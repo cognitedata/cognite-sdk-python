@@ -8,11 +8,11 @@ from cognite.client.data_classes.workflows import (
     WorkflowCreate,
     WorkflowExecution,
     WorkflowExecutionList,
-    WorkflowId,
     WorkflowIds,
     WorkflowList,
     WorkflowVersion,
     WorkflowVersionCreate,
+    WorkflowVersionId,
     WorkflowVersionList,
 )
 from cognite.client.utils._identifier import (
@@ -50,7 +50,7 @@ class WorkflowExecutionAPI(BetaAPIClient):
 
     def trigger(
         self,
-        workflow_id: WorkflowId | tuple[str, str],
+        workflow_id: WorkflowVersionId | tuple[str, str],
         input: dict,
         authentication: dict,
     ) -> dict:
@@ -58,7 +58,7 @@ class WorkflowExecutionAPI(BetaAPIClient):
 
     def list(
         self,
-        ids: WorkflowId | Sequence[WorkflowId] | None = None,
+        ids: WorkflowVersionId | Sequence[WorkflowVersionId] | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
     ) -> WorkflowExecutionList:
@@ -78,14 +78,15 @@ class WorkflowVersionAPI(BetaAPIClient):
 
     def delete(
         self,
-        workflow_external_id: str,
-        versions: str | Sequence[str],
+        workflow_id: WorkflowVersionId
+        | tuple[str, str]
+        | MutableSequence[WorkflowVersionId]
+        | MutableSequence[tuple[str, str]],
         ignore_unknown_ids: bool = False,
     ) -> None:
+        identifiers = WorkflowIds._load(workflow_id).dump(camel_case=True)
         self._delete_multiple(
-            identifiers=WorkflowVersionIdentifierSequence.load(
-                versions=versions, workflow_external_id=workflow_external_id
-            ),
+            identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
             delete_limit=100,
             wrap_ids=True,
@@ -93,17 +94,17 @@ class WorkflowVersionAPI(BetaAPIClient):
 
     def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion:
         response = self._get(
-            url_path=f"{self._RESOURCE_PATH}/{workflow_external_id}/versions/{version}",
+            url_path=f"/workflows/{workflow_external_id}/versions/{version}",
         )
 
         return WorkflowVersion._load(response.json())
 
     def list(
         self,
-        workflow_id: WorkflowId
+        workflow_id: WorkflowVersionId
         | str
         | tuple[str, str]
-        | MutableSequence[WorkflowId]
+        | MutableSequence[WorkflowVersionId]
         | MutableSequence[tuple[str, str]]
         | MutableSequence[str]
         | None = None,
@@ -112,7 +113,9 @@ class WorkflowVersionAPI(BetaAPIClient):
         if workflow_id is None:
             body = None
         else:
-            body = {"filter": {"workflowFilters": WorkflowIds._load(workflow_id).dump(camel_case=True)}}
+            body = {
+                "filter": {"workflowFilters": WorkflowIds._load(workflow_id).dump(camel_case=True, as_external_id=True)}
+            }
 
         response = self._post(url_path=self._RESOURCE_PATH + "/list", json=body)
 

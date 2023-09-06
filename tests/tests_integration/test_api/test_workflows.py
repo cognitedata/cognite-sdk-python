@@ -145,7 +145,7 @@ class TestWorkflowVersions:
             ],
             description="This is ephemeral workflow definition for testing purposes",
         )
-        cognite_client.workflows.versions.delete(version.workflow_external_id, version.version, ignore_unknown_ids=True)
+        cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
 
         created_version: WorkflowVersion | None = None
         try:
@@ -156,7 +156,9 @@ class TestWorkflowVersions:
             assert created_version.hash is not None
         finally:
             if created_version is not None:
-                cognite_client.workflows.versions.delete(created_version.workflow_external_id, version.version)
+                cognite_client.workflows.versions.delete(
+                    created_version.as_id(),
+                )
                 cognite_client.workflows.delete(created_version.workflow_external_id)
 
     def test_list_workflow_versions(
@@ -166,3 +168,29 @@ class TestWorkflowVersions:
 
         assert len(listed) == len(workflow_version_list)
         assert listed == workflow_version_list
+
+    def test_delete_non_existing_raise(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.workflows.versions.delete(
+                ("integration_test:non_existing_workflow_version", "1"), ignore_unknown_ids=False
+            )
+
+        assert "not found" in str(e.value)
+
+    def test_delete_non_existing(self, cognite_client: CogniteClient) -> None:
+        cognite_client.workflows.versions.delete(
+            ("integration_test:non_existing_workflow_version", "1"), ignore_unknown_ids=True
+        )
+
+    def test_retrieve_workflow(self, cognite_client: CogniteClient, workflow_version_list: WorkflowVersionList) -> None:
+        retrieve_id = workflow_version_list[0].as_id()
+
+        retrieved = cognite_client.workflows.versions.retrieve(*retrieve_id.as_primitive())
+
+        assert retrieved == workflow_version_list[0]
+
+    def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.workflows.versions.retrieve("integration_test:non_existing_workflow", "1")
+
+        assert "not found" in str(e.value).lower()

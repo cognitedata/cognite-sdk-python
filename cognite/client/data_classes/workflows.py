@@ -321,6 +321,12 @@ class WorkflowVersionCreate(CogniteResource):
             ("workflowDefinition" if camel_case else "workflow_definition"): workflow_definition,
         }
 
+    def as_id(self) -> WorkflowVersionId:
+        return WorkflowVersionId(
+            workflow_external_id=self.workflow_external_id,
+            version=self.version,
+        )
+
 
 class WorkflowVersion(WorkflowVersionCreate):
     def __init__(
@@ -350,12 +356,6 @@ class WorkflowVersion(WorkflowVersionCreate):
         output = super().dump(camel_case)
         output[("workflowDefinition" if camel_case else "workflow_definition")]["hash"] = self.hash
         return output
-
-    def as_id(self) -> WorkflowId:
-        return WorkflowId(
-            external_id=self.workflow_external_id,
-            version=self.version,
-        )
 
 
 class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
@@ -396,47 +396,65 @@ class WorkflowExecutionList(CogniteResourceList[WorkflowExecution]):
 
 
 @dataclass
-class WorkflowId(CogniteResource):
-    external_id: str
+class WorkflowVersionId(CogniteResource):
+    workflow_external_id: str
     version: str | None = None
 
+    def as_primitive(self) -> tuple[str, str | None]:
+        return self.workflow_external_id, self.version
+
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowId:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowVersionId:
         resource = json.loads(resource) if isinstance(resource, str) else resource
+        if "workflowExternalId" in resource:
+            workflow_external_id = resource["workflowExternalId"]
+        elif "externalId" in resource:
+            workflow_external_id = resource["externalId"]
+        else:
+            raise ValueError("Invalid input to WorkflowVersionId")
+
         return cls(
-            external_id=resource["externalId"],
+            workflow_external_id=workflow_external_id,
             version=resource.get("version"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: dict[str, Any] = {
-            ("externalId" if camel_case else "external_id"): self.external_id,
-        }
+    def dump(self, camel_case: bool = False, as_external_id_key: bool = False) -> dict[str, Any]:
+        if as_external_id_key:
+            output: dict[str, Any] = {
+                ("externalId" if camel_case else "external_id"): self.workflow_external_id,
+            }
+        else:
+            output = {
+                ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
+            }
         if self.version:
             output["version"] = self.version
         return output
 
 
-class WorkflowIds(CogniteResourceList[WorkflowId]):
-    _RESOURCE = WorkflowId
+class WorkflowIds(CogniteResourceList[WorkflowVersionId]):
+    _RESOURCE = WorkflowVersionId
 
     @classmethod
     def _load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> WorkflowIds:
-        workflow_ids: Sequence[WorkflowId]
+        workflow_ids: Sequence[WorkflowVersionId]
         if isinstance(resource, tuple) and len(resource) == 2 and all(isinstance(x, str) for x in resource):
-            workflow_ids = [WorkflowId(*resource)]
-        elif isinstance(resource, WorkflowId):
+            workflow_ids = [WorkflowVersionId(*resource)]
+        elif isinstance(resource, WorkflowVersionId):
             workflow_ids = [resource]
         elif isinstance(resource, str):
-            workflow_ids = [WorkflowId(external_id=resource)]
+            workflow_ids = [WorkflowVersionId(workflow_external_id=resource)]
         elif isinstance(resource, dict):
-            workflow_ids = [WorkflowId._load(resource)]
+            workflow_ids = [WorkflowVersionId._load(resource)]
         elif isinstance(resource, Sequence) and resource and isinstance(resource[0], tuple):
-            workflow_ids = [WorkflowId(*x) for x in resource]
-        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], WorkflowId):
+            workflow_ids = [WorkflowVersionId(*x) for x in resource]
+        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], WorkflowVersionId):
             workflow_ids = resource
         elif isinstance(resource, Sequence) and resource and isinstance(resource[0], str):
-            workflow_ids = [WorkflowId(external_id=x) for x in resource]
+            workflow_ids = [WorkflowVersionId(workflow_external_id=x) for x in resource]
         else:
             raise ValueError("Invalid input to WorkflowIds")
         return cls(workflow_ids)
+
+    def dump(self, camel_case: bool = False, as_external_id: bool = False) -> list[dict[str, Any]]:
+        return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]

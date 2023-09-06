@@ -278,15 +278,31 @@ class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):
     @classmethod
-    def load(cls, versions: str | Sequence[str], workflow_external_id: str) -> WorkflowVersionIdentifierSequence:
-        if isinstance(versions, str):
-            return cls([WorkflowVersionIdentifier(versions, workflow_external_id)], is_singleton=True)
-        elif isinstance(versions, Sequence):
+    def load(cls, workflow_ids: Sequence[dict]) -> WorkflowVersionIdentifierSequence:
+        if len(workflow_ids) == 1 and isinstance(workflow_ids[0], dict):
             return cls(
-                [WorkflowVersionIdentifier(version, workflow_external_id) for version in versions], is_singleton=False
+                [
+                    WorkflowVersionIdentifier(
+                        version=workflow_ids[0]["version"], workflow_external_id=workflow_ids[0]["workflowExternalId"]
+                    )
+                ],
+                is_singleton=True,
             )
-        raise TypeError(f"versions must be of type str or Sequence[str]. Found {type(versions)}")
+        elif isinstance(workflow_ids, Sequence) and workflow_ids and isinstance(workflow_ids[0], dict):
+            return cls(
+                [WorkflowVersionIdentifier(entry["version"], entry["workflowExternalId"]) for entry in workflow_ids],
+                is_singleton=False,
+            )
+        raise TypeError(f"versions must be of type str or Sequence[str]. Found {type(workflow_ids)}")
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
-            raise ValueError("Exactly one version must be specified")
+            raise ValueError("Exactly one workflow version must be specified")
+
+    @staticmethod
+    def unwrap_identifier(identifier: str | int | dict) -> str | int | tuple[str, str]:  # type: ignore[override]
+        if isinstance(identifier, (str, int)):
+            return identifier
+        if "workflowExternalId" in identifier and "version" in identifier:
+            return identifier["workflowExternalId"], identifier["version"]
+        raise ValueError(f"{identifier} does not contain 'workflowExternalId' and 'version''")
