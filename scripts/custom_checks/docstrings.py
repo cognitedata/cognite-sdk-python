@@ -148,6 +148,10 @@ class DocstrFormatter:
             raise ValueError("Missing return type annotation")
 
         for var_name, param in method_signature.parameters.items():
+            if not (isinstance(param.annotation, str) or param.annotation is inspect.Signature.empty):
+                # The file is probably missing '__from__future import annotations', we skip for now:
+                raise FalsePositiveDocstring
+
             if var_name in {"self", "cls"}:
                 continue
             if param.kind is param.VAR_POSITIONAL:
@@ -201,6 +205,10 @@ class DocstrFormatter:
                 self.line_return_group = line_group
             elif len(first.split(self.RETURN_STRING)) > 1:
                 raise ValueError(f"'{self.RETURN_STRING}'-line contains additional text")
+
+        if self.line_args_group is self.line_return_group is None:
+            # Skip small docstrings; small as in the writer didnt specify args & return:
+            raise FalsePositiveDocstring
 
         self.add_space_after_args, self.add_space_after_returns = False, False
         if self.line_args_group is not None:
