@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.21.0] - 2023-09-06
+### Added
+- Supporting pattern mode and extra configuration for diagram detect in beta.
+
 ## [6.20.0] - 2023-09-05
 ### Fixed
 - When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
