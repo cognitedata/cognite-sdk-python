@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, List, Sequence, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.templates import (
     GraphQlResponse,
     TemplateGroup,
@@ -160,12 +160,12 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT, owners: Sequence[str] | None = None) -> TemplateGroupList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ, owners: Sequence[str] | None = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
-            limit (int): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             owners (Sequence[str] | None): Include template groups that have any of these values in their `owner` field.
 
         Returns:
@@ -262,7 +262,7 @@ class TemplateGroupVersionsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         min_version: int | None = None,
         max_version: int | None = None,
     ) -> TemplateGroupVersionList:
@@ -271,7 +271,7 @@ class TemplateGroupVersionsAPI(APIClient):
 
         Args:
             external_id (str): The external id of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             min_version (int | None): (Optional[int]): Exclude versions with a version number smaller than this.
             max_version (int | None): (Optional[int]): Exclude versions with a version number larger than this.
 
@@ -479,7 +479,7 @@ class TemplateInstancesAPI(APIClient):
         self,
         external_id: str,
         version: int,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         data_set_ids: Sequence[int] | None = None,
         template_names: Sequence[str] | None = None,
     ) -> TemplateInstanceList:
@@ -489,7 +489,7 @@ class TemplateInstancesAPI(APIClient):
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             data_set_ids (Sequence[int] | None): (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
             template_names (Sequence[str] | None): (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
 
@@ -634,7 +634,7 @@ class TemplateViewsAPI(APIClient):
         version: int,
         view_external_id: str,
         input: dict[str, Any] | None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ViewResolveList:
         """`Resolves a View.`
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
@@ -644,7 +644,7 @@ class TemplateViewsAPI(APIClient):
             version (int): The version of the template group.
             view_external_id (str): No description.
             input (dict[str, Any] | None): The input for the View.
-            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ViewResolveList: The resolved items.
@@ -666,15 +666,14 @@ class TemplateViewsAPI(APIClient):
             other_params={"externalId": view_external_id, "input": input},
         )
 
-    def list(self, external_id: str, version: int, limit: int = LIST_LIMIT_DEFAULT) -> ViewList:
+    def list(self, external_id: str, version: int, limit: int | None = DEFAULT_LIMIT_READ) -> ViewList:
         """`Lists view in a template group.`
         Up to 1000 views can be retrieved in one operation.
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int | None): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ViewList: List of requested views

@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate, FileMetadata
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.exceptions import CogniteAPIError
@@ -166,7 +166,7 @@ def check_created_vs_base(base_annotation: Annotation, created_annotation: Annot
 
 
 def _test_list_on_created_annotations(
-    cognite_client: CogniteClient, annotations: AnnotationList, limit: int = LIST_LIMIT_DEFAULT
+    cognite_client: CogniteClient, annotations: AnnotationList, limit: int = DEFAULT_LIMIT_READ
 ):
     annotation = annotations[0]
     filter = AnnotationFilter(

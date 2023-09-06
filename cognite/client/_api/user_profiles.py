@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, MutableSequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
 from cognite.client.utils._identifier import UserIdentifierSequence
 
@@ -80,7 +80,7 @@ class UserProfilesAPI(APIClient):
         #       so we sort manually for now:
         return UserProfileList(cast(List[UserProfile], [profiles.get(user) for user in user_identifier]))
 
-    def search(self, name: str, limit: int = 100) -> UserProfileList:
+    def search(self, name: str, limit: int = DEFAULT_LIMIT_READ) -> UserProfileList:
         """`Search for user profiles <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles~1search/post>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, as the result set ordering and match criteria threshold may change over time.
 
@@ -106,7 +106,7 @@ class UserProfilesAPI(APIClient):
             limit=limit,
         )
 
-    def list(self, limit: int | None = LIST_LIMIT_DEFAULT) -> UserProfileList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> UserProfileList:
         """`List user profiles <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles/get>`_
 
         List all user profiles in the current CDF project. The results are ordered alphabetically by name.

@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Any, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
@@ -173,12 +173,12 @@ class AnnotationsAPI(APIClient):
             url_path=self._RESOURCE_PATH + "/reverselookup",
         )
 
-    def list(self, filter: AnnotationFilter | dict, limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
+    def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
         Args:
             filter (AnnotationFilter | dict): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
-            limit (int): Maximum number of annotations to return. Defaults to 25.
+            limit (int | None): Maximum number of annotations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AnnotationList: list of annotations

@@ -17,10 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.18.0] - 2023-09-04
+## [6.20.0] - 2023-09-06
 ### Added
 - Supporting pattern mode and extra configuration for diagram detect in beta.
 
+## [6.19.0] - 2023-09-04
+## Added
+- Now possible to retrieve and update translation and scale of 3D model revisions.
+
+## [6.18.0] - 2023-09-04
+### Added
+- Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+
+### Improved
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
+>>>>>>> e7dd74b0414e8735728dc6869805a0db04c41b7e
 
 ## [6.17.0] - 2023-09-01
 ### Added

@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesAggregate,
@@ -303,11 +303,10 @@ class TimeSeriesAPI(APIClient):
         in your CDF project, but exclude timezones from america:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters, aggregations
+            >>> from cognite.client.data_classes import filters, aggregations as aggs
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_america = a.Not(a.Prefix("america"))
+            >>> not_america = aggs.Not(aggs.Prefix("america"))
             >>> is_critical = filters.Search(TimeSeriesProperty.description, "critical")
             >>> timezone_count = c.time_series.aggregate_cardinality_values(
             ...     TimeSeriesProperty.metadata_key("timezone"),
@@ -418,10 +417,9 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-                >>> from cognite.client.data_classes import aggregations, filters
+                >>> from cognite.client.data_classes import aggregations as aggs, filters
                 >>> c = CogniteClient()
-                >>> a = aggregations
-                >>> not_test = a.Not(a.Prefix("test"))
+                >>> not_test = aggs.Not(aggs.Prefix("test"))
                 >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
                 >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
                 >>> print(result.unique)
@@ -632,7 +630,7 @@ class TimeSeriesAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: TimeSeriesFilter | dict | None = None,
-        limit: int = 100,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
         """`Search for time series. <https://developer.cognite.com/api#tag/Time-series/operation/searchTimeSeries>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -672,7 +670,7 @@ class TimeSeriesAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
         """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
@@ -683,7 +681,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TimeSeriesList: List of time series that match the filter criteria.
@@ -754,7 +752,7 @@ class TimeSeriesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
         """`List over time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
@@ -776,7 +774,7 @@ class TimeSeriesAPI(APIClient):
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
-            limit (int): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TimeSeriesList: The requested time series.

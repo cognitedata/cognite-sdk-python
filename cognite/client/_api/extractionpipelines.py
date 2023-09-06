@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     ExtractionPipeline,
     ExtractionPipelineConfig,
@@ -100,11 +100,11 @@ class ExtractionPipelinesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> ExtractionPipelineList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> ExtractionPipelineList:
         """`List extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/listExtPipes>`_
 
         Args:
-            limit (int): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ExtractionPipelineList: List of requested ExtractionPipelines
@@ -220,7 +220,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         statuses: Sequence[str] | None = None,
         message_substring: str | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ExtractionPipelineRunList:
         """`List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/filterRuns>`_
 
@@ -229,7 +229,7 @@ class ExtractionPipelineRunsAPI(APIClient):
             statuses (Sequence[str] | None): One or more among "success" / "failure" / "seen".
             message_substring (str | None): Failure message part.
             created_time (dict[str, Any] | TimestampRange | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-            limit (int): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ExtractionPipelineRunList: List of requested extraction pipeline runs
