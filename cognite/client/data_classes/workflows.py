@@ -153,7 +153,6 @@ class Task(CogniteResource):
     def __init__(
         self,
         external_id: str,
-        type: Literal["function", "transformation", "cdf", "dynamic"],
         parameters: Parameters,
         name: str | None = None,
         description: str | None = None,
@@ -187,7 +186,6 @@ class Task(CogniteResource):
             raise ValueError(f"Unknown task type: {type_}")
         return cls(
             external_id=resource["externalId"],
-            type=resource["type"],
             parameters=parameters,
             name=resource.get("name"),
             description=resource.get("description"),
@@ -199,9 +197,20 @@ class Task(CogniteResource):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        if isinstance(self.parameters, FunctionParameters):
+            type_ = "function"
+        elif isinstance(self.parameters, TransformationParameters):
+            type_ = "transformation"
+        elif isinstance(self.parameters, CDFRequestParameters):
+            type_ = "cdf"
+        elif isinstance(self.parameters, DynamicTaskParameters):
+            type_ = "dynamic"
+        else:
+            raise ValueError(f"Unknown task type: {type(self.parameters)}")
+
         output: dict[str, Any] = {
             ("externalId" if camel_case else "external_id"): self.external_id,
-            "type": self.type,
+            "type": type_,
             "parameters": self.parameters.dump(camel_case),
             "retries": self.retries,
             "timeout": self.timeout,
@@ -341,6 +350,10 @@ class WorkflowVersion(WorkflowVersionCreate):
         output = super().dump(camel_case)
         output[("workflowDefinition" if camel_case else "workflow_definition")]["hash"] = self.hash
         return output
+
+
+class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
+    _RESOURCE = WorkflowVersion
 
 
 class WorkflowExecution(CogniteResource):

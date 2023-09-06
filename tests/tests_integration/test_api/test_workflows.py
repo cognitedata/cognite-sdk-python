@@ -11,6 +11,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowList,
     WorkflowVersion,
     WorkflowVersionCreate,
+    WorkflowVersionList,
 )
 from cognite.client.exceptions import CogniteAPIError
 
@@ -36,6 +37,18 @@ def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
     if call_list:
         return cognite_client.workflows.list()
     return listed
+
+
+def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
+    pass
+    # version1 = WorkflowVersionCreate(
+    #     workflow_external_id=workflow_id,
+    #     version="1",
+    #     tasks=[
+    #         Task(
+    #         )]
+    #
+    # )
 
 
 class TestWorkflows:
@@ -88,12 +101,11 @@ class TestWorkflows:
 class TestWorkflowVersions:
     def test_create_delete(self, cognite_client: CogniteClient) -> None:
         version = WorkflowVersionCreate(
-            workflow_external_id="integration_test:workflow_definitions:test_create_delete",
+            workflow_external_id="integration_test:workflow_versions:test_create_delete",
             version="1",
             tasks=[
                 Task(
                     external_id="integration_test:workflow_definitions:test_create_delete:task1",
-                    type="function",
                     parameters=FunctionParameters(
                         external_id="integration_test:workflow_definitions:test_create_delete:task1:function",
                         data={"a": 1, "b": 2},
@@ -114,3 +126,4 @@ class TestWorkflowVersions:
         finally:
             if created_version is not None:
                 cognite_client.workflows.versions.delete(created_version.workflow_external_id, version.version)
+                cognite_client.workflows.delete(created_version.workflow_external_id)
