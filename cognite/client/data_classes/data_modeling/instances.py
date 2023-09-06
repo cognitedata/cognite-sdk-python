@@ -25,12 +25,9 @@ from typing import (
     overload,
 )
 
-from cognite.client.data_classes._base import (
-    CogniteFilter,
-    CogniteResourceList,
-)
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
+from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
@@ -756,16 +753,14 @@ class InstancesApply:
     edges: EdgeApplyList
 
 
-class InstanceSort(CogniteFilter):
+class InstanceSort(DataModelingSort):
     def __init__(
         self,
         property: list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
     ) -> None:
-        self.property = property
-        self.direction = direction
-        self.nulls_first = nulls_first
+        super().__init__(property, direction, nulls_first)
 
 
 @dataclass

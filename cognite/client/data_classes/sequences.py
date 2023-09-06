@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Literal, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast
 from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
@@ -17,11 +17,11 @@ from cognite.client.data_classes._base import (
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
     PropertySpec,
-    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -76,15 +76,15 @@ class Sequence(CogniteResource):
         self.data_set_id = data_set_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def rows(self, start: int, end: int) -> list[dict]:
+    def rows(self, start: int, end: int | None) -> SequenceData:
         """Retrieves rows from this sequence.
 
         Args:
-            start (int): No description.
-            end (int): No description.
+            start (int): Row number to start from (inclusive).
+            end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
 
         Returns:
-            list[dict]: List of sequence data.
+            SequenceData: List of sequence data.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
@@ -122,7 +122,6 @@ class SequenceFilter(CogniteFilter):
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         data_set_ids (SequenceType[dict[str, Any]] | None): Only include sequences that belong to these datasets.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -135,7 +134,6 @@ class SequenceFilter(CogniteFilter):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         data_set_ids: SequenceType[dict[str, Any]] | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -145,17 +143,6 @@ class SequenceFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: dict | str) -> SequenceFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
 
 class SequenceColumnUpdate(CogniteUpdate):
@@ -366,7 +353,7 @@ class SequenceData(CogniteResource):
 
     def __eq__(self, other: Any) -> bool:
         return (
-            type(self) == type(other)
+            type(self) is type(other)
             and self.id == other.id
             and self.external_id == other.external_id
             and self.row_numbers == other.row_numbers
@@ -396,7 +383,7 @@ class SequenceData(CogniteResource):
             )
         return [r[ix] for r in self.values]
 
-    def items(self) -> Generator[tuple[int, list[int | str | float]], None, None]:
+    def items(self) -> Iterator[tuple[int, list[int | str | float]]]:
         """Returns an iterator over tuples of (row number, values)."""
         for row, values in zip(self.row_numbers, self.values):
             yield row, list(values)
@@ -526,7 +513,7 @@ class SortableSequenceProperty(EnumProperty):
 SortableSequencePropertyLike: TypeAlias = Union[SortableSequenceProperty, str, List[str]]
 
 
-class SequenceSort(Sort):
+class SequenceSort(CogniteSort):
     def __init__(
         self,
         property: SortableSequenceProperty,

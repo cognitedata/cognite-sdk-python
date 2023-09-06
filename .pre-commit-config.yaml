@@ -13,7 +13,7 @@ repos:
           - --fixable=E,W,F,I,T,RUF,TID,UP
           - --target-version=py38
           - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
-    rev: v0.0.285
+    rev: v0.0.286
 
   - repo: https://github.com/psf/black
     rev: 23.7.0
@@ -21,12 +21,12 @@ repos:
       - id: black
         exclude: ^cognite/client/_proto.*$
         args:
-          - --line-length
-          - '120'
-          - --target-version
-          - py38
-          - --include
-          - \.py$
+          - --line-length=120
+          - --target-version=py38
+          - --target-version=py39
+          - --target-version=py310
+          - --target-version=py311
+          - --include=\.py$
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -57,7 +57,7 @@ repos:
         require_serial: true  # avoid possible race conditions
 
   - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
-    rev: 0.2.4
+    rev: 0.3.0
     hooks:
       - id: pydoclint
         require_serial: true  # Spammy in run-all scenarios (more than fast enough already)

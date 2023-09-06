@@ -110,6 +110,8 @@ class DiagramsAPI(APIClient):
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | Sequence[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool = False,
+        configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[False],
     ) -> DiagramDetectResults:
@@ -125,6 +127,8 @@ class DiagramsAPI(APIClient):
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | Sequence[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool = False,
+        configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[True],
     ) -> tuple[DetectJobBundle | None, list[dict[str, Any]]]:
@@ -140,6 +144,8 @@ class DiagramsAPI(APIClient):
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | Sequence[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool = False,
+        configuration: dict[str, Any] | None = None,
     ) -> DiagramDetectResults:
         ...
 
@@ -152,6 +158,8 @@ class DiagramsAPI(APIClient):
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | Sequence[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool | None = None,
+        configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]:
@@ -169,8 +177,9 @@ class DiagramsAPI(APIClient):
             file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (str | Sequence[str] | None): File external ids.
             file_references (list[FileReference] | FileReference | None): File references (id or external id) with page ranges.
-            multiple_jobs (bool): Enables you to publish multiple jobs. If True the method will return a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
-
+            pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
+            configuration (dict[str, Any] | None): Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
+            multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
             DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
 
@@ -190,6 +199,10 @@ class DiagramsAPI(APIClient):
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
+        beta_parameters = {}
+        if pattern_mode is not None or configuration is not None:
+            beta_parameters = dict(pattern_mode=pattern_mode, configuration=configuration)
+
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
             if num_new_jobs > self._DETECT_API_STATUS_JOB_LIMIT:
@@ -212,6 +225,7 @@ class DiagramsAPI(APIClient):
                         search_field=search_field,
                         min_tokens=min_tokens,
                         job_cls=DiagramDetectResults,
+                        **beta_parameters,  # type: ignore[arg-type]
                     )
                     jobs.append(posted_job)
                 except CogniteAPIError as exc:
@@ -233,11 +247,12 @@ class DiagramsAPI(APIClient):
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
+            **beta_parameters,  # type: ignore[arg-type]
         )
 
     def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
         if self._cognite_client is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
         jobs = res.json()["items"]
         return [

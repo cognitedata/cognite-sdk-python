@@ -268,11 +268,7 @@ class WeekAligner(DateTimeAligner):
         Ceils the date to the next monday
         >>> WeekAligner.ceil(datetime(2023, 4, 9 ))
         datetime.datetime(2023, 4, 10, 0, 0)
-
-        Args:
-            date (datetime): No description.
-        Returns:
-            datetime: No description."""
+        """
         date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date + timedelta(days=7 - weekday)
@@ -284,11 +280,7 @@ class WeekAligner(DateTimeAligner):
         Floors the date to the nearest monday
         >>> WeekAligner.floor(datetime(2023, 4, 9))
         datetime.datetime(2023, 4, 3, 0, 0)
-
-        Args:
-            date (datetime): No description.
-        Returns:
-            datetime: No description."""
+        """
         date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date - timedelta(days=weekday)
@@ -317,11 +309,7 @@ class MonthAligner(DateTimeAligner):
         datetime.datetime(2024, 1, 1, 0, 0)
         >>> MonthAligner.ceil(datetime(2024, 1, 10))
         datetime.datetime(2024, 2, 1, 0, 0)
-
-        Args:
-            date (datetime): No description.
-        Returns:
-            datetime: No description."""
+        """
         if date == datetime(year=date.year, month=date.month, day=1, tzinfo=date.tzinfo):
             return date
         extra, month = divmod(date.month + 1, 12)
@@ -353,11 +341,7 @@ class QuarterAligner(DateTimeAligner):
         datetime.datetime(2024, 1, 1, 0, 0)
         >>> QuarterAligner.ceil(datetime(2023, 1, 1))
         datetime.datetime(2023, 1, 1, 0, 0)
-
-        Args:
-            date (datetime): No description.
-        Returns:
-            datetime: No description."""
+        """
         if any(date == datetime(date.year, month, 1, tzinfo=date.tzinfo) for month in [1, 4, 7, 10]):
             return date
         month = 3 * ((date.month - 1) // 3 + 1) + 1
@@ -374,11 +358,7 @@ class QuarterAligner(DateTimeAligner):
         datetime.datetime(2023, 7, 1, 0, 0)
         >>> QuarterAligner.floor(datetime(2023, 12, 1))
         datetime.datetime(2023, 10, 1, 0, 0)
-
-        Args:
-            date (datetime): No description.
-        Returns:
-            datetime: No description."""
+        """
         month = 3 * ((date.month - 1) // 3) + 1
         return cls.normalize(date.replace(month=month, day=1))
 
@@ -559,14 +539,7 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     This function overcomes that limitation.
 
     Assumes that start and end have the same timezone.
-
-    Args:
-        start (datetime): No description.
-        end (datetime): No description.
-        freq (str): No description.
-        inclusive (str): No description.
-    Returns:
-        pandas.DatetimeIndex: No description."""
+    """
     pd = cast(Any, local_import("pandas"))
     # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
     # datetimes. This is a workaround by passing the time zone as an argument to the function.
@@ -600,12 +573,7 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
     Note:
         We do not consider timezones with different keys, but equal fixed offsets from UTC to be equal. An example
         would be Zulu Time (which is +00:00 ahead of UTC) and UTC.
-
-    Args:
-        start_tz (tzinfo): No description.
-        end_tz (tzinfo): No description.
-    Returns:
-        bool: No description."""
+    """
     if start_tz is end_tz:
         return True
     ZoneInfo, ZoneInfoNotFoundError = import_zoneinfo(), _import_zoneinfo_not_found_error()
@@ -662,12 +630,7 @@ def _unit_in_days(unit: str, ceil: bool = True) -> float:
     **Caveat** Should not be used for precise calculations, as month, quarter, and year
     do not have a precise timespan in days. Instead, the ceil argument is used to select between
     the maximum and minimum length of a year, quarter, and month.
-
-    Args:
-        unit (str): No description.
-        ceil (bool): No description.
-    Returns:
-        float: No description."""
+    """
     if unit in {"w", "d", "h", "m", "s"}:
         unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
         arg = {unit: 1}

@@ -5,14 +5,13 @@ from collections import UserDict
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Union, cast
 
 from cognite.client.data_classes._base import (
-    EXCLUDE_VALUE,
     CogniteObjectUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
 )
-from cognite.client.utils._text import to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -246,21 +245,16 @@ class TemplateInstance(CogniteResource):
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case:
-            return {
-                to_camel_case(key): value
-                if key != "field_resolvers"
-                else TemplateInstance._encode_field_resolvers(value, camel_case=camel_case)
-                for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
-            }
-        return {
+        dumped = {
             key: value
             if key != "field_resolvers"
             else TemplateInstance._encode_field_resolvers(value, camel_case=camel_case)
             for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
+            if value is not None and not key.startswith("_")
         }
+        if camel_case:
+            return convert_all_keys_to_camel_case(dumped)
+        return dumped
 
     @staticmethod
     def _encode_field_resolvers(field_resolvers: dict[str, FieldResolvers], camel_case: bool) -> dict[str, Any]:
@@ -387,17 +381,14 @@ class View(CogniteResource):
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case:
-            return {
-                to_camel_case(key): View.resolve_nested_classes(value, camel_case)
-                for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
-            }
-        return {
+        dumped = {
             key: View.resolve_nested_classes(value, camel_case)
             for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
+            if value is not None and not key.startswith("_")
         }
+        if camel_case:
+            return convert_all_keys_to_camel_case(dumped)
+        return dumped
 
     @staticmethod
     def resolve_nested_classes(value: CogniteResource | dict, camel_case: bool) -> dict:

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Iterator, List, Sequence, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
@@ -114,11 +114,11 @@ class RawDatabasesAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> DatabaseList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
-            limit (int): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             DatabaseList: List of requested databases.
@@ -263,12 +263,12 @@ class RawTablesAPI(APIClient):
         for tbl in table_iterator:
             yield self._set_db_name_on_tables(tbl, db_name)
 
-    def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
+    def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
             db_name (str): The database to list tables from.
-            limit (int): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TableList: List of requested tables.
@@ -509,7 +509,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -521,7 +521,7 @@ class RawRowsAPI(APIClient):
             min_last_updated_time (int | None): Rows must have been last updated after this time. ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             pandas.DataFrame: The requested rows in a pandas dataframe.
@@ -547,7 +547,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> RowList:
         """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -557,7 +557,7 @@ class RawRowsAPI(APIClient):
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             RowList: The requested rows.

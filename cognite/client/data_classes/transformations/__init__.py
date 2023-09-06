@@ -488,16 +488,6 @@ class TransformationFilter(CogniteFilter):
         self.data_set_ids = data_set_ids
         self.tags = tags
 
-    @classmethod
-    def _load(cls, resource: dict | str) -> TransformationFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         if obj.get("includePublic") is not None:

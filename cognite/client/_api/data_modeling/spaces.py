@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
 
@@ -126,13 +126,13 @@ class SpacesAPI(APIClient):
 
     def list(
         self,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         include_global: bool = False,
     ) -> SpaceList:
         """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            limit (int): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether to include global spaces. Defaults to False.
 
         Returns:

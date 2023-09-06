@@ -15,7 +15,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generator,
     Generic,
     Hashable,
     Iterator,
@@ -720,11 +719,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
 
 class SplittingFetchSubtask(SerialFetchSubtask):
     """Fetches data serially, but splits its time domain ("divide and conquer") based on the density
-    of returned datapoints. Stores data in parent
-
-    Args:
-        max_splitting_factor (int): No description.
-        **kwargs (Any): No description.
+    of returned datapoints. Stores data in parent.
     """
 
     def __init__(self, *, max_splitting_factor: int = 10, **kwargs: Any) -> None:
@@ -740,7 +735,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             return self._split_self_into_new_subtasks_if_needed(last_ts)
         return None
 
-    def _create_subtasks_idxs(self, n_new_tasks: int) -> Generator[tuple[float, ...], None, None]:
+    def _create_subtasks_idxs(self, n_new_tasks: int) -> Iterator[tuple[float, ...]]:
         # Since this task may decide to split itself multiple times, we count backwards to keep order
         # (we rely on tuple sorting logic). Example using `self.subtask_idx=(4,)`:
         # - First split into e.g. 3 parts: (4,-3), (4,-2), (4,-1)

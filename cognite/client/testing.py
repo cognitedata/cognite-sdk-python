@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any, Iterator
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
@@ -57,6 +57,7 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
+from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
 
 
@@ -64,10 +65,7 @@ class CogniteClientMock(MagicMock):
     """Mock for CogniteClient object
 
     All APIs are replaced with specced MagicMock objects.
-
-    Args:
-        *args (Any): No description.
-        **kwargs (Any): No description."""
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if "parent" in kwargs:
@@ -115,6 +113,7 @@ class CogniteClientMock(MagicMock):
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
+        self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
@@ -156,7 +155,7 @@ class CogniteClientMock(MagicMock):
 
 
 @contextmanager
-def monkeypatch_cognite_client() -> Generator[CogniteClientMock, None, None]:
+def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
     """Context manager for monkeypatching the CogniteClient.
 
     Will patch all clients and replace them with specced MagicMock objects.

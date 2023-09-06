@@ -109,11 +109,14 @@ class DocstrFormatter:
     def _extract_yields_return_annot(string):
         # Example:
         #   A return annotation like 'Generator[tuple[float, ...], list[str, int], int | float]'
-        #   should be marked as yielding: 'tuple[float, ...]'
+        #   should be marked as yielding: 'tuple[float, ...]', and similarly, Iterator[int] --> int.
         # TODO: With 3.9 this gets much easier: get_args(get_type_hints(method)["return"])[0]
 
+        if string.startswith("Iterator["):
+            return string[9:-1]
+
         if not string.startswith("Generator["):
-            raise ValueError("All generators must be annotated using 'typing.Generator'")
+            raise ValueError("All generators must be annotated using 'Generator' or 'Iterator'")
 
         bracket_count, letters = 0, []
         for char in string[10:]:
@@ -145,6 +148,10 @@ class DocstrFormatter:
             raise ValueError("Missing return type annotation")
 
         for var_name, param in method_signature.parameters.items():
+            if not (isinstance(param.annotation, str) or param.annotation is inspect.Signature.empty):
+                # The file is probably missing '__from__future import annotations', we skip for now:
+                raise FalsePositiveDocstring
+
             if var_name in {"self", "cls"}:
                 continue
             if param.kind is param.VAR_POSITIONAL:
@@ -198,6 +205,10 @@ class DocstrFormatter:
                 self.line_return_group = line_group
             elif len(first.split(self.RETURN_STRING)) > 1:
                 raise ValueError(f"'{self.RETURN_STRING}'-line contains additional text")
+
+        if self.line_args_group is self.line_return_group is None:
+            # Skip small docstrings; small as in the writer didnt specify args & return:
+            raise FalsePositiveDocstring
 
         self.add_space_after_args, self.add_space_after_returns = False, False
         if self.line_args_group is not None:

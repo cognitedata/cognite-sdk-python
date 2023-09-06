@@ -10,7 +10,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Collection,
-    Dict,
     Generic,
     Iterator,
     List,
@@ -38,12 +37,10 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
-EXCLUDE_VALUE = [None]
-
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     # TODO: Consider using inheritance?
-    dumped = {k: v for k, v in vars(obj).items() if v not in EXCLUDE_VALUE and not k.startswith("_")}
+    dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
     if camel_case:
         return convert_all_keys_to_camel_case(dumped)
     return dumped
@@ -58,12 +55,12 @@ class CogniteResponse:
         return str(self)
 
     def __eq__(self, other: Any) -> bool:
-        return type(other) == type(self) and other.dump() == self.dump()
+        return type(other) is type(self) and other.dump() == self.dump()
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         return attr
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -99,7 +96,7 @@ class CogniteResource:
         return obj
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
@@ -108,7 +105,7 @@ class CogniteResource:
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         return attr
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -128,7 +125,7 @@ class CogniteResource:
     ) -> T_CogniteResource:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
+        elif isinstance(resource, dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
@@ -215,7 +212,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         return attr
 
     def pop(self, i: int = -1) -> T_CogniteResource:
@@ -344,7 +341,7 @@ class CogniteUpdate:
         self._update_object: dict[str, Any] = {}
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
@@ -493,7 +490,7 @@ class CogniteLabelUpdate(Generic[T_CogniteUpdate]):
 
 class CogniteFilter:
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
@@ -501,25 +498,6 @@ class CogniteFilter:
 
     def __repr__(self) -> str:
         return str(self)
-
-    def __getattribute__(self, item: Any) -> Any:
-        attr = super().__getattribute__(item)
-        if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
-        return attr
-
-    @classmethod
-    def _load(cls: type[T_CogniteFilter], resource: dict | str) -> T_CogniteFilter:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource))
-        elif isinstance(resource, Dict):
-            instance = cls()
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -631,7 +609,7 @@ class Geometry(dict):
 SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]
 
 
-class Sort:
+class CogniteSort:
     def __init__(
         self,
         property: SortableProperty,
@@ -642,15 +620,21 @@ class Sort:
         self.order = order
         self.nulls = nulls
 
+    def __str__(self) -> str:
+        return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
+
+    def __repr__(self) -> str:
+        return str(self)
+
     @classmethod
     def load(
-        cls: type[T_Sort],
+        cls: type[T_CogniteSort],
         data: dict[str, Any]
         | tuple[SortableProperty, Literal["asc", "desc"]]
         | tuple[SortableProperty, Literal["asc", "desc"], Literal["auto", "first", "last"]]
         | SortableProperty
-        | T_Sort,
-    ) -> T_Sort:
+        | T_CogniteSort,
+    ) -> T_CogniteSort:
         if isinstance(data, cls):
             return data
         elif isinstance(data, dict):
@@ -690,7 +674,7 @@ class Sort:
         return output
 
 
-T_Sort = TypeVar("T_Sort", bound=Sort)
+T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
 class HasExternalAndInternalId(Protocol):
