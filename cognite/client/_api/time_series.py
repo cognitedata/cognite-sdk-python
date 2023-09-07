@@ -712,25 +712,18 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
+
+        if isinstance(sort, (str, dict)):
             sort = [sort]
 
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._list(
-                list_cls=TimeSeriesList,
-                resource_cls=TimeSeries,
-                method="POST",
-                limit=limit,
-                advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-                sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._list(
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            method="POST",
+            limit=limit,
+            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
+        )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
