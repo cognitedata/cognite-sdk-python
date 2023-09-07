@@ -139,9 +139,16 @@ class APIClient:
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
     ) -> Response:
         return self._do_request(
-            "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
+            "POST",
+            url_path,
+            json=json,
+            headers=headers,
+            params=params,
+            timeout=self._config.timeout,
+            api_subversion=api_subversion,
         )
 
     def _put(
@@ -149,11 +156,21 @@ class APIClient:
     ) -> Response:
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
-    def _do_request(self, method: str, url_path: str, accept: str = "application/json", **kwargs: Any) -> Response:
+    def _do_request(
+        self,
+        method: str,
+        url_path: str,
+        accept: str = "application/json",
+        api_subversion: str | None = None,
+        **kwargs: Any,
+    ) -> Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
-
         json_payload = kwargs.get("json")
-        headers = self._configure_headers(accept, additional_headers=self._config.headers.copy())
+        headers = self._configure_headers(
+            accept,
+            additional_headers=self._config.headers.copy(),
+            api_subversion=api_subversion,
+        )
         headers.update(kwargs.get("headers") or {})
 
         if json_payload:
@@ -192,7 +209,9 @@ class APIClient:
         self._log_request(res, payload=json_payload, stream=stream)
         return res
 
-    def _configure_headers(self, accept: str, additional_headers: dict[str, str]) -> MutableMapping[str, Any]:
+    def _configure_headers(
+        self, accept: str, additional_headers: dict[str, str], api_subversion: str | None
+    ) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
         self._refresh_auth_header(headers)
@@ -200,7 +219,7 @@ class APIClient:
         headers["accept"] = accept
         headers["x-cdp-sdk"] = f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}"
         headers["x-cdp-app"] = self._config.client_name
-        headers["cdf-version"] = self._api_subversion
+        headers["cdf-version"] = api_subversion or self._api_subversion
         if "User-Agent" in headers:
             headers["User-Agent"] += " " + utils._auxiliary.get_user_agent()
         else:
@@ -373,6 +392,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
         if is_unlimited(limit):
             limit = None
@@ -415,6 +435,7 @@ class APIClient:
                         params["sort"] = sort
                     params.update(other_params or {})
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
+
                 elif method == "POST":
                     body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                     if filter:
@@ -427,7 +448,12 @@ class APIClient:
                         )
                     if sort is not None:
                         body["sort"] = sort
-                    res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
+                    res = self._post(
+                        url_path=url_path or resource_path + "/list",
+                        json=body,
+                        headers=headers,
+                        api_subversion=api_subversion,
+                    )
                 else:
                     raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
                 last_received_items = res.json()["items"]
@@ -504,6 +530,7 @@ class APIClient:
         headers: dict | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         if partitions:
             if not is_unlimited(limit):
@@ -536,6 +563,7 @@ class APIClient:
             headers=headers,
             initial_cursor=initial_cursor,
             advanced_filter=advanced_filter,
+            api_subversion=api_subversion,
         ):
             items.extend(resource_list.data)
         return list_cls(items, cognite_client=self._cognite_client)
@@ -674,6 +702,7 @@ class APIClient:
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
+        api_subversion: str | None = None,
     ) -> int | UniqueResultList:
         if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
             raise ValueError(
@@ -681,9 +710,7 @@ class APIClient:
                 f"'cardinalityProperties', 'uniqueValues', and 'uniqueProperties'."
             )
 
-        body: dict[str, Any] = {
-            "aggregate": aggregate,
-        }
+        body: dict[str, Any] = {"aggregate": aggregate}
         if properties is not None:
             if isinstance(properties, tuple):
                 properties, property_aggregation_filter = properties
@@ -697,9 +724,11 @@ class APIClient:
                 dumped_properties = [to_camel_case(p) for p in properties]
             else:
                 raise ValueError(f"Unknown property format: {properties}")
+
             body["properties"] = [{"property": dumped_properties}]
             if property_aggregation_filter is not None:
                 body["properties"][0]["filter"] = property_aggregation_filter.dump()
+
         if path is not None:
             if isinstance(path, EnumProperty):
                 dumped_path = path.as_reference()
@@ -710,8 +739,10 @@ class APIClient:
             else:
                 raise ValueError(f"Unknown path format: {path}")
             body["path"] = dumped_path
+
         if query is not None:
             body["search"] = {"query": query}
+
         if filter is not None:
             utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
             if isinstance(filter, CogniteFilter):
@@ -721,6 +752,7 @@ class APIClient:
             else:
                 raise ValueError(f"Unknown filter format: {filter}")
             body["filter"] = dumped_filter
+
         if advanced_filter is not None:
             body["advancedFilter"] = advanced_filter.dump() if isinstance(advanced_filter, Filter) else advanced_filter
 
@@ -731,7 +763,7 @@ class APIClient:
         if limit is not None:
             body["limit"] = limit
 
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body)
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body, api_subversion=api_subversion)
         json_items = res.json()["items"]
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
