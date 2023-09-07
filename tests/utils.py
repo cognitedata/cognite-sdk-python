@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import abc
 import cProfile
 import functools
 import gzip
+import inspect
 import json
 import math
 import os
@@ -18,6 +20,8 @@ from cognite.client.utils._text import random_string
 if TYPE_CHECKING:
     import pandas
 
+T_Type = TypeVar("T_Type", bound=type)
+
 
 def all_subclasses(base: type) -> list[type]:
     """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
@@ -30,6 +34,14 @@ def all_subclasses(base: type) -> list[type]:
         ),
         key=str,
     )
+
+
+def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
+    return [
+        sub
+        for sub in all_subclasses(base)
+        if all(base is not abc.ABC for base in sub.__bases__) and not inspect.isabstract(sub)
+    ]
 
 
 def all_mock_children(mock, parent_name=()):

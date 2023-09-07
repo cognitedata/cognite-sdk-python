@@ -170,7 +170,7 @@ class CogniteClientMock(MagicMock):
         self.vision = MagicMock(spec_set=VisionAPI)
 
         self.workflows = MagicMock(spec=WorkflowAPI)
-        self.workflows.definitions = MagicMock(spec_set=WorkflowVersionAPI)
+        self.workflows.versions = MagicMock(spec_set=WorkflowVersionAPI)
         self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
         self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
 

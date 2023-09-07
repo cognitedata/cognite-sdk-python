@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence, Tuple, Union
 
 from typing_extensions import TypeAlias
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
-class BetaAPIClient(APIClient):
+class BetaAPIClient(APIClient, ABC):
     def __init__(
         self,
         config: ClientConfig,
