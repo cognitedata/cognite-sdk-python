@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 
 from cognite.client.data_classes.data_modeling.query import Query
+from cognite.client.utils._text import shorten
 
 FUNC_EXCEPTIONS = {}
 CLS_METHOD_EXCEPTIONS = {
@@ -167,10 +168,11 @@ class DocstrFormatter:
         lines = doc.splitlines()
         indentations = np.array(list(map(count_indent, lines)))
         if any(indentations % 4 != 0):
-            # Developer-help to find wrongly indented lines: (uncomment and run again)
-            # for info in zip(indentations, indentations % 4 != 0, lines):
-            #     print(*info)
-            raise ValueError("One or more lines is not indented a multiple of 4 spaces")
+            # Developer-help to find wrongly indented lines:
+            for n_space, is_bad, line in zip(indentations, indentations % 4 != 0, lines):
+                if is_bad:
+                    print(f"- Bad indent.: {n_space} space(s), {shorten(line.strip(), 80, ' (...)')!r}")
+            raise ValueError("The above line(s) are not indented a multiple of 4 spaces.")
 
         # TODO: Short, or only-text docstrings is most likely ok to skip, at least for now:
         if len(non_zero := np.nonzero(indentations)[0]) == 0:
