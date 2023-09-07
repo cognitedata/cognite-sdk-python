@@ -794,26 +794,17 @@ class SequencesAPI(APIClient):
                 ...                            sort=SortableSequenceProperty.created_time)
 
         """
-        self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
+        if isinstance(sort, (str, dict)):
             sort = [sort]
 
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._list(
-                list_cls=SequenceList,
-                resource_cls=Sequence,
-                method="POST",
-                limit=limit,
-                advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-                sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._list(
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            method="POST",
+            limit=limit,
+            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
+        )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
