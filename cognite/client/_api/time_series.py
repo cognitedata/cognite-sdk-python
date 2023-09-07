@@ -716,13 +716,16 @@ class TimeSeriesAPI(APIClient):
         if isinstance(sort, (str, dict)):
             sort = [sort]
 
+        if sort is not None:
+            sort = [TimeSeriesSort.load(item).dump(camel_case=True) for item in sort]
+
         return self._list(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
+            sort=sort,
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
