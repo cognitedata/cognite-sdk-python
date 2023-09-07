@@ -190,17 +190,67 @@ class WorkflowAPI(BetaAPIClient):
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
 
     def create(self, workflow: WorkflowCreate) -> Workflow:
+        """`Create a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+
+        Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
+
+        Args:
+            workflow (WorkflowCreate): The workflow to create.
+
+        Returns:
+            Workflow: The created workflow.
+
+        Examples:
+
+            Create workflow my workflow:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import WorkflowCreate
+                >>> c = CogniteClient()
+                >>> res = c.workflows.create(WorkflowCreate(external_id="my workflow", description="my workflow description"))
+        """
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
         )
         return Workflow._load(response.json()["items"][0])
 
-    def retrieve(self, external_id: str) -> Workflow:
+    def retrieve(self, external_id: str) -> Workflow | None:
+        """`Retrieve a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+
+        Args:
+            external_id (str): Identifier for a Workflow. Must be unique for the project.
+
+        Returns:
+            Workflow | None: The requested workflow if it exists, None otherwise.
+
+        Examples:
+
+            Retrieve workflow my workflow:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.retrieve("my workflow")
+        """
         response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
         return Workflow._load(response.json())
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
+        """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_
+
+        Args:
+            external_id (str | Sequence[str]): External id or list of external ids to delete.
+            ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
+
+        Examples:
+
+            Delete workflow my workflow:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.workflows.delete("my workflow")
+        """
+
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             params={"ignoreUnknownIds": ignore_unknown_ids},
@@ -209,5 +259,6 @@ class WorkflowAPI(BetaAPIClient):
         )
 
     def list(self) -> WorkflowList:
+        """`List all workflows in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/FetchAllWorkflows>`_"""
         response = self._get(url_path=self._RESOURCE_PATH)
         return WorkflowList._load(response.json()["items"])
