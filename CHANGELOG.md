@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.22.0] - 2023-09-07
+### Added
+- Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
+
 ## [6.21.0] - 2023-09-06
 ### Added
 - Supporting pattern mode and extra configuration for diagram detect in beta.
