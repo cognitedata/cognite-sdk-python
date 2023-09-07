@@ -259,7 +259,7 @@ class TestDatapointSubscriptions:
                 np.testing.assert_equal(
                     new_timestamps,
                     [dp.timestamp for dp in batch.updates[0].upserts],
-                    err_msg="The integer timestamps of the retrieved data should be exactly equal",
+                    err_msg="The timestamps of the retrieved data should be exactly equal to the inserted ones",
                 )
 
             finally:
