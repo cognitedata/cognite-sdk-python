@@ -667,6 +667,7 @@ class APIClient:
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
+        api_subversion: str | None = None,
     ) -> int:
         ...
 
@@ -685,6 +686,7 @@ class APIClient:
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
+        api_subversion: str | None = None,
     ) -> UniqueResultList:
         ...
 

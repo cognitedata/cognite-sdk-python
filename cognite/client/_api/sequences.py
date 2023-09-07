@@ -249,17 +249,12 @@ class SequencesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                "count",
-                filter=filter,
-                advanced_filter=advanced_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            "count",
+            filter=filter,
+            advanced_filter=advanced_filter,
+            api_subversion="beta",
+        )
 
     def aggregate_cardinality_values(
         self,
@@ -303,20 +298,14 @@ class SequencesAPI(APIClient):
                 ...     aggregate_filter=not_america)
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                "cardinalityValues",
-                properties=property,
-                filter=filter,
-                advanced_filter=advanced_filter,
-                aggregate_filter=aggregate_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            "cardinalityValues",
+            properties=property,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+            api_subversion="beta",
+        )
 
     def aggregate_cardinality_properties(
         self,
@@ -346,19 +335,14 @@ class SequencesAPI(APIClient):
                 >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                "cardinalityProperties",
-                path=path,
-                filter=filter,
-                advanced_filter=advanced_filter,
-                aggregate_filter=aggregate_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            "cardinalityProperties",
+            path=path,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+            api_subversion="beta",
+        )
 
     def aggregate_unique_values(
         self,
@@ -413,29 +397,23 @@ class SequencesAPI(APIClient):
                 >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            if property == ["metadata"] or property is SequenceProperty.metadata:
-                return self._advanced_aggregate(
-                    aggregate="uniqueProperties",
-                    path=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
-            else:
-                return self._advanced_aggregate(
-                    aggregate="uniqueValues",
-                    properties=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
-        finally:
-            self._api_subversion = api_version
+        if property == ["metadata"] or property is SequenceProperty.metadata:
+            return self._advanced_aggregate(
+                aggregate="uniqueProperties",
+                path=property,
+                api_subversion="beta",
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        return self._advanced_aggregate(
+            aggregate="uniqueValues",
+            properties=property,
+            api_subversion="beta",
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+        )
 
     def aggregate_unique_properties(
         self,
@@ -465,20 +443,14 @@ class SequencesAPI(APIClient):
                 >>> result = c.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                aggregate="uniqueProperties",
-                path=path,
-                filter=filter,
-                advanced_filter=advanced_filter,
-                aggregate_filter=aggregate_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            aggregate="uniqueProperties",
+            path=path,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+            api_subversion="beta",
+        )
 
     @overload
     def create(self, sequence: Sequence) -> Sequence:
@@ -800,20 +772,15 @@ class SequencesAPI(APIClient):
         elif not isinstance(sort, list):
             sort = [sort]
 
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._list(
-                list_cls=SequenceList,
-                resource_cls=Sequence,
-                method="POST",
-                limit=limit,
-                advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-                sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._list(
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            method="POST",
+            limit=limit,
+            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
+            api_subversion="beta",
+        )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
