@@ -57,9 +57,9 @@ class WorkflowTaskAPI(BetaAPIClient):
 class WorkflowExecutionAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
-    def retrieve_detailed(self, external_id: str) -> WorkflowExecutionDetailed | None:
+    def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
         try:
-            response = self._get(url_path=f"{self._RESOURCE_PATH}/{external_id}")
+            response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
         except CogniteAPIError as e:
             if e.code == 400:
                 return None
@@ -70,12 +70,16 @@ class WorkflowExecutionAPI(BetaAPIClient):
         self,
         workflow_external_id: str,
         version: str,
-        input: dict,
+        input: dict | None = None,
     ) -> WorkflowExecution:
         nonce = _create_session_and_return_nonce(self._cognite_client)
+        body = {"authentication": {"nonce": nonce}}
+        if input is not None:
+            body["input"] = input
+
         response = self._post(
             url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
-            json={"input": input, "authentication": {"nonce": nonce}},
+            json=body,
         )
         return WorkflowExecution._load(response.json())
 

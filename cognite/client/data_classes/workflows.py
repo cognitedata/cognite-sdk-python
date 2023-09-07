@@ -48,6 +48,9 @@ class Workflow(WorkflowCreate):
 class WorkflowList(CogniteResourceList[Workflow]):
     _RESOURCE = Workflow
 
+    def as_external_is(self) -> list[str]:
+        return [workflow.external_id for workflow in self.data]
+
 
 class Parameters(CogniteResource, ABC):
     ...

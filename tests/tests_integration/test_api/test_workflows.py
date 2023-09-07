@@ -100,7 +100,7 @@ def cdf_function_add(cognite_client: CogniteClient) -> Function:
 
     def handle(client, data: dict):
         output = data.copy()
-        data["sum"] = data["a"] + data["b"]
+        output["sum"] = output["a"] + output["b"]
         return output
 
     deployed = cognite_client.functions.create(name="Add", external_id=external_id, function_handle=handle)
@@ -116,7 +116,7 @@ def cdf_function_multiply(cognite_client: CogniteClient) -> Function:
 
     def handle(client, data: dict):
         output = data.copy()
-        data["product"] = data["a"] * data["b"]
+        output["product"] = output["a"] * output["b"]
         return output
 
     deployed = cognite_client.functions.create(name="Multiply", external_id=external_id, function_handle=handle)
@@ -172,11 +172,12 @@ def workflow_execution_list(
     )
     t0 = time.time()
     while result.status != "completed":
-        result = cognite_client.workflows.executions.retrieve(result.external_id)
+        result = cognite_client.workflows.executions.retrieve_detailed(result.id)
+        cognite_client.workflows.tasks.update(result.executed_tasks[1].id, "completed")
         time.sleep(5)
         if time.time() - t0 > 60:
             raise TimeoutError("Workflow execution did not complete in time")
-    return cognite_client.workflows.executions.list(workflow_external_id=add_multiply_workflow.as_id(), limit=5)
+    return cognite_client.workflows.executions.list(workflow_ids=add_multiply_workflow.as_id(), limit=5)
 
 
 class TestWorkflows:
@@ -326,18 +327,16 @@ class TestWorkflowExecutions:
         self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
     ) -> None:
         workflow_execution = cognite_client.workflows.executions.trigger(
-            add_multiply_workflow.workflow_external_id, add_multiply_workflow.version, {"a": 41, "b": 1}
+            add_multiply_workflow.workflow_external_id,
+            add_multiply_workflow.version,
         )
-
-        assert workflow_execution.status
 
         async_task = add_multiply_workflow.workflow_definition.tasks[1]
         assert isinstance(async_task.parameters, FunctionParameters)
         assert async_task.parameters.is_async_complete
 
         workflow_execution_detailed = cognite_client.workflows.executions.retrieve_detailed(workflow_execution.id)
+        async_task = workflow_execution_detailed.executed_tasks[1]
 
-        task_execution = workflow_execution_detailed.executed_tasks[1]
-
-        task_execution = cognite_client.workflows.tasks.update(task_execution.id, "completed")
-        assert task_execution.status == "completed"
+        async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
+        assert async_task.status == "completed"
