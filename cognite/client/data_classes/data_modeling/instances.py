@@ -691,9 +691,11 @@ class NodeList(CogniteResourceList[Node]):
 
 
 class NodeListWithCursor(NodeList):
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(
+        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(resources, cognite_client)
-        self.cursor: str | None = None
+        self.cursor = cursor
 
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
@@ -736,9 +738,11 @@ class EdgeList(CogniteResourceList[Edge]):
 
 
 class EdgeListWithCursor(EdgeList):
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(
+        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(resources, cognite_client)
-        self.cursor: str | None = None
+        self.cursor = cursor
 
 
 @dataclass
