@@ -401,18 +401,18 @@ class SequencesAPI(APIClient):
             return self._advanced_aggregate(
                 aggregate="uniqueProperties",
                 path=property,
-                api_subversion="beta",
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
+                api_subversion="beta",
             )
         return self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
-            api_subversion="beta",
             filter=filter,
             advanced_filter=advanced_filter,
             aggregate_filter=aggregate_filter,
+            api_subversion="beta",
         )
 
     def aggregate_unique_properties(

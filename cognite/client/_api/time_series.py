@@ -315,8 +315,8 @@ class TimeSeriesAPI(APIClient):
             properties=property,
             filter=filter,
             advanced_filter=advanced_filter,
-            api_subversion="beta",
             aggregate_filter=aggregate_filter,
+            api_subversion="beta",
         )
 
     def aggregate_cardinality_properties(
@@ -351,8 +351,8 @@ class TimeSeriesAPI(APIClient):
             path=path,
             filter=filter,
             advanced_filter=advanced_filter,
-            api_subversion="beta",
             aggregate_filter=aggregate_filter,
+            api_subversion="beta",
         )
 
     def aggregate_unique_values(
@@ -413,8 +413,8 @@ class TimeSeriesAPI(APIClient):
             properties=property,
             filter=filter,
             advanced_filter=advanced_filter,
-            api_subversion="beta",
             aggregate_filter=aggregate_filter,
+            api_subversion="beta",
         )
 
     def aggregate_unique_properties(
@@ -450,8 +450,8 @@ class TimeSeriesAPI(APIClient):
             path=path,
             filter=filter,
             advanced_filter=advanced_filter,
-            api_subversion="beta",
             aggregate_filter=aggregate_filter,
+            api_subversion="beta",
         )
 
     @overload
