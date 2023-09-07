@@ -4,6 +4,7 @@ import json
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -813,3 +814,13 @@ class InstancesDeleteResult:
 
     nodes: list[NodeId]
     edges: list[EdgeId]
+
+
+@dataclass
+class SubscriptionContext:
+    last_successful_sync: datetime | None = None
+    last_successful_callback: datetime | None = None
+    _canceled: bool = False
+
+    def cancel(self) -> None:
+        self._canceled = True

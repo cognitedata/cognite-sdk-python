@@ -1,8 +1,24 @@
 from __future__ import annotations
 
 import json
+import logging
+import random
+import time
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
+from datetime import datetime, timezone
+from threading import Thread
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterator,
+    List,
+    Literal,
+    Sequence,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -37,6 +53,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    SubscriptionContext,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
@@ -45,6 +62,8 @@ from cognite.client.data_classes.data_modeling.query import (
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+from cognite.client.utils._retry import Backoff
+from cognite.client.utils._text import random_string
 
 from ._data_modeling_executor import get_data_modeling_executor
 
@@ -69,6 +88,8 @@ _DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
         filters.Overlaps,
     }
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class _NodeOrEdgeList(CogniteResourceList):
@@ -393,6 +414,99 @@ class InstancesAPI(APIClient):
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
+
+    def subscribe(
+        self,
+        query: Query,
+        callback: Callable[[QueryResult], None],
+        poll_delay_seconds: float = 30,
+        throttle_seconds: float = 1,
+    ) -> SubscriptionContext:
+        """Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
+        in a background thread, and only invokes the callback when there are actual changes to the result set(s).
+
+        We do not support chaining result sets when subscribing to a query.
+
+        Args:
+            query (Query): The query to subscribe to.
+            callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
+            poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
+            throttle_seconds (float): The time to wait between polls despite data being present.
+        Returns:
+            SubscriptionContext: An object that can be used to cancel the subscription.
+
+        Examples:
+
+            Subscrie to a given query and print the changed data:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import Query, QueryResult, NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.filters import Range
+                >>>
+                >>> c = CogniteClient()
+                >>> def just_print_the_result(result: QueryResult) -> None:
+                ...     print(result)
+                ...
+                >>> view_id = ViewId("someSpace", "someView", "v1")
+                >>> filter = Range(view_id.as_property_ref("releaseYear"), lt=2000)
+                >>> query = Query(
+                ...     with_={"movies": NodeResultSetExpression(filter=filter)},
+                ...     select={"movies": Select([SourceSelector(view_id, ["releaseYear"])])}
+                ... )
+                >>> subscription_context = c.data_modeling.instances.subscribe(query, just_print_the_result)
+                >>> subscription_context.cancel()
+        """
+        for result_set_expression in query.with_.values():
+            if result_set_expression.from_ is not None:
+                raise ValueError("Cannot chain result sets when subscribing to a query")
+
+        subscription_context = SubscriptionContext()
+
+        def _poll_delay(seconds: float) -> None:
+            if not hasattr(_poll_delay, "has_been_invoked"):
+                # smear if first invocation
+                delay = random.uniform(0, poll_delay_seconds)
+                setattr(_poll_delay, "has_been_invoked", True)
+            else:
+                delay = seconds
+            _LOGGER.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
+            time.sleep(delay)
+
+        def _do_subscribe() -> None:
+            cursors = query.cursors
+            error_backoff = Backoff(max_wait=30)
+            while not subscription_context._canceled:
+                # No need to resync if we encountered an error in the callback last iteration
+                if not error_backoff.has_progressed():
+                    query.cursors = cursors
+                    result = self.sync(query)
+                    subscription_context.last_successful_sync = datetime.now(tz=timezone.utc)
+
+                try:
+                    callback(result)
+                except Exception:
+                    _LOGGER.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
+                    time.sleep(next(error_backoff))
+                    continue
+
+                subscription_context.last_successful_callback = datetime.now(tz=timezone.utc)
+                # only progress the cursor if the callback executed successfully
+                cursors = result.cursors
+
+                data_is_present = any(len(instances) > 0 for instances in result.data.values())
+                if data_is_present:
+                    _poll_delay(throttle_seconds)
+                else:
+                    _poll_delay(poll_delay_seconds)
+
+                error_backoff.reset()
+
+        thread_name = f"instances-sync-subscriber-{random_string(10)}"
+        thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
+        thread.start()
+
+        return subscription_context
 
     @classmethod
     def _create_other_params(
