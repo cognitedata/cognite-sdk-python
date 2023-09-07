@@ -216,6 +216,7 @@ from cognite.client.data_classes.workflows import (
     DynamicTaskParameters,
     FunctionOutput,
     FunctionParameters,
+    Task,
     TaskExecution,
     TransformationOutput,
     TransformationParameters,
@@ -426,4 +427,5 @@ __all__ = [
     "WorkflowDefinitionCreate",
     "TaskExecution",
     "Workflow",
+    "Task",
 ]

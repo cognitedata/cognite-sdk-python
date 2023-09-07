@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence
+from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence, Tuple, Union
+
+from typing_extensions import TypeAlias
 
 from cognite.client._api.functions import _create_session_and_return_nonce
 from cognite.client._api_client import APIClient
@@ -38,6 +40,9 @@ class BetaAPIClient(APIClient):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
+
+
+WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
 
 
 class WorkflowTaskAPI(BetaAPIClient):
@@ -115,6 +120,43 @@ class WorkflowVersionAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/versions"
 
     def create(self, version: WorkflowVersionCreate) -> WorkflowVersion:
+        """`Create a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+
+        Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
+
+        Furthermore, if the workflow does not exist, it will be created.
+
+        Args:
+            version (WorkflowVersionCreate): The workflow version to create.
+
+        Returns:
+            WorkflowVersion: The created workflow version.
+
+        Examples:
+
+            Create workflow version with one Function task:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import WorkflowVersionCreate, WorkflowDefinitionCreate, Task, FunctionParameters
+                >>> c = CogniteClient()
+                >>> new_version =WorkflowVersionCreate(
+                ...    workflow_external_id="my_workflow",
+                ...    version="1",
+                ...    workflow_definition=WorkflowDefinitionCreate(
+                ...        tasks=[
+                ...            Task(
+                ...                external_id="my_workflow-task1",
+                ...                parameters=FunctionParameters(
+                ...                    external_id="cdf_deployed_function:my_function",
+                ...                    data={"a": 1, "b": 2},
+                ...                ),
+                ...            )
+                ...        ],
+                ...        description="This workflow has one step",
+                ...    ),
+                ... )
+                >>> res = c.workflows.create(new_version)
+        """
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [version.dump(camel_case=True)]},
@@ -130,6 +172,28 @@ class WorkflowVersionAPI(BetaAPIClient):
         | MutableSequence[tuple[str, str]],
         ignore_unknown_ids: bool = False,
     ) -> None:
+        """`Delete a workflow version(s). <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/DeleteSpecificVersionsOfWorkflow>`_
+
+        Args:
+            workflow_id (WorkflowVersionId | tuple[str, str] | MutableSequence[WorkflowVersionId] | MutableSequence[tuple[str, str]]): Workflow version id or list of workflow version ids to delete.
+            ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
+
+        Examples:
+
+            Delete workflow version 1 of workflow my workflow specified by using a tuple:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.workflows.versions.delete(("my workflow", "1"))
+
+            Delete workflow version 1 of workflow my workflow and workflow version 2 of workflow my workflow 2 using the WorkflowVersionId class:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import WorkflowVersionId
+                >>> c = CogniteClient()
+                >>> c.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
+
+        """
         identifiers = WorkflowIds._load(workflow_id).dump(camel_case=True)
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
@@ -139,6 +203,23 @@ class WorkflowVersionAPI(BetaAPIClient):
         )
 
     def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
+        """`Retrieve a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/GetSpecificVersion>`_
+
+        Args:
+            workflow_external_id (str): External id of the workflow.
+            version (str): Version of the workflow.
+
+        Returns:
+            WorkflowVersion | None: The requested workflow version if it exists, None otherwise.
+
+        Examples:
+
+            Retrieve workflow version 1 of workflow my workflow:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.versions.retrieve("my workflow", "1")
+        """
         try:
             response = self._get(
                 url_path=f"/workflows/{workflow_external_id}/versions/{version}",
@@ -152,14 +233,38 @@ class WorkflowVersionAPI(BetaAPIClient):
 
     def list(
         self,
-        workflow_ids: WorkflowVersionId
-        | str
-        | tuple[str, str]
-        | MutableSequence[WorkflowVersionId]
-        | MutableSequence[tuple[str, str]]
-        | MutableSequence[str]
-        | None = None,
+        workflow_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
     ) -> WorkflowVersionList:
+        """`List workflow versions in the project <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/ListWorkflowVersions>`_
+
+        Args:
+            workflow_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+
+        Returns:
+            WorkflowVersionList: The requested workflow versions.
+
+        Examples:
+
+            Get all workflow version for workflows 'my_workflow' and 'my_workflow_2':
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.versions.list(["my_workflow", "my_workflow_2"])
+
+            Get all workflow versions for workflows 'my_workflow' and 'my_workflow_2' using the WorkflowVersionId class:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import WorkflowVersionId
+                >>> c = CogniteClient()
+                >>> res = c.workflows.versions.list([WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
+
+            Get all workflow versions for workflows 'my_workflow' version '1' and 'my_workflow_2' version '2' using tuples:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
+
+        """
         body: dict | None
         if workflow_ids is None:
             body = None
