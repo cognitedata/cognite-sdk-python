@@ -27,19 +27,9 @@ from cognite.client._api.extractionpipelines import (
     ExtractionPipelinesAPI,
 )
 from cognite.client._api.files import FilesAPI
-from cognite.client._api.functions import (
-    FunctionCallsAPI,
-    FunctionsAPI,
-    FunctionSchedulesAPI,
-)
+from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
-from cognite.client._api.iam import (
-    IAMAPI,
-    GroupsAPI,
-    SecurityCategoriesAPI,
-    SessionsAPI,
-    TokenAPI,
-)
+from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
@@ -69,12 +59,7 @@ from cognite.client._api.transformations import (
 )
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
-from cognite.client._api.workflows import (
-    WorkflowAPI,
-    WorkflowExecutionAPI,
-    WorkflowTaskAPI,
-    WorkflowVersionAPI,
-)
+from cognite.client._api.workflows import WorkflowAPI, WorkflowExecutionAPI, WorkflowTaskAPI, WorkflowVersionAPI
 
 
 class CogniteClientMock(MagicMock):

@@ -30,11 +30,7 @@ from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
-from cognite.client.credentials import (
-    CredentialProvider,
-    OAuthClientCredentials,
-    OAuthInteractive,
-)
+from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 
 
 class CogniteClient:
@@ -85,12 +81,7 @@ class CogniteClient:
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
-    def get(
-        self,
-        url: str,
-        params: dict[str, Any] | None = None,
-        headers: dict[str, Any] | None = None,
-    ) -> Response:
+    def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
         """Perform a GET request to an arbitrary path in the API."""
         return self._api_client._get(url, params=params, headers=headers)
 
@@ -104,21 +95,11 @@ class CogniteClient:
         """Perform a POST request to an arbitrary path in the API."""
         return self._api_client._post(url, json=json, params=params, headers=headers)
 
-    def put(
-        self,
-        url: str,
-        json: dict[str, Any] | None = None,
-        headers: dict[str, Any] | None = None,
-    ) -> Response:
+    def put(self, url: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
         """Perform a PUT request to an arbitrary path in the API."""
         return self._api_client._put(url, json=json, headers=headers)
 
-    def delete(
-        self,
-        url: str,
-        params: dict[str, Any] | None = None,
-        headers: dict[str, Any] | None = None,
-    ) -> Response:
+    def delete(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
 
