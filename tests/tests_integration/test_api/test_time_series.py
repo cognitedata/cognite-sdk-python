@@ -189,6 +189,20 @@ class TestTimeSeriesAPI:
         # Assert
         assert result, "There should be at least one numeric time series"
 
+    def test_filter_default_sort(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
+        # Arrange
+        f = filters
+        is_integration_test = f.Prefix(TimeSeriesProperty.external_id, "PYSDK integration test")
+        is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
+
+        # Act
+        result = cognite_client.time_series.filter(
+            f.And(is_integration_test, is_numeric),
+        )
+
+        # Assert
+        assert result, "`sort` should be an optional parameter"
+
     def test_aggregate_count(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:
         f = filters
         is_integration_test = f.Prefix("externalId", "integration_test:")
