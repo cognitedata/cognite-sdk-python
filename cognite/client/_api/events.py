@@ -697,9 +697,8 @@ class EventsAPI(APIClient):
                 ...                       sort=(SortableEventProperty.start_time, "desc"))
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
+
+        if isinstance(sort, (str, dict)):
             sort = [sort]
 
         return self._list(

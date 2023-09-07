@@ -903,9 +903,7 @@ class AssetsAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
+        if isinstance(sort, (str, dict)):
             sort = [sort]
         if aggregated_properties:
             aggregated_properties_camel = [to_camel_case(prop) for prop in aggregated_properties]
