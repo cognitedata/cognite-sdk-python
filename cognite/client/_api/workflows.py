@@ -42,13 +42,49 @@ class BetaAPIClient(APIClient):
         self._api_subversion = "beta"
 
 
-WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
+WorkflowIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
+WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str]]
 
 
 class WorkflowTaskAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
     def update(self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None) -> TaskExecution:
+        """`Update status of async task. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Tasks/operation/UpdateTaskStatus>`_
+
+        For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed' or 'failed'.
+
+        Args:
+            task_id (str): The server-generated id of the task.
+            status (Literal["completed", "failed"]): The new status of the task. Must be either 'completed' or 'failed'.
+            output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
+
+        Returns:
+            TaskExecution: The updated task execution.
+
+        Examples:
+
+            Update task with UUID '000560bc-9080-4286-b242-a27bb4819253' to status 'completed':
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
+
+            Update task with UUID '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
+
+            Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.trigger("my workflow", "1")
+                >>> res = c.workflows.executions.retrieve_detailed(res.id)
+                >>> res = c.workflows.tasks.update(res.tasks[1].id, "completed")
+
+        """
         body: dict[str, Any] = {"status": status.upper()}
         if output is not None:
             body["output"] = output
@@ -63,6 +99,30 @@ class WorkflowExecutionAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
+        """`Retrieve a workflow execution with detailed information. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/ExecutionOfSpecificRunOfWorkflow>`_
+
+        Args:
+            id (str): The server-generated id of the workflow execution.
+
+        Returns:
+            WorkflowExecutionDetailed | None: The requested workflow execution if it exists, None otherwise.
+
+        Examples:
+
+            Retrieve workflow execution with UUID '000560bc-9080-4286-b242-a27bb4819253':
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
+
+            List workflow executions and retrieve detailed information for the first one:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.list()
+                >>> res = c.workflows.executions.retrieve_detailed(res[0].id)
+
+        """
         try:
             response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
         except CogniteAPIError as e:
@@ -77,6 +137,46 @@ class WorkflowExecutionAPI(BetaAPIClient):
         version: str,
         input: dict | None = None,
     ) -> WorkflowExecution:
+        """`Trigger a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+
+        Args:
+            workflow_external_id (str): External id of the workflow.
+            version (str): Version of the workflow.
+            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the strind "${workflow.input}"
+                                See tip below for more information.
+
+        .. tip::
+            The workflow input can be available in the workflow tasks. For example, if you have a Task with
+            function parameters then you can specify it as follows
+                >>> from cognite.client.data_classes  import Task, FunctionParameters
+                >>> task = Task(
+                ...     external_id="my_workflow-task1",
+                ...     parameters=FunctionParameters(
+                ...         external_id="cdf_deployed_function:my_function",
+                ...         data={"workflow_data": "${workflow.input}",},
+                ...     ),
+                ... )
+
+
+        Returns:
+            WorkflowExecution: The created workflow execution.
+
+        Examples:
+
+            Trigger workflow execution for workflow my workflow version 1:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.trigger("my workflow", "1")
+
+            Trigger workflow execution for workflow my workflow version 1 with input data '{"a": 1, "b": 2}:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.trigger("my workflow", "1", input={"a": 1, "b": 2})
+
+        """
+
         nonce = _create_session_and_return_nonce(self._cognite_client)
         body = {"authentication": {"nonce": nonce}}
         if input is not None:
@@ -90,15 +190,39 @@ class WorkflowExecutionAPI(BetaAPIClient):
 
     def list(
         self,
-        workflow_ids: WorkflowVersionId
-        | tuple[str, str]
-        | MutableSequence[WorkflowVersionId]
-        | MutableSequence[tuple[str, str]]
-        | None = None,
+        workflow_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
+        """`List workflow executions in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/ListWorkflowExecutions>`_
+
+        Args:
+            workflow_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            created_time_start (int | None): Filter out executions that was created before this time. Time is in milliseconds since epoch.
+            created_time_end (int | None): Filter out executions that was created after this time. Time is in milliseconds since epoch.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
+                        to return all items.
+
+        Returns:
+            WorkflowExecutionList: The requested workflow executions.
+
+        Examples:
+
+            Get all workflow executions for workflows 'my_workflow' version '1':
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.list(("my_workflow", "1"))
+
+            Get all workflow executions for workflows after last 24 hours:
+
+                >>> from cognite.client import CogniteClient
+                >>> from datetime import datetime, timedelta
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.list(created_time_start=int((datetime.now() - timedelta(days=1)).timestamp() * 1000))
+
+        """
         filter_: dict[str, Any] = {}
         if workflow_ids is not None:
             filter_["workflowFilters"] = WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
@@ -233,12 +357,12 @@ class WorkflowVersionAPI(BetaAPIClient):
 
     def list(
         self,
-        workflow_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
+        workflow_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
     ) -> WorkflowVersionList:
         """`List workflow versions in the project <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/ListWorkflowVersions>`_
 
         Args:
-            workflow_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            workflow_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
 
         Returns:
             WorkflowVersionList: The requested workflow versions.

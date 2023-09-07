@@ -43,6 +43,25 @@ List Workflow Versions
 .. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.list
 
 
+Workflow Executions
+------------------
+List Workflow Executions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.list
+
+Retrieve Detailed Workflow Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retrieve_detailed
+
+Trigger Workflow Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.trigger
+
+Workflow Tasks
+------------------
+Update Status of Async Task
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTaskAPI.update
 
 
 Workflow Orchestration data classes
