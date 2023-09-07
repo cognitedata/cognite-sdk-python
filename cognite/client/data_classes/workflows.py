@@ -102,8 +102,7 @@ class Parameters(CogniteResource, ABC):
 
 
 class FunctionParameters(Parameters):
-    """
-    The function parameters are used to specify the Cognite Function to be called.
+    """The function parameters are used to specify the Cognite Function to be called.
 
     Args:
         external_id (str): The external ID of the function to be called.
@@ -113,27 +112,28 @@ class FunctionParameters(Parameters):
     If a function is asynchronous, you need to call the client.workflows.tasks.update() endpoint to update the status of the task.
     While synchronous tasks update the status automatically.
 
-        .. tip::
-            You can dynamicaly specify data from other tasks or the workflow. You do this by following the format
-            `${prefix.jsonPath}` in the expression. The valid are:
-                - `${workflow.input}`: The workflow input.
-                - `${<taskExternalId>.output}`: The output of the task with the given external id.
-                - `${<taskExternalId>.input}`: The input of the task with the given external id.
+    .. tip::
+        You can dynamicaly specify data from other tasks or the workflow. You do this by following the format
+        `${prefix.jsonPath}` in the expression. The valid are:
 
-            For example, if I have a workflow with two tasks with external_id of the first task being `task1` then,
-            I can specify the data for the second task as follows:
-                >>> from cognite.client.data_classes  import Task, FunctionParameters
-                >>> task = Task(
-                ...     external_id="task2",
-                ...     parameters=FunctionParameters(
-                ...         external_id="cdf_deployed_function",
-                ...         data={
-                ...             "workflow_data": "${workflow.input}",
-                ...             "task1_input": "${task1.input}",
-                ...             "task1_output": "${task1.output}"
-                ...             },
-                ...     ),
-                ... )
+        - `${workflow.input}`: The workflow input.
+        - `${<taskExternalId>.output}`: The output of the task with the given external id.
+        - `${<taskExternalId>.input}`: The input of the task with the given external id.
+
+        For example, if I have a workflow with two tasks with external_id of the first task being `task1` then,
+        I can specify the data for the second task as follows:
+        >>> from cognite.client.data_classes  import Task, FunctionParameters
+        >>> task = Task(
+        ...     external_id="task2",
+        ...     parameters=FunctionParameters(
+        ...         external_id="cdf_deployed_function",
+        ...         data={
+        ...             "workflow_data": "${workflow.input}",
+        ...             "task1_input": "${task1.input}",
+        ...             "task1_output": "${task1.output}"
+        ...             },
+        ...     ),
+        ... )
     """
 
     def __init__(

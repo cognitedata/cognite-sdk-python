@@ -149,14 +149,14 @@ class WorkflowExecutionAPI(BetaAPIClient):
         .. tip::
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
             function parameters then you can specify it as follows
-                >>> from cognite.client.data_classes  import Task, FunctionParameters
-                >>> task = Task(
-                ...     external_id="my_workflow-task1",
-                ...     parameters=FunctionParameters(
-                ...         external_id="cdf_deployed_function:my_function",
-                ...         data={"workflow_data": "${workflow.input}",},
-                ...     ),
-                ... )
+            >>> from cognite.client.data_classes  import Task, FunctionParameters
+            >>> task = Task(
+            ...     external_id="my_workflow-task1",
+            ...     parameters=FunctionParameters(
+            ...         external_id="cdf_deployed_function:my_function",
+            ...         data={"workflow_data": "${workflow.input}",},
+            ...     ),
+            ... )
 
 
         Returns:

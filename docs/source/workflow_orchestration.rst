@@ -37,14 +37,14 @@ Delete Workflow Version(s)
 Retrieve Workflow Version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.retrieve
-m
+
 List Workflow Versions
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.list
 
 
 Workflow Executions
-------------------
+--------------------
 List Workflow Executions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.list
