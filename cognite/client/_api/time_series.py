@@ -713,10 +713,9 @@ class TimeSeriesAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        if isinstance(sort, (str, dict)):
-            sort = [sort]
-
         if sort is not None:
+            if not isinstance(sort, list):
+                sort = [sort]
             sort = [TimeSeriesSort.load(item).dump(camel_case=True) for item in sort]
 
         return self._list(

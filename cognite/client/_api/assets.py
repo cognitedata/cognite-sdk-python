@@ -904,9 +904,9 @@ class AssetsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        if isinstance(sort, (str, dict)):
-            sort = [sort]
         if sort is not None:
+            if not isinstance(sort, list):
+                sort = [sort]
             sort = [AssetSort.load(item).dump(camel_case=True) for item in sort]
 
         if aggregated_properties:

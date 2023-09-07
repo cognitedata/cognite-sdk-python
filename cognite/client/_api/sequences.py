@@ -794,9 +794,9 @@ class SequencesAPI(APIClient):
                 ...                            sort=SortableSequenceProperty.created_time)
 
         """
-        if isinstance(sort, (str, dict)):
-            sort = [sort]
         if sort is not None:
+            if not isinstance(sort, list):
+                sort = [sort]
             sort = [SequenceSort.load(item).dump(camel_case=True) for item in sort]
 
         return self._list(
