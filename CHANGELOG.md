@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.21.1] - 2023-09-07
+### Fixed
+- Concurrent usage of the `CogniteClient` could result in API calls being made with the wrong value for `api_subversion`.
+
 ## [6.21.0] - 2023-09-06
 ### Added
 - Supporting pattern mode and extra configuration for diagram detect in beta.
