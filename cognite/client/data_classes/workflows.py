@@ -53,7 +53,23 @@ class WorkflowList(CogniteResourceList[Workflow]):
 
 
 class Parameters(CogniteResource, ABC):
-    ...
+    @classmethod
+    def load_parameters(cls, data: dict) -> Parameters:
+        type_ = data.get("type", data.get("taskType"))
+        parameters = data.get("parameters", data.get("input"))
+        if parameters is None:
+            raise ValueError("You must provide parameter data either with key 'input' or 'parameter'")
+
+        if type_ == "function":
+            return FunctionParameters._load(parameters)
+        elif type_ == "transformation":
+            return TransformationParameters._load(parameters)
+        elif type_ == "cdf":
+            return CDFRequestParameters._load(parameters)
+        elif type_ == "dynamic":
+            return DynamicTaskParameters._load(parameters)
+        else:
+            raise ValueError(f"Unknown task type: {type_}")
 
 
 class FunctionParameters(Parameters):
@@ -177,21 +193,9 @@ class Task(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Task:
         resource = json.loads(resource) if isinstance(resource, str) else resource
-        type_ = resource["type"]
-        parameters: Parameters
-        if type_ == "function":
-            parameters = FunctionParameters._load(resource["parameters"])
-        elif type_ == "transformation":
-            parameters = TransformationParameters._load(resource["parameters"])
-        elif type_ == "cdf":
-            parameters = CDFRequestParameters._load(resource["parameters"])
-        elif type_ == "dynamic":
-            parameters = DynamicTaskParameters._load(resource["parameters"])
-        else:
-            raise ValueError(f"Unknown task type: {type_}")
         return cls(
             external_id=resource["externalId"],
-            parameters=parameters,
+            parameters=Parameters.load_parameters(resource),
             name=resource.get("name"),
             description=resource.get("description"),
             retries=resource.get("retries", 3),
@@ -234,6 +238,20 @@ class Output(ABC):
     @abstractmethod
     def load(cls: type[T_Output], data: dict) -> T_Output:
         raise NotImplementedError()
+
+    @classmethod
+    def load_output(cls, data: dict) -> Output:
+        task_type = data["taskType"]
+        if task_type == "function":
+            return FunctionOutput.load(data["output"])
+        elif task_type == "transformation":
+            return TransformationOutput.load(data["output"])
+        elif task_type == "cdf":
+            return CDFTaskOutput.load(data["output"])
+        elif task_type == "dynamic":
+            return DynamicTaskOutput.load(data["output"])
+        else:
+            raise ValueError(f"Unknown task type: {task_type}")
 
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -320,7 +338,7 @@ class TaskExecution(CogniteResource):
             "timed_out",
             "skipped",
         ],
-        input: dict,
+        input: Parameters,
         output: Output,
         version: str | None = None,
         start_time: int | None = None,
@@ -340,20 +358,6 @@ class TaskExecution(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TaskExecution:
         resource = json.loads(resource) if isinstance(resource, str) else resource
-
-        task_type = resource["taskType"]
-        output: Output
-        if task_type == "function":
-            output = FunctionOutput.load(resource["output"])
-        elif task_type == "transformation":
-            output = TransformationOutput.load(resource["output"])
-        elif task_type == "cdf":
-            output = CDFTaskOutput.load(resource["output"])
-        elif task_type == "dynamic":
-            output = DynamicTaskOutput.load(resource["output"])
-        else:
-            raise ValueError(f"Unknown task type: {task_type}")
-
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -370,8 +374,8 @@ class TaskExecution(CogniteResource):
                 ],
                 to_snake_case(resource["status"]),
             ),
-            input=resource["input"],
-            output=output,
+            input=Parameters.load_parameters(resource),
+            output=Output.load_output(resource),
             version=resource.get("version"),
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
