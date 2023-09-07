@@ -232,7 +232,12 @@ class WorkflowAPI(BetaAPIClient):
                 >>> c = CogniteClient()
                 >>> res = c.workflows.retrieve("my workflow")
         """
-        response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
+        try:
+            response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
+        except CogniteAPIError as e:
+            if e.code == 404:
+                return None
+            raise e
         return Workflow._load(response.json())
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:

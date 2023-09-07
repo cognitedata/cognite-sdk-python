@@ -221,10 +221,9 @@ class TestWorkflows:
         assert retrieved == workflow_list[0]
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
-        with pytest.raises(CogniteAPIError) as e:
-            cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
+        non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
 
-        assert "Workflow not found" in str(e.value)
+        assert non_existing is None
 
 
 class TestWorkflowVersions:
