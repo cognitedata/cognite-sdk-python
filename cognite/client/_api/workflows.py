@@ -149,15 +149,15 @@ class WorkflowExecutionAPI(BetaAPIClient):
         .. tip::
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
             function parameters then you can specify it as follows
-            >>> from cognite.client.data_classes  import Task, FunctionParameters
-            >>> task = Task(
-            ...     external_id="my_workflow-task1",
-            ...     parameters=FunctionParameters(
-            ...         external_id="cdf_deployed_function:my_function",
-            ...         data={"workflow_data": "${workflow.input}",},
-            ...     ),
-            ... )
 
+                >>> from cognite.client.data_classes  import Task, FunctionParameters
+                >>> task = Task(
+                ...     external_id="my_workflow-task1",
+                ...     parameters=FunctionParameters(
+                ...         external_id="cdf_deployed_function:my_function",
+                ...         data={"workflow_data": "${workflow.input}",},
+                ...     ),
+                ... )
 
         Returns:
             WorkflowExecution: The created workflow execution.
@@ -494,6 +494,19 @@ class WorkflowAPI(BetaAPIClient):
         )
 
     def list(self) -> WorkflowList:
-        """`List all workflows in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/FetchAllWorkflows>`_"""
+        """`List all workflows in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/FetchAllWorkflows>`_
+
+        Returns:
+            WorkflowList: All workflows in the CDF project.
+
+        Examples:
+
+            List all workflows:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.workflows.list()
+
+        """
         response = self._get(url_path=self._RESOURCE_PATH)
         return WorkflowList._load(response.json()["items"])

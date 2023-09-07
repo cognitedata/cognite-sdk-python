@@ -122,18 +122,19 @@ class FunctionParameters(Parameters):
 
         For example, if I have a workflow with two tasks with external_id of the first task being `task1` then,
         I can specify the data for the second task as follows:
-        >>> from cognite.client.data_classes  import Task, FunctionParameters
-        >>> task = Task(
-        ...     external_id="task2",
-        ...     parameters=FunctionParameters(
-        ...         external_id="cdf_deployed_function",
-        ...         data={
-        ...             "workflow_data": "${workflow.input}",
-        ...             "task1_input": "${task1.input}",
-        ...             "task1_output": "${task1.output}"
-        ...             },
-        ...     ),
-        ... )
+
+            >>> from cognite.client.data_classes  import Task, FunctionParameters
+            >>> task = Task(
+            ...     external_id="task2",
+            ...     parameters=FunctionParameters(
+            ...         external_id="cdf_deployed_function",
+            ...         data={
+            ...             "workflow_data": "${workflow.input}",
+            ...             "task1_input": "${task1.input}",
+            ...             "task1_output": "${task1.output}"
+            ...             },
+            ...     ),
+            ... )
     """
 
     def __init__(
