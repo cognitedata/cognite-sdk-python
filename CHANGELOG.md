@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.23.0] - 2023-09-08
+### Added
+- Supporting for deleting constraints and indexes on containers.
+
+### Changed
+- The abstract class `Index` can no longer be instantiated. Use BTreeIndex or InvertedIndex instead.
+
 ## [6.22.0] - 2023-09-08
 ### Added
 - `client.data_modeling.instances.subscribe` which lets you subscribe to a given

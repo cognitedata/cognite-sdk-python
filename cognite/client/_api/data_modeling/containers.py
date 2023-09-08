@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
@@ -11,8 +11,10 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerList,
 )
 from cognite.client.data_classes.data_modeling.ids import (
+    ConstraintIdentifier,
     ContainerId,
     ContainerIdentifier,
+    IndexIdentifier,
     _load_identifier,
 )
 
@@ -145,6 +147,67 @@ class ContainersAPI(APIClient):
             ),
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
+
+    def delete_constraints(self, id: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
+        """`Delete one or more constraints <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerConstraints>`_
+
+        Args:
+            id (Sequence[ConstraintIdentifier]): The constraint identifier(s).
+        Returns:
+            list[ConstraintIdentifier]: The constraints(s) which have been deleted.
+        Examples:
+
+            Delete constraints by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.data_modeling.containers.delete_constraints(
+                ...     [(ContainerId("mySpace", "myContainer"), "myConstraint")]
+                ... )
+        """
+        return self._delete_constraints_or_indexes(id, "constraints")
+
+    def delete_indexes(self, id: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
+        """`Delete one or more indexes <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerIndexes>`_
+
+        Args:
+            id (Sequence[IndexIdentifier]): The index identifier(s).
+        Returns:
+            list[IndexIdentifier]: The indexes(s) which has been deleted.
+        Examples:
+
+            Delete indexes by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.data_modeling.containers.delete_indexes(
+                ...     [(ContainerId("mySpace", "myContainer"), "myIndex")]
+                ... )
+        """
+        return self._delete_constraints_or_indexes(id, "indexes")
+
+    def _delete_constraints_or_indexes(
+        self,
+        id: Sequence[ConstraintIdentifier] | Sequence[IndexIdentifier],
+        constraint_or_index: Literal["constraints", "indexes"],
+    ) -> list[tuple[ContainerId, str]]:
+        res = self._post(
+            url_path=f"{self._RESOURCE_PATH}/{constraint_or_index}/delete",
+            json={
+                "items": [
+                    {
+                        "space": constraint_id[0].space,
+                        "containerExternalId": constraint_id[0].external_id,
+                        "identifier": constraint_id[1],
+                    }
+                    for constraint_id in id
+                ]
+            },
+        )
+        return [
+            (ContainerId(space=item["space"], external_id=item["containerExternalId"]), item["identifier"])
+            for item in res.json()["items"]
+        ]
 
     def list(
         self,
