@@ -19,6 +19,7 @@ from cognite.client.data_classes.data_modeling import (
     Text,
     View,
 )
+from cognite.client.data_classes.data_modeling.containers import BTreeIndex, UniquenessConstraint
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -65,6 +66,8 @@ class TestContainersAPI:
             description="Integration test, should not persist",
             name="Create and delete container",
             used_for="node",
+            constraints={"uniqueName": UniquenessConstraint(properties=["name"])},
+            indexes={"nameIdx": BTreeIndex(properties=["name"])},
         )
         created: Container | None = None
         deleted_ids: list[ContainerId] = []
@@ -80,6 +83,14 @@ class TestContainersAPI:
             assert retrieved.as_apply().dump() == new_container.dump()
 
             # Act
+            deleted_indexes = cognite_client.data_modeling.containers.delete_indexes(
+                [(new_container.as_id(), "nameIdx")]
+            )
+            assert deleted_indexes == [(new_container.as_id(), "nameIdx")]
+            deleted_constraints = cognite_client.data_modeling.containers.delete_constraints(
+                [(new_container.as_id(), "uniqueName")]
+            )
+            assert deleted_constraints == [(new_container.as_id(), "uniqueName")]
             deleted_ids = cognite_client.data_modeling.containers.delete(new_container.as_id())
             retrieved_deleted = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
 
