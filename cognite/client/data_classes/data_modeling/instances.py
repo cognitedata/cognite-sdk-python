@@ -4,6 +4,7 @@ import json
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -691,9 +692,11 @@ class NodeList(CogniteResourceList[Node]):
 
 
 class NodeListWithCursor(NodeList):
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(
+        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(resources, cognite_client)
-        self.cursor: str | None = None
+        self.cursor = cursor
 
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
@@ -736,9 +739,11 @@ class EdgeList(CogniteResourceList[Edge]):
 
 
 class EdgeListWithCursor(EdgeList):
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(
+        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(resources, cognite_client)
-        self.cursor: str | None = None
+        self.cursor = cursor
 
 
 @dataclass
@@ -809,3 +814,13 @@ class InstancesDeleteResult:
 
     nodes: list[NodeId]
     edges: list[EdgeId]
+
+
+@dataclass
+class SubscriptionContext:
+    last_successful_sync: datetime | None = None
+    last_successful_callback: datetime | None = None
+    _canceled: bool = False
+
+    def cancel(self) -> None:
+        self._canceled = True

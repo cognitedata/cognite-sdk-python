@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.22.0] - 2023-09-08
+### Added
+- `client.data_modeling.instances.subscribe` which lets you subscribe to a given
+data modeling query and receive updates through a provided callback.
+- Example on how to use the subscribe method to sync nodes to a local sqlite db.
+
 ## [6.21.1] - 2023-09-07
 ### Fixed
 - Concurrent usage of the `CogniteClient` could result in API calls being made with the wrong value for `api_subversion`.
