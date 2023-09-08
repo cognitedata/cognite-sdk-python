@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
@@ -821,6 +822,10 @@ class SubscriptionContext:
     last_successful_sync: datetime | None = None
     last_successful_callback: datetime | None = None
     _canceled: bool = False
+    _thread: threading.Thread | None = None
 
     def cancel(self) -> None:
         self._canceled = True
+
+    def is_alive(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
