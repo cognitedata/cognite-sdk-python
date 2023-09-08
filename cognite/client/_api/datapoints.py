@@ -1250,7 +1250,6 @@ class DatapointsAPI(APIClient):
 
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value::
 
-
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
                 >>> c = CogniteClient()
