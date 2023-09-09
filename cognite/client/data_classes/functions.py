@@ -318,10 +318,8 @@ class FunctionCall(CogniteResource):
         Returns:
             dict | None: Response from the function call.
         """
-        if self.id is None or self.function_id is None:
-            raise ValueError("FunctionCall is missing one or more of: [id, function_id]")
-
-        return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
+        call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
+        return self._cognite_client.functions.calls.get_response(call_id=call_id, function_id=function_id)
 
     def get_logs(self) -> FunctionCallLog:
         """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
@@ -329,18 +327,25 @@ class FunctionCall(CogniteResource):
         Returns:
             FunctionCallLog: Log for the function call.
         """
-        if self.id is None or self.function_id is None:
-            raise ValueError("FunctionCall is missing one or more of: [id, function_id]")
-        return self._cognite_client.functions.calls.get_logs(call_id=self.id, function_id=self.function_id)
+        call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
+        return self._cognite_client.functions.calls.get_logs(call_id=call_id, function_id=function_id)
 
     def update(self) -> None:
         """Update the function call object. Can be useful if the call was made with wait=False."""
-        latest = self._cognite_client.functions.calls.retrieve(call_id=self.id, function_id=self.function_id)
+        call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
+        latest = self._cognite_client.functions.calls.retrieve(call_id=call_id, function_id=function_id)
         if latest is None:
             raise RuntimeError("Unable to update the function call object (it was not found)")
         self.status = latest.status
         self.end_time = latest.end_time
         self.error = latest.error
+
+    @staticmethod
+    def _get_identifiers_or_raise(call_id: int | None, function_id: int | None) -> tuple[int, int]:
+        # Mostly a mypy thing, but for sure nice with an error message :D
+        if call_id is None or function_id is None:
+            raise ValueError("FunctionCall is missing one or more of: [id, function_id]")
+        return call_id, function_id
 
     def wait(self) -> None:
         while self.status == "Running":
