@@ -343,13 +343,17 @@ class TransformationBlockedInfo:
     """Information about the reason why and when a transformation is blocked.
 
     Args:
-        reason (str | None): Reason why the transformation is blocked.
-        created_time (int | None): Timestamp when the transformation was blocked.
+        reason (str): Reason why the transformation is blocked.
+        created_time (int): Timestamp when the transformation was blocked.
     """
 
-    def __init__(self, reason: str | None = None, created_time: int | None = None) -> None:
+    def __init__(self, reason: str, created_time: int) -> None:
         self.reason = reason
         self.created_time = created_time
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
+        return cls(reason=resource["reason"], created_time=resource["createdTime"])
 
 
 def _load_destination_dct(dct: dict[str, Any]) -> RawTable | Nodes | Edges | SequenceRows | TransformationDestination:
