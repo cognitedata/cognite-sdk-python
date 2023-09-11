@@ -10,8 +10,7 @@ from tests.utils import jsgz_load
 
 @pytest.fixture
 def mock_client():
-    (mock_client := MagicMock()).__class__ = CogniteClient
-    return mock_client
+    return MagicMock(spec_set=CogniteClient)
 
 
 @pytest.fixture

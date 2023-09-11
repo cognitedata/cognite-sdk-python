@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 from typing import Any
-from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -24,13 +24,6 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
 from tests.utils import all_subclasses
-
-
-@pytest.fixture
-def simple_mock_client():
-    # We allow the mock to pass isinstance checks
-    (client := mock.MagicMock()).__class__ = CogniteClient
-    return client
 
 
 class MyResource(CogniteResource):
@@ -151,9 +144,9 @@ class TestCogniteResource:
     def test_load_object_attr(self):
         assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
 
-    def test_eq(self, simple_mock_client):
+    def test_eq(self):
         assert MyResource(1, "s") == MyResource(1, "s")
-        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=simple_mock_client)
+        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=MagicMock(spec_set=CogniteClient))
         assert MyResource() == MyResource()
         assert MyResource(1, "s") != MyResource(1)
         assert MyResource(1, "s") != MyResource(2, "t")
@@ -286,8 +279,8 @@ class TestCogniteResourceList:
         assert MyResourceList([MyResource(1, 2), MyResource(2, 3)]) == resource_list[:]
         assert isinstance(resource_list[:], MyResourceList)
 
-    def test_slice_list_client_remains(self, simple_mock_client):
-        rl = MyResourceList([MyResource(1, 2)], cognite_client=simple_mock_client)
+    def test_slice_list_client_remains(self):
+        rl = MyResourceList([MyResource(1, 2)], cognite_client=MagicMock(spec_set=CogniteClient))
         rl_sliced = rl[:]
         assert rl._cognite_client == rl_sliced._cognite_client
 

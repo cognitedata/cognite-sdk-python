@@ -146,16 +146,13 @@ class CreatedSession(CogniteResponse):
 
     @classmethod
     def _load(cls, response: dict[str, Any]) -> CreatedSession:
-        to_load = {
-            "id": response["id"],
-            "status": response["status"],
-            "nonce": response["nonce"],
-        }
-        if "type" in response:
-            to_load["type"] = response["type"]
-        if "clientId" in response:
-            to_load["client_id"] = response["clientId"]
-        return cls(**to_load)
+        return cls(
+            id=response["id"],
+            status=response["status"],
+            nonce=response["nonce"],
+            type=response.get("type"),
+            client_id=response.get("clientId"),
+        )
 
 
 class Session(CogniteResource):

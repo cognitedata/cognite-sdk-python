@@ -117,8 +117,7 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        # Make a mock that pass isinstance checks for 'CogniteClient':
-        (mock_cognite_client := mock.MagicMock()).__class__ = CogniteClient
+        mock_cognite_client = mock.MagicMock(spec_set=CogniteClient)
         mock_method = getattr(mock_cognite_client, method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
