@@ -57,14 +57,11 @@ class SessionDetails:
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> SessionDetails:
-        to_load = {}
-        if "sessionId" in resource:
-            to_load["session_id"] = resource["sessionId"]
-        if "clientId" in resource:
-            to_load["client_id"] = resource["clientId"]
-        if "projectName" in resource:
-            to_load["project_name"] = resource["projectName"]
-        return cls(**to_load)
+        return cls(
+            session_id=resource.get("sessionId"),
+            client_id=resource.get("clientId"),
+            project_name=resource.get("projectName"),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
