@@ -19,9 +19,16 @@ Changes are grouped as follows
 
 ## [6.25.1] - 2023-09-15
 ### Fixed
+- Using nonce credentials now works as expected for `transformations.[create, update]`. Previously, the attempt to create
+  a session would always fail, leading to nonce credentials never being used (full credentials were passed to- and
+  stored in the transformations backend service).
+- Additionally, the automatic creation of a session no longer fails silently when an `CogniteAuthError` is encountered
+  (which happens when the credentials are invalid).
 - While processing source- and destination credentials in `client.transformations.[create, update]`, an `AttributeError`
-  can no longer be raised (by not specifying project). Additionally, the automatic creation of a session no longer fails silently.
-- `TransformationList` now correctly inherits the two missing methods `as_ids()` and `as_external_ids()`
+  can no longer be raised (by not specifying project).
+
+### Added
+- `TransformationList` now correctly inherits the two (missing) helper methods `as_ids()` and `as_external_ids()`.
 
 ## [6.25.0] - 2023-09-14
 ### Added
