@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, UserIdentTransformerMixin
 from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ class UserProfile(CogniteResource):
         return cls(**to_load, cognite_client=cognite_client)
 
 
-class UserProfileList(CogniteResourceList[UserProfile]):
+class UserProfileList(CogniteResourceList[UserProfile], UserIdentTransformerMixin):
     _RESOURCE = UserProfile
 
     def __init__(self, resources: Sequence[UserProfile], cognite_client: CogniteClient | None = None) -> None:

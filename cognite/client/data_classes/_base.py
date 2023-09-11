@@ -681,47 +681,131 @@ class CogniteSort:
 T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
-class HasExternalAndInternalId(Protocol):
-    @property
-    def external_id(self) -> str | None:
-        ...
-
+class HasInternalId(Protocol):
     @property
     def id(self) -> int | None:
         ...
 
 
-class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
-    def as_external_ids(self) -> list[str]:
-        """
-        Returns the external ids of all resources.
+class HasExternalId(Protocol):
+    @property
+    def external_id(self) -> str | None:
+        ...
 
-        Raises:
-            ValueError: If any resource in the list does not have an external id.
 
-        Returns:
-            list[str]: The external ids of all resources in the list.
-        """
-        external_ids: list[str] = []
-        for x in self:
-            if x.external_id is None:
-                raise ValueError(f"All {type(x).__name__} must have external_id")
-            external_ids.append(x.external_id)
-        return external_ids
+class HasExtAndInternalId(HasInternalId, HasExternalId, Protocol):
+    ...
 
+
+class HasUserIdentifier(Protocol):
+    @property
+    def user_identifier(self) -> str:
+        ...
+
+
+class HasName(Protocol):
+    @property
+    def name(self) -> str | None:
+        ...
+
+
+class HasKey(Protocol):
+    @property
+    def key(self) -> str | None:
+        ...
+
+
+class IdTransformerMixin(Sequence[HasInternalId], ABC):
     def as_ids(self) -> list[int]:
         """
         Returns the ids of all resources.
 
         Raises:
             ValueError: If any resource in the list does not have an id.
-
         Returns:
             list[int]: The ids of all resources in the list.
         """
         ids: list[int] = []
         for x in self:
             if x.id is None:
-                raise ValueError(f"All {type(x).__name__} must have id")
+                raise ValueError(f"All {type(x).__name__} must have 'id'")
             ids.append(x.id)
         return ids
+
+
+class ExtIdTransformerMixin(Sequence[HasExternalId], ABC):
+    def as_external_ids(self) -> list[str]:
+        """
+        Returns the external ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an external id.
+        Returns:
+            list[str]: The external ids of all resources in the list.
+        """
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError(f"All {type(x).__name__} must have 'external_id'")
+            external_ids.append(x.external_id)
+        return external_ids
+
+
+class IdAndExtIdTransformerMixin(IdTransformerMixin, ExtIdTransformerMixin, ABC):
+    ...
+
+
+class NameTransformerMixin(Sequence[HasName], ABC):
+    def as_names(self) -> list[str]:
+        """
+        Returns the name of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an name.
+        Returns:
+            list[str]: The names of all resources in the list.
+        """
+        names: list[str] = []
+        for x in self:
+            if x.name is None:
+                raise ValueError(f"All {type(x).__name__} must have 'name'")
+            names.append(x.name)
+        return names
+
+
+class KeyTransformerMixin(Sequence[HasKey], ABC):
+    def as_keys(self) -> list[str]:
+        """
+        Returns the key of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an key.
+
+        Returns:
+            list[str]: The keys of all resources in the list.
+        """
+        keys: list[str] = []
+        for x in self:
+            if x.key is None:
+                raise ValueError(f"All {type(x).__name__} must have 'key'")
+            keys.append(x.key)
+        return keys
+
+
+class UserIdentTransformerMixin(Sequence[HasUserIdentifier], ABC):
+    def as_user_identifiers(self) -> list[str]:
+        """
+        Returns the user identifier of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have a user identifier.
+
+        Returns:
+            list[str]: The user identifiers of all resources in the list.
+        """
+        user_identifiers: list[str] = []
+        for x in self:
+            if x.user_identifier is None:
+                raise ValueError(f"All {type(x).__name__} must have 'user_identifier'")
+            user_identifiers.append(x.user_identifier)
+        return user_identifiers

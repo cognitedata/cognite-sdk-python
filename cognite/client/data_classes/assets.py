@@ -38,7 +38,7 @@ from cognite.client.data_classes._base import (
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
-    IdTransformerMixin,
+    IdAndExtIdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
 )
@@ -372,7 +372,7 @@ class AssetUpdate(CogniteUpdate):
         ]
 
 
-class AssetList(CogniteResourceList[Asset], IdTransformerMixin):
+class AssetList(CogniteResourceList[Asset], IdAndExtIdTransformerMixin):
     _RESOURCE = Asset
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:

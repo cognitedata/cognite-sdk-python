@@ -10,7 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
-    IdTransformerMixin,
+    IdAndExtIdTransformerMixin,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._time import ms_to_datetime
@@ -263,7 +263,7 @@ class FunctionSchedulesList(CogniteResourceList[FunctionSchedule]):
     _RESOURCE = FunctionSchedule
 
 
-class FunctionList(CogniteResourceList[Function], IdTransformerMixin):
+class FunctionList(CogniteResourceList[Function], IdAndExtIdTransformerMixin):
     _RESOURCE = Function
 
 
