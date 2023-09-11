@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import asdict, dataclass
 from typing import ClassVar
 
@@ -35,7 +34,8 @@ class DirectRelationReference:
         return self.space, self.external_id
 
 
-class PropertyType(ABC):
+@dataclass
+class PropertyType:
     _type: ClassVar[str]
 
     def dump(self, camel_case: bool = False) -> dict:

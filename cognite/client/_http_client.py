@@ -5,7 +5,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Any, Callable, MutableMapping
+from typing import Any, Callable, Literal, MutableMapping
 
 import requests
 import requests.adapters
@@ -16,7 +16,10 @@ from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionR
 
 
 class BlockAll(cookiejar.CookiePolicy):
-    return_ok = set_ok = domain_return_ok = path_return_ok = lambda self, *args, **kwargs: False
+    def _block_all(*args: Any, **kwargs: Any) -> Literal[False]:
+        return False
+
+    return_ok = set_ok = domain_return_ok = path_return_ok = _block_all
     netscape = True
     rfc2965 = hide_cookie2 = False
 
