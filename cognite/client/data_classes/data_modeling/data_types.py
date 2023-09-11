@@ -4,8 +4,6 @@ from abc import ABC
 from dataclasses import asdict, dataclass
 from typing import Any, ClassVar
 
-from typing_extensions import Self
-
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
@@ -25,7 +23,7 @@ class DirectRelationReference:
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls, data: dict | tuple[str, str]) -> Self:
+    def load(cls, data: dict | tuple[str, str]) -> DirectRelationReference:
         if isinstance(data, dict):
             return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
         elif isinstance(data, tuple) and len(data) == 2:
