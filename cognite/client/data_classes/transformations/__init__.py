@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Awaitable, Dict, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Dict, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-logger = logging.getLogger("cognite-sdk")
+logger = logging.getLogger(__name__)
 
 
 class SessionDetails:
@@ -201,51 +201,69 @@ class Transformation(CogniteResource):
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(oidc_credentials: OidcCredentials) -> NonceCredentials | None:
-            if keep_none and oidc_credentials is None:
-                return None
-
-            project = oidc_credentials.cdf_project_name or self._cognite_client.config.project
-
-            # MyPy requires this to make sure it's not changed to None after inner declaration
-            assert sessions_cache is not None
-
-            key = "DEFAULT"
-            if oidc_credentials:
-                key = f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
-
-            if (ret := sessions_cache.get(key)) is None:
-                credentials = None
-                if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
-                    credentials = oidc_credentials.as_client_credentials()
-
-                client = self._cognite_client
-                if project != self._cognite_client.config.project:
-                    from cognite.client import CogniteClient
-
-                    config = deepcopy(self._cognite_client.config)
-                    config.project = project
-                    config.credentials = oidc_credentials.as_credential_provider()
-                    client = CogniteClient(config)
-                try:
-                    session = client.iam.sessions.create(credentials)
-                    ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
-                except CogniteAPIError as err:
-                    # This is fine, we might be missing SessionsACL. The OIDC credentials are passed
-                    # directly to the backend service. We do however not catch CogniteAuthError as that
-                    # would mean the credentials are invalid.
-                    logger.debug(f"Unable to create a session and get a nonce towards {project=}: {err!r}")
-            return ret
-
         if self.source_nonce is None and self.source_oidc_credentials:
-            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials)
+            self.source_nonce = self._try_get_or_create_nonce(
+                self.source_oidc_credentials,
+                sessions_cache,
+                keep_none,
+                credentials_name="source",
+            )
             if self.source_nonce:
                 self.source_oidc_credentials = None
 
         if self.destination_nonce is None and self.destination_oidc_credentials:
-            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials)
+            self.destination_nonce = self._try_get_or_create_nonce(
+                self.destination_oidc_credentials,
+                sessions_cache,
+                keep_none,
+                credentials_name="destination",
+            )
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
+
+    def _try_get_or_create_nonce(
+        self,
+        oidc_credentials: OidcCredentials,
+        sessions_cache: dict[str, NonceCredentials],
+        keep_none: bool,
+        credentials_name: Literal["source", "destination"],
+    ) -> NonceCredentials | None:
+        if keep_none and oidc_credentials is None:
+            return None
+
+        project = oidc_credentials.cdf_project_name or self._cognite_client.config.project
+
+        key = "DEFAULT"
+        if oidc_credentials:
+            key = f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
+
+        if (ret := sessions_cache.get(key)) is None:
+            credentials = None
+            if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
+                credentials = oidc_credentials.as_client_credentials()
+
+            # We want to create a session using the supplied 'oidc_credentials' (either 'source_oidc_credentials'
+            # or 'destination_oidc_credentials') and send the nonce to the Transformations backend, to avoid sending
+            # (and it having to store) the full set of client credentials. However, there is no easy way to do this
+            # without instantiating a new 'CogniteClient' with the given credentials:
+            from cognite.client import CogniteClient
+
+            config = deepcopy(self._cognite_client.config)
+            config.project = project
+            config.credentials = oidc_credentials.as_credential_provider()
+            other_client = CogniteClient(config)
+            try:
+                session = other_client.iam.sessions.create(credentials)
+                ret = sessions_cache[key] = NonceCredentials(cast(int, session.id), cast(str, session.nonce), project)
+            except CogniteAPIError as err:
+                # This is fine, we might be missing SessionsACL. The OIDC credentials will then be passed
+                # directly to the backend service. We do however not catch CogniteAuthError as that would
+                # mean the credentials are invalid.
+                logger.debug(
+                    f"Unable to create a session and get a nonce towards {project=} using the provided "
+                    f"{credentials_name} credentials: {err!r}"
+                )
+        return ret
 
     def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
