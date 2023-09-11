@@ -152,7 +152,7 @@ class IdLike(Protocol):
         ...
 
 
-class VersionedIdLike(IdLike):
+class VersionedIdLike(IdLike, Protocol):
     @property
     def version(self) -> str | None:
         ...
