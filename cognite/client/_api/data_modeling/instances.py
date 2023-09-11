@@ -631,6 +631,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
+            limit=100,
             executor=get_data_modeling_executor(),
         )
         return InstancesApplyResult(
