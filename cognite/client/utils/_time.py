@@ -69,15 +69,17 @@ def datetime_to_ms(dt: datetime) -> int:
 
     Returns:
         int: Milliseconds since epoch (negative for time prior to 1970-01-01)
+
+    Raises:
+        ValueError: If timestamp conversion fails.
     """
     try:
         return int(1000 * dt.timestamp())
     except OSError as e:
         # OSError is raised if dt.timestamp() is called before 1970-01-01 on Windows for naive datetime.
         raise ValueError(
-            "Failed to convert datetime to epoch. "
-            "This likely because you are using a naive datetime."
-            " Try using a timezone aware datetime instead."
+            "Failed to convert datetime to epoch. This likely because you are using a naive datetime. "
+            "Try using a timezone aware datetime instead."
         ) from e
 
 
@@ -87,11 +89,11 @@ def ms_to_datetime(ms: int | float) -> datetime:
     Args:
         ms (int | float): Milliseconds since epoch.
 
-    Raises:
-        ValueError: On invalid Cognite timestamps.
-
     Returns:
         datetime: Aware datetime object in UTC.
+
+    Raises:
+        ValueError: On invalid Cognite timestamps.
     """
     if not (MIN_TIMESTAMP_MS <= ms <= MAX_TIMESTAMP_MS):
         raise ValueError(f"Input {ms=} does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
@@ -145,6 +147,10 @@ def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
 
     Returns:
         int: Milliseconds since epoch representation of timestamp
+
+    Raises:
+        TypeError: Unsupported type for timestamp argument.
+        ValueError: Timestamp was out of bounds (not supported by the API).
     """
     if isinstance(timestamp, numbers.Number):  # float, int, int64 etc
         ms = int(timestamp)  # type: ignore[arg-type]
@@ -404,6 +410,9 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
 
     Returns:
         tuple[datetime, datetime]: start and end aligned with granularity
+
+    Raises:
+        ValueError: Granularity unit is not supported.
     """
     multiplier, unit = get_granularity_multiplier_and_unit(granularity)
     # Can be replaced by a single dispatch pattern, but kept more explicit for readability.

@@ -230,6 +230,9 @@ class FeatureList(CogniteResourceList[Feature]):
         Returns:
             FeatureList: The list of features converted from the geodataframe rows.
 
+        Raises:
+            ValueError: Missing value for non-optional property.
+
         Examples:
 
             Create features from a geopandas dataframe:
@@ -248,7 +251,7 @@ class FeatureList(CogniteResourceList[Feature]):
         assert feature_type.properties
         if property_column_mapping is None:
             property_column_mapping = {prop_name: prop_name for (prop_name, _) in feature_type.properties.items()}
-        for _, row in geodataframe.iterrows():
+        for _, row in geodataframe.iterrows():  # TODO: Use itertuples instead (speed & type safety)
             feature = Feature(external_id=row[external_id_column], data_set_id=row.get(data_set_id_column, None))
             for prop in feature_type.properties.items():
                 prop_name = prop[0]
@@ -268,8 +271,7 @@ class FeatureList(CogniteResourceList[Feature]):
                 if column_name is None or column_value is None:
                     if prop_optional:
                         continue
-                    else:
-                        raise ValueError(f"Missing value for property {prop_name}")
+                    raise ValueError(f"Missing value for property {prop_name}")
 
                 prop_name = _to_feature_property_name(prop_name)
                 if _is_geometry_type(prop_type):

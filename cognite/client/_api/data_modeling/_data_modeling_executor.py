@@ -16,6 +16,9 @@ def get_data_modeling_executor() -> TaskExecutor:
 
     Returns:
         TaskExecutor: The data modeling executor.
+
+    Raises:
+        RuntimeError: Invalid setting for ``cognite.client.utils._concurrency.ConcurrencySettings.executor_type``
     """
     global _THREAD_POOL_EXECUTOR_SINGLETON
 

@@ -71,6 +71,9 @@ class GeometryFilter(dict):
     Args:
         type (Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
         coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+
+    Raises:
+        ValueError: Argument 'type' is invalid.
     """
 
     _VALID_TYPES = frozenset({"Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
@@ -96,6 +99,9 @@ class GeoLocation(dict):
         type (Literal['Feature']): The GeoJSON type. Currently only 'Feature' is supported.
         geometry (Geometry): The geometry. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
         properties (dict | None): Optional additional properties in a String key -> Object value format.
+
+    Raises:
+        ValueError: Argument 'type' is invalid.
     """
 
     _VALID_TYPES = frozenset({"Feature"})

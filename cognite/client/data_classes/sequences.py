@@ -374,6 +374,9 @@ class SequenceData(CogniteResource):
 
         Returns:
             list[int | str | float]: A list of values for that column in the sequence
+
+        Raises:
+            ValueError: Column external ID does not exist.
         """
         try:
             ix = self.column_external_ids.index(external_id)
@@ -415,6 +418,9 @@ class SequenceData(CogniteResource):
 
         Returns:
             pandas.DataFrame: The dataframe.
+
+        Raises:
+            ValueError: Invalid option given for 'column_names'.
         """
         pd = utils._auxiliary.local_import("pandas")
 

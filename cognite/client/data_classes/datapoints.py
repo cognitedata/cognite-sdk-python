@@ -346,6 +346,10 @@ class DatapointsArray(CogniteResource):
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
+
+        Raises:
+            ValueError: Invalid value passed for 'column_names'.
+            ValueError: No identifier set on object.
         """
         pd = cast(Any, local_import("pandas"))
         if column_names == "id":
@@ -526,6 +530,10 @@ class Datapoints(CogniteResource):
 
         Returns:
             pandas.DataFrame: The dataframe.
+
+        Raises:
+            ValueError: Invalid value passed for 'column_names'.
+            ValueError: If 'include_errors=True' for non-synthetic datapoints.
         """
         pd = cast(Any, local_import("pandas"))
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat

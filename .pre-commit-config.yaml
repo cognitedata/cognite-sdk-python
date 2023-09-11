@@ -65,4 +65,3 @@ repos:
           - --style=google
           - --exclude=tests/|scripts/
           - --quiet  # otherwise prints all checked files that are ok...
-          - --skip-checking-raises=true  # TODO: Fix in other PR

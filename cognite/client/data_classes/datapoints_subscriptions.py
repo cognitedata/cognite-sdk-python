@@ -115,6 +115,9 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
 
     A subscription can either be defined directly by a list of time series ids or indirectly by a filter.
 
+    Raises:
+        ValueError: If both or none of 'time_series_ids' and 'filter' are given.
+
     Args:
         external_id (str): Externally provided ID for the subscription. Must be unique.
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.

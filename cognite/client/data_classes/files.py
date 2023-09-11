@@ -25,6 +25,9 @@ if TYPE_CHECKING:
 class FileMetadata(CogniteResource):
     """No description.
 
+    Raises:
+        TypeError: 'geo_location' is invalid.
+
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): Name of the file.
@@ -103,6 +106,9 @@ class FileMetadata(CogniteResource):
 class FileMetadataFilter(CogniteFilter):
     """No description.
 
+    Raises:
+        TypeError: 'labels' or 'geo_location' are invalid.
+
     Args:
         name (str | None): Name of the file.
         mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
@@ -179,10 +185,7 @@ class FileMetadataFilter(CogniteFilter):
 
 
 class FileMetadataUpdate(CogniteUpdate):
-    """Changes will be applied to file.
-
-    Args:
-    """
+    """Changes will be applied to file."""
 
     class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> FileMetadataUpdate:

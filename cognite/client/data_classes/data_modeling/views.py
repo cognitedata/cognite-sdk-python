@@ -190,6 +190,9 @@ class View(ViewCore):
 
         Returns:
             ViewApply: The view apply.
+
+        Raises:
+            NotImplementedError: If any properties are unsupported.
         """
         properties: dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None = None
         if self.properties:

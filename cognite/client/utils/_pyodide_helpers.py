@@ -76,8 +76,6 @@ class EnvVarToken(CredentialProvider):
     allowing refreshing the value by another entity.
     Args:
         key (str): The name of the env.var. to read from. Default: 'COGNITE_TOKEN'
-    Raises:
-        KeyError: If the env.var. is not set.
     """
 
     def __init__(self, key: str = "COGNITE_TOKEN") -> None:
