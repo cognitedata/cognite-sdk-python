@@ -90,7 +90,10 @@ class RelationshipsAPI(APIClient):
             confidence (dict[str, int] | None): Range to filter the field for (inclusive).
             last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
             created_time (dict[str, int] | None): Range to filter the field for (inclusive).
-            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals
+                [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is
+                regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly,
+                if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter | None): Return only the resource matching the specified label constraints.
             limit (int | None): No description.
             fetch_resources (bool): No description.
@@ -99,6 +102,9 @@ class RelationshipsAPI(APIClient):
 
         Returns:
             Iterator[Relationship] | Iterator[RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
+
+        Raises:
+            ValueError: Too many identifiers given as source_external_ids or target_external_ids.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -245,6 +251,9 @@ class RelationshipsAPI(APIClient):
         Returns:
             RelationshipList: List of requested relationships
 
+        Raises:
+            ValueError: Too many identifiers given as source_external_ids or target_external_ids and limit was finite.
+
         Examples:
 
             List relationships::
@@ -279,49 +288,49 @@ class RelationshipsAPI(APIClient):
         target_external_id_list: list[str] = filter.get("targetExternalIds", [])
         source_external_id_list: list[str] = filter.get("sourceExternalIds", [])
         if (
-            len(target_external_id_list) > self._LIST_SUBQUERY_LIMIT
-            or len(source_external_id_list) > self._LIST_SUBQUERY_LIMIT
+            len(target_external_id_list) <= self._LIST_SUBQUERY_LIMIT
+            and len(source_external_id_list) <= self._LIST_SUBQUERY_LIMIT
         ):
-            if not is_unlimited(limit):
-                raise ValueError(
-                    f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
-                    f"supported for queries without limit (pass -1 / None / inf instead of {limit})"
-                )
-            tasks = []
-
-            for ti in range(0, max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
-                for si in range(0, max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
-                    task_filter = copy.copy(filter)
-                    if target_external_id_list:  # keep null if it was
-                        task_filter["targetExternalIds"] = target_external_id_list[ti : ti + self._LIST_SUBQUERY_LIMIT]
-                    if source_external_id_list:  # keep null if it was
-                        task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
-                    tasks.append((task_filter,))
-
-            tasks_summary = utils._concurrency.execute_tasks(
-                lambda filter: self._list(
-                    list_cls=RelationshipList,
-                    resource_cls=Relationship,
-                    method="POST",
-                    limit=limit,
-                    filter=filter,
-                    other_params={"fetchResources": fetch_resources},
-                    partitions=partitions,
-                ),
-                tasks,
-                max_workers=self._config.max_workers,
+            return self._list(
+                list_cls=RelationshipList,
+                resource_cls=Relationship,
+                method="POST",
+                limit=limit,
+                filter=filter,
+                other_params={"fetchResources": fetch_resources},
             )
-            if tasks_summary.exceptions:
-                raise tasks_summary.exceptions[0]
-            return RelationshipList(tasks_summary.joined_results())
-        return self._list(
-            list_cls=RelationshipList,
-            resource_cls=Relationship,
-            method="POST",
-            limit=limit,
-            filter=filter,
-            other_params={"fetchResources": fetch_resources},
+
+        if not is_unlimited(limit):
+            raise ValueError(
+                f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
+                f"supported for queries without limit (pass -1 / None / inf instead of {limit})"
+            )
+
+        tasks = []
+        for ti in range(0, max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
+            for si in range(0, max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
+                task_filter = copy.copy(filter)
+                if target_external_id_list:  # keep null if it was
+                    task_filter["targetExternalIds"] = target_external_id_list[ti : ti + self._LIST_SUBQUERY_LIMIT]
+                if source_external_id_list:  # keep null if it was
+                    task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
+                tasks.append((task_filter,))
+
+        tasks_summary = utils._concurrency.execute_tasks(
+            lambda filter: self._list(
+                list_cls=RelationshipList,
+                resource_cls=Relationship,
+                method="POST",
+                limit=limit,
+                filter=filter,
+                other_params={"fetchResources": fetch_resources},
+                partitions=partitions,
+            ),
+            tasks,
+            max_workers=self._config.max_workers,
         )
+        tasks_summary.reraise_if_any_task_failed()
+        return RelationshipList(tasks_summary.joined_results())
 
     def create(self, relationship: Relationship | Sequence[Relationship]) -> Relationship | RelationshipList:
         """`Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_

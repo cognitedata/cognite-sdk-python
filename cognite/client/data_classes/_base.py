@@ -151,6 +151,9 @@ class CogniteResource(_WithClientMixin):
 
         Returns:
             pandas.DataFrame: The dataframe.
+
+        Raises:
+            AssertionError: If the value of a key to expand isn't a dictionary.
         """
         ignore = [] if ignore is None else ignore
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
@@ -530,6 +533,9 @@ class Geometry(dict):
         type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
         coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
         geometries (Collection[Geometry] | None): No description.
+
+    Raises:
+        ValueError: 'type' is not valid.
 
     Examples:
         Point:

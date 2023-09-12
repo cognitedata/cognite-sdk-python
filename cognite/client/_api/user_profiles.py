@@ -19,8 +19,8 @@ class UserProfilesAPI(APIClient):
         Returns:
             UserProfile: Your own user profile.
 
-        Raises:
-            CogniteAPIError: If this principal doesn't have a user profile, you get a not found (404) response code.
+        Note:
+            If this principal doesn't have a user profile, you get a not found (404) response code (CogniteAPIError).
 
         Examples:
 
@@ -53,8 +53,8 @@ class UserProfilesAPI(APIClient):
         Returns:
             UserProfile | UserProfileList | None: UserProfileList if a sequence of user identifier were requested, else UserProfile. If a single user identifier is requested and it is not found, None is returned.
 
-        Raises:
-            CogniteNotFoundError: A sequences of user identifiers were requested, but one or more does not exist.
+        Note:
+            When a sequences of user identifiers are requested, but one or more does not exist, CogniteNotFoundError is raised.
 
         Examples:
 

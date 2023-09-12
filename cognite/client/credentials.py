@@ -36,6 +36,9 @@ class Token(CredentialProvider):
             >>> token_provider = Token("my secret token")
             >>> token_factory_provider = Token(lambda: "my secret token")
 
+    Raises:
+        TypeError: 'token' is not a string or not callable.
+
     Note:
         If you pass in a callable, we will expect that you supplied a function that may do a token refresh
         under the hood, so it will be called while holding a thread lock (threading.Lock()).

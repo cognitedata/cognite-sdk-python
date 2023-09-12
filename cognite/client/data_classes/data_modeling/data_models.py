@@ -207,6 +207,10 @@ class DataModelList(CogniteResourceList[DataModel[T_View]]):
 
         Returns:
             DataModel[T_View]: The data model with the latest version.
+
+        Raises:
+            ValueError: If called on an empty DataModelList
+            ValueError: Invalid value for key.
         """
         if not self:
             raise ValueError("No data models in list")

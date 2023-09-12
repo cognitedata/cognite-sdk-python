@@ -45,6 +45,10 @@ class TasksSummary:
                 joined_results.append(unwrapped)
         return joined_results
 
+    def reraise_if_any_task_failed(self) -> None:
+        if self.exceptions:
+            raise self.exceptions[0]
+
     def raise_compound_exception_if_failed_tasks(
         self,
         task_unwrap_fn: Callable | None = None,

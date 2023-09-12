@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -57,8 +57,8 @@ class SyntheticDatapointsAPI(APIClient):
 
             Use variables to re-use an expression:
 
-                >>> vars = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
-                >>> dps = c.time_series.data.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
+                >>> variables = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
+                >>> dps = c.time_series.data.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=variables)
 
             Use sympy to build complex expressions:
 
@@ -89,17 +89,14 @@ class SyntheticDatapointsAPI(APIClient):
 
             tasks.append((query, query_datapoints, limit))
 
-        datapoints_summary = utils._concurrency.execute_tasks(
+        tasks_summary = utils._concurrency.execute_tasks(
             self._fetch_datapoints, tasks, max_workers=self._config.max_workers
         )
-
-        if datapoints_summary.exceptions:
-            raise datapoints_summary.exceptions[0]
-
+        tasks_summary.reraise_if_any_task_failed()
         return (
-            DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
-            if isinstance(expressions, List)
-            else datapoints_summary.results[0]
+            DatapointsList(tasks_summary.results, cognite_client=self._cognite_client)
+            if isinstance(expressions, list)
+            else tasks_summary.results[0]
         )
 
     def _fetch_datapoints(self, query: dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:

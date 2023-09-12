@@ -884,13 +884,16 @@ class SequencesDataAPI(APIClient):
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
 
+        Raises:
+            ValueError: The 'rows' given are not one of the supported input formats.
+
         Examples:
-            Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
+            Your rows of data can be a list of tuples where the first element is the row number and the second element is the data to be inserted::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> seq = c.sequences.create(Sequence(columns=[{"valueType": "STRING", "externalId":"col_a"},{"valueType": "DOUBLE", "externalId":"col_b"}]))
-                >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
+                >>> data = [(1, ['pi', 3.14]), (2, ['e', 2.72]) ]
                 >>> c.sequences.data.insert(column_external_ids=["col_a","col_b"], rows=data, id=1)
 
             They can also be provided as a list of API-style objects with a rowNumber and values field::
@@ -1062,8 +1065,7 @@ class SequencesDataAPI(APIClient):
         tasks_summary = utils._concurrency.execute_tasks(
             _fetch_sequence, [(x,) for x in post_objs], max_workers=self._config.max_workers
         )
-        if tasks_summary.exceptions:
-            raise tasks_summary.exceptions[0]
+        tasks_summary.reraise_if_any_task_failed()
         results = tasks_summary.joined_results()
         if len(post_objs) == 1:
             return results[0]

@@ -51,6 +51,9 @@ class TransformationsAPI(APIClient):
         Returns:
             Transformation | TransformationList: Created transformation(s)
 
+        Raises:
+            TypeError: Given 'transformation' is not valid.
+
         Examples:
 
             Create new transformations:
@@ -286,6 +289,9 @@ class TransformationsAPI(APIClient):
 
         Returns:
             Transformation | TransformationList: Updated transformation(s)
+
+        Raises:
+            TypeError: Given 'item' is not valid as an update(s).
 
         Examples:
 

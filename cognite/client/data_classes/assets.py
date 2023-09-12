@@ -119,6 +119,9 @@ class Asset(CogniteResource):
         root_id (int | None): ID of the root asset.
         aggregates (dict[str, Any] | AggregateResultItem | None): Aggregated metrics of the asset
         cognite_client (CogniteClient | None): The client to associate with this object.
+
+    Raises:
+        TypeError: 'geo_location' is invalid.
     """
 
     def __init__(
@@ -178,6 +181,9 @@ class Asset(CogniteResource):
 
         Returns:
             Asset: The parent asset.
+
+        Raises:
+            ValueError: 'parent_id' not set on object.
         """
         if self.parent_id is None:
             raise ValueError("parent_id is None, is this a root asset?")
@@ -454,6 +460,9 @@ class AssetFilter(CogniteFilter):
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         labels (LabelFilter | None): Return only the resource matching the specified label constraints.
         geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
+
+    Raises:
+        TypeError: 'labels' is invalid.
     """
 
     def __init__(

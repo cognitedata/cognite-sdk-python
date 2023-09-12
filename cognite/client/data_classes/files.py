@@ -48,6 +48,9 @@ class FileMetadata(CogniteResource):
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient | None): The client to associate with this object.
+
+    Raises:
+        TypeError: 'geo_location' is invalid.
     """
 
     def __init__(

@@ -844,7 +844,9 @@ class VisionExtractJob(VisionJob):
             creating_app_version (str | None): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
         Returns:
             Annotation | AnnotationList: (suggested) annotation(s) stored in CDF.
-
+        Raises:
+            CogniteException: Status of extraction job is not completed.
+            CogniteException: Extraction job did not contain any predictions.
         """
         if JobStatus(self.status) is JobStatus.COMPLETED:
             annotations = self._predictions_to_annotations(

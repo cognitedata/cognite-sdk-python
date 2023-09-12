@@ -39,6 +39,9 @@ class CogniteClient:
 
     Args:
         config (ClientConfig | None): The configuration for this client.
+
+    Raises:
+        ValueError: If no config has been provided and global_config.default_client_config is not set.
     """
 
     _API_VERSION = "v1"
