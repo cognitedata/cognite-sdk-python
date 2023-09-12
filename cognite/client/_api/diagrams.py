@@ -180,8 +180,12 @@ class DiagramsAPI(APIClient):
             pattern_mode (bool | None): Only in beta. If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
             configuration (dict[str, Any] | None): Only in beta. Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
+
         Returns:
             DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
+
+        Raises:
+            ValueError: When running with 'multiple_jobs=True' and the number of new jobs exceeds the maximum limit.
 
         Examples:
                 >>> from cognite.client import CogniteClient
@@ -304,14 +308,7 @@ class DiagramsAPI(APIClient):
 
     @staticmethod
     def _process_detect_job(detect_job: DiagramDetectResults) -> list:
-        """process the result from detect job so it complies with diagram convert schema
-
-        Args:
-            detect_job (DiagramDetectResults): detect job
-
-        Returns:
-            list: the format complies with diagram convert schema
-        """
+        """Process the result from detect job so it complies with diagram convert schema"""
         if any(item.get("page_range") is not None for item in detect_job.result["items"]):
             raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
         items = [

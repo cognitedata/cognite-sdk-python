@@ -411,6 +411,9 @@ class FilesAPI(APIClient):
         Returns:
             FileMetadata | FileMetadataList: The file metadata of the uploaded file(s).
 
+        Raises:
+            ValueError: The path did not point to a file or directory.
+
         Examples:
 
             Upload a file in a given path::
@@ -466,29 +469,29 @@ class FilesAPI(APIClient):
             if not name:
                 file_metadata.name = os.path.basename(path)
             return self._upload_file_from_path(file_metadata, path, overwrite)
-        elif os.path.isdir(path):
-            tasks = []
-            if recursive:
-                for root, _, files in os.walk(path):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        basename = os.path.basename(file_path)
-                        file_metadata = copy.copy(file_metadata)
-                        file_metadata.name = basename
-                        tasks.append((file_metadata, file_path, overwrite))
-            else:
-                for file_name in os.listdir(path):
-                    file_path = os.path.join(path, file_name)
-                    if os.path.isfile(file_path):
-                        file_metadata = copy.copy(file_metadata)
-                        file_metadata.name = file_name
-                        tasks.append((file_metadata, file_path, overwrite))
-            tasks_summary = utils._concurrency.execute_tasks(
-                self._upload_file_from_path, tasks, self._config.max_workers
-            )
-            tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
-            return FileMetadataList(tasks_summary.results)
-        raise ValueError(f"The path '{path}' does not exist")
+
+        elif not os.path.isdir(path):
+            raise ValueError(f"The path '{path}' does not exist")
+
+        tasks = []
+        if recursive:
+            for root, _, files in os.walk(path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    basename = os.path.basename(file_path)
+                    file_metadata = copy.copy(file_metadata)
+                    file_metadata.name = basename
+                    tasks.append((file_metadata, file_path, overwrite))
+        else:
+            for file_name in os.listdir(path):
+                file_path = os.path.join(path, file_name)
+                if os.path.isfile(file_path):
+                    file_metadata = copy.copy(file_metadata)
+                    file_metadata.name = file_name
+                    tasks.append((file_metadata, file_path, overwrite))
+        tasks_summary = utils._concurrency.execute_tasks(self._upload_file_from_path, tasks, self._config.max_workers)
+        tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
+        return FileMetadataList(tasks_summary.results)
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
         fh: bytes | BufferedReader
@@ -636,6 +639,9 @@ class FilesAPI(APIClient):
             external_id (str | Sequence[str] | None): External ID or list of external ids.
             keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
                 creating subdirectories as needed below the given directory.
+
+        Raises:
+            NotADirectoryError: Given 'directory' does not exist.
 
         Examples:
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json as complexjson
+import json
 import numbers
 import urllib.parse
 import warnings
@@ -226,8 +226,8 @@ class GeospatialAPI(APIClient):
             search_spec_update = {"add": add_search_spec, "remove": remove_search_spec}
             return {"properties": properties_update, "searchSpec": search_spec_update}
 
-        json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
+        body = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=body)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
@@ -274,7 +274,7 @@ class GeospatialAPI(APIClient):
         """
         if isinstance(patch, FeatureTypePatch):
             patch = [patch]
-        json = {
+        body = {
             "items": [
                 {
                     "externalId": it.external_id,
@@ -283,7 +283,7 @@ class GeospatialAPI(APIClient):
                 for it in patch
             ]
         }
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=body)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     @overload
@@ -325,6 +325,9 @@ class GeospatialAPI(APIClient):
         Returns:
             Feature | FeatureList: Created features
 
+        Raises:
+            ValueError: Too large 'chunk_size'.
+
         Examples:
 
             Create a new feature type and corresponding feature:
@@ -350,7 +353,7 @@ class GeospatialAPI(APIClient):
                 ...     )
                 ... )
         """
-        if chunk_size is not None and (chunk_size < 1 or chunk_size > self._CREATE_LIMIT):
+        if chunk_size is not None and not 1 <= chunk_size <= self._CREATE_LIMIT:
             raise ValueError(f"The chunk_size must be strictly positive and not exceed {self._CREATE_LIMIT}")
         if isinstance(feature, FeatureList):
             feature = list(feature)
@@ -464,6 +467,9 @@ class GeospatialAPI(APIClient):
         Returns:
             FeatureList: Updated features
 
+        Raises:
+            ValueError: Too large 'chunk_size'.
+
         Examples:
 
             Update one feature:
@@ -479,7 +485,7 @@ class GeospatialAPI(APIClient):
                 ...     feature=Feature(external_id="my_feature", temperature=6.237)
                 ... )
         """
-        if chunk_size is not None and (chunk_size < 1 or chunk_size > self._UPDATE_LIMIT):
+        if chunk_size is not None and not 1 <= chunk_size <= self._UPDATE_LIMIT:
             raise ValueError(f"The chunk_size must be strictly positive and not exceed {self._UPDATE_LIMIT}")
         if isinstance(feature, FeatureList):
             feature = list(feature)
@@ -718,6 +724,9 @@ class GeospatialAPI(APIClient):
         Yields:
             Feature: a generator for the filtered features
 
+        Raises:
+            CogniteConnectionError: If streaming operation fails.
+
         Examples:
 
             Stream features:
@@ -746,15 +755,14 @@ class GeospatialAPI(APIClient):
                 ...     # do something with the features
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
-        json = {"filter": filter or {}, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
+        body = {"filter": filter or {}, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
         res = self._do_request(
-            "POST", url_path=resource_path, json=json, timeout=self._config.timeout, stream=True, params=params
+            "POST", url_path=resource_path, json=body, timeout=self._config.timeout, stream=True, params=params
         )
-
         try:
             for line in res.iter_lines():
-                yield Feature._load(complexjson.loads(line))
+                yield Feature._load(json.loads(line))
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 
@@ -1144,5 +1152,4 @@ class GeospatialAPI(APIClient):
             timeout=self._config.timeout,
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
-        json = res.json()
-        return GeospatialComputedResponse._load(json, cognite_client=self._cognite_client)
+        return GeospatialComputedResponse._load(res.json(), cognite_client=self._cognite_client)

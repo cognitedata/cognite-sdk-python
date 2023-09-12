@@ -231,6 +231,9 @@ class InstancesAPI(APIClient):
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 
+        Raises:
+            ValueError: Invalid value given for 'instance_type'.
+
         Returns:
             Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
@@ -432,8 +435,12 @@ class InstancesAPI(APIClient):
             callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
+
         Returns:
             SubscriptionContext: An object that can be used to cancel the subscription.
+
+        Raises:
+            ValueError: Chained result sets given in 'query'.
 
         Examples:
 
@@ -684,6 +691,9 @@ class InstancesAPI(APIClient):
         Returns:
             NodeList | EdgeList: Search result with matching nodes or edges.
 
+        Raises:
+            ValueError: Invalid value given for 'instance_type'.
+
         Examples:
 
             Search for Arnold in the person view in the name property:
@@ -746,6 +756,9 @@ class InstancesAPI(APIClient):
 
         Returns:
             InstanceAggregationResultList: Node or edge aggregation results.
+
+        Raises:
+            ValueError: Invalid value given for 'instance_type'.
 
         Examples:
 
@@ -830,6 +843,10 @@ class InstancesAPI(APIClient):
         Returns:
             HistogramValue | list[HistogramValue]: Node or edge aggregation results.
 
+        Raises:
+            ValueError: Invalid value given for 'instance_type'.
+            TypeError: Invalid type given for 'histograms'.
+
         Examples:
 
             Find the number of people born per decade:
@@ -858,7 +875,7 @@ class InstancesAPI(APIClient):
 
         for histogram in histogram_seq:
             if not isinstance(histogram, Histogram):
-                raise ValueError(f"Not a histogram: {histogram}")
+                raise TypeError(f"Not a histogram: {histogram}")
 
         body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
         if filter:
@@ -1010,6 +1027,9 @@ class InstancesAPI(APIClient):
 
         Returns:
             NodeList | EdgeList: List of requested instances
+
+        Raises:
+            ValueError: Invalid value given for 'instance_type'.
 
         Examples:
 

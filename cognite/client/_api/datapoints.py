@@ -916,6 +916,10 @@ class DatapointsAPI(APIClient):
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
 
+        Raises:
+            ValueError: Invalid value for 'column_names'.
+            ValueError: The current query is incompatible with the 'uniform_index=True' option.
+
         Examples:
 
             Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
@@ -1055,6 +1059,11 @@ class DatapointsAPI(APIClient):
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given time zone.
 
+        Raises:
+            ValueError: Invalid mix of identifiers given, or one or more duplicates.
+            ValueError: Invalid values for aggregate and/or granularity.
+            ValueError: Granularity higher than the maximum API limit (~11 years).
+
         Examples:
 
             Get a pandas dataframe in the time zone of Oslo, Norway:
@@ -1099,7 +1108,7 @@ class DatapointsAPI(APIClient):
 
         if exactly_one_is_not_none(aggregates, granularity):
             raise ValueError(
-                "Got only one of 'aggregates' and 'granularity'."
+                "Got only one of 'aggregates' and 'granularity'. "
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
@@ -1404,6 +1413,11 @@ class DatapointsAPI(APIClient):
             external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
 
+        Raises:
+            ValueError: Index is not pd.DatetimeIndex.
+            ValueError: Columns not unique.
+            ValueError: Data frame contained one or more invalid values: +/-infinity or NaN.
+
         Examples:
             Post a dataframe with white noise::
 
@@ -1637,6 +1651,5 @@ class RetrieveLatestDpsFetcher:
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
-        if tasks_summary.exceptions:
-            raise tasks_summary.exceptions[0]
+        tasks_summary.reraise_if_any_task_failed()
         return tasks_summary.joined_results(lambda res: res.json()["items"])

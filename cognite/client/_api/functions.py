@@ -138,6 +138,9 @@ class FunctionsAPI(APIClient):
         Returns:
             Function: The created function.
 
+        Raises:
+            RuntimeError: The file object (zipped source code, uploaded or referenced) could not be fetched.
+
         Examples:
 
             Create function with source code in folder::
@@ -200,7 +203,7 @@ class FunctionsAPI(APIClient):
             else:
                 break
         else:
-            raise OSError("Could not retrieve file from files API")
+            raise RuntimeError("Could not retrieve file from files API")
 
         url = "/functions"
         function: dict[str, Any] = {
@@ -939,6 +942,9 @@ class FunctionSchedulesAPI(APIClient):
         Returns:
             FunctionSchedulesList: List of function schedules
 
+        Raises:
+            AssertionError: Both of 'function_id' and 'function_external_id' was passed.
+
         Examples:
 
             List function schedules::
@@ -959,7 +965,9 @@ class FunctionSchedulesAPI(APIClient):
             try:
                 IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
             except ValueError:
-                raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
+                raise AssertionError(
+                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither"
+                )
 
         if is_unlimited(limit):
             limit = self._LIST_LIMIT_CEILING

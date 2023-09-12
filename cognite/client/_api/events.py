@@ -762,6 +762,9 @@ class EventsAPI(APIClient):
         Returns:
             EventList: List of requested events
 
+        Raises:
+            ValueError: Given 'end_time' is invalid.
+
         Examples:
 
             List events and filter on max start time::
