@@ -320,9 +320,6 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     time series are chunked per request is dynamic and is decided by the overall number to fetch, their
     individual number of datapoints and whether raw- or aggregate datapoints are asked for since
     they are independent in requests - as long as the total number of time series does not exceed `_FETCH_TS_LIMIT`.
-
-    Args:
-        *args (Any): No description.
     """
 
     def __init__(self, *args: Any) -> None:
@@ -1252,7 +1249,6 @@ class DatapointsAPI(APIClient):
         Examples:
 
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value::
-
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone

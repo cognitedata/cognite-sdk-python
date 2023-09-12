@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, Literal, cast
 
@@ -16,8 +16,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     PropertyType,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
 
 
 class ContainerCore(DataModelingResource):
@@ -207,7 +206,7 @@ class ContainerFilter(CogniteFilter):
         self.include_global = include_global
 
 
-@dataclass
+@dataclass(frozen=True)
 class ContainerProperty:
     type: PropertyType
     nullable: bool = True
@@ -221,10 +220,17 @@ class ContainerProperty:
         if "type" not in data:
             raise ValueError("Type not specified")
         if data["type"].get("type") == "direct":
-            data["type"] = DirectRelation.load(data["type"])
+            type_: PropertyType = DirectRelation.load(data["type"])
         else:
-            data["type"] = PropertyType.load(data["type"])
-        return cls(**convert_all_keys_to_snake_case(data))
+            type_ = PropertyType.load(data["type"])
+        return cls(
+            type=type_,
+            nullable=data["nullable"],
+            auto_increment=data["autoIncrement"],
+            name=data.get("name"),
+            default_value=data.get("defaultValue"),
+            description=data.get("description"),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
         output = asdict(self)
@@ -233,40 +239,32 @@ class ContainerProperty:
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
-@dataclass
+@dataclass(frozen=True)
 class Constraint(ABC):
     @classmethod
-    def _load(cls, data: dict) -> Constraint:
-        return cls(**convert_all_keys_to_snake_case(data))
-
-    @classmethod
-    def load(cls, data: dict) -> RequiresConstraintDefinition | UniquenessConstraintDefinition:
+    def load(cls, data: dict) -> RequiresConstraint | UniquenessConstraintDefinition:
         if data["constraintType"] == "requires":
-            return RequiresConstraintDefinition.load(data)
+            return RequiresConstraint.load(data)
         elif data["constraintType"] == "uniqueness":
             return UniquenessConstraintDefinition.load(data)
         raise ValueError(f"Invalid constraint type {data['constraintType']}")
 
+    @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = asdict(self)
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        raise NotImplementedError
 
 
-@dataclass
-class RequiresConstraintDefinition(Constraint):
+@dataclass(frozen=True)
+class RequiresConstraint(Constraint):
     require: ContainerId
 
     @classmethod
-    def load(cls, data: dict) -> RequiresConstraintDefinition:
-        output = cast(
-            RequiresConstraintDefinition, super()._load(rename_and_exclude_keys(data, exclude={"constraintType"}))
-        )
-        if "require" in data:
-            output.require = ContainerId.load(data["require"])
-        return output
+    def load(cls, data: dict) -> RequiresConstraint:
+        return cls(require=ContainerId.load(data["require"]))
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = super().dump(camel_case)
+        as_dict = asdict(self)
+        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         if "require" in output and isinstance(output["require"], dict):
             output["require"] = self.require.dump(camel_case)
         key = "constraintType" if camel_case else "constraint_type"
@@ -274,37 +272,67 @@ class RequiresConstraintDefinition(Constraint):
         return output
 
 
-@dataclass
-class UniquenessConstraintDefinition(Constraint):
+@dataclass(frozen=True)
+class UniquenessConstraint(Constraint):
     properties: list[str]
 
     @classmethod
-    def load(cls, data: dict) -> UniquenessConstraintDefinition:
-        return cast(
-            UniquenessConstraintDefinition, super()._load(rename_and_exclude_keys(data, exclude={"constraintType"}))
-        )
+    def load(cls, data: dict) -> UniquenessConstraint:
+        return cls(properties=data["properties"])
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = super().dump()
+        as_dict = asdict(self)
+        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "uniqueness"
         return output
 
 
-@dataclass
-class Index:
+# Type aliases for backwards compatibility after renaming
+# TODO: Remove in some future major version
+RequiresConstraintDefinition = RequiresConstraint
+UniquenessConstraintDefinition = UniquenessConstraint
+
+
+@dataclass(frozen=True)
+class Index(ABC):
+    @classmethod
+    def load(cls, data: dict) -> Index:
+        if data["indexType"] == "btree":
+            return BTreeIndex.load(data)
+        if data["indexType"] == "inverted":
+            return InvertedIndex.load(data)
+        raise ValueError(f"Invalid index type {data['indexType']}")
+
+    @abstractmethod
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class BTreeIndex(Index):
     properties: list[str]
-    index_type: Literal["btree"] | str = "btree"
     cursorable: bool = False
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> Index:
-        data = convert_all_keys_to_snake_case(data)
-        # We want to avoid repeating the default values here (e.g. cursorable = False):
-        for key in set(data) - set(cls.__dataclass_fields__):
-            del data[key]
-        return cls(**data)
+    def load(cls, data: dict[str, Any]) -> BTreeIndex:
+        return cls(properties=data["properties"], cursorable=data["cursorable"])
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = asdict(self)
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        as_dict = asdict(self)
+        as_dict["indexType" if camel_case else "index_type"] = "btree"
+        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+
+
+@dataclass(frozen=True)
+class InvertedIndex(Index):
+    properties: list[str]
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> InvertedIndex:
+        return cls(properties=data["properties"])
+
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        as_dict = asdict(self)
+        as_dict["indexType" if camel_case else "index_type"] = "inverted"
+        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict

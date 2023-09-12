@@ -159,6 +159,8 @@ class VersionedIdLike(IdLike):
 
 
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
+ConstraintIdentifier = Tuple[ContainerId, str]
+IndexIdentifier = Tuple[ContainerId, str]
 ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
 DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]

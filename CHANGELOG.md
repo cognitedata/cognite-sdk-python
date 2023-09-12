@@ -23,6 +23,27 @@ Changes are grouped as follows
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 
+## [6.23.0] - 2023-09-08
+### Added
+- Supporting for deleting constraints and indexes on containers.
+
+### Changed
+- The abstract class `Index` can no longer be instantiated. Use BTreeIndex or InvertedIndex instead.
+
+## [6.22.0] - 2023-09-08
+### Added
+- `client.data_modeling.instances.subscribe` which lets you subscribe to a given
+data modeling query and receive updates through a provided callback.
+- Example on how to use the subscribe method to sync nodes to a local sqlite db.
+
+## [6.21.1] - 2023-09-07
+### Fixed
+- Concurrent usage of the `CogniteClient` could result in API calls being made with the wrong value for `api_subversion`.
+
+## [6.21.0] - 2023-09-06
+### Added
+- Supporting pattern mode and extra configuration for diagram detect in beta.
+
 ## [6.20.0] - 2023-09-05
 ### Fixed
 - When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
