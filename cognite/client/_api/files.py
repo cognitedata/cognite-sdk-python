@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 import os
-import re
 import warnings
 from io import BufferedReader
 from pathlib import Path
@@ -32,7 +31,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
@@ -576,11 +575,9 @@ class FilesAPI(APIClient):
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
         if not upload_response.ok:
-            request_id = r.group(1) if (r := re.search(r"\nRequestId:*(.+?)\n", upload_response.text)) else None
-            raise CogniteAPIError(
+            raise CogniteFileUploadError(
                 message=upload_response.text,
                 code=upload_response.status_code,
-                x_request_id=request_id,
             )
 
         return FileMetadata._load(returned_file_metadata)

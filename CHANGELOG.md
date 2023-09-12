@@ -18,7 +18,9 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ### Fixed
-- Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `CogniteAPIError` is raised based on upload response.
+- Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `CogniteFileUploadError` is raised based on upload response.
+
+------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ## [6.20.0] - 2023-09-05
