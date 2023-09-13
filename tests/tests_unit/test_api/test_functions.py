@@ -1107,7 +1107,7 @@ class TestFunctionCallsAPI:
 
 @pytest.fixture
 def fns_api_with_mock_client(cognite_client):
-    cognite_client.functions._cognite_client = MagicMock(spec_set=CogniteClient)
+    cognite_client.functions._cognite_client = MagicMock()
     return cognite_client.functions
 
 

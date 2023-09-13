@@ -10,7 +10,9 @@ from tests.utils import jsgz_load
 
 @pytest.fixture
 def mock_client():
-    return MagicMock(spec_set=CogniteClient)
+    # We allow the mock to pass isinstance checks
+    (client := MagicMock()).__class__ = CogniteClient
+    return client
 
 
 @pytest.fixture

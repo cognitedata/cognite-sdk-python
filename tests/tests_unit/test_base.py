@@ -146,7 +146,7 @@ class TestCogniteResource:
 
     def test_eq(self):
         assert MyResource(1, "s") == MyResource(1, "s")
-        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=MagicMock(spec_set=CogniteClient))
+        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=MagicMock(spec=CogniteClient))
         assert MyResource() == MyResource()
         assert MyResource(1, "s") != MyResource(1)
         assert MyResource(1, "s") != MyResource(2, "t")
@@ -280,7 +280,7 @@ class TestCogniteResourceList:
         assert isinstance(resource_list[:], MyResourceList)
 
     def test_slice_list_client_remains(self):
-        rl = MyResourceList([MyResource(1, 2)], cognite_client=MagicMock(spec_set=CogniteClient))
+        rl = MyResourceList([MyResource(1, 2)], cognite_client=MagicMock(spec=CogniteClient))
         rl_sliced = rl[:]
         assert rl._cognite_client == rl_sliced._cognite_client
 
