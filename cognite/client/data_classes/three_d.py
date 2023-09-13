@@ -61,6 +61,7 @@ class ThreeDModel(CogniteResource):
         name (str | None): The name of the model.
         id (int | None): The ID of the model.
         created_time (int | None): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        data_set_id (int | None): The id of the dataset this 3D model belongs to.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
@@ -70,12 +71,14 @@ class ThreeDModel(CogniteResource):
         name: str | None = None,
         id: int | None = None,
         created_time: int | None = None,
+        data_set_id: int | None = None,
         metadata: dict[str, str] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.name = name
         self.id = id
         self.created_time = created_time
+        self.data_set_id = data_set_id
         self.metadata = metadata
         self._cognite_client = cast("CogniteClient", cognite_client)
 
