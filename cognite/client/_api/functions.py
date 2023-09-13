@@ -966,7 +966,7 @@ class FunctionSchedulesAPI(APIClient):
                 IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
             except ValueError:
                 raise AssertionError(
-                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither"
+                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
                 )
 
         if is_unlimited(limit):
