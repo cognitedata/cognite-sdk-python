@@ -1272,7 +1272,8 @@ class _AssetHierarchyCreator:
                 # If update went well: Add to list of successful assets and remove from "bad":
                 if updated is not None:
                     successful.extend(updated)
-                    still_bad = set(bad_assets).difference(updated)
+                    updated_xids = set(upd.external_id for upd in updated)
+                    still_bad = [bad for bad in bad_assets if bad.external_id not in updated_xids]
                     bad_assets.clear()
                     bad_assets.extend(still_bad)
 
