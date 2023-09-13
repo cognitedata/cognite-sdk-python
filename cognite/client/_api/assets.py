@@ -1315,11 +1315,11 @@ class _AssetHierarchyCreator:
         return upd
 
     def _get_latest_exception(self) -> Exception | None:
-        thread_id = threading.get_native_id()
+        thread_id = threading.get_ident()
         return self.latest_exception.get(thread_id)
 
     def _set_latest_exception(self, err: Exception | None) -> None:
-        thread_id = threading.get_native_id()
+        thread_id = threading.get_ident()
         self.latest_exception[thread_id] = err
 
     @cached_property
