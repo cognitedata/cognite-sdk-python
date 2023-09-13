@@ -1161,7 +1161,7 @@ class _AssetHierarchyCreator:
         self.max_workers = assets_api._config.max_workers
         self.failed: list[Asset] = []
         self.unknown: list[Asset] = []
-        # Each thread need to store its latest exception:
+        # Each thread needs to store its latest exception:
         self.latest_exception: dict[int, Exception | None] = {}
 
         self.__counter = itertools.count().__next__
