@@ -90,7 +90,14 @@ class Filter(ABC):
         elif filter_name == MatchAll._filter_name:
             return MatchAll()
         elif filter_name == HasData._filter_name:
-            return HasData(containers=filter_body.get("containers"), views=filter_body.get("views"))
+            containers = []
+            views = []
+            for view_or_space in filter_body:
+                if view_or_space["type"] == "container":
+                    containers.append((view_or_space["space"], view_or_space["externalId"]))
+                else:
+                    views.append((view_or_space["space"], view_or_space["externalId"], view_or_space.get("version")))
+            return HasData(containers=containers, views=views)
         elif filter_name == Range._filter_name:
             return Range(
                 property=filter_body["property"],
@@ -283,7 +290,7 @@ class HasData(Filter):
         self.__containers: list[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
         self.__views: list[ViewId] = [ViewId.load(view) for view in (views or [])]
 
-    def _filter_body(self, camel_case_property: bool) -> dict:
+    def _filter_body(self, camel_case_property: bool) -> list:
         views = [v.as_tuple() for v in self.__views]
         filter_body_views = [
             {"type": "view", "space": space, "externalId": externalId, "version": version}
