@@ -693,15 +693,13 @@ class FilesAPI(APIClient):
         all_identifiers = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_identifiers)
 
+        all_ids, filepaths, directories = self._get_ids_filepaths_directories(
+            directory, id_to_metadata, keep_directory_structure
+        )
+
         if keep_directory_structure:
-            all_ids, filepaths, _ = self._prepare_file_hierarchy(directory, id_to_metadata)
-        else:
-            all_ids = all_identifiers
-            filepaths = [
-                directory / cast(str, metadata.name)
-                for identifier, metadata in id_to_metadata.items()
-                if isinstance(identifier, int)
-            ]
+            for file_folder in set(directories):
+                file_folder.mkdir(parents=True, exist_ok=True)
 
         if resolve_duplicate_file_names:
             filepaths_str = self._create_unique_file_names(filepaths)
@@ -715,8 +713,10 @@ class FilesAPI(APIClient):
         )
 
     @staticmethod
-    def _prepare_file_hierarchy(
-        directory: Path, id_to_metadata: dict[str | int, FileMetadata]
+    def _get_ids_filepaths_directories(
+        directory: Path,
+        id_to_metadata: dict[str | int, FileMetadata],
+        keep_directory_structure: bool = False,
     ) -> tuple[list[dict[str, str | int]], list[Path], list[Path]]:
         # Note on type hint: Too much of the SDK is wrongly typed with 'dict[str, str | int]',
         # instead of 'dict[str, str] | dict[str, int]', so we pretend dict-value type can also be str:
@@ -726,16 +726,13 @@ class FilesAPI(APIClient):
             if not isinstance(identifier, int):
                 continue
             file_directory = directory
-            if metadata.directory:
+            if metadata.directory and keep_directory_structure:
                 # CDF enforces absolute, unix-style paths (i.e. always stating with '/'). We strip to make it relative:
                 file_directory /= metadata.directory[1:]
 
             ids.append({"id": identifier})
             file_directories.append(file_directory)
             filepaths.append(file_directory / cast(str, metadata.name))
-
-        for file_folder in set(file_directories):
-            file_folder.mkdir(parents=True, exist_ok=True)
 
         return ids, filepaths, file_directories
 
