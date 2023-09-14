@@ -789,13 +789,8 @@ class FilesAPI(APIClient):
         directory: Path,
         identifier: dict[str, int | str],
         id_to_metadata: dict[str | int, FileMetadata],
-        file_path: Path | None = None,
+        file_path: Path,
     ) -> None:
-        if not file_path:
-            id = IdentifierSequence.unwrap_identifier(identifier)
-            file_metadata = id_to_metadata[id]
-            file_path = directory / cast(str, file_metadata.name)
-
         file_path_absolute = file_path.resolve()
         file_is_in_download_directory = directory.resolve() in file_path_absolute.parents
         if not file_is_in_download_directory:
