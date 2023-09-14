@@ -612,12 +612,46 @@ class FilesAPI(APIClient):
         results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
         return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
 
+    @staticmethod
+    def _create_unique_file_names(file_names_in: list[str] | list[Path]) -> list[str]:
+        """
+        Create unique file names by appending a number to the base file name.
+        """
+        file_names: list[str] = [str(file_name) for file_name in file_names_in]
+        file_names_unique: list = []
+        file_names_original_count: dict = {}
+
+        for file_name in file_names:
+            if file_name not in file_names_unique:
+                file_names_unique.append(file_name)
+                continue
+
+            file_base = file_name
+            file_ext = ""
+            if "." in file_name:
+                file_name_split = file_name.split(".")
+                file_base = ".".join(file_name_split[:-1])
+                file_ext = f".{file_name_split[-1]}"
+
+            new_name = file_name
+            while new_name in file_names_unique:
+                if file_name not in file_names_original_count:
+                    file_names_original_count[file_name] = 1
+
+                new_name = f"{file_base}({file_names_original_count.get(file_name)}){file_ext}"
+                file_names_original_count[file_name] += 1
+
+            file_names_unique.append(new_name)
+
+        return file_names_unique
+
     def download(
         self,
         directory: str | Path,
         id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
         keep_directory_structure: bool = False,
+        resolve_duplicate_file_names: bool = False,
     ) -> None:
         """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
@@ -625,6 +659,8 @@ class FilesAPI(APIClient):
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
         You can also choose to keep the directory structure from CDF so that the files will be stored in subdirectories
         matching the directory attribute on the files. When missing, the (root) directory is used.
+        By default, duplicate file names to the same local folder will be resolved by only keeping one of the files.
+        You can choose to resolve this by appending a number to the file name using the resolve_duplicate_file_names argument.
 
         Warning:
             If you are downloading several files at once, be aware that file name collisions lead to all-but-one of
@@ -636,6 +672,7 @@ class FilesAPI(APIClient):
             external_id (str | Sequence[str] | None): External ID or list of external ids.
             keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
                 creating subdirectories as needed below the given directory.
+            resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
 
         Examples:
 
@@ -657,15 +694,25 @@ class FilesAPI(APIClient):
         id_to_metadata = self._get_id_to_metadata_map(all_identifiers)
 
         if keep_directory_structure:
-            all_ids, filepaths, file_directories = self._prepare_file_hierarchy(directory, id_to_metadata)
-            self._download_files_to_directory(file_directories, all_ids, id_to_metadata, filepaths)
+            all_ids, filepaths, _ = self._prepare_file_hierarchy(directory, id_to_metadata)
         else:
+            all_ids = all_identifiers
             filepaths = [
                 directory / cast(str, metadata.name)
                 for identifier, metadata in id_to_metadata.items()
                 if isinstance(identifier, int)
             ]
-            self._download_files_to_directory(directory, all_identifiers, id_to_metadata, filepaths)
+
+        if resolve_duplicate_file_names:
+            filepaths_str = self._create_unique_file_names(filepaths)
+            filepaths = [Path(file_path) for file_path in filepaths_str]
+
+        self._download_files_to_directory(
+            directory=directory,
+            all_ids=all_ids,
+            id_to_metadata=id_to_metadata,
+            filepaths=filepaths,
+        )
 
     @staticmethod
     def _prepare_file_hierarchy(
@@ -720,16 +767,13 @@ class FilesAPI(APIClient):
 
     def _download_files_to_directory(
         self,
-        directory: Path | Sequence[Path],
+        directory: Path,
         all_ids: Sequence[dict[str, int | str]],
         id_to_metadata: dict[str | int, FileMetadata],
         filepaths: list[Path],
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)
-        if isinstance(directory, Path):
-            tasks = [(directory, id, id_to_metadata) for id in all_ids]
-        else:
-            tasks = [(dir, id, id_to_metadata) for dir, id in zip(directory, all_ids)]
+        tasks = [(directory, id, id_to_metadata, filepath) for id, filepath in zip(all_ids, filepaths)]
         tasks_summary = utils._concurrency.execute_tasks(
             self._process_file_download, tasks, max_workers=self._config.max_workers
         )
@@ -748,15 +792,19 @@ class FilesAPI(APIClient):
         directory: Path,
         identifier: dict[str, int | str],
         id_to_metadata: dict[str | int, FileMetadata],
+        file_path: Path | None = None,
     ) -> None:
-        id = IdentifierSequence.unwrap_identifier(identifier)
-        file_metadata = id_to_metadata[id]
-        file_path = (directory / cast(str, file_metadata.name)).resolve()
-        file_is_in_download_directory = directory.resolve() in file_path.parents
+        if not file_path:
+            id = IdentifierSequence.unwrap_identifier(identifier)
+            file_metadata = id_to_metadata[id]
+            file_path = directory / cast(str, file_metadata.name)
+
+        file_path_absolute = file_path.resolve()
+        file_is_in_download_directory = directory.resolve() in file_path_absolute.parents
         if not file_is_in_download_directory:
-            raise RuntimeError(f"Resolved file path '{file_path}' is not inside download directory")
+            raise RuntimeError(f"Resolved file path '{file_path_absolute}' is not inside download directory")
         download_link = self._get_download_link(identifier)
-        self._download_file_to_path(download_link, file_path)
+        self._download_file_to_path(download_link, file_path_absolute)
 
     def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(

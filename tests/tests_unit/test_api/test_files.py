@@ -525,6 +525,9 @@ class TestFilesAPI:
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
 
+    def test_create_unique_file_names(self, cognite_client):
+        assert cognite_client.files._create_unique_file_names(["a.txt", "a.txt"]) == ["a.txt", "a(1).txt"]
+
     def test_download_with_folder_structure(
         self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure
     ):
