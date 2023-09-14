@@ -1314,10 +1314,6 @@ class _AssetHierarchyCreator:
         upd._update_object = dct_update
         return upd
 
-    def _get_latest_exception(self) -> Exception | None:
-        thread_id = threading.get_ident()
-        return self.latest_exception.get(thread_id)
-
     def _set_latest_exception(self, err: Exception | None) -> None:
         thread_id = threading.get_ident()
         self.latest_exception[thread_id] = err
