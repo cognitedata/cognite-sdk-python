@@ -90,7 +90,7 @@ jobs:
         run: |
           pytest tests --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
