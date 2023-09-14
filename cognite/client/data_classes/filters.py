@@ -284,10 +284,16 @@ class HasData(Filter):
         self.__views: list[ViewId] = [ViewId.load(view) for view in (views or [])]
 
     def _filter_body(self, camel_case_property: bool) -> dict:
-        return {
-            "views": [view.as_tuple() for view in self.__views],
-            "containers": [container.as_tuple() for container in self.__containers],
-        }
+        views = [v.as_tuple() for v in self.__views]
+        filter_body_views = [
+            {"type": "view", "space": space, "externalId": externalId, "version": version}
+            for space, externalId, version in views
+        ]
+        containers = [c.as_tuple() for c in self.__containers]
+        filter_body_containers = [
+            {"type": "container", "space": space, "externalId": externalId} for space, externalId in containers
+        ]
+        return filter_body_views + filter_body_containers
 
 
 @final

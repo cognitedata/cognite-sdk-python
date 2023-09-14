@@ -138,7 +138,7 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
             },
             {
                 "or": [
-                    {"hasData": {"views": [], "containers": [("space", "container")]}},
+                    {"hasData": [{"type": "container", "space": "space", "externalId": "container"}]},
                     {
                         "overlaps": {
                             "startProperty": ("space", "container", "prop1"),
