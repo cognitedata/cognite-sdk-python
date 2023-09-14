@@ -83,7 +83,7 @@ class Table(CogniteResource):
         ...
 
     @overload
-    def rows(self, key: None, limit: int | None = None) -> RowList:
+    def rows(self, key: None = None, limit: int | None = None) -> RowList:
         ...
 
     def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:

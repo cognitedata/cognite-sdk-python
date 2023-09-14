@@ -17,6 +17,7 @@ from typing import (
     Literal,
     Protocol,
     Sequence,
+    SupportsIndex,
     TypeVar,
     Union,
     cast,
@@ -224,16 +225,17 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     def __iter__(self) -> Iterator[T_CogniteResource]:
         return super().__iter__()
 
-    @overload  # type: ignore [override]
-    # Generic[T] + UserList does not like this overload:
-    def __getitem__(self: T_CogniteResourceList, item: int) -> T_CogniteResource:
+    @overload
+    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource:
         ...
 
     @overload
     def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList:
         ...
 
-    def __getitem__(self: T_CogniteResourceList, item: int | slice) -> T_CogniteResource | T_CogniteResourceList:
+    def __getitem__(
+        self: T_CogniteResourceList, item: SupportsIndex | slice
+    ) -> T_CogniteResource | T_CogniteResourceList:
         value = self.data[item]
         if isinstance(item, slice):
             return type(self)(value, cognite_client=self._get_cognite_client())
