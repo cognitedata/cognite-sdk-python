@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.24.1] - 2023-09-13
+### Fixed
+- Bugfix for `AssetsAPI.create_hierarchy` when running in upsert mode: It could skip certain updates above
+  the single-request create limit (currently 1000 assets).
+
 ## [6.24.0] - 2023-09-12
 ### Fixed
 - Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `CogniteFileUploadError` is raised based on upload response.

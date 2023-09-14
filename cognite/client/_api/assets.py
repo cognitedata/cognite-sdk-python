@@ -5,6 +5,7 @@ import heapq
 import itertools
 import math
 import operator as op
+import threading
 import warnings
 from functools import cached_property
 from types import MappingProxyType
@@ -703,6 +704,9 @@ class AssetsAPI(APIClient):
                 ... else:
                 ...     hierarchy.validate_and_report(output_file=Path("report.txt"))
         """
+        if upsert and upsert_mode not in ("patch", "replace"):
+            raise ValueError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
+
         if not isinstance(assets, AssetHierarchy):
             utils._auxiliary.assert_type(assets, "assets", [Sequence])
             assets = AssetHierarchy(assets, ignore_orphans=True)
@@ -1157,7 +1161,8 @@ class _AssetHierarchyCreator:
         self.max_workers = assets_api._config.max_workers
         self.failed: list[Asset] = []
         self.unknown: list[Asset] = []
-        self.latest_exception: Exception | None = None
+        # Each thread needs to store its latest exception:
+        self.latest_exception: dict[int, Exception | None] = {}
 
         self.__counter = itertools.count().__next__
 
@@ -1167,7 +1172,11 @@ class _AssetHierarchyCreator:
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
         with get_priority_executor(max_workers=self.max_workers) as pool:
-            return self._create(pool, insert_fn, insert_dct, subtree_count)
+            created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)
+
+        if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
+            self._raise_latest_exception(all_exceptions, created_assets)
+        return AssetList(created_assets, cognite_client=self.assets_api._cognite_client)
 
     def _create(
         self,
@@ -1175,7 +1184,7 @@ class _AssetHierarchyCreator:
         insert_fn: Callable[[list[Asset]], _TaskResult],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
-    ) -> AssetList:
+    ) -> list[Asset]:
         queue_fn = functools.partial(
             self._queue_tasks,
             pool=pool,
@@ -1202,10 +1211,7 @@ class _AssetHierarchyCreator:
             # Newly created assets are now unblocked as parents for the next iteration:
             to_create = list(self._pop_child_assets(new_assets, insert_dct))
             futures |= queue_fn(to_create)
-
-        if self.latest_exception is not None:
-            self._raise_latest_exception(created_assets)
-        return AssetList(created_assets, cognite_client=self.assets_api._cognite_client)
+        return created_assets
 
     def _queue_tasks(
         self,
@@ -1236,7 +1242,7 @@ class _AssetHierarchyCreator:
             successful = list(map(Asset._load, resp.json()["items"]))
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
-            self.latest_exception = err
+            self._set_latest_exception(err)
             successful = []
             failed: list[Asset] = []
             unknown: list[Asset] = []
@@ -1266,31 +1272,28 @@ class _AssetHierarchyCreator:
                 # If update went well: Add to list of successful assets and remove from "bad":
                 if updated is not None:
                     successful.extend(updated)
-                    still_bad = set(bad_assets).difference(updated)
+                    updated_xids = set(upd.external_id for upd in updated)
+                    still_bad = [bad for bad in bad_assets if bad.external_id not in updated_xids]
                     bad_assets.clear()
                     bad_assets.extend(still_bad)
 
             return _TaskResult(successful, failed, unknown)
 
     def _update(self, to_update: list[Asset], upsert_mode: Literal["patch", "replace"]) -> list[Asset] | None:
-        if upsert_mode == "patch":
-            updates = [self._make_asset_updates(asset, patch=True) for asset in to_update]
-        elif upsert_mode == "replace":
-            updates = [self._make_asset_updates(asset, patch=False) for asset in to_update]
-        else:
-            raise ValueError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
+        is_patch = upsert_mode == "patch"
+        updates = [self._make_asset_updates(asset, patch=is_patch) for asset in to_update]
         return self._update_post(updates)
 
     def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
         try:
             resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
             updated = [Asset._load(item) for item in resp.json()["items"]]
-            self.latest_exception = None  # Update worked, so we hide exception
+            self._set_latest_exception(None)  # Update worked, so we hide exception
             return updated
         except Exception as err:
             # At this point, we don't care what caused the failure (well, we store error to show the user):
             # All assets that failed the update are already marked as either failed or unknown.
-            self.latest_exception = err
+            self._set_latest_exception(err)
             return None
 
     def _make_asset_updates(self, asset: Asset, patch: bool) -> AssetUpdate:
@@ -1310,6 +1313,10 @@ class _AssetHierarchyCreator:
         upd = AssetUpdate(external_id=dumped["externalId"])
         upd._update_object = dct_update
         return upd
+
+    def _set_latest_exception(self, err: Exception | None) -> None:
+        thread_id = threading.get_ident()
+        self.latest_exception[thread_id] = err
 
     @cached_property
     def clear_all_update(self) -> MappingProxyType[str, dict[str, Any]]:
@@ -1402,7 +1409,8 @@ class _AssetHierarchyCreator:
             skip_assets = list(self._pop_child_assets(skip_assets, insert_dct))
             self.failed.extend(skip_assets)
 
-    def _raise_latest_exception(self, successful: list[Asset]) -> NoReturn:
+    def _raise_latest_exception(self, exceptions: list[Exception], successful: list[Asset]) -> NoReturn:
+        *_, latest_exception = exceptions
         common = dict(
             successful=AssetList(successful),
             unknown=AssetList(self.unknown),
@@ -1410,19 +1418,19 @@ class _AssetHierarchyCreator:
             unwrap_fn=op.attrgetter("external_id"),
         )
         err_message = "One or more errors happened during asset creation. Latest error:"
-        if isinstance(self.latest_exception, CogniteAPIError):
+        if isinstance(latest_exception, CogniteAPIError):
             raise CogniteAPIError(
-                message=f"{err_message} {self.latest_exception.message}",
-                x_request_id=self.latest_exception.x_request_id,
-                code=self.latest_exception.code,
-                extra=self.latest_exception.extra,
+                message=f"{err_message} {latest_exception.message}",
+                x_request_id=latest_exception.x_request_id,
+                code=latest_exception.code,
+                extra=latest_exception.extra,
                 **common,  # type: ignore [arg-type]
             )
         # If a non-Cognite-exception was raised, we still raise CogniteAPIError, but use 'from' to not hide
         # the underlying reason from the user. We also do this because we promise that 'successful', 'unknown'
         # and 'failed' can be inspected:
         raise CogniteAPIError(
-            message=f"{err_message} {type(self.latest_exception).__name__}('{self.latest_exception}')",
+            message=f"{err_message} {type(latest_exception).__name__}('{latest_exception}')",
             code=None,  # type: ignore [arg-type]
             **common,  # type: ignore [arg-type]
-        ) from self.latest_exception
+        ) from latest_exception
