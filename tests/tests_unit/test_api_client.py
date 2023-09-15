@@ -5,7 +5,7 @@ import math
 import random
 import unittest
 from collections import namedtuple
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import pytest
 from requests import Response
@@ -221,6 +221,7 @@ class SomeResource(CogniteResource):
         self.y = y
         self.id = id
         self.external_id = external_id
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SomeResourceList(CogniteResourceList):
@@ -260,12 +261,8 @@ class TestStandardRetrieve:
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
-        assert (
-            cognite_client
-            == api_client_with_token._retrieve(
-                cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1)
-            )._cognite_client
-        )
+        res = api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
+        assert cognite_client == res._cognite_client
 
 
 class TestStandardRetrieveMultiple:
@@ -392,15 +389,13 @@ class TestStandardRetrieveMultiple:
         assert {"id": 2} in e.value.not_found
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, mock_by_ids):
-        assert (
-            cognite_client
-            == api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(1, 2),
-            )._cognite_client
+        res = api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(1, 2),
         )
+        assert cognite_client == res._cognite_client
 
     def test_over_limit_concurrent(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"items": [{"x": 1, "y": 2}]})
@@ -675,18 +670,15 @@ class TestStandardList:
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
-        assert (
-            cognite_client
-            == api_client_with_token._list(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
-            )._cognite_client
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
         )
-        assert (
-            cognite_client
-            == api_client_with_token._list(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
-            )._cognite_client
+        assert cognite_client == res._cognite_client
+
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         )
+        assert cognite_client == res._cognite_client
 
 
 class TestStandardAggregate:

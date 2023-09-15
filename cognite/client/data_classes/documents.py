@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Literal, Union
+from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -72,7 +72,7 @@ class SourceFile(CogniteResource):
         self.dataset_id = dataset_id
         self.security_categories = security_categories
         self.metadata: dict[str, str] = metadata or {}
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SourceFile:
@@ -163,7 +163,7 @@ class Document(CogniteResource):
         self.asset_ids: list[int] = asset_ids or []
         self.labels: list[Label] = Label._load_list(labels) or []
         self.geo_location = geo_location
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Document:

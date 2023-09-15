@@ -87,7 +87,7 @@ class Sequence(CogniteResource):
             SequenceData: List of sequence data.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
+        return cast(SequenceData, self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end))
 
     @property
     def column_external_ids(self) -> list[str]:
