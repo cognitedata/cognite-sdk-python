@@ -23,10 +23,19 @@ from cognite.client.data_classes.transformations.common import (
     SequenceRows,
     ViewInfo,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
+from cognite.client.utils._time import timestamp_to_ms
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def transform_cleanup(cognite_client):
+    transforms = cognite_client.transformations.list(created_time={"max": timestamp_to_ms("1d-ago")}, limit=None)
+    if transforms:
+        cognite_client.transformations.delete(id=transforms.as_ids())
+
+
+@pytest.fixture(scope="module")
 def new_datasets(cognite_client):
     ds_ext_id1 = "transformation-ds"
     ds_ext_id2 = "transformation-ds2"
@@ -42,11 +51,13 @@ def new_datasets(cognite_client):
 
 
 @pytest.fixture
-def new_transformation(cognite_client, new_datasets):
+def new_transformation(cognite_client, new_datasets, transform_cleanup):
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     if not isinstance(creds, (OAuthClientCredentials, OAuthClientCertificate)):
         pytest.skip("Only run in CI environment")
+    # TODO: Data Integration team, add:
+    pytest.skip("Need valid credentials for: 'source_oidc_credentials' and 'destination_oidc_credentials'...")
     transform = Transformation(
         name="any",
         query="select 1",
@@ -81,18 +92,14 @@ other_transformation = new_transformation
 
 class TestTransformationsAPI:
     def test_create_transformation_error(self, cognite_client):
-        prefix = random_string(6, string.ascii_letters)
-        transform_without_name = Transformation(
-            external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
-        )
-        try:
-            ts = cognite_client.transformations.create(transform_without_name)
-            failed = False
-            cognite_client.transformations.delete(id=ts.id)
-        except Exception as ex:
-            failed = True
-            str(ex)
-        assert failed
+        xid = f"{random_string(6, string.ascii_letters)}-transformation"
+        transform_without_name = Transformation(external_id=xid, destination=TransformationDestination.assets())
+
+        with pytest.raises(CogniteAPIError, match="^Invalid value for: body") as exc:
+            cognite_client.transformations.create(transform_without_name)
+
+        assert exc.value.code == 400
+        assert exc.value.failed == [transform_without_name]
 
     def test_create_asset_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
@@ -102,7 +109,7 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
-    @pytest.mark.skip(reason="Awaiting access to an additional CDF project")
+    @pytest.mark.skip(reason="Awaiting access to more than one CDF project for our credentials")
     def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
@@ -539,9 +546,14 @@ class TestTransformationsAPI:
         other_transformation.tags = ["hi", "kiki"]
         cognite_client.transformations.update([new_transformation, other_transformation])
         ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
-        assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
+
+        new_ts = ts.get(id=new_transformation.id)
+        assert new_ts is not None
+        assert new_ts.tags == ["hello"]
+
         ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
-        assert len(ts3) == 2 and {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
+        assert len(ts3) == 2
+        assert {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
 
     def test_transformation_dump_and_str(self, cognite_client, new_transformation, new_datasets):
         cognite_client.transformations.schedules.create(
