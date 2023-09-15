@@ -162,8 +162,7 @@ class ContextualizationJob(CogniteResource):
         obj._status_path = status_path
         # '_load' does not see properties (real attribute stored under a different name, e.g. '_items' not 'items'):
         if "items" in data and hasattr(obj, "items"):
-            # TODO: Remove type-ignore-comment after updating mypy (it doesn't understand hasattr yet):
-            obj.items = data["items"]  # type: ignore [attr-defined]
+            obj.items = data["items"]
         return obj
 
 
