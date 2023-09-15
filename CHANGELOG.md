@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.25.0] - 2023-09-14
+### Added
+- Support for `ignore_unknown_ids` in `client.functions.retrieve_multiple` method.
+- 
 ## [6.24.1] - 2023-09-13
 ### Fixed
 - Bugfix for `AssetsAPI.create_hierarchy` when running in upsert mode: It could skip certain updates above
