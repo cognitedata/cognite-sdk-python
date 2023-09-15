@@ -16,10 +16,10 @@ from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionR
 
 
 class BlockAll(cookiejar.CookiePolicy):
-    def _block_all(*args: Any, **kwargs: Any) -> Literal[False]:
+    def no(*args: Any, **kwargs: Any) -> Literal[False]:
         return False
 
-    return_ok = set_ok = domain_return_ok = path_return_ok = _block_all
+    return_ok = set_ok = domain_return_ok = path_return_ok = no
     netscape = True
     rfc2965 = hide_cookie2 = False
 
