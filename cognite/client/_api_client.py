@@ -991,7 +991,7 @@ class APIClient:
             result = self._update_multiple(items, list_cls, resource_cls, update_cls, mode=mode)
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
-            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}  # type: ignore [attr-defined]
+            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
             # Not found must have an external id as they do not exist in CDF:
             try:
                 missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
