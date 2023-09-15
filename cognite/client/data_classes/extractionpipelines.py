@@ -328,7 +328,7 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         self.revision = revision
         self.description = description
         self.created_time = created_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):

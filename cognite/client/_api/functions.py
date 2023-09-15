@@ -318,13 +318,17 @@ class FunctionsAPI(APIClient):
         return self._retrieve_multiple(identifiers=identifier, resource_cls=Function, list_cls=FunctionList)
 
     def retrieve_multiple(
-        self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
+        ignore_unknown_ids: bool = False,
     ) -> FunctionList | Function | None:
         """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
             ids (Sequence[int] | None): IDs
             external_ids (Sequence[str] | None): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             FunctionList | Function | None: The requested functions.
@@ -349,6 +353,7 @@ class FunctionsAPI(APIClient):
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             resource_cls=Function,
             list_cls=FunctionList,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def call(
@@ -517,7 +522,7 @@ class FunctionsAPI(APIClient):
 def _create_session_and_return_nonce(
     client: CogniteClient,
     client_credentials: dict | ClientCredentials | None = None,
-) -> str | None:
+) -> str:
     if client_credentials is None:
         if isinstance(client._config.credentials, OAuthClientCertificate):
             raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")

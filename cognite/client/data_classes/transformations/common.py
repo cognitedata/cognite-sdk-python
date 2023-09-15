@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from cognite.client.credentials import OAuthClientCredentials
+from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.utils._auxiliary import basic_obj_dump
 from cognite.client.utils._text import convert_all_keys_to_snake_case, iterable_to_case
 
@@ -276,10 +278,10 @@ class Instances(TransformationDestination):
 class OidcCredentials:
     def __init__(
         self,
-        client_id: str | None = None,
-        client_secret: str | None = None,
-        scopes: str | None = None,
-        token_uri: str | None = None,
+        client_id: str,
+        client_secret: str,
+        scopes: str,
+        token_uri: str,
         audience: str | None = None,
         cdf_project_name: str | None = None,
     ) -> None:
@@ -289,6 +291,18 @@ class OidcCredentials:
         self.token_uri = token_uri
         self.audience = audience
         self.cdf_project_name = cdf_project_name
+
+    def as_credential_provider(self) -> OAuthClientCredentials:
+        return OAuthClientCredentials(
+            token_url=self.token_uri,
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            scopes=self.scopes.split(","),
+            audience=self.audience,
+        )
+
+    def as_client_credentials(self) -> ClientCredentials:
+        return ClientCredentials(client_id=self.client_id, client_secret=self.client_secret)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
