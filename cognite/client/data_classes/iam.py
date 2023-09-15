@@ -119,32 +119,40 @@ class TokenInspection(CogniteResponse):
         return dumped
 
 
-class CreatedSession(CogniteResource):
+class CreatedSession(CogniteResponse):
     """Session creation related information
 
     Args:
-        id (int | None): ID of the created session.
+        id (int): ID of the created session.
+        status (str): Current status of the session.
+        nonce (str): Nonce to be passed to the internal service that will bind the session
         type (str | None): Credentials kind used to create the session.
-        status (str | None): Current status of the session.
-        nonce (str | None): Nonce to be passed to the internal service that will bind the session
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
-        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        id: int | None = None,
+        id: int,
+        status: str,
+        nonce: str,
         type: str | None = None,
-        status: str | None = None,
-        nonce: str | None = None,
         client_id: str | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
-        self.type = type
         self.status = status
         self.nonce = nonce
+        self.type = type
         self.client_id = client_id
+
+    @classmethod
+    def _load(cls, response: dict[str, Any]) -> CreatedSession:
+        return cls(
+            id=response["id"],
+            status=response["status"],
+            nonce=response["nonce"],
+            type=response.get("type"),
+            client_id=response.get("clientId"),
+        )
 
 
 class Session(CogniteResource):

@@ -12,7 +12,7 @@ from cognite.client.utils._text import convert_all_keys_recursive, convert_all_k
 @dataclass(frozen=True)
 class AbstractDataclass(ABC):
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
-        if cls == AbstractDataclass or cls.__bases__[0] == AbstractDataclass:
+        if cls is AbstractDataclass or cls.__bases__[0] is AbstractDataclass:
             raise TypeError("Cannot instantiate abstract class.")
         return super().__new__(cls)
 

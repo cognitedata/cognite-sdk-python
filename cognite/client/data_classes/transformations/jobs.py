@@ -113,7 +113,13 @@ class TransformationJob(CogniteResource):
 
     def update(self) -> None:
         """`Get updated job status.`"""
+        if self.id is None:
+            raise ValueError("Unable to update, TransformationJob is missing 'id'")
+
         updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)
+        if updated is None:
+            raise RuntimeError("Unable to update the transformation. Has it been deleted?")
+
         self.status = updated.status
         self.error = updated.error
         self.started_time = updated.started_time
