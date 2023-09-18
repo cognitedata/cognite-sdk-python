@@ -20,7 +20,7 @@ Changes are grouped as follows
 ## [6.25.0] - 2023-09-14
 ### Added
 - Added parameter `resolve_duplicate_file_names` to `client.files.download`. 
-This will keep all the files when downloading to local machine, even if they have the same name.
+  This will keep all the files when downloading to local machine, even if they have the same name.
 
 ## [6.24.0] - 2023-09-12
 ### Fixed
