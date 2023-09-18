@@ -618,32 +618,29 @@ class FilesAPI(APIClient):
         Create unique file names by appending a number to the base file name.
         """
         file_names: list[str] = [str(file_name) for file_name in file_names_in]
-        file_names_unique: list = []
+        file_names_unique_original = set(file_names)
+        file_names_unique_created: list = []
         file_names_original_count: dict = {}
 
         for file_name in file_names:
-            if file_name not in file_names_unique:
-                file_names_unique.append(file_name)
+            if file_name not in file_names_unique_created:
+                file_names_unique_created.append(file_name)
                 continue
 
-            file_base = file_name
-            file_ext = ""
-            if "." in file_name:
-                file_name_split = file_name.split(".")
-                file_base = ".".join(file_name_split[:-1])
-                file_ext = f".{file_name_split[-1]}"
+            file_base = f"{Path(file_name).parent / Path(file_name).stem}"
+            file_ext = Path(file_name).suffix
 
             new_name = file_name
-            while new_name in file_names_unique:
+            while (new_name in file_names_unique_created) or (new_name in file_names_unique_original):
                 if file_name not in file_names_original_count:
                     file_names_original_count[file_name] = 1
 
                 new_name = f"{file_base}({file_names_original_count.get(file_name)}){file_ext}"
                 file_names_original_count[file_name] += 1
 
-            file_names_unique.append(new_name)
+            file_names_unique_created.append(new_name)
 
-        return file_names_unique
+        return file_names_unique_created
 
     def download(
         self,

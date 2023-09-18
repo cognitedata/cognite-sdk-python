@@ -529,8 +529,8 @@ class TestFilesAPI:
         assert cognite_client.files._create_unique_file_names(["a.txt", "a.txt"]) == ["a.txt", "a(1).txt"]
         assert cognite_client.files._create_unique_file_names(["a.txt", "a.txt", "a(1).txt"]) == [
             "a.txt",
+            "a(2).txt",
             "a(1).txt",
-            "a(1)(1).txt",
         ]
         assert cognite_client.files._create_unique_file_names(["a.txt", "file", "a(1).txt", "a.txt", "file"]) == [
             "a.txt",
