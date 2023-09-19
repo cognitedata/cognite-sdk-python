@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.25.3] - 2023-09-19
+### Added
+- Support for setting and retrieving `data_set_id` in data class `client.data_classes.ThreeDModel`.
+
 ## [6.25.2] - 2023-09-12
 ### Fixed
 - Using the `HasData` filter would raise an API error in CDF.
