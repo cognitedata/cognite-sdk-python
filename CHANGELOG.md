@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.25.2] - 2023-09-12
+### Fixed
+- Using the `HasData` filter would raise an API error in CDF.
+
 ## [6.25.1] - 2023-09-15
 ### Fixed
 - Using nonce credentials now works as expected for `transformations.[create, update]`. Previously, the attempt to create

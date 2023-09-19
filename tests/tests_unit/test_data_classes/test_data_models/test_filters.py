@@ -54,7 +54,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
                         "lte": "2021-01-01T00:00:00Z",
                     }
                 },
-                {"hasData": {"views": [("space", "viewExternalId", "v1")], "containers": []}},
+                {"hasData": [{"type": "view", "space": "space", "externalId": "viewExternalId", "version": "v1"}]},
             ]
         },
         id="And hasData and overlaps",
@@ -138,7 +138,7 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
             },
             {
                 "or": [
-                    {"hasData": {"views": [], "containers": [("space", "container")]}},
+                    {"hasData": [{"type": "container", "space": "space", "externalId": "container"}]},
                     {
                         "overlaps": {
                             "startProperty": ("space", "container", "prop1"),
