@@ -48,10 +48,10 @@ class DataModelingGraphQLAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.graphql.apply_dml(
-                ...     id=("mySpaceExternalId", "myModelExternalId" , "1"),
+                ...     id=("mySpaceExternalId", "myModelExternalId", "1"),
                 ...     dml="type MyType { id: String! }",
-                ...     name = "My model name",
-                ...     description= "My model description"
+                ...     name="My model name",
+                ...     description="My model description"
                 ... )
         """
         graphql_body = """
