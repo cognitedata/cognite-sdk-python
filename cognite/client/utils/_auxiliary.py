@@ -52,11 +52,13 @@ def fast_dict_load(
     cls: type[T_CogniteResource], item: dict[str, Any], cognite_client: CogniteClient | None
 ) -> T_CogniteResource:
     instance = cls(cognite_client=cognite_client)
-    # Note: Do not use cast(Hashable, cls) here as this is called in a hot loop
+    # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
     accepted = get_accepted_params(cls)  # type: ignore [arg-type]
     for camel_attr, value in item.items():
-        if snake_attr := accepted.get(camel_attr):
-            setattr(instance, snake_attr, value)
+        try:
+            setattr(instance, accepted[camel_attr], value)
+        except KeyError:
+            pass
     return instance
 
 
