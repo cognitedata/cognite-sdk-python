@@ -633,6 +633,9 @@ class AssetsAPI(APIClient):
             (instead of ``parent_id``) to avoid race conditions in insertion order (temporary cycles might form since we
             can only make changes to 1000 assets at the time).
 
+        Raises:
+            ValueError: Invalid choice of 'upsert_mode' used.
+
         Examples:
 
             Create an asset hierarchy:

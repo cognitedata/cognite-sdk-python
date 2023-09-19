@@ -95,6 +95,9 @@ class Table(CogniteResource):
 
         Returns:
             Row | RowList | None: List of tables in this database.
+
+        Raises:
+            ValueError: Table is missing name or database link
         """
         if self._db_name is None:
             raise ValueError("Table is not linked to a database, did you instantiate it yourself?")
@@ -137,6 +140,9 @@ class Database(CogniteResource):
 
         Returns:
             TableList: List of tables in this database.
+
+        Raises:
+            ValueError: Database 'name' is missing.
         """
         if self.name is None:
             raise ValueError("Unable to list tables, 'name' is not set on instance")

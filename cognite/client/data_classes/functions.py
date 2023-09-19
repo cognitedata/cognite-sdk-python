@@ -318,9 +318,6 @@ class FunctionCall(CogniteResource):
     def get_response(self) -> dict | None:
         """Retrieve the response from this function call.
 
-        Raises:
-            ValueError: 'id' or 'function_id' is missing on object.
-
         Returns:
             dict | None: Response from the function call.
         """
@@ -329,9 +326,6 @@ class FunctionCall(CogniteResource):
 
     def get_logs(self) -> FunctionCallLog:
         """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
-
-        Raises:
-            ValueError: 'id' or 'function_id' is missing on object.
 
         Returns:
             FunctionCallLog: Log for the function call.
