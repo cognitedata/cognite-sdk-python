@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Sequence, cast
 
 from typing_extensions import Self
 
@@ -83,9 +83,9 @@ class WorkflowList(CogniteResourceList[Workflow]):
         return [workflow.external_id for workflow in self.data]
 
 
-class Parameters(CogniteResource, ABC):
+class TaskParameters(CogniteResource, ABC):
     @classmethod
-    def load_parameters(cls, data: dict) -> Parameters:
+    def load_parameters(cls, data: dict) -> TaskParameters:
         type_ = data.get("type", data.get("taskType"))
         parameters = data.get("parameters", data.get("input"))
         if parameters is None:
@@ -103,12 +103,12 @@ class Parameters(CogniteResource, ABC):
             raise ValueError(f"Unknown task type: {type_}")
 
 
-class FunctionTaskParameters(Parameters):
+class FunctionTaskParameters(TaskParameters):
     """The function parameters are used to specify the Cognite Function to be called.
 
     Args:
         external_id (str): The external ID of the function to be called.
-        data (dict | None): The data to be passed to the function. Defaults to None. The data can be used to specify the input to the function from previous tasks or the workflow input. See the tip below for more information.
+        data (dict | str | None): The data to be passed to the function. Defaults to None. The data can be used to specify the input to the function from previous tasks or the workflow input. See the tip below for more information.
         is_async_complete (bool): Whether the function is asynchronous. Defaults to False.
 
     If a function is asynchronous, you need to call the client.workflows.tasks.update() endpoint to update the status of the task.
@@ -142,7 +142,7 @@ class FunctionTaskParameters(Parameters):
     def __init__(
         self,
         external_id: str,
-        data: dict | None = None,
+        data: dict | str | None = None,
         is_async_complete: bool = False,
     ) -> None:
         self.external_id = external_id
@@ -174,7 +174,7 @@ class FunctionTaskParameters(Parameters):
         return output
 
 
-class TransformationTaskParameters(Parameters):
+class TransformationTaskParameters(TaskParameters):
     """
     The transformation parameters are used to specify the transformation to be called.
 
@@ -201,16 +201,16 @@ class TransformationTaskParameters(Parameters):
         }
 
 
-class CDFTaskParameters(Parameters):
+class CDFTaskParameters(TaskParameters):
     """
     The CDF request parameters are used to specify a request to the Cognite Data Fusion API.
 
     Args:
         resource_path (str): The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
-        method (Literal["GET", "POST", "PUT", "DELETE"]): The HTTP method of the request.
-        query_parameters (dict | None): The query parameters of the request. Defaults to None.
-        body (dict | None): The body of the request. Defaults to None. Limited to 1024KiB in size
-        request_timeout_in_millis (int): The timeout of the request in milliseconds. Defaults to 10000.
+        method (Literal["GET", "POST", "PUT", "DELETE"] | str): The HTTP method of the request.
+        query_parameters (dict | str | None): The query parameters of the request. Defaults to None.
+        body (dict | str | None): The body of the request. Defaults to None. Limited to 1024KiB in size
+        request_timeout_in_millis (int | str): The timeout of the request in milliseconds. Defaults to 10000.
 
     Examples:
 
@@ -231,10 +231,10 @@ class CDFTaskParameters(Parameters):
     def __init__(
         self,
         resource_path: str,
-        method: Literal["GET", "POST", "PUT", "DELETE"],
-        query_parameters: dict | None = None,
-        body: dict | None = None,
-        request_timeout_in_millis: int = 10000,
+        method: Literal["GET", "POST", "PUT", "DELETE"] | str,
+        query_parameters: dict | str | None = None,
+        body: dict | str | None = None,
+        request_timeout_in_millis: int | str = 10000,
     ) -> None:
         self.resource_path = resource_path
         self.method = method
@@ -258,7 +258,7 @@ class CDFTaskParameters(Parameters):
         }
 
 
-class DynamicTaskParameters(Parameters):
+class DynamicTaskParameters(TaskParameters):
     """
     The dynamic task parameters are used to specify a dynamic task.
 
@@ -268,11 +268,11 @@ class DynamicTaskParameters(Parameters):
     a Cognite Function task.
 
     Args:
-        dynamic (list[Task]): The dynamic task to be called. The dynamic task is a string that is evaluated by the
+        dynamic (list[Task] | str): The dynamic task to be called. The dynamic task is a string that is evaluated by the
 
     """
 
-    def __init__(self, dynamic: list[Task]) -> None:
+    def __init__(self, dynamic: list[Task] | str) -> None:
         self.dynamic = dynamic
 
 
@@ -284,7 +284,7 @@ class Task(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        parameters (Parameters): The parameters of the task.
+        parameters (TaskParameters): The parameters of the task.
         name (str | None): The name of the task. Defaults to None.
         description (str | None): The description of the task. Defaults to None.
         retries (int): The number of retries for the task. Defaults to 3.
@@ -295,7 +295,7 @@ class Task(CogniteResource):
     def __init__(
         self,
         external_id: str,
-        parameters: Parameters,
+        parameters: TaskParameters,
         name: str | None = None,
         description: str | None = None,
         retries: int = 3,
@@ -316,7 +316,7 @@ class Task(CogniteResource):
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             external_id=resource["externalId"],
-            parameters=Parameters.load_parameters(resource),
+            parameters=TaskParameters.load_parameters(resource),
             name=resource.get("name"),
             description=resource.get("description"),
             retries=resource.get("retries", 3),
@@ -354,14 +354,14 @@ class Task(CogniteResource):
         return output
 
 
-class Output(ABC):
+class TaskOutput(ABC):
     @classmethod
     @abstractmethod
-    def load(cls: type[T_Output], data: dict) -> T_Output:
+    def load(cls: type[Self], data: dict) -> Self:
         raise NotImplementedError()
 
     @classmethod
-    def load_output(cls, data: dict) -> Output:
+    def load_output(cls, data: dict) -> TaskOutput:
         task_type = data["taskType"]
         if task_type == "function":
             return FunctionTaskOutput.load(data["output"])
@@ -379,10 +379,7 @@ class Output(ABC):
         raise NotImplementedError()
 
 
-T_Output = TypeVar("T_Output", bound=Output)
-
-
-class FunctionTaskOutput(Output):
+class FunctionTaskOutput(TaskOutput):
     """
     The function output is used to specify the output of a function task.
 
@@ -410,7 +407,7 @@ class FunctionTaskOutput(Output):
         }
 
 
-class TransformationTaskOutput(Output):
+class TransformationTaskOutput(TaskOutput):
     """
     The transformation output is used to specify the output of a transformation task.
 
@@ -431,7 +428,7 @@ class TransformationTaskOutput(Output):
         }
 
 
-class CDFTaskOutput(Output):
+class CDFTaskOutput(TaskOutput):
     """
     The CDF Request output is used to specify the output of a CDF Request.
 
@@ -455,7 +452,7 @@ class CDFTaskOutput(Output):
         }
 
 
-class DynamicTaskOutput(Output):
+class DynamicTaskOutput(TaskOutput):
     """
     The dynamic task output is used to specify the output of a dynamic task.
 
@@ -484,8 +481,8 @@ class TaskExecution(CogniteResource):
         id (str): The server generated id of the task execution.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         status (Literal["in_progress", "cancelled", "failed", "failed_with_terminal_error", "completed", "completed_with_errors", "timed_out", "skipped"]): The status of the task execution.
-        input (Parameters): The input parameters of the task execution.
-        output (Output): The output of the task execution.
+        input (TaskParameters): The input parameters of the task execution.
+        output (TaskOutput): The output of the task execution.
         version (str | None): The version of the task execution. Defaults to None.
         start_time (int | None): The start time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the task execution. Unix timestamp in milliseconds. Defaults to None.
@@ -507,8 +504,8 @@ class TaskExecution(CogniteResource):
             "timed_out",
             "skipped",
         ],
-        input: Parameters,
-        output: Output,
+        input: TaskParameters,
+        output: TaskOutput,
         version: str | None = None,
         start_time: int | None = None,
         end_time: int | None = None,
@@ -543,8 +540,8 @@ class TaskExecution(CogniteResource):
                 ],
                 to_snake_case(resource["status"]),
             ),
-            input=Parameters.load_parameters(resource),
-            output=Output.load_output(resource),
+            input=TaskParameters.load_parameters(resource),
+            output=TaskOutput.load_output(resource),
             version=resource.get("version"),
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
