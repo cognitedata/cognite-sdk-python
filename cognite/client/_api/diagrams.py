@@ -201,7 +201,7 @@ class DiagramsAPI(APIClient):
                 )
                 >>> result = detect_job.result
                 >>> print(result)
-
+                <code>
                 {
                     'items': [
                         {'fileId': 101, 'annotations': []},
@@ -230,7 +230,7 @@ class DiagramsAPI(APIClient):
                         }
                     ]
                 }
-
+                </code>
         """
         items = self._process_file_ids(file_ids, file_external_ids, file_references)
         entities = [
