@@ -176,7 +176,7 @@ class DiagramsAPI(APIClient):
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (str | Sequence[str] | None): File external ids, alternative to file_ids and file_references.
-            file_references (list[FileReference] | FileReference | None): File references (id or external_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages.
+            file_references (list[FileReference] | FileReference | None): File references (id or external_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
             pattern_mode (bool | None): Only in beta. If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
             configuration (dict[str, Any] | None): Only in beta. Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
@@ -187,18 +187,48 @@ class DiagramsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import FileReference
                 >>> client = CogniteClient()
-                >>> retrieved_model = client.diagrams.detect(
-                    entities=[{"userDefinedField": "21PT1017","ignoredField": "AA11"}],
+                >>> detect_job = client.diagrams.detect(
+                    entities=[{"userDefinedField": "21PT1017","ignoredField": "AA11"}, {"userDefinedField": "21PT1018"}],
                     search_field="userDefinedField",
                     partial_match=True,
                     min_tokens=2,
                     file_ids=[101],
                     file_external_ids=["Test1"],
                     file_references=[
-                        FileReference(id=101, first_page=1, last_page=10),
-                        FileReference(external_id="ext_101", first_page=11, last_page=20)
+                        FileReference(id=20, first_page=1, last_page=10),
+                        FileReference(external_id="ext_20", first_page=11, last_page=20)
                     ],
                 )
+                >>> result = detect_job.result
+                >>> print(result)
+
+                {
+                    'items': [
+                        {'fileId': 101, 'annotations': []},
+                        {'fileExternalId': 'Test1', 'fileId: 1, 'annotations': []},
+                        {'fileId': 20, 'fileExternalId': 'ext_20', 'annotations': [], 'pageCount': 17}
+                        {
+                            'fileId': 20,
+                            'fileExternalId': 'ext_20',
+                            'annotations': [
+                                {
+                                    'text': '21PT1017',
+                                    'entities': [{"userDefinedField": "21PT1017","ignoredField": "AA11"}],
+                                    'region': {
+                                        'page': 12,
+                                        'shape': 'rectangle',
+                                        'vertices': [
+                                            {'x': 0.01, 'y': 0.01},
+                                            {'x': 0.01, 'y': 0.02},
+                                            {'x': 0.02, 'y': 0.02},
+                                            {'x': 0.02, 'y': 0.01}
+                                        ]
+                                    }
+                            'pageCount': 17,
+                        }
+                    ]
+                }
+
         """
         items = self._process_file_ids(file_ids, file_external_ids, file_references)
         entities = [
