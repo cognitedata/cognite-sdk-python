@@ -164,10 +164,10 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
             function parameters then you can specify it as follows
 
-                >>> from cognite.client.data_classes  import Task, FunctionParameters
+                >>> from cognite.client.data_classes  import Task, FunctionTaskParameters
                 >>> task = Task(
                 ...     external_id="my_workflow-task1",
-                ...     parameters=FunctionParameters(
+                ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
                 ...         data={"workflow_data": "${workflow.input}",},
                 ...     ),
@@ -283,7 +283,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             Create workflow version with one Function task:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import WorkflowVersionCreate, WorkflowDefinitionCreate, Task, FunctionParameters
+                >>> from cognite.client.data_classes import WorkflowVersionCreate, WorkflowDefinitionCreate, Task, FunctionTaskParameters
                 >>> c = CogniteClient()
                 >>> new_version =WorkflowVersionCreate(
                 ...    workflow_external_id="my_workflow",
@@ -292,7 +292,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 ...        tasks=[
                 ...            Task(
                 ...                external_id="my_workflow-task1",
-                ...                parameters=FunctionParameters(
+                ...                parameters=FunctionTaskParameters(
                 ...                    external_id="cdf_deployed_function:my_function",
                 ...                    data={"a": 1, "b": 2},
                 ...                ),

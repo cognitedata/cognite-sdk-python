@@ -92,18 +92,18 @@ class Parameters(CogniteResource, ABC):
             raise ValueError("You must provide parameter data either with key 'input' or 'parameter'")
 
         if type_ == "function":
-            return FunctionParameters._load(parameters)
+            return FunctionTaskParameters._load(parameters)
         elif type_ == "transformation":
-            return TransformationParameters._load(parameters)
+            return TransformationTaskParameters._load(parameters)
         elif type_ == "cdf":
-            return CDFRequestParameters._load(parameters)
+            return CDFTaskParameters._load(parameters)
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
         else:
             raise ValueError(f"Unknown task type: {type_}")
 
 
-class FunctionParameters(Parameters):
+class FunctionTaskParameters(Parameters):
     """The function parameters are used to specify the Cognite Function to be called.
 
     Args:
@@ -125,10 +125,10 @@ class FunctionParameters(Parameters):
         For example, if I have a workflow with two tasks with external_id of the first task being `task1` then,
         I can specify the data for the second task as follows:
 
-            >>> from cognite.client.data_classes  import Task, FunctionParameters
+            >>> from cognite.client.data_classes  import Task, FunctionTaskParameters
             >>> task = Task(
             ...     external_id="task2",
-            ...     parameters=FunctionParameters(
+            ...     parameters=FunctionTaskParameters(
             ...         external_id="cdf_deployed_function",
             ...         data={
             ...             "workflow_data": "${workflow.input}",
@@ -150,7 +150,7 @@ class FunctionParameters(Parameters):
         self.is_async_complete = is_async_complete
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FunctionParameters:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FunctionTaskParameters:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         function: dict[str, Any] = resource["function"]
 
@@ -174,7 +174,7 @@ class FunctionParameters(Parameters):
         return output
 
 
-class TransformationParameters(Parameters):
+class TransformationTaskParameters(Parameters):
     """
     The transformation parameters are used to specify the transformation to be called.
 
@@ -187,7 +187,7 @@ class TransformationParameters(Parameters):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationParameters:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             resource["transformation"]["externalId"],
@@ -201,7 +201,7 @@ class TransformationParameters(Parameters):
         }
 
 
-class CDFRequestParameters(Parameters):
+class CDFTaskParameters(Parameters):
     """
     The CDF request parameters are used to specify a request to the Cognite Data Fusion API.
 
@@ -216,10 +216,10 @@ class CDFRequestParameters(Parameters):
 
         Call the asset/list endpoint with a limit of 10:
 
-            >>> from cognite.client.data_classes import Task, CDFRequestParameters
+            >>> from cognite.client.data_classes import Task, CDFTaskParameters
             >>> task = Task(
             ...     external_id="task1",
-            ...     parameters=CDFRequestParameters(
+            ...     parameters=CDFTaskParameters(
             ...         resource_path="/assets/list",
             ...         method="GET",
             ...         query_parameters={"limit": 10},
@@ -327,11 +327,11 @@ class Task(CogniteResource):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        if isinstance(self.parameters, FunctionParameters):
+        if isinstance(self.parameters, FunctionTaskParameters):
             type_ = "function"
-        elif isinstance(self.parameters, TransformationParameters):
+        elif isinstance(self.parameters, TransformationTaskParameters):
             type_ = "transformation"
-        elif isinstance(self.parameters, CDFRequestParameters):
+        elif isinstance(self.parameters, CDFTaskParameters):
             type_ = "cdf"
         elif isinstance(self.parameters, DynamicTaskParameters):
             type_ = "dynamic"
@@ -364,9 +364,9 @@ class Output(ABC):
     def load_output(cls, data: dict) -> Output:
         task_type = data["taskType"]
         if task_type == "function":
-            return FunctionOutput.load(data["output"])
+            return FunctionTaskOutput.load(data["output"])
         elif task_type == "transformation":
-            return TransformationOutput.load(data["output"])
+            return TransformationTaskOutput.load(data["output"])
         elif task_type == "cdf":
             return CDFTaskOutput.load(data["output"])
         elif task_type == "dynamic":
@@ -382,7 +382,7 @@ class Output(ABC):
 T_Output = TypeVar("T_Output", bound=Output)
 
 
-class FunctionOutput(Output):
+class FunctionTaskOutput(Output):
     """
     The function output is used to specify the output of a function task.
 
@@ -399,7 +399,7 @@ class FunctionOutput(Output):
         self.response = response
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> FunctionOutput:
+    def load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
         return cls(data.get("callId"), data.get("functionId"), data.get("response"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -410,7 +410,7 @@ class FunctionOutput(Output):
         }
 
 
-class TransformationOutput(Output):
+class TransformationTaskOutput(Output):
     """
     The transformation output is used to specify the output of a transformation task.
 
@@ -422,7 +422,7 @@ class TransformationOutput(Output):
         self.job_id = job_id
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> TransformationOutput:
+    def load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
         return cls(data["jobId"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -554,9 +554,9 @@ class TaskExecution(CogniteResource):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         task_type_key = "taskType" if camel_case else "task_type"
-        if isinstance(self.output, FunctionOutput):
+        if isinstance(self.output, FunctionTaskOutput):
             output[task_type_key] = "function"
-        elif isinstance(self.output, TransformationOutput):
+        elif isinstance(self.output, TransformationTaskOutput):
             output[task_type_key] = "transformation"
         elif isinstance(self.output, CDFTaskOutput):
             output[task_type_key] = "cdf"

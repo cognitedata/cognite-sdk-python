@@ -7,10 +7,10 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
-    CDFRequestParameters,
-    FunctionParameters,
+    CDFTaskParameters,
+    FunctionTaskParameters,
     Task,
-    TransformationParameters,
+    TransformationTaskParameters,
     Workflow,
     WorkflowCreate,
     WorkflowDefinitionCreate,
@@ -56,7 +56,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
             tasks=[
                 Task(
                     external_id=f"{workflow_id}-1-task1",
-                    parameters=TransformationParameters(
+                    parameters=TransformationTaskParameters(
                         external_id="None-existing-transformation",
                     ),
                 )
@@ -70,7 +70,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
             tasks=[
                 Task(
                     external_id=f"{workflow_id}-2-task1",
-                    parameters=CDFRequestParameters(
+                    parameters=CDFTaskParameters(
                         resource_path="/dummy/no/real/resource/path",
                         method="GET",
                         body={"limit": 1},
@@ -135,14 +135,14 @@ def add_multiply_workflow(
             tasks=[
                 Task(
                     external_id=f"{workflow_id}-1-add",
-                    parameters=FunctionParameters(
+                    parameters=FunctionTaskParameters(
                         external_id=cdf_function_add.external_id,
                         data={"a": 1, "b": 2},
                     ),
                 ),
                 Task(
                     external_id=f"{workflow_id}-1-multiply",
-                    parameters=FunctionParameters(
+                    parameters=FunctionTaskParameters(
                         external_id=cdf_function_multiply.external_id,
                         data={"a": 3, "b": 4},
                         is_async_complete=True,
@@ -235,7 +235,7 @@ class TestWorkflowVersions:
                 tasks=[
                     Task(
                         external_id="integration_test-workflow_definitions-test_create_delete-task1",
-                        parameters=FunctionParameters(
+                        parameters=FunctionTaskParameters(
                             external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
                             data={"a": 1, "b": 2},
                         ),
@@ -338,7 +338,7 @@ class TestWorkflowExecutions:
         )
 
         async_task = add_multiply_workflow.workflow_definition.tasks[1]
-        assert isinstance(async_task.parameters, FunctionParameters)
+        assert isinstance(async_task.parameters, FunctionTaskParameters)
         assert async_task.parameters.is_async_complete
 
         workflow_execution_detailed = cognite_client.workflows.executions.retrieve_detailed(workflow_execution.id)
