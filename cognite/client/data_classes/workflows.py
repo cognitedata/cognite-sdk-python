@@ -6,6 +6,8 @@ from collections import UserList
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
@@ -234,6 +236,7 @@ class CDFRequestParameters(Parameters):
         body: dict | None = None,
         request_timeout_in_millis: int = 10000,
     ) -> None:
+        super().__init__(cognite_client=None)
         self.resource_path = resource_path
         self.method = method
         self.query_parameters = query_parameters or {}
@@ -241,20 +244,13 @@ class CDFRequestParameters(Parameters):
         self.request_timeout_in_millis = request_timeout_in_millis
 
     @classmethod
-    def _load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
 
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
-        return cls(
-            resource_path=cdf_request["resourcePath"],
-            method=cdf_request["method"],
-            query_parameters=cdf_request.get("queryParameters"),
-            body=cdf_request.get("body"),
-            request_timeout_in_millis=cdf_request.get("requestTimeoutInMillis"),
-        )
+        arguments = convert_all_keys_to_snake_case(cdf_request)
+        return cls(**arguments)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -658,9 +654,7 @@ class WorkflowVersionCreate(CogniteResource):
         self.workflow_definition = workflow_definition
 
     @classmethod
-    def _load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
