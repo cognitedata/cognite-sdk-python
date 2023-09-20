@@ -206,7 +206,7 @@ class DiagramsAPI(APIClient):
                     'items': [
                         {'fileId': 101, 'annotations': []},
                         {'fileExternalId': 'Test1', 'fileId: 1, 'annotations': []},
-                        {'fileId': 20, 'fileExternalId': 'ext_20', 'annotations': [], 'pageCount': 17}
+                        {'fileId': 20, 'fileExternalId': 'ext_20', 'annotations': [], 'pageCount': 17},
                         {
                             'fileId': 20,
                             'fileExternalId': 'ext_20',
@@ -224,7 +224,8 @@ class DiagramsAPI(APIClient):
                                             {'x': 0.02, 'y': 0.01}
                                         ]
                                     }
-                            'pageCount': 17,
+                                },
+                            'pageCount': 17
                         }
                     ]
                 }
