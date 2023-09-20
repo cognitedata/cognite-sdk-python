@@ -224,7 +224,8 @@ class DiagramsAPI(APIClient):
                                             {'x': 0.02, 'y': 0.01}
                                         ]
                                     }
-                                },
+                                }
+                            ],
                             'pageCount': 17
                         }
                     ]
