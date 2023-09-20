@@ -392,7 +392,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         Args:
             workflow_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
-            limit (int): No description.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
 
         Returns:
             WorkflowVersionList: The requested workflow versions.
@@ -433,14 +433,6 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             query_params={"limit": limit},
             api_subversion=self._api_subversion,
         )
-        # response = self._post(
-        #     url_path=self._RESOURCE_PATH + "/list",
-        #     json={"filter": {"workflowFilters": workflow_ids_dumped}},
-        #     api_subversion=self._api_subversion,
-        #     params={"limit": limit},
-        # )
-        #
-        # return WorkflowVersionList._load(response.json()["items"])
 
 
 class WorkflowAPI(BetaWorkflowAPIClient):
@@ -538,7 +530,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         """`List all workflows in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/FetchAllWorkflows>`_
 
         Args:
-            limit (int): No description.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
         Returns:
             WorkflowList: All workflows in the CDF project.
 
@@ -552,9 +544,11 @@ class WorkflowAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        response = self._get(
-            url_path=self._RESOURCE_PATH,
+
+        return self._list(
+            method="GET",
+            resource_cls=Workflow,
+            list_cls=WorkflowList,
+            limit=limit,
             api_subversion=self._api_subversion,
-            params={"limit": limit},
         )
-        return WorkflowList._load(response.json()["items"])
