@@ -236,7 +236,6 @@ class CDFRequestParameters(Parameters):
         body: dict | None = None,
         request_timeout_in_millis: int = 10000,
     ) -> None:
-        super().__init__(cognite_client=None)
         self.resource_path = resource_path
         self.method = method
         self.query_parameters = query_parameters or {}
