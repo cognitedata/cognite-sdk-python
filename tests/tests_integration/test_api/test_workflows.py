@@ -268,6 +268,13 @@ class TestWorkflowVersions:
         assert len(listed) == len(workflow_version_list)
         assert listed == workflow_version_list
 
+    def test_list_workflow_version_limit(
+        self, cognite_client: CogniteClient, workflow_version_list: WorkflowVersionList
+    ) -> None:
+        listed = cognite_client.workflows.versions.list(limit=1)
+
+        assert len(listed) == 1
+
     def test_delete_non_existing_raise(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.workflows.versions.delete(

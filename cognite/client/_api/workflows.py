@@ -386,11 +386,13 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
     def list(
         self,
         workflow_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
         """`List workflow versions in the project <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/ListWorkflowVersions>`_
 
         Args:
             workflow_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            limit (int): No description.
 
         Returns:
             WorkflowVersionList: The requested workflow versions.
@@ -418,23 +420,27 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        body: dict | None
         if workflow_ids is None:
-            body = None
+            workflow_ids_dumped = []
         else:
-            body = {
-                "filter": {
-                    "workflowFilters": WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
-                }
-            }
+            workflow_ids_dumped = WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
 
-        response = self._post(
-            url_path=self._RESOURCE_PATH + "/list",
-            json=body,
+        return self._list(
+            method="POST",
+            resource_cls=WorkflowVersion,
+            list_cls=WorkflowVersionList,
+            filter={"workflowFilters": workflow_ids_dumped},
+            query_params={"limit": limit},
             api_subversion=self._api_subversion,
         )
-
-        return WorkflowVersionList._load(response.json()["items"])
+        # response = self._post(
+        #     url_path=self._RESOURCE_PATH + "/list",
+        #     json={"filter": {"workflowFilters": workflow_ids_dumped}},
+        #     api_subversion=self._api_subversion,
+        #     params={"limit": limit},
+        # )
+        #
+        # return WorkflowVersionList._load(response.json()["items"])
 
 
 class WorkflowAPI(BetaWorkflowAPIClient):
@@ -528,9 +534,11 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             wrap_ids=True,
         )
 
-    def list(self) -> WorkflowList:
+    def list(self, limit: int = DEFAULT_LIMIT_READ) -> WorkflowList:
         """`List all workflows in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/FetchAllWorkflows>`_
 
+        Args:
+            limit (int): No description.
         Returns:
             WorkflowList: All workflows in the CDF project.
 
@@ -547,5 +555,6 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         response = self._get(
             url_path=self._RESOURCE_PATH,
             api_subversion=self._api_subversion,
+            params={"limit": limit},
         )
         return WorkflowList._load(response.json()["items"])

@@ -399,6 +399,7 @@ class APIClient:
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
+        query_params: dict[str, Any] | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
         if is_unlimited(limit):
             limit = None
@@ -443,7 +444,14 @@ class APIClient:
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
 
                 elif method == "POST":
-                    body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                    if isinstance(query_params, dict) and "limit" in query_params:
+                        # Workflow uses query params for cursor and limit.
+                        limit = query_params["limit"]
+                        body: dict[str, Any] = {**(other_params or {})}
+                        if next_cursor:
+                            query_params["cursor"] = next_cursor
+                    else:
+                        body = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                     if filter:
                         body["filter"] = filter
                     if advanced_filter:
@@ -459,6 +467,7 @@ class APIClient:
                         json=body,
                         headers=headers,
                         api_subversion=api_subversion,
+                        params=query_params,
                     )
                 else:
                     raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
@@ -537,6 +546,7 @@ class APIClient:
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
+        query_params: dict[str, Any] | None = None,
     ) -> T_CogniteResourceList:
         if partitions:
             if not is_unlimited(limit):
@@ -551,6 +561,7 @@ class APIClient:
                 filter=filter,
                 other_params=other_params,
                 headers=headers,
+                query_params=query_params,
             )
 
         resource_path = resource_path or self._RESOURCE_PATH
@@ -570,6 +581,7 @@ class APIClient:
             initial_cursor=initial_cursor,
             advanced_filter=advanced_filter,
             api_subversion=api_subversion,
+            query_params=query_params,
         ):
             items.extend(cast(T_CogniteResourceList, resource_list).data)
         return list_cls(items, cognite_client=self._cognite_client)
@@ -584,6 +596,7 @@ class APIClient:
         other_params: dict | None = None,
         headers: dict | None = None,
         advanced_filter: dict | Filter | None = None,
+        query_params: dict[str, Any] | None = None,
     ) -> T_CogniteResourceList:
         def get_partition(partition: int) -> list[dict[str, Any]]:
             next_cursor = None
@@ -604,7 +617,10 @@ class APIClient:
                             else advanced_filter
                         )
                     res = self._post(
-                        url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
+                        url_path=(resource_path or self._RESOURCE_PATH) + "/list",
+                        json=body,
+                        headers=headers,
+                        params=query_params,
                     )
                 elif method == "GET":
                     params = {
