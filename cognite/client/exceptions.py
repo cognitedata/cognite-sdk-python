@@ -61,6 +61,19 @@ class CogniteReadTimeout(CogniteException):
     pass
 
 
+class CogniteFileUploadError(CogniteException):
+    def __init__(
+        self,
+        message: str,
+        code: int,
+    ) -> None:
+        self.message = message
+        self.code = code
+
+    def __str__(self) -> str:
+        return f"{self.message} | code: {self.code}"
+
+
 class CogniteMultiException(CogniteException):
     def __init__(
         self,

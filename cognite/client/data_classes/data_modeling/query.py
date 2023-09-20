@@ -8,10 +8,10 @@ from typing import Any, Literal, Mapping, cast
 
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
-    EdgeList,
+    Edge,
     EdgeListWithCursor,
     InstanceSort,
-    NodeList,
+    Node,
     NodeListWithCursor,
     PropertyValue,
 )
@@ -95,8 +95,11 @@ class Query:
         self.parameters = parameters
         self.cursors = cursors or {k: None for k in select}
 
-    def instance_type_by_result_expression(self) -> dict[str, type[NodeList] | type[EdgeList]]:
-        return {k: NodeList if isinstance(v, NodeResultSetExpression) else EdgeList for k, v in self.with_.items()}
+    def instance_type_by_result_expression(self) -> dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]]:
+        return {
+            k: NodeListWithCursor if isinstance(v, NodeResultSetExpression) else EdgeListWithCursor
+            for k, v in self.with_.items()
+        }
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -137,6 +140,12 @@ class Query:
 
 
 class ResultSetExpression(ABC):
+    def __init__(self, from_: str | None, filter: Filter | None, limit: int | None, sort: list[InstanceSort] | None):
+        self.from_ = from_
+        self.filter = filter
+        self.limit = limit
+        self.sort = sort
+
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         ...
@@ -184,10 +193,7 @@ class NodeResultSetExpression(ResultSetExpression):
         sort: list[InstanceSort] | None = None,
         limit: int | None = None,
     ):
-        self.from_ = from_
-        self.filter = filter
-        self.sort = sort
-        self.limit = limit
+        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = {"nodes": {}}
@@ -219,16 +225,13 @@ class EdgeResultSetExpression(ResultSetExpression):
         post_sort: list[InstanceSort] | None = None,
         limit: int | None = None,
     ):
-        self.from_ = from_
+        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort)
         self.max_distance = max_distance
         self.direction = direction
-        self.filter = filter
         self.node_filter = node_filter
         self.termination_filter = termination_filter
         self.limit_each = limit_each
-        self.sort = sort
         self.post_sort = post_sort
-        self.limit = limit
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = {"edges": {}}
@@ -270,22 +273,19 @@ class QueryResult(UserDict):
     def load(
         cls,
         data: dict[str, Any] | str,
-        default_by_reference: dict[str, type[NodeList] | type[EdgeList]],
-        cursors: dict[str, Any] | None = None,
+        instance_list_type_by_result_expression_name: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
+        cursors: dict[str, Any],
     ) -> QueryResult:
         data = json.loads(data) if isinstance(data, str) else data
         instance = cls()
         for key, values in data.items():
+            cursor = cursors.get(key)
             if not values:
-                instance[key] = default_by_reference[key]([])
-            elif values[0].get("instanceType") == "node":
-                instance[key] = NodeListWithCursor._load(values)
-                if cursors:
-                    instance[key].cursor = cursors.get(key)
-            elif values[0].get("instanceType") == "edge":
-                instance[key] = EdgeListWithCursor._load(values)
-                if cursors:
-                    instance[key].cursor = cursors.get(key)
+                instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
+            elif values[0]["instanceType"] == "node":
+                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor)
+            elif values[0]["instanceType"] == "edge":
+                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
 

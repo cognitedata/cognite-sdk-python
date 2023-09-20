@@ -422,9 +422,10 @@ def set_create_lim(cognite_client):
         yield
 
 
+@pytest.mark.usefixtures("set_create_lim")
 class TestAssetsAPICreateHierarchy:
     @pytest.mark.parametrize("n_roots", (0, 1, 4))
-    def test_variable_number_of_root_assets(self, cognite_client, n_roots, root_test_asset, set_create_lim):
+    def test_variable_number_of_root_assets(self, cognite_client, n_roots, root_test_asset):
         s = random_string(10)
         assets = []
         for i in range(n_roots):
@@ -451,7 +452,7 @@ class TestAssetsAPICreateHierarchy:
         ),
     )
     def test_orphans__parent_linked_using_mixed_ids_xids(
-        self, n_id, n_xid, pass_hierarchy, cognite_client, root_test_asset_subtree, set_create_lim
+        self, n_id, n_xid, pass_hierarchy, cognite_client, root_test_asset_subtree
     ):
         assets = generate_orphan_assets(n_id, n_xid, sample_from=root_test_asset_subtree)
         expected = set(AssetList(assets)._external_id_to_item)
@@ -525,6 +526,21 @@ class TestAssetsAPICreateHierarchy:
             with create_hierarchy_with_cleanup(cognite_client, assets, upsert=False, upsert_mode="patch"):
                 pytest.fail("Expected 409 API error: 'Asset id duplicated'")
         assert err.value.code == 409
+
+    def test_upsert_mode__only_first_batch_is_updated(self, cognite_client):
+        # SDK 6.24.0 and earlier versions had a bug when using upsert that could lead to only the first
+        # _CREATE_LIMIT number of assets (updated) being returned.
+        assets = AssetList(create_asset_tower(10))
+        expected_xids = set(assets.as_external_ids())
+        created = cognite_client.assets.create_hierarchy(assets, upsert=False)
+        assert set(created.as_external_ids()) == expected_xids
+
+        for a in assets:
+            a.description = "updated <3"
+
+        with create_hierarchy_with_cleanup(cognite_client, assets, upsert=True, upsert_mode="patch") as updated:
+            assert set(updated.as_external_ids()) == expected_xids
+            assert all(upd.description == "updated <3" for upd in updated)
 
     def test_upsert_mode_with_replace(self, cognite_client):
         assets = create_asset_tower(5)

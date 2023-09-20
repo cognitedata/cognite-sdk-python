@@ -12,7 +12,7 @@ from cognite.client.utils._text import convert_all_keys_recursive, convert_all_k
 @dataclass(frozen=True)
 class AbstractDataclass(ABC):
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
-        if cls == AbstractDataclass or cls.__bases__[0] == AbstractDataclass:
+        if cls is AbstractDataclass or cls.__bases__[0] is AbstractDataclass:
             raise TypeError("Cannot instantiate abstract class.")
         return super().__new__(cls)
 
@@ -152,13 +152,15 @@ class IdLike(Protocol):
         ...
 
 
-class VersionedIdLike(IdLike):
+class VersionedIdLike(IdLike, Protocol):
     @property
     def version(self) -> str | None:
         ...
 
 
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
+ConstraintIdentifier = Tuple[ContainerId, str]
+IndexIdentifier = Tuple[ContainerId, str]
 ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
 DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]

@@ -4,6 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Iterable
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
@@ -27,9 +28,10 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils._auxiliary import fast_dict_load
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -57,12 +59,6 @@ class CogniteResponse:
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and other.dump() == self.dump()
 
-    def __getattribute__(self, item: Any) -> Any:
-        attr = super().__getattribute__(item)
-        if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError(self)
-        return attr
-
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
@@ -85,15 +81,35 @@ class CogniteResponse:
 T_CogniteResponse = TypeVar("T_CogniteResponse", bound=CogniteResponse)
 
 
-class CogniteResource:
-    _cognite_client: Any
+class _WithClientMixin:
+    @property
+    def _cognite_client(self) -> CogniteClient:
+        with suppress(AttributeError):
+            if self.__cognite_client is not None:
+                return self.__cognite_client
+        raise CogniteMissingClientError(self)
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> CogniteResource:
-        obj = super().__new__(cls)
-        obj._cognite_client = None
-        if "cognite_client" in kwargs:
-            obj._cognite_client = kwargs["cognite_client"]
-        return obj
+    @_cognite_client.setter
+    def _cognite_client(self, value: CogniteClient | None) -> None:
+        from cognite.client import CogniteClient
+
+        if value is None or isinstance(value, CogniteClient):
+            self.__cognite_client = value
+        else:
+            raise AttributeError(
+                "Can't set the CogniteClient reference to anything else than a CogniteClient instance or None"
+            )
+
+    def _get_cognite_client(self) -> CogniteClient | None:
+        """Get Cognite client reference without raising (when missing)"""
+        return self.__cognite_client
+
+
+class CogniteResource(_WithClientMixin):
+    __cognite_client: CogniteClient | None
+
+    def __init__(self, cognite_client: CogniteClient | None = None) -> None:
+        raise NotImplementedError
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
@@ -101,12 +117,6 @@ class CogniteResource:
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
-
-    def __getattribute__(self, item: Any) -> Any:
-        attr = super().__getattribute__(item)
-        if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError(self)
-        return attr
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -123,15 +133,10 @@ class CogniteResource:
     def _load(
         cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
-        if isinstance(resource, str):
+        if isinstance(resource, dict):
+            return fast_dict_load(cls, resource, cognite_client=cognite_client)
+        elif isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    setattr(instance, snake_case_key, value)
-            return instance
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
@@ -188,8 +193,9 @@ class CognitePropertyClassUtil:
             self[schema_name] = value
 
 
-class CogniteResourceList(UserList, Generic[T_CogniteResource]):
-    _RESOURCE: type[CogniteResource]
+class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
+    _RESOURCE: type[T_CogniteResource]
+    __cognite_client: CogniteClient | None
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
         for resource in resources:
@@ -209,12 +215,6 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
             if hasattr(self.data[0], "id"):
                 self._id_to_item = {item.id: item for item in self.data if item.id is not None}
 
-    def __getattribute__(self, item: Any) -> Any:
-        attr = super().__getattribute__(item)
-        if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError(self)
-        return attr
-
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
 
@@ -222,21 +222,20 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         return super().__iter__()
 
     @overload
-    def __getitem__(self, item: SupportsIndex) -> T_CogniteResource:
+    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource:
         ...
 
     @overload
-    def __getitem__(self, item: slice) -> CogniteResourceList[T_CogniteResource]:
+    def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList:
         ...
 
-    def __getitem__(self, item: Any) -> Any:
-        value = super().__getitem__(item)
+    def __getitem__(
+        self: T_CogniteResourceList, item: SupportsIndex | slice
+    ) -> T_CogniteResource | T_CogniteResourceList:
+        value = self.data[item]
         if isinstance(item, slice):
-            c = None
-            if super().__getattribute__("_cognite_client") is not None:
-                c = self._cognite_client
-            return self.__class__(value, cognite_client=c)
-        return value
+            return type(self)(value, cognite_client=self._get_cognite_client())
+        return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())

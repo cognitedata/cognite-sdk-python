@@ -17,15 +17,65 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.22.0] - 2023-09-07
+## [6.26.0] - 2023-09-20
 ### Added
 - Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
+
+## [6.25.3] - 2023-09-19
+### Added
+- Support for setting and retrieving `data_set_id` in data class `client.data_classes.ThreeDModel`.
+
+## [6.25.2] - 2023-09-12
+### Fixed
+- Using the `HasData` filter would raise an API error in CDF.
+
+## [6.25.1] - 2023-09-15
+### Fixed
+- Using nonce credentials now works as expected for `transformations.[create, update]`. Previously, the attempt to create
+  a session would always fail, leading to nonce credentials never being used (full credentials were passed to- and
+  stored in the transformations backend service).
+- Additionally, the automatic creation of a session no longer fails silently when an `CogniteAuthError` is encountered
+  (which happens when the credentials are invalid).
+- While processing source- and destination credentials in `client.transformations.[create, update]`, an `AttributeError`
+  can no longer be raised (by not specifying project).
+
+### Added
+- `TransformationList` now correctly inherits the two (missing) helper methods `as_ids()` and `as_external_ids()`.
+
+## [6.25.0] - 2023-09-14
+### Added
+- Support for `ignore_unknown_ids` in `client.functions.retrieve_multiple` method.
+## [6.24.1] - 2023-09-13
+### Fixed
+- Bugfix for `AssetsAPI.create_hierarchy` when running in upsert mode: It could skip certain updates above
+  the single-request create limit (currently 1000 assets).
+
+## [6.24.0] - 2023-09-12
+### Fixed
+- Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `CogniteFileUploadError` is raised based on upload response.
+
+## [6.23.0] - 2023-09-08
+### Added
+- Supporting for deleting constraints and indexes on containers.
+
+### Changed
+- The abstract class `Index` can no longer be instantiated. Use BTreeIndex or InvertedIndex instead.
+
+## [6.22.0] - 2023-09-08
+### Added
+- `client.data_modeling.instances.subscribe` which lets you subscribe to a given
+data modeling query and receive updates through a provided callback.
+- Example on how to use the subscribe method to sync nodes to a local sqlite db.
+
+## [6.21.1] - 2023-09-07
+### Fixed
+- Concurrent usage of the `CogniteClient` could result in API calls being made with the wrong value for `api_subversion`.
 
 ## [6.21.0] - 2023-09-06
 ### Added
 - Supporting pattern mode and extra configuration for diagram detect in beta.
 
-## [6.20.0] - 2023-09-05
+## [6.20.0] - 2023-09-06
 ### Fixed
 - When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
   the verification process. This could leave leftover modules still in scope, possibly affecting subsequent calls. This is

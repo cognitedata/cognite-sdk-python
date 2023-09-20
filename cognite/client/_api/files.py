@@ -31,6 +31,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.exceptions import CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
@@ -570,9 +571,15 @@ class FilesAPI(APIClient):
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
-        self._http_client_with_retry.request(
+        upload_response = self._http_client_with_retry.request(
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
+        if not upload_response.ok:
+            raise CogniteFileUploadError(
+                message=upload_response.text,
+                code=upload_response.status_code,
+            )
+
         return FileMetadata._load(returned_file_metadata)
 
     def retrieve_download_urls(

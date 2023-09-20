@@ -213,10 +213,6 @@ class AggregationFilter(ABC):
     def dump(self) -> dict[str, Any]:
         return {self._filter_name: self._filter_body()}
 
-    @classmethod
-    def load(cls, filter_: dict[str, Any]) -> AggregationFilter:
-        ...
-
     @abstractmethod
     def _filter_body(self) -> list | dict:
         raise NotImplementedError

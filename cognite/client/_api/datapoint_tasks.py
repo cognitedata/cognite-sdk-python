@@ -47,8 +47,8 @@ if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
     from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
 else:
-    from cognite.client._proto_legacy.data_point_list_response_pb2 import DataPointListItem  # type: ignore [misc]
-    from cognite.client._proto_legacy.data_points_pb2 import (  # type: ignore [misc]
+    from cognite.client._proto_legacy.data_point_list_response_pb2 import DataPointListItem  # type: ignore [assignment]
+    from cognite.client._proto_legacy.data_points_pb2 import (  # type: ignore [assignment]
         AggregateDatapoint,
         NumericDatapoint,
         StringDatapoint,
@@ -624,7 +624,7 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     def _create_payload_item(self) -> CustomDatapoints:
         return CustomDatapoints(
             {
-                **self.identifier.as_dict(),  # type: ignore [misc]
+                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
                 "start": self.start,
                 "end": self.end,
                 "limit": 0,  # Not a bug; it just returns the outside points
@@ -685,7 +685,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def _create_payload_item(self, remaining_limit: float) -> CustomDatapoints:
         return CustomDatapoints(
             {
-                **self.identifier.as_dict(),  # type: ignore [misc]
+                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
                 "start": self.next_start,
                 "end": self.end,
                 "limit": min(remaining_limit, self.max_query_limit),

@@ -261,17 +261,12 @@ class TimeSeriesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                "count",
-                filter=filter,
-                advanced_filter=advanced_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            "count",
+            filter=filter,
+            advanced_filter=advanced_filter,
+            api_subversion="beta",
+        )
 
     def aggregate_cardinality_values(
         self,
@@ -315,20 +310,14 @@ class TimeSeriesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                "cardinalityValues",
-                properties=property,
-                filter=filter,
-                advanced_filter=advanced_filter,
-                aggregate_filter=aggregate_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            "cardinalityValues",
+            properties=property,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+            api_subversion="beta",
+        )
 
     def aggregate_cardinality_properties(
         self,
@@ -357,20 +346,14 @@ class TimeSeriesAPI(APIClient):
                 >>> key_count = c.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                "cardinalityProperties",
-                path=path,
-                filter=filter,
-                advanced_filter=advanced_filter,
-                aggregate_filter=aggregate_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            "cardinalityProperties",
+            path=path,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+            api_subversion="beta",
+        )
 
     def aggregate_unique_values(
         self,
@@ -425,20 +408,14 @@ class TimeSeriesAPI(APIClient):
                 >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                aggregate="uniqueValues",
-                properties=property,
-                filter=filter,
-                advanced_filter=advanced_filter,
-                aggregate_filter=aggregate_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            aggregate="uniqueValues",
+            properties=property,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+            api_subversion="beta",
+        )
 
     def aggregate_unique_properties(
         self,
@@ -468,20 +445,14 @@ class TimeSeriesAPI(APIClient):
                 >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._advanced_aggregate(
-                aggregate="uniqueProperties",
-                path=path,
-                filter=filter,
-                advanced_filter=advanced_filter,
-                aggregate_filter=aggregate_filter,
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._advanced_aggregate(
+            aggregate="uniqueProperties",
+            path=path,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+            api_subversion="beta",
+        )
 
     @overload
     def create(self, time_series: Sequence[TimeSeries]) -> TimeSeriesList:
@@ -717,20 +688,15 @@ class TimeSeriesAPI(APIClient):
         elif not isinstance(sort, list):
             sort = [sort]
 
-        api_version = self._api_subversion
-
-        try:
-            self._api_subversion = "beta"
-            return self._list(
-                list_cls=TimeSeriesList,
-                resource_cls=TimeSeries,
-                method="POST",
-                limit=limit,
-                advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-                sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
-            )
-        finally:
-            self._api_subversion = api_version
+        return self._list(
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            method="POST",
+            limit=limit,
+            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
+            api_subversion="beta",
+        )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)

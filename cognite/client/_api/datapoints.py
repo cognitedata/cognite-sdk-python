@@ -79,7 +79,7 @@ from cognite.client.utils._validation import validate_user_input_dict_with_ident
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 else:
-    from cognite.client._proto_legacy.data_point_list_response_pb2 import (  # type: ignore [misc]
+    from cognite.client._proto_legacy.data_point_list_response_pb2 import (  # type: ignore [assignment]
         DataPointListItem,
         DataPointListResponse,
     )
@@ -1249,7 +1249,6 @@ class DatapointsAPI(APIClient):
         Examples:
 
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value::
-
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
