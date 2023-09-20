@@ -28,9 +28,10 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils._auxiliary import fast_dict_load
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -132,15 +133,10 @@ class CogniteResource(_WithClientMixin):
     def _load(
         cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
-        if isinstance(resource, str):
+        if isinstance(resource, dict):
+            return fast_dict_load(cls, resource, cognite_client=cognite_client)
+        elif isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    setattr(instance, snake_case_key, value)
-            return instance
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(

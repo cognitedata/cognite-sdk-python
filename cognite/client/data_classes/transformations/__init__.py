@@ -27,7 +27,7 @@ from cognite.client.data_classes.transformations.jobs import TransformationJob, 
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -54,6 +54,14 @@ class SessionDetails:
         self.session_id = session_id
         self.client_id = client_id
         self.project_name = project_name
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> SessionDetails:
+        return cls(
+            session_id=resource.get("sessionId"),
+            client_id=resource.get("clientId"),
+            project_name=resource.get("projectName"),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -287,29 +295,24 @@ class Transformation(CogniteResource):
             instance.destination = _load_destination_dct(instance.destination)
 
         if isinstance(instance.running_job, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.running_job)
-            instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.running_job = TransformationJob._load(instance.running_job, cognite_client=cognite_client)
 
         if isinstance(instance.last_finished_job, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.last_finished_job)
-            instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.last_finished_job = TransformationJob._load(
+                instance.last_finished_job, cognite_client=cognite_client
+            )
 
         if isinstance(instance.blocked, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.blocked)
-            snake_dict.pop("time")
-            instance.blocked = TransformationBlockedInfo(**snake_dict)
+            instance.blocked = TransformationBlockedInfo._load(instance.blocked)
 
         if isinstance(instance.schedule, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.schedule)
-            instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
+            instance.schedule = TransformationSchedule._load(instance.schedule, cognite_client=cognite_client)
 
         if isinstance(instance.source_session, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.source_session)
-            instance.source_session = SessionDetails(**snake_dict)
+            instance.source_session = SessionDetails._load(instance.source_session)
 
         if isinstance(instance.destination_session, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.destination_session)
-            instance.destination_session = SessionDetails(**snake_dict)
+            instance.destination_session = SessionDetails._load(instance.destination_session)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
