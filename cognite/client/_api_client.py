@@ -129,9 +129,15 @@ class APIClient:
         return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
     def _get(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+        self,
+        url_path: str,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
     ) -> Response:
-        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
+        return self._do_request(
+            "GET", url_path, params=params, headers=headers, timeout=self._config.timeout, api_subversion=api_subversion
+        )
 
     def _post(
         self,
@@ -872,6 +878,7 @@ class APIClient:
         returns_items: bool = False,
         executor: TaskExecutor | None = None,
         delete_limit: int | None = None,
+        api_subversion: str | None = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
@@ -883,6 +890,7 @@ class APIClient:
                 },
                 "params": params,
                 "headers": headers,
+                "api_subversion": api_subversion,
             }
             for chunk in identifiers.chunked(delete_limit or self._DELETE_LIMIT)
         ]

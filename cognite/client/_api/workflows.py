@@ -104,6 +104,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
             json=body,
+            api_subversion=self._api_subversion,
         )
         return TaskExecution._load(response.json())
 
@@ -138,7 +139,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         """
         self._experimental_warning()
         try:
-            response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
+            response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}", api_subversion=self._api_subversion)
         except CogniteAPIError as e:
             if e.code == 400:
                 return None
@@ -199,6 +200,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
             json=body,
+            api_subversion=self._api_subversion,
         )
         return WorkflowExecution._load(response.json())
 
@@ -250,7 +252,12 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         else:
             body = None
 
-        response = self._post(url_path=self._RESOURCE_PATH + "/list", json=body, params={"limit": limit})
+        response = self._post(
+            url_path=self._RESOURCE_PATH + "/list",
+            json=body,
+            params={"limit": limit},
+            api_subversion=self._api_subversion,
+        )
 
         return WorkflowExecutionList._load(response.json()["items"])
 
@@ -300,6 +307,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [version.dump(camel_case=True)]},
+            api_subversion=self._api_subversion,
         )
 
         return WorkflowVersion._load(response.json()["items"][0])
@@ -341,6 +349,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             params={"ignoreUnknownIds": ignore_unknown_ids},
             delete_limit=100,
             wrap_ids=True,
+            api_subversion=self._api_subversion,
         )
 
     def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
@@ -365,6 +374,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         try:
             response = self._get(
                 url_path=f"/workflows/{workflow_external_id}/versions/{version}",
+                api_subversion=self._api_subversion,
             )
         except CogniteAPIError as e:
             if e.code == 404:
@@ -418,7 +428,11 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 }
             }
 
-        response = self._post(url_path=self._RESOURCE_PATH + "/list", json=body)
+        response = self._post(
+            url_path=self._RESOURCE_PATH + "/list",
+            json=body,
+            api_subversion=self._api_subversion,
+        )
 
         return WorkflowVersionList._load(response.json()["items"])
 
@@ -461,6 +475,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
+            api_subversion=self._api_subversion,
         )
         return Workflow._load(response.json()["items"][0])
 
@@ -483,7 +498,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         """
         self._experimental_warning()
         try:
-            response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
+            response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}", api_subversion=self._api_subversion)
         except CogniteAPIError as e:
             if e.code == 404:
                 return None
@@ -529,5 +544,8 @@ class WorkflowAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        response = self._get(url_path=self._RESOURCE_PATH)
+        response = self._get(
+            url_path=self._RESOURCE_PATH,
+            api_subversion=self._api_subversion,
+        )
         return WorkflowList._load(response.json()["items"])
