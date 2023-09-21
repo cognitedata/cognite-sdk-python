@@ -114,6 +114,8 @@ class FunctionsAPI(APIClient):
 
         By default, the function is deployed with the latest version of cognite-sdk. If a specific version is desired, it can be specified either in a requirements.txt file when deploying via the `folder` argument or between `[requirements]` tags when deploying via the `function_handle` argument (see example below).
 
+        For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
+
         Args:
             name (str): The name of the function.
             folder (str | None): Path to the folder where the function source code is located.
