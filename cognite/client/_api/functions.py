@@ -959,7 +959,9 @@ class FunctionSchedulesAPI(APIClient):
             try:
                 IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
             except ValueError:
-                raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
+                raise AssertionError(
+                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
+                )
 
         if is_unlimited(limit):
             limit = self._LIST_LIMIT_CEILING

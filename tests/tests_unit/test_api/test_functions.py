@@ -895,7 +895,10 @@ class TestFunctionSchedulesAPI:
     def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
         with pytest.raises(AssertionError) as excinfo:
             cognite_client.functions.schedules.list(function_id=123, function_external_id="my-func")
-        assert "Only function_id or function_external_id allowed when listing schedules." == excinfo.value.args[0]
+        assert (
+            "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
+            == excinfo.value.args[0]
+        )
 
     def test_create_schedules_with_function_external_id(
         self, mock_function_schedules_response_xid_not_valid_with_oidc, cognite_client
