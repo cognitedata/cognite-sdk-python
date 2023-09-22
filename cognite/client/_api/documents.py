@@ -61,18 +61,17 @@ class DocumentPreviewAPI(APIClient):
 
         Examples:
 
-        Download image preview of page 5 of file with id 123:
+            Download image preview of page 5 of file with id 123:
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> content = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> content = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
 
-        Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
+            Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
 
-            >>> from IPython.display import Image
-            >>> binary_png = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
-            >>> Image(binary_png)
-
+                >>> from IPython.display import Image
+                >>> binary_png = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
+                >>> Image(binary_png)
         """
         res = self._do_request(
             "GET", f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", accept="image/png"
@@ -127,11 +126,11 @@ class DocumentPreviewAPI(APIClient):
 
         Examples:
 
-        Download PDF preview of file with id 123:
+            Download PDF preview of file with id 123:
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> content = c.documents.previews.download_document_as_pdf_bytes(id=123)
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> content = c.documents.previews.download_document_as_pdf_bytes(id=123)
         """
         res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
         return res.content
@@ -181,11 +180,11 @@ class DocumentPreviewAPI(APIClient):
 
         Examples:
 
-        Retrieve the PDF preview download link for document with id 123:
+            Retrieve the PDF preview download link for document with id 123:
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> link = c.documents.previews.retrieve_pdf_link(id=123)
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> link = c.documents.previews.retrieve_pdf_link(id=123)
         """
         res = self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
         return TemporaryLink.load(res.json())
@@ -271,21 +270,20 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Count the number of documents in your CDF project:
+            Count the number of documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> count = c.documents.aggregate_count()
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> count = c.documents.aggregate_count()
 
-        Count the number of PDF documents in your CDF project:
+            Count the number of PDF documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-            >>> pdf_count = c.documents.aggregate_count(filter=is_pdf)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
+                >>> pdf_count = c.documents.aggregate_count(filter=is_pdf)
         """
         self._validate_filter(filter)
         return self._advanced_aggregate(
@@ -368,13 +366,12 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Count the number metadata keys for documents in your CDF project:
+            Count the number metadata keys for documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import SourceFileProperty
-            >>> c = CogniteClient()
-            >>> count = c.documents.aggregate_cardinality_properties(SourceFileProperty.metadata)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import SourceFileProperty
+                >>> c = CogniteClient()
+                >>> count = c.documents.aggregate_cardinality_properties(SourceFileProperty.metadata)
         """
         self._validate_filter(filter)
 
@@ -408,35 +405,34 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Get the unique types with count of documents in your CDF project:
+            Get the unique types with count of documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type)
-            >>> unique_types = result.unique
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type)
+                >>> unique_types = result.unique
 
-        Get the different languages with count for documents with external id prefix "abc":
+            Get the different languages with count for documents with external id prefix "abc":
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
-            >>> result = c.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
-            >>> unique_languages = result.unique
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
+                >>> result = c.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
+                >>> unique_languages = result.unique
 
-        Get the unique mime types with count of documents, but exclude mime types that start with text:
+            Get the unique mime types with count of documents, but exclude mime types that start with text:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> from cognite.client.data_classes import aggregations
-            >>> c = CogniteClient()
-            >>> agg = aggregations
-            >>> is_not_text = agg.Not(agg.Prefix("text"))
-            >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
-            >>> unique_mime_types = result.unique
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> from cognite.client.data_classes import aggregations
+                >>> c = CogniteClient()
+                >>> agg = aggregations
+                >>> is_not_text = agg.Not(agg.Prefix("text"))
+                >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
+                >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
         return self._advanced_aggregate(
@@ -470,13 +466,12 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Get the unique metadata keys with count of documents in your CDF project:
+            Get the unique metadata keys with count of documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import SourceFileProperty
-            >>> c = CogniteClient()
-            >>> result = c.documents.aggregate_unique_values(SourceFileProperty.metadata)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import SourceFileProperty
+                >>> c = CogniteClient()
+                >>> result = c.documents.aggregate_unique_values(SourceFileProperty.metadata)
         """
         self._validate_filter(filter)
 
@@ -510,12 +505,11 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Retrieve the content of a document with id 123:
+            Retrieve the content of a document with id 123:
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> content = c.documents.retrieve_content(id=123)
-
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> content = c.documents.retrieve_content(id=123)
         """
         response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
         return response.content
