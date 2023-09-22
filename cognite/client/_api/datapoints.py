@@ -1099,7 +1099,7 @@ class DatapointsAPI(APIClient):
 
         if exactly_one_is_not_none(aggregates, granularity):
             raise ValueError(
-                "Got only one of 'aggregates' and 'granularity'."
+                "Got only one of 'aggregates' and 'granularity'. "
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
