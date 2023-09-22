@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.26.0] - 2023-09-22
+### Added
+- Support `partition` and `cursor` parameters on `timeseries.subscriptions.iterate_data`
+- Include the `cursor` attribute on `DatapointSubscriptionBatch`, which is yielded in every iteration
+of `timeseries.subscriptions.iterate_data`.
+
 ## [6.25.3] - 2023-09-19
 ### Added
 - Support for setting and retrieving `data_set_id` in data class `client.data_classes.ThreeDModel`.
@@ -34,13 +40,13 @@ Changes are grouped as follows
   (which happens when the credentials are invalid).
 - While processing source- and destination credentials in `client.transformations.[create, update]`, an `AttributeError`
   can no longer be raised (by not specifying project).
-
 ### Added
 - `TransformationList` now correctly inherits the two (missing) helper methods `as_ids()` and `as_external_ids()`.
 
 ## [6.25.0] - 2023-09-14
 ### Added
 - Support for `ignore_unknown_ids` in `client.functions.retrieve_multiple` method.
+
 ## [6.24.1] - 2023-09-13
 ### Fixed
 - Bugfix for `AssetsAPI.create_hierarchy` when running in upsert mode: It could skip certain updates above
