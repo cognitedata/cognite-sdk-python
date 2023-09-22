@@ -905,7 +905,7 @@ class InstancesAPI(APIClient):
                 ...     },
                 ...     select = {
                 ...         "actors": Select(
-                ...             [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
+                ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
                 ...     },
                 ... )
                 >>> res = c.data_modeling.instances.query(query)
@@ -928,6 +928,7 @@ class InstancesAPI(APIClient):
             Find actors in movies released before 2000 sorted by actor name:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
@@ -942,7 +943,7 @@ class InstancesAPI(APIClient):
                 ...     },
                 ...     select = {
                 ...         "actors": Select(
-                ...             [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
+                ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
                 ...     },
                 ... )
                 >>> res = c.data_modeling.instances.sync(query)
