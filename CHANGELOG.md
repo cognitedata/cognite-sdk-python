@@ -908,7 +908,7 @@ It will also cache the token between runs.
 ### Changed
 - Client configuration no longer respects any environment variables. There are other libraries better
 suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
-been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+been several reports of envvar name clash issues in tools built on top the SDK. We therefore
 consider this something that should be handled by the application consuming the SDK. All configuration of
 `cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
 `max_connection_pool_size` and other options which apply to all client instances are now configured through

@@ -52,7 +52,7 @@ class ViewCore(DataModelingResource):
         if "filter" in data:
             data["filter"] = Filter.load(data["filter"])
 
-        return cast(ViewCore, super().load(data))
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

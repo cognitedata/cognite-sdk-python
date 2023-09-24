@@ -262,7 +262,7 @@ class Transformation(CogniteResource):
             other_client = CogniteClient(config)
             try:
                 session = other_client.iam.sessions.create(credentials)
-                ret = sessions_cache[key] = NonceCredentials(cast(int, session.id), cast(str, session.nonce), project)
+                ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
             except CogniteAPIError as err:
                 # This is fine, we might be missing SessionsACL. The OIDC credentials will then be passed
                 # directly to the backend service. We do however not catch CogniteAuthError as that would

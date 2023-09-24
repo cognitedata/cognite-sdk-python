@@ -4,8 +4,6 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, BinaryIO, Literal, cast, overload
 
-from requests import Response
-
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
@@ -542,7 +540,6 @@ class DocumentsAPI(APIClient):
         with self._do_request(
             "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
         ) as response:
-            response = cast(Response, response)
             for chunk in response.iter_content(chunk_size=2**21):
                 if chunk:  # filter out keep-alive new chunks
                     buffer.write(chunk)

@@ -61,7 +61,7 @@ class SpacesAPI(APIClient):
         Returns:
             Iterator[Space]: yields Spaces one by one.
         """
-        return cast(Iterator[Space], self())
+        return self()
 
     @overload
     def retrieve(self, space: str) -> Space | None:  # type: ignore[misc]
