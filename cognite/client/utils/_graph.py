@@ -23,7 +23,7 @@ def find_extended_cycle(slow: str, edges: dict, skip: set[str]) -> tuple[set[str
         if slow in skip:
             return all_elements, []
 
-        all_elements.add(slow := edges[slow])  # type: ignore [arg-type, assignment]
+        all_elements.add(slow := edges[slow])
         fast = edges[edges[fast]]
 
     loop_elements = [loop_start := slow]
