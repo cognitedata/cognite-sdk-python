@@ -104,7 +104,6 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
             json=body,
-            api_subversion=self._api_subversion,
         )
         return TaskExecution._load(response.json())
 
@@ -139,7 +138,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         """
         self._experimental_warning()
         try:
-            response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}", api_subversion=self._api_subversion)
+            response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
         except CogniteAPIError as e:
             if e.code == 400:
                 return None
@@ -200,7 +199,6 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
             json=body,
-            api_subversion=self._api_subversion,
         )
         return WorkflowExecution._load(response.json())
 
@@ -256,7 +254,6 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             url_path=self._RESOURCE_PATH + "/list",
             json=body,
             params={"limit": limit},
-            api_subversion=self._api_subversion,
         )
 
         return WorkflowExecutionList._load(response.json()["items"])
@@ -264,6 +261,10 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
 class WorkflowVersionAPI(BetaWorkflowAPIClient):
     _RESOURCE_PATH = "/workflows/versions"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 100
 
     def create(self, version: WorkflowVersionCreate) -> WorkflowVersion:
         """`Create a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
@@ -307,7 +308,6 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [version.dump(camel_case=True)]},
-            api_subversion=self._api_subversion,
         )
 
         return WorkflowVersion._load(response.json()["items"][0])
@@ -347,9 +347,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
-            delete_limit=100,
             wrap_ids=True,
-            api_subversion=self._api_subversion,
         )
 
     def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
@@ -374,7 +372,6 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         try:
             response = self._get(
                 url_path=f"/workflows/{workflow_external_id}/versions/{version}",
-                api_subversion=self._api_subversion,
             )
         except CogniteAPIError as e:
             if e.code == 404:
@@ -431,7 +428,6 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             list_cls=WorkflowVersionList,
             filter={"workflowFilters": workflow_ids_dumped},
             query_params={"limit": limit},
-            api_subversion=self._api_subversion,
         )
 
 
@@ -448,6 +444,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         self.versions = WorkflowVersionAPI(config, api_version, cognite_client)
         self.executions = WorkflowExecutionAPI(config, api_version, cognite_client)
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 100
 
     def create(self, workflow: WorkflowCreate) -> Workflow:
         """`Create a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
@@ -473,7 +470,6 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
-            api_subversion=self._api_subversion,
         )
         return Workflow._load(response.json()["items"][0])
 
@@ -496,7 +492,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         """
         self._experimental_warning()
         try:
-            response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}", api_subversion=self._api_subversion)
+            response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
         except CogniteAPIError as e:
             if e.code == 404:
                 return None
@@ -522,7 +518,6 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             params={"ignoreUnknownIds": ignore_unknown_ids},
-            delete_limit=100,
             wrap_ids=True,
         )
 
@@ -550,5 +545,4 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             resource_cls=Workflow,
             list_cls=WorkflowList,
             limit=limit,
-            api_subversion=self._api_subversion,
         )

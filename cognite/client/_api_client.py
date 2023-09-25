@@ -893,7 +893,6 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
         executor: TaskExecutor | None = None,
-        delete_limit: int | None = None,
         api_subversion: str | None = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
@@ -908,7 +907,7 @@ class APIClient:
                 "headers": headers,
                 "api_subversion": api_subversion,
             }
-            for chunk in identifiers.chunked(delete_limit or self._DELETE_LIMIT)
+            for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
         summary = utils._concurrency.execute_tasks(
             self._post, tasks, max_workers=self._config.max_workers, executor=executor
