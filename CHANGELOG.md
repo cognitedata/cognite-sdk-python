@@ -19,9 +19,9 @@ Changes are grouped as follows
 
 ## [6.26.0] - 2023-09-22
 ### Added
-- Support `partition` and `cursor` parameters on `timeseries.subscriptions.iterate_data`
+- Support `partition` and `cursor` parameters on `time_series.subscriptions.iterate_data`
 - Include the `cursor` attribute on `DatapointSubscriptionBatch`, which is yielded in every iteration
-of `timeseries.subscriptions.iterate_data`.
+of `time_series.subscriptions.iterate_data`.
 
 ## [6.25.3] - 2023-09-19
 ### Added
