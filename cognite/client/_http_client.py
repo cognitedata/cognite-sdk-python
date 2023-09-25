@@ -141,13 +141,7 @@ class HTTPClient:
         Sometimes the appropriate built-in networking exception is not in the context, sometimes the requests
         exception is not in the context, so we need to check for the appropriate built-in exceptions,
         urllib3 exceptions, and requests exceptions.
-
-        Args:
-            method (str): No description.
-            url (str): No description.
-            **kwargs (Any): No description.
-        Returns:
-            requests.Response: No description."""
+        """
         try:
             res = self.session.request(method=method, url=url, **kwargs)
             return res
