@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import abc
 import cProfile
 import functools
 import gzip
-import inspect
 import json
 import math
 import os
@@ -34,14 +32,6 @@ def all_subclasses(base: type) -> list[type]:
         ),
         key=str,
     )
-
-
-def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
-    return [
-        sub
-        for sub in all_subclasses(base)
-        if all(base is not abc.ABC for base in sub.__bases__) and not inspect.isabstract(sub)
-    ]
 
 
 def all_mock_children(mock, parent_name=()):
