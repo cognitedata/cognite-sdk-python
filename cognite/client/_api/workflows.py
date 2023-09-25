@@ -42,15 +42,13 @@ class BetaWorkflowAPIClient(APIClient, ABC):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
-        # Easter egg to enable users to receive warnings everytime a endpoint is called
-        self._print_warning = True
 
-    def _experimental_warning(self) -> None:
-        if self._print_warning:
-            warn(
-                "Workflow Orchestration endpoints are experimental and may be subject to breaking changes in future versions without notice.",
-                FutureWarning,
-            )
+    @staticmethod
+    def _experimental_warning() -> None:
+        warn(
+            "Workflow Orchestration endpoints are experimental and may be subject to breaking changes in future versions without notice.",
+            FutureWarning,
+        )
 
 
 WorkflowIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
