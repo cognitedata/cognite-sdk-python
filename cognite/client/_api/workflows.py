@@ -6,7 +6,6 @@ from warnings import warn
 
 from typing_extensions import TypeAlias
 
-from cognite.client._api.functions import _create_session_and_return_nonce
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
@@ -28,6 +27,7 @@ from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
 )
+from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -189,7 +189,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        nonce = _create_session_and_return_nonce(self._cognite_client)
+        nonce = create_session_and_return_nonce(self._cognite_client)
         body = {"authentication": {"nonce": nonce}}
         if input is not None:
             body["input"] = input
