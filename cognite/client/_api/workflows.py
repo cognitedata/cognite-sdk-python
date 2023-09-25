@@ -142,7 +142,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         except CogniteAPIError as e:
             if e.code == 400:
                 return None
-            raise e
+            raise
         return WorkflowExecutionDetailed._load(response.json())
 
     def trigger(
@@ -159,7 +159,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the strind "${workflow.input}"
                                 See tip below for more information.
 
-        .. tip::
+        Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
             function parameters then you can specify it as follows
 
@@ -168,9 +168,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
-                ...         data={"workflow_data": "${workflow.input}",},
-                ...     ),
-                ... )
+                ...         data={"workflow_data": "${workflow.input}",}))
 
         Returns:
             WorkflowExecution: The created workflow execution.
@@ -328,13 +326,13 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         Examples:
 
-            Delete workflow version 1 of workflow my workflow specified by using a tuple:
+            Delete workflow version "1" of workflow "my workflow" specified by using a tuple:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.workflows.versions.delete(("my workflow", "1"))
 
-            Delete workflow version 1 of workflow my workflow and workflow version 2 of workflow my workflow 2 using the WorkflowVersionId class:
+            Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
@@ -536,7 +534,6 @@ class WorkflowAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.workflows.list()
-
         """
         self._experimental_warning()
 

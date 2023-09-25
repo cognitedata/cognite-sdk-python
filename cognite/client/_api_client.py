@@ -133,11 +133,8 @@ class APIClient:
         url_path: str,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-        api_subversion: str | None = None,
     ) -> Response:
-        return self._do_request(
-            "GET", url_path, params=params, headers=headers, timeout=self._config.timeout, api_subversion=api_subversion
-        )
+        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
     def _post(
         self,
