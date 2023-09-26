@@ -305,4 +305,4 @@ class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionId
             return identifier
         if "workflowExternalId" in identifier and "version" in identifier:
             return identifier["workflowExternalId"], identifier["version"]
-        raise ValueError(f"{identifier} does not contain 'workflowExternalId' and 'version''")
+        raise ValueError(f"{identifier} does not contain both 'workflowExternalId' and 'version''")
