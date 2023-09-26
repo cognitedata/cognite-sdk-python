@@ -293,15 +293,15 @@ class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionId
                 [WorkflowVersionIdentifier(entry["version"], entry["workflowExternalId"]) for entry in workflow_ids],
                 is_singleton=False,
             )
-        raise TypeError(f"versions must be of type str or Sequence[str]. Found {type(workflow_ids)}")
+        raise TypeError(f"WorkflowIdentifier must be of type str or Sequence[str]. Found {type(workflow_ids)}")
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one workflow version must be specified")
 
     @staticmethod
-    def unwrap_identifier(identifier: str | int | dict) -> str | int | tuple[str, str]:  # type: ignore[override]
-        if isinstance(identifier, (str, int)):
+    def unwrap_identifier(identifier: str | dict) -> str | tuple[str, str]:  # type: ignore[override]
+        if isinstance(identifier, str):
             return identifier
         if "workflowExternalId" in identifier and "version" in identifier:
             return identifier["workflowExternalId"], identifier["version"]

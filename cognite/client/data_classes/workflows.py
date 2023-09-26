@@ -503,7 +503,7 @@ class TaskExecution(CogniteResource):
         version (str | None): The version of the task execution. Defaults to None.
         start_time (int | None): The start time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the task execution. Unix timestamp in milliseconds. Defaults to None.
-        reason_for_incompletion (str | None): The reason for the task execution not completed. Defaults to None.
+        reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
 
     """
 
@@ -689,10 +689,11 @@ class WorkflowVersion(WorkflowVersionCreate):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
         resource = json.loads(resource) if isinstance(resource, str) else resource
+        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
             workflow_external_id=resource["workflowExternalId"],
             version=resource["version"],
-            workflow_definition=WorkflowDefinition._load(resource["workflowDefinition"]),
+            workflow_definition=WorkflowDefinition._load(workflow_definition),
         )
 
 
@@ -703,9 +704,9 @@ class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
 
     _RESOURCE = WorkflowVersion
 
-    def as_ids(self) -> WorkflowIds:
-        """Returns a WorkflowIdList of workflow version ids for the workflow versions in the list."""
-        return WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
+    def as_ids(self) -> _WorkflowIds:
+        """Returns a WorkflowIds object with the workflow version ids."""
+        return _WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
 
 
 class WorkflowExecution(CogniteResource):
@@ -720,7 +721,7 @@ class WorkflowExecution(CogniteResource):
         version (str | None): The version of the workflow. Defaults to None.
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
-        reason_for_incompletion (str | None): The reason for the workflow execution not completed. Defaults to None.
+        reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
     """
 
     def __init__(
@@ -780,19 +781,19 @@ class WorkflowExecutionDetailed(WorkflowExecution):
     This class represents a detailed workflow execution.
 
     A detailed workflow execution contains the input and output of each task in the workflow execution. In addition,
-    it contains the workflow definition of the workflow execution.
+    it contains the workflow definition of the workflow.
 
     Args:
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
-        workflow_definition (WorkflowDefinition): The workflow definition of the workflow execution.
+        workflow_definition (WorkflowDefinition): The workflow definition of the workflow.
         status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
         executed_tasks (list[TaskExecution]): The executed tasks of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
-        reason_for_incompletion (str | None): The reason for the workflow execution not completed. Defaults to None.
+        reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
     """
 
     def __init__(
@@ -880,7 +881,7 @@ class WorkflowVersionId:
         elif "externalId" in resource:
             workflow_external_id = resource["externalId"]
         else:
-            raise ValueError("Invalid input to WorkflowVersionId")
+            raise ValueError("Invalid input to WorkflowVersionId._load")
 
         return cls(
             workflow_external_id=workflow_external_id,
@@ -889,27 +890,21 @@ class WorkflowVersionId:
 
     def dump(self, camel_case: bool = False, as_external_id_key: bool = False) -> dict[str, Any]:
         if as_external_id_key:
-            output: dict[str, Any] = {
-                ("externalId" if camel_case else "external_id"): self.workflow_external_id,
-            }
+            output: dict[str, Any] = {("externalId" if camel_case else "external_id"): self.workflow_external_id}
         else:
-            output = {
-                ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
-            }
+            output = {("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id}
         if self.version:
             output["version"] = self.version
         return output
 
 
-class WorkflowIds(UserList):
+class _WorkflowIds(UserList):
     """
     This class represents a list of Workflow Version Identifiers.
     """
 
-    _RESOURCE = WorkflowVersionId
-
     @classmethod
-    def _load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> WorkflowIds:
+    def _load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> _WorkflowIds:
         workflow_ids: Sequence[WorkflowVersionId]
         if isinstance(resource, tuple) and len(resource) == 2 and all(isinstance(x, str) for x in resource):
             workflow_ids = [WorkflowVersionId(*resource)]

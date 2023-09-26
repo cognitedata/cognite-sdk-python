@@ -13,10 +13,11 @@ if TYPE_CHECKING:
 def create_session_and_return_nonce(
     client: CogniteClient,
     client_credentials: dict | ClientCredentials | None = None,
+    api_name: str = "Functions API",
 ) -> str:
     if client_credentials is None:
         if isinstance(client._config.credentials, OAuthClientCertificate):
-            raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")
+            raise CogniteAuthError(f"Client certificate credentials is not supported with the {api_name}")
     elif isinstance(client_credentials, dict):
         client_credentials = ClientCredentials(client_credentials["client_id"], client_credentials["client_secret"])
     return client.iam.sessions.create(client_credentials).nonce

@@ -15,12 +15,12 @@ from cognite.client.data_classes.workflows import (
     WorkflowExecution,
     WorkflowExecutionDetailed,
     WorkflowExecutionList,
-    WorkflowIds,
     WorkflowList,
     WorkflowVersion,
     WorkflowVersionCreate,
     WorkflowVersionId,
     WorkflowVersionList,
+    _WorkflowIds,
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import (
@@ -187,7 +187,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        nonce = create_session_and_return_nonce(self._cognite_client)
+        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Workflow API")
         body = {"authentication": {"nonce": nonce}}
         if input is not None:
             body["input"] = input
@@ -236,7 +236,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         self._experimental_warning()
         filter_: dict[str, Any] = {}
         if workflow_ids is not None:
-            filter_["workflowFilters"] = WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
+            filter_["workflowFilters"] = _WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
         if created_time_start is not None:
             filter_["createdTimeStart"] = created_time_start
         if created_time_end is not None:
@@ -310,16 +310,13 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
     def delete(
         self,
-        workflow_id: WorkflowVersionId
-        | tuple[str, str]
-        | MutableSequence[WorkflowVersionId]
-        | MutableSequence[tuple[str, str]],
+        workflow_id: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier],
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete a workflow version(s). <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/DeleteSpecificVersionsOfWorkflow>`_
 
         Args:
-            workflow_id (WorkflowVersionId | tuple[str, str] | MutableSequence[WorkflowVersionId] | MutableSequence[tuple[str, str]]): Workflow version id or list of workflow version ids to delete.
+            workflow_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]): Workflow version id or list of workflow version ids to delete.
             ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
 
         Examples:
@@ -339,7 +336,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        identifiers = WorkflowIds._load(workflow_id).dump(camel_case=True)
+        identifiers = _WorkflowIds._load(workflow_id).dump(camel_case=True)
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
@@ -416,7 +413,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         if workflow_ids is None:
             workflow_ids_dumped = []
         else:
-            workflow_ids_dumped = WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
+            workflow_ids_dumped = _WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
 
         return self._list(
             method="POST",

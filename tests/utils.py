@@ -18,8 +18,6 @@ from cognite.client.utils._text import random_string
 if TYPE_CHECKING:
     import pandas
 
-T_Type = TypeVar("T_Type", bound=type)
-
 
 def all_subclasses(base: type) -> list[type]:
     """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
