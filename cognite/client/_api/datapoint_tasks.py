@@ -203,7 +203,7 @@ class _SingleTSQueryValidator:
 
             elif isinstance(ts, dict):
                 ts_validated = self._validate_user_supplied_dict_keys(ts, arg_name)
-                if not isinstance(identifier := ts_validated[arg_name], exp_type):  # type: ignore [literal-required]
+                if not isinstance(identifier := ts_validated[arg_name], exp_type):
                     self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
                 # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
                 ts_dct = {**self.defaults, **ts_validated}

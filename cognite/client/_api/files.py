@@ -6,7 +6,6 @@ import warnings
 from io import BufferedReader
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     BinaryIO,
     Iterator,
@@ -35,9 +34,6 @@ from cognite.client.exceptions import CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
-
-if TYPE_CHECKING:
-    from requests import Response
 
 
 class FilesAPI(APIClient):
@@ -762,7 +758,6 @@ class FilesAPI(APIClient):
         with self._http_client_with_retry.request(
             "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
-            r = cast("Response", r)
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:  # filter out keep-alive new chunks
