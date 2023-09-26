@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class WorkflowCreate(CogniteResource):
     """
-    This class represents a workflow. This is the write version, used when creating a workflow.
+    This class represents a workflow. This is the write version, used when creating or updating a workflow.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -47,7 +47,7 @@ class WorkflowCreate(CogniteResource):
 
 class Workflow(WorkflowCreate):
     """
-    This class represents a workflow. This is the write version, used when creating a workflow.
+    This class represents a workflow. This is the reading version, used when reading or listing a workflows.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -67,15 +67,12 @@ class Workflow(WorkflowCreate):
 
 
 class WorkflowList(CogniteResourceList[Workflow]):
-    """
-    This class represents a list of workflows.
-    """
+    """This class represents a list of workflows."""
 
     _RESOURCE = Workflow
 
-    def as_external_is(self) -> list[str]:
+    def as_external_ids(self) -> list[str]:
         """Returns a list of external ids for the workflows in the list.
-
 
         Returns:
             list[str]: List of external ids.
@@ -89,7 +86,10 @@ class TaskParameters(CogniteResource, ABC):
         type_ = data.get("type", data.get("taskType"))
         parameters = data.get("parameters", data.get("input"))
         if parameters is None:
-            raise ValueError("You must provide parameter data either with key 'input' or 'parameter'")
+            raise ValueError(
+                "You must provide parameter data either with key "
+                "'parameter' or 'input', with parameter taking precedence."
+            )
 
         if type_ == "function":
             return FunctionTaskParameters._load(parameters)
@@ -100,7 +100,7 @@ class TaskParameters(CogniteResource, ABC):
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
         else:
-            raise ValueError(f"Unknown task type: {type_}")
+            raise ValueError(f"Unknown task type: {type_}. Expected 'function', 'transformation', 'cdf, or 'dynamic'")
 
 
 class FunctionTaskParameters(TaskParameters):
@@ -114,16 +114,16 @@ class FunctionTaskParameters(TaskParameters):
     If a function is asynchronous, you need to call the client.workflows.tasks.update() endpoint to update the status of the task.
     While synchronous tasks update the status automatically.
 
-    .. tip::
-        You can dynamicaly specify data from other tasks or the workflow. You do this by following the format
+    Tip:
+        You can dynamically specify data from other tasks or the workflow. You do this by following the format
         `${prefix.jsonPath}` in the expression. The valid are:
 
         - `${workflow.input}`: The workflow input.
         - `${<taskExternalId>.output}`: The output of the task with the given external id.
         - `${<taskExternalId>.input}`: The input of the task with the given external id.
 
-        For example, if I have a workflow with two tasks with external_id of the first task being `task1` then,
-        I can specify the data for the second task as follows:
+        For example, if you have a workflow containing two tasks, and the external_id of the first task is `task1` then,
+        you can specify the data for the second task as follows:
 
             >>> from cognite.client.data_classes  import Task, FunctionTaskParameters
             >>> task = Task(
@@ -157,7 +157,8 @@ class FunctionTaskParameters(TaskParameters):
         return cls(
             external_id=function["externalId"],
             data=function.get("data"),
-            is_async_complete=resource.get("isAsyncComplete", False),
+            # Allow default to come from the API.
+            is_async_complete=resource.get("isAsyncComplete"),  # type: ignore[arg-type]
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -194,11 +195,7 @@ class TransformationTaskParameters(TaskParameters):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {
-            "transformation": {
-                ("externalId" if camel_case else "external_id"): self.external_id,
-            }
-        }
+        return {"transformation": {("externalId" if camel_case else "external_id"): self.external_id}}
 
 
 class CDFTaskParameters(TaskParameters):
@@ -268,7 +265,8 @@ class DynamicTaskParameters(TaskParameters):
     a Cognite Function task.
 
     Args:
-        dynamic (list[Task] | str): The dynamic task to be called. The dynamic task is a string that is evaluated by the
+        dynamic (list[Task] | str): The dynamic task to be called. The dynamic task is a string that is evaluated
+                                during the workflow's execution.
 
     """
 
@@ -280,7 +278,7 @@ class Task(CogniteResource):
     """
     This class represents a task.
 
-    Note tasks do not distinguish between write and read versions.
+    Note: tasks do not distinguish between write and read versions.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
