@@ -553,6 +553,16 @@ class TaskExecution(CogniteResource):
 
 
 class WorkflowDefinitionCreate(CogniteResource):
+    """
+    This class represents a workflow definition. This represents the write/update version of a workflow definiton.
+
+    A workflow definition defines the tasks and order/dependencies of these tasks.
+
+    Args:
+        tasks (list[Task]): The tasks of the workflow definition.
+        description (str | None): The description of the workflow definition. Defaults to None.
+    """
+
     def __init__(
         self,
         tasks: list[Task],
@@ -571,9 +581,7 @@ class WorkflowDefinitionCreate(CogniteResource):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: dict[str, Any] = {
-            "tasks": [task.dump(camel_case) for task in self.tasks],
-        }
+        output: dict[str, Any] = {"tasks": [task.dump(camel_case) for task in self.tasks]}
         if self.description:
             output["description"] = self.description
         return output
@@ -581,9 +589,9 @@ class WorkflowDefinitionCreate(CogniteResource):
 
 class WorkflowDefinition(WorkflowDefinitionCreate):
     """
-    This class represents a workflow definition.
+    This class represents a workflow definition. This represents the read version of a workflow definiton.
 
-    A workflow definition defines the tasks and order/dependencies of the tasks in a workflow.
+    A workflow definition defines the tasks and order/dependencies of these tasks.
 
     Args:
         hash_ (str): The hash of the tasks and description. This is used to uniquely identify the workflow definition as you can overwrite a workflow version.
@@ -617,7 +625,7 @@ class WorkflowDefinition(WorkflowDefinitionCreate):
 
 class WorkflowVersionCreate(CogniteResource):
     """
-    This class represents a workflow version. This is the write version, used when creating a workflow version.
+    This class represents a workflow version. This is the write-variant, used when creating or updating a workflow variant.
 
     Args:
         workflow_external_id (str): The external ID of the workflow.
@@ -637,7 +645,7 @@ class WorkflowVersionCreate(CogniteResource):
         self.workflow_definition = workflow_definition
 
     @classmethod
-    def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
@@ -662,7 +670,7 @@ class WorkflowVersionCreate(CogniteResource):
 
 class WorkflowVersion(WorkflowVersionCreate):
     """
-    This class represents a workflow version. This is the read version, used when retrieving a workflow version.
+    This class represents a workflow version. This is the read variant, used when retrieving/listing a workflow variant.
 
     Args:
         workflow_external_id (str): The external ID of the workflow.
