@@ -6,7 +6,7 @@ from cognite.client.utils._concurrency import ConcurrencySettings, MainThreadExe
 
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
-_MAX_WORKERS = 2
+_MAX_WORKERS = 1
 
 
 def get_data_modeling_executor() -> TaskExecutor:
