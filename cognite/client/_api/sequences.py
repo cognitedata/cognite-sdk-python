@@ -225,7 +225,7 @@ class SequencesAPI(APIClient):
 
         Args:
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count.
-            filter (SequenceFilter | dict | None): The filter to narrow down sequences to count requirering exact match.
+            filter (SequenceFilter | dict | None): The filter to narrow down sequences to count requiring exact match.
 
         Returns:
             int: The number of sequences matching the specified filters and search.
@@ -269,7 +269,7 @@ class SequencesAPI(APIClient):
             property (SequenceProperty | str | list[str]): The property to count the cardinality of.
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
             int: The number of properties matching the specified filters and search.
@@ -320,7 +320,7 @@ class SequencesAPI(APIClient):
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
             int: The number of properties matching the specified filters and search.
@@ -357,7 +357,7 @@ class SequencesAPI(APIClient):
             property (SequenceProperty | str | list[str]): The property to group by.
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requirering exact match.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of sequences matching the specified filters and search.
@@ -428,7 +428,7 @@ class SequencesAPI(APIClient):
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requirering exact match.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of sequences matching the specified filters and search.
@@ -738,7 +738,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Find all sequences with asset id '123' and metadata key 'type' equals 'efficency' and
+            Find all sequences with asset id '123' and metadata key 'type' equals 'efficiency' and
             return them sorted by created time:
 
                 >>> from cognite.client import CogniteClient
@@ -752,7 +752,7 @@ class SequencesAPI(APIClient):
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
 
-            To make it easier to avoid spelling mistakes and easiser to look up available properties
+            To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` enums.
 
                 >>> from cognite.client import CogniteClient
@@ -761,8 +761,8 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> f = filters
                 >>> is_asset = f.Equals(SequenceProperty.asset_id, 123)
-                >>> is_efficency = f.Equals(SequenceProperty.metadata_key("type"), "efficiency")
-                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficency),
+                >>> is_efficiency = f.Equals(SequenceProperty.metadata_key("type"), "efficiency")
+                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficiency),
                 ...                            sort=SortableSequenceProperty.created_time)
 
         """
@@ -1082,7 +1082,7 @@ class SequencesDataAPI(APIClient):
         Args:
             id (int | None): Id or list of ids.
             external_id (str | None): External id or list of external ids.
-            column_external_ids (SequenceType[str] | None): (optional, SequenceType[str]): external ids of columns to include. Omitting wil return all columns.
+            column_external_ids (SequenceType[str] | None): (optional, SequenceType[str]): external ids of columns to include. Omitting will return all columns.
             before (int | None): (optional, int): Get latest datapoint before this row number.
 
         Returns:

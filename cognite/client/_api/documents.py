@@ -527,7 +527,7 @@ class DocumentsAPI(APIClient):
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the content of.
-            buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retriving large documents.
+            buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retrieving large documents.
 
         Examples:
 

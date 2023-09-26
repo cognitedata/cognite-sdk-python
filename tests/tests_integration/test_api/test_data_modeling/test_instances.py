@@ -541,12 +541,12 @@ class TestInstancesAPI:
         result = cognite_client.data_modeling.instances.query(my_query)
 
         # Assert
-        assert len(result["movies"]) > 0, "Add at least one movie withe release year before 2000"
+        assert len(result["movies"]) > 0, "Add at least one movie with release year before 2000"
         assert all(
             cast(int, movie.properties.get(movie_id, {}).get("releaseYear")) < 2000 for movie in result["movies"]
         )
         assert result["movies"] == sorted(result["movies"], key=lambda x: x.properties.get(movie_id, {}).get("title"))
-        assert len(result["actors"]) > 0, "Add at leas one actor that acted in the movies released before 2000"
+        assert len(result["actors"]) > 0, "Add at least one actor that acted in the movies released before 2000"
         assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
         assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
 

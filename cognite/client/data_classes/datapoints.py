@@ -713,7 +713,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         id: int | None = None,
         external_id: str | None = None,
     ) -> DatapointsArray | list[DatapointsArray] | None:
-        """Get a specific DatapointsArray from this list by id or exernal_id.
+        """Get a specific DatapointsArray from this list by id or external_id.
 
         Note: For duplicated time series, returns a list of DatapointsArray.
 
@@ -792,7 +792,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         id: int | None = None,
         external_id: str | None = None,
     ) -> Datapoints | list[Datapoints] | None:
-        """Get a specific Datapoints from this list by id or exernal_id.
+        """Get a specific Datapoints from this list by id or external_id.
 
         Note: For duplicated time series, returns a list of Datapoints.
 

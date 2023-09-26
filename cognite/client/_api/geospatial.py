@@ -991,7 +991,7 @@ class GeospatialAPI(APIClient):
             raster_scale_y (float | None): the Y component of the pixel height in units of coordinate reference system
 
         Returns:
-            RasterMetadata: the raster metadata if it was ingested succesfully
+            RasterMetadata: the raster metadata if it was ingested successfully
 
         Examples:
 

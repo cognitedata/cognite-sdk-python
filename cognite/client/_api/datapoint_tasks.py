@@ -725,7 +725,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
     def __init__(self, *, max_splitting_factor: int = 10, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.max_splitting_factor = max_splitting_factor
-        self.split_subidx: int = 0  # Actual value doesnt matter (any int will do)
+        self.split_subidx: int = 0  # Actual value doesn't matter (any int will do)
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         self.prev_start = self.next_start
@@ -758,7 +758,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         n_new_tasks = min(cast(int, n_new_lim), n_new_pct, self.max_splitting_factor + 1)  # +1 for "self next"
         if n_new_tasks <= 1:  # No point in splitting; no faster than this task just continuing
             return None
-        # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries):
+        # Find a `delta_ms` that's a multiple of granularity in ms (trivial for raw queries):
         boundaries = split_time_range(last_ts, self.end, n_new_tasks, self.parent.offset_next)
         self.end = boundaries[1]  # We shift end of 'self' backwards
         static_params: dict[str, Any] = {

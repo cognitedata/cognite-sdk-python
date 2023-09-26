@@ -48,7 +48,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Examples:
 
-            Create a subscrpition with explicit time series IDs:
+            Create a subscription with explicit time series IDs:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionCreate
