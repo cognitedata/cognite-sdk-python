@@ -4,9 +4,9 @@ import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -17,6 +17,17 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+WorkflowStatus: TypeAlias = Literal[
+    "in_progress",
+    "cancelled",
+    "failed",
+    "failed_with_terminal_error",
+    "completed",
+    "completed_with_errors",
+    "timed_out",
+    "skipped",
+]
 
 
 class WorkflowCreate(CogniteResource):
@@ -81,6 +92,8 @@ class WorkflowList(CogniteResourceList[Workflow]):
 
 
 class TaskParameters(CogniteResource, ABC):
+    task_type: ClassVar[str]
+
     @classmethod
     def load_parameters(cls, data: dict) -> TaskParameters:
         type_ = data.get("type", data.get("taskType"))
@@ -139,6 +152,8 @@ class FunctionTaskParameters(TaskParameters):
             ... )
     """
 
+    task_type: ClassVar[str] = "function"
+
     def __init__(
         self,
         external_id: str,
@@ -184,6 +199,8 @@ class TransformationTaskParameters(TaskParameters):
 
     """
 
+    task_type: ClassVar[str] = "transformation"
+
     def __init__(self, external_id: str) -> None:
         self.external_id = external_id
 
@@ -224,6 +241,8 @@ class CDFTaskParameters(TaskParameters):
             ... )
 
     """
+
+    task_type: ClassVar[str] = "cdf"
 
     def __init__(
         self,
@@ -270,13 +289,15 @@ class DynamicTaskParameters(TaskParameters):
 
     """
 
+    task_type: ClassVar[str] = "dynamic"
+
     def __init__(self, dynamic: list[Task] | str) -> None:
         self.dynamic = dynamic
 
 
 class Task(CogniteResource):
     """
-    This class represents a task.
+    This class represents a workflow task.
 
     Note: tasks do not distinguish between write and read versions.
 
@@ -317,24 +338,14 @@ class Task(CogniteResource):
             parameters=TaskParameters.load_parameters(resource),
             name=resource.get("name"),
             description=resource.get("description"),
-            retries=resource.get("retries", 3),
-            timeout=resource.get("timeout", 3600),
-            depends_on=[dependency["externalId"] for dependency in depends_on]
-            if (depends_on := resource.get("depends_on"))
-            else None,
+            # Allow default to come from the API.
+            retries=resource.get("retries"),  # type: ignore[arg-type]
+            timeout=resource.get("timeout"),  # type: ignore[arg-type]
+            depends_on=[dep["externalId"] for dep in resource.get("depends_on", [])] or None,
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        if isinstance(self.parameters, FunctionTaskParameters):
-            type_ = "function"
-        elif isinstance(self.parameters, TransformationTaskParameters):
-            type_ = "transformation"
-        elif isinstance(self.parameters, CDFTaskParameters):
-            type_ = "cdf"
-        elif isinstance(self.parameters, DynamicTaskParameters):
-            type_ = "dynamic"
-        else:
-            raise ValueError(f"Unknown task type: {type(self.parameters)}")
+        type_ = self.parameters.task_type
 
         output: dict[str, Any] = {
             ("externalId" if camel_case else "external_id"): self.external_id,
@@ -348,15 +359,19 @@ class Task(CogniteResource):
         if self.description:
             output["description"] = self.description
         if self.depends_on:
-            output["dependsOn"] = [{"externalId": dependency} for dependency in self.depends_on]
+            output["dependsOn"] = [
+                {("externalId" if camel_case else "external_id"): dependency} for dependency in self.depends_on
+            ]
         return output
 
 
 class TaskOutput(ABC):
+    task_type: ClassVar[str]
+
     @classmethod
     @abstractmethod
     def load(cls: type[Self], data: dict) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def load_output(cls, data: dict) -> TaskOutput:
@@ -374,19 +389,21 @@ class TaskOutput(ABC):
 
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class FunctionTaskOutput(TaskOutput):
     """
-    The function output is used to specify the output of a function task.
+    The class represent the output of Cognite Function task.
 
     Args:
-        call_id (int | None): The callId of the CDF Function call instance.
-        function_id (int | None): The functionId of the CDF Function.
+        call_id (int | None): The call_id of the CDF Function call.
+        function_id (int | None): The function_id of the CDF Function.
         response (dict | None): The response of the CDF Function call.
 
     """
+
+    task_type: ClassVar[str] = "function"
 
     def __init__(self, call_id: int | None, function_id: int | None, response: dict | None) -> None:
         self.call_id = call_id
@@ -413,6 +430,8 @@ class TransformationTaskOutput(TaskOutput):
         job_id (int): The job id of the transformation job.
     """
 
+    task_type: ClassVar[str] = "transformation"
+
     def __init__(self, job_id: int) -> None:
         self.job_id = job_id
 
@@ -421,9 +440,7 @@ class TransformationTaskOutput(TaskOutput):
         return cls(data["jobId"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {
-            ("jobId" if camel_case else "job_id"): self.job_id,
-        }
+        return {("jobId" if camel_case else "job_id"): self.job_id}
 
 
 class CDFTaskOutput(TaskOutput):
@@ -434,6 +451,8 @@ class CDFTaskOutput(TaskOutput):
         response (str | dict | None): The response of the CDF Request. Will be a JSON object if content-type is application/json, otherwise will be a string.
         status_code (int | None): The status code of the CDF Request.
     """
+
+    task_type: ClassVar[str] = "cdf"
 
     def __init__(self, response: str | dict | None, status_code: int | None) -> None:
         self.response = response
@@ -458,6 +477,8 @@ class DynamicTaskOutput(TaskOutput):
         dynamic_tasks (list[Task]): The dynamic tasks to be created on the fly.
     """
 
+    task_type: ClassVar[str] = "dynamic"
+
     def __init__(self, dynamic_tasks: list[Task]) -> None:
         self.dynamic_tasks = dynamic_tasks
 
@@ -466,9 +487,7 @@ class DynamicTaskOutput(TaskOutput):
         return cls([Task._load(task) for task in data["dynamicTasks"]])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {
-            "tasks": [task.dump(camel_case) for task in self.dynamic_tasks],
-        }
+        return {"tasks": [task.dump(camel_case) for task in self.dynamic_tasks]}
 
 
 class TaskExecution(CogniteResource):
@@ -478,7 +497,7 @@ class TaskExecution(CogniteResource):
     Args:
         id (str): The server generated id of the task execution.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        status (Literal["in_progress", "cancelled", "failed", "failed_with_terminal_error", "completed", "completed_with_errors", "timed_out", "skipped"]): The status of the task execution.
+        status (WorkflowStatus): The status of the task execution.
         input (TaskParameters): The input parameters of the task execution.
         output (TaskOutput): The output of the task execution.
         version (str | None): The version of the task execution. Defaults to None.
@@ -492,16 +511,7 @@ class TaskExecution(CogniteResource):
         self,
         id: str,
         external_id: str,
-        status: Literal[
-            "in_progress",
-            "cancelled",
-            "failed",
-            "failed_with_terminal_error",
-            "completed",
-            "completed_with_errors",
-            "timed_out",
-            "skipped",
-        ],
+        status: WorkflowStatus,
         input: TaskParameters,
         output: TaskOutput,
         version: str | None = None,
@@ -525,19 +535,7 @@ class TaskExecution(CogniteResource):
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
-            status=cast(
-                Literal[
-                    "in_progress",
-                    "cancelled",
-                    "failed",
-                    "failed_with_terminal_error",
-                    "completed",
-                    "completed_with_errors",
-                    "timed_out",
-                    "skipped",
-                ],
-                to_snake_case(resource["status"]),
-            ),
+            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
             input=TaskParameters.load_parameters(resource),
             output=TaskOutput.load_output(resource),
             version=resource.get("version"),
@@ -549,16 +547,7 @@ class TaskExecution(CogniteResource):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         task_type_key = "taskType" if camel_case else "task_type"
-        if isinstance(self.output, FunctionTaskOutput):
-            output[task_type_key] = "function"
-        elif isinstance(self.output, TransformationTaskOutput):
-            output[task_type_key] = "transformation"
-        elif isinstance(self.output, CDFTaskOutput):
-            output[task_type_key] = "cdf"
-        elif isinstance(self.output, DynamicTaskOutput):
-            output[task_type_key] = "dynamic"
-        else:
-            raise ValueError(f"Unknown task type: {type(self.output)}")
+        output[task_type_key] = self.output.task_type
         output["output"] = self.output.dump(camel_case)
         return output
 
