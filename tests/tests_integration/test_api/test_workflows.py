@@ -9,13 +9,13 @@ from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
     CDFTaskParameters,
     FunctionTaskParameters,
-    Task,
     TransformationTaskParameters,
     Workflow,
     WorkflowCreate,
     WorkflowDefinitionCreate,
     WorkflowExecutionList,
     WorkflowList,
+    WorkflowTask,
     WorkflowVersion,
     WorkflowVersionCreate,
     WorkflowVersionList,
@@ -54,7 +54,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
         version="1",
         workflow_definition=WorkflowDefinitionCreate(
             tasks=[
-                Task(
+                WorkflowTask(
                     external_id=f"{workflow_id}-1-task1",
                     parameters=TransformationTaskParameters(
                         external_id="None-existing-transformation",
@@ -68,7 +68,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
         version="2",
         workflow_definition=WorkflowDefinitionCreate(
             tasks=[
-                Task(
+                WorkflowTask(
                     external_id=f"{workflow_id}-2-task1",
                     parameters=CDFTaskParameters(
                         resource_path="/dummy/no/real/resource/path",
@@ -133,14 +133,14 @@ def add_multiply_workflow(
         version="1",
         workflow_definition=WorkflowDefinitionCreate(
             tasks=[
-                Task(
+                WorkflowTask(
                     external_id=f"{workflow_id}-1-add",
                     parameters=FunctionTaskParameters(
                         external_id=cdf_function_add.external_id,
                         data={"a": 1, "b": 2},
                     ),
                 ),
-                Task(
+                WorkflowTask(
                     external_id=f"{workflow_id}-1-multiply",
                     parameters=FunctionTaskParameters(
                         external_id=cdf_function_multiply.external_id,
@@ -233,7 +233,7 @@ class TestWorkflowVersions:
             version="1",
             workflow_definition=WorkflowDefinitionCreate(
                 tasks=[
-                    Task(
+                    WorkflowTask(
                         external_id="integration_test-workflow_definitions-test_create_delete-task1",
                         parameters=FunctionTaskParameters(
                             external_id="integration_test-workflow_definitions-test_create_delete-task1-function",

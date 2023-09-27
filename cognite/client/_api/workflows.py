@@ -9,13 +9,13 @@ from typing_extensions import TypeAlias
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
-    TaskExecution,
     Workflow,
     WorkflowCreate,
     WorkflowExecution,
     WorkflowExecutionDetailed,
     WorkflowExecutionList,
     WorkflowList,
+    WorkflowTaskExecution,
     WorkflowVersion,
     WorkflowVersionCreate,
     WorkflowVersionId,
@@ -58,7 +58,9 @@ WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str]]
 class WorkflowTaskAPI(BetaWorkflowAPIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
-    def update(self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None) -> TaskExecution:
+    def update(
+        self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None
+    ) -> WorkflowTaskExecution:
         """`Update status of async task. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Tasks/operation/UpdateTaskStatus>`_
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed' or 'failed'.
@@ -69,7 +71,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:
-            TaskExecution: The updated task execution.
+            WorkflowTaskExecution: The updated task execution.
 
         Examples:
 
@@ -103,7 +105,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
             json=body,
         )
-        return TaskExecution._load(response.json())
+        return WorkflowTaskExecution._load(response.json())
 
 
 class WorkflowExecutionAPI(BetaWorkflowAPIClient):
@@ -161,8 +163,8 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
             function parameters then you can specify it as follows
 
-                >>> from cognite.client.data_classes  import Task, FunctionTaskParameters
-                >>> task = Task(
+                >>> from cognite.client.data_classes  import WorkflowTask, FunctionTaskParameters
+                >>> task = WorkflowTask(
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
@@ -282,14 +284,14 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             Create workflow version with one Function task:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import WorkflowVersionCreate, WorkflowDefinitionCreate, Task, FunctionTaskParameters
+                >>> from cognite.client.data_classes import WorkflowVersionCreate, WorkflowDefinitionCreate, WorkflowTask, FunctionTaskParameters
                 >>> c = CogniteClient()
                 >>> new_version =WorkflowVersionCreate(
                 ...    workflow_external_id="my_workflow",
                 ...    version="1",
                 ...    workflow_definition=WorkflowDefinitionCreate(
                 ...        tasks=[
-                ...            Task(
+                ...            WorkflowTask(
                 ...                external_id="my_workflow-task1",
                 ...                parameters=FunctionTaskParameters(
                 ...                    external_id="cdf_deployed_function:my_function",
