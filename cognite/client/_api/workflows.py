@@ -263,7 +263,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
-    def create(self, version: WorkflowVersionCreate) -> WorkflowVersion:
+    def upsert(self, version: WorkflowVersionCreate, mode: Literal["replace"] = "replace") -> WorkflowVersion:
         """`Create a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
@@ -272,6 +272,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         Args:
             version (WorkflowVersionCreate): The workflow version to create.
+            mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
             WorkflowVersion: The created workflow version.
@@ -302,6 +303,9 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 >>> res = c.workflows.create(new_version)
         """
         self._experimental_warning()
+        if mode != "replace":
+            raise ValueError("Only replace mode is supported for upserting workflow versions.")
+
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [version.dump(camel_case=True)]},
@@ -440,13 +444,14 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
-    def create(self, workflow: WorkflowCreate) -> Workflow:
+    def upsert(self, workflow: WorkflowCreate, mode: Literal["replace"] = "replace") -> Workflow:
         """`Create a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
 
         Args:
             workflow (WorkflowCreate): The workflow to create.
+            mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
             Workflow: The created workflow.
@@ -461,6 +466,9 @@ class WorkflowAPI(BetaWorkflowAPIClient):
                 >>> res = c.workflows.create(WorkflowCreate(external_id="my workflow", description="my workflow description"))
         """
         self._experimental_warning()
+        if mode != "replace":
+            raise ValueError("Only replace mode is supported for upserting workflows.")
+
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},

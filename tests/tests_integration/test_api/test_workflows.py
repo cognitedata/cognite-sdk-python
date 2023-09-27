@@ -40,7 +40,7 @@ def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
     for workflow in workflows:
         if workflow.external_id not in existing:
             call_list = True
-            cognite_client.workflows.create(workflow)
+            cognite_client.workflows.upsert(workflow)
     if call_list:
         return cognite_client.workflows.list()
     return listed
@@ -85,7 +85,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
     for version in [version1, version2]:
         if version.version not in existing:
             call_list = True
-            cognite_client.workflows.versions.create(version)
+            cognite_client.workflows.versions.upsert(version)
     if call_list:
         return cognite_client.workflows.versions.list(workflow_ids=workflow_id)
     return listed
@@ -156,7 +156,7 @@ def add_multiply_workflow(
     retrieved = cognite_client.workflows.versions.retrieve(workflow_id, version.version)
     if retrieved is not None:
         return retrieved
-    return cognite_client.workflows.versions.create(version)
+    return cognite_client.workflows.versions.upsert(version)
 
 
 @pytest.fixture
@@ -181,7 +181,7 @@ def workflow_execution_list(
 
 
 class TestWorkflows:
-    def test_create_delete(self, cognite_client: CogniteClient) -> None:
+    def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         workflow = WorkflowCreate(
             external_id="integration_test-test_create_delete",
             description="This is ephemeral workflow for testing purposes",
@@ -190,7 +190,7 @@ class TestWorkflows:
 
         created_workflow: Workflow | None = None
         try:
-            created_workflow = cognite_client.workflows.create(workflow)
+            created_workflow = cognite_client.workflows.upsert(workflow)
 
             assert created_workflow.external_id == workflow.external_id
             assert created_workflow.description == workflow.description
@@ -227,7 +227,7 @@ class TestWorkflows:
 
 
 class TestWorkflowVersions:
-    def test_create_delete(self, cognite_client: CogniteClient) -> None:
+    def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         version = WorkflowVersionCreate(
             workflow_external_id="integration_test-workflow_versions-test_create_delete",
             version="1",
@@ -248,7 +248,7 @@ class TestWorkflowVersions:
 
         created_version: WorkflowVersion | None = None
         try:
-            created_version = cognite_client.workflows.versions.create(version)
+            created_version = cognite_client.workflows.versions.upsert(version)
 
             assert created_version.workflow_external_id == version.workflow_external_id
             assert created_version.workflow_definition.description == version.workflow_definition.description
