@@ -7,9 +7,9 @@ Workflow Orchestration
 
 Workflows
 ------------
-Create Workflow
+Upsert Workflow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowAPI.create
+.. automethod:: cognite.client._api.workflows.WorkflowAPI.upsert
 
 Delete Workflow(s)
 ^^^^^^^^^^^^^^^^^^^
@@ -26,9 +26,9 @@ List Workflows
 
 Workflow Versions
 ------------------
-Create Workflow Version
+Upsert Workflow Version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.create
+.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.upsert
 
 Delete Workflow Version(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
