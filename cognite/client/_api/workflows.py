@@ -202,7 +202,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
     def list(
         self,
-        workflow_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
+        workflow_version_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -210,7 +210,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         """`List workflow executions in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/ListWorkflowExecutions>`_
 
         Args:
-            workflow_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
             created_time_start (int | None): Filter out executions that was created before this time. Time is in milliseconds since epoch.
             created_time_end (int | None): Filter out executions that was created after this time. Time is in milliseconds since epoch.
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
@@ -237,8 +237,10 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         """
         self._experimental_warning()
         filter_: dict[str, Any] = {}
-        if workflow_ids is not None:
-            filter_["workflowFilters"] = _WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
+        if workflow_version_ids is not None:
+            filter_["workflowFilters"] = _WorkflowIds._load(workflow_version_ids).dump(
+                camel_case=True, as_external_id=True
+            )
         if created_time_start is not None:
             filter_["createdTimeStart"] = created_time_start
         if created_time_end is not None:
@@ -382,13 +384,13 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
     def list(
         self,
-        workflow_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
+        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
         """`List workflow versions in the project <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/ListWorkflowVersions>`_
 
         Args:
-            workflow_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
 
         Returns:
@@ -417,10 +419,10 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        if workflow_ids is None:
+        if workflow_version_ids is None:
             workflow_ids_dumped = []
         else:
-            workflow_ids_dumped = _WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
+            workflow_ids_dumped = _WorkflowIds._load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
         return self._list(
             method="POST",

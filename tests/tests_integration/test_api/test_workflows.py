@@ -81,7 +81,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
             description=None,
         ),
     )
-    listed = cognite_client.workflows.versions.list(workflow_ids=workflow_id)
+    listed = cognite_client.workflows.versions.list(workflow_version_ids=workflow_id)
     existing = {w.version for w in listed}
     call_list = False
     for version in [version1, version2]:
@@ -89,7 +89,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
             call_list = True
             cognite_client.workflows.versions.upsert(version)
     if call_list:
-        return cognite_client.workflows.versions.list(workflow_ids=workflow_id)
+        return cognite_client.workflows.versions.list(workflow_version_ids=workflow_id)
     return listed
 
 
@@ -166,7 +166,7 @@ def add_multiply_workflow(
 def workflow_execution_list(
     cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
 ) -> WorkflowExecutionList:
-    executions = cognite_client.workflows.executions.list(workflow_ids=add_multiply_workflow.as_id(), limit=5)
+    executions = cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=5)
     if executions:
         return executions
     # Creating at least one execution
@@ -180,7 +180,7 @@ def workflow_execution_list(
         time.sleep(5)
         if time.time() - t0 > 60:
             raise TimeoutError("Workflow execution did not complete in time")
-    return cognite_client.workflows.executions.list(workflow_ids=add_multiply_workflow.as_id(), limit=5)
+    return cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=5)
 
 
 class TestWorkflows:
@@ -304,7 +304,7 @@ class TestWorkflowExecutions:
         workflow_ids = set(w.as_workflow_id() for w in workflow_execution_list)
 
         listed = cognite_client.workflows.executions.list(
-            workflow_ids=list(workflow_ids), limit=len(workflow_execution_list)
+            workflow_version_ids=list(workflow_ids), limit=len(workflow_execution_list)
         )
 
         assert len(listed) == len(workflow_execution_list)
