@@ -271,7 +271,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         Furthermore, if the workflow does not exist, it will be created.
 
         Args:
-            version (WorkflowVersionCreate): The workflow version to create.
+            version (WorkflowVersionCreate): The workflow version to create or update.
             mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
@@ -300,7 +300,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 ...        description="This workflow has one step",
                 ...    ),
                 ... )
-                >>> res = c.workflows.create(new_version)
+                >>> res = c.workflows.upsert(new_version)
         """
         self._experimental_warning()
         if mode != "replace":
@@ -450,7 +450,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
 
         Args:
-            workflow (WorkflowCreate): The workflow to create.
+            workflow (WorkflowCreate): The workflow to create or update.
             mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
@@ -463,7 +463,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowCreate
                 >>> c = CogniteClient()
-                >>> res = c.workflows.create(WorkflowCreate(external_id="my workflow", description="my workflow description"))
+                >>> res = c.workflows.upsert(WorkflowCreate(external_id="my workflow", description="my workflow description"))
         """
         self._experimental_warning()
         if mode != "replace":
