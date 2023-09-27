@@ -61,6 +61,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
                     ),
                 )
             ],
+            description=None,
         ),
     )
     version2 = WorkflowVersionUpsert(
@@ -77,6 +78,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
                     ),
                 )
             ],
+            description=None,
         ),
     )
     listed = cognite_client.workflows.versions.list(workflow_ids=workflow_id)
@@ -132,6 +134,7 @@ def add_multiply_workflow(
         workflow_external_id=workflow_id,
         version="1",
         workflow_definition=WorkflowDefinitionUpsert(
+            description=None,
             tasks=[
                 WorkflowTask(
                     external_id=f"{workflow_id}-1-add",
