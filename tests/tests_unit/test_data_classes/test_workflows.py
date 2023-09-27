@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from cognite.client.data_classes.workflows import (
@@ -9,6 +11,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowTask,
     WorkflowTaskOutput,
     WorkflowVersionId,
+    _WorkflowIds,
 )
 
 
@@ -40,3 +43,31 @@ class TestWorkflowId:
     )
     def test_serialization(self, workflow_id: WorkflowVersionId):
         assert WorkflowVersionId._load(workflow_id.dump(camel_case=True)).dump() == workflow_id.dump()
+
+
+class TestWorkflowIds:
+    @pytest.mark.parametrize(
+        "resource, expected",
+        [
+            [("abc",), _WorkflowIds([WorkflowVersionId("abc")])],
+            [("abc", "def"), _WorkflowIds([WorkflowVersionId("abc", "def")])],
+            [{"workflowExternalId": "abc"}, _WorkflowIds([WorkflowVersionId("abc")])],
+            [{"workflowExternalId": "abc", "version": "def"}, _WorkflowIds([WorkflowVersionId("abc", "def")])],
+            [WorkflowVersionId("abc"), _WorkflowIds([WorkflowVersionId("abc")])],
+            [["abc", "def"], _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")])],
+            [
+                [WorkflowVersionId("abc"), WorkflowVersionId("def")],
+                _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
+            ],
+            [
+                _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
+                _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
+            ],
+            [
+                [("abc", "def"), ("ghi", "jkl")],
+                _WorkflowIds([WorkflowVersionId("abc", "def"), WorkflowVersionId("ghi", "jkl")]),
+            ],
+        ],
+    )
+    def test_load(self, resource: Any, expected: _WorkflowIds):
+        assert _WorkflowIds._load(resource) == expected
