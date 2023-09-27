@@ -416,9 +416,12 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
-            ("callId" if camel_case else "call_id"): self.call_id,
-            ("functionId" if camel_case else "function_id"): self.function_id,
-            "response": self.response,
+            "output": {
+                ("callId" if camel_case else "call_id"): self.call_id,
+                ("functionId" if camel_case else "function_id"): self.function_id,
+                "response": self.response,
+            },
+            ("taskType" if camel_case else "task_type"): self.task_type,
         }
 
 
@@ -440,7 +443,10 @@ class TransformationTaskOutput(WorkflowTaskOutput):
         return cls(data["jobId"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {("jobId" if camel_case else "job_id"): self.job_id}
+        return {
+            "output": {("jobId" if camel_case else "job_id"): self.job_id},
+            ("taskType" if camel_case else "task_type"): self.task_type,
+        }
 
 
 class CDFTaskOutput(WorkflowTaskOutput):
@@ -464,8 +470,11 @@ class CDFTaskOutput(WorkflowTaskOutput):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
-            "response": self.response,
-            ("statusCode" if camel_case else "status_code"): self.status_code,
+            "output": {
+                "response": self.response,
+                ("statusCode" if camel_case else "status_code"): self.status_code,
+            },
+            ("taskType" if camel_case else "task_type"): self.task_type,
         }
 
 
@@ -487,7 +496,10 @@ class DynamicTaskOutput(WorkflowTaskOutput):
         return cls([WorkflowTask._load(task) for task in data["dynamicTasks"]])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {"tasks": [task.dump(camel_case) for task in self.dynamic_tasks]}
+        return {
+            "output": {"dynamicTasks": [task.dump(camel_case) for task in self.dynamic_tasks]},
+            ("taskType" if camel_case else "task_type"): self.task_type,
+        }
 
 
 class WorkflowTaskExecution(CogniteResource):
