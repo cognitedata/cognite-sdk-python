@@ -241,15 +241,16 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             filter_["createdTimeStart"] = created_time_start
         if created_time_end is not None:
             filter_["createdTimeEnd"] = created_time_end
+
+        body: dict[str, Any] = {}
         if filter_:
-            body = {"filter": filter_}
-        else:
-            body = None
+            body["filter"] = filter_
+        if limit:
+            body["limit"] = limit
 
         response = self._post(
             url_path=self._RESOURCE_PATH + "/list",
-            json=body,
-            params={"limit": limit},
+            json=body or None,
         )
 
         return WorkflowExecutionList._load(response.json()["items"])
@@ -420,7 +421,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             resource_cls=WorkflowVersion,
             list_cls=WorkflowVersionList,
             filter={"workflowFilters": workflow_ids_dumped},
-            query_params={"limit": limit},
+            limit=limit,
         )
 
 
