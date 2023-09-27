@@ -67,7 +67,7 @@ class AnnotationsAPI(APIClient):
             list_cls=AnnotationList,
             resource_cls=Annotation,
             resource_path=self._RESOURCE_PATH + "/suggest",
-            items=items,  # type: ignore[arg-type]
+            items=items,
         )
 
     @staticmethod

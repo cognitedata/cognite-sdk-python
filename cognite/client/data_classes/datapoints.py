@@ -725,7 +725,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
             DatapointsArray | list[DatapointsArray] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)  # type: ignore [return-value]
+        return super().get(id, external_id)
 
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
@@ -804,7 +804,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
             Datapoints | list[Datapoints] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)  # type: ignore [return-value]
+        return super().get(id, external_id)
 
     def __str__(self) -> str:
         item = self.dump()
