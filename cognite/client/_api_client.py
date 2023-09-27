@@ -437,7 +437,7 @@ class APIClient:
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
 
                 elif method == "POST":
-                    body = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                    body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                     if filter:
                         body["filter"] = filter
                     if advanced_filter:
@@ -598,9 +598,7 @@ class APIClient:
                             else advanced_filter
                         )
                     res = self._post(
-                        url_path=(resource_path or self._RESOURCE_PATH) + "/list",
-                        json=body,
-                        headers=headers,
+                        url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
                     )
                 elif method == "GET":
                     params = {
@@ -873,7 +871,6 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
         executor: TaskExecutor | None = None,
-        api_subversion: str | None = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
@@ -885,7 +882,6 @@ class APIClient:
                 },
                 "params": params,
                 "headers": headers,
-                "api_subversion": api_subversion,
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
