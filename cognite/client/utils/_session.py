@@ -11,9 +11,7 @@ if TYPE_CHECKING:
 
 
 def create_session_and_return_nonce(
-    client: CogniteClient,
-    client_credentials: dict | ClientCredentials | None = None,
-    api_name: str = "Functions API",
+    client: CogniteClient, api_name: str, client_credentials: dict | ClientCredentials | None = None
 ) -> str:
     if client_credentials is None:
         if isinstance(client._config.credentials, OAuthClientCertificate):

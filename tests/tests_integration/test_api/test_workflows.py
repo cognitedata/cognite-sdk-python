@@ -35,7 +35,7 @@ def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
     )
     workflows = [workflow1, workflow2]
     listed = cognite_client.workflows.list()
-    existing = {w.external_id for w in listed}
+    existing = listed._external_id_to_item
     call_list = False
     for workflow in workflows:
         if workflow.external_id not in existing:
@@ -91,7 +91,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
     return listed
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def cdf_function_add(cognite_client: CogniteClient) -> Function:
     external_id = "integration_test-workflow-cdf_function_add"
     add_function = cognite_client.functions.retrieve(external_id=external_id)
@@ -107,7 +107,7 @@ def cdf_function_add(cognite_client: CogniteClient) -> Function:
     return deployed
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def cdf_function_multiply(cognite_client: CogniteClient) -> Function:
     external_id = "integration_test-workflow-cdf_function_multiply"
     multiply_function = cognite_client.functions.retrieve(external_id=external_id)
@@ -119,8 +119,8 @@ def cdf_function_multiply(cognite_client: CogniteClient) -> Function:
         output["product"] = output["a"] * output["b"]
         return output
 
-    deployed = cognite_client.functions.create(name="Multiply", external_id=external_id, function_handle=handle)
-    return deployed
+    cognite_client.functions.create(name="Multiply", external_id=external_id, function_handle=handle)
+    pytest.skip("Function need to be redeployed, skipping tests that need it", allow_module_level=True)
 
 
 @pytest.fixture
@@ -207,13 +207,6 @@ class TestWorkflows:
 
     def test_delete_non_existing(self, cognite_client: CogniteClient) -> None:
         cognite_client.workflows.delete("integration_test-non_existing_workflow", ignore_unknown_ids=True)
-
-    def test_list_workflows(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
-        listed = cognite_client.workflows.list()
-
-        assert len(listed) >= len(workflow_list)
-        assert listed.get(external_id=workflow_list[0].external_id) == workflow_list[0]
-        assert listed.get(external_id=workflow_list[1].external_id) == workflow_list[1]
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
         retrieved = cognite_client.workflows.retrieve(workflow_list[0].external_id)

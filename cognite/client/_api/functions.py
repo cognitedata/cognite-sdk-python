@@ -394,7 +394,7 @@ class FunctionsAPI(APIClient):
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = create_session_and_return_nonce(self._cognite_client)
+        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
 
         if data is None:
             data = {}
@@ -1024,7 +1024,9 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         _get_function_identifier(function_id, function_external_id)
-        nonce = create_session_and_return_nonce(self._cognite_client, client_credentials)
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Functions API", client_credentials=client_credentials
+        )
         body: dict[str, list[dict[str, str | int | None | dict]]] = {
             "items": [
                 {
