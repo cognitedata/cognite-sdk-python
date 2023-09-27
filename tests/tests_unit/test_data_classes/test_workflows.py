@@ -8,6 +8,7 @@ from cognite.client.data_classes.workflows import (
     TransformationTaskOutput,
     WorkflowTask,
     WorkflowTaskOutput,
+    WorkflowVersionId,
 )
 
 
@@ -27,3 +28,15 @@ class TestWorkflowTaskOutput:
     )
     def test_serialization(self, output: WorkflowTaskOutput):
         assert WorkflowTaskOutput.load_output(output.dump(camel_case=True)).dump() == output.dump()
+
+
+class TestWorkflowId:
+    @pytest.mark.parametrize(
+        "workflow_id",
+        [
+            WorkflowVersionId(workflow_external_id="abc"),
+            WorkflowVersionId(workflow_external_id="def", version="3000"),
+        ],
+    )
+    def test_serialization(self, workflow_id: WorkflowVersionId):
+        assert WorkflowVersionId._load(workflow_id.dump(camel_case=True)).dump() == workflow_id.dump()
