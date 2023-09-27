@@ -838,7 +838,7 @@ class APIClient:
 
         def unwrap_element(el: T) -> CogniteResource | T:
             if isinstance(el, dict):
-                return input_resource_cls._load(el, cognite_client=self._cognite_client)  # type: ignore[union-attr]
+                return input_resource_cls._load(el, cognite_client=self._cognite_client)
             else:
                 return el
 

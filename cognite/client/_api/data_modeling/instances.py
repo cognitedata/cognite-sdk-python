@@ -267,7 +267,7 @@ class InstancesAPI(APIClient):
         Returns:
             Iterator[Node]: yields Instances one by one.
         """
-        return cast(Iterator[Node], self(None, "node"))
+        return self(None, "node")
 
     def retrieve(
         self,

@@ -33,7 +33,7 @@ def patch_sdk_for_pyodide() -> None:
 
     # - Use another HTTP adapter:
     cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
-    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [assignment]
+    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [method-assign]
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
@@ -64,7 +64,7 @@ def http_client__init__(
     refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
     retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
 ) -> None:
-    import pyodide_http  # type: ignore [import]
+    import pyodide_http
 
     self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
     self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
