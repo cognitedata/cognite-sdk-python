@@ -11,25 +11,25 @@ from cognite.client.data_classes.workflows import (
     FunctionTaskParameters,
     TransformationTaskParameters,
     Workflow,
-    WorkflowCreate,
-    WorkflowDefinitionCreate,
+    WorkflowDefinitionUpsert,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowTask,
+    WorkflowUpsert,
     WorkflowVersion,
-    WorkflowVersionCreate,
     WorkflowVersionList,
+    WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture
 def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
-    workflow1 = WorkflowCreate(
+    workflow1 = WorkflowUpsert(
         external_id="integration_test-workflow1",
         description="This is  workflow for testing purposes",
     )
-    workflow2 = WorkflowCreate(
+    workflow2 = WorkflowUpsert(
         external_id="integration_test-workflow2",
         description="This is  workflow for testing purposes",
     )
@@ -49,10 +49,10 @@ def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
 @pytest.fixture
 def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
     workflow_id = "integration_test-workflow_with_versions"
-    version1 = WorkflowVersionCreate(
+    version1 = WorkflowVersionUpsert(
         workflow_external_id=workflow_id,
         version="1",
-        workflow_definition=WorkflowDefinitionCreate(
+        workflow_definition=WorkflowDefinitionUpsert(
             tasks=[
                 WorkflowTask(
                     external_id=f"{workflow_id}-1-task1",
@@ -63,10 +63,10 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
             ],
         ),
     )
-    version2 = WorkflowVersionCreate(
+    version2 = WorkflowVersionUpsert(
         workflow_external_id=workflow_id,
         version="2",
-        workflow_definition=WorkflowDefinitionCreate(
+        workflow_definition=WorkflowDefinitionUpsert(
             tasks=[
                 WorkflowTask(
                     external_id=f"{workflow_id}-2-task1",
@@ -128,10 +128,10 @@ def add_multiply_workflow(
     cognite_client: CogniteClient, cdf_function_add: Function, cdf_function_multiply
 ) -> WorkflowVersion:
     workflow_id = "integration_test-workflow-add_multiply"
-    version = WorkflowVersionCreate(
+    version = WorkflowVersionUpsert(
         workflow_external_id=workflow_id,
         version="1",
-        workflow_definition=WorkflowDefinitionCreate(
+        workflow_definition=WorkflowDefinitionUpsert(
             tasks=[
                 WorkflowTask(
                     external_id=f"{workflow_id}-1-add",
@@ -182,7 +182,7 @@ def workflow_execution_list(
 
 class TestWorkflows:
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
-        workflow = WorkflowCreate(
+        workflow = WorkflowUpsert(
             external_id="integration_test-test_create_delete",
             description="This is ephemeral workflow for testing purposes",
         )
@@ -221,10 +221,10 @@ class TestWorkflows:
 
 class TestWorkflowVersions:
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
-        version = WorkflowVersionCreate(
+        version = WorkflowVersionUpsert(
             workflow_external_id="integration_test-workflow_versions-test_create_delete",
             version="1",
-            workflow_definition=WorkflowDefinitionCreate(
+            workflow_definition=WorkflowDefinitionUpsert(
                 tasks=[
                     WorkflowTask(
                         external_id="integration_test-workflow_definitions-test_create_delete-task1",

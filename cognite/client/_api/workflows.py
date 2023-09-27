@@ -10,16 +10,16 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
     Workflow,
-    WorkflowCreate,
     WorkflowExecution,
     WorkflowExecutionDetailed,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowTaskExecution,
+    WorkflowUpsert,
     WorkflowVersion,
-    WorkflowVersionCreate,
     WorkflowVersionId,
     WorkflowVersionList,
+    WorkflowVersionUpsert,
     _WorkflowIds,
 )
 from cognite.client.exceptions import CogniteAPIError
@@ -265,7 +265,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
-    def upsert(self, version: WorkflowVersionCreate, mode: Literal["replace"] = "replace") -> WorkflowVersion:
+    def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
         """`Create a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
@@ -273,7 +273,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         Furthermore, if the workflow does not exist, it will be created.
 
         Args:
-            version (WorkflowVersionCreate): The workflow version to create or update.
+            version (WorkflowVersionUpsert): The workflow version to create or update.
             mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
@@ -284,12 +284,12 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             Create workflow version with one Function task:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import WorkflowVersionCreate, WorkflowDefinitionCreate, WorkflowTask, FunctionTaskParameters
+                >>> from cognite.client.data_classes import WorkflowVersionUpsert, WorkflowDefinitionUpsert, WorkflowTask, FunctionTaskParameters
                 >>> c = CogniteClient()
-                >>> new_version =WorkflowVersionCreate(
+                >>> new_version =WorkflowVersionUpsert(
                 ...    workflow_external_id="my_workflow",
                 ...    version="1",
-                ...    workflow_definition=WorkflowDefinitionCreate(
+                ...    workflow_definition=WorkflowDefinitionUpsert(
                 ...        tasks=[
                 ...            WorkflowTask(
                 ...                external_id="my_workflow-task1",
@@ -446,13 +446,13 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
-    def upsert(self, workflow: WorkflowCreate, mode: Literal["replace"] = "replace") -> Workflow:
+    def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
         """`Create a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
 
         Args:
-            workflow (WorkflowCreate): The workflow to create or update.
+            workflow (WorkflowUpsert): The workflow to create or update.
             mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
@@ -463,9 +463,9 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             Create workflow my workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import WorkflowCreate
+                >>> from cognite.client.data_classes import WorkflowUpsert
                 >>> c = CogniteClient()
-                >>> res = c.workflows.upsert(WorkflowCreate(external_id="my workflow", description="my workflow description"))
+                >>> res = c.workflows.upsert(WorkflowUpsert(external_id="my workflow", description="my workflow description"))
         """
         self._experimental_warning()
         if mode != "replace":
