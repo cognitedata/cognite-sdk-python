@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 
 
 @dataclass
@@ -42,11 +42,19 @@ class Unit(CogniteResource):
         return UnitID(unit_external_id=self.external_id, name=self.name)
 
 
+class UnitList(CogniteResourceList[Unit]):
+    _RESOURCE = Unit
+
+
 class UnitSystem(CogniteResource):
     def __init__(
         self,
         name: str,
-        quantities: list[UnitSystem],
+        quantities: list[UnitID],
     ):
         self.name = name
         self.quantities = quantities
+
+
+class UnitSystemList(CogniteResourceList[UnitSystem]):
+    _RESOURCE = UnitSystem
