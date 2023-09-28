@@ -105,8 +105,8 @@ def cdf_function_add(cognite_client: CogniteClient) -> Function:
         output["sum"] = output["a"] + output["b"]
         return output
 
-    deployed = cognite_client.functions.create(name="Add", external_id=external_id, function_handle=handle)
-    return deployed
+    cognite_client.functions.create(name="Add", external_id=external_id, function_handle=handle)
+    pytest.skip("Function need to be redeployed, skipping tests that need it", allow_module_level=True)
 
 
 @pytest.fixture(scope="session")
