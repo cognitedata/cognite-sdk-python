@@ -19,7 +19,8 @@ Changes are grouped as follows
 
 ## [6.28.1] - 2023-09-26
 ### Fixed
-- If you have en expired token you got the error message `TypeError: argument of type 'NoneType' is not iterable`
+- If you have en expired token you got the error message `TypeError: argument of type 'NoneType' is not iterable`. 
+  The SDK will now try to refresh your token instead.
 
 ## [6.28.0] - 2023-09-26
 ### Added
