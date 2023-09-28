@@ -19,6 +19,7 @@ from cognite.client._api import (
     sequences,
     three_d,
     time_series,
+    units,
     workflows,
 )
 from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
@@ -93,3 +94,6 @@ class TestDocstringExamples:
 
     def test_workflows(self):
         run_docstring_tests(workflows)
+
+    def test_units(self):
+        run_docstring_tests(units)

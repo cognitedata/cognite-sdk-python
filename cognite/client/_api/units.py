@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
-class UnitsAPIClient(APIClient):
+class UnitAPI(APIClient):
     def __init__(
         self,
         config: ClientConfig,
