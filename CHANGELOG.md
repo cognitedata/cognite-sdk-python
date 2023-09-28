@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.0] - 2023-09-26
+### Added
+- Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
+
 ## [6.27.0] - 2023-09-13
 ### Changed
 - Reduce concurrency in data modeling client to 1 

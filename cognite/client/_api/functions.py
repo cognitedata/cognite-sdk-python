@@ -18,7 +18,6 @@ from zipfile import ZipFile
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.credentials import OAuthClientCertificate
 from cognite.client.data_classes import (
     ClientCredentials,
     Function,
@@ -34,9 +33,9 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
-from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -395,7 +394,7 @@ class FunctionsAPI(APIClient):
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = _create_session_and_return_nonce(self._cognite_client)
+        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
 
         if data is None:
             data = {}
@@ -521,18 +520,6 @@ class FunctionsAPI(APIClient):
         """
         res = self._get("/functions/status")
         return FunctionsStatus._load(res.json())
-
-
-def _create_session_and_return_nonce(
-    client: CogniteClient,
-    client_credentials: dict | ClientCredentials | None = None,
-) -> str:
-    if client_credentials is None:
-        if isinstance(client._config.credentials, OAuthClientCertificate):
-            raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")
-    elif isinstance(client_credentials, dict):
-        client_credentials = ClientCredentials(client_credentials["client_id"], client_credentials["client_secret"])
-    return client.iam.sessions.create(client_credentials).nonce
 
 
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
@@ -1037,7 +1024,9 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         _get_function_identifier(function_id, function_external_id)
-        nonce = _create_session_and_return_nonce(self._cognite_client, client_credentials)
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Functions API", client_credentials=client_credentials
+        )
         body: dict[str, list[dict[str, str | int | None | dict]]] = {
             "items": [
                 {
