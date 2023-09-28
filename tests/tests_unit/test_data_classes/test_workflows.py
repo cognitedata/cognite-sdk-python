@@ -8,10 +8,10 @@ from cognite.client.data_classes.workflows import (
     FunctionTaskOutput,
     FunctionTaskParameters,
     TransformationTaskOutput,
+    WorkflowIds,
     WorkflowTask,
     WorkflowTaskOutput,
     WorkflowVersionId,
-    _WorkflowIds,
 )
 
 
@@ -49,25 +49,25 @@ class TestWorkflowIds:
     @pytest.mark.parametrize(
         "resource, expected",
         [
-            [("abc",), _WorkflowIds([WorkflowVersionId("abc")])],
-            [("abc", "def"), _WorkflowIds([WorkflowVersionId("abc", "def")])],
-            [{"workflowExternalId": "abc"}, _WorkflowIds([WorkflowVersionId("abc")])],
-            [{"workflowExternalId": "abc", "version": "def"}, _WorkflowIds([WorkflowVersionId("abc", "def")])],
-            [WorkflowVersionId("abc"), _WorkflowIds([WorkflowVersionId("abc")])],
-            [["abc", "def"], _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")])],
+            [("abc",), WorkflowIds([WorkflowVersionId("abc")])],
+            [("abc", "def"), WorkflowIds([WorkflowVersionId("abc", "def")])],
+            [{"workflowExternalId": "abc"}, WorkflowIds([WorkflowVersionId("abc")])],
+            [{"workflowExternalId": "abc", "version": "def"}, WorkflowIds([WorkflowVersionId("abc", "def")])],
+            [WorkflowVersionId("abc"), WorkflowIds([WorkflowVersionId("abc")])],
+            [["abc", "def"], WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")])],
             [
                 [WorkflowVersionId("abc"), WorkflowVersionId("def")],
-                _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
+                WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
             ],
             [
-                _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
-                _WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
+                WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
+                WorkflowIds([WorkflowVersionId("abc"), WorkflowVersionId("def")]),
             ],
             [
                 [("abc", "def"), ("ghi", "jkl")],
-                _WorkflowIds([WorkflowVersionId("abc", "def"), WorkflowVersionId("ghi", "jkl")]),
+                WorkflowIds([WorkflowVersionId("abc", "def"), WorkflowVersionId("ghi", "jkl")]),
             ],
         ],
     )
-    def test_load(self, resource: Any, expected: _WorkflowIds):
-        assert _WorkflowIds._load(resource) == expected
+    def test_load(self, resource: Any, expected: WorkflowIds):
+        assert WorkflowIds._load(resource) == expected

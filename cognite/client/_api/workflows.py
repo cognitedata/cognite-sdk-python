@@ -13,6 +13,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowExecution,
     WorkflowExecutionDetailed,
     WorkflowExecutionList,
+    WorkflowIds,
     WorkflowList,
     WorkflowTaskExecution,
     WorkflowUpsert,
@@ -20,7 +21,6 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionId,
     WorkflowVersionList,
     WorkflowVersionUpsert,
-    _WorkflowIds,
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import (
@@ -163,7 +163,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
             function parameters then you can specify it as follows
 
-                >>> from cognite.client.data_classes  import WorkflowTask, FunctionTaskParameters
+                >>> from cognite.client.data_classes import WorkflowTask, FunctionTaskParameters
                 >>> task = WorkflowTask(
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
@@ -238,7 +238,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         self._experimental_warning()
         filter_: dict[str, Any] = {}
         if workflow_version_ids is not None:
-            filter_["workflowFilters"] = _WorkflowIds._load(workflow_version_ids).dump(
+            filter_["workflowFilters"] = WorkflowIds._load(workflow_version_ids).dump(
                 camel_case=True, as_external_id=True
             )
         if created_time_start is not None:
@@ -340,7 +340,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         """
         self._experimental_warning()
-        identifiers = _WorkflowIds._load(workflow_version_id).dump(camel_case=True)
+        identifiers = WorkflowIds._load(workflow_version_id).dump(camel_case=True)
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
@@ -417,7 +417,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         if workflow_version_ids is None:
             workflow_ids_dumped = []
         else:
-            workflow_ids_dumped = _WorkflowIds._load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
+            workflow_ids_dumped = WorkflowIds._load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
         return self._list(
             method="POST",

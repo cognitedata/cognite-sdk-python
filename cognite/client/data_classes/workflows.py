@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from collections import UserList
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
 
@@ -359,7 +360,7 @@ class WorkflowTask(CogniteResource):
         if self.description:
             output["description"] = self.description
         if self.depends_on:
-            output["dependsOn"] = [
+            output[("dependsOn" if camel_case else "depends_on")] = [
                 {("externalId" if camel_case else "external_id"): dependency} for dependency in self.depends_on
             ]
         return output
@@ -377,13 +378,13 @@ class WorkflowTaskOutput(ABC):
     def load_output(cls, data: dict) -> WorkflowTaskOutput:
         task_type = data["taskType"]
         if task_type == "function":
-            return FunctionTaskOutput.load(data["output"])
+            return FunctionTaskOutput.load(data)
         elif task_type == "transformation":
-            return TransformationTaskOutput.load(data["output"])
+            return TransformationTaskOutput.load(data)
         elif task_type == "cdf":
-            return CDFTaskOutput.load(data["output"])
+            return CDFTaskOutput.load(data)
         elif task_type == "dynamic":
-            return DynamicTaskOutput.load(data["output"])
+            return DynamicTaskOutput.load(data)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
 
@@ -412,7 +413,8 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
-        return cls(data.get("callId"), data.get("functionId"), data.get("response"))
+        output = data["output"]
+        return cls(output.get("callId"), output.get("functionId"), output.get("response"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
@@ -440,7 +442,8 @@ class TransformationTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
-        return cls(data["jobId"])
+        output = data["output"]
+        return cls(output["jobId"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
@@ -466,7 +469,8 @@ class CDFTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> CDFTaskOutput:
-        return cls(data.get("response"), data.get("statusCode"))
+        output = data["output"]
+        return cls(output.get("response"), output.get("statusCode"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
@@ -493,7 +497,8 @@ class DynamicTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
-        return cls([WorkflowTask._load(task) for task in data["dynamicTasks"]])
+        output = data["output"]
+        return cls([WorkflowTask._load(task) for task in output["dynamicTasks"]])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
@@ -719,9 +724,9 @@ class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
 
     _RESOURCE = WorkflowVersion
 
-    def as_ids(self) -> _WorkflowIds:
+    def as_ids(self) -> WorkflowIds:
         """Returns a WorkflowIds object with the workflow version ids."""
-        return _WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
+        return WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
 
 
 class WorkflowExecution(CogniteResource):
@@ -913,13 +918,22 @@ class WorkflowVersionId:
         return output
 
 
-class _WorkflowIds(UserList):
+class WorkflowIds(UserList):
     """
     This class represents a list of Workflow Version Identifiers.
     """
 
+    def __init__(self, workflow_ids: Collection[WorkflowVersionId]) -> None:
+        for workflow_id in workflow_ids:
+            if not isinstance(workflow_id, WorkflowVersionId):
+                raise TypeError(
+                    f"All resources for class '{type(self).__name__}' must be of type "
+                    f"'{type(WorkflowVersionId).__name__}', not '{type(workflow_id)}'."
+                )
+        super().__init__(workflow_ids)
+
     @classmethod
-    def _load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> _WorkflowIds:
+    def _load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> WorkflowIds:
         workflow_ids: Sequence[WorkflowVersionId]
         if isinstance(resource, tuple) and len(resource) == 2 and all(isinstance(x, str) for x in resource):
             workflow_ids = [WorkflowVersionId(*resource)]
