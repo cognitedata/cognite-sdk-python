@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class UnitAPI(APIClient):
+    _RESOURCE_PATH = "/units"
+
     def __init__(
         self,
         config: ClientConfig,
@@ -30,4 +32,4 @@ class UnitAPI(APIClient):
         raise NotImplementedError
 
     def list(self) -> UnitList:
-        raise NotImplementedError
+        return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
