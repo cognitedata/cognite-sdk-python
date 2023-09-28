@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.1] - 2023-09-26
+### Fixed
+- If you have en expired token you got the error message `TypeError: argument of type 'NoneType' is not iterable`
+
 ## [6.28.0] - 2023-09-26
 ### Added
 - Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.

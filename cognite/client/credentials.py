@@ -288,7 +288,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
     def _refresh_access_token(self) -> tuple[str, float]:
         # First check if there is a serialized token cached on disk.
         if accounts := self.__app.get_accounts():
-            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
+            credentials = self.__app.acquire_token_silent_with_error(scopes=self.__scopes, account=accounts[0])
+            if "error" in credentials:
+                # The token might be expired, so we try to refresh it
+                credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
         # If not, we acquire a new token interactively
         else:
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
