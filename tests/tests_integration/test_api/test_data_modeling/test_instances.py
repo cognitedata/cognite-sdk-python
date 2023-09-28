@@ -304,9 +304,14 @@ class TestInstancesAPI:
         assert cognite_client.data_modeling.instances.retrieve(("myNonExistingSpace", "myImaginaryNode")).nodes == []
 
     def test_iterate_over_instances(self, cognite_client: CogniteClient) -> None:
-        for nodes in cognite_client.data_modeling.instances(chunk_size=2, limit=-1):
-            assert isinstance(nodes, NodeList)
-            assert len(nodes) <= 2
+        iterator = cognite_client.data_modeling.instances(chunk_size=2)
+        first_iter = next(iterator)
+        assert isinstance(first_iter, NodeList)
+        assert len(first_iter) <= 2
+
+        second_iter = next(iterator)
+        assert isinstance(second_iter, NodeList)
+        assert len(second_iter) <= 2
 
     def test_apply_invalid_node_data(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
