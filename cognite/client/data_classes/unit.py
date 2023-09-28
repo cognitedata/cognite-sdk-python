@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -36,11 +37,11 @@ class UnitID(CogniteResource):
         self.name = name
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = resource if isinstance(resource, str) else resource
+    def _load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> Self:
+        loaded = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
-            unit_external_id=resource["unitExternalId"],
-            name=resource["name"],
+            unit_external_id=loaded["unitExternalId"],
+            name=loaded["name"],
         )
 
 
@@ -70,9 +71,7 @@ class Unit(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = resource if isinstance(resource, str) else resource
-        if "items" in resource:
-            resource = resource["items"][0]
+        resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -115,7 +114,7 @@ class UnitSystem(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = resource if isinstance(resource, str) else resource
+        resource = json.loads(resource) if isinstance(resource, str) else resource
 
         return cls(
             name=resource["name"],
