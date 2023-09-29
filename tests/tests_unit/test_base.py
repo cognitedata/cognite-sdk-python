@@ -370,6 +370,7 @@ class TestCogniteResourceList:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    @pytest.mark.dsl
     def test_to_pandas_method(self):
         import pandas as pd
 
