@@ -226,11 +226,11 @@ def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]:
 
 def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list] | list[dict]:
     if isinstance(collection, list):
-        return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
+        return [collection[i : i + chunk_size] for i in range(len(collection), chunk_size)]
 
     if isinstance(collection, dict):
         collection = list(collection.items())
-        return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
+        return [dict(collection[i : i + chunk_size]) for i in range(len(collection), chunk_size)]
 
     raise ValueError(f"Can only split list or dict, not {type(collection)}")
 
