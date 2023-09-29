@@ -541,10 +541,15 @@ class TestFilesAPI:
             "file(1)",
         ]
         assert cognite_client.files._create_unique_file_names(
-            ["posixfolder/a.txt", "posixfolder/a.txt", str(Path(r"winfolder\a.txt")), str(Path(r"winfolder\a.txt"))]
+            [
+                str(Path("posixfolder/a.txt")),
+                str(Path("posixfolder/a.txt")),
+                str(Path(r"winfolder\a.txt")),
+                str(Path(r"winfolder\a.txt")),
+            ]
         ) == [
-            "posixfolder/a.txt",
-            "posixfolder/a(1).txt",
+            str(Path("posixfolder/a.txt")),
+            str(Path("posixfolder/a(1).txt")),
             str(Path(r"winfolder\a.txt")),
             str(Path(r"winfolder\a(1).txt")),
         ]
