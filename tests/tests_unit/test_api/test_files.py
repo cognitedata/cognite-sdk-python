@@ -2,6 +2,7 @@ import json
 import os
 import re
 from io import BufferedReader
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -540,12 +541,12 @@ class TestFilesAPI:
             "file(1)",
         ]
         assert cognite_client.files._create_unique_file_names(
-            ["posixfolder/a.txt", "posixfolder/a.txt", r"winfolder\a.txt", r"winfolder\a.txt"]
+            ["posixfolder/a.txt", "posixfolder/a.txt", str(Path(r"winfolder\a.txt")), str(Path(r"winfolder\a.txt"))]
         ) == [
             "posixfolder/a.txt",
             "posixfolder/a(1).txt",
-            r"winfolder\a.txt",
-            r"winfolder\a(1).txt",
+            str(Path(r"winfolder\a.txt")),
+            str(Path(r"winfolder\a(1).txt")),
         ]
 
     def test_download_with_duplicate_names(
