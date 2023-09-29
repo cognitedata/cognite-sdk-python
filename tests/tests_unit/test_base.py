@@ -370,6 +370,20 @@ class TestCogniteResourceList:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    def test_to_pandas_method():
+        import pandas as pd
+
+        from cognite.client.data_classes import Asset
+
+        obj = Asset(id=1)
+
+        result_df = obj.to_pandas()
+
+        expected_df = pd.DataFrame({"value": [1]}, index=["id"])
+
+        # Assert that the resultant DataFrame is equal to the expected DataFrame
+        pd.testing.assert_frame_equal(result_df, expected_df)
+
 
 class TestCogniteFilter:
     def test_dump(self):
