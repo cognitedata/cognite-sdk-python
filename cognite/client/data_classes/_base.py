@@ -580,7 +580,7 @@ class Geometry(dict):
         geometries: Collection[Geometry] | None = None,
     ) -> None:
         if type not in self._VALID_TYPES:
-            raise ValueError(f"type must be one of {self._VALID_TYPES}")
+            raise TypeError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
         self.geometries = geometries
@@ -665,7 +665,7 @@ class CogniteSort:
         elif isinstance(prop, list):
             prop = [to_camel_case(p) for p in prop]
         else:
-            raise ValueError(f"Unable to dump {type(self).__name__} with property {prop}")
+            raise TypeError(f"Unable to dump {type(self).__name__} with property {prop}")
 
         output: dict[str, str | list[str]] = {"property": prop, "order": self.order}
         if self.nulls is not None:

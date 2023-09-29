@@ -48,7 +48,7 @@ class PropertyType(ABC):
     @classmethod
     def load(cls, data: dict) -> PropertyType:
         if "type" not in data:
-            raise ValueError("Property types are required to have a type")
+            raise TypeError("Property types are required to have a type")
         type_ = data["type"]
         data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
 
@@ -79,7 +79,7 @@ class PropertyType(ABC):
         elif type_ == "direct":
             return DirectRelation(**data)
 
-        raise ValueError(f"Invalid type {type_}.")
+        raise TypeError(f"Invalid type {type_}.")
 
 
 @dataclass

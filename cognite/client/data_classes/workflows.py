@@ -115,7 +115,7 @@ class WorkflowTaskParameters(CogniteResource, ABC):
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
         else:
-            raise ValueError(f"Unknown task type: {type_}. Expected 'function', 'transformation', 'cdf, or 'dynamic'")
+            raise TypeError(f"Unknown task type: {type_}. Expected 'function', 'transformation', 'cdf, or 'dynamic'")
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -386,7 +386,7 @@ class WorkflowTaskOutput(ABC):
         elif task_type == "dynamic":
             return DynamicTaskOutput.load(data)
         else:
-            raise ValueError(f"Unknown task type: {task_type}")
+            raise TypeError(f"Unknown task type: {task_type}")
 
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

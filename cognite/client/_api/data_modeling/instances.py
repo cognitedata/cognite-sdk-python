@@ -245,7 +245,7 @@ class InstancesAPI(APIClient):
         elif instance_type == "edge":
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
         else:
-            raise ValueError(f"Invalid instance type: {instance_type}")
+            raise TypeError(f"Invalid instance type: {instance_type}")
 
         return cast(
             Union[Iterator[Edge], Iterator[EdgeList], Iterator[Node], Iterator[NodeList]],
@@ -710,7 +710,7 @@ class InstancesAPI(APIClient):
         elif instance_type == "edge":
             list_cls = EdgeList
         else:
-            raise ValueError(f"Invalid instance type: {instance_type}")
+            raise TypeError(f"Invalid instance type: {instance_type}")
 
         body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type, "limit": limit}
         if properties:
@@ -760,7 +760,7 @@ class InstancesAPI(APIClient):
 
         """
         if instance_type not in ("node", "edge"):
-            raise ValueError(f"Invalid instance type: {instance_type}")
+            raise TypeError(f"Invalid instance type: {instance_type}")
 
         self._validate_filter(filter)
         body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
@@ -842,7 +842,7 @@ class InstancesAPI(APIClient):
                 >>> res = c.data_modeling.instances.histogram(view_id, birth_by_decade)
         """
         if instance_type not in ("node", "edge"):
-            raise ValueError(f"Invalid instance type: {instance_type}")
+            raise TypeError(f"Invalid instance type: {instance_type}")
 
         self._validate_filter(filter)
         body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
@@ -858,7 +858,7 @@ class InstancesAPI(APIClient):
 
         for histogram in histogram_seq:
             if not isinstance(histogram, Histogram):
-                raise ValueError(f"Not a histogram: {histogram}")
+                raise TypeError(f"Not a histogram: {histogram}")
 
         body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
         if filter:
@@ -1045,7 +1045,7 @@ class InstancesAPI(APIClient):
         elif instance_type == "edge":
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
         else:
-            raise ValueError(f"Invalid instance type: {instance_type}")
+            raise TypeError(f"Invalid instance type: {instance_type}")
 
         return cast(
             Union[NodeList, EdgeList],

@@ -232,7 +232,7 @@ def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list] | 
         collection = list(collection.items())
         return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
-    raise ValueError(f"Can only split list or dict, not {type(collection)}")
+    raise TypeError(f"Can only split list or dict, not {type(collection)}")
 
 
 def convert_true_match(true_match: dict | list | tuple[int | str, int | str]) -> dict:
@@ -247,7 +247,7 @@ def convert_true_match(true_match: dict | list | tuple[int | str, int | str]) ->
     elif isinstance(true_match, dict):
         return true_match
     else:
-        raise ValueError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
+        raise TypeError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
 
 
 def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:

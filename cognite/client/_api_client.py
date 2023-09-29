@@ -249,7 +249,7 @@ class APIClient:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
 
         if method not in valid_methods:
-            raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
+            raise TypeError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
         if method in ["GET", "PUT", "PATCH"]:
             return True
@@ -455,7 +455,7 @@ class APIClient:
                         api_subversion=api_subversion,
                     )
                 else:
-                    raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
+                    raise TypeError(f"_list_generator parameter `method` must be GET or POST, not {method}")
                 last_received_items = res.json()["items"]
                 total_items_retrieved += len(last_received_items)
 
@@ -610,7 +610,7 @@ class APIClient:
                     }
                     res = self._get(url_path=(resource_path or self._RESOURCE_PATH), params=params, headers=headers)
                 else:
-                    raise ValueError(f"Unsupported method: {method}")
+                    raise TypeError(f"Unsupported method: {method}")
                 retrieved_items.extend(res.json()["items"])
                 next_cursor = res.json().get("nextCursor")
                 if next_cursor is None:
@@ -725,7 +725,7 @@ class APIClient:
             elif isinstance(properties, list):
                 dumped_properties = [to_camel_case(p) for p in properties]
             else:
-                raise ValueError(f"Unknown property format: {properties}")
+                raise TypeError(f"Unknown property format: {properties}")
 
             body["properties"] = [{"property": dumped_properties}]
             if property_aggregation_filter is not None:
@@ -739,7 +739,7 @@ class APIClient:
             elif isinstance(path, list):
                 dumped_path = path
             else:
-                raise ValueError(f"Unknown path format: {path}")
+                raise TypeError(f"Unknown path format: {path}")
             body["path"] = dumped_path
 
         if query is not None:
@@ -752,7 +752,7 @@ class APIClient:
             elif isinstance(filter, Dict):
                 dumped_filter = convert_all_keys_to_camel_case(filter)
             else:
-                raise ValueError(f"Unknown filter format: {filter}")
+                raise TypeError(f"Unknown filter format: {filter}")
             body["filter"] = dumped_filter
 
         if advanced_filter is not None:
@@ -955,7 +955,7 @@ class APIClient:
                 if "metadata" in patch_object_update and patch_object_update["metadata"] == {"set": None}:
                     patch_object_update["metadata"] = {"set": {}}
             else:
-                raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
+                raise TypeError("update item must be of type CogniteResource or CogniteUpdate")
         patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
@@ -984,7 +984,7 @@ class APIClient:
         input_resource_cls: type[CogniteResource] | None = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
-            raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
+            raise TypeError(f"mode must be either 'patch' or 'replace', got {mode!r}")
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
         try:

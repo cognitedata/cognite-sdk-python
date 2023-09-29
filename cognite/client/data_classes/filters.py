@@ -65,7 +65,7 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
         output = [to_camel_case(p) if camel_case else p for p in property_]
         return tuple(output) if isinstance(property_, tuple) else output
     else:
-        raise ValueError(f"Invalid property format {property_}")
+        raise TypeError(f"Invalid property format {property_}")
 
 
 class Filter(ABC):
@@ -168,7 +168,7 @@ class Filter(ABC):
                 value=_load_filter_value(filter_body["value"]),
             )
         else:
-            raise ValueError(f"Unknown filter type: {filter_name}")
+            raise TypeError(f"Unknown filter type: {filter_name}")
 
     @abstractmethod
     def _filter_body(self, camel_case_property: bool) -> list | dict:
@@ -187,7 +187,7 @@ def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[
         return
     if not_supported := (filter._involved_filter_types() - supported_filters):
         names = [f.__name__ for f in not_supported]
-        raise ValueError(f"The filters {names} are not supported for {api_name}")
+        raise TypeError(f"The filters {names} are not supported for {api_name}")
 
 
 class CompoundFilter(Filter):

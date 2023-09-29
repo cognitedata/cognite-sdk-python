@@ -705,7 +705,7 @@ class AssetsAPI(APIClient):
                 ...     hierarchy.validate_and_report(output_file=Path("report.txt"))
         """
         if upsert and upsert_mode not in ("patch", "replace"):
-            raise ValueError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
+            raise TypeError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
 
         if not isinstance(assets, AssetHierarchy):
             utils._auxiliary.assert_type(assets, "assets", [Sequence])

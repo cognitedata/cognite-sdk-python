@@ -925,7 +925,7 @@ class SequencesDataAPI(APIClient):
         elif isinstance(rows, SequenceType) and (len(rows) == 0 or isinstance(rows[0], tuple)):
             all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
         else:
-            raise ValueError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
+            raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = Identifier.of_either(id, external_id).as_dict()
         base_obj.update(self._process_columns(column_external_ids))
