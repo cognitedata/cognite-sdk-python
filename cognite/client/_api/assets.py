@@ -1009,17 +1009,14 @@ class AssetsAPI(APIClient):
     def _get_asset_subtree(self, assets: list, current_depth: int, depth: int | None) -> list:
         subtree = assets
         if depth is None or current_depth < depth:
-            children = self._get_children(assets)
-            if children:
+            if children := self._get_children(subtree):
                 subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
         return subtree
 
     def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
-        tasks = []
         chunk_size = 100
-        for i in range(0, len(ids), chunk_size):
-            tasks.append({"parent_ids": ids[i : i + chunk_size], "limit": -1})
+        tasks = [{"parent_ids": ids[i : i + chunk_size], "limit": -1} for i in range(len(ids), chunk_size)]
         tasks_summary = utils._concurrency.execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results

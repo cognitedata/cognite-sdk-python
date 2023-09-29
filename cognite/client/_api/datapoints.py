@@ -1520,7 +1520,7 @@ class DatapointsPoster:
 
     def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
         for dps_object in dps_object_list:
-            for i in range(0, len(dps_object["datapoints"]), self.limit):
+            for i in range(len(dps_object["datapoints"]), self.limit):
                 dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.limit]
                 for bin in self.bins:

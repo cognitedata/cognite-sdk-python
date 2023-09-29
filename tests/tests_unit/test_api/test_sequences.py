@@ -113,7 +113,7 @@ def mock_get_sequence_data_many_columns(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "ceid" + str(i)} for i in range(0, 200)],
+        "columns": [{"externalId": "ceid" + str(i)} for i in range(200)],
         "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
     }
     rsps.add(
@@ -135,7 +135,7 @@ def mock_get_sequence_data_two_col(rsps, cognite_client):
     }
     rsps.add(
         rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
+        f"{cognite_client.sequences._get_base_url_with_base_path()}/sequences/data/list",
         status=200,
         json=json,
     )
@@ -558,7 +558,7 @@ class TestSequencesPandasIntegration:
     def test_retrieve_dataframe_columns_many_extid(self, cognite_client, mock_get_sequence_data_many_columns):
         data = cognite_client.sequences.data.retrieve(external_id="foo", start=1000000, end=1100000)
         assert isinstance(data, SequenceData)
-        assert ["ceid" + str(i) for i in range(200)] == list(data.to_pandas().columns)
+        assert [f"ceid{i!s}" for i in range(200)] == list(data.to_pandas().columns)
 
     def test_retrieve_dataframe_convert_null(self, cognite_client, mock_seq_response, mock_get_sequence_data_with_null):
         df = cognite_client.sequences.data.retrieve_dataframe(external_id="foo", start=0, end=None)

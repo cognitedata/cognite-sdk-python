@@ -22,7 +22,9 @@ def new_template_group(cognite_client):
     username = cognite_client.iam.token.inspect().subject
     template_group = cognite_client.templates.groups.create(
         TemplateGroup(
-            external_id=external_id, description="some description", owners=[username, external_id + "@cognite.com"]
+            external_id=external_id,
+            description="some description",
+            owners=[username, f"{external_id}@cognite.com"],
         )
     )
     yield template_group, external_id
@@ -75,9 +77,15 @@ def new_template_instance(cognite_client, new_template_group_version):
 
 @pytest.fixture
 def new_view(cognite_client, new_template_group_version):
-    events = []
-    for i in range(0, 1001):
-        events.append(Event(external_id="test_evt_templates_1_" + str(i), type="test_templates_1", start_time=i * 1000))
+    len_new_view = 1000
+    events = [
+        Event(
+            external_id=f"test_evt_templates_1_{i}",
+            type="test_templates_1",
+            start_time=i * len_new_view,
+        )
+        for i in range(len_new_view + 1)
+    ]
     try:
         cognite_client.events.create(events)
     except Exception:
@@ -115,7 +123,7 @@ class TestTemplatesCogniteClient:
 
     def test_groups_list_filter(self, cognite_client, new_template_group):
         new_group, ext_id = new_template_group
-        res = cognite_client.templates.groups.list(owners=[ext_id + "@cognite.com"])
+        res = cognite_client.templates.groups.list(owners=[f"{ext_id}@cognite.com"])
         assert len(res) == 1
         assert isinstance(res, TemplateGroupList)
 
@@ -234,7 +242,7 @@ class TestTemplatesCogniteClient:
             ext_id, new_version.version, view.external_id, input={"minStartTime": 10 * 1000}, limit=10
         )
         expected = ViewResolveList._load(
-            [{"startTime": (i + 10) * 1000, "test_type": "test_templates_1"} for i in range(0, 10)]
+            [{"startTime": (i + 10) * 1000, "test_type": "test_templates_1"} for i in range(10)]
         )
         assert res == expected
 
@@ -244,7 +252,7 @@ class TestTemplatesCogniteClient:
             ext_id, new_version.version, view.external_id, input={"minStartTime": 0}, limit=-1
         )
         expected = ViewResolveList._load(
-            [{"startTime": i, "test_type": "test_templates_1"} for i in range(0, 1_000_001, 1000)]
+            [{"startTime": i, "test_type": "test_templates_1"} for i in range(1_000_001, 1000)]
         )
         assert res == expected
 
