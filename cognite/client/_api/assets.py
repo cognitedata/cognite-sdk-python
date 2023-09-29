@@ -907,10 +907,14 @@ class AssetsAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
-            sort = [sort]
+
+        if sort is not None:
+            if not isinstance(sort, list):
+                sort = [sort]
+            sort_dumped = [AssetSort.load(item).dump(camel_case=True) for item in sort]
+        else:
+            sort_dumped = None
+
         if aggregated_properties:
             aggregated_properties_camel = [to_camel_case(prop) for prop in aggregated_properties]
         else:
@@ -922,7 +926,7 @@ class AssetsAPI(APIClient):
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=[AssetSort.load(item).dump(camel_case=True) for item in sort],
+            sort=sort_dumped,
             other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
         )
 
