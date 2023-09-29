@@ -539,6 +539,14 @@ class TestFilesAPI:
             "a(2).txt",
             "file(1)",
         ]
+        assert cognite_client.files._create_unique_file_names(
+            ["posixfolder/a.txt", "posixfolder/a.txt", r"winfolder\a.txt", r"winfolder\a.txt"]
+        ) == [
+            "posixfolder/a.txt",
+            "posixfolder/a(1).txt",
+            r"winfolder\a.txt",
+            r"winfolder\a(1).txt",
+        ]
 
     def test_download_with_duplicate_names(
         self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
