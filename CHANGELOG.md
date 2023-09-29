@@ -17,13 +17,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.1] - 2023-09-26
+### Fixed
+- Fix a bug in handling an optional `sort` paramter in methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()`.
+
 ## [6.28.0] - 2023-09-26
 ### Added
 - Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
 
 ## [6.27.0] - 2023-09-13
 ### Changed
-- Reduce concurrency in data modeling client to 1 
+- Reduce concurrency in data modeling client to 1
 
 ## [6.26.0] - 2023-09-22
 ### Added
