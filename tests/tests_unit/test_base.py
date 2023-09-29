@@ -370,7 +370,7 @@ class TestCogniteResourceList:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
-    def test_to_pandas_method():
+    def test_to_pandas_method(self):
         import pandas as pd
 
         from cognite.client.data_classes import Asset
