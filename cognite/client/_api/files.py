@@ -6,7 +6,6 @@ import warnings
 from io import BufferedReader
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     BinaryIO,
     Iterator,
@@ -35,9 +34,6 @@ from cognite.client.exceptions import CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
-
-if TYPE_CHECKING:
-    from requests import Response
 
 
 class FilesAPI(APIClient):
@@ -538,6 +534,9 @@ class FilesAPI(APIClient):
             security_categories (Sequence[int] | None): Security categories to attach to this file.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
+        Returns:
+            FileMetadata: No description.
+
         Examples:
 
             Upload a file from memory::
@@ -545,10 +544,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
-
-
-        Returns:
-            FileMetadata: No description."""
+        """
         file_metadata = FileMetadata(
             name=name,
             external_id=external_id,
@@ -799,7 +795,6 @@ class FilesAPI(APIClient):
         with self._http_client_with_retry.request(
             "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
-            r = cast("Response", r)
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:  # filter out keep-alive new chunks

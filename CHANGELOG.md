@@ -17,10 +17,53 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.25.0] - 2023-09-14
+## [6.29.0] - 2023-09-29
 ### Added
 - Added parameter `resolve_duplicate_file_names` to `client.files.download`. 
   This will keep all the files when downloading to local machine, even if they have the same name.
+
+## [6.28.0] - 2023-09-26
+### Added
+- Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
+
+## [6.27.0] - 2023-09-13
+### Changed
+- Reduce concurrency in data modeling client to 1 
+
+## [6.26.0] - 2023-09-22
+### Added
+- Support `partition` and `cursor` parameters on `time_series.subscriptions.iterate_data`
+- Include the `cursor` attribute on `DatapointSubscriptionBatch`, which is yielded in every iteration
+of `time_series.subscriptions.iterate_data`.
+
+## [6.25.3] - 2023-09-19
+### Added
+- Support for setting and retrieving `data_set_id` in data class `client.data_classes.ThreeDModel`.
+
+## [6.25.2] - 2023-09-12
+### Fixed
+- Using the `HasData` filter would raise an API error in CDF.
+
+## [6.25.1] - 2023-09-15
+### Fixed
+- Using nonce credentials now works as expected for `transformations.[create, update]`. Previously, the attempt to create
+  a session would always fail, leading to nonce credentials never being used (full credentials were passed to- and
+  stored in the transformations backend service).
+- Additionally, the automatic creation of a session no longer fails silently when an `CogniteAuthError` is encountered
+  (which happens when the credentials are invalid).
+- While processing source- and destination credentials in `client.transformations.[create, update]`, an `AttributeError`
+  can no longer be raised (by not specifying project).
+### Added
+- `TransformationList` now correctly inherits the two (missing) helper methods `as_ids()` and `as_external_ids()`.
+
+## [6.25.0] - 2023-09-14
+### Added
+- Support for `ignore_unknown_ids` in `client.functions.retrieve_multiple` method.
+
+## [6.24.1] - 2023-09-13
+### Fixed
+- Bugfix for `AssetsAPI.create_hierarchy` when running in upsert mode: It could skip certain updates above
+  the single-request create limit (currently 1000 assets).
 
 ## [6.24.0] - 2023-09-12
 ### Fixed
@@ -884,7 +927,7 @@ It will also cache the token between runs.
 ### Changed
 - Client configuration no longer respects any environment variables. There are other libraries better
 suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
-been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+been several reports of envvar name clash issues in tools built on top the SDK. We therefore
 consider this something that should be handled by the application consuming the SDK. All configuration of
 `cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
 `max_connection_pool_size` and other options which apply to all client instances are now configured through

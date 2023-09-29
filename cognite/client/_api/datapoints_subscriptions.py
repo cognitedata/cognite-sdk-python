@@ -177,6 +177,8 @@ class DatapointsSubscriptionAPI(APIClient):
         external_id: str,
         start: str | None = None,
         limit: int = DEFAULT_LIMIT_READ,
+        partition: int = 0,
+        cursor: str | None = None,
     ) -> Iterator[DatapointSubscriptionBatch]:
         """`Iterate over data from a given subscription. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
@@ -191,6 +193,8 @@ class DatapointsSubscriptionAPI(APIClient):
             external_id (str): The external ID of the subscription.
             start (str | None): When to start the iteration. If set to None, the iteration will start from the beginning. The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute). For example, "12h-ago" will start the iteration from 12 hours ago. You can also set it to "now" to jump straight to the end. Defaults to None.
             limit (int): Approximate number of results to return across all partitions.
+            partition (int): The partition to iterate over. Defaults to 0.
+            cursor (str | None): Optional cursor to start iterating from.
 
         Yields:
             DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
@@ -215,9 +219,7 @@ class DatapointsSubscriptionAPI(APIClient):
         """
         self._experimental_warning()
 
-        current_partitions: list[DatapointSubscriptionPartition] = [
-            DatapointSubscriptionPartition.create(p) for p in [0]
-        ]
+        current_partitions = [DatapointSubscriptionPartition.create((partition, cursor))]
         while True:
             body = {
                 "externalId": external_id,
@@ -231,7 +233,10 @@ class DatapointsSubscriptionAPI(APIClient):
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
             batch = _DatapointSubscriptionBatchWithPartitions._load(res.json())
 
-            yield DatapointSubscriptionBatch(batch.updates, batch.subscription_changes, batch.has_next)
+            cursor = batch.partitions[0].cursor
+            assert cursor is not None
+
+            yield DatapointSubscriptionBatch(batch.updates, batch.subscription_changes, batch.has_next, cursor)
 
             current_partitions = batch.partitions
 

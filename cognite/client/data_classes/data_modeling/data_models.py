@@ -79,8 +79,7 @@ class DataModelApply(DataModelCore):
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "views" in data:
             data["views"] = [cls._load_view(v) for v in data["views"]] or None
-
-        return cast(DataModelApply, super().load(data))
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

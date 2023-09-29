@@ -7,11 +7,14 @@ from itertools import zip_longest
 
 import pytest
 
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import (
     assert_type,
     exactly_one_is_not_none,
+    fast_dict_load,
     find_duplicates,
+    get_accepted_params,
     handle_deprecated_camel_case_argument,
     interpolate_and_url_encode,
     json_dump_default,
@@ -273,3 +276,32 @@ class TestExactlyOneIsNotNone:
     )
     def test_exactly_one_is_not_none(self, inp, expected):
         assert exactly_one_is_not_none(*inp) == expected
+
+
+class MyTestResource(CogniteResource):
+    # Test resource for fast_dict_load below
+    def __init__(self, foo=None, foo_bar=None, foo_bar_baz=None, cognite_client=None):
+        self.foo = foo
+        self.foo_bar = foo_bar
+        self.foo_bar_baz = foo_bar_baz
+        self._cognite_client = cognite_client
+
+    def _load(*a, **kw):
+        raise NotImplementedError
+
+
+class TestFastDictLoad:
+    @pytest.mark.parametrize(
+        "item, expected",
+        (
+            # Simple load test for all keys:
+            ({"foo": "a", "fooBar": "b", "fooBarBaz": "c"}, MyTestResource(*"abc")),
+            # Ensure unknown keys are skipped silently:
+            ({"f": "a", "foot": "b", "fooBarBaz": "c"}, MyTestResource(foo_bar_baz="c")),
+            # Ensure keys must be camel cased:
+            ({"foo": "a", "foo_bar": "b", "foo_bar_baz": "c"}, MyTestResource(foo="a")),
+        ),
+    )
+    def test_load(self, item, expected):
+        get_accepted_params.cache_clear()  # For good measure
+        assert expected == fast_dict_load(MyTestResource, item, cognite_client=None)

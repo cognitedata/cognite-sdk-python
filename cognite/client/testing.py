@@ -59,6 +59,7 @@ from cognite.client._api.transformations import (
 )
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
+from cognite.client._api.workflows import WorkflowAPI, WorkflowExecutionAPI, WorkflowTaskAPI, WorkflowVersionAPI
 
 
 class CogniteClientMock(MagicMock):
@@ -153,6 +154,11 @@ class CogniteClientMock(MagicMock):
 
         self.vision = MagicMock(spec_set=VisionAPI)
 
+        self.workflows = MagicMock(spec=WorkflowAPI)
+        self.workflows.versions = MagicMock(spec_set=WorkflowVersionAPI)
+        self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
+        self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
+
 
 @contextmanager
 def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
@@ -205,6 +211,6 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>         assert "Something went wrong" == e.message
     """
     cognite_client_mock = CogniteClientMock()
-    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[assignment]
+    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
     yield cognite_client_mock
-    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[assignment]
+    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]

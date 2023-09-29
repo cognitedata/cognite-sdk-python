@@ -47,8 +47,8 @@ if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
     from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
 else:
-    from cognite.client._proto_legacy.data_point_list_response_pb2 import DataPointListItem  # type: ignore [misc]
-    from cognite.client._proto_legacy.data_points_pb2 import (  # type: ignore [misc]
+    from cognite.client._proto_legacy.data_point_list_response_pb2 import DataPointListItem  # type: ignore [assignment]
+    from cognite.client._proto_legacy.data_points_pb2 import (  # type: ignore [assignment]
         AggregateDatapoint,
         NumericDatapoint,
         StringDatapoint,
@@ -203,7 +203,7 @@ class _SingleTSQueryValidator:
 
             elif isinstance(ts, dict):
                 ts_validated = self._validate_user_supplied_dict_keys(ts, arg_name)
-                if not isinstance(identifier := ts_validated[arg_name], exp_type):  # type: ignore [literal-required]
+                if not isinstance(identifier := ts_validated[arg_name], exp_type):
                     self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
                 # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
                 ts_dct = {**self.defaults, **ts_validated}
@@ -624,7 +624,7 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     def _create_payload_item(self) -> CustomDatapoints:
         return CustomDatapoints(
             {
-                **self.identifier.as_dict(),  # type: ignore [misc]
+                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
                 "start": self.start,
                 "end": self.end,
                 "limit": 0,  # Not a bug; it just returns the outside points
@@ -685,7 +685,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def _create_payload_item(self, remaining_limit: float) -> CustomDatapoints:
         return CustomDatapoints(
             {
-                **self.identifier.as_dict(),  # type: ignore [misc]
+                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
                 "start": self.next_start,
                 "end": self.end,
                 "limit": min(remaining_limit, self.max_query_limit),

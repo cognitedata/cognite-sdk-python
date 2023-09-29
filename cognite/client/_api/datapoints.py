@@ -79,7 +79,7 @@ from cognite.client.utils._validation import validate_user_input_dict_with_ident
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 else:
-    from cognite.client._proto_legacy.data_point_list_response_pb2 import (  # type: ignore [misc]
+    from cognite.client._proto_legacy.data_point_list_response_pb2 import (  # type: ignore [assignment]
         DataPointListItem,
         DataPointListResponse,
     )
@@ -1099,7 +1099,7 @@ class DatapointsAPI(APIClient):
 
         if exactly_one_is_not_none(aggregates, granularity):
             raise ValueError(
-                "Got only one of 'aggregates' and 'granularity'."
+                "Got only one of 'aggregates' and 'granularity'. "
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
@@ -1138,10 +1138,10 @@ class DatapointsAPI(APIClient):
             duplicated = find_duplicates(identifiers.as_primitives())
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
-        intervals = to_fixed_utc_intervals(start, end, granularity)  # type: ignore [arg-type]
+        intervals = to_fixed_utc_intervals(start, end, granularity)
 
         queries = [
-            {**ident_dct, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
+            {**ident_dct, "aggregates": aggregates, **interval}
             for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
         ]
 
@@ -1159,8 +1159,8 @@ class DatapointsAPI(APIClient):
         )
 
         if uniform_index:
-            freq = to_pandas_freq(granularity, start)  # type: ignore [arg-type]
-            start, end = align_large_granularity(start, end, granularity)  # type: ignore [arg-type]
+            freq = to_pandas_freq(granularity, start)
+            start, end = align_large_granularity(start, end, granularity)
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
 
         return df

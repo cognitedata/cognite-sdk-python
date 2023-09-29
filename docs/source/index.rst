@@ -48,6 +48,7 @@ Contents
    transformations
    functions
    data_modeling
+   workflow_orchestration
    deprecated
    base_data_classes
    exceptions

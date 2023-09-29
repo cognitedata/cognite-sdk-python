@@ -131,7 +131,7 @@ def mock_sessions_with_client_credentials(rsps, cognite_client_with_client_crede
         rsps.POST,
         url=url,
         status=200,
-        json={"items": [{"nonce": "aabbccdd"}]},
+        json={"items": [{"nonce": "aabbccdd", "id": 123, "status": "mocky"}]},
         match=[post_body_matcher({"items": [{"clientId": creds.client_id, "clientSecret": creds.client_secret}]})],
     )
 
@@ -146,7 +146,7 @@ def mock_sessions_with_token_exchange(rsps, cognite_client):
         rsps.POST,
         url=url,
         status=200,
-        json={"items": [{"nonce": "aabbccdd"}]},
+        json={"items": [{"nonce": "aabbccdd", "id": 123, "status": "mocky"}]},
         match=[post_body_matcher({"items": [{"tokenExchange": True}]})],
     )
 
@@ -784,7 +784,12 @@ def mock_filter_function_schedules_response(rsps, cognite_client):
 @pytest.fixture
 def mock_function_schedules_response(rsps, cognite_client):
     # Creating a new schedule first needs a session (to pass the nonce):
-    rsps.add(rsps.POST, full_url(cognite_client, "/sessions"), status=200, json={"items": [{"nonce": "very noncy"}]})
+    rsps.add(
+        rsps.POST,
+        full_url(cognite_client, "/sessions"),
+        status=200,
+        json={"items": [{"nonce": "very noncy", "id": 123, "status": "mocky"}]},
+    )
 
     url = full_url(cognite_client, "/functions/schedules")
     rsps.assert_all_requests_are_fired = False
@@ -797,7 +802,12 @@ def mock_function_schedules_response(rsps, cognite_client):
 @pytest.fixture
 def mock_function_schedules_response_xid_not_valid_with_oidc(rsps, cognite_client):
     # Creating a new schedule first needs a session (to pass the nonce):
-    rsps.add(rsps.POST, full_url(cognite_client, "/sessions"), status=200, json={"items": [{"nonce": "very noncy"}]})
+    rsps.add(
+        rsps.POST,
+        full_url(cognite_client, "/sessions"),
+        status=200,
+        json={"items": [{"nonce": "very noncy", "id": 123, "status": "mocky"}]},
+    )
     rsps.add(
         rsps.POST,
         full_url(cognite_client, "/functions/schedules"),
@@ -820,7 +830,7 @@ def mock_function_schedules_response_oidc_client_credentials(rsps, cognite_clien
         rsps.POST,
         session_url,
         status=200,
-        json={"items": [{"nonce": "aaabbb"}]},
+        json={"items": [{"nonce": "aaabbb", "id": 123, "status": "mocky"}]},
         match=[post_body_matcher({"items": [{"clientId": "aabbccdd", "clientSecret": "xxyyzz"}]})],
     )
 
@@ -885,7 +895,10 @@ class TestFunctionSchedulesAPI:
     def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
         with pytest.raises(AssertionError) as excinfo:
             cognite_client.functions.schedules.list(function_id=123, function_external_id="my-func")
-        assert "Only function_id or function_external_id allowed when listing schedules." == excinfo.value.args[0]
+        assert (
+            "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
+            == excinfo.value.args[0]
+        )
 
     def test_create_schedules_with_function_external_id(
         self, mock_function_schedules_response_xid_not_valid_with_oidc, cognite_client

@@ -86,7 +86,7 @@ class DataModelsAPI(APIClient):
         Returns:
             Iterator[DataModel]: yields DataModels one by one.
         """
-        return cast(Iterator[DataModel], self())
+        return self()
 
     @overload
     def retrieve(

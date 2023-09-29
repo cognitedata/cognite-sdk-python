@@ -289,7 +289,9 @@ class DatapointSubscriptionPartition:
     cursor: str | None = None
 
     @classmethod
-    def create(cls, data: tuple[int, str] | int | DatapointSubscriptionPartition) -> DatapointSubscriptionPartition:
+    def create(
+        cls, data: tuple[int, str | None] | int | DatapointSubscriptionPartition
+    ) -> DatapointSubscriptionPartition:
         if isinstance(data, DatapointSubscriptionPartition):
             return data
         if isinstance(data, tuple):
@@ -312,10 +314,11 @@ class DatapointSubscriptionBatch:
     updates: list[DatapointsUpdate]
     subscription_changes: SubscriptionTimeSeriesUpdate
     has_next: bool
+    cursor: str
 
 
 @dataclass(frozen=True)
-class _DatapointSubscriptionBatchWithPartitions(DatapointSubscriptionBatch):
+class _DatapointSubscriptionBatchWithPartitions:
     """A batch of data from a subscription.
 
     Args:
@@ -325,6 +328,9 @@ class _DatapointSubscriptionBatchWithPartitions(DatapointSubscriptionBatch):
         subscription_changes (SubscriptionTimeSeriesUpdate): If present, this object represents changes to the subscription definition. The subscription will now start/stop listening to changes from the time series listed here.
     """
 
+    updates: list[DatapointsUpdate]
+    subscription_changes: SubscriptionTimeSeriesUpdate
+    has_next: bool
     partitions: list[DatapointSubscriptionPartition]
 
     @classmethod

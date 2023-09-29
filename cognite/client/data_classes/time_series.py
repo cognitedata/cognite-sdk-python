@@ -105,7 +105,7 @@ class TimeSeries(CogniteResource):
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
-        return sum(dps.count)
+        return sum(dps.count)  # type: ignore [union-attr, arg-type]
 
     def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
         """Returns the latest datapoint in this time series. If empty, returns None.
@@ -117,7 +117,7 @@ class TimeSeries(CogniteResource):
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
-            return dps[0]
+            return dps[0]  # type: ignore [return-value]
         return None
 
     def first(self) -> Datapoint | None:
@@ -131,7 +131,7 @@ class TimeSeries(CogniteResource):
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, limit=1
         )
         if dps:
-            return dps[0]
+            return dps[0]  # type: ignore [return-value]
         return None
 
     def asset(self) -> Asset:
@@ -144,7 +144,7 @@ class TimeSeries(CogniteResource):
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")
-        return self._cognite_client.assets.retrieve(id=self.asset_id)
+        return cast("Asset", self._cognite_client.assets.retrieve(id=self.asset_id))
 
 
 class TimeSeriesFilter(CogniteFilter):

@@ -5,7 +5,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Any, Callable, MutableMapping
+from typing import Any, Callable, Literal, MutableMapping
 
 import requests
 import requests.adapters
@@ -16,7 +16,10 @@ from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionR
 
 
 class BlockAll(cookiejar.CookiePolicy):
-    return_ok = set_ok = domain_return_ok = path_return_ok = lambda self, *args, **kwargs: False
+    def no(*args: Any, **kwargs: Any) -> Literal[False]:
+        return False
+
+    return_ok = set_ok = domain_return_ok = path_return_ok = no
     netscape = True
     rfc2965 = hide_cookie2 = False
 
@@ -138,13 +141,7 @@ class HTTPClient:
         Sometimes the appropriate built-in networking exception is not in the context, sometimes the requests
         exception is not in the context, so we need to check for the appropriate built-in exceptions,
         urllib3 exceptions, and requests exceptions.
-
-        Args:
-            method (str): No description.
-            url (str): No description.
-            **kwargs (Any): No description.
-        Returns:
-            requests.Response: No description."""
+        """
         try:
             res = self.session.request(method=method, url=url, **kwargs)
             return res

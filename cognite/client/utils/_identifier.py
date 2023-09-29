@@ -87,6 +87,21 @@ class UserIdentifier:
         return self.__value
 
 
+class WorkflowVersionIdentifier:
+    def __init__(self, version: str, workflow_external_id: str) -> None:
+        self.__version: str = version
+        self.__workflow_external_id: str = workflow_external_id
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {
+            "version": self.__version,
+            ("workflowExternalId" if camel_case else "workflow_external_id"): self.__workflow_external_id,
+        }
+
+    def as_primitive(self) -> NoReturn:
+        raise AttributeError(f"Not supported for {type(self).__name__} implementation")
+
+
 class DataModelingIdentifier:
     def __init__(
         self,
@@ -259,3 +274,35 @@ class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one user identifier (string) must be specified")
+
+
+class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):
+    @classmethod
+    def load(cls, workflow_ids: Sequence[dict]) -> WorkflowVersionIdentifierSequence:
+        if len(workflow_ids) == 1 and isinstance(workflow_ids[0], dict):
+            return cls(
+                [
+                    WorkflowVersionIdentifier(
+                        version=workflow_ids[0]["version"], workflow_external_id=workflow_ids[0]["workflowExternalId"]
+                    )
+                ],
+                is_singleton=True,
+            )
+        elif isinstance(workflow_ids, Sequence) and workflow_ids and isinstance(workflow_ids[0], dict):
+            return cls(
+                [WorkflowVersionIdentifier(entry["version"], entry["workflowExternalId"]) for entry in workflow_ids],
+                is_singleton=False,
+            )
+        raise TypeError(f"WorkflowIdentifier must be of type str or Sequence[str]. Found {type(workflow_ids)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one workflow version must be specified")
+
+    @staticmethod
+    def unwrap_identifier(identifier: str | dict) -> str | tuple[str, str]:  # type: ignore[override]
+        if isinstance(identifier, str):
+            return identifier
+        if "workflowExternalId" in identifier and "version" in identifier:
+            return identifier["workflowExternalId"], identifier["version"]
+        raise ValueError(f"{identifier} does not contain both 'workflowExternalId' and 'version''")

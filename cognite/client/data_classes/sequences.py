@@ -87,7 +87,7 @@ class Sequence(CogniteResource):
             SequenceData: List of sequence data.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
+        return cast(SequenceData, self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end))
 
     @property
     def column_external_ids(self) -> list[str]:
@@ -432,7 +432,7 @@ class SequenceData(CogniteResource):
             for eid in self.column_external_ids
         ]
         # TODO: Optimization required (None/nan):
-        return pd.DataFrame(  # type: ignore
+        return pd.DataFrame(
             [[x if x is not None else math.nan for x in r] for r in self.values],
             index=self.row_numbers,
             columns=df_columns,
@@ -475,7 +475,7 @@ class SequenceDataList(CogniteResourceList[SequenceData]):
             pandas.DataFrame: The sequence data list as a pandas DataFrame.
         """
         pd = utils._auxiliary.local_import("pandas")
-        return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)  # type: ignore
+        return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)
 
 
 class SequenceProperty(EnumProperty):

@@ -520,7 +520,7 @@ class EdgeApply(InstanceApply):
     @classmethod
     def load(cls, data: dict | str) -> EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
-        instance = cast(EdgeApply, super().load(data))
+        instance = super().load(data)
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])
@@ -529,7 +529,7 @@ class EdgeApply(InstanceApply):
 
 
 class Edge(Instance):
-    """An Edge.  This is the read version of the edge.
+    """An Edge. This is the read version of the edge.
 
     Args:
         space (str): The workspace for the edge an unique identifier for the space.
@@ -607,7 +607,7 @@ class Edge(Instance):
     @classmethod
     def load(cls, data: dict | str) -> Edge:
         data = json.loads(data) if isinstance(data, str) else data
-        instance = cast(Edge, super().load(data))
+        instance = super().load(data)
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])

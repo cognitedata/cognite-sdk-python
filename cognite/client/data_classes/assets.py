@@ -174,14 +174,14 @@ class Asset(CogniteResource):
         return hash(self.external_id)
 
     def parent(self) -> Asset:
-        """Returns this assets parent.
+        """Returns this asset's parent.
 
         Returns:
             Asset: The parent asset.
         """
         if self.parent_id is None:
-            raise ValueError("parent_id is None")
-        return self._cognite_client.assets.retrieve(id=self.parent_id)
+            raise ValueError("parent_id is None, is this a root asset?")
+        return cast(Asset, self._cognite_client.assets.retrieve(id=self.parent_id))
 
     def children(self) -> AssetList:
         """Returns the children of this asset.
@@ -189,6 +189,7 @@ class Asset(CogniteResource):
         Returns:
             AssetList: The requested assets
         """
+        assert self.id is not None
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
     def subtree(self, depth: int | None = None) -> AssetList:
@@ -200,6 +201,7 @@ class Asset(CogniteResource):
         Returns:
             AssetList: The requested assets sorted topologically.
         """
+        assert self.id is not None
         return self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
     def time_series(self, **kwargs: Any) -> TimeSeriesList:
@@ -210,6 +212,7 @@ class Asset(CogniteResource):
         Returns:
             TimeSeriesList: All time series related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
 
     def sequences(self, **kwargs: Any) -> SequenceList:
@@ -220,6 +223,7 @@ class Asset(CogniteResource):
         Returns:
             SequenceList: All sequences related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
 
     def events(self, **kwargs: Any) -> EventList:
@@ -230,7 +234,7 @@ class Asset(CogniteResource):
         Returns:
             EventList: All events related to this asset.
         """
-
+        assert self.id is not None
         return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
 
     def files(self, **kwargs: Any) -> FileMetadataList:
@@ -241,6 +245,7 @@ class Asset(CogniteResource):
         Returns:
             FileMetadataList: Metadata about all files related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -757,7 +762,7 @@ class AssetHierarchy:
             elif parent in has_cycles or xid == parent:
                 has_cycles.add(xid)
             else:
-                self._cycle_search(cast(str, xid), parent, edges, no_cycles, has_cycles)
+                self._cycle_search(xid, parent, edges, no_cycles, has_cycles)
 
         return len(has_cycles), find_all_cycles_with_elements(has_cycles, edges)
 

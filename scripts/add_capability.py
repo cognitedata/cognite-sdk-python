@@ -7,13 +7,21 @@ TMP_DIR = Path(__file__).resolve().parent / "tmp"
 
 
 def main(client: CogniteClient):
-    new_capabilities = [{"geospatialCrsAcl": {"scope": {"all": {}}, "actions": ["READ", "WRITE"]}}]
+    new_capabilities = [
+        {
+            "experimentAcl": {
+                "actions": ["USE"],
+                "scope": {"experimentscope": {"experiments": ["workflowOrchestrator"]}},
+            }
+        },
+    ]
 
     source_id = "4521b63c-b914-44fe-9f86-f42b17fcb6c1"
     name = "integration-test-runner"
     groups = client.iam.groups.list()
     selected_group = next(
-        (group for group in groups if group.name == name and group.source_id == source_id and group.capabilities), None
+        (group for group in groups if group.name == name and group.source_id == source_id and group.capabilities),
+        None,
     )
 
     if not selected_group:
@@ -24,11 +32,17 @@ def main(client: CogniteClient):
     TMP_DIR.mkdir(exist_ok=True)
     (TMP_DIR / f"{selected_group.name}.json").write_text(json.dumps(selected_group.dump(camel_case=True), indent=4))
 
-    available_capabilities = {next(iter(capability.keys())) for capability in selected_group.capabilities}
+    existing_capability_by_name = {
+        next(iter(capability.keys())): capability for capability in selected_group.capabilities
+    }
     added = []
     for new_capability in new_capabilities:
         (capability_name,) = new_capability.keys()
-        if capability_name not in available_capabilities:
+        if capability_name not in existing_capability_by_name:
+            selected_group.capabilities.append(new_capability)
+            added.append(capability_name)
+        elif new_capability[capability_name] != existing_capability_by_name[capability_name]:
+            # Capability exists, but with different scope or actions
             selected_group.capabilities.append(new_capability)
             added.append(capability_name)
         else:

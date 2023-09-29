@@ -12,7 +12,7 @@ from cognite.client.utils._text import convert_all_keys_recursive, convert_all_k
 @dataclass(frozen=True)
 class AbstractDataclass(ABC):
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
-        if cls == AbstractDataclass or cls.__bases__[0] == AbstractDataclass:
+        if cls is AbstractDataclass or cls.__bases__[0] is AbstractDataclass:
             raise TypeError("Cannot instantiate abstract class.")
         return super().__new__(cls)
 
@@ -152,7 +152,7 @@ class IdLike(Protocol):
         ...
 
 
-class VersionedIdLike(IdLike):
+class VersionedIdLike(IdLike, Protocol):
     @property
     def version(self) -> str | None:
         ...
@@ -190,7 +190,7 @@ def _load_identifier(
     def create_args(id_: Id) -> tuple[str, str, str | None, Literal["node", "edge"] | None]:
         if isinstance(id_, tuple) and is_instance:
             if len(id_) == 2:
-                return id_[0], id_[1], None, id_type  # type: ignore[misc, return-value]
+                return id_[0], id_[1], None, id_type  # type: ignore[return-value]
             raise ValueError("Instance given as a tuple must have two elements (space, externalId)")
         if isinstance(id_, tuple):
             return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None  # type: ignore[misc]

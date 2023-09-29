@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Awaitable, Dict, cast
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Awaitable, Dict, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -10,9 +12,9 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    IdTransformerMixin,
     PropertySpec,
 )
-from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import (
     NonceCredentials,
@@ -24,10 +26,14 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
-from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
+from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+logger = logging.getLogger(__name__)
 
 
 class SessionDetails:
@@ -48,6 +54,14 @@ class SessionDetails:
         self.session_id = session_id
         self.client_id = client_id
         self.project_name = project_name
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> SessionDetails:
+        return cls(
+            session_id=resource.get("sessionId"),
+            client_id=resource.get("clientId"),
+            project_name=resource.get("projectName"),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -181,7 +195,7 @@ class Transformation(CogniteResource):
             self.blocked,
             self.schedule,
             self.data_set_id,
-            None,
+            None,  # skip cognite client
             self.source_nonce,
             self.destination_nonce,
             self.source_session,
@@ -195,44 +209,69 @@ class Transformation(CogniteResource):
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(oidc_credentials: OidcCredentials | None, project: str) -> NonceCredentials | None:
-            if keep_none and oidc_credentials is None:
-                return None
-
-            # MyPy requires this to make sure it's not changed to None after inner declaration
-            assert sessions_cache is not None
-
-            key = (
-                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
-                if oidc_credentials
-                else "DEFAULT"
-            )
-
-            ret = sessions_cache.get(key)
-            if not ret:
-                if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
-                    credentials = ClientCredentials(oidc_credentials.client_id, oidc_credentials.client_secret)
-                else:
-                    credentials = None
-                try:
-                    session = self._cognite_client.iam.sessions.create(credentials, project=project)
-                    ret = NonceCredentials(session.id, session.nonce, project)
-                    sessions_cache[key] = ret
-                except Exception:
-                    ret = None
-            return ret
-
         if self.source_nonce is None and self.source_oidc_credentials:
-            project = self.source_oidc_credentials.cdf_project_name or self._cognite_client.project
-            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
+            self.source_nonce = self._try_get_or_create_nonce(
+                self.source_oidc_credentials,
+                sessions_cache,
+                keep_none,
+                credentials_name="source",
+            )
             if self.source_nonce:
                 self.source_oidc_credentials = None
 
         if self.destination_nonce is None and self.destination_oidc_credentials:
-            project = self.destination_oidc_credentials.cdf_project_name or self._cognite_client.project
-            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
+            self.destination_nonce = self._try_get_or_create_nonce(
+                self.destination_oidc_credentials,
+                sessions_cache,
+                keep_none,
+                credentials_name="destination",
+            )
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
+
+    def _try_get_or_create_nonce(
+        self,
+        oidc_credentials: OidcCredentials,
+        sessions_cache: dict[str, NonceCredentials],
+        keep_none: bool,
+        credentials_name: Literal["source", "destination"],
+    ) -> NonceCredentials | None:
+        if keep_none and oidc_credentials is None:
+            return None
+
+        project = oidc_credentials.cdf_project_name or self._cognite_client.config.project
+
+        key = "DEFAULT"
+        if oidc_credentials:
+            key = f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
+
+        if (ret := sessions_cache.get(key)) is None:
+            credentials = None
+            if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
+                credentials = oidc_credentials.as_client_credentials()
+
+            # We want to create a session using the supplied 'oidc_credentials' (either 'source_oidc_credentials'
+            # or 'destination_oidc_credentials') and send the nonce to the Transformations backend, to avoid sending
+            # (and it having to store) the full set of client credentials. However, there is no easy way to do this
+            # without instantiating a new 'CogniteClient' with the given credentials:
+            from cognite.client import CogniteClient
+
+            config = deepcopy(self._cognite_client.config)
+            config.project = project
+            config.credentials = oidc_credentials.as_credential_provider()
+            other_client = CogniteClient(config)
+            try:
+                session = other_client.iam.sessions.create(credentials)
+                ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
+            except CogniteAPIError as err:
+                # This is fine, we might be missing SessionsACL. The OIDC credentials will then be passed
+                # directly to the backend service. We do however not catch CogniteAuthError as that would
+                # mean the credentials are invalid.
+                logger.debug(
+                    f"Unable to create a session and get a nonce towards {project=} using the provided "
+                    f"{credentials_name} credentials: {err!r}"
+                )
+        return ret
 
     def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
@@ -256,29 +295,24 @@ class Transformation(CogniteResource):
             instance.destination = _load_destination_dct(instance.destination)
 
         if isinstance(instance.running_job, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.running_job)
-            instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.running_job = TransformationJob._load(instance.running_job, cognite_client=cognite_client)
 
         if isinstance(instance.last_finished_job, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.last_finished_job)
-            instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.last_finished_job = TransformationJob._load(
+                instance.last_finished_job, cognite_client=cognite_client
+            )
 
         if isinstance(instance.blocked, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.blocked)
-            snake_dict.pop("time")
-            instance.blocked = TransformationBlockedInfo(**snake_dict)
+            instance.blocked = TransformationBlockedInfo._load(instance.blocked)
 
         if isinstance(instance.schedule, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.schedule)
-            instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
+            instance.schedule = TransformationSchedule._load(instance.schedule, cognite_client=cognite_client)
 
         if isinstance(instance.source_session, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.source_session)
-            instance.source_session = SessionDetails(**snake_dict)
+            instance.source_session = SessionDetails._load(instance.source_session)
 
         if isinstance(instance.destination_session, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.destination_session)
-            instance.destination_session = SessionDetails(**snake_dict)
+            instance.destination_session = SessionDetails._load(instance.destination_session)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -413,7 +447,7 @@ class TransformationUpdate(CogniteUpdate):
         ]
 
 
-class TransformationList(CogniteResourceList):
+class TransformationList(CogniteResourceList[Transformation], IdTransformerMixin):
     _RESOURCE = Transformation
 
 
@@ -490,12 +524,11 @@ class TransformationFilter(CogniteFilter):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if obj.get("includePublic") is not None:
-            is_public = obj.pop("includePublic")
-            obj["isPublic"] = is_public
-        if obj.get("tags"):
-            tags = obj.pop("tags")
-            obj["tags"] = tags.dump(camel_case)
+        if (value := obj.pop("includePublic" if camel_case else "include_public", None)) is not None:
+            obj["isPublic" if camel_case else "is_public"] = value
+
+        if (value := obj.pop("tags", None)) is not None:
+            obj["tags"] = value.dump(camel_case)
         return obj
 
 

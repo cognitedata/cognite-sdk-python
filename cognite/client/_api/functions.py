@@ -18,7 +18,6 @@ from zipfile import ZipFile
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.credentials import OAuthClientCertificate
 from cognite.client.data_classes import (
     ClientCredentials,
     Function,
@@ -34,9 +33,9 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
-from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -111,6 +110,10 @@ class FunctionsAPI(APIClient):
         - If the user calls the function with input data, this is passed through the `data` argument.
         - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument.
         - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id` and, if the call is scheduled, `schedule_id` and `scheduled_time`.
+
+        By default, the function is deployed with the latest version of cognite-sdk. If a specific version is desired, it can be specified either in a requirements.txt file when deploying via the `folder` argument or between `[requirements]` tags when deploying via the `function_handle` argument (see example below).
+
+        For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
 
         Args:
             name (str): The name of the function.
@@ -318,13 +321,17 @@ class FunctionsAPI(APIClient):
         return self._retrieve_multiple(identifiers=identifier, resource_cls=Function, list_cls=FunctionList)
 
     def retrieve_multiple(
-        self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
+        ignore_unknown_ids: bool = False,
     ) -> FunctionList | Function | None:
         """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
             ids (Sequence[int] | None): IDs
             external_ids (Sequence[str] | None): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             FunctionList | Function | None: The requested functions.
@@ -349,6 +356,7 @@ class FunctionsAPI(APIClient):
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             resource_cls=Function,
             list_cls=FunctionList,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def call(
@@ -386,7 +394,7 @@ class FunctionsAPI(APIClient):
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = _create_session_and_return_nonce(self._cognite_client)
+        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
 
         if data is None:
             data = {}
@@ -512,18 +520,6 @@ class FunctionsAPI(APIClient):
         """
         res = self._get("/functions/status")
         return FunctionsStatus._load(res.json())
-
-
-def _create_session_and_return_nonce(
-    client: CogniteClient,
-    client_credentials: dict | ClientCredentials | None = None,
-) -> str | None:
-    if client_credentials is None:
-        if isinstance(client._config.credentials, OAuthClientCertificate):
-            raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")
-    elif isinstance(client_credentials, dict):
-        client_credentials = ClientCredentials(client_credentials["client_id"], client_credentials["client_secret"])
-    return client.iam.sessions.create(client_credentials).nonce
 
 
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
@@ -950,7 +946,9 @@ class FunctionSchedulesAPI(APIClient):
             try:
                 IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
             except ValueError:
-                raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
+                raise AssertionError(
+                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
+                )
 
         if is_unlimited(limit):
             limit = self._LIST_LIMIT_CEILING
@@ -1026,7 +1024,9 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         _get_function_identifier(function_id, function_external_id)
-        nonce = _create_session_and_return_nonce(self._cognite_client, client_credentials)
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Functions API", client_credentials=client_credentials
+        )
         body: dict[str, list[dict[str, str | int | None | dict]]] = {
             "items": [
                 {
