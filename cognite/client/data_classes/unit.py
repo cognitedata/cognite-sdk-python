@@ -14,6 +14,14 @@ if TYPE_CHECKING:
 
 @dataclass
 class UnitConversion:
+    """
+    The conversion between a unit and its base unit.
+
+    Args:
+        multiplier (float): The multiplier to convert from the unit to the base unit.
+        offset (float): The offset to convert from the unit to the base unit.
+    """
+
     multiplier: float
     offset: float
 
@@ -32,7 +40,15 @@ class UnitConversion:
 
 
 class UnitID(CogniteResource):
-    def __init__(self, unit_external_id: str, name: str):
+    """
+    Unit Identifier
+
+    Args:
+        unit_external_id (str): External ID of the unit.
+        name (str): Name of the unit.
+    """
+
+    def __init__(self, unit_external_id: str, name: str) -> None:
         self.unit_external_id = unit_external_id
         self.name = name
 
@@ -46,6 +62,21 @@ class UnitID(CogniteResource):
 
 
 class Unit(CogniteResource):
+    """
+    This class represents a Unit in CDF.
+
+    Args:
+        external_id (str): A unique identifier of the unit.
+        name (str): The name of the unit, e.g. °C for Celsius.
+        long_name (str): A more descriptive name of the unit, e.g., degrees Celsius.
+        alias_names (list[str]): List of alias names for the unit, e.g., Degree C, degC, °C, and so on.
+        quantity (str): The quantity of the unit, e.g., temperature.
+        conversion (UnitConversion): The conversion between the unit and its base unit. For example, the base unit for
+            temperature is Kelvin, and the conversion from Celsius to Kelvin is multiplier = 1, offset = 273.15.
+        source (str | None): The source of the unit, e.g., qudt.org
+        source_reference (str | None): The reference to the source of the unit, e.g., http://qudt.org/vocab/unit/DEG_C
+    """
+
     def __init__(
         self,
         external_id: str,
@@ -56,7 +87,7 @@ class Unit(CogniteResource):
         conversion: UnitConversion,
         source: str | None = None,
         source_reference: str | None = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.name = name
         self.long_name = long_name
@@ -67,6 +98,7 @@ class Unit(CogniteResource):
         self.source_reference = source_reference
 
     def as_id(self) -> UnitID:
+        """Returns the UnitID of this unit."""
         return UnitID(unit_external_id=self.external_id, name=self.name)
 
     @classmethod
@@ -97,6 +129,8 @@ class Unit(CogniteResource):
 
 
 class UnitList(CogniteResourceList[Unit]):
+    """List of Units"""
+
     _RESOURCE = Unit
 
     def as_external_ids(self) -> list[str]:
@@ -104,11 +138,16 @@ class UnitList(CogniteResourceList[Unit]):
 
 
 class UnitSystem(CogniteResource):
-    def __init__(
-        self,
-        name: str,
-        quantities: list[UnitID],
-    ):
+    """
+    This class represents a Unit System in CDF.
+
+    Args:
+        name (str): The name of the unit system, e.g., SI and Imperial.
+        quantities (list[UnitID]): The quantities of the unit system, e.g., length, mass, and so on.
+
+    """
+
+    def __init__(self, name: str, quantities: list[UnitID]) -> None:
         self.name = name
         self.quantities = quantities
 
@@ -126,6 +165,8 @@ class UnitSystem(CogniteResource):
 
 
 class UnitSystemList(CogniteResourceList[UnitSystem]):
+    """List of Unit Systems"""
+
     _RESOURCE = UnitSystem
 
     def as_names(self) -> list[str]:
