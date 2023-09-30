@@ -28,6 +28,19 @@ class UnitSystemAPI(APIClient):
         self._api_subversion = "beta"
 
     def list(self) -> UnitSystemList:
+        """`List all supported unit systems <https://pr-50.units-api.preview.cogniteapp.com/#tag/Units/operation/list_unit_systems_api_v1_projects__project__units_systems_get>`_
+
+        Returns:
+            UnitSystemList: List of unit systems
+
+        Examples:
+            List all supported unit systems in CDF:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.units.systems.list()
+
+        """
         return self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)
 
 
@@ -54,7 +67,30 @@ class UnitAPI(APIClient):
 
     def retrieve(
         self, external_id: str | MutableSequence[str], ignore_unknown_ids: bool = False
-    ) -> None | Unit | UnitList:
+    ) -> Unit | UnitList | None:
+        """`Retrieve one or more unit <https://pr-50.units-api.preview.cogniteapp.com/#tag/Units/operation/retrieve_units_by_ids_api_v1_projects__project__units_byids_post>`_
+
+        Args:
+            external_id (str | MutableSequence[str]): External ID or list of external IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            Unit | UnitList | None: If a single external ID is specified: the requested unit, or None if it does not exist. If several external IDs are specified: the requested units.
+
+        Examples:
+            Retrive unit 'temperature:deg_c'
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.units.retrieve('temperature:deg_c')
+
+            Retrive units 'temperature:deg_c' and 'pressure:bar'
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.units.retrieve(['temperature:deg_c', 'pressure:bar'])
+
+        """
         if isinstance(external_id, str):
             is_single = True
             external_id = [external_id]
@@ -76,4 +112,16 @@ class UnitAPI(APIClient):
             return retrieved
 
     def list(self) -> UnitList:
+        """`List all supported units <https://pr-50.units-api.preview.cogniteapp.com/#tag/Units/operation/List_units_api_v1_projects__project__units_get>`_
+
+        Returns:
+            UnitList: List of units
+
+        Examples:
+            List all supported unit in CDF:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.units.list()
+        """
         return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
