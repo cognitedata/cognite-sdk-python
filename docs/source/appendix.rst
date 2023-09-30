@@ -29,7 +29,7 @@ New Cognite Data Fusion API features may get support in the Python SDK before th
 general availability (GA). These features are marked as alpha or beta in the documentation, and will also
 invoke a `FeaturePreviewWarning` when used.
 
-Furthermore, we distinguish between version of the API specification and the SDK implementation. Typically,
+Furthermore, we distinguish between maturity of the API specification and the SDK implementation. Typically,
 the API specification may be in beta, while the SDK implementation is in alpha.
 
 * `aplha` - The feature is not yet released for general availability. There may be breaking changes to the API
