@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.1] - 2023-09-30
+### Improved
+- Warning when using alpha/beta features.
+
 ## [6.28.0] - 2023-09-26
 ### Added
 - Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
