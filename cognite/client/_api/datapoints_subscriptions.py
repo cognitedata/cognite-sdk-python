@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterator, Sequence
-from warnings import warn
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
@@ -16,6 +15,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionUpdate,
     _DatapointSubscriptionBatchWithPartitions,
 )
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -30,10 +30,8 @@ class DatapointsSubscriptionAPI(APIClient):
         self._api_subversion = "beta"
 
     def _experimental_warning(self) -> None:
-        warn(
-            "DataPoint Subscriptions are experimental and may be subject to breaking changes in future versions without notice.",
-            FutureWarning,
-        )
+        warning = FeaturePreviewWarning(api_version="beta", sdk_version="alpha", feature_name="DataPoint Subscriptions")
+        warning.warn()
 
     def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
         """`Create a subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_

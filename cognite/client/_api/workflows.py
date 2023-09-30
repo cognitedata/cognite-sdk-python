@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence, Tuple, Union
-from warnings import warn
 
 from typing_extensions import TypeAlias
 
@@ -23,6 +22,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -45,10 +45,8 @@ class BetaWorkflowAPIClient(APIClient, ABC):
 
     @staticmethod
     def _experimental_warning() -> None:
-        warn(
-            "Workflow Orchestration endpoints are experimental and may be subject to breaking changes in future versions without notice.",
-            FutureWarning,
-        )
+        warning = FeaturePreviewWarning(api_version="beta", sdk_version="alpha", feature_name="Workflow Orchestration")
+        warning.warn()
 
 
 WorkflowIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
