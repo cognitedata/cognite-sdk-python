@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, MutableSequence, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.unit import (
+from cognite.client.data_classes.units import (
     Unit,
     UnitList,
     UnitSystem,

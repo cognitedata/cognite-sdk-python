@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.unit import (
+from cognite.client.data_classes.units import (
     UnitList,
 )
 from cognite.client.exceptions import CogniteNotFoundError
