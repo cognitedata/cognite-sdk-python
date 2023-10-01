@@ -577,6 +577,30 @@ class TestRetrieveRawDatapointsAPI:
                     assert isinstance(r.is_step, bool)
                     assert isinstance(r.is_string, bool)
 
+    def test_retrieve_datapoints_in_target_unit(self, cognite_client: CogniteClient) -> None:
+        timeseries = TimeSeries(
+            external_id="test_retrieve_datapoints_in_target_unit",
+            name="test_retrieve_datapoints_in_target_unit",
+            is_string=False,
+            unit_external_id="temperature:deg_c",
+        )
+        created_timeseries: TimeSeries | None = None
+        cognite_client.time_series.delete(external_id=timeseries.external_id, ignore_unknown_ids=True)
+
+        try:
+            created_timeseries = cognite_client.time_series.create(timeseries)
+            cognite_client.time_series.data.insert([(1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+
+            res = cognite_client.time_series.data.retrieve(
+                external_id=timeseries.external_id, target_unit="temperature:deg_f"
+            )
+
+            assert res[0].value == 32
+            assert res[1].value == 212
+        finally:
+            if created_timeseries is not None:
+                cognite_client.time_series.delete(id=created_timeseries.id, ignore_unknown_ids=True)
+
 
 class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
