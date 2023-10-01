@@ -573,17 +573,7 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)
         """
-        api_subversion: str | None = None
-        if isinstance(item, TimeSeries) and item.unit_external_id:
-            api_subversion = "beta"
-        elif isinstance(item, TimeSeriesUpdate) and item.unit_external_id:
-            api_subversion = "beta"
-        elif isinstance(item, Sequence) and any(ts.unit_external_id for ts in item):
-            api_subversion = "beta"
-        elif isinstance(item, Sequence) and any(
-            isinstance(ts, TimeSeriesUpdate) and ts.unit_external_id for ts in item
-        ):
-            api_subversion = "beta"
+        api_subversion = self._get_subapiversion_update(item)
 
         return self._update_multiple(
             list_cls=TimeSeriesList,
@@ -592,6 +582,21 @@ class TimeSeriesAPI(APIClient):
             items=item,
             api_subversion=api_subversion,
         )
+
+    @staticmethod
+    def _get_subapiversion_update(
+        item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate],
+    ) -> str | None:
+        api_subversion: str | None = None
+        if isinstance(item, TimeSeries) and item.unit_external_id:
+            api_subversion = "beta"
+        elif isinstance(item, TimeSeriesUpdate) and "unit_external_id" in item.dump():
+            api_subversion = "beta"
+        elif isinstance(item, Sequence) and any(
+            ts.unit_external_id if isinstance(ts, TimeSeries) else "unit_external_id" in ts.dump() for ts in item
+        ):
+            api_subversion = "beta"
+        return api_subversion
 
     @overload
     def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
@@ -629,6 +634,7 @@ class TimeSeriesAPI(APIClient):
                 >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
                 >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
+        api_subversion = self._get_subapiversion_update(item)
         return self._upsert_multiple(
             item,
             list_cls=TimeSeriesList,
@@ -636,6 +642,7 @@ class TimeSeriesAPI(APIClient):
             update_cls=TimeSeriesUpdate,
             input_resource_cls=TimeSeries,
             mode=mode,
+            api_subversion=api_subversion,
         )
 
     def search(

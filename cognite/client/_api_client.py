@@ -1002,13 +1002,16 @@ class APIClient:
         update_cls: type[CogniteUpdate],
         mode: Literal["patch", "replace"],
         input_resource_cls: type[CogniteResource] | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
         try:
-            result = self._update_multiple(items, list_cls, resource_cls, update_cls, mode=mode)
+            result = self._update_multiple(
+                items, list_cls, resource_cls, update_cls, mode=mode, api_subversion=api_subversion
+            )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
             items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
@@ -1036,7 +1039,11 @@ class APIClient:
             try:
                 if to_create:
                     created = self._create_multiple(
-                        to_create, list_cls=list_cls, resource_cls=resource_cls, input_resource_cls=input_resource_cls
+                        to_create,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        input_resource_cls=input_resource_cls,
+                        api_subversion=api_subversion,
                     )
                 if to_update:
                     updated = self._update_multiple(
@@ -1045,6 +1052,7 @@ class APIClient:
                         resource_cls=resource_cls,
                         update_cls=update_cls,
                         mode=mode,
+                        api_subversion=api_subversion,
                     )
             except CogniteAPIError as api_error:
                 successful = list(api_error.successful)
@@ -1067,7 +1075,7 @@ class APIClient:
             if not_found_error.successful:
                 identifiers = IdentifierSequence.of(*not_found_error.successful)
                 successful_resources = self._retrieve_multiple(
-                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers
+                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers, api_subversion=api_subversion
                 )
                 if isinstance(successful_resources, resource_cls):
                     successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
