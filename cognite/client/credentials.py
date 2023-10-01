@@ -209,9 +209,13 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     def _refresh_access_token(self) -> tuple[str, float]:
         # First check if there is a serialized token cached on disk.
         if accounts := self.__app.get_accounts():
-            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
-        # If not, we acquire a new token using device code auth flow:
+            credentials = self.__app.acquire_token_silent_with_error(scopes=self.__scopes, account=accounts[0])
         else:
+            credentials = {}
+
+        # If not, we acquire a new token using device code auth flow:
+        # or the token might be expired, so we try to refresh it.
+        if not accounts or "error" in credentials:
             device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
             # print device code user instructions to screen
             print(f"Device code: {device_flow['message']}")  # noqa: T201
