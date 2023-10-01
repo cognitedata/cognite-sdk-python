@@ -590,10 +590,13 @@ class TimeSeriesAPI(APIClient):
         api_subversion: str | None = None
         if isinstance(item, TimeSeries) and item.unit_external_id:
             api_subversion = "beta"
-        elif isinstance(item, TimeSeriesUpdate) and "unit_external_id" in item.dump():
+        elif isinstance(item, TimeSeriesUpdate) and "unitExternalId" in item.dump(camel_case=True).get("update", {}):
             api_subversion = "beta"
         elif isinstance(item, Sequence) and any(
-            ts.unit_external_id if isinstance(ts, TimeSeries) else "unit_external_id" in ts.dump() for ts in item
+            ts.unit_external_id
+            if isinstance(ts, TimeSeries)
+            else "unitExternalId" in ts.dump(camel_case=True).get("update", {})
+            for ts in item
         ):
             api_subversion = "beta"
         return api_subversion
