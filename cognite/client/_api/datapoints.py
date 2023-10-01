@@ -797,15 +797,20 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
-        api_subversion = None
-        if target_unit is not None or target_unit_system is not None:
-            api_subversion = "beta"
+        api_subversion = self._get_api_subversion(target_unit, target_unit_system)
+
         dps_lst = fetcher.fetch_all_datapoints(api_subversion)
         if not query.is_single_identifier:
             return dps_lst
         elif not dps_lst and ignore_unknown_ids:
             return None
         return dps_lst[0]
+
+    def _get_api_subversion(self, target_unit: str | None, target_unit_system: str | None) -> str | None:
+        api_subversion = None
+        if target_unit is not None or target_unit_system is not None:
+            api_subversion = "beta"
+        return api_subversion
 
     def retrieve_arrays(
         self,
@@ -895,12 +900,16 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
+        api_subversion = self._get_api_subversion(target_unit, target_unit_system)
         fetcher = select_dps_fetch_strategy(self, user_query=query)
-        dps_lst = fetcher.fetch_all_datapoints_numpy()
+
+        dps_lst = fetcher.fetch_all_datapoints_numpy(api_subversion)
         if not query.is_single_identifier:
             return dps_lst
         elif not dps_lst and ignore_unknown_ids:
@@ -1008,13 +1017,17 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
+        api_subversion = self._get_api_subversion(target_unit, target_unit_system)
+
         if not uniform_index:
-            return fetcher.fetch_all_datapoints_numpy().to_pandas(
+            return fetcher.fetch_all_datapoints_numpy(api_subversion).to_pandas(
                 column_names, include_aggregate_name, include_granularity_name
             )
         # Uniform index requires extra validation and processing:
@@ -1026,7 +1039,7 @@ class DatapointsAPI(APIClient):
                 f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
             )
 
-        df = fetcher.fetch_all_datapoints_numpy().to_pandas(
+        df = fetcher.fetch_all_datapoints_numpy(api_subversion).to_pandas(
             column_names, include_aggregate_name, include_granularity_name
         )
         start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
@@ -1152,6 +1165,8 @@ class DatapointsAPI(APIClient):
                     end=end,
                     aggregates=aggregates,
                     granularity=granularity,
+                    target_unit=target_unit,
+                    target_unit_system=target_unit_system,
                     ignore_unknown_ids=ignore_unknown_ids,
                     uniform_index=uniform_index,
                     include_aggregate_name=include_aggregate_name,
@@ -1186,6 +1201,8 @@ class DatapointsAPI(APIClient):
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             **{identifiers[0].name(): queries},  # type: ignore [arg-type]
         )
         assert isinstance(arrays, DatapointsArrayList)  # mypy
