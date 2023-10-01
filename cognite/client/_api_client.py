@@ -790,6 +790,7 @@ class APIClient:
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -806,6 +807,7 @@ class APIClient:
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -821,6 +823,7 @@ class APIClient:
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -835,7 +838,12 @@ class APIClient:
             (resource_path, task_items, params, headers)
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
+        summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            executor=executor,
+        )
 
         def unwrap_element(el: T) -> CogniteResource | T:
             if isinstance(el, dict):

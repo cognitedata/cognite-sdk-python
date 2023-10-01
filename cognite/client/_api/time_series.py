@@ -486,7 +486,15 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
-        return self._create_multiple(list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series)
+        api_subversion: str | None = None
+        if isinstance(time_series, TimeSeries) and time_series.unit_external_id:
+            api_subversion = "beta"
+        elif isinstance(time_series, Sequence) and any(ts.unit_external_id for ts in time_series):
+            api_subversion = "beta"
+
+        return self._create_multiple(
+            list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series, api_subversion=api_subversion
+        )
 
     def delete(
         self,
