@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.31.0] - 2023-10-09
+### Added
+- Support for the setting and fetching TimeSeries and Datapoints with `units`.
+
 ## [6.30.2] - 2023-10-09
 ### Fixed
 - Serialization of `Transformation` or `TransformationList` no longer fails in `json.dumps` due to unhandled composite objects.
