@@ -150,7 +150,7 @@ class DpsFetchStrategy(ABC):
         # might be running in pure python or compiled C code. We issue a warning if we can determine
         # that the user is running in pure python mode (quite a bit slower...)
         with contextlib.suppress(ImportError):
-            from google.protobuf.descriptor import _USE_C_DESCRIPTORS  # type: ignore [attr-defined]
+            from google.protobuf.descriptor import _USE_C_DESCRIPTORS
 
             if _USE_C_DESCRIPTORS is False:
                 warnings.warn(
