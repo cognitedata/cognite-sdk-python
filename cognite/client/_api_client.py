@@ -313,6 +313,7 @@ class APIClient:
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource | None:
         ...
 
@@ -328,6 +329,7 @@ class APIClient:
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -342,6 +344,7 @@ class APIClient:
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -359,7 +362,12 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
+        tasks_summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            executor=executor,
+        )
 
         if tasks_summary.exceptions:
             try:
@@ -915,6 +923,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -929,6 +938,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -942,6 +952,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -970,7 +981,9 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
+        )
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
@@ -1086,6 +1099,7 @@ class APIClient:
         resource_path: str | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
@@ -1098,6 +1112,7 @@ class APIClient:
             json={"search": search, "filter": filter, "limit": limit},
             params=params,
             headers=headers,
+            api_subversion=api_subversion,
         )
         return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
