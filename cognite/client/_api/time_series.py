@@ -635,6 +635,8 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
         api_subversion = self._get_subapiversion_update(item)
+        if mode == "replace":
+            api_subversion = "beta"
         return self._upsert_multiple(
             item,
             list_cls=TimeSeriesList,
