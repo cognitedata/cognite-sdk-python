@@ -81,6 +81,8 @@ class CustomDatapointsQuery(TypedDict, total=False):
     end: int | str | datetime | None
     aggregates: list[str] | None
     granularity: str | None
+    target_unit: str | None
+    target_unit_system: str | None
     limit: int | None
     include_outside_points: bool | None
     ignore_unknown_ids: bool | None
@@ -100,6 +102,8 @@ class CustomDatapoints(TypedDict, total=False):
     end: int
     aggregates: list[str] | None
     granularity: str | None
+    target_unit: str | None
+    target_unit_system: str | None
     limit: int
     include_outside_points: bool
 
@@ -118,6 +122,8 @@ class _DatapointsQuery:
     external_id: DatapointsExternalId | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
+    target_unit: str | None = None
+    target_unit_system: str | None = None
     limit: int | None = None
     include_outside_points: bool = False
     ignore_unknown_ids: bool = False
@@ -144,6 +150,8 @@ class _SingleTSQueryValidator:
             limit=user_query.limit,
             aggregates=user_query.aggregates,
             granularity=user_query.granularity,
+            target_unit=user_query.target_unit,
+            target_unit_system=user_query.target_unit_system,
             include_outside_points=user_query.include_outside_points,
             ignore_unknown_ids=user_query.ignore_unknown_ids,
         )
@@ -301,6 +309,8 @@ class _SingleTSQueryValidator:
             "identifier": identifier,
             "start": start,
             "end": end,
+            "target_unit": dct["target_unit"],
+            "target_unit_system": dct["target_unit_system"],
             "limit": limit,
             "ignore_unknown_ids": dct["ignore_unknown_ids"],
         }
@@ -357,6 +367,8 @@ class _SingleTSQueryBase:
         end: int,
         max_query_limit: int,
         limit: int | None,
+        target_unit: str | None,
+        target_unit_system: str | None,
         include_outside_points: bool,
         ignore_unknown_ids: bool,
     ) -> None:
@@ -365,6 +377,8 @@ class _SingleTSQueryBase:
         self.end = end
         self.max_query_limit = max_query_limit
         self.limit = limit
+        self.target_unit = target_unit
+        self.target_unit_system = target_unit_system
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
 
@@ -427,13 +441,19 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
         return True
 
     def to_payload(self) -> dict[str, Any]:
-        return {
+        payload = {
             **self.identifier.as_dict(),
             "start": self.start,
             "end": self.end,
             "limit": self.capped_limit,
             "includeOutsidePoints": self.include_outside_points,
         }
+
+        if self.target_unit is not None:
+            payload["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            payload["targetUnitSystem"] = self.target_unit_system
+        return payload
 
 
 class _SingleTSQueryRawLimited(_SingleTSQueryRaw):
@@ -470,7 +490,7 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
         return list(map(to_camel_case, self.aggregates))
 
     def to_payload(self) -> dict[str, Any]:
-        return {
+        payload = {
             **self.identifier.as_dict(),
             "start": self.start,
             "end": self.end,
@@ -479,6 +499,11 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
             "limit": self.capped_limit,
             "includeOutsidePoints": self.include_outside_points,
         }
+        if self.target_unit is not None:
+            payload["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            payload["targetUnitSystem"] = self.target_unit_system
+        return payload
 
 
 class _SingleTSQueryAggLimited(_SingleTSQueryAgg):
@@ -586,6 +611,8 @@ class BaseDpsFetchSubtask:
         priority: int,
         max_query_limit: int,
         is_raw_query: bool,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
     ) -> None:
         self.start = start
         self.end = end
@@ -594,6 +621,8 @@ class BaseDpsFetchSubtask:
         self.priority = priority
         self.is_raw_query = is_raw_query
         self.max_query_limit = max_query_limit
+        self.target_unit = target_unit
+        self.target_unit_system = target_unit_system
 
         self.is_done = False
 
@@ -622,15 +651,18 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
         return self._create_payload_item()
 
     def _create_payload_item(self) -> CustomDatapoints:
-        return CustomDatapoints(
-            {
-                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-                "start": self.start,
-                "end": self.end,
-                "limit": 0,  # Not a bug; it just returns the outside points
-                "includeOutsidePoints": True,
-            }
-        )
+        output = {
+            **self.identifier.as_dict(),
+            "start": self.start,
+            "end": self.end,
+            "limit": 0,  # Not a bug; it just returns the outside points
+            "includeOutsidePoints": True,
+        }
+        if self.target_unit is not None:
+            output["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            output["targetUnitSystem"] = self.target_unit_system
+        return CustomDatapoints(output)  # type: ignore [misc]
 
     def store_partial_result(self, res: DataPointListItem) -> None:
         # `Oneof` field `datapointType` can be either `numericDatapoints` or `stringDatapoints`
@@ -683,15 +715,19 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         return self._create_payload_item(math.inf if remaining is None else remaining)
 
     def _create_payload_item(self, remaining_limit: float) -> CustomDatapoints:
-        return CustomDatapoints(
-            {
-                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-                "start": self.next_start,
-                "end": self.end,
-                "limit": min(remaining_limit, self.max_query_limit),
-                **self.agg_kwargs,
-            }
-        )
+        output = {
+            **self.identifier.as_dict(),
+            "start": self.next_start,
+            "end": self.end,
+            "limit": min(remaining_limit, self.max_query_limit),
+            **self.agg_kwargs,
+        }
+        if self.target_unit is not None:
+            output["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            output["targetUnitSystem"] = self.target_unit_system
+
+        return CustomDatapoints(output)  # type: ignore [misc]
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         if self.parent.ts_info is None:
@@ -910,6 +946,8 @@ class BaseConcurrentTask:
                 identifier=self.query.identifier,
                 aggregates=self.query.aggregates_cc,
                 granularity=self.query.granularity,
+                target_unit=self.query.target_unit,
+                target_unit_system=self.query.target_unit_system,
                 max_query_limit=self.query.max_query_limit,
                 is_raw_query=self.query.is_raw_query,
             )

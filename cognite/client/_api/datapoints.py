@@ -163,14 +163,14 @@ class DpsFetchStrategy(ABC):
                     stacklevel=3,
                 )
 
-    def fetch_all_datapoints(self) -> DatapointsList:
+    def fetch_all_datapoints(self, api_subversion: str | None = None) -> DatapointsList:
         with get_priority_executor(max_workers=self.max_workers) as pool:
-            ordered_results = self._fetch_all(pool, use_numpy=False)
+            ordered_results = self._fetch_all(pool, use_numpy=False, api_subversion=api_subversion)
         return self._finalize_tasks(ordered_results, resource_lst=DatapointsList)
 
-    def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
+    def fetch_all_datapoints_numpy(self, api_subversion: str | None = None) -> DatapointsArrayList:
         with get_priority_executor(max_workers=self.max_workers) as pool:
-            ordered_results = self._fetch_all(pool, use_numpy=True)
+            ordered_results = self._fetch_all(pool, use_numpy=True, api_subversion=api_subversion)
         return self._finalize_tasks(ordered_results, resource_lst=DatapointsArrayList)
 
     def _finalize_tasks(self, ordered_results: list[BaseConcurrentTask], resource_lst: type[TResLst]) -> TResLst:
@@ -179,21 +179,26 @@ class DpsFetchStrategy(ABC):
             cognite_client=self.dps_client._cognite_client,
         )
 
-    def _make_dps_request_using_protobuf(self, payload: DatapointsPayload) -> bytes:
+    def _make_dps_request_using_protobuf(self, payload: DatapointsPayload, api_subversion: str | None) -> bytes:
         return self.dps_client._do_request(
             json=payload,
             method="POST",
             url_path=f"{self.dps_client._RESOURCE_PATH}/list",
             accept="application/protobuf",
             timeout=self.dps_client._config.timeout,
+            api_subversion=api_subversion,
         ).content
 
-    def _request_datapoints(self, payload: DatapointsPayload) -> Sequence[DataPointListItem]:
-        (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(payload))
+    def _request_datapoints(
+        self, payload: DatapointsPayload, api_subversion: str | None
+    ) -> Sequence[DataPointListItem]:
+        (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(payload, api_subversion))
         return res.items
 
     @abstractmethod
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
+    def _fetch_all(
+        self, pool: PriorityThreadPoolExecutor, use_numpy: bool, api_subversion: str | None
+    ) -> list[BaseConcurrentTask]:
         raise NotImplementedError
 
 
@@ -212,6 +217,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         self,
         task: SplittingFetchSubtask,
         payload: CustomDatapoints | None = None,
+        api_subversion: str | None = None,
     ) -> Sequence[DataPointListItem] | None:
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
@@ -220,10 +226,12 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
         dps_payload: DatapointsPayload = cast(DatapointsPayload, copy(payload) or {})
         dps_payload["items"] = [item]
-        return self._request_datapoints(dps_payload)
+        return self._request_datapoints(dps_payload, api_subversion)
 
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
-        futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
+    def _fetch_all(
+        self, pool: PriorityThreadPoolExecutor, use_numpy: bool, api_subversion: str | None
+    ) -> list[BaseConcurrentTask]:
+        futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy, api_subversion)
 
         # Run until all top level tasks are complete:
         while futures_dct:
@@ -253,13 +261,16 @@ class EagerDpsFetcher(DpsFetchStrategy):
         self,
         pool: PriorityThreadPoolExecutor,
         use_numpy: bool,
+        api_subversion: str | None,
     ) -> tuple[dict[Future, BaseDpsFetchSubtask], dict[_SingleTSQueryBase, BaseConcurrentTask]]:
         futures_dct: dict[Future, BaseDpsFetchSubtask] = {}
         ts_task_lookup, payload = {}, {"ignoreUnknownIds": False}
         for query in self.all_queries:
             ts_task = ts_task_lookup[query] = query.ts_task_type(query=query, eager_mode=True, use_numpy=use_numpy)
             for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
-                future = pool.submit(self.__request_datapoints_jit, subtask, payload, priority=subtask.priority)
+                future = pool.submit(
+                    self.__request_datapoints_jit, subtask, payload, api_subversion, priority=subtask.priority
+                )
                 futures_dct[future] = subtask
         return futures_dct, ts_task_lookup
 
@@ -331,11 +342,13 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.agg_subtask_pool: list[PoolSubtaskType] = []
         self.subtask_pools = (self.agg_subtask_pool, self.raw_subtask_pool)
 
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
+    def _fetch_all(
+        self, pool: PriorityThreadPoolExecutor, use_numpy: bool, api_subversion: str | None
+    ) -> list[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing, which
         # are string, which are sparse... We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
-        initial_query_limits, initial_futures_dct = self._create_initial_tasks(pool)
+        initial_query_limits, initial_futures_dct = self._create_initial_tasks(pool, api_subversion)
 
         for future in pool.as_completed(initial_futures_dct):
             res_lst = future.result()
@@ -357,8 +370,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 )
             )
             futures_dct: dict[Future, list[BaseDpsFetchSubtask]] = {}
-            self._queue_new_subtasks(pool, futures_dct)
-            self._fetch_until_complete(pool, futures_dct, ts_task_lookup)
+            self._queue_new_subtasks(pool, futures_dct, api_subversion)
+            self._fetch_until_complete(pool, futures_dct, ts_task_lookup, api_subversion)
         # Return only non-missing time series tasks in correct order given by `all_queries`:
         return list(filter(None, map(ts_task_lookup.get, self.all_queries)))
 
@@ -367,6 +380,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         pool: PriorityThreadPoolExecutor,
         futures_dct: dict[Future, list[BaseDpsFetchSubtask]],
         ts_task_lookup: dict[_SingleTSQueryBase, BaseConcurrentTask],
+        api_subversion: str | None,
     ) -> None:
         while futures_dct:
             future = next(pool.as_completed(futures_dct))
@@ -381,14 +395,14 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             if done_ts_tasks := {sub.parent for sub in subtask_lst if sub.parent.is_done}:
                 self._cancel_subtasks(done_ts_tasks)
 
-            self._queue_new_subtasks(pool, futures_dct)
+            self._queue_new_subtasks(pool, futures_dct, api_subversion)
 
             if all(task.is_done for task in ts_task_lookup.values()):
                 pool.shutdown(wait=False)
                 return None
 
     def _create_initial_tasks(
-        self, pool: PriorityThreadPoolExecutor
+        self, pool: PriorityThreadPoolExecutor, api_subversion: str | None
     ) -> tuple[dict[_SingleTSQueryBase, int], dict[Future, tuple[TSQueryList, TSQueryList]]]:
         initial_query_limits: dict[_SingleTSQueryBase, int] = {}
         initial_futures_dct: dict[Future, tuple[TSQueryList, TSQueryList]] = {}
@@ -405,7 +419,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 items.extend([{**q.to_payload(), "limit": lim} for q, lim in chunk_query_limits.items()])
 
             payload = {"ignoreUnknownIds": True, "items": items}
-            future = pool.submit(self._request_datapoints, payload, priority=0)
+            future = pool.submit(self._request_datapoints, payload, api_subversion, priority=0)
             initial_futures_dct[future] = query_chunks
         return initial_query_limits, initial_futures_dct
 
@@ -446,7 +460,10 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
-        self, pool: PriorityThreadPoolExecutor, futures_dct: dict[Future, list[BaseDpsFetchSubtask]]
+        self,
+        pool: PriorityThreadPoolExecutor,
+        futures_dct: dict[Future, list[BaseDpsFetchSubtask]],
+        api_subversion: str | None,
     ) -> None:
         while pool._work_queue.empty() and any(self.subtask_pools):
             # While the number of unstarted tasks is 0 and we have unqueued subtasks in one of the pools,
@@ -454,7 +471,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             if (new_request := self._combine_subtasks_into_new_request()) is None:
                 return
             payload, subtask_lst, priority = new_request
-            future = pool.submit(self._request_datapoints, payload, priority=priority)
+            future = pool.submit(self._request_datapoints, payload, api_subversion, priority=priority)
             futures_dct[future] = subtask_lst
             # Yield thread control (or qsize will increase despite idle workers):
             time.sleep(0.0001)
@@ -773,12 +790,17 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
-        dps_lst = fetcher.fetch_all_datapoints()
+        api_subversion = None
+        if target_unit is not None or target_unit_system is not None:
+            api_subversion = "beta"
+        dps_lst = fetcher.fetch_all_datapoints(api_subversion)
         if not query.is_single_identifier:
             return dps_lst
         elif not dps_lst and ignore_unknown_ids:

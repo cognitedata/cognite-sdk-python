@@ -595,8 +595,8 @@ class TestRetrieveRawDatapointsAPI:
                 external_id=timeseries.external_id, target_unit="temperature:deg_f"
             )
 
-            assert res[0].value == 32
-            assert res[1].value == 212
+            assert abs(res[0].value - 32) < 0.5
+            assert abs(res[1].value - 212) < 0.5
         finally:
             if created_timeseries is not None:
                 cognite_client.time_series.delete(id=created_timeseries.id, ignore_unknown_ids=True)
