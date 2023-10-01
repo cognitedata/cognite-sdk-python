@@ -291,6 +291,7 @@ class TimeSeriesUpdate(CogniteUpdate):
             # TimeSeries does not support setting metadata to an empty array.
             PropertySpec("metadata", is_container=True, is_nullable=False),
             PropertySpec("unit"),
+            PropertySpec("unit_external_id"),
             PropertySpec("asset_id"),
             PropertySpec("description"),
             PropertySpec("is_step", is_nullable=False),
