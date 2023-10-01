@@ -604,6 +604,8 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
@@ -624,6 +626,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -790,6 +794,8 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
@@ -805,6 +811,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -886,6 +894,8 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
@@ -905,6 +915,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -1011,6 +1023,8 @@ class DatapointsAPI(APIClient):
         end: datetime,
         aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
@@ -1046,6 +1060,8 @@ class DatapointsAPI(APIClient):
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True

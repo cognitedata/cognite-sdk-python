@@ -65,6 +65,8 @@ class TimeSeriesAPI(APIClient):
         chunk_size: int | None = None,
         name: str | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         asset_ids: Sequence[int] | None = None,
@@ -88,6 +90,8 @@ class TimeSeriesAPI(APIClient):
             chunk_size (int | None): Number of time series to return in each chunk. Defaults to yielding one time series a time.
             name (str | None): Name of the time series. Often referred to as tag.
             unit (str | None): Unit of the time series.
+            unit_external_id (str | None): Filter on unit external ID.
+            unit_quantity (str | None): Filter on unit quantity.
             is_string (bool | None): Whether the time series is an string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
@@ -112,6 +116,8 @@ class TimeSeriesAPI(APIClient):
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,
+            unit_external_id=unit_external_id,
+            unit_quantity=unit_quantity,
             is_step=is_step,
             is_string=is_string,
             asset_ids=asset_ids,
@@ -700,6 +706,8 @@ class TimeSeriesAPI(APIClient):
         self,
         name: str | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         asset_ids: Sequence[int] | None = None,
@@ -722,6 +730,8 @@ class TimeSeriesAPI(APIClient):
         Args:
             name (str | None): Name of the time series. Often referred to as tag.
             unit (str | None): Unit of the time series.
+            unit_external_id (str | None): Filter on unit external ID.
+            unit_quantity (str | None): Filter on unit quantity.
             is_string (bool | None): Whether the time series is an string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
@@ -768,6 +778,8 @@ class TimeSeriesAPI(APIClient):
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,
+            unit_external_id=unit_external_id,
+            unit_quantity=unit_quantity,
             is_step=is_step,
             is_string=is_string,
             asset_ids=asset_ids,
