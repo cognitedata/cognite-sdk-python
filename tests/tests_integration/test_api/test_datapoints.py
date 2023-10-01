@@ -1089,6 +1089,43 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
 
+    def test_retrieve_datapoints_in_target_unit(
+        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
+    ) -> None:
+        timeseries = timeseries_degree_c_0_100
+
+        res = cognite_client.time_series.data.retrieve(
+            external_id=timeseries.external_id, target_unit="temperature:deg_f", aggregates="max", granularity="1h"
+        )
+
+        assert abs(res.max[0] - 212) < 0.5
+
+    def test_retrieve_arrays_in_target_unit(
+        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
+    ) -> None:
+        timeseries = timeseries_degree_c_0_100
+
+        res = cognite_client.time_series.data.retrieve_arrays(
+            external_id=timeseries.external_id, target_unit="temperature:deg_f", aggregates="min", granularity="1h"
+        )
+
+        assert abs(res.min[0] - 32) < 0.5
+
+    def test_retrieve_dataframe_in_target_unit(
+        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
+    ) -> None:
+        external_id = timeseries_degree_c_0_100.external_id
+
+        res = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=external_id,
+            target_unit="temperature:deg_f",
+            aggregates="min",
+            granularity="1h",
+            include_aggregate_name=False,
+        )
+
+        assert abs(res[external_id][0] - 32) < 0.5
+
 
 @pytest.fixture(scope="session")
 def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
