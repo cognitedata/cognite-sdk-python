@@ -82,7 +82,7 @@ class ContainersAPI(APIClient):
         Returns:
             Iterator[Container]: yields Containers one by one.
         """
-        return cast(Iterator[Container], self())
+        return self()
 
     @overload
     def retrieve(self, ids: ContainerIdentifier) -> Container | None:

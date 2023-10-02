@@ -762,7 +762,7 @@ class AssetHierarchy:
             elif parent in has_cycles or xid == parent:
                 has_cycles.add(xid)
             else:
-                self._cycle_search(cast(str, xid), parent, edges, no_cycles, has_cycles)
+                self._cycle_search(xid, parent, edges, no_cycles, has_cycles)
 
         return len(has_cycles), find_all_cycles_with_elements(has_cycles, edges)
 

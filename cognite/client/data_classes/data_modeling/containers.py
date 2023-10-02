@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -64,7 +64,7 @@ class ContainerCore(DataModelingResource):
             data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
         if "properties" in data:
             data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
-        return cast(ContainerCore, super().load(data))
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

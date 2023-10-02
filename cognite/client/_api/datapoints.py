@@ -150,7 +150,7 @@ class DpsFetchStrategy(ABC):
         # might be running in pure python or compiled C code. We issue a warning if we can determine
         # that the user is running in pure python mode (quite a bit slower...)
         with contextlib.suppress(ImportError):
-            from google.protobuf.descriptor import _USE_C_DESCRIPTORS  # type: ignore [attr-defined]
+            from google.protobuf.descriptor import _USE_C_DESCRIPTORS
 
             if _USE_C_DESCRIPTORS is False:
                 warnings.warn(
@@ -1138,10 +1138,10 @@ class DatapointsAPI(APIClient):
             duplicated = find_duplicates(identifiers.as_primitives())
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
-        intervals = to_fixed_utc_intervals(start, end, granularity)  # type: ignore [arg-type]
+        intervals = to_fixed_utc_intervals(start, end, granularity)
 
         queries = [
-            {**ident_dct, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
+            {**ident_dct, "aggregates": aggregates, **interval}
             for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
         ]
 
@@ -1159,8 +1159,8 @@ class DatapointsAPI(APIClient):
         )
 
         if uniform_index:
-            freq = to_pandas_freq(granularity, start)  # type: ignore [arg-type]
-            start, end = align_large_granularity(start, end, granularity)  # type: ignore [arg-type]
+            freq = to_pandas_freq(granularity, start)
+            start, end = align_large_granularity(start, end, granularity)
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
 
         return df

@@ -190,7 +190,7 @@ def _load_identifier(
     def create_args(id_: Id) -> tuple[str, str, str | None, Literal["node", "edge"] | None]:
         if isinstance(id_, tuple) and is_instance:
             if len(id_) == 2:
-                return id_[0], id_[1], None, id_type  # type: ignore[misc, return-value]
+                return id_[0], id_[1], None, id_type  # type: ignore[return-value]
             raise ValueError("Instance given as a tuple must have two elements (space, externalId)")
         if isinstance(id_, tuple):
             return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None  # type: ignore[misc]

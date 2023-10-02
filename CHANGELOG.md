@@ -17,6 +17,23 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.2] - 2023-10-02
+### Fixed
+- When cache lookup did not yield a token for `CredentialProvider`s like `OAuthDeviceCode` or `OAuthInteractive`, a
+  `TypeError` could be raised instead of initiating their authentication flow.
+
+## [6.28.1] - 2023-09-30
+### Improved
+- Warning when using alpha/beta features.
+
+## [6.28.0] - 2023-09-26
+### Added
+- Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
+
+## [6.27.0] - 2023-09-13
+### Changed
+- Reduce concurrency in data modeling client to 1
+
 ## [6.26.0] - 2023-09-22
 ### Added
 - Support `partition` and `cursor` parameters on `time_series.subscriptions.iterate_data`
@@ -77,7 +94,7 @@ data modeling query and receive updates through a provided callback.
 ### Added
 - Supporting pattern mode and extra configuration for diagram detect in beta.
 
-## [6.20.0] - 2023-09-06
+## [6.20.0] - 2023-09-05
 ### Fixed
 - When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
   the verification process. This could leave leftover modules still in scope, possibly affecting subsequent calls. This is
@@ -914,7 +931,7 @@ It will also cache the token between runs.
 ### Changed
 - Client configuration no longer respects any environment variables. There are other libraries better
 suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
-been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+been several reports of envvar name clash issues in tools built on top the SDK. We therefore
 consider this something that should be handled by the application consuming the SDK. All configuration of
 `cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
 `max_connection_pool_size` and other options which apply to all client instances are now configured through
