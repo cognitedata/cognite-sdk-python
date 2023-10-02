@@ -62,6 +62,7 @@ from cognite.client.utils._auxiliary import (
     split_into_n_parts,
 )
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import (
     _unit_in_days,
@@ -611,6 +612,7 @@ class DatapointsAPI(APIClient):
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
         self._GRANULARITY_HOURS_LIMIT = 100_000
+        self._unit_warning = FeaturePreviewWarning("beta", "alpha", feature_name="Datapoints Target Unit")
 
     def retrieve(
         self,
@@ -810,6 +812,7 @@ class DatapointsAPI(APIClient):
         api_subversion = None
         if target_unit is not None or target_unit_system is not None:
             api_subversion = "beta"
+            self._unit_warning.warn()
         return api_subversion
 
     def retrieve_arrays(

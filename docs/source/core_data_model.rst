@@ -154,6 +154,18 @@ Events Data classes
 
 Data points
 -----------
+.. warning::
+    TimeSeries Unit is a new feature:
+      * The API specification is in beta.
+      * The SDK implementation is in alpha.
+
+    Unit is implemented in the Datapoints APIs with the parameters `target_unt` in
+    the retrieve methods below. It is only the use of this arguments that is in alpha. Using the methods below
+    without this arguments is stable.
+
+    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
+
+
 Retrieve datapoints
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve

@@ -60,7 +60,7 @@ class TimeSeriesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.data = DatapointsAPI(config, api_version, cognite_client)
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
-        self._unit_warning = FeaturePreviewWarning("beta", "alpha", "Unit Support")
+        self._unit_warning = FeaturePreviewWarning("beta", "alpha", "Timeseries Unit External ID")
 
     def __call__(
         self,
