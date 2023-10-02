@@ -665,7 +665,7 @@ class CogniteSort:
         elif isinstance(prop, list):
             prop = [to_camel_case(p) for p in prop]
         else:
-            raise TypeError(f"Unable to dump {type(self).__name__} with property {prop}")
+            raise ValueError(f"Unable to dump {type(self).__name__} with property {prop}")
 
         output: dict[str, str | list[str]] = {"property": prop, "order": self.order}
         if self.nulls is not None:
