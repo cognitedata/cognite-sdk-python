@@ -176,7 +176,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             external_id=function["externalId"],
             data=function.get("data"),
             # Allow default to come from the API.
-            is_async_complete=resource.get("isAsyncComplete", False),  # type: ignore[arg-type]
+            is_async_complete=resource.get("isAsyncComplete", False),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -336,8 +336,8 @@ class WorkflowTask(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        type (Literal["function", "transformation", "cdf", "dynamic"] | None): The type of the task.
         parameters (WorkflowTaskParameters): The parameters of the task.
+        type (Literal["function", "transformation", "cdf", "dynamic"] | None): The type of the task.
         name (str | None): The name of the task. Defaults to None.
         description (str | None): The description of the task. Defaults to None.
         retries (int): The number of retries for the task. Defaults to 3.
