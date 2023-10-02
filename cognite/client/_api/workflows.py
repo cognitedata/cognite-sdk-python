@@ -162,6 +162,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client.data_classes import WorkflowTask, FunctionTaskParameters
                 >>> task = WorkflowTask(
                 ...     external_id="my_workflow-task1",
+                ...     type="function",
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
                 ...         data={"workflow_data": "${workflow.input}",}))
@@ -279,13 +280,14 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionUpsert, WorkflowDefinitionUpsert, WorkflowTask, FunctionTaskParameters
                 >>> c = CogniteClient()
-                >>> new_version =WorkflowVersionUpsert(
+                >>> new_version = WorkflowVersionUpsert(
                 ...    workflow_external_id="my_workflow",
                 ...    version="1",
                 ...    workflow_definition=WorkflowDefinitionUpsert(
                 ...        tasks=[
                 ...            WorkflowTask(
                 ...                external_id="my_workflow-task1",
+                ...                type="function",
                 ...                parameters=FunctionTaskParameters(
                 ...                    external_id="cdf_deployed_function:my_function",
                 ...                    data={"a": 1, "b": 2},
