@@ -282,7 +282,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
     The dynamic task parameters are used to specify a dynamic task.
 
     When the tasks and their order of execution are determined at runtime, we use dynamic tasks. It takes the tasks parameter which is a Reference to
-     an array of function, transformation, and cdf task definitions. This array should be generated and returned by a previous step in the workflow, for instance,
+    an array of function, transformation, and cdf task definitions. This array should be generated and returned by a previous step in the workflow, for instance,
     a Cognite Function task.
 
     Tip:
