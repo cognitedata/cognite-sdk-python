@@ -376,7 +376,7 @@ class TestCogniteResourceList:
 
         from cognite.client.data_classes import Asset
 
-        obj = Asset(id=1)
+        obj = [Asset(id=i) for i in range(5)]
 
         result_df = obj.to_pandas()
 
