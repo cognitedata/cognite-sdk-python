@@ -165,8 +165,7 @@ class CogniteResource(_WithClientMixin):
                 else:
                     raise AssertionError(f"Could not expand attribute '{key}'")
 
-        data = [{"value": value} for name, value in dumped.items()]
-        df = pd.DataFrame(data, index=dumped.keys())
+        df = pd.DataFrame.from_dict(dumped, orient="index", columns=["value"])
 
         return df
 
