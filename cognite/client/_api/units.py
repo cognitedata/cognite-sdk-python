@@ -9,6 +9,7 @@ from cognite.client.data_classes.units import (
     UnitSystem,
     UnitSystemList,
 )
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -23,8 +24,10 @@ class UnitSystemAPI(APIClient):
         config: ClientConfig,
         api_version: str | None,
         cognite_client: CogniteClient,
+        warning: FeaturePreviewWarning,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._warning = warning
         self._api_subversion = "beta"
 
     def list(self) -> UnitSystemList:
@@ -41,6 +44,7 @@ class UnitSystemAPI(APIClient):
                 >>> res = c.units.systems.list()
 
         """
+        self._warning.warn()
         return self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)
 
 
@@ -55,7 +59,8 @@ class UnitAPI(APIClient):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
-        self.systems = UnitSystemAPI(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="beta", feature_name="Unit Catalogue")
+        self.systems = UnitSystemAPI(config, api_version, cognite_client, self._warning)
 
     @overload
     def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit:
@@ -91,6 +96,7 @@ class UnitAPI(APIClient):
                 >>> res = c.units.retrieve(['temperature:deg_c', 'pressure:bar'])
 
         """
+        self._warning.warn()
         if isinstance(external_id, str):
             is_single = True
             external_id = [external_id]
@@ -124,4 +130,5 @@ class UnitAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.units.list()
         """
+        self._warning.warn()
         return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
