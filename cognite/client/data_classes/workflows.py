@@ -336,7 +336,7 @@ class WorkflowTask(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        type (Literal["function", "transformation", "cdf", "dynamic"]): The type of the task.
+        type (Literal["function", "transformation", "cdf", "dynamic"] | None): The type of the task.
         parameters (WorkflowTaskParameters): The parameters of the task.
         name (str | None): The name of the task. Defaults to None.
         description (str | None): The description of the task. Defaults to None.
@@ -348,8 +348,8 @@ class WorkflowTask(CogniteResource):
     def __init__(
         self,
         external_id: str,
-        type: Literal["function", "transformation", "cdf", "dynamic"],
         parameters: WorkflowTaskParameters,
+        type: Literal["function", "transformation", "cdf", "dynamic"] | None = None,
         name: str | None = None,
         description: str | None = None,
         retries: int = 3,
@@ -357,8 +357,8 @@ class WorkflowTask(CogniteResource):
         depends_on: list[str] | None = None,
     ) -> None:
         self.external_id = external_id
-        self.type = type
         self.parameters = parameters
+        self.type = type or parameters.task_type
         self.name = name
         self.description = description
         self.retries = retries
