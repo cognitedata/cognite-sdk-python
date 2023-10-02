@@ -293,6 +293,12 @@ class DynamicTaskParameters(WorkflowTaskParameters):
 
     task_type: ClassVar[str] = "dynamic"
 
+    @classmethod
+    def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        dynamic: str = resource["dynamic"]
+        return cls(dynamic)
+
     def __init__(self, dynamic: list[WorkflowTask] | str) -> None:
         self.dynamic = dynamic
 
