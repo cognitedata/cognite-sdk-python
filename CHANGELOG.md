@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.2] - 2023-10-02
+### Fixed
+- When cache lookup did not yield a token for `CredentialProvider`s like `OAuthDeviceCode` or `OAuthInteractive`, a
+  `TypeError` could be raised instead of initiating their authentication flow.
+
 ## [6.28.1] - 2023-09-30
 ### Improved
 - Warning when using alpha/beta features.
@@ -27,7 +32,7 @@ Changes are grouped as follows
 
 ## [6.27.0] - 2023-09-13
 ### Changed
-- Reduce concurrency in data modeling client to 1 
+- Reduce concurrency in data modeling client to 1
 
 ## [6.26.0] - 2023-09-22
 ### Added
