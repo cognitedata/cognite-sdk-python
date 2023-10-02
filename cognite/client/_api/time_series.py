@@ -19,6 +19,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
@@ -59,6 +60,7 @@ class TimeSeriesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.data = DatapointsAPI(config, api_version, cognite_client)
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
+        self._unit_warning = FeaturePreviewWarning("beta", "alpha", "Unit Support")
 
     def __call__(
         self,
@@ -583,9 +585,8 @@ class TimeSeriesAPI(APIClient):
             api_subversion=api_subversion,
         )
 
-    @staticmethod
     def _get_subapiversion_update(
-        item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate],
+        self, item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]
     ) -> str | None:
         api_subversion: str | None = None
         if isinstance(item, TimeSeries) and item.unit_external_id:
@@ -599,6 +600,9 @@ class TimeSeriesAPI(APIClient):
             for ts in item
         ):
             api_subversion = "beta"
+
+        if api_subversion == "beta":
+            self._unit_warning.warn()
         return api_subversion
 
     @overload
@@ -640,6 +644,8 @@ class TimeSeriesAPI(APIClient):
         api_subversion = self._get_subapiversion_update(item)
         if mode == "replace":
             api_subversion = "beta"
+            self._unit_warning.warn()
+
         return self._upsert_multiple(
             item,
             list_cls=TimeSeriesList,
@@ -862,9 +868,9 @@ class TimeSeriesAPI(APIClient):
             api_subversion=api_subversion,
         )
 
-    @staticmethod
-    def _get_api_subversion(unit_external_id: str | None, unit_quantity: str | None) -> str | None:
+    def _get_api_subversion(self, unit_external_id: str | None, unit_quantity: str | None) -> str | None:
         api_subversion: str | None = None
         if unit_external_id is not None or unit_quantity is not None:
             api_subversion = "beta"
+            self._unit_warning.warn()
         return api_subversion
