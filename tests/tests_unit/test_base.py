@@ -376,11 +376,15 @@ class TestCogniteResourceList:
 
         from cognite.client.data_classes import Asset, AssetList
 
-        obj = AssetList([Asset(id=i) for i in range(5)])
+        obj = AssetList([Asset(external_id=f"ext-{i}", name=f"name-{i}") for i in range(5)])
 
         result_df = obj.to_pandas()
 
-        expected_df = pd.DataFrame({"value": [1]}, index=["id"])
+        data = {
+            "external_id": ["ext-0", "ext-1", "ext-2", "ext-3", "ext-4"],
+            "name": ["name-0", "name-1", "name-2", "name-3", "name-4"],
+        }
+        expected_df = pd.DataFrame(data)
 
         # Assert that the resultant DataFrame is equal to the expected DataFrame
         pd.testing.assert_frame_equal(result_df, expected_df)
