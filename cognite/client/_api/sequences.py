@@ -1058,8 +1058,7 @@ class SequencesDataAPI(APIClient):
         tasks_summary = utils._concurrency.execute_tasks(
             _fetch_sequence, [(x,) for x in post_objs], max_workers=self._config.max_workers
         )
-        if tasks_summary.exceptions:
-            raise tasks_summary.exceptions[0]
+        tasks_summary.raise_first_encountered_exception()
         results = tasks_summary.joined_results()
         if len(post_objs) == 1:
             return results[0]

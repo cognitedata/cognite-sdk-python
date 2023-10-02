@@ -92,9 +92,7 @@ class SyntheticDatapointsAPI(APIClient):
         datapoints_summary = utils._concurrency.execute_tasks(
             self._fetch_datapoints, tasks, max_workers=self._config.max_workers
         )
-
-        if datapoints_summary.exceptions:
-            raise datapoints_summary.exceptions[0]
+        datapoints_summary.raise_first_encountered_exception()
 
         return (
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)

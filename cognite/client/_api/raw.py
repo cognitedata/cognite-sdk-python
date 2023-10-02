@@ -614,6 +614,6 @@ class RawRowsAPI(APIClient):
             for cursor in cursors
         ]
         summary = utils._concurrency.execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
-        if summary.exceptions:
-            raise summary.exceptions[0]
+        summary.raise_first_encountered_exception()
+
         return RowList(summary.joined_results())
