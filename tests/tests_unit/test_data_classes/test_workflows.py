@@ -6,10 +6,8 @@ from cognite.client.data_classes.workflows import (
     CDFTaskOutput,
     DynamicTaskOutput,
     FunctionTaskOutput,
-    FunctionTaskParameters,
     TransformationTaskOutput,
     WorkflowIds,
-    WorkflowTask,
     WorkflowTaskOutput,
     WorkflowVersionId,
 )
@@ -20,11 +18,7 @@ class TestWorkflowTaskOutput:
         "output",
         [
             FunctionTaskOutput(call_id=123, function_id=3456, response={"test": 1}),
-            DynamicTaskOutput(
-                dynamic_tasks=[
-                    WorkflowTask(external_id="abc", name="abc", parameters=FunctionTaskParameters(external_id="def"))
-                ]
-            ),
+            DynamicTaskOutput(),
             CDFTaskOutput(response={"test": 1}, status_code=200),
             TransformationTaskOutput(job_id=789),
         ],
