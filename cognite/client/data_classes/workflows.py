@@ -136,6 +136,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         - `${workflow.input}`: The workflow input.
         - `${<taskExternalId>.output}`: The output of the task with the given external id.
         - `${<taskExternalId>.input}`: The input of the task with the given external id.
+        - `${<taskExternalId>.input.someKey}`: A specific key within the input of the task with the given external id.
 
         For example, if you have a workflow containing two tasks, and the external_id of the first task is `task1` then,
         you can specify the data for the second task as follows:
@@ -280,15 +281,23 @@ class DynamicTaskParameters(WorkflowTaskParameters):
     """
     The dynamic task parameters are used to specify a dynamic task.
 
-    When the tasks and their order of execution are determined at runtime, we use dynamic tasks. It takes the tasks parameter,
-    which is an array of function, transformation, and cdf task definitions.
-    This array should then be generated and returned by a previous step in the workflow, for instance,
+    When the tasks and their order of execution are determined at runtime, we use dynamic tasks. It takes the tasks parameter which is a Reference to
+     an array of function, transformation, and cdf task definitions. This array should be generated and returned by a previous step in the workflow, for instance,
     a Cognite Function task.
+
+    Tip:
+        You can reference data from other tasks or the workflow. You do this by following the format
+        `${prefix.jsonPath}` in the expression. Some valid option are:
+
+        - `${workflow.input}`: The workflow input.
+        - `${<taskExternalId>.output}`: The output of the task with the given external id.
+        - `${<taskExternalId>.input}`: The input of the task with the given external id.
+        - `${<taskExternalId>.input.someKey}`: A specific key within the input of the task with the given external id.
 
     Args:
         tasks (list[WorkflowTask] | str): The tasks to be dynamically executed. The dynamic task is a string that is evaluated
-                                during the workflow's execution.
-
+                    during the workflow's execution. When calling Version Upsert, the tasks parameter must be a Reference string.
+                    When calling Execution details, the tasks parameter will be a list of WorkflowTask objects.
     """
 
     task_type: ClassVar[str] = "dynamic"
@@ -299,7 +308,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
 
         dynamic: dict[str, Any] = resource[cls.task_type]
 
-        # can either be unresolved (i.e., in case of WorkflowDefinitions)
+        # can either be a reference string (i.e., in case of WorkflowDefinitions)
         if isinstance(dynamic["tasks"], str):
             return cls(dynamic["tasks"])
 
