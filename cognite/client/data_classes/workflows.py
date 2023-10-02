@@ -176,7 +176,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             external_id=function["externalId"],
             data=function.get("data"),
             # Allow default to come from the API.
-            is_async_complete=resource.get("isAsyncComplete"),  # type: ignore[arg-type]
+            is_async_complete=resource.get("isAsyncComplete", False),  # type: ignore[arg-type]
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -336,6 +336,7 @@ class WorkflowTask(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        type (Literal["function", "transformation", "cdf", "dynamic"]): The type of the task.
         parameters (WorkflowTaskParameters): The parameters of the task.
         name (str | None): The name of the task. Defaults to None.
         description (str | None): The description of the task. Defaults to None.
@@ -347,6 +348,7 @@ class WorkflowTask(CogniteResource):
     def __init__(
         self,
         external_id: str,
+        type: Literal["function", "transformation", "cdf", "dynamic"],
         parameters: WorkflowTaskParameters,
         name: str | None = None,
         description: str | None = None,
@@ -355,6 +357,7 @@ class WorkflowTask(CogniteResource):
         depends_on: list[str] | None = None,
     ) -> None:
         self.external_id = external_id
+        self.type = type
         self.parameters = parameters
         self.name = name
         self.description = description
@@ -367,21 +370,20 @@ class WorkflowTask(CogniteResource):
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             external_id=resource["externalId"],
+            type=resource["type"],
             parameters=WorkflowTaskParameters.load_parameters(resource),
             name=resource.get("name"),
             description=resource.get("description"),
             # Allow default to come from the API.
             retries=resource.get("retries"),  # type: ignore[arg-type]
             timeout=resource.get("timeout"),  # type: ignore[arg-type]
-            depends_on=[dep["externalId"] for dep in resource.get("depends_on", [])] or None,
+            depends_on=[dep["externalId"] for dep in resource.get("dependsOn", [])] or None,
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        type_ = self.parameters.task_type
-
         output: dict[str, Any] = {
             ("externalId" if camel_case else "external_id"): self.external_id,
-            "type": type_,
+            "type": self.type,
             "parameters": self.parameters.dump(camel_case),
             "retries": self.retries,
             "timeout": self.timeout,
