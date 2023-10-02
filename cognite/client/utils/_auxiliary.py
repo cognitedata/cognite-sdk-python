@@ -247,7 +247,7 @@ def convert_true_match(true_match: dict | list | tuple[int | str, int | str]) ->
     elif isinstance(true_match, dict):
         return true_match
     else:
-        raise TypeError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
+        raise ValueError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
 
 
 def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
