@@ -207,15 +207,15 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return self.__scopes
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        # First check if there is a serialized token cached on disk.
+        # First check if a token cache exists on disk. If yes, find and use:
+        # - A valid access token.
+        # - A valid refresh token, and if so, use it automatically to redeem a new access token.
+        credentials = None
         if accounts := self.__app.get_accounts():
-            credentials = self.__app.acquire_token_silent_with_error(scopes=self.__scopes, account=accounts[0])
-        else:
-            credentials = {}
+            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
 
-        # If not, we acquire a new token using device code auth flow:
-        # or the token might be expired, so we try to refresh it.
-        if not accounts or "error" in credentials:
+        # If we're unable to find (or acquire a new) access token, we initiate the device code auth flow:
+        if credentials is None:
             device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
             # print device code user instructions to screen
             print(f"Device code: {device_flow['message']}")  # noqa: T201
@@ -290,14 +290,15 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         return self.__scopes
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        # First check if there is a serialized token cached on disk.
+        # First check if a token cache exists on disk. If yes, find and use:
+        # - A valid access token.
+        # - A valid refresh token, and if so, use it automatically to redeem a new access token.
+        credentials = None
         if accounts := self.__app.get_accounts():
-            credentials = self.__app.acquire_token_silent_with_error(scopes=self.__scopes, account=accounts[0])
-            if "error" in credentials:
-                # The token might be expired, so we try to refresh it
-                credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
-        # If not, we acquire a new token interactively
-        else:
+            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
+
+        # If we're unable to find (or acquire a new) access token, we initiate the interactive auth flow:
+        if credentials is None:
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
 
         self._verify_credentials(credentials)
