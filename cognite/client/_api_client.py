@@ -455,7 +455,7 @@ class APIClient:
                         api_subversion=api_subversion,
                     )
                 else:
-                    raise TypeError(f"_list_generator parameter `method` must be GET or POST, not {method}")
+                    raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
                 last_received_items = res.json()["items"]
                 total_items_retrieved += len(last_received_items)
 
@@ -610,7 +610,7 @@ class APIClient:
                     }
                     res = self._get(url_path=(resource_path or self._RESOURCE_PATH), params=params, headers=headers)
                 else:
-                    raise TypeError(f"Unsupported method: {method}")
+                    raise ValueError(f"Unsupported method: {method}")
                 retrieved_items.extend(res.json()["items"])
                 next_cursor = res.json().get("nextCursor")
                 if next_cursor is None:
@@ -984,7 +984,7 @@ class APIClient:
         input_resource_cls: type[CogniteResource] | None = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
-            raise TypeError(f"mode must be either 'patch' or 'replace', got {mode!r}")
+            raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
         try:
