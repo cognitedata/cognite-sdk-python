@@ -19,8 +19,8 @@ Changes are grouped as follows
 
 ## [6.28.2] - 2023-10-02
 ### Fixed
-- If you have en expired token you got the error message `TypeError: argument of type 'NoneType' is not iterable`. 
-  The SDK will now try to refresh your token instead.
+- When cache lookup did not yield a token for `CredentialProvider`s like `OAuthDeviceCode` or `OAuthInteractive`, a
+  `TypeError` could be raised instead of initiating their authentication flow.
 
 ## [6.28.1] - 2023-09-30
 ### Improved
@@ -32,7 +32,7 @@ Changes are grouped as follows
 
 ## [6.27.0] - 2023-09-13
 ### Changed
-- Reduce concurrency in data modeling client to 1 
+- Reduce concurrency in data modeling client to 1
 
 ## [6.26.0] - 2023-09-22
 ### Added
