@@ -17,10 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.28.1] - 2023-09-26
+## [6.28.2] - 2023-10-02
 ### Fixed
 - If you have en expired token you got the error message `TypeError: argument of type 'NoneType' is not iterable`. 
   The SDK will now try to refresh your token instead.
+
+## [6.28.1] - 2023-09-30
+### Improved
+- Warning when using alpha/beta features.
 
 ## [6.28.0] - 2023-09-26
 ### Added
