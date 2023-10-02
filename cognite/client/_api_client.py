@@ -249,7 +249,7 @@ class APIClient:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
 
         if method not in valid_methods:
-            raise TypeError(f"Method {method} is not valid. Must be one of {valid_methods}")
+            raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
         if method in ["GET", "PUT", "PATCH"]:
             return True
