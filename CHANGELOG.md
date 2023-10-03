@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.28.1] - 2023-09-26
 ### Fixed
-- Fix a bug in handling an optional `sort` paramter in methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()`.
+- Calling any of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter caused a `CogniteAPIError` with a 400 code. This is now fixed. 
 
 ## [6.28.0] - 2023-09-26
 ### Added
