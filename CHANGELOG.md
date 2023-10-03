@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.3] - 2023-10-03
+### Fixed
+- Uploading files, `client.files.upload_bytes`, as string with nordic characters loses some characters due to an encoding issue. This is now fixed.
+
 ## [6.28.2] - 2023-10-02
 ### Fixed
 - When cache lookup did not yield a token for `CredentialProvider`s like `OAuthDeviceCode` or `OAuthInteractive`, a
