@@ -255,7 +255,7 @@ class ExtractionPipelineRun(CogniteResource):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dct = super().dump(camel_case=camel_case)
         # Note: No way to make this id/xid API mixup completely correct. Either:
-        # 1. We use id / external_id for respecively "self id" / "ext.pipe external id"
+        # 1. We use id / external_id for respectively "self id" / "ext.pipe external id"
         #   - Problem: Only dataclass in the SDK where id and external_id does not point to same object...
         # 2. We rename external_id to extpipe_external_id in the SDK only
         #   - Problem: This dump method might be surprising to the user - if used (its public)...

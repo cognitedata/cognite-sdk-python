@@ -97,7 +97,7 @@ class EventsAPI(APIClient):
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str | None): External Id provided by client. Should be unique within the project
-            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
+            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when omitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             limit (int | None): Maximum number of events to return. Defaults to return all items.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
@@ -259,7 +259,7 @@ class EventsAPI(APIClient):
 
         Args:
             fields (Sequence[str] | None): The fields to return. Defaults to ["count"].
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
+            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
             property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to consider.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -332,7 +332,7 @@ class EventsAPI(APIClient):
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
                 (property is not null) and matching the filters.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
+            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
 
         Returns:
             int: The number of events matching the specified filters and search.
@@ -375,7 +375,7 @@ class EventsAPI(APIClient):
             property (EventPropertyLike): The property to count the cardinality of.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
+            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filter.
 
@@ -422,7 +422,7 @@ class EventsAPI(APIClient):
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
+            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filters and search.
 
@@ -459,7 +459,7 @@ class EventsAPI(APIClient):
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
+            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of events matching the specified filters and search.
@@ -683,7 +683,7 @@ class EventsAPI(APIClient):
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
 
-            To make it easier to avoid spelling mistakes and easiser to look up available properties
+            To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
 
                 >>> from cognite.client import CogniteClient
@@ -755,7 +755,7 @@ class EventsAPI(APIClient):
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
+            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when omitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             partitions (int | None): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
             limit (int | None): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 

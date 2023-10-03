@@ -85,12 +85,12 @@ class RelationshipsAPI(APIClient):
             target_types (Sequence[str] | None): Include relationships that have any of these values in their target Type field
             data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | Sequence[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
             confidence (dict[str, int] | None): Range to filter the field for (inclusive).
             last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
             created_time (dict[str, int] | None): Range to filter the field for (inclusive).
-            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter | None): Return only the resource matching the specified label constraints.
             limit (int | None): No description.
             fetch_resources (bool): No description.
@@ -231,12 +231,12 @@ class RelationshipsAPI(APIClient):
             target_types (Sequence[str] | None): Include relationships that have any of these values in their target Type field
             data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | Sequence[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
             confidence (dict[str, int] | None): Range to filter the field for (inclusive).
             last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
             created_time (dict[str, int] | None): Range to filter the field for (inclusive).
-            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter | None): Return only the resource matching the specified label constraints.
             limit (int | None): Maximum number of relationships to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.

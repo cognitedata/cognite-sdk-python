@@ -545,6 +545,9 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
         """
+        if isinstance(content, str):
+            content = content.encode("utf-8")
+
         file_metadata = FileMetadata(
             name=name,
             external_id=external_id,

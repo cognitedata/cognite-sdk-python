@@ -1,5 +1,5 @@
 """
-This file contains integration tests for the logic in the generic API client. However, since we cannot instansiate a
+This file contains integration tests for the logic in the generic API client. However, since we cannot instantiate a
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
 from unittest.mock import patch

@@ -21,6 +21,19 @@ Changes are grouped as follows
 ### Added
 - Added parameter `resolve_duplicate_file_names` to `client.files.download`. 
   This will keep all the files when downloading to local machine, even if they have the same name.
+## [6.28.3] - 2023-10-03
+### Fixed
+- When uploading files as strings using `client.files.upload_bytes` the wrong encoding is used on Windows, which is causing
+  part of the content to be lost when uploading. This is now fixed.
+
+## [6.28.2] - 2023-10-02
+### Fixed
+- When cache lookup did not yield a token for `CredentialProvider`s like `OAuthDeviceCode` or `OAuthInteractive`, a
+  `TypeError` could be raised instead of initiating their authentication flow.
+
+## [6.28.1] - 2023-09-30
+### Improved
+- Warning when using alpha/beta features.
 
 ## [6.28.0] - 2023-09-26
 ### Added
@@ -28,7 +41,7 @@ Changes are grouped as follows
 
 ## [6.27.0] - 2023-09-13
 ### Changed
-- Reduce concurrency in data modeling client to 1 
+- Reduce concurrency in data modeling client to 1
 
 ## [6.26.0] - 2023-09-22
 ### Added
@@ -302,8 +315,8 @@ in beta and thus we reserve the right to break it without bumping the major vers
 
 ## [6.5.5] - 2023-06-28
 ### Fixed
-- A bug where we would raise the wrong exception when errors on occured on `data_modeling.spaces.delete`
-- A bug causing incosistent MRO in DataModelList
+- A bug where we would raise the wrong exception when errors on occurred on `data_modeling.spaces.delete`
+- A bug causing inconsistent MRO in DataModelList
 
 ## [6.5.4] - 2023-06-28
 ### Added
@@ -363,7 +376,7 @@ but we accept the cost of breaking a few consumers now early on the really nail 
 - Make VersionedDataModelingId:load accept `tuple[str, str]`
 - Rename ConstraintIdentifier to Constraint - it was not an id but the definition itself
 - Rename IndexIdentifier to Index - it was not an id but the definition itself
-- Rename ContainerPropertyIdentifier to ContaienrProperty - it was not an id but the definition itself
+- Rename ContainerPropertyIdentifier to ContainerProperty - it was not an id but the definition itself
 
 ### Removed
 - Redundant EdgeApply:create method. It simply mirrored the EdgeApply constructor.
