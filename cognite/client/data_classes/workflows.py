@@ -302,6 +302,9 @@ class DynamicTaskParameters(WorkflowTaskParameters):
 
     task_type: ClassVar[str] = "dynamic"
 
+    def __init__(self, tasks: list[WorkflowTask] | str) -> None:
+        self.tasks = tasks
+    
     @classmethod
     def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
@@ -323,9 +326,6 @@ class DynamicTaskParameters(WorkflowTaskParameters):
                 "tasks": self.tasks if isinstance(self.tasks, str) else [task.dump(camel_case) for task in self.tasks]
             }
         }
-
-    def __init__(self, tasks: list[WorkflowTask] | str) -> None:
-        self.tasks = tasks
 
 
 class WorkflowTask(CogniteResource):
