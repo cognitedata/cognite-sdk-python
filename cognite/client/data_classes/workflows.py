@@ -175,7 +175,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return cls(
             external_id=function["externalId"],
             data=function.get("data"),
-            is_async_complete=resource.get("isAsyncComplete"),
+            is_async_complete=resource.get("isAsyncComplete") or resource.get("asyncComplete"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -451,12 +451,9 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
-            "output": {
-                ("callId" if camel_case else "call_id"): self.call_id,
-                ("functionId" if camel_case else "function_id"): self.function_id,
-                "response": self.response,
-            },
-            ("taskType" if camel_case else "task_type"): self.task_type,
+            ("callId" if camel_case else "call_id"): self.call_id,
+            ("functionId" if camel_case else "function_id"): self.function_id,
+            "response": self.response,
         }
 
 
@@ -479,10 +476,7 @@ class TransformationTaskOutput(WorkflowTaskOutput):
         return cls(output["jobId"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {
-            "output": {("jobId" if camel_case else "job_id"): self.job_id},
-            ("taskType" if camel_case else "task_type"): self.task_type,
-        }
+        return {("jobId" if camel_case else "job_id"): self.job_id}
 
 
 class CDFTaskOutput(WorkflowTaskOutput):
@@ -507,11 +501,8 @@ class CDFTaskOutput(WorkflowTaskOutput):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
-            "output": {
-                "response": self.response,
-                ("statusCode" if camel_case else "status_code"): self.status_code,
-            },
-            ("taskType" if camel_case else "task_type"): self.task_type,
+            "response": self.response,
+            ("statusCode" if camel_case else "status_code"): self.status_code,
         }
 
 
@@ -530,9 +521,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
         return cls()
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {
-            ("taskType" if camel_case else "task_type"): self.task_type,
-        }
+        return {}
 
 
 class WorkflowTaskExecution(CogniteResource):
@@ -575,7 +564,7 @@ class WorkflowTaskExecution(CogniteResource):
         self.start_time = start_time
         self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
-        self.type = type
+        self.task_type = type
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowTaskExecution:
@@ -595,7 +584,15 @@ class WorkflowTaskExecution(CogniteResource):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
-        output[("taskType" if camel_case else "task_type")] = self.type
+        output["input"] = self.input.dump(camel_case)
+        output["status"] = self.status.upper()
+
+        # API uses isAsyncComplete and asyncComplete inconsistently:
+        if self.task_type == "function":
+            if (is_async_complete := output["input"].get("isAsyncComplete")) is not None:
+                output["input"]["asyncComplete"] = is_async_complete
+                del output["input"]["isAsyncComplete"]
+
         output["output"] = self.output.dump(camel_case)
         return output
 
