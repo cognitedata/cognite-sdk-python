@@ -189,7 +189,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             "function": function,
         }
         if self.is_async_complete is not None:
-            output["isAsyncComplete"] = self.is_async_complete
+            output[("isAsyncComplete" if camel_case else "is_async_complete")] = self.is_async_complete
         return output
 
 
@@ -273,7 +273,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
         return {
-            ("cdfRequest" if camel_case else "cdfRequest"): output,
+            ("cdfRequest" if camel_case else "cdf_request"): output,
         }
 
 
@@ -549,6 +549,7 @@ class WorkflowTaskExecution(CogniteResource):
         start_time (int | None): The start time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
+        type (str | None): No description.
 
     """
 
@@ -563,6 +564,7 @@ class WorkflowTaskExecution(CogniteResource):
         start_time: int | None = None,
         end_time: int | None = None,
         reason_for_incompletion: str | None = None,
+        type: str | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -573,6 +575,7 @@ class WorkflowTaskExecution(CogniteResource):
         self.start_time = start_time
         self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
+        self.type = type
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowTaskExecution:
@@ -587,12 +590,12 @@ class WorkflowTaskExecution(CogniteResource):
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             reason_for_incompletion=resource.get("reasonForIncompletion"),
+            type=resource.get("taskType"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
-        task_type_key = "taskType" if camel_case else "task_type"
-        output[task_type_key] = self.output.task_type
+        output[("taskType" if camel_case else "task_type")] = self.type
         output["output"] = self.output.dump(camel_case)
         return output
 
