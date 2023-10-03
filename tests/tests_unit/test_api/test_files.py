@@ -552,7 +552,7 @@ class TestFilesAPI:
             ),
         ],
     )
-    def test_create_unique_file_names_param(self, cognite_client, input_list, expected_output_list):
+    def test_create_unique_file_names(self, cognite_client, input_list, expected_output_list):
         assert cognite_client.files._create_unique_file_names(input_list) == expected_output_list
 
     def test_download_with_duplicate_names(
