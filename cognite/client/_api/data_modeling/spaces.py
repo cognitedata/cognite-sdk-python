@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
 
@@ -17,7 +17,7 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[Space]:
         ...
 
@@ -25,25 +25,25 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[SpaceList]:
         ...
 
     def __call__(
         self,
-        chunk_size: Optional[int] = None,
-        limit: Optional[int] = None,
+        chunk_size: int | None = None,
+        limit: int | None = None,
     ) -> Iterator[Space] | Iterator[SpaceList]:
         """Iterate over spaces
 
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
         Args:
-            chunk_size (int, optional): Number of spaces to return in each chunk. Defaults to yielding one space a time.
-            limit (int, optional): Maximum number of spaces to return. Default to return all items.
+            chunk_size (int | None): Number of spaces to return in each chunk. Defaults to yielding one space a time.
+            limit (int | None): Maximum number of spaces to return. Defaults to returning all items.
 
-        Yields:
-            Union[Space, SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
+        Returns:
+            Iterator[Space] | Iterator[SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
         return self._list_generator(
             list_cls=SpaceList,
@@ -58,10 +58,10 @@ class SpacesAPI(APIClient):
 
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
-        Yields:
-            Space: yields Spaces one by one.
+        Returns:
+            Iterator[Space]: yields Spaces one by one.
         """
-        return cast(Iterator[Space], self())
+        return self()
 
     @overload
     def retrieve(self, space: str) -> Space | None:  # type: ignore[misc]
@@ -75,10 +75,10 @@ class SpacesAPI(APIClient):
         """`Retrieve space by id. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            space (str): Space ID
+            space (str | Sequence[str]): Space ID
 
         Returns:
-            Optional[Space]: Requested space or None if it does not exist.
+            Space | SpaceList | None: Requested space or None if it does not exist.
 
         Examples:
 
@@ -86,7 +86,7 @@ class SpacesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.spaces.retrieve(space='mySpace')
 
-         Get multiple spaces by id:
+            Get multiple spaces by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -126,15 +126,14 @@ class SpacesAPI(APIClient):
 
     def list(
         self,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         include_global: bool = False,
     ) -> SpaceList:
         """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            limit (int, optional): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None
-                to return all items.
-            include_global (bool, optional): Whether to include global spaces. Defaults to False.
+            limit (int | None): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            include_global (bool): Whether to include global spaces. Defaults to False.
 
         Returns:
             SpaceList: List of requested spaces
@@ -181,7 +180,7 @@ class SpacesAPI(APIClient):
         """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_
 
         Args:
-            space (space: Space | Sequence[Space]): Space or spaces of spacesda to create or update.
+            space (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.
 
         Returns:
             Space | SpaceList: Created space(s)

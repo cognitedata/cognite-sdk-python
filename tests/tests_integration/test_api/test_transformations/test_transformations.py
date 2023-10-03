@@ -23,10 +23,19 @@ from cognite.client.data_classes.transformations.common import (
     SequenceRows,
     ViewInfo,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
+from cognite.client.utils._time import timestamp_to_ms
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def transform_cleanup(cognite_client):
+    transforms = cognite_client.transformations.list(created_time={"max": timestamp_to_ms("1d-ago")}, limit=None)
+    if transforms:
+        cognite_client.transformations.delete(id=transforms.as_ids())
+
+
+@pytest.fixture(scope="module")
 def new_datasets(cognite_client):
     ds_ext_id1 = "transformation-ds"
     ds_ext_id2 = "transformation-ds2"
@@ -42,11 +51,13 @@ def new_datasets(cognite_client):
 
 
 @pytest.fixture
-def new_transformation(cognite_client, new_datasets):
+def new_transformation(cognite_client, new_datasets, transform_cleanup):
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     if not isinstance(creds, (OAuthClientCredentials, OAuthClientCertificate)):
         pytest.skip("Only run in CI environment")
+    # TODO: Data Integration team, add:
+    pytest.skip("Need valid credentials for: 'source_oidc_credentials' and 'destination_oidc_credentials'...")
     transform = Transformation(
         name="any",
         query="select 1",
@@ -81,18 +92,14 @@ other_transformation = new_transformation
 
 class TestTransformationsAPI:
     def test_create_transformation_error(self, cognite_client):
-        prefix = random_string(6, string.ascii_letters)
-        transform_without_name = Transformation(
-            external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
-        )
-        try:
-            ts = cognite_client.transformations.create(transform_without_name)
-            failed = False
-            cognite_client.transformations.delete(id=ts.id)
-        except Exception as ex:
-            failed = True
-            str(ex)
-        assert failed
+        xid = f"{random_string(6, string.ascii_letters)}-transformation"
+        transform_without_name = Transformation(external_id=xid, destination=TransformationDestination.assets())
+
+        with pytest.raises(CogniteAPIError, match="^Invalid value for: body") as exc:
+            cognite_client.transformations.create(transform_without_name)
+
+        assert exc.value.code == 400
+        assert exc.value.failed == [transform_without_name]
 
     def test_create_asset_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
@@ -102,6 +109,7 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
+    @pytest.mark.skip(reason="Awaiting access to more than one CDF project for our credentials")
     def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
@@ -447,7 +455,7 @@ class TestTransformationsAPI:
 
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
-        # just make sure it doesnt raise exceptions
+        # just make sure it doesn't raise exceptions
         str(query_result)
 
     def test_update_instance_nodes(self, cognite_client, new_transformation):
@@ -538,46 +546,37 @@ class TestTransformationsAPI:
         other_transformation.tags = ["hi", "kiki"]
         cognite_client.transformations.update([new_transformation, other_transformation])
         ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
-        assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
-        ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
-        assert len(ts3) == 2 and {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
 
-    def test_transformation_str_function(self, cognite_client, new_transformation, new_datasets):
+        new_ts = ts.get(id=new_transformation.id)
+        assert new_ts is not None
+        assert new_ts.tags == ["hello"]
+
+        ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
+        assert len(ts3) == 2
+        assert {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
+
+    def test_transformation_dump_and_str(self, cognite_client, new_transformation, new_datasets):
         cognite_client.transformations.schedules.create(
             TransformationSchedule(external_id=new_transformation.external_id, interval="* * * * *", is_paused=True)
         )
         tr: Transformation = cognite_client.transformations.retrieve(external_id=new_transformation.external_id)
-        import json
+        dumped = tr.dump()  # str also uses dump
+        assert tr.id == dumped["id"] == new_transformation.id
+        assert tr.external_id == dumped["external_id"] == new_transformation.external_id
+        assert tr.name == dumped["name"] == "any"
+        assert tr.query == dumped["query"] == "select 1"
 
-        str_res = json.loads(str(tr))
-        str_res["created_time"] = None
-        str_res["last_updated_time"] = None
-        str_res["owner"] = None
-        str_res["schedule"]["created_time"] = None
-        str_res["schedule"]["last_updated_time"] = None
+        assert tr.destination.type == dumped["destination"]["type"] == "assets"
+        assert tr.conflict_mode == dumped["conflict_mode"] == "upsert"
+        assert tr.is_public is dumped["is_public"] is True
+        assert tr.ignore_null_fields is dumped["ignore_null_fields"] is False
+        assert tr.has_source_oidc_credentials is dumped["has_source_oidc_credentials"] is True
+        assert tr.has_destination_oidc_credentials is dumped["has_destination_oidc_credentials"] is True
+        assert tr.owner_is_current_user is dumped["owner_is_current_user"] is True
+        assert tr.data_set_id == dumped["data_set_id"] == new_datasets[0].id
 
-        assert str_res == {
-            "id": new_transformation.id,
-            "external_id": new_transformation.external_id,
-            "name": "any",
-            "query": "select 1",
-            "destination": {"type": "assets"},
-            "conflict_mode": "upsert",
-            "is_public": True,
-            "ignore_null_fields": False,
-            "has_source_oidc_credentials": True,
-            "has_destination_oidc_credentials": True,
-            "created_time": None,
-            "last_updated_time": None,
-            "owner": None,
-            "owner_is_current_user": True,
-            "schedule": {
-                "id": new_transformation.id,
-                "external_id": new_transformation.external_id,
-                "created_time": None,
-                "last_updated_time": None,
-                "interval": "* * * * *",
-                "is_paused": True,
-            },
-            "data_set_id": new_datasets[0].id,
-        }
+        schedule = dumped["schedule"]
+        assert tr.schedule.id == schedule["id"] == new_transformation.id  # not the id of the schedule...
+        assert tr.schedule.external_id == schedule["external_id"] == new_transformation.external_id
+        assert tr.schedule.interval == schedule["interval"] == "* * * * *"
+        assert tr.schedule.is_paused is schedule["is_paused"] is True

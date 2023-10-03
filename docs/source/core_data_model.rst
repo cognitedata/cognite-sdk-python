@@ -30,6 +30,26 @@ Aggregate asset metadata values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_values
 
+Aggregate Asset Count
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_count
+
+Aggregate Asset Value Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_cardinality_values
+
+Aggregate Asset Property Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_cardinality_properties
+
+Aggregate Asset Unique Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_unique_values
+
+Aggregate Asset Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_unique_properties
+
 Search for assets
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.search
@@ -45,6 +65,10 @@ Create asset hierarchy
 Delete assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.delete
+
+Filter assets
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.filter
 
 Update assets
 ^^^^^^^^^^^^^
@@ -77,7 +101,26 @@ List events
 Aggregate events
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.aggregate
+
+Aggregate Event Count
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_count
+
+Aggregate Event Values Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_cardinality_values
+
+Aggregate Event Property Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_cardinality_properties
+
+Aggregate Event Unique Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique_values
+
+Aggregate Event Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique_properties
 
 Search for events
 ^^^^^^^^^^^^^^^^^
@@ -98,6 +141,10 @@ Update events
 Upsert events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.upsert
+
+Filter events
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.filter
 
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^
@@ -339,6 +386,26 @@ Aggregate time series
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate
 
+Aggregate Time Series Count
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_count
+
+Aggregate Time Series Values Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_cardinality_values
+
+Aggregate Time Series Property Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_cardinality_properties
+
+Aggregate Time Series Unique Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_unique_values
+
+Aggregate Time Series Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_unique_properties
+
 Search for time series
 ^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.search
@@ -350,6 +417,10 @@ Create time series
 Delete time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.delete
+
+Filter time series
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.filter
 
 Update time series
 ^^^^^^^^^^^^^^^^^^
@@ -386,6 +457,26 @@ Aggregate sequences
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate
 
+Aggregate Sequences Count
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_count
+
+Aggregate Sequences Value Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_cardinality_values
+
+Aggregate Sequences Property Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_cardinality_properties
+
+Aggregate Sequences Unique Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_unique_values
+
+Aggregate Sequences Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_unique_properties
+
 Search for sequences
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.search
@@ -397,6 +488,11 @@ Create a sequence
 Delete sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.delete
+
+Filter sequences
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.filter
+
 
 Update sequences
 ^^^^^^^^^^^^^^^^
@@ -445,7 +541,11 @@ Data Point Subscriptions
 ---------------------------
 
 .. warning::
-    DataPoint Subscriptions are experimental and may be subject to breaking changes in future versions without notice.
+    DataPoint Subscription is a new feature:
+      * The API specification is in beta.
+      * The SDK implementation is in alpha.
+
+    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
 
 
 Create data point subscriptions

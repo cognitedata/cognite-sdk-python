@@ -6,9 +6,9 @@ class TestTransformationSchemaAPI:
         asset_columns = cognite_client.transformations.schema.retrieve(destination=TransformationDestination.assets())
         assert len(asset_columns) > 0
         assert len([col for col in asset_columns if col.name == "id"]) > 0
-        assert [col for col in asset_columns if col.name == "id"][0].type.type == "long"
-        assert [col for col in asset_columns if col.name == "metadata"][0].type.type == "map"
-        assert [col for col in asset_columns if col.name == "metadata"][0].type.key_type == "string"
+        assert next(col for col in asset_columns if col.name == "id").type.type == "long"
+        assert next(col for col in asset_columns if col.name == "metadata").type.type == "map"
+        assert next(col for col in asset_columns if col.name == "metadata").type.key_type == "string"
 
     def test_assets_delete(self, cognite_client):
         asset_columns = cognite_client.transformations.schema.retrieve(

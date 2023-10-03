@@ -1,5 +1,5 @@
 """
-This file contains integration tests for the logic in the generic API client. However, since we cannot instansiate a
+This file contains integration tests for the logic in the generic API client. However, since we cannot instantiate a
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
 from unittest.mock import patch
@@ -8,7 +8,8 @@ import pytest
 from pytest import MonkeyPatch
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, Event
+from cognite.client.data_classes import Asset, Event, EventFilter, EventList, aggregations, filters
+from cognite.client.data_classes.events import EventProperty
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 
@@ -330,3 +331,87 @@ class TestAPIClientUpsert:
             assert updated.end_time == existing_event.end_time
         finally:
             cognite_client.events.delete(external_id=existing_event.external_id, ignore_unknown_ids=True)
+
+
+@pytest.fixture(scope="session")
+def event_list(cognite_client: CogniteClient) -> EventList:
+    prefix = "events:_advanced_aggregate:"
+    events = EventList(
+        [
+            Event(
+                external_id=f"{prefix}1",
+                type="type1",
+                subtype="subtype1",
+                start_time=0,
+                source="source1",
+                metadata={
+                    "timezone": "Europe/Oslo",
+                    "shop:dynamic": "ignore",
+                    "shop:static": "file",
+                },
+            ),
+            Event(
+                external_id=f"{prefix}2",
+                type="type1",
+                subtype="subtype2",
+                start_time=100,
+                source="source1",
+                metadata={"timezone": "Europe/Oslo", "shop:dynamic": "rerun", "shop:static": "config"},
+            ),
+            Event(
+                external_id=f"{prefix}3",
+                type="type2",
+                subtype="subtype1",
+                start_time=200,
+                end_time=500,
+                source="source2",
+                metadata={
+                    "timezone": "America/New_York",
+                    "shop:dynamic": "taxing",
+                    "shop:static": "config",
+                },
+            ),
+        ]
+    )
+    retrieved_events = cognite_client.events.retrieve_multiple(
+        external_ids=events.as_external_ids(), ignore_unknown_ids=True
+    )
+    if len(retrieved_events) == len(events):
+        return retrieved_events
+    return cognite_client.events.upsert(events, mode="replace")
+
+
+class TestAPIClientAdvancedAggregate:
+    def test_aggregate_property_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList):
+        filter_ = EventFilter(external_id_prefix="_advanced_aggregate:")
+        advanced_filter = filters.Not(filters.Equals(EventProperty.source, "source2"))
+        agg_filter = aggregations.Prefix("subtype1")
+
+        count = cognite_client.events.aggregate_cardinality_values(
+            property=EventProperty.subtype, filter=filter_, advanced_filter=advanced_filter, aggregate_filter=agg_filter
+        )
+
+        assert count == sum(
+            1
+            for event in event_list
+            if event.subtype.startswith("type1")
+            and event.external_id.startswith("_advanced_aggregate:") == "subtype1"
+            and event.source != "source2"
+        )
+
+    def test_aggregate_path_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList):
+        filter_ = EventFilter(external_id_prefix="_advanced_aggregate:")
+        advanced_filter = filters.Not(filters.Equals(EventProperty.type, "type1"))
+        agg_filter = aggregations.Prefix("shop")
+
+        count = cognite_client.events.aggregate_cardinality_properties(
+            path=EventProperty.metadata, filter=filter_, advanced_filter=advanced_filter, aggregate_filter=agg_filter
+        )
+
+        assert count == sum(
+            1
+            for event in event_list
+            if event.external_id.startswith("_advanced_aggregate:") == "subtype1" and event.type != "type1"
+            for key in event.metadata
+            if key.startswith("shop")
+        )

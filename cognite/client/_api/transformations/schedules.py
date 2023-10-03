@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Sequence
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformations import TransformationFilter
 from cognite.client.utils._identifier import IdentifierSequence
@@ -17,22 +17,22 @@ if TYPE_CHECKING:
 class TransformationSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schedules"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5
         self._DELETE_LIMIT = 5
         self._UPDATE_LIMIT = 5
 
     def create(
-        self, schedule: Union[TransformationSchedule, Sequence[TransformationSchedule]]
-    ) -> Union[TransformationSchedule, TransformationScheduleList]:
+        self, schedule: TransformationSchedule | Sequence[TransformationSchedule]
+    ) -> TransformationSchedule | TransformationScheduleList:
         """`Schedule the specified transformation with the specified configuration(s). <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/createTransformationSchedules>`_
 
         Args:
-            schedule (Union[TransformationSchedule, Sequence[TransformationSchedule]]): Configuration or list of configurations of the schedules to create.
+            schedule (TransformationSchedule | Sequence[TransformationSchedule]): Configuration or list of configurations of the schedules to create.
 
         Returns:
-            Created schedule(s)
+            TransformationSchedule | TransformationScheduleList: Created schedule(s)
 
         Examples:
 
@@ -49,15 +49,15 @@ class TransformationSchedulesAPI(APIClient):
             list_cls=TransformationScheduleList, resource_cls=TransformationSchedule, items=schedule
         )
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TransformationSchedule]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> TransformationSchedule | None:
         """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
-            id (int, optional): transformation ID
-            external_id (str, optional): transformation External ID
+            id (int | None): transformation ID
+            external_id (str | None): transformation External ID
 
         Returns:
-            Optional[TransformationSchedule]: Requested transformation schedule or None if it does not exist.
+            TransformationSchedule | None: Requested transformation schedule or None if it does not exist.
 
         Examples:
 
@@ -80,15 +80,15 @@ class TransformationSchedulesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationScheduleList:
         """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
-            ids (int, optional): transformation IDs
-            external_ids (str, optional): transformation External IDs
+            ids (Sequence[int] | None): transformation IDs
+            external_ids (Sequence[str] | None): transformation External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -116,15 +116,12 @@ class TransformationSchedulesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
-        self, include_public: bool = True, limit: Optional[int] = LIST_LIMIT_DEFAULT
-    ) -> TransformationScheduleList:
+    def list(self, include_public: bool = True, limit: int | None = DEFAULT_LIMIT_READ) -> TransformationScheduleList:
         """`List all transformation schedules. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedules>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
-            cursor (str): Cursor for paging through results.
-            limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
             TransformationScheduleList: List of schedules
@@ -149,19 +146,16 @@ class TransformationSchedulesAPI(APIClient):
 
     def delete(
         self,
-        id: Optional[Union[int, Sequence[int]]] = None,
-        external_id: Optional[Union[str, Sequence[str]]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Unschedule one or more transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
+            id (int | Sequence[int] | None): Id or list of ids
+            external_id (str | Sequence[str] | None): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
 
         Examples:
 
@@ -179,19 +173,17 @@ class TransformationSchedulesAPI(APIClient):
 
     def update(
         self,
-        item: Union[
-            TransformationSchedule,
-            TransformationScheduleUpdate,
-            Sequence[Union[TransformationSchedule, TransformationScheduleUpdate]],
-        ],
-    ) -> Union[TransformationSchedule, TransformationScheduleList]:
+        item: TransformationSchedule
+        | TransformationScheduleUpdate
+        | Sequence[TransformationSchedule | TransformationScheduleUpdate],
+    ) -> TransformationSchedule | TransformationScheduleList:
         """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
 
         Args:
-            item (Union[TransformationSchedule, TransformationScheduleUpdate, Sequence[Union[TransformationSchedule, TransformationScheduleUpdate]]]): Transformation schedule(s) to update
+            item (TransformationSchedule | TransformationScheduleUpdate | Sequence[TransformationSchedule | TransformationScheduleUpdate]): Transformation schedule(s) to update
 
         Returns:
-            Union[TransformationSchedule, TransformationScheduleList]: Updated transformation schedule(s)
+            TransformationSchedule | TransformationScheduleList: Updated transformation schedule(s)
 
         Examples:
 

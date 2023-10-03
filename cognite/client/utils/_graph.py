@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict, List, Set, Tuple
 
-
-def find_all_cycles_with_elements(has_cycles: Set[str], edges: Dict) -> List[List[str]]:
-    """Given a set of connected nodes and a mapping between them (edges), find and return all cycles.
-
-    Raises:
-        KeyError: No loop found or edge does not exist.
-    """
+def find_all_cycles_with_elements(has_cycles: set[str], edges: dict) -> list[list[str]]:
+    """Given a set of connected nodes and a mapping between them (edges), find and return all cycles."""
     cycles = []
-    skip: Set[str] = set()
+    skip: set[str] = set()
     while has_cycles:
         start = has_cycles.pop()
         visited, cycle = find_extended_cycle(start, edges, skip)
@@ -21,19 +15,15 @@ def find_all_cycles_with_elements(has_cycles: Set[str], edges: Dict) -> List[Lis
     return cycles
 
 
-def find_extended_cycle(slow: str, edges: Dict, skip: Set[str]) -> Tuple[Set[str], List[str]]:
-    """Uses Floyd's cycle-finding algo with two pointers "slow" and "fast" moving at different speeds.
-
-    Raises:
-        KeyError: No loop found or edge does not exist.
-    """
+def find_extended_cycle(slow: str, edges: dict, skip: set[str]) -> tuple[set[str], list[str]]:
+    """Uses Floyd's cycle-finding algo with two pointers "slow" and "fast" moving at different speeds."""
     all_elements = {slow}
     fast = edges[slow]
     while slow != fast:
         if slow in skip:
             return all_elements, []
 
-        all_elements.add(slow := edges[slow])  # type: ignore [arg-type, assignment]
+        all_elements.add(slow := edges[slow])
         fast = edges[edges[fast]]
 
     loop_elements = [loop_start := slow]

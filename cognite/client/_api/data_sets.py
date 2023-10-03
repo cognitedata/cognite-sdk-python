@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     DataSet,
     DataSetAggregate,
@@ -22,35 +22,35 @@ if TYPE_CHECKING:
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10
 
     def __call__(
         self,
-        chunk_size: Optional[int] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        external_id_prefix: Optional[str] = None,
-        write_protected: Optional[bool] = None,
-        limit: Optional[int] = None,
-    ) -> Union[Iterator[DataSet], Iterator[DataSetList]]:
+        chunk_size: int | None = None,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[DataSet] | Iterator[DataSetList]:
         """Iterate over data sets
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
         Args:
-            chunk_size (int, optional): Number of data sets to return in each chunk. Defaults to yielding one data set a time.
-            metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
-            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int, optional): Maximum number of data sets to return. Defaults to return all items.
+            chunk_size (int | None): Number of data sets to return in each chunk. Defaults to yielding one data set a time.
+            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
+            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+            write_protected (bool | None): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
+            limit (int | None): Maximum number of data sets to return. Defaults to return all items.
 
-        Yields:
-            Union[DataSet, DataSetList]: yields DataSet one by one if chunk is not specified, else DataSetList objects.
+        Returns:
+            Iterator[DataSet] | Iterator[DataSetList]: yields DataSet one by one if chunk is not specified, else DataSetList objects.
         """
         filter = DataSetFilter(
             metadata=metadata,
@@ -68,19 +68,19 @@ class DataSetsAPI(APIClient):
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
-        Yields:
-            Event: yields DataSet one by one.
+        Returns:
+            Iterator[DataSet]: yields DataSet one by one.
         """
         return cast(Iterator[DataSet], self())
 
-    def create(self, data_set: Union[DataSet, Sequence[DataSet]]) -> Union[DataSet, DataSetList]:
+    def create(self, data_set: DataSet | Sequence[DataSet]) -> DataSet | DataSetList:
         """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
 
         Args:
-            data_set: Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
+            data_set (DataSet | Sequence[DataSet]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
 
         Returns:
-            Union[DataSet, DataSetList]: Created data set(s)
+            DataSet | DataSetList: Created data set(s)
 
         Examples:
 
@@ -94,15 +94,15 @@ class DataSetsAPI(APIClient):
         """
         return self._create_multiple(list_cls=DataSetList, resource_cls=DataSet, items=data_set)
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[DataSet]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
         """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (int | None): ID
+            external_id (str | None): External ID
 
         Returns:
-            Optional[DataSet]: Requested data set or None if it does not exist.
+            DataSet | None: Requested data set or None if it does not exist.
 
         Examples:
 
@@ -123,15 +123,15 @@ class DataSetsAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> DataSetList:
         """`Retrieve multiple data sets by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Sequence[int] | None): IDs
+            external_ids (Sequence[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -156,25 +156,73 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    def aggregate(self, filter: DataSetFilter | dict | None = None) -> list[DataSetAggregate]:
+        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
+
+        Args:
+            filter (DataSetFilter | dict | None): Filter on data set filter with exact match
+
+        Returns:
+            list[DataSetAggregate]: List of data set aggregates
+
+        Examples:
+
+            Aggregate data_sets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_protected = c.data_sets.aggregate(filter={"write_protected": True})
+        """
+
+        return self._aggregate(filter=filter, cls=DataSetAggregate)
+
+    def update(self, item: DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]) -> DataSet | DataSetList:
+        """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
+
+        Args:
+            item (DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]): Data set(s) to update
+
+        Returns:
+            DataSet | DataSetList: Updated data set(s)
+
+        Examples:
+
+            Update a data set that you have fetched. This will perform a full update of the data set::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> data_set = c.data_sets.retrieve(id=1)
+                >>> data_set.description = "New description"
+                >>> res = c.data_sets.update(data_set)
+
+            Perform a partial update on a data set, updating the description and removing a field from metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DataSetUpdate
+                >>> c = CogniteClient()
+                >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
+                >>> res = c.data_sets.update(my_update)
+        """
+        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item)
+
     def list(
         self,
-        metadata: Optional[Dict[str, str]] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        external_id_prefix: Optional[str] = None,
-        write_protected: Optional[bool] = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DataSetList:
         """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
 
         Args:
-            metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
-            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int, optional): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
+            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+            write_protected (bool | None): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
+            limit (int | None): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             DataSetList: List of requested data sets
@@ -210,54 +258,3 @@ class DataSetsAPI(APIClient):
             write_protected=write_protected,
         ).dump(camel_case=True)
         return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
-
-    def aggregate(self, filter: Optional[Union[DataSetFilter, Dict]] = None) -> List[DataSetAggregate]:
-        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
-
-        Args:
-            filter (Union[DataSetFilter, Dict]): Filter on data set filter with exact match
-
-        Returns:
-            List[DataSetAggregate]: List of data set aggregates
-
-        Examples:
-
-            Aggregate data_sets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_protected = c.data_sets.aggregate(filter={"write_protected": True})
-        """
-
-        return self._aggregate(filter=filter, cls=DataSetAggregate)
-
-    def update(
-        self, item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]
-    ) -> Union[DataSet, DataSetList]:
-        """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
-
-        Args:
-            item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]: Data set(s) to update
-
-        Returns:
-            Union[DataSet, DataSetList]: Updated data set(s)
-
-        Examples:
-
-            Update a data set that you have fetched. This will perform a full update of the data set::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> data_set = c.data_sets.retrieve(id=1)
-                >>> data_set.description = "New description"
-                >>> res = c.data_sets.update(data_set)
-
-            Perform a partial update on a data set, updating the description and removing a field from metadata::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import DataSetUpdate
-                >>> c = CogniteClient()
-                >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
-                >>> res = c.data_sets.update(my_update)
-        """
-        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item)

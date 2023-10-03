@@ -47,7 +47,7 @@ for api_name, api in apis:
             for ex in [*parsed_lines, "<end>"]:
                 if isinstance(ex, Example):
                     if ex.source.strip() not in filter_out:
-                        current_snippet += re.sub("(= |in |^)c\.", "\\1client.", ex.source.rstrip()) + "\n"
+                        current_snippet += re.sub(r"(= |in |^)c\.", "\\1client.", ex.source.rstrip()) + "\n"
                 elif ex != "":
                     if current_snippet:
                         endpoint_snippets.append(current_snippet)

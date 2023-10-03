@@ -181,7 +181,7 @@ class TestEvents:
     def test_search(self, cognite_client, mock_events_response):
         res = cognite_client.events.search(filter=EventFilter(external_id_prefix="abc"))
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
+        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
             mock_events_response.calls[0].request.body
         )
 
@@ -189,12 +189,11 @@ class TestEvents:
     def test_search_dict_filter(self, cognite_client, mock_events_response, filter_field):
         res = cognite_client.events.search(filter={filter_field: "bla"})
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "bla"}, "limit": 100} == jsgz_load(
+        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "bla"}, "limit": 25} == jsgz_load(
             mock_events_response.calls[0].request.body
         )
 
     def test_event_update_object(self):
-
         assert isinstance(
             EventUpdate(1)
             .asset_ids.add([])

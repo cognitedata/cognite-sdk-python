@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -16,19 +16,19 @@ class Row(CogniteResource):
     """No description.
 
     Args:
-        key (str): Unique row key
-        columns (Dict[str, Any]): Row data stored as a JSON object.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        key (str | None): Unique row key
+        columns (dict[str, Any] | None): Row data stored as a JSON object.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        key: Optional[str] = None,
-        columns: Optional[Dict[str, Any]] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        key: str | None = None,
+        columns: dict[str, Any] | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.key = key
         self.columns = columns
         self.last_updated_time = last_updated_time
@@ -61,34 +61,47 @@ class Table(CogniteResource):
     """A NoSQL database table to store customer data
 
     Args:
-        name (str): Unique name of the table
-        created_time (int): Time the table was created.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (str | None): Unique name of the table
+        created_time (int | None): Time the table was created.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        created_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        name: str | None = None,
+        created_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-        self._db_name: Optional[str] = None
+        self._db_name: str | None = None
 
-    def rows(self, key: Optional[str] = None, limit: Optional[int] = None) -> Union[Row, RowList]:
+    @overload
+    def rows(self, key: str, limit: int | None = None) -> Row | None:
+        ...
+
+    @overload
+    def rows(self, key: None = None, limit: int | None = None) -> RowList:
+        ...
+
+    def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
         """Get the rows in this table.
 
         Args:
-            key (str): Specify a key to return only that row.
-            limit (int): The number of rows to return.
+            key (str | None): Specify a key to return only that row.
+            limit (int | None): The number of rows to return.
 
         Returns:
-            Union[Row, RowList]: List of tables in this database.
+            Row | RowList | None: List of tables in this database.
         """
-        if key:
+        if self._db_name is None:
+            raise ValueError("Table is not linked to a database, did you instantiate it yourself?")
+        elif self.name is None:
+            raise ValueError("Table 'name' is missing")
+
+        if key is not None:
             return self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
         return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
@@ -101,30 +114,32 @@ class Database(CogniteResource):
     """A NoSQL database to store customer data.
 
     Args:
-        name (str): Unique name of a database.
-        created_time (int): Time the database was created.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (str | None): Unique name of a database.
+        created_time (int | None): Time the database was created.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        created_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        name: str | None = None,
+        created_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def tables(self, limit: Optional[int] = None) -> TableList:
+    def tables(self, limit: int | None = None) -> TableList:
         """Get the tables in this database.
 
         Args:
-            limit (int): The number of tables to return.
+            limit (int | None): The number of tables to return.
 
         Returns:
             TableList: List of tables in this database.
         """
+        if self.name is None:
+            raise ValueError("Unable to list tables, 'name' is not set on instance")
         return self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
 
 

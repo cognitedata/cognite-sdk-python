@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Sequence
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     TransformationJob,
     TransformationJobFilter,
@@ -20,16 +20,16 @@ class TransformationJobsAPI(APIClient):
 
     def list(
         self,
-        limit: Optional[int] = LIST_LIMIT_DEFAULT,
-        transformation_id: Optional[int] = None,
-        transformation_external_id: Optional[str] = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
     ) -> TransformationJobList:
         """`List all running transformation jobs. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobs>`_
 
         Args:
-            limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
-            transformation_id (int): Filters the results by the internal transformation id.
-            transformation_external_id (str): Filters the results by the external transformation id.
+            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            transformation_id (int | None): Filters the results by the internal transformation id.
+            transformation_external_id (str | None): Filters the results by the external transformation id.
 
         Returns:
             TransformationJobList: List of transformation jobs
@@ -57,14 +57,14 @@ class TransformationJobsAPI(APIClient):
             list_cls=TransformationJobList, resource_cls=TransformationJob, method="GET", limit=limit, filter=filter
         )
 
-    def retrieve(self, id: int) -> Optional[TransformationJob]:
+    def retrieve(self, id: int) -> TransformationJob | None:
         """`Retrieve a single transformation job by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
             id (int): Job internal Id
 
         Returns:
-            Optional[TransformationJob]: Requested transformation job or None if it does not exist.
+            TransformationJob | None: Requested transformation job or None if it does not exist.
 
         Examples:
 

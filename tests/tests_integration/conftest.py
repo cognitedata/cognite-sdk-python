@@ -10,6 +10,15 @@ from cognite.client.credentials import OAuthClientCertificate, OAuthClientCreden
 
 @pytest.fixture(scope="session")
 def cognite_client() -> CogniteClient:
+    return make_cognite_client(beta=False)
+
+
+@pytest.fixture(scope="session")
+def cognite_client_beta() -> CogniteClient:
+    return make_cognite_client(beta=True)
+
+
+def make_cognite_client(beta: bool = False) -> CogniteClient:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
         credentials = OAuthClientCredentials(
@@ -38,11 +47,14 @@ def cognite_client() -> CogniteClient:
             "Environment variable LOGIN_FLOW must be set to 'client_credentials', 'client_certificate' or 'interactive'"
         )
 
+    beta_configuration = dict(api_subversion="beta") if beta else dict()
+
     return CogniteClient(
         ClientConfig(
             client_name=os.environ["COGNITE_CLIENT_NAME"],
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
             credentials=credentials,
+            **beta_configuration,
         )
     )

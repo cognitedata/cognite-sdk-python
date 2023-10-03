@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, overload
 
 from requests import Response
 
@@ -27,7 +27,7 @@ _T = TypeVar("_T")
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         # https://docs.cognite.com/api/playground/#operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50
@@ -37,9 +37,9 @@ class DiagramsAPI(APIClient):
     def _camel_post(
         self,
         context_path: str,
-        json: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> Response:
         return self._post(
             self._RESOURCE_PATH + context_path,
@@ -50,10 +50,10 @@ class DiagramsAPI(APIClient):
 
     def _run_job(
         self,
-        job_cls: Type[T_ContextualizationJob],
+        job_cls: type[T_ContextualizationJob],
         job_path: str,
-        status_path: Optional[str] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        status_path: str | None = None,
+        headers: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
@@ -68,7 +68,7 @@ class DiagramsAPI(APIClient):
 
     @staticmethod
     def _list_from_instance_or_list(
-        instance_or_list: Union[Sequence[_T], _T, None], instance_type: Type[_T], error_message: str
+        instance_or_list: Sequence[_T] | _T | None, instance_type: type[_T], error_message: str
     ) -> Sequence[_T]:
         if instance_or_list is None:
             return []
@@ -80,10 +80,10 @@ class DiagramsAPI(APIClient):
 
     @staticmethod
     def _process_file_ids(
-        ids: Union[Sequence[int], int, None],
-        external_ids: Union[Sequence[str], str, None],
-        file_references: Union[Sequence[FileReference], FileReference, None],
-    ) -> List[Union[Dict[str, Union[int, str, Dict[str, int]]], Dict[str, str], Dict[str, int]]]:
+        ids: Sequence[int] | int | None,
+        external_ids: Sequence[str] | str | None,
+        file_references: Sequence[FileReference] | FileReference | None,
+    ) -> list[dict[str, int | str | dict[str, int]] | dict[str, str] | dict[str, int]]:
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = DiagramsAPI._list_from_instance_or_list(
             external_ids, str, "external_ids must be str or list of str"
@@ -103,13 +103,15 @@ class DiagramsAPI(APIClient):
     @overload
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool = False,
+        configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[False],
     ) -> DiagramDetectResults:
@@ -118,43 +120,49 @@ class DiagramsAPI(APIClient):
     @overload
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool = False,
+        configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[True],
-    ) -> Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]:
+    ) -> tuple[DetectJobBundle | None, list[dict[str, Any]]]:
         ...
 
     @overload
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool = False,
+        configuration: dict[str, Any] | None = None,
     ) -> DiagramDetectResults:
         ...
 
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
+        pattern_mode: bool | None = None,
+        configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: bool = False,
-    ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
+    ) -> DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]:
         """Detect entities in a PNID. The results are not written to CDF.
 
         Note:
@@ -162,35 +170,76 @@ class DiagramsAPI(APIClient):
             are able to access the data sent to this endpoint.
 
         Args:
-            entities (Sequence[Union[dict, CogniteResource]]): List of entities to detect
+            entities (Sequence[dict | CogniteResource]): List of entities to detect
             search_field (str): If entities is a list of dictionaries, this is the key to the values to detect in the PnId
             partial_match (bool): Allow for a partial match (e.g. missing prefix).
             min_tokens (int): Minimal number of tokens a match must be based on
-            file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
-            file_external_ids (Sequence[str]): File external ids.
-            file_references (Sequence[FileReference]): File references (id or external id) with page ranges.
-        Keyword Args:
-            multiple_jobs (bool): Enables you to publish multiple jobs. If True the method will return a tuple of DetectJobBundle and list
-                of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
+            file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
+            file_external_ids (str | Sequence[str] | None): File external ids, alternative to file_ids and file_references.
+            file_references (list[FileReference] | FileReference | None): File references (id or external_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
+            pattern_mode (bool | None): Only in beta. If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
+            configuration (dict[str, Any] | None): Only in beta. Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
+            multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
-            Union[DiagramDetectResults, Tuple[DetectJobBundle, List[Dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files.
-            Note that the .result property of the job or job bundle will block waiting for results.
+            DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
+
         Examples:
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.contextualization import FileReference
                 >>> client = CogniteClient()
-                >>> retrieved_model = client.diagrams.detect(
-                    entities=[{"userDefinedField": "21PT1017","ignoredField": "AA11"}],
+                >>> detect_job = client.diagrams.detect(
+                    entities=[{"userDefinedField": "21PT1017","ignoredField": "AA11"}, {"userDefinedField": "21PT1018"}],
                     search_field="userDefinedField",
                     partial_match=True,
                     min_tokens=2,
                     file_ids=[101],
                     file_external_ids=["Test1"],
+                    file_references=[
+                        FileReference(id=20, first_page=1, last_page=10),
+                        FileReference(external_id="ext_20", first_page=11, last_page=20)
+                    ],
                 )
+                >>> result = detect_job.result
+                >>> print(result)
+                <code>
+                {
+                    'items': [
+                        {'fileId': 101, 'annotations': []},
+                        {'fileExternalId': 'Test1', 'fileId: 1, 'annotations': []},
+                        {'fileId': 20, 'fileExternalId': 'ext_20', 'annotations': [], 'pageCount': 17},
+                        {
+                            'fileId': 20,
+                            'fileExternalId': 'ext_20',
+                            'annotations': [
+                                {
+                                    'text': '21PT1017',
+                                    'entities': [{"userDefinedField": "21PT1017","ignoredField": "AA11"}],
+                                    'region': {
+                                        'page': 12,
+                                        'shape': 'rectangle',
+                                        'vertices': [
+                                            {'x': 0.01, 'y': 0.01},
+                                            {'x': 0.01, 'y': 0.02},
+                                            {'x': 0.02, 'y': 0.02},
+                                            {'x': 0.02, 'y': 0.01}
+                                        ]
+                                    }
+                                }
+                            ],
+                            'pageCount': 17
+                        }
+                    ]
+                }
+                </code>
         """
         items = self._process_file_ids(file_ids, file_external_ids, file_references)
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
+        beta_parameters = {}
+        if pattern_mode is not None or configuration is not None:
+            beta_parameters = dict(pattern_mode=pattern_mode, configuration=configuration)
+
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
             if num_new_jobs > self._DETECT_API_STATUS_JOB_LIMIT:
@@ -198,8 +247,8 @@ class DiagramsAPI(APIClient):
                     f"Number of jobs exceed limit of: '{self._DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{num_new_jobs}'"
                 )
 
-            jobs: List[DiagramDetectResults] = []
-            unposted_files: List[Dict[str, Any]] = []
+            jobs: list[DiagramDetectResults] = []
+            unposted_files: list[dict[str, Any]] = []
             for i in range(num_new_jobs):
                 batch = items[(self._DETECT_API_FILE_LIMIT * i) : self._DETECT_API_FILE_LIMIT * (i + 1)]
 
@@ -213,6 +262,7 @@ class DiagramsAPI(APIClient):
                         search_field=search_field,
                         min_tokens=min_tokens,
                         job_cls=DiagramDetectResults,
+                        **beta_parameters,  # type: ignore[arg-type]
                     )
                     jobs.append(posted_job)
                 except CogniteAPIError as exc:
@@ -234,11 +284,12 @@ class DiagramsAPI(APIClient):
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
+            **beta_parameters,  # type: ignore[arg-type]
         )
 
-    def get_detect_jobs(self, job_ids: List[int]) -> List[DiagramDetectResults]:
+    def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
         if self._cognite_client is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
         jobs = res.json()["items"]
         return [
@@ -259,7 +310,7 @@ class DiagramsAPI(APIClient):
             detect_job (DiagramDetectResults): detect job
 
         Returns:
-            items: the format complies with diagram convert schema
+            list: the format complies with diagram convert schema
         """
         if any(item.get("page_range") is not None for item in detect_job.result["items"]):
             raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
@@ -272,7 +323,7 @@ class DiagramsAPI(APIClient):
         """Convert a P&ID to interactive SVGs where the provided annotations are highlighted.
 
         Args:
-            detect_job(DiagramConvertResults): detect job
+            detect_job (DiagramDetectResults): detect job
 
         Returns:
             DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results.

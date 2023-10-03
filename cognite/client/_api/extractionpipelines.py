@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     ExtractionPipeline,
     ExtractionPipelineConfig,
@@ -19,7 +18,6 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.extractionpipelines import StringFilter
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._time import datetime_to_ms, time_ago_to_ms
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -29,20 +27,20 @@ if TYPE_CHECKING:
 class ExtractionPipelinesAPI(APIClient):
     _RESOURCE_PATH = "/extpipes"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.runs = ExtractionPipelineRunsAPI(config, api_version, cognite_client)
         self.config = ExtractionPipelineConfigsAPI(config, api_version, cognite_client)
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[ExtractionPipeline]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:
         """`Retrieve a single extraction pipeline by id. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/showExtPipe>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (int | None): ID
+            external_id (str | None): External ID
 
         Returns:
-            Optional[ExtractionPipeline]: Requested extraction pipeline or None if it does not exist.
+            ExtractionPipeline | None: Requested extraction pipeline or None if it does not exist.
 
         Examples:
 
@@ -66,15 +64,15 @@ class ExtractionPipelinesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> ExtractionPipelineList:
         """`Retrieve multiple extraction pipelines by ids and external ids. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/byidsExtPipes>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Sequence[int] | None): IDs
+            external_ids (Sequence[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -102,12 +100,11 @@ class ExtractionPipelinesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> ExtractionPipelineList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> ExtractionPipelineList:
         """`List extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/listExtPipes>`_
 
         Args:
-            limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ExtractionPipelineList: List of requested ExtractionPipelines
@@ -132,17 +129,17 @@ class ExtractionPipelinesAPI(APIClient):
         ...
 
     def create(
-        self, extraction_pipeline: Union[ExtractionPipeline, Sequence[ExtractionPipeline]]
-    ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
+        self, extraction_pipeline: ExtractionPipeline | Sequence[ExtractionPipeline]
+    ) -> ExtractionPipeline | ExtractionPipelineList:
         """`Create one or more extraction pipelines. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/createExtPipes>`_
 
         You can create an arbitrary number of extraction pipelines, and the SDK will split the request into multiple requests if necessary.
 
         Args:
-            extraction_pipeline (Union[ExtractionPipeline, List[ExtractionPipeline]]): Extraction pipeline or list of extraction pipelines to create.
+            extraction_pipeline (ExtractionPipeline | Sequence[ExtractionPipeline]): Extraction pipeline or list of extraction pipelines to create.
 
         Returns:
-            Union[ExtractionPipeline, ExtractionPipelineList]: Created extraction pipeline(s)
+            ExtractionPipeline | ExtractionPipelineList: Created extraction pipeline(s)
 
         Examples:
 
@@ -159,17 +156,12 @@ class ExtractionPipelinesAPI(APIClient):
             list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extraction_pipeline
         )
 
-    def delete(
-        self, id: Optional[Union[int, Sequence[int]]] = None, external_id: Optional[Union[str, Sequence[str]]] = None
-    ) -> None:
+    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/deleteExtPipes>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
-
-        Returns:
-            None
+            id (int | Sequence[int] | None): Id or list of ids
+            external_id (str | Sequence[str] | None): External ID or list of external ids
 
         Examples:
 
@@ -182,26 +174,24 @@ class ExtractionPipelinesAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(id, external_id), wrap_ids=True, extra_body_fields={})
 
     @overload
-    def update(self, item: Union[ExtractionPipeline, ExtractionPipelineUpdate]) -> ExtractionPipeline:
+    def update(self, item: ExtractionPipeline | ExtractionPipelineUpdate) -> ExtractionPipeline:
         ...
 
     @overload
-    def update(self, item: Sequence[Union[ExtractionPipeline, ExtractionPipelineUpdate]]) -> ExtractionPipelineList:
+    def update(self, item: Sequence[ExtractionPipeline | ExtractionPipelineUpdate]) -> ExtractionPipelineList:
         ...
 
     def update(
         self,
-        item: Union[
-            ExtractionPipeline, ExtractionPipelineUpdate, Sequence[Union[ExtractionPipeline, ExtractionPipelineUpdate]]
-        ],
-    ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
+        item: ExtractionPipeline | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineUpdate],
+    ) -> ExtractionPipeline | ExtractionPipelineList:
         """`Update one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/updateExtPipes>`_
 
         Args:
-            item (Union[ExtractionPipeline, ExtractionPipelineUpdate, Sequence[Union[ExtractionPipeline, ExtractionPipelineUpdate]]]): Extraction pipeline(s) to update
+            item (ExtractionPipeline | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineUpdate]): Extraction pipeline(s) to update
 
         Returns:
-            Union[ExtractionPipeline, ExtractionPipelineList]: Updated extraction pipeline(s)
+            ExtractionPipeline | ExtractionPipelineList: Updated extraction pipeline(s)
 
         Examples:
 
@@ -227,20 +217,19 @@ class ExtractionPipelineRunsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        statuses: Optional[Sequence[str]] = None,
-        message_substring: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        statuses: Sequence[str] | None = None,
+        message_substring: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ExtractionPipelineRunList:
         """`List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/filterRuns>`_
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (Sequence[str]): One or more among "success" / "failure" / "seen".
-            message_substring (str): Failure message part.
-            created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-            limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            statuses (Sequence[str] | None): One or more among "success" / "failure" / "seen".
+            message_substring (str | None): Failure message part.
+            created_time (dict[str, Any] | TimestampRange | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+            limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ExtractionPipelineRunList: List of requested extraction pipeline runs
@@ -292,17 +281,17 @@ class ExtractionPipelineRunsAPI(APIClient):
         ...
 
     def create(
-        self, run: Union[ExtractionPipelineRun, Sequence[ExtractionPipelineRun]]
-    ) -> Union[ExtractionPipelineRun, ExtractionPipelineRunList]:
+        self, run: ExtractionPipelineRun | Sequence[ExtractionPipelineRun]
+    ) -> ExtractionPipelineRun | ExtractionPipelineRunList:
         """`Create one or more extraction pipeline runs. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/createRuns>`_
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 
         Args:
-            run (Union[ExtractionPipelineRun, Sequence[ExtractionPipelineRun]]): Extraction pipeline or list of extraction pipeline runs to create.
+            run (ExtractionPipelineRun | Sequence[ExtractionPipelineRun]): Extraction pipeline or list of extraction pipeline runs to create.
 
         Returns:
-            Union[ExtractionPipelineRun, ExtractionPipelineRunList]: Created extraction pipeline run(s)
+            ExtractionPipelineRun | ExtractionPipelineRunList: Created extraction pipeline run(s)
 
         Examples:
 
@@ -317,85 +306,84 @@ class ExtractionPipelineRunsAPI(APIClient):
         utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, Sequence])
         return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)
 
-    def filter(
-        self,
-        external_id: str,
-        status: Literal["success", "failure", "seen"] | Sequence[Literal["success", "failure", "seen"]] | None = None,
-        created_time: TimestampRange | Dict[str, Any] | str | None = None,
-        message: str | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
-    ) -> ExtractionPipelineRunList:
-        """`Filter extraction pipeline runs <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
-
-        Args:
-            external_id (str): Extraction pipeline external Id.
-            status (Literal["success", "failure", "seen"], optional): Filter for one or more statuses.
-            created_time (TimestampRange | Dict[str, Any] | str, optional): Filter for extraction pipeline runs created within a time range.
-            message (str, optional): Filter for the extraction pipeline runs with substring to find. Ignoring case.
-            limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-
-        Returns:
-            ExtractionPipelineRunList: List of extraction pipeline runs matching the filters.
-
-        Tip:
-            The created_time paremeter supports in addition to a dictonary with the format
-            `{"min": epoch_min, "max": epoch_max}`, arguments given on the format `<integer>(s|m|h|d|w)-ago`.
-            For example, `12h-ago`, which will be parsed to  `{"min"= now - 12h-ago}`.
-
-        Examples:
-
-            Get all pipeline runs with status "success" for pipeliene 'extId':
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="success")
-
-            Get all pipeline runs with a message containing "CLPEX Error" and status ="failure" for pipeline 'extId':
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", message="CPLEX Error")
-
-            Get all failed pipeline runs the last 24 hours for pipeliene 'extId':
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", created_time="24h-ago")
-
-        """
-        status_list: list[str] | None = None
-        if status is not None:
-            status_list = [status] if isinstance(status, str) else cast(List[str], status)
-
-        if isinstance(created_time, str):
-            timespan = time_ago_to_ms(created_time)
-            now = datetime_to_ms(datetime.now(timezone.utc))
-            created_time = TimestampRange(min=now - timespan)
-
-        filter_ = ExtractionPipelineRunFilter(
-            external_id=external_id,
-            statuses=status_list,
-            created_time=created_time,
-            message=StringFilter(substring=message),
-        )
-        return self._list(
-            list_cls=ExtractionPipelineRunList,
-            resource_cls=ExtractionPipelineRun,
-            method="POST",
-            limit=limit,
-            filter=filter_.dump(camel_case=True),
-        )
+    # def filter(
+    #     self,
+    #     external_id: str,
+    #     status: Literal["success", "failure", "seen"] | Sequence[Literal["success", "failure", "seen"]] | None = None,
+    #     created_time: TimestampRange | dict[str, Any] | str | None = None,
+    #     message: str | None = None,
+    #     limit: int = DEFAULT_LIMIT_READ,
+    # ) -> ExtractionPipelineRunList:
+    #     """`Filter extraction pipeline runs <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
+    #
+    #     Args:
+    #         external_id (str): Extraction pipeline external Id.
+    #         status (Literal["success", "failure", "seen")] | Sequence[Literal[("success", "failure", "seen"]] | None): Filter for one or more statuses.
+    #         created_time (TimestampRange | dict[str, Any] | str | None): Filter for extraction pipeline runs created within a time range.
+    #         message (str | None): Filter for the extraction pipeline runs with substring to find. Ignoring case.
+    #         limit (int): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+    #
+    #     Returns:
+    #         ExtractionPipelineRunList: List of extraction pipeline runs matching the filters.
+    #
+    #     Tip:
+    #         The created_time paremeter supports in addition to a dictonary with the format
+    #         `{"min": epoch_min, "max": epoch_max}`, arguments given on the format `<integer>(s|m|h|d|w)-ago`.
+    #         For example, `12h-ago`, which will be parsed to  `{"min"= now - 12h-ago}`.
+    #
+    #     Examples:
+    #
+    #         Get all pipeline runs with status "success" for pipeliene 'extId':
+    #
+    #             >>> from cognite.client import CogniteClient
+    #             >>> from cognite.client.data_classes import ExtractionPipelineRun
+    #             >>> c = CogniteClient()
+    #             >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="success")
+    #
+    #         Get all pipeline runs with a message containing "CLPEX Error" and status ="failure" for pipeline 'extId':
+    #
+    #             >>> from cognite.client import CogniteClient
+    #             >>> from cognite.client.data_classes import ExtractionPipelineRun
+    #             >>> c = CogniteClient()
+    #             >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", message="CPLEX Error")
+    #
+    #         Get all failed pipeline runs the last 24 hours for pipeliene 'extId':
+    #
+    #             >>> from cognite.client import CogniteClient
+    #             >>> from cognite.client.data_classes import ExtractionPipelineRun
+    #             >>> c = CogniteClient()
+    #             >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", created_time="24h-ago")
+    #
+    #     """
+    #     status_list: list[str] | None = None
+    #     if status is not None:
+    #         status_list = [status] if isinstance(status, str) else cast(List[str], status)
+    #
+    #     if isinstance(created_time, str):
+    #         timespan = time_ago_to_ms(created_time)
+    #         now = datetime_to_ms(datetime.now(timezone.utc))
+    #         created_time = TimestampRange(min=now - timespan)
+    #
+    #     filter_ = ExtractionPipelineRunFilter(
+    #         external_id=external_id,
+    #         statuses=status_list,
+    #         created_time=created_time,
+    #         message=StringFilter(substring=message),
+    #     )
+    #     return self._list(
+    #         list_cls=ExtractionPipelineRunList,
+    #         resource_cls=ExtractionPipelineRun,
+    #         method="POST",
+    #         limit=limit,
+    #         filter=filter_.dump(camel_case=True),
+    #     )
 
 
 class ExtractionPipelineConfigsAPI(APIClient):
     _RESOURCE_PATH = "/extpipes/config"
 
     def retrieve(
-        self, external_id: str, revision: Optional[int] = None, active_at_time: Optional[int] = None
+        self, external_id: str, revision: int | None = None, active_at_time: int | None = None
     ) -> ExtractionPipelineConfig:
         """`Retrieve a specific configuration revision, or the latest by default <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/getExtPipeConfigRevision>`
 
@@ -403,8 +391,8 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
         Args:
             external_id (str): External id of the extraction pipeline to retrieve config from.
-            revision (Optional[int]): Optionally specify a revision number to retrieve.
-            active_at_time (Optional[int]): Optionally specify a timestamp the configuration revision should be active.
+            revision (int | None): Optionally specify a revision number to retrieve.
+            active_at_time (int | None): Optionally specify a timestamp the configuration revision should be active.
 
         Returns:
             ExtractionPipelineConfig: Retrieved extraction pipeline configuration revision

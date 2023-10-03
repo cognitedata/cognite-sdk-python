@@ -51,8 +51,31 @@ Revoke a session
 .. automethod:: cognite.client._api.iam.SessionsAPI.revoke
 
 
+User Profiles
+^^^^^^^^^^^^^^^^^^^
+Get my own user profile
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.UserProfilesAPI.me
+
+List user profiles
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.UserProfilesAPI.list
+
+Retrieve one or more user profiles
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.UserProfilesAPI.retrieve
+
+Search for user profiles
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.UserProfilesAPI.search
+
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam
+    :members:
+    :show-inheritance:
+
+.. automodule:: cognite.client.data_classes.user_profiles
     :members:
     :show-inheritance:

@@ -89,14 +89,16 @@ def _worker(executor_reference, work_queue):
 
 class PriorityThreadPoolExecutor(ThreadPoolExecutor):
     """Thread pool executor with queue.PriorityQueue() as its work queue. Accepts a 'priority' parameter
-    thats controls the prioritisation of tasks: lower numbers being run before higher numbers, and
+    that's controls the prioritisation of tasks: lower numbers being run before higher numbers, and
     0 (zero) being the highest possible priority.
 
     All tasks not given a priority will be given `priority=0` to work seamlessly as a stand-in for the
     regular ThreadPoolExecutor.
-    """
 
-    def __init__(self, max_workers=None):
+    Args:
+        max_workers (int | None): Max number of workers threads to spawn."""
+
+    def __init__(self, max_workers: int | None = None) -> None:
         super().__init__(max_workers)
         self._work_queue = PriorityQueue()
         self._task_counter = itertools.count().__next__

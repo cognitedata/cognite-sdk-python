@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
@@ -19,25 +20,25 @@ if TYPE_CHECKING:
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_SUBQUERY_LIMIT = 1000
 
     def _create_filter(
         self,
-        source_external_ids: Optional[Sequence[str]] = None,
-        source_types: Optional[Sequence[str]] = None,
-        target_external_ids: Optional[Sequence[str]] = None,
-        target_types: Optional[Sequence[str]] = None,
-        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
-        start_time: Optional[Dict[str, int]] = None,
-        end_time: Optional[Dict[str, int]] = None,
-        confidence: Optional[Dict[str, int]] = None,
-        last_updated_time: Optional[Dict[str, int]] = None,
-        created_time: Optional[Dict[str, int]] = None,
-        active_at_time: Optional[Dict[str, int]] = None,
-        labels: Optional[LabelFilter] = None,
-    ) -> Dict[str, Any]:
+        source_external_ids: Sequence[str] | None = None,
+        source_types: Sequence[str] | None = None,
+        target_external_ids: Sequence[str] | None = None,
+        target_types: Sequence[str] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+    ) -> dict[str, Any]:
         return RelationshipFilter(
             source_external_ids=source_external_ids,
             source_types=source_types,
@@ -55,47 +56,49 @@ class RelationshipsAPI(APIClient):
 
     def __call__(
         self,
-        source_external_ids: Optional[Sequence[str]] = None,
-        source_types: Optional[Sequence[str]] = None,
-        target_external_ids: Optional[Sequence[str]] = None,
-        target_types: Optional[Sequence[str]] = None,
-        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
-        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        start_time: Optional[Dict[str, int]] = None,
-        end_time: Optional[Dict[str, int]] = None,
-        confidence: Optional[Dict[str, int]] = None,
-        last_updated_time: Optional[Dict[str, int]] = None,
-        created_time: Optional[Dict[str, int]] = None,
-        active_at_time: Optional[Dict[str, int]] = None,
-        labels: Optional[LabelFilter] = None,
-        limit: Optional[int] = None,
+        source_external_ids: Sequence[str] | None = None,
+        source_types: Sequence[str] | None = None,
+        target_external_ids: Sequence[str] | None = None,
+        target_types: Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        limit: int | None = None,
         fetch_resources: bool = False,
-        chunk_size: Optional[int] = None,
-        partitions: Optional[int] = None,
-    ) -> Union[Iterator[Relationship], Iterator[RelationshipList]]:
+        chunk_size: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Relationship] | Iterator[RelationshipList]:
         """Iterate over relationships
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Args:
-            source_external_ids (Sequence[str]): Include relationships that have any of these values in their source External Id field
-            source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
-            target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
-            target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            confidence (Dict[str, int]): Range to filter the field for (inclusive).
-            last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
-            created_time (Dict[str, int]): Range to filter the field for (inclusive).
-            active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-            labels (LabelFilter): Return only the resource matching the specified label constraints.
-            chunk_size (int, optional): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
-            partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
+            source_external_ids (Sequence[str] | None): Include relationships that have any of these values in their source External Id field
+            source_types (Sequence[str] | None): Include relationships that have any of these values in their source Type field
+            target_external_ids (Sequence[str] | None): Include relationships that have any of these values in their target External Id field
+            target_types (Sequence[str] | None): Include relationships that have any of these values in their target Type field
+            data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
+            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            confidence (dict[str, int] | None): Range to filter the field for (inclusive).
+            last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
+            created_time (dict[str, int] | None): Range to filter the field for (inclusive).
+            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            labels (LabelFilter | None): Return only the resource matching the specified label constraints.
+            limit (int | None): No description.
+            fetch_resources (bool): No description.
+            chunk_size (int | None): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
+            partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
-        Yields:
-            Union[Relationship, RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
+        Returns:
+            Iterator[Relationship] | Iterator[RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -138,21 +141,20 @@ class RelationshipsAPI(APIClient):
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
-        Yields:
-            Relationship: yields Relationships one by one.
+        Returns:
+            Iterator[Relationship]: yields Relationships one by one.
         """
         return cast(Iterator[Relationship], self())
 
-    def retrieve(self, external_id: str, fetch_resources: bool = False) -> Optional[Relationship]:
+    def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.
 
         Args:
             external_id (str): External ID
-            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
-                source and target fields.
+            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the source and target fields.
 
         Returns:
-            Optional[Relationship]: Requested relationship or None if it does not exist.
+            Relationship | None: Requested relationship or None if it does not exist.
 
         Examples:
 
@@ -170,13 +172,16 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def retrieve_multiple(self, external_ids: Sequence[str], fetch_resources: bool = False) -> RelationshipList:
+    def retrieve_multiple(
+        self, external_ids: Sequence[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
+    ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
         Args:
             external_ids (Sequence[str]): External IDs
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             RelationshipList: The requested relationships.
@@ -195,48 +200,47 @@ class RelationshipsAPI(APIClient):
             resource_cls=Relationship,
             identifiers=identifiers,
             other_params={"fetchResources": fetch_resources},
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(
         self,
-        source_external_ids: Optional[Sequence[str]] = None,
-        source_types: Optional[Sequence[str]] = None,
-        target_external_ids: Optional[Sequence[str]] = None,
-        target_types: Optional[Sequence[str]] = None,
-        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
-        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        start_time: Optional[Dict[str, int]] = None,
-        end_time: Optional[Dict[str, int]] = None,
-        confidence: Optional[Dict[str, int]] = None,
-        last_updated_time: Optional[Dict[str, int]] = None,
-        created_time: Optional[Dict[str, int]] = None,
-        active_at_time: Optional[Dict[str, int]] = None,
-        labels: Optional[LabelFilter] = None,
-        limit: int = 100,
-        partitions: Optional[int] = None,
+        source_external_ids: Sequence[str] | None = None,
+        source_types: Sequence[str] | None = None,
+        target_external_ids: Sequence[str] | None = None,
+        target_types: Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
         """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_
 
         Args:
-            source_external_ids (Sequence[str]): Include relationships that have any of these values in their source External Id field
-            source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
-            target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
-            target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            confidence (Dict[str, int]): Range to filter the field for (inclusive).
-            last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
-            created_time (Dict[str, int]): Range to filter the field for (inclusive).
-            active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-            labels (LabelFilter): Return only the resource matching the specified label constraints.
-            limit (int): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
-                to return all items.
-            partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
-            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
-                source and target fields.
+            source_external_ids (Sequence[str] | None): Include relationships that have any of these values in their source External Id field
+            source_types (Sequence[str] | None): Include relationships that have any of these values in their source Type field
+            target_external_ids (Sequence[str] | None): Include relationships that have any of these values in their target External Id field
+            target_types (Sequence[str] | None): Include relationships that have any of these values in their target Type field
+            data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
+            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            confidence (dict[str, int] | None): Range to filter the field for (inclusive).
+            last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
+            created_time (dict[str, int] | None): Range to filter the field for (inclusive).
+            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            labels (LabelFilter | None): Return only the resource matching the specified label constraints.
+            limit (int | None): Maximum number of relationships to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
+            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the source and target fields.
 
         Returns:
             RelationshipList: List of requested relationships
@@ -272,8 +276,8 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        target_external_id_list: List[str] = filter.get("targetExternalIds", [])
-        source_external_id_list: List[str] = filter.get("sourceExternalIds", [])
+        target_external_id_list: list[str] = filter.get("targetExternalIds", [])
+        source_external_id_list: list[str] = filter.get("sourceExternalIds", [])
         if (
             len(target_external_id_list) > self._LIST_SUBQUERY_LIMIT
             or len(source_external_id_list) > self._LIST_SUBQUERY_LIMIT
@@ -319,16 +323,14 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def create(
-        self, relationship: Union[Relationship, Sequence[Relationship]]
-    ) -> Union[Relationship, RelationshipList]:
+    def create(self, relationship: Relationship | Sequence[Relationship]) -> Relationship | RelationshipList:
         """`Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_
 
         Args:
-            relationship (Union[Relationship, Sequence[Relationship]]): Relationship or list of relationships to create.
+            relationship (Relationship | Sequence[Relationship]): Relationship or list of relationships to create.
 
         Returns:
-            Union[Relationship, RelationshipList]: Created relationship(s)
+            Relationship | RelationshipList: Created relationship(s)
 
         Note:
             - The source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
@@ -370,16 +372,16 @@ class RelationshipsAPI(APIClient):
         return self._create_multiple(list_cls=RelationshipList, resource_cls=Relationship, items=relationship)
 
     def update(
-        self, item: Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]
-    ) -> Union[Relationship, RelationshipList]:
+        self, item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]
+    ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]): Relationship(s) to update
+            item (Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]): Relationship(s) to update
 
         Returns:
-            Union[Relationship, RelationshipList]: Updated relationship(s)
+            Relationship | RelationshipList: Updated relationship(s)
 
         Examples:
             Update a data set that you have fetched. This will perform a full update of the data set::
@@ -433,16 +435,14 @@ class RelationshipsAPI(APIClient):
         self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"] = "patch"
     ) -> Relationship | RelationshipList:
         """Upsert relationships, i.e., update if it exists, and create if it does not exist.
-         Note this is a convenience method that handles the upserting for you by first calling update on all items,
-         and if any of them fail because they do not exist, it will create them instead.
+            Note this is a convenience method that handles the upserting for you by first calling update on all items,
+            and if any of them fail because they do not exist, it will create them instead.
 
-         For more details, see :ref:`appendix-upsert`.
+            For more details, see :ref:`appendix-upsert`.
 
         Args:
             item (Relationship | Sequence[Relationship]): Relationship or list of relationships to upsert.
-            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the relationships are existing. If
-                                                you set 'patch', the call will only update fields with non-null values (default).
-                                                Setting 'replace' will unset any fields that are not specified.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the relationships are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Relationship | RelationshipList: The upserted relationship(s).
@@ -468,15 +468,12 @@ class RelationshipsAPI(APIClient):
             mode=mode,
         )
 
-    def delete(self, external_id: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_
 
         Args:
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
+            external_id (str | Sequence[str]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
-        Returns:
-            None
-
         Examples:
 
             Delete relationships by external id::

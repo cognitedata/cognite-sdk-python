@@ -5,7 +5,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Any, Callable, MutableMapping, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Literal, MutableMapping
 
 import requests
 import requests.adapters
@@ -16,7 +16,10 @@ from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionR
 
 
 class BlockAll(cookiejar.CookiePolicy):
-    return_ok = set_ok = domain_return_ok = path_return_ok = lambda self, *args, **kwargs: False
+    def no(*args: Any, **kwargs: Any) -> Literal[False]:
+        return False
+
+    return_ok = set_ok = domain_return_ok = path_return_ok = no
     netscape = True
     rfc2965 = hide_cookie2 = False
 
@@ -41,14 +44,14 @@ def get_global_requests_session() -> requests.Session:
 class HTTPClientConfig:
     def __init__(
         self,
-        status_codes_to_retry: Set[int],
+        status_codes_to_retry: set[int],
         backoff_factor: float,
         max_backoff_seconds: int,
         max_retries_total: int,
         max_retries_status: int,
         max_retries_read: int,
         max_retries_connect: int,
-    ):
+    ) -> None:
         self.status_codes_to_retry = status_codes_to_retry
         self.backoff_factor = backoff_factor
         self.max_backoff_seconds = max_backoff_seconds
@@ -59,7 +62,7 @@ class HTTPClientConfig:
 
 
 class _RetryTracker:
-    def __init__(self, config: HTTPClientConfig):
+    def __init__(self, config: HTTPClientConfig) -> None:
         self.config = config
         self.status = 0
         self.read = 0
@@ -77,7 +80,7 @@ class _RetryTracker:
         backoff_time_adjusted = self._max_backoff_and_jitter(backoff_time)
         return backoff_time_adjusted
 
-    def should_retry(self, status_code: Optional[int]) -> bool:
+    def should_retry(self, status_code: int | None) -> bool:
         if self.total >= self.config.max_retries_total:
             return False
         if self.status > 0 and self.status >= self.config.max_retries_status:
@@ -98,7 +101,7 @@ class HTTPClient:
         session: requests.Session,
         refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
         retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
-    ):
+    ) -> None:
         self.session = session
         self.config = config
         self.refresh_auth_header = refresh_auth_header
@@ -163,7 +166,7 @@ class HTTPClient:
 
     @classmethod
     def _any_exception_in_context_isinstance(
-        cls, exc: BaseException, exc_types: Union[Tuple[Type[BaseException], ...], Type[BaseException]]
+        cls, exc: BaseException, exc_types: tuple[type[BaseException], ...] | type[BaseException]
     ) -> bool:
         """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
         the __context__ attribute.

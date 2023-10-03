@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Sequence
 
+from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
@@ -24,11 +25,12 @@ if TYPE_CHECKING:
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.groups = GroupsAPI(config, api_version, cognite_client)
         self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
         self.sessions = SessionsAPI(config, api_version, cognite_client)
+        self.user_profiles = UserProfilesAPI(config, api_version, cognite_client)
         # TokenAPI only uses base_url, so we pass `api_version=None`:
         self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
 
@@ -56,13 +58,13 @@ class GroupsAPI(APIClient):
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         return GroupList._load(res.json()["items"])
 
-    def create(self, group: Union[Group, Sequence[Group]]) -> Union[Group, GroupList]:
+    def create(self, group: Group | Sequence[Group]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
 
         Args:
-            group (Union[Group, Sequence[Group]]): Group or list of groups to create.
+            group (Group | Sequence[Group]): Group or list of groups to create.
         Returns:
-            Union[Group, GroupList]: The created group(s).
+            Group | GroupList: The created group(s).
 
         Example:
 
@@ -77,14 +79,11 @@ class GroupsAPI(APIClient):
         """
         return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group)
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
 
         Args:
-            id (Union[int, Sequence[int]]): ID or list of IDs of groups to delete.
-
-        Returns:
-            None
+            id (int | Sequence[int]): ID or list of IDs of groups to delete.
 
         Example:
 
@@ -100,11 +99,11 @@ class GroupsAPI(APIClient):
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> SecurityCategoryList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
         """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
-            limit (int): Max number of security categories to return. Defaults to 25.
+            limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SecurityCategoryList: List of security categories
@@ -120,15 +119,15 @@ class SecurityCategoriesAPI(APIClient):
         return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
     def create(
-        self, security_category: Union[SecurityCategory, Sequence[SecurityCategory]]
-    ) -> Union[SecurityCategory, SecurityCategoryList]:
+        self, security_category: SecurityCategory | Sequence[SecurityCategory]
+    ) -> SecurityCategory | SecurityCategoryList:
         """`Create one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
-            security_category (Union[SecurityCategory, Sequence[SecurityCategory]]): Security category or list of categories to create.
+            security_category (SecurityCategory | Sequence[SecurityCategory]): Security category or list of categories to create.
 
         Returns:
-            Union[SecurityCategory, SecurityCategoryList]: The created security category or categories.
+            SecurityCategory | SecurityCategoryList: The created security category or categories.
 
         Example:
 
@@ -144,14 +143,11 @@ class SecurityCategoriesAPI(APIClient):
             list_cls=SecurityCategoryList, resource_cls=SecurityCategory, items=security_category
         )
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
-            id (Union[int, Sequence[int]]): ID or list of IDs of security categories to delete.
-
-        Returns:
-            None
+            id (int | Sequence[int]): ID or list of IDs of security categories to delete.
 
         Example:
 
@@ -187,19 +183,15 @@ class TokenAPI(APIClient):
 class SessionsAPI(APIClient):
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
-    def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:
+    def create(self, client_credentials: ClientCredentials | None = None) -> CreatedSession:
         """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
 
         Args:
-            client_credentials (Optional[ClientCredentials]): The client credentials to create the session. If set to None,
-                a session will be created using the credentials used to instantiate -this- CogniteClient object. If that
-                was done using a token, a session will be created using token exchange. Similarly, if the credentials were
-                client credentials, a session will be created using client credentials. This method does not work when
-                using client certificates (not supported server-side).
+            client_credentials (ClientCredentials | None): The client credentials to create the session. If set to None, a session will be created using the credentials used to instantiate -this- CogniteClient object. If that was done using a token, a session will be created using token exchange. Similarly, if the credentials were client credentials, a session will be created using client credentials. This method does not work when using client certificates (not supported server-side).
 
         Returns:
             CreatedSession: The object with token inspection details.
@@ -210,11 +202,11 @@ class SessionsAPI(APIClient):
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
         return CreatedSession._load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
-    def revoke(self, id: Union[int, Sequence[int]]) -> SessionList:
+    def revoke(self, id: int | Sequence[int]) -> SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of session ids
+            id (int | Sequence[int]): Id or list of session ids
 
         Returns:
             SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
@@ -224,11 +216,11 @@ class SessionsAPI(APIClient):
 
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
-    def list(self, status: Optional[str] = None) -> SessionList:
+    def list(self, status: str | None = None) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
-            status (Optional[str]): If given, only sessions with the given status are returned.
+            status (str | None): If given, only sessions with the given status are returned.
 
         Returns:
             SessionList: a list of sessions in the current project.

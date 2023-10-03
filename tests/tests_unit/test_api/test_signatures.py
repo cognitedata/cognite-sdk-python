@@ -46,7 +46,7 @@ class TestListAndIterSignatures:
     )
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):
         iter_parameters = dict(inspect.signature(api.__call__).parameters)
-        for name in set([*ignore, "chunk_size", "limit"]):
+        for name in {*ignore, "chunk_size", "limit"}:
             del iter_parameters[name]
 
         list_parameters = dict(inspect.signature(api.list).parameters)
@@ -54,7 +54,6 @@ class TestListAndIterSignatures:
             del list_parameters[name]
 
         filter_parameters = dict(inspect.signature(filter.__init__).parameters)
-        del filter_parameters["cognite_client"]
 
         iter_parameters = {v.name for _, v in iter_parameters.items()}
         filter_parameters = {v.name for _, v in filter_parameters.items()}

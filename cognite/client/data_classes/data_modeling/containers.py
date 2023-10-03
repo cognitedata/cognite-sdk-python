@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -16,8 +16,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     PropertyType,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
 
 
 class ContainerCore(DataModelingResource):
@@ -26,12 +25,13 @@ class ContainerCore(DataModelingResource):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
+        constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
+        indexes (dict[str, Index] | None): Set of indexes to apply to the container.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -39,13 +39,13 @@ class ContainerCore(DataModelingResource):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        used_for: Optional[Literal["node", "edge", "all"]] = None,
-        constraints: Optional[dict[str, Constraint]] = None,
-        indexes: Optional[dict[str, Index]] = None,
+        description: str | None = None,
+        name: str | None = None,
+        used_for: Literal["node", "edge", "all"] | None = None,
+        constraints: dict[str, Constraint] | None = None,
+        indexes: dict[str, Index] | None = None,
         **_: Any,
-    ):
+    ) -> None:
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -64,7 +64,7 @@ class ContainerCore(DataModelingResource):
             data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
         if "properties" in data:
             data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
-        return cast(ContainerCore, super().load(data))
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -87,12 +87,12 @@ class ContainerApply(ContainerCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
+        constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
+        indexes (dict[str, Index] | None): Set of indexes to apply to the container.
     """
 
     def __init__(
@@ -100,12 +100,12 @@ class ContainerApply(ContainerCore):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        used_for: Optional[Literal["node", "edge", "all"]] = None,
-        constraints: Optional[dict[str, Constraint]] = None,
-        indexes: Optional[dict[str, Index]] = None,
-    ):
+        description: str | None = None,
+        name: str | None = None,
+        used_for: Literal["node", "edge", "all"] | None = None,
+        constraints: dict[str, Constraint] | None = None,
+        indexes: dict[str, Index] | None = None,
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
@@ -116,15 +116,16 @@ class Container(ContainerCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        used_for (Literal["node", "edge", "all"]): Should this operation apply to nodes, edges or both.
+        constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
+        indexes (dict[str, Index] | None): Set of indexes to apply to the container.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -135,13 +136,13 @@ class Container(ContainerCore):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
         used_for: Literal["node", "edge", "all"] = "node",
-        constraints: Optional[dict[str, Constraint]] = None,
-        indexes: Optional[dict[str, Index]] = None,
+        constraints: dict[str, Constraint] | None = None,
+        indexes: dict[str, Index] | None = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
         self.last_updated_time = last_updated_time
@@ -196,21 +197,21 @@ class ContainerFilter(CogniteFilter):
     """Represent the filter arguments for the list endpoint.
 
     Args:
-        space (str): The space to query
+        space (str | None): The space to query
         include_global (bool): Whether the global containers should be included.
     """
 
-    def __init__(self, space: Optional[str] = None, include_global: bool = False):
+    def __init__(self, space: str | None = None, include_global: bool = False) -> None:
         self.space = space
         self.include_global = include_global
 
 
-@dataclass
+@dataclass(frozen=True)
 class ContainerProperty:
     type: PropertyType
     nullable: bool = True
     auto_increment: bool = False
-    name: Optional[str] = None
+    name: str | None = None
     default_value: str | int | dict | None = None
     description: str | None = None
 
@@ -219,10 +220,17 @@ class ContainerProperty:
         if "type" not in data:
             raise ValueError("Type not specified")
         if data["type"].get("type") == "direct":
-            data["type"] = DirectRelation.load(data["type"])
+            type_: PropertyType = DirectRelation.load(data["type"])
         else:
-            data["type"] = PropertyType.load(data["type"])
-        return cls(**convert_all_keys_to_snake_case(data))
+            type_ = PropertyType.load(data["type"])
+        return cls(
+            type=type_,
+            nullable=data["nullable"],
+            auto_increment=data["autoIncrement"],
+            name=data.get("name"),
+            default_value=data.get("defaultValue"),
+            description=data.get("description"),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
         output = asdict(self)
@@ -231,40 +239,32 @@ class ContainerProperty:
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
-@dataclass
+@dataclass(frozen=True)
 class Constraint(ABC):
     @classmethod
-    def _load(cls, data: dict) -> Constraint:
-        return cls(**convert_all_keys_to_snake_case(data))
-
-    @classmethod
-    def load(cls, data: dict) -> RequiresConstraintDefinition | UniquenessConstraintDefinition:
+    def load(cls, data: dict) -> RequiresConstraint | UniquenessConstraintDefinition:
         if data["constraintType"] == "requires":
-            return RequiresConstraintDefinition.load(data)
+            return RequiresConstraint.load(data)
         elif data["constraintType"] == "uniqueness":
             return UniquenessConstraintDefinition.load(data)
         raise ValueError(f"Invalid constraint type {data['constraintType']}")
 
+    @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = asdict(self)
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        raise NotImplementedError
 
 
-@dataclass
-class RequiresConstraintDefinition(Constraint):
+@dataclass(frozen=True)
+class RequiresConstraint(Constraint):
     require: ContainerId
 
     @classmethod
-    def load(cls, data: dict) -> RequiresConstraintDefinition:
-        output = cast(
-            RequiresConstraintDefinition, super()._load(rename_and_exclude_keys(data, exclude={"constraintType"}))
-        )
-        if "require" in data:
-            output.require = ContainerId.load(data["require"])
-        return output
+    def load(cls, data: dict) -> RequiresConstraint:
+        return cls(require=ContainerId.load(data["require"]))
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = super().dump(camel_case)
+        as_dict = asdict(self)
+        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         if "require" in output and isinstance(output["require"], dict):
             output["require"] = self.require.dump(camel_case)
         key = "constraintType" if camel_case else "constraint_type"
@@ -272,37 +272,67 @@ class RequiresConstraintDefinition(Constraint):
         return output
 
 
-@dataclass
-class UniquenessConstraintDefinition(Constraint):
+@dataclass(frozen=True)
+class UniquenessConstraint(Constraint):
     properties: list[str]
 
     @classmethod
-    def load(cls, data: dict) -> UniquenessConstraintDefinition:
-        return cast(
-            UniquenessConstraintDefinition, super()._load(rename_and_exclude_keys(data, exclude={"constraintType"}))
-        )
+    def load(cls, data: dict) -> UniquenessConstraint:
+        return cls(properties=data["properties"])
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = super().dump()
+        as_dict = asdict(self)
+        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "uniqueness"
         return output
 
 
-@dataclass
-class Index:
+# Type aliases for backwards compatibility after renaming
+# TODO: Remove in some future major version
+RequiresConstraintDefinition = RequiresConstraint
+UniquenessConstraintDefinition = UniquenessConstraint
+
+
+@dataclass(frozen=True)
+class Index(ABC):
+    @classmethod
+    def load(cls, data: dict) -> Index:
+        if data["indexType"] == "btree":
+            return BTreeIndex.load(data)
+        if data["indexType"] == "inverted":
+            return InvertedIndex.load(data)
+        raise ValueError(f"Invalid index type {data['indexType']}")
+
+    @abstractmethod
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class BTreeIndex(Index):
     properties: list[str]
-    index_type: Literal["btree"] | str = "btree"
     cursorable: bool = False
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> Index:
-        data = convert_all_keys_to_snake_case(data)
-        # We want to avoid repeating the default values here (e.g. cursorable = False):
-        for key in set(data) - set(cls.__dataclass_fields__):
-            del data[key]
-        return cls(**data)
+    def load(cls, data: dict[str, Any]) -> BTreeIndex:
+        return cls(properties=data["properties"], cursorable=data["cursorable"])
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = asdict(self)
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        as_dict = asdict(self)
+        as_dict["indexType" if camel_case else "index_type"] = "btree"
+        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+
+
+@dataclass(frozen=True)
+class InvertedIndex(Index):
+    properties: list[str]
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> InvertedIndex:
+        return cls(properties=data["properties"])
+
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        as_dict = asdict(self)
+        as_dict["indexType" if camel_case else "index_type"] = "inverted"
+        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict

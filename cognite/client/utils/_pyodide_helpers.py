@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, MutableMapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, MutableMapping
 
 import cognite.client as cc
 from cognite.client._http_client import _RetryTracker
@@ -10,7 +10,6 @@ from cognite.client.config import ClientConfig
 from cognite.client.credentials import CredentialProvider
 
 if TYPE_CHECKING:
-
     from requests import Session
 
     from cognite.client._http_client import HTTPClient, HTTPClientConfig
@@ -34,7 +33,7 @@ def patch_sdk_for_pyodide() -> None:
 
     # - Use another HTTP adapter:
     cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
-    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [assignment]
+    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [method-assign]
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
@@ -65,7 +64,7 @@ def http_client__init__(
     refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
     retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
 ) -> None:
-    import pyodide_http  # type: ignore [import]
+    import pyodide_http
 
     self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
     self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
@@ -87,7 +86,7 @@ class EnvVarToken(CredentialProvider):
     def __token_factory(self) -> str:
         return os.environ[self.key]
 
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         return "Authorization", f"Bearer {self.__token_factory()}"
 
 
@@ -95,10 +94,10 @@ class FusionNotebookConfig(ClientConfig):
     def __init__(
         self,
         client_name: str = "DSHubLite",
-        api_subversion: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-        file_transfer_timeout: Optional[int] = None,
+        api_subversion: str | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
+        file_transfer_timeout: int | None = None,
         debug: bool = False,
     ) -> None:
         super().__init__(
