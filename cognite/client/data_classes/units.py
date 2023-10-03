@@ -67,8 +67,9 @@ class Unit(CogniteResource):
 
     Args:
         external_id (str): A unique identifier of the unit.
-        name (str): The name of the unit, e.g. °C for Celsius.
+        name (str): The name of the unit, e.g. DEG_C for Celsius.
         long_name (str): A more descriptive name of the unit, e.g., degrees Celsius.
+        symbol (str): The symbol of the unit, e.g., °C.
         alias_names (list[str]): List of alias names for the unit, e.g., Degree C, degC, °C, and so on.
         quantity (str): The quantity of the unit, e.g., temperature.
         conversion (UnitConversion): The conversion between the unit and its base unit. For example, the base unit for
@@ -82,6 +83,7 @@ class Unit(CogniteResource):
         external_id: str,
         name: str,
         long_name: str,
+        symbol: str,
         alias_names: list[str],
         quantity: str,
         conversion: UnitConversion,
@@ -91,6 +93,7 @@ class Unit(CogniteResource):
         self.external_id = external_id
         self.name = name
         self.long_name = long_name
+        self.symbol = symbol
         self.alias_names = alias_names
         self.quantity = quantity
         self.conversion = conversion
@@ -108,6 +111,7 @@ class Unit(CogniteResource):
             external_id=resource["externalId"],
             name=resource["name"],
             long_name=resource["longName"],
+            symbol=resource["symbol"],
             alias_names=resource["aliasNames"],
             quantity=resource["quantity"],
             conversion=UnitConversion.load(resource["conversion"]),
@@ -120,6 +124,7 @@ class Unit(CogniteResource):
             ("externalId" if camel_case else "external_id"): self.external_id,
             "name": self.name,
             ("longName" if camel_case else "long_name"): self.long_name,
+            "symbol": self.symbol,
             ("aliasNames" if camel_case else "alias_names"): self.alias_names,
             "quantity": self.quantity,
             "conversion": self.conversion.dump(camel_case),
