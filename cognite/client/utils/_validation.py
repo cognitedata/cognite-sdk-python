@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence, TypeVar
 
+from cognite.client.data_classes._base import CogniteSort
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client.utils._identifier import T_ID
+
+
+SortSpecT = TypeVar("SortSpecT")
 
 
 def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[str]) -> dict[str, T_ID]:
@@ -45,3 +49,13 @@ process_data_set_ids: Callable[
 process_asset_subtree_ids: Callable[
     [int | Sequence[int] | None, str | Sequence[str] | None], list[dict[str, int | str]] | None
 ] = functools.partial(_process_identifiers, id_name="asset_subtree")
+
+
+def prepare_filter_sort(
+    sort: SortSpecT | list[SortSpecT] | None, sort_type: CogniteSort
+) -> list[dict[str, Any]] | None:
+    if sort is not None:
+        if not isinstance(sort, list):
+            sort = [sort]
+        return [sort_type.load(item).dump(camel_case=True) for item in sort]
+    return None

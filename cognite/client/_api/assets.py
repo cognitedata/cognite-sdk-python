@@ -53,7 +53,7 @@ from cognite.client.utils._auxiliary import split_into_n_parts
 from cognite.client.utils._concurrency import classify_error, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -908,13 +908,6 @@ class AssetsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        if sort is not None:
-            if not isinstance(sort, list):
-                sort = [sort]
-            sort_dumped = [AssetSort.load(item).dump(camel_case=True) for item in sort]
-        else:
-            sort_dumped = None
-
         if aggregated_properties:
             aggregated_properties_camel = [to_camel_case(prop) for prop in aggregated_properties]
         else:
@@ -926,7 +919,7 @@ class AssetsAPI(APIClient):
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=sort_dumped,
+            sort=prepare_filter_sort(sort, AssetSort),
             other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
         )
 

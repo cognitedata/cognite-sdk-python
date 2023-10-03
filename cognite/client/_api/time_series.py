@@ -20,7 +20,7 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -683,12 +683,6 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
         self._validate_filter(filter)
-        if sort is not None:
-            if not isinstance(sort, list):
-                sort = [sort]
-            sort_dumped = [TimeSeriesSort.load(item).dump(camel_case=True) for item in sort]
-        else:
-            sort_dumped = None
 
         return self._list(
             list_cls=TimeSeriesList,
@@ -696,7 +690,7 @@ class TimeSeriesAPI(APIClient):
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=sort_dumped,
+            sort=prepare_filter_sort(sort, TimeSeriesSort),
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
