@@ -3,6 +3,7 @@ import uuid
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
@@ -202,3 +203,14 @@ class TestFilesAPI:
             time.sleep(0.2)
             res = cognite_client.files.list(geo_location=geo_location_filter)
         assert res[0].geo_location == new_file_with_geoLocation.geo_location
+
+    def test_upload_bytes_with_nordic_characters(self, cognite_client: CogniteClient) -> None:
+        content = "æøåøøøø ååå ææææ"
+        external_id = "test_upload_bytes_with_nordic_characters"
+
+        _ = cognite_client.files.upload_bytes(
+            content=content, name="nordic_chars.txt", external_id=external_id, overwrite=True
+        )
+
+        retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
+        assert retrieved_content == content.encode("utf-8")

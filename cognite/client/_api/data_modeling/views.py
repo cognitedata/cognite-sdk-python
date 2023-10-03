@@ -132,7 +132,7 @@ class ViewsAPI(APIClient):
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
 
         Args:
-            ids (ViewIdentifier | Sequence[ViewIdentifier]): View dentifier(s)
+            ids (ViewIdentifier | Sequence[ViewIdentifier]): View identifier(s)
         Returns:
             list[ViewId]: The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
         Examples:

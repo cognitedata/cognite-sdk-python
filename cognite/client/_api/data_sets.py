@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -72,6 +72,14 @@ class DataSetsAPI(APIClient):
             Iterator[DataSet]: yields DataSet one by one.
         """
         return cast(Iterator[DataSet], self())
+
+    @overload
+    def create(self, data_set: Sequence[DataSet]) -> DataSetList:
+        ...
+
+    @overload
+    def create(self, data_set: DataSet) -> DataSet:
+        ...
 
     def create(self, data_set: DataSet | Sequence[DataSet]) -> DataSet | DataSetList:
         """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_

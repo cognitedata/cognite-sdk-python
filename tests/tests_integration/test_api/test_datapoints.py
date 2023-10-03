@@ -215,7 +215,7 @@ def make_dps_tests_reproducible(testrun_uid):
     # test data over time (...thats the whole point), so we set seed based on a unique run ID created by pytest-xdist:
     print(  # noqa: T201
         f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints test failed - and you weren't "
-        "the cause, please create a new (Github) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
+        "the cause, please create a new (GitHub) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
     )
     with rng_context(testrun_uid):  # Internal state of `random` will be reset after exiting contextmanager
         yield
@@ -314,7 +314,7 @@ def parametrized_values_uniform_index_fails(testrun_uid):
 
 
 class TestRetrieveRawDatapointsAPI:
-    """Note: Since `retrieve` and `retrieve_arrays` endspoints should give identical results,
+    """Note: Since `retrieve` and `retrieve_arrays` endpoints should give identical results,
     except for the data container types, all tests run both endpoints.
     """
 
