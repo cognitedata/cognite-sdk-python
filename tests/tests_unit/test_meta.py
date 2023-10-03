@@ -1,7 +1,9 @@
 import inspect
 from pathlib import Path
 
-from cognite.client.data_classes._base import CogniteResource
+import pytest
+
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from tests.utils import all_subclasses
 
 ALL_FILEPATHS = Path("cognite/client/").rglob("*.py")
@@ -32,8 +34,12 @@ def test_ensure_all_files_use_future_annots():
             assert file.readline() == "from __future__ import annotations\n", err_msg.format(filepath)
 
 
-def test_ensure_all_tests_use_camel_case_except_dump():
-    err_msg = "Class: '{}' contains camel_case=True as default."
-    for cls in all_subclasses(CogniteResource):
-        if param := inspect.signature(cls.to_pandas).parameters.get("camel_case"):
-            assert param.default is False, err_msg.format(cls.__name__)
+@pytest.mark.parametrize("cls", [CogniteResource, CogniteResourceList])
+def test_ensure_all_tests_use_camel_case_except_dump(cls):
+    method = "to_pandas"
+    err_msg = "Class: '{}' for method {} does not default to False."
+    for cls in all_subclasses(cls):
+        if cls_method := getattr(cls, method, False):
+            continue
+        if param := inspect.signature(cls_method).parameters.get("camel_case"):
+            assert param.default is False, err_msg.format(cls.__name__, method)
