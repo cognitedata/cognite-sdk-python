@@ -629,10 +629,7 @@ class FilesAPI(APIClient):
 
             file_suffixes = Path(file_name).suffixes
             file_postfix = "".join(file_suffixes)
-
-            file_name_no_parent = Path(file_name).name
-            file_base_no_parent = file_name_no_parent[: -len(file_postfix)] if file_postfix else file_name_no_parent
-            file_base = f"{Path(file_name).parent / Path(file_base_no_parent)}"
+            file_base = file_name[: -len(file_postfix)] if file_postfix else file_name
 
             new_name = file_name
             while (new_name in unique_created) or (new_name in unique_original):

@@ -547,8 +547,8 @@ class TestFilesAPI:
                 ],
             ),
             (
-                ["folder/sub.folder/arch.tar.gz", "folder/sub.folder/arch.tar.gz"],
-                ["folder/sub.folder/arch.tar.gz", "folder/sub.folder/arch(1).tar.gz"],
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch.tar.gz"))],
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch(1).tar.gz"))],
             ),
         ],
     )
