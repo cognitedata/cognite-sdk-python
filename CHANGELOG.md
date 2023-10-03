@@ -21,6 +21,11 @@ Changes are grouped as follows
 ### Added
 - Added parameter `resolve_duplicate_file_names` to `client.files.download`. 
   This will keep all the files when downloading to local machine, even if they have the same name.
+
+## [6.28.4] - 2023-10-03
+### Fixed
+- Overload data_set/create for improved type safety
+
 ## [6.28.3] - 2023-10-03
 ### Fixed
 - When uploading files as strings using `client.files.upload_bytes` the wrong encoding is used on Windows, which is causing
