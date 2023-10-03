@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping, Sequence, Tuple, Union
 
-from cognite.client.data_classes._base import CogniteSort
+from typing_extensions import TypeAlias
+
+from cognite.client.data_classes._base import T_CogniteSort
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client.utils._identifier import T_ID
 
 
-SortSpecT = TypeVar("SortSpecT")
+SortSpec: TypeAlias = Union[
+    T_CogniteSort,
+    str,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
 
 
 def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[str]) -> dict[str, T_ID]:
@@ -52,7 +59,7 @@ process_asset_subtree_ids: Callable[
 
 
 def prepare_filter_sort(
-    sort: SortSpecT | list[SortSpecT] | None, sort_type: CogniteSort
+    sort: SortSpec | list[SortSpec] | None, sort_type: type[T_CogniteSort]
 ) -> list[dict[str, Any]] | None:
     if sort is not None:
         if not isinstance(sort, list):
