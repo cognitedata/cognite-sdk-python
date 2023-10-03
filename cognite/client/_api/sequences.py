@@ -933,7 +933,7 @@ class SequencesDataAPI(APIClient):
         else:
             rows_per_request = self._SEQ_POST_LIMIT_ROWS
 
-        row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(len(all_rows), rows_per_request)]
+        row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
         tasks = [({**base_obj, **rows},) for rows in row_objs]
         summary = utils._concurrency.execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks()

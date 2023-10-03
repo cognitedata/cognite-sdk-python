@@ -135,7 +135,7 @@ def mock_get_sequence_data_two_col(rsps, cognite_client):
     }
     rsps.add(
         rsps.POST,
-        f"{cognite_client.sequences._get_base_url_with_base_path()}/sequences/data/list",
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
         status=200,
         json=json,
     )

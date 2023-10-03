@@ -252,7 +252,7 @@ class TestTemplatesCogniteClient:
             ext_id, new_version.version, view.external_id, input={"minStartTime": 0}, limit=-1
         )
         expected = ViewResolveList._load(
-            [{"startTime": i, "test_type": "test_templates_1"} for i in range(1_000_001, 1000)]
+            [{"startTime": i, "test_type": "test_templates_1"} for i in range(0, 1_000_001, 1000)]
         )
         assert res == expected
 

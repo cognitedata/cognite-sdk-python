@@ -289,8 +289,8 @@ class RelationshipsAPI(APIClient):
                 )
             tasks = []
 
-            for ti in range(max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
-                for si in range(max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
+            for ti in range(0, max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
+                for si in range(0, max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
                     task_filter = copy.copy(filter)
                     if target_external_id_list:  # keep null if it was
                         task_filter["targetExternalIds"] = target_external_id_list[ti : ti + self._LIST_SUBQUERY_LIMIT]
