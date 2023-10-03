@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
+
+from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -17,11 +20,16 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.extractionpipelines import StringFilter
+from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._time import time_ago_to_ms
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
+
+
+RunStatus: TypeAlias = Literal["success", "failure", "seen"]
 
 
 class ExtractionPipelinesAPI(APIClient):
@@ -217,22 +225,27 @@ class ExtractionPipelineRunsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        statuses: Sequence[str] | None = None,
+        statuses: RunStatus | Sequence[RunStatus] | Sequence[str] | None = None,
         message_substring: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
+        created_time: dict[str, Any] | TimestampRange | str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ExtractionPipelineRunList:
         """`List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/filterRuns>`_
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (Sequence[str] | None): One or more among "success" / "failure" / "seen".
+            statuses (RunStatus | Sequence[RunStatus] | Sequence[str] | None): One or more among "success" / "failure" / "seen".
             message_substring (str | None): Failure message part.
-            created_time (dict[str, Any] | TimestampRange | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+            created_time (dict[str, Any] | TimestampRange | str | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
             limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ExtractionPipelineRunList: List of requested extraction pipeline runs
+
+        Tip:
+            The created_time paremeter supports in addition to a dictonary with the format
+            `{"min": epoch_min, "max": epoch_max}`, arguments given on the format `<integer>(s|m|h|d|w)-ago`.
+            For example, `12h-ago`, which will be parsed to `{"min"= now - 12h-ago}`.
 
         Examples:
 
@@ -247,12 +260,23 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> runsList = c.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], statuslimit=5)
+
+            Get all failed pipeline runs the last 24 hours for pipeliene 'extId':
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ExtractionPipelineRun
+                >>> c = CogniteClient()
+                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", statuses="failure", created_time="24h-ago")
         """
+        if isinstance(created_time, str):
+            timespan = time_ago_to_ms(created_time)
+            now = datetime_to_ms(datetime.now(timezone.utc))
+            created_time = TimestampRange(min=now - timespan)
 
         if statuses is not None or message_substring is not None or created_time is not None:
             filter = ExtractionPipelineRunFilter(
                 external_id=external_id,
-                statuses=statuses,
+                statuses=[statuses] if isinstance(statuses, str) else statuses,
                 message=StringFilter(substring=message_substring),
                 created_time=created_time,
             ).dump(camel_case=True)
@@ -305,78 +329,6 @@ class ExtractionPipelineRunsAPI(APIClient):
         """
         utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, Sequence])
         return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)
-
-    # def filter(
-    #     self,
-    #     external_id: str,
-    #     status: Literal["success", "failure", "seen"] | Sequence[Literal["success", "failure", "seen"]] | None = None,
-    #     created_time: TimestampRange | dict[str, Any] | str | None = None,
-    #     message: str | None = None,
-    #     limit: int = DEFAULT_LIMIT_READ,
-    # ) -> ExtractionPipelineRunList:
-    #     """`Filter extraction pipeline runs <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
-    #
-    #     Args:
-    #         external_id (str): Extraction pipeline external Id.
-    #         status (Literal["success", "failure", "seen")] | Sequence[Literal[("success", "failure", "seen"]] | None): Filter for one or more statuses.
-    #         created_time (TimestampRange | dict[str, Any] | str | None): Filter for extraction pipeline runs created within a time range.
-    #         message (str | None): Filter for the extraction pipeline runs with substring to find. Ignoring case.
-    #         limit (int): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-    #
-    #     Returns:
-    #         ExtractionPipelineRunList: List of extraction pipeline runs matching the filters.
-    #
-    #     Tip:
-    #         The created_time paremeter supports in addition to a dictonary with the format
-    #         `{"min": epoch_min, "max": epoch_max}`, arguments given on the format `<integer>(s|m|h|d|w)-ago`.
-    #         For example, `12h-ago`, which will be parsed to  `{"min"= now - 12h-ago}`.
-    #
-    #     Examples:
-    #
-    #         Get all pipeline runs with status "success" for pipeliene 'extId':
-    #
-    #             >>> from cognite.client import CogniteClient
-    #             >>> from cognite.client.data_classes import ExtractionPipelineRun
-    #             >>> c = CogniteClient()
-    #             >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="success")
-    #
-    #         Get all pipeline runs with a message containing "CLPEX Error" and status ="failure" for pipeline 'extId':
-    #
-    #             >>> from cognite.client import CogniteClient
-    #             >>> from cognite.client.data_classes import ExtractionPipelineRun
-    #             >>> c = CogniteClient()
-    #             >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", message="CPLEX Error")
-    #
-    #         Get all failed pipeline runs the last 24 hours for pipeliene 'extId':
-    #
-    #             >>> from cognite.client import CogniteClient
-    #             >>> from cognite.client.data_classes import ExtractionPipelineRun
-    #             >>> c = CogniteClient()
-    #             >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", created_time="24h-ago")
-    #
-    #     """
-    #     status_list: list[str] | None = None
-    #     if status is not None:
-    #         status_list = [status] if isinstance(status, str) else cast(List[str], status)
-    #
-    #     if isinstance(created_time, str):
-    #         timespan = time_ago_to_ms(created_time)
-    #         now = datetime_to_ms(datetime.now(timezone.utc))
-    #         created_time = TimestampRange(min=now - timespan)
-    #
-    #     filter_ = ExtractionPipelineRunFilter(
-    #         external_id=external_id,
-    #         statuses=status_list,
-    #         created_time=created_time,
-    #         message=StringFilter(substring=message),
-    #     )
-    #     return self._list(
-    #         list_cls=ExtractionPipelineRunList,
-    #         resource_cls=ExtractionPipelineRun,
-    #         method="POST",
-    #         limit=limit,
-    #         filter=filter_.dump(camel_case=True),
-    #     )
 
 
 class ExtractionPipelineConfigsAPI(APIClient):

@@ -99,10 +99,6 @@ List runs for an extraction pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.list
 
-Filter runs for an extraction pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.filter
-
 Report new runs
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.create

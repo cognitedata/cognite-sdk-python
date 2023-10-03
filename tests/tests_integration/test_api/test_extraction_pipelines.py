@@ -142,16 +142,16 @@ class TestExtractionPipelinesAPI:
         for run in dumped:
             assert run["external_id"] == new_extpipe.external_id
 
-    def test_filter_extraction_pipeline_runs(
+    def test_list_failed_extraction_pipeline_runs(
         self,
         cognite_client: CogniteClient,
         new_extpipe: ExtractionPipeline,
         populated_runs: ExtractionPipelineRunList,
     ) -> None:
-        expected = ExtractionPipelineRunList([_pop_ext_id(run) for run in populated_runs if run.status == "failure"])
+        expected = ExtractionPipelineRunList([run for run in populated_runs if run.status == "failure"])
 
-        filtered = cognite_client.extraction_pipelines.runs.filter(
-            external_id=new_extpipe.external_id, status="failure", limit=1
+        filtered = cognite_client.extraction_pipelines.runs.list(
+            external_id=new_extpipe.external_id, statuses="failure", limit=1
         )
 
         assert expected.dump() == filtered.dump()
@@ -163,18 +163,10 @@ class TestExtractionPipelinesAPI:
         populated_runs: ExtractionPipelineRunList,
     ) -> None:
         yesterday = datetime_to_ms(datetime.now(timezone.utc) - timedelta(days=1))
-        expected = ExtractionPipelineRunList(
-            [_pop_ext_id(run) for run in populated_runs if run.created_time > yesterday]
-        )
+        expected = ExtractionPipelineRunList([run for run in populated_runs if run.created_time > yesterday])
 
-        filtered = cognite_client.extraction_pipelines.runs.filter(
+        filtered = cognite_client.extraction_pipelines.runs.list(
             external_id=new_extpipe.external_id, created_time="24h-ago", limit=1
         )
 
         assert expected.dump() == filtered.dump()
-
-
-def _pop_ext_id(run: ExtractionPipelineRun) -> ExtractionPipelineRun:
-    # Remove the external id from the run, since it is not returned by the API
-    run.extpipe_external_id = None
-    return run
