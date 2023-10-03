@@ -49,7 +49,7 @@ class Token(CredentialProvider):
             token_refresh_lock = threading.Lock()
 
             def thread_safe_get_token() -> str:
-                assert not isinstance(token, str)  # unbelivable
+                assert not isinstance(token, str)  # unbelievable
                 with token_refresh_lock:
                     return token()
 
@@ -93,7 +93,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
 
     @staticmethod
     def _verify_credentials(credentials: dict[str, Any]) -> None:
-        """The msal library doesnt raise anything when auth fails, but returns a dictionary with varying keys"""
+        """The msal library doesn't raise anything when auth fails, but returns a dictionary with varying keys"""
         if "access_token" in credentials and "expires_in" in credentials:
             return
 

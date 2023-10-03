@@ -455,7 +455,7 @@ class TestTransformationsAPI:
 
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
-        # just make sure it doesnt raise exceptions
+        # just make sure it doesn't raise exceptions
         str(query_result)
 
     def test_update_instance_nodes(self, cognite_client, new_transformation):
