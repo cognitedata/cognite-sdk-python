@@ -124,7 +124,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
     Args:
         external_id (str): The external ID of the function to be called.
         data (dict | str | None): The data to be passed to the function. Defaults to None. The data can be used to specify the input to the function from previous tasks or the workflow input. See the tip below for more information.
-        is_async_complete (bool): Whether the function is asynchronous. Defaults to False.
+        is_async_complete (bool | None): Whether the function is asynchronous. Defaults to None, which the API will interpret as False.
 
     If a function is asynchronous, you need to call the client.workflows.tasks.update() endpoint to update the status of the task.
     While synchronous tasks update the status automatically.
@@ -161,7 +161,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         self,
         external_id: str,
         data: dict | str | None = None,
-        is_async_complete: bool = False,
+        is_async_complete: bool | None = None,
     ) -> None:
         self.external_id = external_id
         self.data = data
@@ -175,8 +175,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return cls(
             external_id=function["externalId"],
             data=function.get("data"),
-            # Allow default to come from the API.
-            is_async_complete=resource.get("isAsyncComplete", False),
+            is_async_complete=resource.get("isAsyncComplete"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -188,8 +187,9 @@ class FunctionTaskParameters(WorkflowTaskParameters):
 
         output: dict[str, Any] = {
             "function": function,
-            "isAsyncComplete": self.is_async_complete,
         }
+        if self.is_async_complete is not None:
+            output["isAsyncComplete"] = self.is_async_complete
         return output
 
 
