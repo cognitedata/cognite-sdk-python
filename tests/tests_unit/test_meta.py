@@ -1,6 +1,10 @@
+import inspect
 from pathlib import Path
 
-ALL_FILEPATHS = Path("cognite/client/").glob("**/*.py")
+from cognite.client.data_classes._base import CogniteResource
+from tests.utils import all_subclasses
+
+ALL_FILEPATHS = Path("cognite/client/").rglob("*.py")
 
 
 def test_assert_no_root_init_file():
@@ -29,12 +33,7 @@ def test_ensure_all_files_use_future_annots():
 
 
 def test_ensure_all_tests_use_camel_case_except_dump():
-    err_msg = "File: '{}' contains camel_case=True and not a dump at line {}."
-    for filepath in ALL_FILEPATHS:
-        if "tests/" in str(filepath):
-            with filepath.open("r") as file:
-                for line_num, line in enumerate(file.readlines()):
-                    if ".dump(camel_case" in line:
-                        continue
-
-                    assert "camel_case=True" not in line, err_msg.format(filepath, line_num)
+    err_msg = "Class: '{}' contains camel_case=True as default."
+    for cls in all_subclasses(CogniteResource):
+        if param := inspect.signature(cls.to_pandas).parameters.get("camel_case"):
+            assert param.default is False, err_msg.format(cls.__name__)
