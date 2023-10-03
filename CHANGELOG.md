@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.4] - 2023-10-03
+### Fixed
+- Overload data_set/create for improved type safety
+
 ## [6.28.3] - 2023-10-03
 ### Fixed
 - When uploading files as strings using `client.files.upload_bytes` the wrong encoding is used on Windows, which is causing
