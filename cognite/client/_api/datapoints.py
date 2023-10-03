@@ -1342,7 +1342,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             start (int | str | datetime): Inclusive start of delete range
-            end (int | str | datetime): Exclusvie end of delete range
+            end (int | str | datetime): Exclusive end of delete range
             id (int | None): Id of time series to delete data from
             external_id (str | None): External id of time series to delete data from
 
@@ -1623,7 +1623,7 @@ class RetrieveLatestDpsFetcher:
         for identifiers, identifier_type in zip([all_ids, all_xids], ["id", "external_id"]):
             for i, dct in enumerate(identifiers):
                 i_before = self.before_settings.get((identifier_type, i), self.default_before)
-                if "now" != i_before is not None:  # mypy doesnt understand 'i_before not in {"now", None}'
+                if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
         all_ids.extend(all_xids)
         return all_ids

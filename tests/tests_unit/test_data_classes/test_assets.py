@@ -270,7 +270,7 @@ class TestAssetHierarchy:
     def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_id(self, n):
         assets = [Asset(name=c, external_id=c, parent_id=ord(c)) for c in string.ascii_letters[:n]]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
-        # Parent ID links are never considered orphans (offline validation impossible as ID cant be set):
+        # Parent ID links are never considered orphans (offline validation impossible as ID can't be set):
         assert len(hierarchy.orphans) == 0
         hierarchy.is_valid(on_error="raise")
 

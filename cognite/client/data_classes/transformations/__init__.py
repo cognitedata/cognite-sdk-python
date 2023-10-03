@@ -537,7 +537,7 @@ class TransformationPreviewResult(CogniteResource):
 
     Args:
         schema (TransformationSchemaColumnList | None): List of column descriptions.
-        results (list[dict] | None): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entrie.
+        results (list[dict] | None): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entry.
         cognite_client (CogniteClient | None): No description.
     """
 
