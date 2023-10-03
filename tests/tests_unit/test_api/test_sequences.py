@@ -591,7 +591,7 @@ class TestSequencesPandasIntegration:
         assert isinstance(df, pd.DataFrame)
         assert df.empty
 
-    def test_sequencess_to_pandas(self, cognite_client, mock_seq_response):
+    def test_sequences_to_pandas(self, cognite_client, mock_seq_response):
         import pandas as pd
 
         df = cognite_client.sequences.retrieve(id=1).to_pandas()

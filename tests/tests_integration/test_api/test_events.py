@@ -5,7 +5,6 @@ from unittest import mock
 
 import pytest
 
-import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, filters
 from cognite.client.data_classes.events import EventProperty, SortableEventProperty
@@ -127,9 +126,7 @@ class TestEventsAPI:
         assert 0 == len(res)
 
     def test_search(self, cognite_client):
-        res = cognite_client.events.search(
-            filter=EventFilter(start_time={"min": cognite.client.utils._time.timestamp_to_ms("2d-ago")})
-        )
+        res = cognite_client.events.search(filter=EventFilter(start_time={"min": 1691574120000}))
         assert len(res) > 0
 
     def test_update(self, cognite_client, new_event):

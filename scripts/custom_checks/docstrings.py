@@ -209,7 +209,7 @@ class DocstrFormatter:
                 raise ValueError(f"'{self.RETURN_STRING}'-line contains additional text")
 
         if self.line_args_group is self.line_return_group is None:
-            # Skip small docstrings; small as in the writer didnt specify args & return:
+            # Skip small docstrings; small as in the writer didn't specify args & return:
             raise FalsePositiveDocstring
 
         self.add_space_after_args, self.add_space_after_returns = False, False
@@ -313,7 +313,7 @@ class DocstrFormatter:
             elif lines is self.line_return_group:
                 lines = self._create_docstring_return_description()
                 if args_missing:
-                    # If return section exists, but args section doesnt, we can't add 'args' later (wrong order):
+                    # If return section exists, but args section doesn't, we can't add 'args' later (wrong order):
                     lines = self._create_docstring_param_description() + lines
 
             final_doc_lines.extend(lines)

@@ -392,7 +392,7 @@ class TransformationsAPI(APIClient):
 
         Examples:
 
-            Run transformation asyncronously by id:
+            Run transformation asynchronously by id:
 
                 >>> import asyncio
                 >>> from cognite.client import CogniteClient
