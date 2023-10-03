@@ -116,13 +116,13 @@ class TestWorkflowExecutionDetailed:
             ),
         ]
 
-        for exepcted_task, actual_task in zip(expected, wf_execution.workflow_definition.tasks):
-            assert actual_task.external_id == exepcted_task.external_id
-            assert actual_task.type == exepcted_task.type
-            assert actual_task.parameters.dump() == exepcted_task.parameters.dump()
-            assert actual_task.retries == exepcted_task.retries
-            assert actual_task.timeout == exepcted_task.timeout
-            assert actual_task.depends_on == exepcted_task.depends_on
+        for expected_task, actual_task in zip(expected, wf_execution.workflow_definition.tasks):
+            assert actual_task.external_id == expected_task.external_id
+            assert actual_task.type == expected_task.type
+            assert actual_task.parameters.dump() == expected_task.parameters.dump()
+            assert actual_task.retries == expected_task.retries
+            assert actual_task.timeout == expected_task.timeout
+            assert actual_task.depends_on == expected_task.depends_on
 
     def test_executed_tasks_parsed_correctly(self):
         wf_execution = WorkflowExecutionDetailed._load(self.test_data)
