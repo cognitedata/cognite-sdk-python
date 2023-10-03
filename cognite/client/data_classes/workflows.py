@@ -842,6 +842,8 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
+        input (dict | None): Input arguments the workflow was triggered with.
+        metadata (dict | None): Metadata set when the workflow was triggered.
     """
 
     def __init__(
@@ -856,12 +858,16 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         start_time: int | None = None,
         end_time: int | None = None,
         reason_for_incompletion: str | None = None,
+        input: dict | None = None,
+        metadata: dict | None = None,
     ) -> None:
         super().__init__(
             id, workflow_external_id, status, created_time, version, start_time, end_time, reason_for_incompletion
         )
         self.workflow_definition = workflow_definition
         self.executed_tasks = executed_tasks
+        self.input = input
+        self.metadata = metadata
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowExecutionDetailed:
@@ -880,6 +886,8 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             reason_for_incompletion=resource.get("reasonForIncompletion"),
             workflow_definition=WorkflowDefinition._load(resource["workflowDefinition"]),
             executed_tasks=[WorkflowTaskExecution._load(task) for task in resource["executedTasks"]],
+            input=resource.get("input"),
+            metadata=resource.get("metadata"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -890,6 +898,10 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         output[("executedTasks" if camel_case else "executed_tasks")] = [
             task.dump(camel_case) for task in self.executed_tasks
         ]
+        if self.input:
+            output["input"] = self.input
+        if self.metadata:
+            output["metadata"] = self.metadata
         return output
 
     def as_execution(self) -> WorkflowExecution:

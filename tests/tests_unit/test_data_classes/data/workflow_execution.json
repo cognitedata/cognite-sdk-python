@@ -972,12 +972,10 @@
     ],
     "input": {
         "triggerEvent": {
-            "externalId": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26",
-            "id": 1511006102514333,
-            "type": "TEST",
-            "metadata": {}
+            "externalId": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
         },
-        "version": "latest"
+        "version": "latest",
+        "snake_case_lets_go": "yes"
     },
     "createdTime": 1696240547972,
     "startTime": 1696240547886,

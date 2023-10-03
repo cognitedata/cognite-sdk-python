@@ -80,10 +80,38 @@ class TestWorkflowExecutionDetailed:
         with test_data.open() as f:
             return json.load(f)
 
+    def test_dump(self, execution_data: dict):
+        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        dumped = wf_execution.dump(camel_case=False)
+        dumped_camel = wf_execution.dump(camel_case=True)
+        assert dumped["metadata"] == {"supervisor": "Jimmy", "best_number": 42}
+        assert dumped["input"] == {
+            "triggerEvent": {
+                "externalId": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26",
+            },
+            "version": "latest",
+            "snake_case_lets_go": "yes"
+        }
+        assert dumped["metadata"] == dumped_camel["metadata"]
+        assert dumped["input"] == dumped_camel["input"]
+
     def test_load_works(self, execution_data: dict):
         wf_execution = WorkflowExecutionDetailed._load(execution_data)
         assert wf_execution.id == "7b6bf517-4812-4874-b227-fa7db36830a3"
         assert wf_execution.workflow_external_id == "TestWorkflowTypeBidProcess"
+        assert wf_execution.version == "latest"
+        assert wf_execution.status == "completed"
+        assert wf_execution.created_time == 1696240547972
+        assert wf_execution.start_time == 1696240547886
+        assert wf_execution.end_time == 1696240836564
+        assert wf_execution.metadata == {"supervisor": "Jimmy", "best_number": 42}
+        assert wf_execution.input == {
+            "triggerEvent": {
+                "externalId": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26",
+            },
+            "version": "latest",
+            "snake_case_lets_go": "yes"
+        }
 
     def test_definition_parsed_correctly(self, execution_data: dict):
         wf_execution = WorkflowExecutionDetailed._load(execution_data)
@@ -114,6 +142,7 @@ class TestWorkflowExecutionDetailed:
                 depends_on=["testTaskDispatcher"],
             ),
         ]
+        assert len(wf_execution.workflow_definition.tasks) == 4
 
         for expected_task, actual_task in zip(expected, wf_execution.workflow_definition.tasks):
             assert actual_task.external_id == expected_task.external_id
