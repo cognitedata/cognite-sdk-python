@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import os
 import warnings
+from collections import defaultdict
 from io import BufferedReader
 from pathlib import Path
 from typing import (
@@ -619,23 +620,24 @@ class FilesAPI(APIClient):
         file_names: list[str] = [str(file_name) for file_name in file_names_in]
         unique_original = set(file_names)
         unique_created: list = []
-        original_count: dict = {}
+        original_count: dict = defaultdict(int)
 
         for file_name in file_names:
             if file_name not in unique_created:
                 unique_created.append(file_name)
                 continue
 
-            file_base = f"{Path(file_name).parent / Path(file_name).stem}"
-            file_ext = Path(file_name).suffix
+            file_suffixes = Path(file_name).suffixes
+            file_postfix = "".join(file_suffixes)
+
+            file_name_no_parent = Path(file_name).name
+            file_base_no_parent = file_name_no_parent[: -len(file_postfix)] if file_postfix else file_name_no_parent
+            file_base = f"{Path(file_name).parent / Path(file_base_no_parent)}"
 
             new_name = file_name
             while (new_name in unique_created) or (new_name in unique_original):
-                if file_name not in original_count:
-                    original_count[file_name] = 1
-
-                new_name = f"{file_base}({original_count[file_name]}){file_ext}"
                 original_count[file_name] += 1
+                new_name = f"{file_base}({original_count[file_name]}){file_postfix}"
 
             unique_created.append(new_name)
 

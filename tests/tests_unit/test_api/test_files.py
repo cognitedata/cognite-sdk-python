@@ -526,33 +526,34 @@ class TestFilesAPI:
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
 
-    def test_create_unique_file_names(self, cognite_client):
-        assert cognite_client.files._create_unique_file_names(["a.txt", "a.txt"]) == ["a.txt", "a(1).txt"]
-        assert cognite_client.files._create_unique_file_names(["a.txt", "a.txt", "a(1).txt"]) == [
-            "a.txt",
-            "a(2).txt",
-            "a(1).txt",
-        ]
-        assert cognite_client.files._create_unique_file_names(["a.txt", "file", "a(1).txt", "a.txt", "file"]) == [
-            "a.txt",
-            "file",
-            "a(1).txt",
-            "a(2).txt",
-            "file(1)",
-        ]
-        assert cognite_client.files._create_unique_file_names(
-            [
-                str(Path("posixfolder/a.txt")),
-                str(Path("posixfolder/a.txt")),
-                str(Path(r"winfolder\a.txt")),
-                str(Path(r"winfolder\a.txt")),
-            ]
-        ) == [
-            str(Path("posixfolder/a.txt")),
-            str(Path("posixfolder/a(1).txt")),
-            str(Path(r"winfolder\a.txt")),
-            str(Path(r"winfolder\a(1).txt")),
-        ]
+    @pytest.mark.parametrize(
+        "input_list,expected_output_list",
+        [
+            (["a.txt", "a.txt"], ["a.txt", "a(1).txt"]),
+            (["a.txt", "a.txt", "a(1).txt"], ["a.txt", "a(2).txt", "a(1).txt"]),
+            (["a.txt", "file", "a(1).txt", "a.txt", "file"], ["a.txt", "file", "a(1).txt", "a(2).txt", "file(1)"]),
+            (
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                ],
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a(1).txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a(1).txt")),
+                ],
+            ),
+            (
+                ["folder/sub.folder/arch.tar.gz", "folder/sub.folder/arch.tar.gz"],
+                ["folder/sub.folder/arch.tar.gz", "folder/sub.folder/arch(1).tar.gz"],
+            ),
+        ],
+    )
+    def test_create_unique_file_names_param(self, cognite_client, input_list, expected_output_list):
+        assert cognite_client.files._create_unique_file_names(input_list) == expected_output_list
 
     def test_download_with_duplicate_names(
         self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
