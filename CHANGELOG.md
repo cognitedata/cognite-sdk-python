@@ -20,7 +20,7 @@ Changes are grouped as follows
 ## [6.28.4] - 2023-10-03
 ### Improved
 - Quality of life improvement to `client.extraction_pipelines.runs.list` method. It uses `Literal` in the type hint
-  of the `status` parameter, allows a single `status` parameter, and accepts `created_time` on the format `12-ago`
+  of the `statuses` parameter, allows a single `statuses` parameter, and accepts `created_time` on the format `12-ago`
   (same as the `DatapointAPI` methods).
 
 ## [6.28.3] - 2023-10-03
