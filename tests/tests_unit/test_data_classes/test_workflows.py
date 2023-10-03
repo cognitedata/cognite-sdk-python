@@ -1,5 +1,4 @@
 import json
-from functools import cached_property
 from pathlib import Path
 from typing import Any
 
@@ -75,19 +74,19 @@ class TestWorkflowIds:
 
 
 class TestWorkflowExecutionDetailed:
-    @cached_property
-    def test_data(self) -> dict:
+    @pytest.fixture(scope="class")
+    def execution_data(self) -> dict:
         test_data = Path(__file__).parent / "data/workflow_execution.json"
         with test_data.open() as f:
             return json.load(f)
 
-    def test_load_works(self):
-        wf_execution = WorkflowExecutionDetailed._load(self.test_data)
+    def test_load_works(self, execution_data: dict):
+        wf_execution = WorkflowExecutionDetailed._load(execution_data)
         assert wf_execution.id == "7b6bf517-4812-4874-b227-fa7db36830a3"
         assert wf_execution.workflow_external_id == "TestWorkflowTypeBidProcess"
 
-    def test_definition_parsed_correctly(self):
-        wf_execution = WorkflowExecutionDetailed._load(self.test_data)
+    def test_definition_parsed_correctly(self, execution_data: dict):
+        wf_execution = WorkflowExecutionDetailed._load(execution_data)
         assert wf_execution.workflow_definition.hash_ == "8AE17296EE6BCCD0B7D9C184E100A5F98069553C"
 
         expected = [
@@ -124,6 +123,6 @@ class TestWorkflowExecutionDetailed:
             assert actual_task.timeout == expected_task.timeout
             assert actual_task.depends_on == expected_task.depends_on
 
-    def test_executed_tasks_parsed_correctly(self):
-        wf_execution = WorkflowExecutionDetailed._load(self.test_data)
+    def test_executed_tasks_parsed_correctly(self, execution_data: dict):
+        wf_execution = WorkflowExecutionDetailed._load(execution_data)
         wf_execution.executed_tasks
