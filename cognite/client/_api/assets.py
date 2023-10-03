@@ -329,7 +329,7 @@ class AssetsAPI(APIClient):
 
         Args:
             property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
-            advanced_filter (Filter | dict | None): The advaned filter to narrow down the assets to count.
+            advanced_filter (Filter | dict | None): The advanced filter to narrow down the assets to count.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count (strict matching).
 
         Returns:
@@ -615,7 +615,7 @@ class AssetsAPI(APIClient):
             3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
             4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
 
-        As part of validation there is a fifth category that is ignored when using this method (for backwards compatability) and that
+        As part of validation there is a fifth category that is ignored when using this method (for backwards compatibility) and that
         is orphan assets. These are assets linking a parent by an identifier that is not present among the given assets, and as such,
         might contain links we are unable to vet ahead of insertion. These are thus assumed to be valid, but may fail.
 
@@ -652,7 +652,7 @@ class AssetsAPI(APIClient):
 
             Patch will only update the parameters you have defined on your assets. Note that specifically setting
             something to ``None`` is the same as not setting it. For ``metadata``, this will extend your existing
-            data, only overwriting when keys overlap. For ``labels`` the behavour is mostly the same, existing are
+            data, only overwriting when keys overlap. For ``labels`` the behaviour is mostly the same, existing are
             left untouched, and your new ones are simply added.
 
             You may also pass ``upsert_mode="replace"`` to make sure the updated assets look identical to the ones
