@@ -165,9 +165,7 @@ class CogniteResource(_WithClientMixin):
                 else:
                     raise AssertionError(f"Could not expand attribute '{key}'")
 
-        df = pd.Series(dumped).to_frame(name="value")
-
-        return df
+        return pd.Series(dumped).to_frame(name="value")
 
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)

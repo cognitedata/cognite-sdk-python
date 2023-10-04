@@ -374,17 +374,33 @@ class TestCogniteResourceList:
     def test_to_pandas_method(self):
         import pandas as pd
 
-        from cognite.client.data_classes import Asset, AssetList
+        from cognite.client.data_classes import Asset, Label
 
-        obj = AssetList([Asset(external_id=f"ext-{i}", name=f"name-{i}") for i in range(5)])
+        asset = Asset(
+            external_id="test-1",
+            name="test 1",
+            parent_external_id="parent-test-1",
+            description="A test asset",
+            data_set_id=123,
+            labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+        )
 
-        result_df = obj.to_pandas()
+        result_df = asset.to_pandas()
 
         data = {
-            "external_id": ["ext-0", "ext-1", "ext-2", "ext-3", "ext-4"],
-            "name": ["name-0", "name-1", "name-2", "name-3", "name-4"],
+            "value": [
+                "test-1",
+                "test 1",
+                "parent-test-1",
+                "A test asset",
+                123,
+                [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+            ]
         }
-        expected_df = pd.DataFrame(data)
+
+        index_labels = ["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"]
+
+        expected_df = pd.DataFrame(data, index=index_labels)
 
         # Assert that the resultant DataFrame is equal to the expected DataFrame
         pd.testing.assert_frame_equal(result_df, expected_df)
