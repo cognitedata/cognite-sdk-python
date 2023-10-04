@@ -35,11 +35,10 @@ def test_ensure_all_files_use_future_annots():
 
 
 @pytest.mark.parametrize("cls", [CogniteResource, CogniteResourceList])
-def test_ensure_all_tests_use_camel_case_except_dump(cls):
-    method = "to_pandas"
-    err_msg = "Class: '{}' for method {} does not default to False."
-    for cls in all_subclasses(cls):
-        if cls_method := getattr(cls, method, False):
+def test_ensure_all_to_pandas_methods_use_snake_case(cls):
+    err_msg = "Class: '{}' for method to_pandas does not default camel_case parameter to False."
+    for sub_cls in all_subclasses(cls):
+        if not (cls_method := getattr(sub_cls, "to_pandas", False)):
             continue
         if param := inspect.signature(cls_method).parameters.get("camel_case"):
-            assert param.default is False, err_msg.format(cls.__name__, method)
+            assert param.default is False, err_msg.format(sub_cls.__name__)
