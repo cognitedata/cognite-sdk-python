@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -380,9 +381,15 @@ class FunctionCallLogEntry(CogniteResource):
 class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
     _RESOURCE = FunctionCallLogEntry
 
-    @property
-    def text(self) -> str:
-        ...
+    def to_text(self, with_timestamps: bool = False) -> str:
+        return "\n".join(self._format_entry(entry, with_timestamps) for entry in self)
+
+    @staticmethod
+    def _format_entry(entry: FunctionCallLogEntry, with_timestamps: bool = False) -> str:
+        ts = ""
+        if with_timestamps and entry.timestamp is not None:
+            ts = f"[{ms_to_datetime(entry.timestamp).isoformat()}] "
+        return f"{ts}{entry.message}"
 
 
 class FunctionsLimits(CogniteResponse):
