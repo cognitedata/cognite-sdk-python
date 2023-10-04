@@ -48,7 +48,7 @@ class PropertyType(ABC):
     @classmethod
     def load(cls, data: dict) -> PropertyType:
         if "type" not in data:
-            raise TypeError("Property types are required to have a type")
+            raise ValueError("Property types are required to have a type")
         type_ = data["type"]
         data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
 
