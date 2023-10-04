@@ -377,19 +377,18 @@ class FunctionCallLogEntry(CogniteResource):
         self.message = message
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def _format(self, with_timestamps: bool = False) -> str:
+        ts = ""
+        if with_timestamps and self.timestamp is not None:
+            ts = f"[{ms_to_datetime(self.timestamp).isoformat()}] "
+        return f"{ts}{self.message}"
+
 
 class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
     _RESOURCE = FunctionCallLogEntry
 
     def to_text(self, with_timestamps: bool = False) -> str:
-        return "\n".join(self._format_entry(entry, with_timestamps) for entry in self)
-
-    @staticmethod
-    def _format_entry(entry: FunctionCallLogEntry, with_timestamps: bool = False) -> str:
-        ts = ""
-        if with_timestamps and entry.timestamp is not None:
-            ts = f"[{ms_to_datetime(entry.timestamp).isoformat()}] "
-        return f"{ts}{entry.message}"
+        return "\n".join(entry._format(with_timestamps) for entry in self)
 
 
 class FunctionsLimits(CogniteResponse):
