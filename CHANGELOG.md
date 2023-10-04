@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.29.0] - 2023-10-04
+### Added
+- Added parameter `resolve_duplicate_file_names` to `client.files.download`. 
+  This will keep all the files when downloading to local machine, even if they have the same name.
+
 ## [6.28.5] - 2023-10-03
 ### Fixed
 - Bugfix for serialization of Workflows' `DynamicTasksParameters` during `workflows.versions.upsert` and `workflows.execution.retrieve_detailed`
