@@ -1015,8 +1015,7 @@ class AssetsAPI(APIClient):
 
     def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
-        chunk_size = 100
-        tasks = [{"parent_ids": chunk} for chunk in split_into_chunks(ids, chunk_size)]
+        tasks = [{"parent_ids": chunk, "limit": -1} for chunk in split_into_chunks(ids, 100)]
         tasks_summary = utils._concurrency.execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results

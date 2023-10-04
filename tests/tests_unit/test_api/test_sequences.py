@@ -113,7 +113,7 @@ def mock_get_sequence_data_many_columns(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "ceid" + str(i)} for i in range(200)],
+        "columns": [{"externalId": f"ceid{i}"} for i in range(200)],
         "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
     }
     rsps.add(
