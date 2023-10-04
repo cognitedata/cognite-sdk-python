@@ -77,14 +77,13 @@ def new_template_instance(cognite_client, new_template_group_version):
 
 @pytest.fixture
 def new_view(cognite_client, new_template_group_version):
-    len_new_view = 1000
     events = [
         Event(
             external_id=f"test_evt_templates_1_{i}",
             type="test_templates_1",
-            start_time=i * len_new_view,
+            start_time=i * 1000,
         )
-        for i in range(len_new_view + 1)
+        for i in range(1001)
     ]
     try:
         cognite_client.events.create(events)
