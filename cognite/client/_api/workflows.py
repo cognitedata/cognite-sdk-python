@@ -279,7 +279,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionUpsert, WorkflowDefinitionUpsert, WorkflowTask, FunctionTaskParameters
                 >>> c = CogniteClient()
-                >>> new_version =WorkflowVersionUpsert(
+                >>> new_version = WorkflowVersionUpsert(
                 ...    workflow_external_id="my_workflow",
                 ...    version="1",
                 ...    workflow_definition=WorkflowDefinitionUpsert(
