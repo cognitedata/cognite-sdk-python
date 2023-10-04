@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.28.5] - 2023-09-26
+## [6.28.6] - 2023-10-05
 ### Fixed
 - Calling any of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter caused a `CogniteAPIError` with a 400 code. This is now fixed. 
+
+## [6.28.5] - 2023-10-04
+### Fixed
+- Bugfix for serialization of Workflows' `DynamicTasksParameters` during `workflows.versions.upsert` and `workflows.execution.retrieve_detailed`
 
 ## [6.28.4] - 2023-10-03
 ### Fixed
