@@ -619,8 +619,8 @@ class FilesAPI(APIClient):
         """
         file_names: list[str] = [str(file_name) for file_name in file_names_in]
         unique_original = set(file_names)
-        unique_created: list = []
-        original_count: dict = defaultdict(int)
+        unique_created = []
+        original_count: defaultdict = defaultdict(int)
 
         for file_name in file_names:
             if file_name not in unique_created:
@@ -629,7 +629,7 @@ class FilesAPI(APIClient):
 
             file_suffixes = Path(file_name).suffixes
             file_postfix = "".join(file_suffixes)
-            file_base = file_name[: -len(file_postfix)] if file_postfix else file_name
+            file_base = file_name[: file_name.index(file_postfix) or None]  # Awaiting .removesuffix in 3.9:
 
             new_name = file_name
             while (new_name in unique_created) or (new_name in unique_original):
