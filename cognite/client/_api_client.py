@@ -725,7 +725,7 @@ class APIClient:
             elif isinstance(properties, list):
                 dumped_properties = [to_camel_case(p) for p in properties]
             else:
-                raise TypeError(f"Unknown property format: {properties}")
+                raise ValueError(f"Unknown property format: {properties}")
 
             body["properties"] = [{"property": dumped_properties}]
             if property_aggregation_filter is not None:
@@ -739,7 +739,7 @@ class APIClient:
             elif isinstance(path, list):
                 dumped_path = path
             else:
-                raise TypeError(f"Unknown path format: {path}")
+                raise ValueError(f"Unknown path format: {path}")
             body["path"] = dumped_path
 
         if query is not None:
@@ -752,7 +752,7 @@ class APIClient:
             elif isinstance(filter, Dict):
                 dumped_filter = convert_all_keys_to_camel_case(filter)
             else:
-                raise TypeError(f"Unknown filter format: {filter}")
+                raise ValueError(f"Unknown filter format: {filter}")
             body["filter"] = dumped_filter
 
         if advanced_filter is not None:
@@ -955,7 +955,7 @@ class APIClient:
                 if "metadata" in patch_object_update and patch_object_update["metadata"] == {"set": None}:
                     patch_object_update["metadata"] = {"set": {}}
             else:
-                raise TypeError("update item must be of type CogniteResource or CogniteUpdate")
+                raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
         patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
