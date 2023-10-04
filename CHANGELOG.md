@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.28.6] - 2023-10-04
+### Added
+- Convenience method `to_text` on the `FunctionCallLog` class that formats log entries into a new-line delimited string.
+
 ## [6.28.5] - 2023-10-03
 ### Fixed
 - Bugfix for serialization of Workflows' `DynamicTasksParameters` during `workflows.versions.upsert` and `workflows.execution.retrieve_detailed`
