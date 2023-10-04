@@ -272,18 +272,18 @@ class TestGeospatialAPI:
         assert res.asset_ids == [new_asset.id]
 
     def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
-        res = cognite_client.geospatial.update_features(
+        results = cognite_client.geospatial.update_features(
             feature_type_external_id=test_feature_type.external_id,
             feature=[
-                Feature(external_id=test_features[idx].external_id, temperature=6.237, pressure=12.21, volume=34.43)
-                for idx in range(len(test_features))
+                Feature(external_id=test_feat.external_id, temperature=6.237, pressure=12.21, volume=34.43)
+                for test_feat in test_features
             ],
             allow_crs_transformation=allow_crs_transformation,
             chunk_size=2,
         )
-        for idx in range(len(test_features)):
-            assert res[idx].external_id == test_features[idx].external_id
-            assert res[idx].temperature == 6.237
+        for res, test_feat in zip(results, test_features):
+            assert res.external_id == test_feat.external_id
+            assert res.temperature == 6.237
 
     def test_search_single_feature(self, cognite_client, test_feature_type, test_feature):
         res = cognite_client.geospatial.search_features(
