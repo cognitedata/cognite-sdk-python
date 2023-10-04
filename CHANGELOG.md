@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.29.1] - 2023-10-04
+### Added
+- Convenience method `to_text` on the `FunctionCallLog` class which simplifies printing out function call logs.
+
 ## [6.29.0] - 2023-10-04
 ### Added
 - Added parameter `resolve_duplicate_file_names` to `client.files.download`. 

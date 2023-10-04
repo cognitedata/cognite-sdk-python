@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -376,9 +377,27 @@ class FunctionCallLogEntry(CogniteResource):
         self.message = message
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def _format(self, with_timestamps: bool = False) -> str:
+        ts = ""
+        if with_timestamps and self.timestamp is not None:
+            ts = f"[{ms_to_datetime(self.timestamp)}] "
+        return f"{ts}{self.message}"
+
 
 class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
+    """A collection of function call log entries."""
+
     _RESOURCE = FunctionCallLogEntry
+
+    def to_text(self, with_timestamps: bool = False) -> str:
+        """Return a new-line delimited string of the log entry messages, optionally with entry timestamps.
+
+        Args:
+            with_timestamps (bool): Whether to include entry timestamps in the output. Defaults to False.
+        Returns:
+            str: new-line delimited log entries.
+        """
+        return "\n".join(entry._format(with_timestamps) for entry in self)
 
 
 class FunctionsLimits(CogniteResponse):
