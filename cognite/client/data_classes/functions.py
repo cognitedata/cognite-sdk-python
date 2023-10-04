@@ -380,6 +380,10 @@ class FunctionCallLogEntry(CogniteResource):
 class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
     _RESOURCE = FunctionCallLogEntry
 
+    @property
+    def text(self) -> str:
+        ...
+
 
 class FunctionsLimits(CogniteResponse):
     """Service limits for the associated project.
