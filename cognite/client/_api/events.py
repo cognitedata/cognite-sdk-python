@@ -22,7 +22,7 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.events import EventPropertyLike, EventSort, SortableEventProperty
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 SortSpec: TypeAlias = Union[
     EventSort,
@@ -697,10 +697,6 @@ class EventsAPI(APIClient):
                 ...                       sort=(SortableEventProperty.start_time, "desc"))
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
-            sort = [sort]
 
         return self._list(
             list_cls=EventList,
@@ -708,7 +704,7 @@ class EventsAPI(APIClient):
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=[EventSort.load(item).dump(camel_case=True) for item in sort],
+            sort=prepare_filter_sort(sort, EventSort),
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:

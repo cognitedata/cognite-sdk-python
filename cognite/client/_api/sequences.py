@@ -26,7 +26,7 @@ from cognite.client.data_classes.sequences import SequenceProperty, SequenceSort
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
-from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     import pandas
@@ -767,10 +767,6 @@ class SequencesAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
-            sort = [sort]
 
         return self._list(
             list_cls=SequenceList,
@@ -778,7 +774,7 @@ class SequencesAPI(APIClient):
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
+            sort=prepare_filter_sort(sort, SequenceSort),
             api_subversion="beta",
         )
 

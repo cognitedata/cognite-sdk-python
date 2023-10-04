@@ -307,6 +307,21 @@ class TestAssetsAPI:
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"
 
+    def test_filter_without_sort(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Arrange
+        f = filters
+        is_integration_test = f.Prefix("external_id", "integration_test:")
+        in_europe = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+
+        # Act
+        result = cognite_client.assets.filter(
+            f.And(is_integration_test, in_europe), aggregated_properties=["child_count"], sort=None
+        )
+
+        # Assert
+        assert len(result) == 1, "Expected only one asset to match the filter"
+        assert result[0].external_id == "integration_test:asset2"
+
     def test_aggregate_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
         f = filters
         is_integration_test = f.Prefix("externalId", "integration_test:")
