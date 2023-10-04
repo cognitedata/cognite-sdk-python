@@ -370,6 +370,41 @@ class TestCogniteResourceList:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    @pytest.mark.dsl
+    def test_to_pandas_method(self):
+        import pandas as pd
+
+        from cognite.client.data_classes import Asset, Label
+
+        asset = Asset(
+            external_id="test-1",
+            name="test 1",
+            parent_external_id="parent-test-1",
+            description="A test asset",
+            data_set_id=123,
+            labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+        )
+
+        result_df = asset.to_pandas()
+
+        data = {
+            "value": [
+                "test-1",
+                "test 1",
+                "parent-test-1",
+                "A test asset",
+                123,
+                [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+            ]
+        }
+
+        index_labels = ["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"]
+
+        expected_df = pd.DataFrame(data, index=index_labels)
+
+        # Assert that the resultant DataFrame is equal to the expected DataFrame
+        pd.testing.assert_frame_equal(result_df, expected_df)
+
 
 class TestCogniteFilter:
     def test_dump(self):
