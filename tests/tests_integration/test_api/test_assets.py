@@ -315,7 +315,8 @@ class TestAssetsAPI:
 
         # Act
         result = cognite_client.assets.filter(
-            f.And(is_integration_test, in_europe), aggregated_properties=["child_count"]
+            f.And(is_integration_test, in_europe), aggregated_properties=["child_count"],
+            sort=None
         )
 
         # Assert

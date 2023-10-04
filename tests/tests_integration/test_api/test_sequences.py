@@ -259,10 +259,10 @@ class TestSequencesAPI:
         is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
 
         # Act
-        result = cognite_client.sequences.filter(f.And(is_integration_test, is_asset))
+        result = cognite_client.sequences.filter(f.And(is_integration_test, is_asset), sort=None)
 
         # Assert
-        assert len(result) == 1, "Expected only one sequence in subtree"
+        assert len(result) == 1
         assert result[0].external_id == sequence_list[0].external_id
 
     def test_aggregate_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
