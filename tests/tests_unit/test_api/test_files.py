@@ -2,6 +2,7 @@ import json
 import os
 import re
 from io import BufferedReader
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -108,16 +109,16 @@ def mock_file_download_response(rsps, cognite_client):
         rsps.POST,
         cognite_client.files._get_base_url_with_base_path() + "/files/byids",
         status=200,
-        json={"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]},
+        json={"items": [{"id": 1, "name": "file1"}, {"id": 10, "externalId": "2", "name": "file2"}]},
     )
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
         response = {}
-        if "id" in identifier:
+        if identifier.get("id") == 1:
             response = {"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]}
-        elif "externalId" in identifier:
-            response = {"items": [{"externalId": "2", "downloadUrl": "https://download.file2.here"}]}
+        if identifier.get("id") == 10:
+            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.file2.here"}]}
         return 200, {}, json.dumps(response)
 
     rsps.add_callback(
@@ -132,7 +133,7 @@ def mock_file_download_response(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_file_download_response_with_folder_structure(rsps, cognite_client):
+def mock_file_download_response_with_folder_structure_same_name(rsps, cognite_client):
     rsps.add(
         rsps.POST,
         cognite_client.files._get_base_url_with_base_path() + "/files/byids",
@@ -181,9 +182,9 @@ def mock_file_download_response_one_fails(rsps, cognite_client):
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
-        if "id" in identifier:
+        if identifier.get("id") == 1:
             return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
-        elif "externalId" in identifier:
+        elif identifier.get("id") == 2:
             return (400, {}, json.dumps({"error": {"message": "User error", "code": 400}}))
 
     rsps.add_callback(
@@ -525,12 +526,59 @@ class TestFilesAPI:
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
 
+    @pytest.mark.parametrize(
+        "input_list,expected_output_list",
+        [
+            (["a.txt", "a.txt"], ["a.txt", "a(1).txt"]),
+            (["a.txt", "a.txt", "a(1).txt"], ["a.txt", "a(2).txt", "a(1).txt"]),
+            (["a.txt", "file", "a(1).txt", "a.txt", "file"], ["a.txt", "file", "a(1).txt", "a(2).txt", "file(1)"]),
+            (
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                ],
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a(1).txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a(1).txt")),
+                ],
+            ),
+            (
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch.tar.gz"))],
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch(1).tar.gz"))],
+            ),
+        ],
+    )
+    def test_create_unique_file_names(self, cognite_client, input_list, expected_output_list):
+        assert cognite_client.files._create_unique_file_names(input_list) == expected_output_list
+
+    def test_download_with_duplicate_names(
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
+    ):
+        cognite_client.files.download(
+            directory=tmp_path,
+            id=[1],
+            external_id=["2"],
+            keep_directory_structure=False,
+            resolve_duplicate_file_names=True,
+        )
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
+        )
+        fp1 = tmp_path / "file_a"
+        fp2 = tmp_path / "file_a(1)"
+        assert fp1.is_file()
+        assert fp2.is_file()
+
     def test_download_with_folder_structure(
-        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
     ):
         cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"], keep_directory_structure=True)
         assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
-            mock_file_download_response_with_folder_structure.calls[0].request.body
+            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
         )
         fp1 = tmp_path / "rootdir/subdir/file_a"
         fp2 = tmp_path / "file_a"
