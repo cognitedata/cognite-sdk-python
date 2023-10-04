@@ -380,7 +380,7 @@ class FunctionCallLogEntry(CogniteResource):
     def _format(self, with_timestamps: bool = False) -> str:
         ts = ""
         if with_timestamps and self.timestamp is not None:
-            ts = f"[{ms_to_datetime(self.timestamp).isoformat()}] "
+            ts = f"[{ms_to_datetime(self.timestamp)}] "
         return f"{ts}{self.message}"
 
 

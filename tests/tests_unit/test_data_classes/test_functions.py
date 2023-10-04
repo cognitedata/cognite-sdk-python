@@ -160,7 +160,7 @@ class TestFunctionCallLogEntry:
         ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
         entry = FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message="line one")
 
-        assert entry._format(with_timestamps=True) == f"[{ts.isoformat()}] line one"
+        assert entry._format(with_timestamps=True) == f"[{ts}] line one"
 
     def test_format_without_timestamp(self):
         ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123)
