@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.28.6] - 2023-10-04
 ### Added
-- Convenience method `to_text` on the `FunctionCallLog` class that formats log entries into a new-line delimited string.
+- Convenience method `to_text` on the `FunctionCallLog` class which simplifies printing out function call logs.
 
 ## [6.28.5] - 2023-10-03
 ### Fixed
