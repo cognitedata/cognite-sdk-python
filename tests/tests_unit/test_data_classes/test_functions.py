@@ -1,11 +1,13 @@
-import re
-from unittest.mock import MagicMock, call
 import datetime
+import re
+from typing import List, Tuple
+from unittest.mock import MagicMock, call
+
 import pytest
-from typing import Tuple, List
+
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function, FunctionSchedule, FunctionCallLogEntry, FunctionCallLog
-from cognite.client.utils._time import datetime_to_ms, ms_to_datetime
+from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry, FunctionSchedule
+from cognite.client.utils._time import datetime_to_ms
 from tests.utils import jsgz_load
 
 
@@ -146,7 +148,9 @@ class TestFunctionCallLog:
         assert log.to_text() == expected
 
     def test_to_text_with_timestamps(self, entries):
-        log = FunctionCallLog(resources=[FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message=msg) for (ts, msg) in entries])
+        log = FunctionCallLog(
+            resources=[FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message=msg) for (ts, msg) in entries]
+        )
         expected = "\n".join(entry._format(with_timestamps=True) for entry in log)
         assert log.to_text(with_timestamps=True) == expected
 
