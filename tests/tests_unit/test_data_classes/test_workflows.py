@@ -123,7 +123,6 @@ class TestWorkflowExecutionDetailed:
         expected = [
             WorkflowTask(
                 external_id="testTaskDispatcher",
-                type="function",
                 parameters=FunctionTaskParameters(
                     external_id="bid_process_task_dispatcher",
                     data={
@@ -137,7 +136,6 @@ class TestWorkflowExecutionDetailed:
             ),
             WorkflowTask(
                 external_id="applicationExecution",
-                type="dynamic",
                 description="Run a collection of preprocessor and app runs concurrently",
                 parameters=DynamicTaskParameters(tasks="${testTaskDispatcher.output.response.testTasks}"),
                 retries=0,

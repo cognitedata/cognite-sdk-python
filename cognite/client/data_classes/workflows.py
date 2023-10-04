@@ -94,7 +94,7 @@ class WorkflowList(CogniteResourceList[Workflow]):
 
 
 class WorkflowTaskParameters(CogniteResource, ABC):
-    task_type: ClassVar[str]
+    task_type: ClassVar[Literal["function", "transformation", "cdf", "dynamic"]]
 
     @classmethod
     def load_parameters(cls, data: dict) -> WorkflowTaskParameters:
@@ -155,7 +155,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             ... )
     """
 
-    task_type: ClassVar[str] = "function"
+    task_type = "function"
 
     def __init__(
         self,
@@ -202,7 +202,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
 
     """
 
-    task_type: ClassVar[str] = "transformation"
+    task_type = "transformation"
 
     def __init__(self, external_id: str) -> None:
         self.external_id = external_id
@@ -245,7 +245,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
 
     """
 
-    task_type: ClassVar[str] = "cdf"
+    task_type = "cdf"
 
     def __init__(
         self,
@@ -300,11 +300,11 @@ class DynamicTaskParameters(WorkflowTaskParameters):
                     When calling Execution details, the tasks parameter will be a list of WorkflowTask objects.
     """
 
-    task_type: ClassVar[str] = "dynamic"
+    task_type = "dynamic"
 
     def __init__(self, tasks: list[WorkflowTask] | str) -> None:
         self.tasks = tasks
-    
+
     @classmethod
     def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
@@ -337,7 +337,6 @@ class WorkflowTask(CogniteResource):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         parameters (WorkflowTaskParameters): The parameters of the task.
-        type (Literal["function", "transformation", "cdf", "dynamic"] | None): The type of the task.
         name (str | None): The name of the task. Defaults to None.
         description (str | None): The description of the task. Defaults to None.
         retries (int): The number of retries for the task. Defaults to 3.
@@ -349,7 +348,6 @@ class WorkflowTask(CogniteResource):
         self,
         external_id: str,
         parameters: WorkflowTaskParameters,
-        type: Literal["function", "transformation", "cdf", "dynamic"] | None = None,
         name: str | None = None,
         description: str | None = None,
         retries: int = 3,
@@ -358,19 +356,21 @@ class WorkflowTask(CogniteResource):
     ) -> None:
         self.external_id = external_id
         self.parameters = parameters
-        self.type = type or parameters.task_type
         self.name = name
         self.description = description
         self.retries = retries
         self.timeout = timeout
         self.depends_on = depends_on
 
+    @property
+    def type(self) -> Literal["function", "transformation", "cdf", "dynamic"]:
+        return self.parameters.task_type
+
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowTask:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             external_id=resource["externalId"],
-            type=resource["type"],
             parameters=WorkflowTaskParameters.load_parameters(resource),
             name=resource.get("name"),
             description=resource.get("description"),
@@ -538,8 +538,6 @@ class WorkflowTaskExecution(CogniteResource):
         start_time (int | None): The start time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
-        type (str | None): No description.
-
     """
 
     def __init__(
@@ -553,7 +551,6 @@ class WorkflowTaskExecution(CogniteResource):
         start_time: int | None = None,
         end_time: int | None = None,
         reason_for_incompletion: str | None = None,
-        type: str | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -564,7 +561,10 @@ class WorkflowTaskExecution(CogniteResource):
         self.start_time = start_time
         self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
-        self.task_type = type
+
+    @property
+    def task_type(self) -> Literal["function", "transformation", "cdf", "dynamic"]:
+        return self.input.task_type
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowTaskExecution:
@@ -579,14 +579,13 @@ class WorkflowTaskExecution(CogniteResource):
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             reason_for_incompletion=resource.get("reasonForIncompletion"),
-            type=resource.get("taskType"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         output["input"] = self.input.dump(camel_case)
         output["status"] = self.status.upper()
-
+        output[("taskType" if camel_case else "task_type")] = self.task_type
         # API uses isAsyncComplete and asyncComplete inconsistently:
         if self.task_type == "function":
             if (is_async_complete := output["input"].get("isAsyncComplete")) is not None:
