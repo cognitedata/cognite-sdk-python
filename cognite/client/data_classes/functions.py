@@ -385,9 +385,18 @@ class FunctionCallLogEntry(CogniteResource):
 
 
 class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
+    """A collection of function call log entries."""
+
     _RESOURCE = FunctionCallLogEntry
 
     def to_text(self, with_timestamps: bool = False) -> str:
+        """Return a new-line delimeted string of the log entry messages, optionally with entry timestamps.
+
+        Args:
+            with_timestamps (bool): Whether to include entrry timestamps in the output. Defaults to False.
+        Returns:
+            str: new-line delimeted log entries.
+        """
         return "\n".join(entry._format(with_timestamps) for entry in self)
 
 
