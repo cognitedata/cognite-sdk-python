@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils._text import convert_dict_to_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -100,7 +101,7 @@ class Unit(CogniteResource):
         self.source = source
         self.source_reference = source_reference
 
-    def as_id(self) -> UnitID:
+    def as_unit_id(self) -> UnitID:
         """Returns the UnitID of this unit."""
         return UnitID(unit_external_id=self.external_id, name=self.name)
 
@@ -120,17 +121,9 @@ class Unit(CogniteResource):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {
-            ("externalId" if camel_case else "external_id"): self.external_id,
-            "name": self.name,
-            ("longName" if camel_case else "long_name"): self.long_name,
-            "symbol": self.symbol,
-            ("aliasNames" if camel_case else "alias_names"): self.alias_names,
-            "quantity": self.quantity,
-            "conversion": self.conversion.dump(camel_case),
-            "source": self.source,
-            ("sourceReference" if camel_case else "source_reference"): self.source_reference,
-        }
+        dumped = super().dump(camel_case)
+        dumped["conversion"] = self.conversion.dump(camel_case)
+        return convert_dict_to_case(dumped, camel_case)
 
 
 class UnitList(CogniteResourceList[Unit]):
