@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -94,7 +94,7 @@ class SyntheticDatapointsAPI(APIClient):
 
         return (
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
-            if isinstance(expressions, List)
+            if isinstance(expressions, list)
             else datapoints_summary.results[0]
         )
 
