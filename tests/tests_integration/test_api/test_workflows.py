@@ -325,6 +325,7 @@ class TestWorkflowExecutions:
 
         assert non_existing is None
 
+    @pytest.mark.skip("Bad test: CogniteAPIError: There can be only 10000 sessions")
     def test_trigger_retrieve_detailed_update_update_task(
         self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
     ) -> None:

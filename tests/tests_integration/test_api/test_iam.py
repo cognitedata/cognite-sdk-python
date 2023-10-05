@@ -37,6 +37,7 @@ class TestSecurityCategoriesAPI:
 
 
 class TestSessionsAPI:
+    @pytest.mark.skip("Bad test: CogniteAPIError: There can be only 10000 sessions")
     @pytest.mark.skipif(
         os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
     )
