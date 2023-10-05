@@ -74,10 +74,8 @@ class SyntheticDatapointsAPI(APIClient):
             expressions if (isinstance(expressions, Sequence) and not isinstance(expressions, str)) else [expressions]
         )
 
-        for i in range(len(expressions_to_iterate)):
-            expression, short_expression = self._build_expression(
-                expressions_to_iterate[i], variables, aggregate, granularity
-            )
+        for exp in expressions_to_iterate:
+            expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)
             query = {
                 "expression": expression,
                 "start": cognite.client.utils._time.timestamp_to_ms(start),
