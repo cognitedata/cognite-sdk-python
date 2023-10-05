@@ -394,7 +394,7 @@ class TestCogniteResourceList:
                 "parent-test-1",
                 "A test asset",
                 123,
-                [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+                [{"external_id": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
             ]
         }
 
