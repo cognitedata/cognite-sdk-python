@@ -120,6 +120,7 @@ class GeoLocation(dict):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        # TODO: convert_all_keys_to_camel_snake_otherwise(self, camel_case)
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
@@ -143,4 +144,5 @@ class GeoLocationFilter(dict):
         return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        # TODO: convert_all_keys_to_camel_snake_otherwise(self, camel_case)
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
