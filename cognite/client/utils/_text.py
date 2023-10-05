@@ -84,3 +84,10 @@ def shorten(obj: Any, width: int = 20, placeholder: str = "...") -> str:
     if len(s) <= width:
         return s
     return f"{s[:width-n]}{placeholder}"
+
+
+def convert_all_keys_to_camel_snake_otherwise(dct: dict[str, Any], camel_case: bool = False) -> dict[str, Any]:
+    if camel_case:
+        return {to_camel_case(key): value for key, value in dct.items()}
+    else:
+        return {to_snake_case(key): value for key, value in dct.items()}
