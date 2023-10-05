@@ -497,7 +497,10 @@ class RawRowsAPI(APIClient):
             return None
         if not isinstance(columns, list):
             raise ValueError("Expected a list for argument columns")
-        return "," if len(columns) == 0 else ",".join([str(x) for x in columns])
+        if len(columns) == 0:
+            return ","
+        else:
+            return ",".join(str(x) for x in columns)
 
     def retrieve_dataframe(
         self,
