@@ -1,3 +1,4 @@
+import time
 import uuid
 
 import pytest
@@ -11,9 +12,31 @@ from cognite.client.data_classes import (
     TemplateInstance,
     TemplateInstanceList,
 )
-from cognite.client.data_classes.events import Event
+from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolveList, ViewResolver
 from cognite.client.exceptions import CogniteNotFoundError
+
+
+@pytest.fixture(scope="session")
+def ensure_event_test_data(cognite_client):
+    events = EventList(
+        [
+            Event(
+                external_id=f"test_evt_templates_1_{i}",
+                type="test_templates_1",
+                start_time=i * 1000,
+            )
+            for i in range(1001)
+        ]
+    )
+    try:
+        cognite_client.events.retrieve_multiple(
+            external_ids=events.as_external_ids(),
+            ignore_unknwown_ids=False,
+        )
+    except CogniteNotFoundError:
+        cognite_client.events.upsert(events)
+        time.sleep(3)
 
 
 @pytest.fixture
@@ -75,22 +98,9 @@ def new_template_instance(cognite_client, new_template_group_version):
     cognite_client.templates.instances.delete(ext_id, new_version.version, instance.external_id)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
+@pytest.mark.usefixtures("ensure_event_test_data")
 def new_view(cognite_client, new_template_group_version):
-    events = [
-        Event(
-            external_id=f"test_evt_templates_1_{i}",
-            type="test_templates_1",
-            start_time=i * 1000,
-        )
-        for i in range(1001)
-    ]
-    try:
-        cognite_client.events.create(events)
-    except Exception:
-        # We only generate this data once for a given project, to prevent issues with eventual consistency etc.
-        None
-
     new_group, ext_id, new_version = new_template_group_version
     view = View(
         external_id="test",
@@ -115,7 +125,7 @@ class TestTemplatesCogniteClient:
         assert isinstance(res[0], TemplateGroup)
         assert new_group.external_id == ext_id
 
-    def test_groups_retrieve_unknown(self, cognite_client, new_template_group):
+    def test_groups_retrieve_unknown(self, cognite_client):
         with pytest.raises(CogniteNotFoundError):
             cognite_client.templates.groups.retrieve_multiple(external_ids=["this does not exist"])
         assert cognite_client.templates.groups.retrieve_multiple(external_ids="this does not exist") is None
@@ -224,16 +234,12 @@ class TestTemplatesCogniteClient:
     def test_view_delete(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
         cognite_client.templates.views.delete(ext_id, new_version.version, [view.external_id])
-        assert (
-            len(
-                [
-                    res
-                    for res in cognite_client.templates.views.list(ext_id, new_version.version)
-                    if res.external_id == view.external_id
-                ]
-            )
-            == 0
-        )
+        should_be_empty = [
+            res
+            for res in cognite_client.templates.views.list(ext_id, new_version.version)
+            if res.external_id == view.external_id
+        ]
+        assert len(should_be_empty) == 0
 
     def test_view_resolve(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
