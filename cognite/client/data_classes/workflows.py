@@ -769,6 +769,7 @@ class WorkflowExecution(CogniteResource):
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
+        metadata (dict | None): Application specific metadata.
     """
 
     def __init__(
