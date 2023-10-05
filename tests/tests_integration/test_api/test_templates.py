@@ -75,7 +75,7 @@ def new_template_instance(cognite_client, new_template_group_version):
     cognite_client.templates.instances.delete(ext_id, new_version.version, instance.external_id)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def new_view(cognite_client, new_template_group_version):
     events = [
         Event(
