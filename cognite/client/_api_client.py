@@ -636,7 +636,7 @@ class APIClient:
         utils._auxiliary.assert_type(fields, "fields", [list], allow_none=True)
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
-        elif isinstance(filter, Dict):
+        elif isinstance(filter, dict):
             dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
@@ -748,7 +748,7 @@ class APIClient:
             utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
             if isinstance(filter, CogniteFilter):
                 dumped_filter = filter.dump(camel_case=True)
-            elif isinstance(filter, Dict):
+            elif isinstance(filter, dict):
                 dumped_filter = convert_all_keys_to_camel_case(filter)
             else:
                 raise ValueError(f"Unknown filter format: {filter}")
@@ -1164,7 +1164,7 @@ class APIClient:
             error = res.json()["error"]
             if isinstance(error, str):
                 msg = error
-            elif isinstance(error, Dict):
+            elif isinstance(error, dict):
                 msg = error["message"]
                 missing = error.get("missing")
                 duplicated = error.get("duplicated")
