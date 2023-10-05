@@ -781,6 +781,7 @@ class WorkflowExecution(CogniteResource):
         start_time: int | None = None,
         end_time: int | None = None,
         reason_for_incompletion: str | None = None,
+        metadata: dict | None = None,
     ) -> None:
         self.id = id
         self.workflow_external_id = workflow_external_id
@@ -790,6 +791,7 @@ class WorkflowExecution(CogniteResource):
         self.start_time = start_time
         self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
+        self.metadata = metadata
 
     def as_workflow_id(self) -> WorkflowVersionId:
         return WorkflowVersionId(
@@ -812,6 +814,7 @@ class WorkflowExecution(CogniteResource):
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             reason_for_incompletion=resource.get("reasonForIncompletion"),
+            metadata=resource.get("metadata"),
         )
 
 
