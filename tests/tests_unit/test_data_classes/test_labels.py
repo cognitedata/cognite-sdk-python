@@ -1,5 +1,5 @@
 import pytest
-from cognite.client.data_classes.labels import Label
+from cognite.client.data_classes.labels import Label, LabelDefinition
 
 
 class TestLabel:
@@ -14,3 +14,8 @@ class TestLabel:
     )
     def test_dump(self, fields: dict, is_camel_case: bool, expected: dict):
         assert Label(**fields).dump(is_camel_case) == expected
+
+    def test_load_list(self):
+        assert Label._load_list(None) is None
+        labels = [{"externalId": "a"}, "b", Label("c"), LabelDefinition("d")]
+        assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]

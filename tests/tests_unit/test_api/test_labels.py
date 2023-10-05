@@ -75,11 +75,6 @@ class TestLabels:
         with pytest.raises(TypeError):
             cognite_client.labels.create([Label(external_id="1", name="my_label")])
 
-    def test_load_list(self):
-        assert Label._load_list(None) is None
-        labels = [{"externalId": "a"}, "b", Label("c"), LabelDefinition("d")]
-        assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]
-
     def test_list_with_dataset_ids(self, cognite_client, mock_labels_response):
         res = cognite_client.labels.list(data_set_ids=[123], data_set_external_ids=["x"])
         assert res[0].data_set_id == 1
