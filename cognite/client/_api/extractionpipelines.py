@@ -266,7 +266,7 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", statuses="failure", created_time="24h-ago")
+                >>> res = c.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
         """
         if isinstance(created_time, str):
             timespan = time_ago_to_ms(created_time)
