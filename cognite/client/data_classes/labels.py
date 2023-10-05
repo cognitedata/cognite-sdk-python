@@ -8,7 +8,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.utils._text import to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_snake_otherwise, to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -107,8 +107,7 @@ class Label(dict):
         return cls(external_id=raw_label["externalId"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        case_converter = to_camel_case if camel_case else to_snake_case
-        return {case_converter(k): v for k, v in self.items()}
+        return convert_all_keys_to_camel_snake_otherwise(self, camel_case)
 
 
 class LabelFilter(dict, CogniteFilter):
@@ -149,6 +148,7 @@ class LabelFilter(dict, CogniteFilter):
         return [{"externalId": v} for v in values]
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        # TODO: convert_all_keys_to_camel_snake_otherwise
         keys = map(to_camel_case, self.keys()) if camel_case else self.keys()
         return dict(zip(keys, map(self._wrap_labels, self.values())))
 

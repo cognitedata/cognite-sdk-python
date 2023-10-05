@@ -15,7 +15,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_snake_otherwise
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -43,7 +43,7 @@ class ExtractionPipelineContact(dict):
     send_notification = CognitePropertyClassUtil.declare_property("sendNotification")
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        return convert_all_keys_to_camel_snake_otherwise(self, camel_case)
 
 
 class ExtractionPipeline(CogniteResource):
