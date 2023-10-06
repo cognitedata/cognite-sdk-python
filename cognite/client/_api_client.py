@@ -52,13 +52,14 @@ from cognite.client.utils._identifier import (
     IdentifierSequenceCore,
     SingletonIdentifierSequence,
 )
+from cognite.client.utils._logging import COGNITE_LOGGER_NAME
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-log = logging.getLogger("cognite-sdk")
+log = logging.getLogger(COGNITE_LOGGER_NAME)
 
 T = TypeVar("T")
 
