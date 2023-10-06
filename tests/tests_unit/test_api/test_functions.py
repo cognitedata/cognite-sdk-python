@@ -118,6 +118,7 @@ CALL_SCHEDULED = {
     "scheduleId": 6789,
     "functionId": FUNCTION_ID,
 }
+SESSION_REVOKED = {"creationTime": 0, "expirationTime": 0, "id": 123, "status": "REVOKED", "type": "TOKEN_EXCHANGE"}
 
 
 @pytest.fixture
@@ -135,6 +136,15 @@ def mock_sessions_with_client_credentials(rsps, cognite_client_with_client_crede
         match=[post_body_matcher({"items": [{"clientId": creds.client_id, "clientSecret": creds.client_secret}]})],
     )
 
+    url = full_url(cognite_client_with_client_credentials_flow, "/sessions/revoke", api="iam.sessions")
+    rsps.add(
+        rsps.POST,
+        url=url,
+        status=200,
+        json={"items": [SESSION_REVOKED]},
+        match=[post_body_matcher({"items": [{"id": 123}]})],
+    )
+
     return rsps
 
 
@@ -148,6 +158,14 @@ def mock_sessions_with_token_exchange(rsps, cognite_client):
         status=200,
         json={"items": [{"nonce": "aabbccdd", "id": 123, "status": "mocky"}]},
         match=[post_body_matcher({"items": [{"tokenExchange": True}]})],
+    )
+
+    rsps.add(
+        rsps.POST,
+        url=full_url(cognite_client, "/sessions/revoke"),
+        status=200,
+        json={"items": [SESSION_REVOKED]},
+        match=[post_body_matcher({"items": [{"id": 123}]})],
     )
 
     return rsps
@@ -560,12 +578,13 @@ class TestFunctionsAPI:
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_from_oidc_client_credentials_flow(
-        self, mock_functions_call_responses, cognite_client_with_client_credentials_flow
+        self, mock_functions_call_responses, cognite_client_with_client_credentials_flow: CogniteClient
     ):
         res = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
 
         assert isinstance(res, FunctionCall)
-        assert mock_functions_call_responses.calls[-1].response.json()["items"][0] == res.dump(camel_case=True)
+        # The last call is to revoke the session
+        assert mock_functions_call_responses.calls[-2].response.json()["items"][0] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_by_external_id_from_oidc_client_credentials_flow(
@@ -574,7 +593,8 @@ class TestFunctionsAPI:
         res = cognite_client_with_client_credentials_flow.functions.call(external_id=f"func-no-{FUNCTION_ID}")
 
         assert isinstance(res, FunctionCall)
-        expected = mock_functions_call_by_external_id_responses.calls[-1].response.json()["items"][0]
+        # The last call is to revoke the session
+        expected = mock_functions_call_by_external_id_responses.calls[-2].response.json()["items"][0]
         assert expected == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
@@ -589,7 +609,8 @@ class TestFunctionsAPI:
     ):
         res = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
         assert isinstance(res, FunctionCall)
-        assert mock_functions_call_timeout_response.calls[-1].response.json() == res.dump(camel_case=True)
+        # The last call is to revoke the session
+        assert mock_functions_call_timeout_response.calls[-2].response.json() == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_with_token_exchange")
     def test_function_call_from_oidc_token_exchange_flow(
@@ -795,7 +816,12 @@ def mock_function_schedules_response(rsps, cognite_client):
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.GET, url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
     rsps.add(rsps.POST, url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
-
+    rsps.add(
+        rsps.POST,
+        full_url(cognite_client, "/sessions/revoke"),
+        status=200,
+        json={"items": [{"id": 123, "status": "mocky"}]},
+    )
     yield rsps
 
 
@@ -819,6 +845,12 @@ def mock_function_schedules_response_xid_not_valid_with_oidc(rsps, cognite_clien
             }
         },
     )
+    rsps.add(
+        rsps.POST,
+        full_url(cognite_client, "/sessions/revoke"),
+        status=200,
+        json={"items": [{"id": 123, "status": "mocky"}]},
+    )
     yield rsps
 
 
@@ -836,6 +868,13 @@ def mock_function_schedules_response_oidc_client_credentials(rsps, cognite_clien
 
     url = full_url(cognite_client, "/functions/schedules")
     rsps.add(rsps.POST, url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_ID_AND_SESSION]})
+    rsps.add(
+        rsps.POST,
+        full_url(cognite_client, "/sessions/revoke"),
+        status=200,
+        json={"items": [{"id": 123, "status": "mocky"}]},
+        match=[post_body_matcher({"items": [{"id": 123}]})],
+    )
     yield rsps
 
 
@@ -915,7 +954,7 @@ class TestFunctionSchedulesAPI:
         assert excinfo.value.code == 400
 
         # Verify that the mocked nonce from the first call is sent in the create-schedule call:
-        _, schedule_create_call = mock_function_schedules_response_xid_not_valid_with_oidc.calls
+        _, schedule_create_call, _ = mock_function_schedules_response_xid_not_valid_with_oidc.calls
         req_body = jsgz_load(schedule_create_call.request.body)["items"][0]
         assert req_body["nonce"] == "very noncy"
         assert req_body["functionId"] is None
