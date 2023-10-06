@@ -45,7 +45,20 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
+PropertyValue = Union[
+    str,
+    int,
+    float,
+    bool,
+    dict,
+    List[str],
+    List[int],
+    List[float],
+    List[bool],
+    List[dict],
+    NodeId,
+    DirectRelationReference,
+]
 Space = str
 PropertyIdentifier = str
 
@@ -67,7 +80,16 @@ class NodeOrEdgeData:
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> dict:
-        output: dict[str, Any] = {"properties": dict(self.properties.items())}
+        properties: dict[str, PropertyValue] = {}
+        for key, value in self.properties.items():
+            if isinstance(value, NodeId):
+                # We don't want to dump the instance_type field when serializing NodeId in this context
+                properties[key] = value.dump(camel_case, include_instance_type=False)
+            elif isinstance(value, DirectRelationReference):
+                properties[key] = value.dump(camel_case)
+            else:
+                properties[key] = value
+        output: dict[str, Any] = {"properties": properties}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
                 output["source"] = self.source.dump(camel_case)
