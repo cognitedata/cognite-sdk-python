@@ -1,10 +1,13 @@
+import datetime
 import re
+from typing import List, Tuple
 from unittest.mock import MagicMock, call
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function, FunctionSchedule
+from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry, FunctionSchedule
+from cognite.client.utils._time import datetime_to_ms
 from tests.utils import jsgz_load
 
 
@@ -130,3 +133,43 @@ class TestFunctionCall:
                 "status": "Completed",
             },
         } == jsgz_load(calls[0].request.body)
+
+
+class TestFunctionCallLog:
+    @pytest.fixture(scope="class")
+    def entries(self) -> List[Tuple[datetime.datetime, str]]:
+        start_ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
+        ms_delta = datetime.timedelta(milliseconds=100)
+        return [(start_ts + i * ms_delta, f"line {i}") for i in range(10)]
+
+    def test_to_text_without_timestamps(self, entries):
+        log = FunctionCallLog(resources=[FunctionCallLogEntry(timestamp=ts, message=msg) for (ts, msg) in entries])
+        expected = "\n".join([msg for (_, msg) in entries])
+        assert log.to_text() == expected
+
+    def test_to_text_with_timestamps(self, entries):
+        log = FunctionCallLog(
+            resources=[FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message=msg) for (ts, msg) in entries]
+        )
+        expected = "\n".join(entry._format(with_timestamps=True) for entry in log)
+        assert log.to_text(with_timestamps=True) == expected
+
+
+class TestFunctionCallLogEntry:
+    def test_format_with_timestamp(self):
+        ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
+        entry = FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message="line one")
+
+        assert entry._format(with_timestamps=True) == f"[{ts}] line one"
+
+    def test_format_without_timestamp(self):
+        ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123)
+        entry = FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message="line one")
+
+        assert entry._format(with_timestamps=False) == "line one"
+
+    def test_format_with_none_timestamp(self):
+        entry = FunctionCallLogEntry(timestamp=None, message="line one")
+
+        assert entry._format(with_timestamps=True) == "line one"
+        assert entry._format(with_timestamps=False) == "line one"

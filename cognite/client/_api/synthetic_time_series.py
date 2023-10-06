@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -74,10 +74,8 @@ class SyntheticDatapointsAPI(APIClient):
             expressions if (isinstance(expressions, Sequence) and not isinstance(expressions, str)) else [expressions]
         )
 
-        for i in range(len(expressions_to_iterate)):
-            expression, short_expression = self._build_expression(
-                expressions_to_iterate[i], variables, aggregate, granularity
-            )
+        for exp in expressions_to_iterate:
+            expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)
             query = {
                 "expression": expression,
                 "start": cognite.client.utils._time.timestamp_to_ms(start),
@@ -92,13 +90,11 @@ class SyntheticDatapointsAPI(APIClient):
         datapoints_summary = utils._concurrency.execute_tasks(
             self._fetch_datapoints, tasks, max_workers=self._config.max_workers
         )
-
-        if datapoints_summary.exceptions:
-            raise datapoints_summary.exceptions[0]
+        datapoints_summary.raise_first_encountered_exception()
 
         return (
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
-            if isinstance(expressions, List)
+            if isinstance(expressions, list)
             else datapoints_summary.results[0]
         )
 

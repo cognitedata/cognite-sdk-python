@@ -506,8 +506,7 @@ class APIClient:
             tasks_summary = utils._concurrency.execute_tasks(
                 get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
             )
-            if tasks_summary.exceptions:
-                raise tasks_summary.exceptions[0]
+            tasks_summary.raise_first_encountered_exception()
 
             for item in tasks_summary.joined_results():
                 yield resource_cls._load(item, cognite_client=self._cognite_client)
@@ -619,8 +618,8 @@ class APIClient:
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
         tasks_summary = utils._concurrency.execute_tasks(get_partition, tasks, max_workers=partitions)
-        if tasks_summary.exceptions:
-            raise tasks_summary.exceptions[0]
+        tasks_summary.raise_first_encountered_exception()
+
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     def _aggregate(
@@ -637,7 +636,7 @@ class APIClient:
         utils._auxiliary.assert_type(fields, "fields", [list], allow_none=True)
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
-        elif isinstance(filter, Dict):
+        elif isinstance(filter, dict):
             dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
@@ -749,7 +748,7 @@ class APIClient:
             utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
             if isinstance(filter, CogniteFilter):
                 dumped_filter = filter.dump(camel_case=True)
-            elif isinstance(filter, Dict):
+            elif isinstance(filter, dict):
                 dumped_filter = convert_all_keys_to_camel_case(filter)
             else:
                 raise ValueError(f"Unknown filter format: {filter}")
@@ -1165,7 +1164,7 @@ class APIClient:
             error = res.json()["error"]
             if isinstance(error, str):
                 msg = error
-            elif isinstance(error, Dict):
+            elif isinstance(error, dict):
                 msg = error["message"]
                 missing = error.get("missing")
                 duplicated = error.get("duplicated")
