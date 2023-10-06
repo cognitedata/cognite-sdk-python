@@ -17,6 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.31.0] - 2023-10-06
+### Added
+- Retrieve method for session, `client.iam.session.retrieve`
+- Added option for getting a session as a context objet with `client.iam.session()`
+### Fixed
+- Used the context session to revoke the session when used in `Functions` and `Workflows`. This is to avoid hitting
+  the limit for sessions would could occure when triggering a lot of workflows or functions.
+
 ## [6.30.1] - 2023-10-06
 ### Added
 - Support for metadata on Workflow executions. Set custom metadata when triggering a workflow (`workflows.executions.trigger()`). The metadata is included in results from `workflows.executions.list()` and `workflows.executions.retrieve_detailed()`.
