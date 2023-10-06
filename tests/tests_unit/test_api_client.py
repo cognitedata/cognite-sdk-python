@@ -1004,7 +1004,7 @@ class TestStandardUpdate:
         assert e.value.unknown == [0, "abc"]
 
     def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps, monkeypatch):
-        # Note 1: We have two tasks being added to an executor, but that doesnt mean we know the
+        # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
         # execution order. Depending on whether the 400 or 500 hits the first or second task,
         # the following asserts fail (ordering issue). Thus, we use 'matchers.json_params_matcher'
         # to make sure the responses match the two tasks.

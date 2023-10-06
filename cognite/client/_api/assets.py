@@ -49,11 +49,11 @@ from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, Sor
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import split_into_n_parts
+from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import classify_error, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -329,7 +329,7 @@ class AssetsAPI(APIClient):
 
         Args:
             property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
-            advanced_filter (Filter | dict | None): The advaned filter to narrow down the assets to count.
+            advanced_filter (Filter | dict | None): The advanced filter to narrow down the assets to count.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count (strict matching).
 
         Returns:
@@ -615,7 +615,7 @@ class AssetsAPI(APIClient):
             3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
             4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
 
-        As part of validation there is a fifth category that is ignored when using this method (for backwards compatability) and that
+        As part of validation there is a fifth category that is ignored when using this method (for backwards compatibility) and that
         is orphan assets. These are assets linking a parent by an identifier that is not present among the given assets, and as such,
         might contain links we are unable to vet ahead of insertion. These are thus assumed to be valid, but may fail.
 
@@ -652,7 +652,7 @@ class AssetsAPI(APIClient):
 
             Patch will only update the parameters you have defined on your assets. Note that specifically setting
             something to ``None`` is the same as not setting it. For ``metadata``, this will extend your existing
-            data, only overwriting when keys overlap. For ``labels`` the behavour is mostly the same, existing are
+            data, only overwriting when keys overlap. For ``labels`` the behaviour is mostly the same, existing are
             left untouched, and your new ones are simply added.
 
             You may also pass ``upsert_mode="replace"`` to make sure the updated assets look identical to the ones
@@ -907,10 +907,7 @@ class AssetsAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
-            sort = [sort]
+
         if aggregated_properties:
             aggregated_properties_camel = [to_camel_case(prop) for prop in aggregated_properties]
         else:
@@ -922,7 +919,7 @@ class AssetsAPI(APIClient):
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=[AssetSort.load(item).dump(camel_case=True) for item in sort],
+            sort=prepare_filter_sort(sort, AssetSort),
             other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
         )
 
@@ -1012,17 +1009,13 @@ class AssetsAPI(APIClient):
     def _get_asset_subtree(self, assets: list, current_depth: int, depth: int | None) -> list:
         subtree = assets
         if depth is None or current_depth < depth:
-            children = self._get_children(assets)
-            if children:
+            if children := self._get_children(subtree):
                 subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
         return subtree
 
     def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
-        tasks = []
-        chunk_size = 100
-        for i in range(0, len(ids), chunk_size):
-            tasks.append({"parent_ids": ids[i : i + chunk_size], "limit": -1})
+        tasks = [{"parent_ids": chunk, "limit": -1} for chunk in split_into_chunks(ids, 100)]
         tasks_summary = utils._concurrency.execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results

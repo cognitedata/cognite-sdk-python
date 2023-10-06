@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import cProfile
-import functools
 import gzip
 import json
 import math
@@ -115,24 +113,6 @@ def jsgz_load(s):
 
 
 @contextmanager
-def profilectx():
-    pr = cProfile.Profile()
-    pr.enable()
-    yield
-    pr.disable()
-    pr.print_stats(sort="cumtime")
-
-
-def profile(method):
-    @functools.wraps(method)
-    def wrapper(*args, **kwargs):
-        with profilectx():
-            method(*args, **kwargs)
-
-    return wrapper
-
-
-@contextmanager
 def set_request_limit(client, limit):
     limits = [
         "_CREATE_LIMIT",
@@ -240,30 +220,3 @@ def dict_without(input_dict: Mapping[K, V], without_keys: set[str]) -> dict[K, V
     {'foo': 'bar', 'bar': 'baz', 'zip': 'zap'}
     """
     return {k: v for k, v in input_dict.items() if k not in without_keys}
-
-
-def dict_with(input_dict: dict[K, V], with_keys: set[str]) -> dict[K, V]:
-    """Copy `input_dict`, including only keys in `with_keys`.
-
-    >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
-    >>> b = dict_with(a, {"foo", "bar"})
-    >>> b
-    {'foo': 'bar', 'bar': 'baz'}
-    >>> b["foo"] = "not bar"
-    >>> a
-    {'foo': 'bar', 'bar': 'baz', 'zip': 'zap'}
-    """
-    return {k: v for k, v in input_dict.items() if k in with_keys}
-
-
-def compare_dicts_without(a: dict, b: dict, without_keys: set[str]) -> bool:
-    """Check whether `a` and `b` are equal, ignoring `without_keys`
-
-    >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
-    >>> b = {"foo": "bar"}
-    >>> compare_dicts_without(a, b, {"bar", "zip"})
-    True
-    >>> compare_dicts_without(a, b, {"bar"})
-    False
-    """
-    return dict_without(a, without_keys) == dict_without(b, without_keys)

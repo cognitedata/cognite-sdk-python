@@ -162,9 +162,8 @@ class Asset(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
         instance = super()._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.aggregates is not None:
-                instance.aggregates = AggregateResultItem(**instance.aggregates)
+        if isinstance(resource, dict) and instance.aggregates is not None:
+            instance.aggregates = AggregateResultItem(**instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)
@@ -673,7 +672,7 @@ class AssetHierarchy:
         return mapping
 
     def count_subtree(self, mapping: dict[str | None, list[Asset]]) -> dict[str, int]:
-        """Returns a mapping from asset external ID to the size of its subtree (children and children of chidren etc.).
+        """Returns a mapping from asset external ID to the size of its subtree (children and children of children etc.).
 
         Args:
             mapping (dict[str | None, list[Asset]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).

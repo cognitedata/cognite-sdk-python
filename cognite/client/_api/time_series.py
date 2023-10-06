@@ -20,7 +20,7 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -237,7 +237,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             advanced_filter (Filter | dict | None): The filter to narrow down the time series to count.
-            filter (TimeSeriesFilter | dict | None): The filter to narrow down time series to count requirering exact match.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down time series to count requiring exact match.
 
         Returns:
             int: The number of time series matching the specified filters and search.
@@ -281,7 +281,7 @@ class TimeSeriesAPI(APIClient):
             property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
             advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filters and search.
 
@@ -332,7 +332,7 @@ class TimeSeriesAPI(APIClient):
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filters and search.
 
@@ -368,7 +368,7 @@ class TimeSeriesAPI(APIClient):
             property (TimeSeriesProperty | str | list[str]): The property to group by.
             advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of time series matching the specified filters and search.
@@ -430,7 +430,7 @@ class TimeSeriesAPI(APIClient):
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of time series matching the specified filters and search.
@@ -671,7 +671,7 @@ class TimeSeriesAPI(APIClient):
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
 
-            To make it easier to avoid spelling mistakes and easiser to look up available properties
+            To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` enums.
 
                 >>> from cognite.client import CogniteClient
@@ -683,10 +683,6 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
-            sort = [sort]
 
         return self._list(
             list_cls=TimeSeriesList,
@@ -694,8 +690,7 @@ class TimeSeriesAPI(APIClient):
             method="POST",
             limit=limit,
             advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
-            api_subversion="beta",
+            sort=prepare_filter_sort(sort, TimeSeriesSort),
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:

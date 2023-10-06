@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Awaitable, Dict, Literal, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -537,7 +537,7 @@ class TransformationPreviewResult(CogniteResource):
 
     Args:
         schema (TransformationSchemaColumnList | None): List of column descriptions.
-        results (list[dict] | None): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entrie.
+        results (list[dict] | None): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entry.
         cognite_client (CogniteClient | None): No description.
     """
 
@@ -554,11 +554,11 @@ class TransformationPreviewResult(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
         instance = super()._load(resource, cognite_client)
-        if isinstance(instance.schema, Dict):
+        if isinstance(instance.schema, dict):
             items = instance.schema.get("items")
             if items is not None:
                 instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
-        if isinstance(instance.results, Dict):
+        if isinstance(instance.results, dict):
             items = instance.results.get("items")
             if items is not None:
                 instance.results = items

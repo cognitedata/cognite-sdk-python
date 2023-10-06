@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence, Tuple, Union
-from warnings import warn
 
 from typing_extensions import TypeAlias
 
@@ -23,6 +22,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -42,12 +42,8 @@ class BetaWorkflowAPIClient(APIClient, ABC):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
-
-    @staticmethod
-    def _experimental_warning() -> None:
-        warn(
-            "Workflow Orchestration endpoints are experimental and may be subject to breaking changes in future versions without notice.",
-            FutureWarning,
+        self._warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="alpha", feature_name="Workflow Orchestration"
         )
 
 
@@ -96,7 +92,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
                 >>> res = c.workflows.tasks.update(res.tasks[1].id, "completed")
 
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         body: dict[str, Any] = {"status": status.upper()}
         if output is not None:
@@ -136,7 +132,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
                 >>> res = c.workflows.executions.retrieve_detailed(res[0].id)
 
         """
-        self._experimental_warning()
+        self._warning.warn()
         try:
             response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
         except CogniteAPIError as e:
@@ -188,7 +184,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
                 >>> res = c.workflows.executions.trigger("my workflow", "1", input={"a": 1, "b": 2})
 
         """
-        self._experimental_warning()
+        self._warning.warn()
         nonce = create_session_and_return_nonce(self._cognite_client, api_name="Workflow API")
         body = {"authentication": {"nonce": nonce}}
         if input is not None:
@@ -235,7 +231,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
                 >>> res = c.workflows.executions.list(created_time_start=int((datetime.now() - timedelta(days=1)).timestamp() * 1000))
 
         """
-        self._experimental_warning()
+        self._warning.warn()
         filter_: dict[str, Any] = {}
         if workflow_version_ids is not None:
             filter_["workflowFilters"] = WorkflowIds._load(workflow_version_ids).dump(
@@ -283,7 +279,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionUpsert, WorkflowDefinitionUpsert, WorkflowTask, FunctionTaskParameters
                 >>> c = CogniteClient()
-                >>> new_version =WorkflowVersionUpsert(
+                >>> new_version = WorkflowVersionUpsert(
                 ...    workflow_external_id="my_workflow",
                 ...    version="1",
                 ...    workflow_definition=WorkflowDefinitionUpsert(
@@ -301,7 +297,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 ... )
                 >>> res = c.workflows.upsert(new_version)
         """
-        self._experimental_warning()
+        self._warning.warn()
         if mode != "replace":
             raise ValueError("Only replace mode is supported for upserting workflow versions.")
 
@@ -339,7 +335,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 >>> c.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
 
         """
-        self._experimental_warning()
+        self._warning.warn()
         identifiers = WorkflowIds._load(workflow_version_id).dump(camel_case=True)
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
@@ -365,7 +361,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 >>> c = CogniteClient()
                 >>> res = c.workflows.versions.retrieve("my workflow", "1")
         """
-        self._experimental_warning()
+        self._warning.warn()
         try:
             response = self._get(
                 url_path=f"/workflows/{workflow_external_id}/versions/{version}",
@@ -413,7 +409,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 >>> res = c.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
-        self._experimental_warning()
+        self._warning.warn()
         if workflow_version_ids is None:
             workflow_ids_dumped = []
         else:
@@ -464,7 +460,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
                 >>> c = CogniteClient()
                 >>> res = c.workflows.upsert(WorkflowUpsert(external_id="my workflow", description="my workflow description"))
         """
-        self._experimental_warning()
+        self._warning.warn()
         if mode != "replace":
             raise ValueError("Only replace mode is supported for upserting workflows.")
 
@@ -491,7 +487,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
                 >>> c = CogniteClient()
                 >>> res = c.workflows.retrieve("my workflow")
         """
-        self._experimental_warning()
+        self._warning.warn()
         try:
             response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
         except CogniteAPIError as e:
@@ -515,7 +511,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
                 >>> c = CogniteClient()
                 >>> c.workflows.delete("my workflow")
         """
-        self._experimental_warning()
+        self._warning.warn()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             params={"ignoreUnknownIds": ignore_unknown_ids},
@@ -538,7 +534,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
                 >>> c = CogniteClient()
                 >>> res = c.workflows.list()
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         return self._list(
             method="GET",

@@ -164,10 +164,8 @@ class CogniteResource(_WithClientMixin):
                     dumped.update(dumped.pop(key))
                 else:
                     raise AssertionError(f"Could not expand attribute '{key}'")
-        df = pd.DataFrame(columns=["value"])
-        for name, value in dumped.items():
-            df.loc[name] = [value]
-        return df
+
+        return pd.Series(dumped).to_frame(name="value")
 
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
@@ -263,7 +261,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return [resource.dump(camel_case) for resource in self.data]
 
     def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
-        """Get an item from this list by id or exernal_id.
+        """Get an item from this list by id or external_id.
 
         Args:
             id (int | None): The id of the item to get.

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -63,7 +63,7 @@ class TransformationSchemaColumn(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationSchemaColumn:
         instance = super()._load(resource, cognite_client)
-        if isinstance(instance.type, Dict):
+        if isinstance(instance.type, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.type)
             instance_type = instance.type.get("type")
             if instance_type == "array":

@@ -392,7 +392,7 @@ class TransformationsAPI(APIClient):
 
         Examples:
 
-            Run transformation asyncronously by id:
+            Run transformation asynchronously by id:
 
                 >>> import asyncio
                 >>> from cognite.client import CogniteClient
@@ -413,7 +413,7 @@ class TransformationsAPI(APIClient):
         return await job.wait_async(timeout=timeout)
 
     def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
-        """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/cancelTransformation>`_
+        """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_
 
         Args:
             transformation_id (int | None): Transformation internal id
@@ -445,7 +445,7 @@ class TransformationsAPI(APIClient):
         source_limit: int | None = 100,
         infer_schema_limit: int | None = 1000,
     ) -> TransformationPreviewResult:
-        """`Preview the result of a query. <https://developer.cognite.com/api#tag/Transformations/operation/runPreview>`_
+        """`Preview the result of a query. <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_
 
         Args:
             query (str | None): SQL query to run for preview.

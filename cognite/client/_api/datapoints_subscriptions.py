@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterator, Sequence
-from warnings import warn
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
@@ -16,6 +15,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionUpdate,
     _DatapointSubscriptionBatchWithPartitions,
 )
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -28,11 +28,8 @@ class DatapointsSubscriptionAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
-
-    def _experimental_warning(self) -> None:
-        warn(
-            "DataPoint Subscriptions are experimental and may be subject to breaking changes in future versions without notice.",
-            FutureWarning,
+        self._warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="alpha", feature_name="DataPoint Subscriptions"
         )
 
     def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
@@ -48,7 +45,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Examples:
 
-            Create a subscrpition with explicit time series IDs:
+            Create a subscription with explicit time series IDs:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionCreate
@@ -69,7 +66,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> sub = DataPointSubscriptionCreate("mySubscription", partition_count=1, filter=numeric_timeseries, name="My subscription for Numeric time series")
                 >>> created = c.time_series.subscriptions.create(sub)
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         return self._create_multiple(
             subscription,
@@ -93,7 +90,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> batch = c.time_series.subscriptions.delete("my_subscription")
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
@@ -119,7 +116,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> batch = c.time_series.subscriptions.retrieve("my_subscription")
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         result = self._retrieve_multiple(
             list_cls=DatapointSubscriptionList,
@@ -163,7 +160,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add("MyNewTimeSeriesExternalId")
                 >>> updated = c.time_series.subscriptions.update(update)
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         return self._update_multiple(
             items=update,
@@ -217,7 +214,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed data in {len(batch.updates)} timeseries")
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         current_partitions = [DatapointSubscriptionPartition.create((partition, cursor))]
         while True:
@@ -257,7 +254,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> subscriptions = c.time_series.subscriptions.list(limit=5)
 
         """
-        self._experimental_warning()
+        self._warning.warn()
 
         return self._list(
             method="GET", limit=limit, list_cls=DatapointSubscriptionList, resource_cls=DatapointSubscription
