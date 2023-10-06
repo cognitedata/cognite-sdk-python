@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, List, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -495,12 +495,12 @@ class RawRowsAPI(APIClient):
     def _make_columns_param(self, columns: list[str] | None) -> str | None:
         if columns is None:
             return None
-        if not isinstance(columns, List):
+        if not isinstance(columns, list):
             raise ValueError("Expected a list for argument columns")
         if len(columns) == 0:
             return ","
         else:
-            return ",".join([str(x) for x in columns])
+            return ",".join(str(x) for x in columns)
 
     def retrieve_dataframe(
         self,

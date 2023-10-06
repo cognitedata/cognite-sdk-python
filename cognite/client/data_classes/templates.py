@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteObjectUpdate,
@@ -259,7 +259,7 @@ class TemplateInstance(CogniteResource):
     @staticmethod
     def _encode_field_resolvers(field_resolvers: dict[str, FieldResolvers], camel_case: bool) -> dict[str, Any]:
         return {
-            key: value.dump(camel_case=camel_case) if not isinstance(value, str) else value
+            key: value if isinstance(value, str) else value.dump(camel_case=camel_case)
             for key, value in field_resolvers.items()
         }
 
@@ -267,7 +267,7 @@ class TemplateInstance(CogniteResource):
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TemplateInstance:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
+        elif isinstance(resource, dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
@@ -401,7 +401,7 @@ class View(CogniteResource):
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> View:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
+        elif isinstance(resource, dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
@@ -424,7 +424,7 @@ class ViewResolveItem(UserDict, CogniteResource):
     def _load(cls, data: dict | str, cognite_client: CogniteClient | None = None) -> ViewResolveItem:
         if isinstance(data, str):
             return cls._load(json.loads(data), cognite_client=cognite_client)
-        elif isinstance(data, Dict):
+        elif isinstance(data, dict):
             return cls(data, cognite_client=cognite_client)
 
 
