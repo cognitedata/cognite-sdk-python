@@ -27,7 +27,6 @@ from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
 )
-from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -185,15 +184,15 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
         """
         self._warning.warn()
-        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Workflow API")
-        body = {"authentication": {"nonce": nonce}}
-        if input is not None:
-            body["input"] = input
+        with self._cognite_client.iam.sessions() as session:
+            body = {"authentication": {"nonce": session.nonce}}
+            if input is not None:
+                body["input"] = input
 
-        response = self._post(
-            url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
-            json=body,
-        )
+            response = self._post(
+                url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
+                json=body,
+            )
         return WorkflowExecution._load(response.json())
 
     def list(

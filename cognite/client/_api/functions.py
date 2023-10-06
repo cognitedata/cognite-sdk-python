@@ -35,7 +35,6 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -394,16 +393,16 @@ class FunctionsAPI(APIClient):
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
 
-        if data is None:
-            data = {}
-        url = f"/functions/{id}/call"
-        res = self._post(url, json={"data": data, "nonce": nonce})
+        with self._cognite_client.iam.sessions() as session:
+            if data is None:
+                data = {}
+            url = f"/functions/{id}/call"
+            res = self._post(url, json={"data": data, "nonce": session.nonce})
 
-        function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
-        if wait:
-            function_call.wait()
+            function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
+            if wait:
+                function_call.wait()
         return function_call
 
     def limits(self) -> FunctionsLimits:
@@ -1024,26 +1023,26 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         _get_function_identifier(function_id, function_external_id)
-        nonce = create_session_and_return_nonce(
-            self._cognite_client, api_name="Functions API", client_credentials=client_credentials
-        )
-        body: dict[str, list[dict[str, str | int | None | dict]]] = {
-            "items": [
-                {
-                    "name": name,
-                    "description": description,
-                    "functionId": function_id,
-                    "functionExternalId": function_external_id,
-                    "cronExpression": cron_expression,
-                    "nonce": nonce,
-                }
-            ]
-        }
 
-        if data:
-            body["items"][0]["data"] = data
+        with self._cognite_client.iam.sessions(client_credentials) as session:
+            body: dict[str, list[dict[str, str | int | None | dict]]] = {
+                "items": [
+                    {
+                        "name": name,
+                        "description": description,
+                        "functionId": function_id,
+                        "functionExternalId": function_external_id,
+                        "cronExpression": cron_expression,
+                        "nonce": session.nonce,
+                    }
+                ]
+            }
 
-        res = self._post(self._RESOURCE_PATH, json=body)
+            if data:
+                body["items"][0]["data"] = data
+
+            res = self._post(self._RESOURCE_PATH, json=body)
+
         return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:
