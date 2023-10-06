@@ -188,6 +188,22 @@ class SessionsAPI(APIClient):
         self._LIST_LIMIT = 100
 
     def __call__(self) -> CDFSession:
+        """
+        Create a session and return a context manager that will revoke the session when it exits.
+
+        Returns:
+            CDFSession: The context manager that will revoke the session when it exits.
+
+        Examples:
+
+            Create a session and use it in a context manager:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> with c.iam.sessions() as session:
+                ...     print(session.status)
+        """
+
         return CDFSession(self)
 
     def create(self, client_credentials: ClientCredentials | None = None) -> CreatedSession:
@@ -246,11 +262,11 @@ class SessionsAPI(APIClient):
             identifiers=identifiers,
         )
 
-    def list(self, status: str | SessionStatus | Sequence[SessionStatus] | None = None) -> SessionList:
+    def list(self, status: str | SessionStatus | None = None) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
-            status (str | SessionStatus | Sequence[SessionStatus] | None): If given, only sessions with the given status are returned.
+            status (str | SessionStatus | None): If given, only sessions with the given status are returned.
 
         Returns:
             SessionList: a list of sessions in the current project.
