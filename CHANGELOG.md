@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.30.0] - 2023-10-06
+### Added
+- Support for the UnitCatalog with the implementation `client.units`.
+
 ## [6.29.2] - 2023-10-04
 ### Fixed
 - Calling some of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter could cause a `CogniteAPIError` with a 400 code. This is now fixed. 
