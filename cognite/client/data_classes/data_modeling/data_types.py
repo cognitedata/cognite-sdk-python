@@ -79,7 +79,7 @@ class PropertyType(ABC):
         elif type_ == "direct":
             return DirectRelation(**data)
 
-        raise TypeError(f"Invalid type {type_}.")
+        raise ValueError(f"Invalid type {type_}.")
 
 
 @dataclass

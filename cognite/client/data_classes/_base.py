@@ -580,7 +580,7 @@ class Geometry(dict):
         geometries: Collection[Geometry] | None = None,
     ) -> None:
         if type not in self._VALID_TYPES:
-            raise TypeError(f"type must be one of {self._VALID_TYPES}")
+            raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
         self.geometries = geometries

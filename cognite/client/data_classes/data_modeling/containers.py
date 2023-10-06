@@ -218,7 +218,7 @@ class ContainerProperty:
     @classmethod
     def load(cls, data: dict[str, Any]) -> ContainerProperty:
         if "type" not in data:
-            raise TypeError("Type not specified")
+            raise ValueError("Type not specified")
         if data["type"].get("type") == "direct":
             type_: PropertyType = DirectRelation.load(data["type"])
         else:
@@ -247,7 +247,7 @@ class Constraint(ABC):
             return RequiresConstraint.load(data)
         elif data["constraintType"] == "uniqueness":
             return UniquenessConstraintDefinition.load(data)
-        raise TypeError(f"Invalid constraint type {data['constraintType']}")
+        raise ValueError(f"Invalid constraint type {data['constraintType']}")
 
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
@@ -302,7 +302,7 @@ class Index(ABC):
             return BTreeIndex.load(data)
         if data["indexType"] == "inverted":
             return InvertedIndex.load(data)
-        raise TypeError(f"Invalid index type {data['indexType']}")
+        raise ValueError(f"Invalid index type {data['indexType']}")
 
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:

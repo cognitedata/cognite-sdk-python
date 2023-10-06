@@ -81,7 +81,7 @@ class GeometryFilter(dict):
         coordinates: list,
     ) -> None:
         if type not in self._VALID_TYPES:
-            raise TypeError(f"type must be one of {self._VALID_TYPES}")
+            raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
 
@@ -102,7 +102,7 @@ class GeoLocation(dict):
 
     def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: dict | None = None) -> None:
         if type not in self._VALID_TYPES:
-            raise TypeError("Only the 'Feature' type is supported.")
+            raise ValueError("Only the 'Feature' type is supported.")
         self.type = type
         self.geometry = geometry
         self.properties = properties
