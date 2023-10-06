@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, overload
+from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -187,6 +187,9 @@ class SessionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
+    def __call__(self) -> CDFSession:
+        return CDFSession(self)
+
     def create(self, client_credentials: ClientCredentials | None = None) -> CreatedSession:
         """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
 
@@ -254,3 +257,20 @@ class SessionsAPI(APIClient):
         """
         filter = {"status": status} if status is not None else None
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
+
+
+class CDFSession:
+    def __init__(self, session_api: SessionsAPI):
+        self._session_api = session_api
+        self._created_session: CreatedSession | None = None
+
+    def __enter__(self) -> CreatedSession:
+        self._created_session = self._session_api.create()
+        return self._created_session
+
+    def __exit__(self, exc_type: Any = None, exc_value: Any = None, traceback_: Any = None) -> bool:
+        suppress_exception = False
+        if self._created_session is not None:
+            self._session_api.revoke(self._created_session.id)
+
+        return suppress_exception

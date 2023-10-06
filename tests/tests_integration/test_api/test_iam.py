@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Group, SecurityCategory
 from cognite.client.utils._text import random_string
 
@@ -40,7 +41,7 @@ class TestSecurityCategoriesAPI:
     os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
 )
 class TestSessionsAPI:
-    def test_create_retrieve_and_revoke(self, cognite_client):
+    def test_create_retrieve_and_revoke(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.iam.sessions.create()
 
         retrieved = cognite_client.iam.sessions.retrieve(res.id)
@@ -48,3 +49,9 @@ class TestSessionsAPI:
         assert retrieved.id == res.id
         assert res.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
         assert res.id in {s.id for s in cognite_client.iam.sessions.revoke(res.id) if s.status == "REVOKED"}
+
+    def test_session_context_manager(self, cognite_client: CogniteClient) -> None:
+        with cognite_client.iam.sessions() as session:
+            assert session.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
+
+        assert session.id in {s.id for s in cognite_client.iam.sessions.list("REVOKED")}
