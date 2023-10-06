@@ -36,12 +36,12 @@ class TestSecurityCategoriesAPI:
         assert res.id not in {s.id for s in cognite_client.iam.security_categories.list()}
 
 
+@pytest.mark.skipif(
+    os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+)
 class TestSessionsAPI:
-    @pytest.mark.skip("Bad test: CogniteAPIError: There can be only 10000 sessions")
-    @pytest.mark.skipif(
-        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
-    )
-    def test_create_and_revoke(self, cognite_client):
+    def test_create_retrieve_and_revoke(self, cognite_client):
         res = cognite_client.iam.sessions.create()
+
         assert res.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
         assert res.id in {s.id for s in cognite_client.iam.sessions.revoke(res.id) if s.status == "REVOKED"}

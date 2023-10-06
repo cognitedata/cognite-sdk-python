@@ -17,7 +17,7 @@ from cognite.client.data_classes import (
     Session,
     SessionList,
 )
-from cognite.client.data_classes.iam import TokenInspection
+from cognite.client.data_classes.iam import SessionStatus, TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -216,11 +216,11 @@ class SessionsAPI(APIClient):
 
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
-    def list(self, status: str | None = None) -> SessionList:
+    def list(self, status: str | SessionStatus | Sequence[SessionStatus] | None = None) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
-            status (str | None): If given, only sessions with the given status are returned.
+            status (str | SessionStatus | Sequence[SessionStatus] | None): If given, only sessions with the given status are returned.
 
         Returns:
             SessionList: a list of sessions in the current project.
