@@ -93,13 +93,13 @@ class TimeSeries(CogniteResource):
             int: The number of datapoints in this time series.
 
         Raises:
-            TypeError: If the time series is string as count aggregate is only supported for numeric data
+            RunTimeError: If the time series is string as count aggregate is only supported for numeric data
 
         Returns:
             int: The total number of datapoints
         """
         if self.is_string:
-            raise TypeError("String time series does not support count aggregate.")
+            raise RunTimeError("String time series does not support count aggregate.")
 
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
