@@ -17,13 +17,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.31.0] - 2023-10-06
+### Added
+- Support for metadata on Workflow executions. Set custom metadata when triggering a workflow (`workflows.executions.trigger()`). The metadata is included in results from `workflows.executions.list()` and `workflows.executions.retrieve_detailed()`.
+
 ## [6.30.0] - 2023-10-06
 ### Added
 - Support for the UnitCatalog with the implementation `client.units`.
 
 ## [6.29.2] - 2023-10-04
 ### Fixed
-- Calling some of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter could cause a `CogniteAPIError` with a 400 code. This is now fixed. 
+- Calling some of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter could cause a `CogniteAPIError` with a 400 code. This is now fixed.
 
 ## [6.29.1] - 2023-10-04
 ### Added
@@ -31,7 +35,7 @@ Changes are grouped as follows
 
 ## [6.29.0] - 2023-10-04
 ### Added
-- Added parameter `resolve_duplicate_file_names` to `client.files.download`. 
+- Added parameter `resolve_duplicate_file_names` to `client.files.download`.
   This will keep all the files when downloading to local machine, even if they have the same name.
 
 ## [6.28.5] - 2023-10-03
