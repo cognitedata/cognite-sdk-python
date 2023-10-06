@@ -78,6 +78,7 @@ class APIClient:
             "/context/entitymatching/(byids|list|jobs)",
             "/sessions/revoke",
             "/models/.*",
+            "/units/.*",
         )
     )
 

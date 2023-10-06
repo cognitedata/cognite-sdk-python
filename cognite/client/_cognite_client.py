@@ -26,6 +26,7 @@ from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import TransformationsAPI
+from cognite.client._api.units import UnitAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
@@ -77,7 +78,7 @@ class CogniteClient:
         self.data_modeling = DataModelingAPI(self._config, self._API_VERSION, self)
         self.documents = DocumentsAPI(self._config, self._API_VERSION, self)
         self.workflows = WorkflowAPI(self._config, self._API_VERSION, self)
-
+        self.units = UnitAPI(self._config, self._API_VERSION, self)
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 

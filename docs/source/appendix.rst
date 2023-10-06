@@ -32,7 +32,7 @@ invoke a `FeaturePreviewWarning` when used.
 Furthermore, we distinguish between maturity of the API specification and the SDK implementation. Typically,
 the API specification may be in beta, while the SDK implementation is in alpha.
 
-* `aplha` - The feature is not yet released for general availability. There may be breaking changes to the API
+* `alpha` - The feature is not yet released for general availability. There may be breaking changes to the API
   specification and/or the SDK implementation without further notice.
 * `beta` - The feature is not yet released for general availability. The feature is considered stable and 'settled'.
   Learnings during the Beta period may result in a requirement to make breaking changes to API spec/SDK implementation.
