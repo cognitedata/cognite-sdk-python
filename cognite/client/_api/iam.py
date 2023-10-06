@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, overload
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -215,6 +215,33 @@ class SessionsAPI(APIClient):
         items = {"items": identifiers.as_dicts()}
 
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+
+    @overload
+    def retrieve(self, id: int) -> Session:
+        ...
+
+    @overload
+    def retrieve(self, id: Sequence[int]) -> SessionList:
+        ...
+
+    def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
+        """`Retrieves sessions with given IDs. <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_
+
+        The request will fail if any of the IDs does not belong to an existing session.
+
+        Args:
+            id (int | Sequence[int]): Id or list of session ids
+
+        Returns:
+            Session | SessionList: Session or list of sessions.
+        """
+
+        identifiers = IdentifierSequence.load(ids=id, external_ids=None)
+        return self._retrieve_multiple(
+            list_cls=SessionList,
+            resource_cls=Session,
+            identifiers=identifiers,
+        )
 
     def list(self, status: str | SessionStatus | Sequence[SessionStatus] | None = None) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
