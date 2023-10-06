@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.31.0] - 2023-10-06
+## [6.30.1] - 2023-10-06
 ### Added
 - Support for metadata on Workflow executions. Set custom metadata when triggering a workflow (`workflows.executions.trigger()`). The metadata is included in results from `workflows.executions.list()` and `workflows.executions.retrieve_detailed()`.
 
