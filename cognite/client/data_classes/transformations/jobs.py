@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
@@ -253,7 +253,7 @@ class TransformationJob(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJob:
         instance = super()._load(resource, cognite_client)
-        if isinstance(instance.destination, Dict):
+        if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
         return instance
 

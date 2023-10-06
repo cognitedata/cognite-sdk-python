@@ -311,8 +311,8 @@ class RelationshipsAPI(APIClient):
                 tasks,
                 max_workers=self._config.max_workers,
             )
-            if tasks_summary.exceptions:
-                raise tasks_summary.exceptions[0]
+            tasks_summary.raise_first_encountered_exception()
+
             return RelationshipList(tasks_summary.joined_results())
         return self._list(
             list_cls=RelationshipList,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
@@ -196,9 +196,8 @@ class ThreeDModelRevision(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDModelRevision:
         instance = super()._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.camera is not None:
-                instance.camera = RevisionCameraProperties(**instance.camera)
+        if isinstance(resource, dict) and instance.camera is not None:
+            instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
 
 
@@ -320,9 +319,8 @@ class ThreeDNode(CogniteResource):
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDNode:
         instance = super()._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.bounding_box is not None:
-                instance.bounding_box = BoundingBox3D(**instance.bounding_box)
+        if isinstance(resource, dict) and instance.bounding_box is not None:
+            instance.bounding_box = BoundingBox3D(**instance.bounding_box)
         return instance
 
 

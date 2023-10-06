@@ -73,6 +73,10 @@ class TasksSummary:
             self.exceptions, successful=successful, failed=failed, unknown=unknown, unwrap_fn=str_format_element_fn
         )
 
+    def raise_first_encountered_exception(self) -> None:
+        if self.exceptions:
+            raise self.exceptions[0]
+
 
 def collect_exc_info_and_raise(
     exceptions: list[Exception],
