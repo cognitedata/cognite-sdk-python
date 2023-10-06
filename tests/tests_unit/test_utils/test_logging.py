@@ -1,4 +1,8 @@
-from cognite.client.utils._logging import _is_debug_logging_enabled, _configure_logger_for_debug_mode, _disable_debug_logging
+from cognite.client.utils._logging import (
+    _configure_logger_for_debug_mode,
+    _disable_debug_logging,
+    _is_debug_logging_enabled,
+)
 
 
 class TestDebugLoggingState:
