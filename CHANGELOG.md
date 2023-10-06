@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.33.0] - 2023-10-13
+### Added
+- Support for providing `DirectRelationReference` and `NodeId` as direct relation values when
+ingesting node and edge data.
+
 ## [6.32.4] - 2023-10-12
 ### Fixed
 - Filters using e.g. metadata keys no longer dumps the key in camel case.
