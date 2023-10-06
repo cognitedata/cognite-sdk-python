@@ -917,6 +917,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             start_time=self.start_time,
             end_time=self.end_time,
             reason_for_incompletion=self.reason_for_incompletion,
+            metadata=self.metadata,
         )
 
 
