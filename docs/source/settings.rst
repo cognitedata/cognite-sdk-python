@@ -39,7 +39,7 @@ You can increase the max connection pool size by setting the :code:`max_connecti
 
 Debug logging
 -------------
-If you need to know the details of the http requests being sent to the API, you can enable debug logging like this:
+If you need to know the details of the http requests being sent to the API, you can enable debug logging. One way is to pass :code:`debug=True` argument to :ref:`cognite_client:ClientConfig`. Alternatively, you can toggle debug logging on and off by setting the :code:`debug` attribute on the :ref:`cognite_client:ClientConfig` object.
 
 .. code:: python
 
