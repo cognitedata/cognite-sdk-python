@@ -617,6 +617,25 @@ class TestRetrieveRawDatapointsAPI:
         assert math.isclose(res.value[1], 32, abs_tol=0.5)
         assert math.isclose(res.value[2], 212, abs_tol=0.5)
 
+    def test_unit_external_id__is_overridden_if_converted(
+        self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        assert timeseries.unit_external_id == "temperature:deg_c"
+
+        res = cognite_client.time_series.data.retrieve(
+            id=[
+                {"id": timeseries.id, "target_unit": "temperature:deg_c"},
+                {"id": timeseries.id, "target_unit": "temperature:deg_f"},
+                {"id": timeseries.id, "target_unit": "temperature:k"},
+            ],
+            end=3,
+        )
+        # Ensure unit_external_id is unchanged (Celsius), or changed (Fahrenheit or Kelvin):
+        assert res[0].unit_external_id == "temperature:deg_c"
+        assert res[1].unit_external_id == "temperature:deg_f"
+        assert res[2].unit_external_id == "temperature:k"
+
 
 class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
