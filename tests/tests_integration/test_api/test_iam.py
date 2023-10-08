@@ -51,7 +51,7 @@ class TestSessionsAPI:
         assert res.id in {s.id for s in cognite_client.iam.sessions.revoke(res.id) if s.status == "REVOKED"}
 
     def test_session_context_manager(self, cognite_client: CogniteClient) -> None:
-        with cognite_client.iam.sessions() as session:
+        with cognite_client.iam.sessions.create_session() as session:
             assert session.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
 
         assert session.id in {s.id for s in cognite_client.iam.sessions.list("REVOKED")}

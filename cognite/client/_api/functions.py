@@ -394,7 +394,7 @@ class FunctionsAPI(APIClient):
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
 
-        with self._cognite_client.iam.sessions() as session:
+        with self._cognite_client.iam.sessions.create_session() as session:
             if data is None:
                 data = {}
             url = f"/functions/{id}/call"
@@ -1024,7 +1024,7 @@ class FunctionSchedulesAPI(APIClient):
         """
         _get_function_identifier(function_id, function_external_id)
 
-        with self._cognite_client.iam.sessions(client_credentials) as session:
+        with self._cognite_client.iam.sessions.create_session(client_credentials) as session:
             body: dict[str, list[dict[str, str | int | None | dict]]] = {
                 "items": [
                     {

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from collections.abc import Iterator
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Sequence, overload
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -187,19 +189,18 @@ class SessionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
-    def __call__(self, client_credentials: ClientCredentials | dict | None = None) -> CDFSession:
+    @contextmanager
+    def create_session(self, client_credentials: ClientCredentials | dict | None = None) -> Iterator[CreatedSession]:
         """
         Create a session and return a context manager that will revoke the session when it exits.
 
         Args:
-            client_credentials (ClientCredentials | dict | None): The client credentials to create the session. If set to None,
-                a session will be created using the credentials used to instantiate -this- CogniteClient object.
-                If that was done using a token, a session will be created using token exchange.
-                Similarly, if the credentials were client credentials, a session will be created using client credentials.
-                This method does not work when using client certificates (not supported server-side).
+            client_credentials (ClientCredentials | dict | None): The client credentials to create the session. If set to None, a session will be created using the credentials used to instantiate -this- CogniteClient object. If that was done using a token, a session will be created using token exchange. Similarly, if the credentials were client credentials, a session will be created using client credentials. This method does not work when using client certificates (not supported server-side).
 
         Returns:
-            CDFSession: The context manager that will revoke the session when it exits.
+            Iterator[CreatedSession]: No description.
+        Yields:
+            CreatedSession: The created session which will be revoked after exiting the context manager.
 
         Examples:
 
@@ -207,11 +208,14 @@ class SessionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> with c.iam.sessions() as session:
+                >>> with c.iam.sessions.create_session() as session:
                 ...     print(session.status)
         """
-
-        return CDFSession(self, client_credentials)
+        created_session = self.create(client_credentials)
+        try:
+            yield created_session
+        finally:
+            self.revoke(created_session.id)
 
     def create(self, client_credentials: ClientCredentials | dict | None = None) -> CreatedSession:
         """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
@@ -287,21 +291,3 @@ class SessionsAPI(APIClient):
         """
         filter = {"status": status} if status is not None else None
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
-
-
-class CDFSession:
-    def __init__(self, session_api: SessionsAPI, client_credentials: ClientCredentials | dict | None = None):
-        self._session_api = session_api
-        self._created_session: CreatedSession | None = None
-        self._client_credentials = client_credentials
-
-    def __enter__(self) -> CreatedSession:
-        self._created_session = self._session_api.create(self._client_credentials)
-        return self._created_session
-
-    def __exit__(self, exc_type: Any = None, exc_value: Any = None, traceback_: Any = None) -> bool:
-        suppress_exception = False
-        if self._created_session is not None:
-            self._session_api.revoke(self._created_session.id)
-
-        return suppress_exception

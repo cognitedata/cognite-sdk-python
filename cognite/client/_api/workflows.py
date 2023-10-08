@@ -185,7 +185,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
         """
         self._warning.warn()
-        with self._cognite_client.iam.sessions() as session:
+        with self._cognite_client.iam.sessions.create_session() as session:
             body = {"authentication": {"nonce": session.nonce}}
             if input is not None:
                 body["input"] = input
