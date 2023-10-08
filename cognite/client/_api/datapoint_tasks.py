@@ -32,7 +32,7 @@ from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
-from cognite.client.utils._auxiliary import import_legacy_protobuf, is_unlimited
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, import_legacy_protobuf, is_unlimited
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import (
@@ -155,10 +155,32 @@ class _SingleTSQueryValidator:
             include_outside_points=user_query.include_outside_points,
             ignore_unknown_ids=user_query.ignore_unknown_ids,
         )
+        self._user_query_is_valid = False
+        self._user_query_requires_beta_api_subversion = False
+
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
         # exception 'end not after start' if both are set to the same value.
         self.__time_now = timestamp_to_ms("now")
+
+    def beta_api_subversion_is_needed(self) -> bool:
+        if self._user_query_is_valid:
+            return self._user_query_requires_beta_api_subversion
+        raise RuntimeError("user query is invalid or validation has not run yet")
+
+    def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
+        self._user_query_is_valid
+        queries = []
+        if self.user_query.id is not None:
+            id_queries = self._validate_multiple_id(self.user_query.id)
+            queries.extend(id_queries)
+        if self.user_query.external_id is not None:
+            xid_queries = self._validate_multiple_xid(self.user_query.external_id)
+            queries.extend(xid_queries)
+        if queries:
+            self._user_query_is_valid = True
+            return queries
+        raise ValueError("Pass at least one time series `id` or `external_id`!")
 
     def _ts_to_ms_frozen_now(self, ts: int | str | datetime | None, default: int) -> int:
         # Time 'now' is frozen for all queries in a single call from the user, leading to identical
@@ -169,18 +191,6 @@ class _SingleTSQueryValidator:
             return self.__time_now - time_ago_to_ms(ts)
         else:
             return timestamp_to_ms(ts)
-
-    def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
-        queries = []
-        if self.user_query.id is not None:
-            id_queries = self._validate_multiple_id(self.user_query.id)
-            queries.extend(id_queries)
-        if self.user_query.external_id is not None:
-            xid_queries = self._validate_multiple_xid(self.user_query.external_id)
-            queries.extend(xid_queries)
-        if queries:
-            return queries
-        raise ValueError("Pass at least one time series `id` or `external_id`!")
 
     def _validate_multiple_id(self, id: DatapointsId) -> list[_SingleTSQueryBase]:
         return self._validate_id_or_xid(id, "id", numbers.Integral)
@@ -248,6 +258,8 @@ class _SingleTSQueryValidator:
             "end",
             "aggregates",
             "granularity",
+            "target_unit",
+            "target_unit_system",
             "limit",
             "include_outside_points",
             "ignore_unknown_ids",
@@ -261,8 +273,14 @@ class _SingleTSQueryValidator:
 
     def _validate_and_create_query(self, dct: DatapointsQueryId | DatapointsQueryExternalId) -> _SingleTSQueryBase:
         limit = self._verify_limit(dct["limit"])
-        granularity, aggregates = dct["granularity"], dct["aggregates"]
 
+        target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
+        if exactly_one_is_not_none(target_unit, target_unit_system):
+            self._user_query_requires_beta_api_subversion = True
+        elif target_unit is not None and target_unit_system is not None:
+            raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
+
+        granularity, aggregates = dct["granularity"], dct["aggregates"]
         if not (granularity is None or isinstance(granularity, str)):
             raise TypeError(f"Expected `granularity` to be of type `str` or None, not {type(granularity)}")
 
