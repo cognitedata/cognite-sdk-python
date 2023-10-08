@@ -17,6 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.30.0] - 2023-10-10
+### Fixed
+- Ref to openapi doc in Vision extract docstring 
+- Parameters to Vision models can be given as Python dict (updated doc accordingly). 
+- Don't throw exception when trying to save empty list of vision extract predictions as annotations. This is to avoid having to wrap this method in try-except for every invocation of the method.
+
+### Added
+- Support for new computer vision models in Vision extract service: digital gauge reader, dial gauge reader, level gauge reader and valve state detection.
+
+
 ## [6.29.2] - 2023-10-04
 ### Fixed
 - Calling some of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter could cause a `CogniteAPIError` with a 400 code. This is now fixed. 
