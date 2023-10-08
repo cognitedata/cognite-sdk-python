@@ -28,7 +28,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load
+from cognite.client.utils._auxiliary import fast_dict_load, local_import
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
@@ -153,7 +153,7 @@ class CogniteResource(_WithClientMixin):
             pandas.DataFrame: The dataframe.
         """
         ignore = [] if ignore is None else ignore
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = cast(Any, local_import("pandas"))
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore:
@@ -292,7 +292,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         Returns:
             pandas.DataFrame: The Cognite resource as a dataframe.
         """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = cast(Any, local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))
         df = convert_nullable_int_cols(df, camel_case)
 

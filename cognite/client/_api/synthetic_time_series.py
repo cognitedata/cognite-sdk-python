@@ -5,9 +5,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import cognite.client.utils._time
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
+from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._concurrency import execute_tasks
 
 if TYPE_CHECKING:
     import sympy
@@ -87,9 +88,7 @@ class SyntheticDatapointsAPI(APIClient):
 
             tasks.append((query, query_datapoints, limit))
 
-        datapoints_summary = utils._concurrency.execute_tasks(
-            self._fetch_datapoints, tasks, max_workers=self._config.max_workers
-        )
+        datapoints_summary = execute_tasks(self._fetch_datapoints, tasks, max_workers=self._config.max_workers)
         datapoints_summary.raise_first_encountered_exception()
 
         return (
@@ -141,7 +140,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     @staticmethod
     def _sympy_to_sts(expression: str | sympy.Expr) -> str:
-        sympy_module = cast(Any, utils._auxiliary.local_import("sympy"))
+        sympy_module = cast(Any, local_import("sympy"))
 
         infix_ops = {sympy_module.Add: "+", sympy_module.Mul: "*"}
         functions = {
