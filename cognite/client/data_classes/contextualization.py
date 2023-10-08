@@ -4,7 +4,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Sequence, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Sequence, Type, TypeVar, Union, cast
 
 from requests.utils import CaseInsensitiveDict
 
@@ -728,7 +728,7 @@ class VisionExtractItem(CogniteResource):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.error_message = error_message
-        self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, Dict) else predictions
+        self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, dict) else predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -745,7 +745,7 @@ class VisionExtractItem(CogniteResource):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         item_dump = super().dump(camel_case=camel_case)
         # Replace the loaded VisionExtractPredictions with its corresponding dict representation
-        if "predictions" in item_dump and isinstance(self._predictions_dict, Dict):
+        if "predictions" in item_dump and isinstance(self._predictions_dict, dict):
             item_dump["predictions"] = (
                 self._predictions_dict if camel_case else self._resource_to_snake_case(self._predictions_dict)
             )

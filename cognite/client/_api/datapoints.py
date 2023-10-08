@@ -1537,9 +1537,7 @@ class DatapointsPoster:
         return binned_dps_object_list
 
     def _insert_datapoints_concurrently(self, dps_object_lists: list[list[dict[str, Any]]]) -> None:
-        tasks = []
-        for dps_object_list in dps_object_lists:
-            tasks.append((dps_object_list,))
+        tasks = [(dps_object_list,) for dps_object_list in dps_object_lists]
         summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.dps_client._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda x: x[0],
@@ -1637,6 +1635,6 @@ class RetrieveLatestDpsFetcher:
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
-        if tasks_summary.exceptions:
-            raise tasks_summary.exceptions[0]
+        tasks_summary.raise_first_encountered_exception()
+
         return tasks_summary.joined_results(lambda res: res.json()["items"])

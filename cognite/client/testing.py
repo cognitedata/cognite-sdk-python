@@ -57,6 +57,7 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
+from cognite.client._api.units import UnitAPI, UnitSystemAPI
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import WorkflowAPI, WorkflowExecutionAPI, WorkflowTaskAPI, WorkflowVersionAPI
@@ -158,6 +159,9 @@ class CogniteClientMock(MagicMock):
         self.workflows.versions = MagicMock(spec_set=WorkflowVersionAPI)
         self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
         self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
+
+        self.units = MagicMock(spec=UnitAPI)
+        self.units.systems = MagicMock(spec_set=UnitSystemAPI)
 
 
 @contextmanager
