@@ -625,7 +625,7 @@ class TestRetrieveRawDatapointsAPI:
 
         res = cognite_client.time_series.data.retrieve(
             id=[
-                {"id": timeseries.id, "target_unit": "temperature:deg_c"},
+                {"id": timeseries.id},
                 {"id": timeseries.id, "target_unit": "temperature:deg_f"},
                 {"id": timeseries.id, "target_unit": "temperature:k"},
             ],
