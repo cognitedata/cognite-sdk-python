@@ -930,9 +930,8 @@ class VisionExtractJob(VisionJob):
             annotations = self._predictions_to_annotations(
                 creating_user=creating_user, creating_app=creating_app, creating_app_version=creating_app_version
             )
-            if annotations:
-                return self._cognite_client.annotations.suggest(annotations=annotations)
-            raise CogniteException("Extract job does not contain any predictions.")
+
+            return self._cognite_client.annotations.suggest(annotations=annotations if annotations else [])
 
         raise CogniteException(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
