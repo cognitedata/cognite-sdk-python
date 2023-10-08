@@ -7,6 +7,7 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 from __future__ import annotations
 
 import itertools
+import math
 import random
 import re
 from contextlib import nullcontext as does_not_raise
@@ -314,7 +315,7 @@ def parametrized_values_uniform_index_fails(testrun_uid):
 
 
 @pytest.fixture(scope="module")
-def timeseries_degree_c_0_100(cognite_client: CogniteClient):
+def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient):
     timeseries = TimeSeries(
         external_id="test_retrieve_datapoints_in_target_unit",
         name="test_retrieve_datapoints_in_target_unit",
@@ -326,7 +327,7 @@ def timeseries_degree_c_0_100(cognite_client: CogniteClient):
 
     try:
         created_timeseries = cognite_client.time_series.create(timeseries)
-        cognite_client.time_series.data.insert([(1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+        cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
 
         yield created_timeseries
     finally:
@@ -598,41 +599,31 @@ class TestRetrieveRawDatapointsAPI:
                     assert isinstance(r.is_step, bool)
                     assert isinstance(r.is_string, bool)
 
-    def test_retrieve_datapoints_in_target_unit(
-        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_0_100
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
 
-        res = cognite_client.time_series.data.retrieve(
-            external_id=timeseries.external_id, target_unit="temperature:deg_f"
-        )
+        res = retrieve_method(external_id=timeseries.external_id, end=3, **kwargs)
 
-        assert abs(res[0].value - 32) < 0.5
-        assert abs(res[1].value - 212) < 0.5
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(value=res.values)
 
-    def test_retrieve_arrays_in_target_unit(
-        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
-    ) -> None:
-        timeseries = timeseries_degree_c_0_100
-
-        res = cognite_client.time_series.data.retrieve_arrays(
-            external_id=timeseries.external_id, target_unit="temperature:deg_f"
-        )
-
-        assert abs(res.value[0] - 32) < 0.5
-        assert abs(res.value[1] - 212) < 0.5
-
-    def test_retrieve_dataframe_in_target_unit(
-        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
-    ) -> None:
-        external_id = timeseries_degree_c_0_100.external_id
-
-        res = cognite_client.time_series.data.retrieve_dataframe(
-            external_id=external_id, target_unit="temperature:deg_f"
-        )
-
-        assert abs(res[external_id][0] - 32) < 0.5
-        assert abs(res[external_id][1] - 212) < 0.5
+        assert math.isclose(res.value[0], -40, abs_tol=0.5)
+        assert math.isclose(res.value[1], 32, abs_tol=0.5)
+        assert math.isclose(res.value[2], 212, abs_tol=0.5)
 
 
 class TestRetrieveAggregateDatapointsAPI:
@@ -1089,42 +1080,29 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
 
-    def test_retrieve_datapoints_in_target_unit(
-        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_0_100
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
 
-        res = cognite_client.time_series.data.retrieve(
-            external_id=timeseries.external_id, target_unit="temperature:deg_f", aggregates="max", granularity="1h"
-        )
+        res = retrieve_method(external_id=timeseries.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
 
-        assert abs(res.max[0] - 212) < 0.5
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(max=res.values)
 
-    def test_retrieve_arrays_in_target_unit(
-        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
-    ) -> None:
-        timeseries = timeseries_degree_c_0_100
-
-        res = cognite_client.time_series.data.retrieve_arrays(
-            external_id=timeseries.external_id, target_unit="temperature:deg_f", aggregates="min", granularity="1h"
-        )
-
-        assert abs(res.min[0] - 32) < 0.5
-
-    def test_retrieve_dataframe_in_target_unit(
-        self, cognite_client: CogniteClient, timeseries_degree_c_0_100: TimeSeries
-    ) -> None:
-        external_id = timeseries_degree_c_0_100.external_id
-
-        res = cognite_client.time_series.data.retrieve_dataframe(
-            external_id=external_id,
-            target_unit="temperature:deg_f",
-            aggregates="min",
-            granularity="1h",
-            include_aggregate_name=False,
-        )
-
-        assert abs(res[external_id][0] - 32) < 0.5
+        assert math.isclose(res.max[0], 212, abs_tol=0.5)
 
 
 @pytest.fixture(scope="session")

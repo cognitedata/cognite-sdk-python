@@ -501,11 +501,7 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
-        api_subversion: str | None = None
-        if isinstance(time_series, TimeSeries) and time_series.unit_external_id:
-            api_subversion = "beta"
-        elif isinstance(time_series, Sequence) and any(ts.unit_external_id for ts in time_series):
-            api_subversion = "beta"
+        api_subversion = self._get_subapiversion_item(time_series)
 
         return self._create_multiple(
             list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series, api_subversion=api_subversion
@@ -575,7 +571,7 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)
         """
-        api_subversion = self._get_subapiversion_update(item)
+        api_subversion = self._get_subapiversion_item(item)
 
         return self._update_multiple(
             list_cls=TimeSeriesList,
@@ -585,7 +581,7 @@ class TimeSeriesAPI(APIClient):
             api_subversion=api_subversion,
         )
 
-    def _get_subapiversion_update(
+    def _get_subapiversion_item(
         self, item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]
     ) -> str | None:
         api_subversion: str | None = None
@@ -641,7 +637,7 @@ class TimeSeriesAPI(APIClient):
                 >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
                 >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
-        api_subversion = self._get_subapiversion_update(item)
+        api_subversion = self._get_subapiversion_item(item)
         if mode == "replace":
             api_subversion = "beta"
             self._unit_warning.warn()
