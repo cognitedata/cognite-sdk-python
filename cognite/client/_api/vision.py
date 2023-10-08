@@ -66,7 +66,7 @@ class VisionAPI(APIClient):
         file_external_ids: list[str] | None = None,
         parameters: FeatureParameters | None = None,
     ) -> VisionExtractJob:
-        """Start an asynchronous job to extract features from image files.
+        """`Start an asynchronous job to extract features from image files. <https://developer.cognite.com/api#tag/Vision/operation/postVisionExtract>`_
 
         Args:
             features (VisionFeature | list[VisionFeature]): The feature(s) to extract from the provided image files.
@@ -113,7 +113,7 @@ class VisionAPI(APIClient):
         )
 
     def get_extract_job(self, job_id: int) -> VisionExtractJob:
-        """Retrieve an existing extract job by ID.
+        """`Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
 
         Args:
             job_id (int): ID of an existing feature extraction job.
