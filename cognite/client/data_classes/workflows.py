@@ -769,6 +769,7 @@ class WorkflowExecution(CogniteResource):
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
         reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
+        metadata (dict | None): Application specific metadata.
     """
 
     def __init__(
@@ -781,6 +782,7 @@ class WorkflowExecution(CogniteResource):
         start_time: int | None = None,
         end_time: int | None = None,
         reason_for_incompletion: str | None = None,
+        metadata: dict | None = None,
     ) -> None:
         self.id = id
         self.workflow_external_id = workflow_external_id
@@ -790,6 +792,7 @@ class WorkflowExecution(CogniteResource):
         self.start_time = start_time
         self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
+        self.metadata = metadata
 
     def as_workflow_id(self) -> WorkflowVersionId:
         return WorkflowVersionId(
@@ -812,6 +815,7 @@ class WorkflowExecution(CogniteResource):
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             reason_for_incompletion=resource.get("reasonForIncompletion"),
+            metadata=resource.get("metadata"),
         )
 
 
@@ -913,6 +917,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             start_time=self.start_time,
             end_time=self.end_time,
             reason_for_incompletion=self.reason_for_incompletion,
+            metadata=self.metadata,
         )
 
 
