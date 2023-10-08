@@ -129,12 +129,14 @@ class TestTimeSeriesAPI:
             cognite_client.time_series.create(new_ts)
 
         listed = cognite_client.time_series.list(
-            unit_external_id="temperature:deg_c", external_id_prefix="test_list_timeseries_with_target_unit", limit=2
+            unit_external_id="temperature:deg_c",
+            external_id_prefix=f"test_list_timeseries_with_target_unit:{system}",
+            limit=2,
         )
 
         assert len(listed) == 1
         assert listed[0].unit_external_id == "temperature:deg_c"
-        assert listed[0].external_id == "test_list_timeseries_with_target_unit:1"
+        assert listed[0].external_id == f"test_list_timeseries_with_target_unit:{system}:1"
 
     def test_partitioned_list(self, cognite_client, post_spy):
         mintime = datetime(2019, 1, 1).timestamp() * 1000
