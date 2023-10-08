@@ -4,11 +4,11 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
-import cognite.client.utils._time
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._time import timestamp_to_ms
 
 if TYPE_CHECKING:
     import sympy
@@ -77,11 +77,7 @@ class SyntheticDatapointsAPI(APIClient):
 
         for exp in expressions_to_iterate:
             expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)
-            query = {
-                "expression": expression,
-                "start": cognite.client.utils._time.timestamp_to_ms(start),
-                "end": cognite.client.utils._time.timestamp_to_ms(end),
-            }
+            query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
             values: list[float] = []  # mypy
             query_datapoints = Datapoints(value=values, error=[])
             query_datapoints.external_id = short_expression

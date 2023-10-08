@@ -28,7 +28,6 @@ import requests.utils
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
-from cognite.client import utils
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
@@ -49,6 +48,7 @@ from cognite.client.utils._auxiliary import (
     get_user_agent,
     interpolate_and_url_encode,
     is_unlimited,
+    json_dump_default,
     split_into_chunks,
 )
 from cognite.client.utils._concurrency import TaskExecutor, collect_exc_info_and_raise, execute_tasks
@@ -183,7 +183,7 @@ class APIClient:
 
         if json_payload:
             try:
-                data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default, allow_nan=False)
+                data = _json.dumps(json_payload, default=json_dump_default, allow_nan=False)
             except ValueError as e:
                 # A lot of work to give a more human friendly error message when nans and infs are present:
                 msg = "Out of range float values are not JSON compliant"

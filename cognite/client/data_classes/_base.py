@@ -26,9 +26,8 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, local_import
+from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, local_import
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
@@ -51,7 +50,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 class CogniteResponse:
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -116,7 +115,7 @@ class CogniteResource(_WithClientMixin):
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(item, default=json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -237,7 +236,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
     def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
@@ -341,7 +340,7 @@ class CogniteUpdate:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(self.dump(), default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -491,7 +490,7 @@ class CogniteFilter:
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -618,7 +617,7 @@ class CogniteSort:
         self.nulls = nulls
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(self.dump(), default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
