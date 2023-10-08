@@ -315,24 +315,16 @@ def parametrized_values_uniform_index_fails(testrun_uid):
 
 
 @pytest.fixture(scope="module")
-def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient):
+def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeries:
     timeseries = TimeSeries(
         external_id="test_retrieve_datapoints_in_target_unit",
         name="test_retrieve_datapoints_in_target_unit",
         is_string=False,
         unit_external_id="temperature:deg_c",
     )
-    created_timeseries: TimeSeries | None = None
-    cognite_client.time_series.delete(external_id=timeseries.external_id, ignore_unknown_ids=True)
-
-    try:
-        created_timeseries = cognite_client.time_series.create(timeseries)
-        cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
-
-        yield created_timeseries
-    finally:
-        if created_timeseries is not None:
-            cognite_client.time_series.delete(id=created_timeseries.id, ignore_unknown_ids=True)
+    created_timeseries = cognite_client.time_series.upsert(timeseries, mode="patch")
+    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+    return created_timeseries
 
 
 class TestRetrieveRawDatapointsAPI:
