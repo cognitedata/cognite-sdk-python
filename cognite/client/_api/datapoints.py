@@ -764,7 +764,7 @@ class DatapointsAPI(APIClient):
                 ...     start=MIN_TIMESTAMP_MS,
                 ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
 
-            The last example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
+            Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
 
                 >>> ts1 = 1337
                 >>> ts2 = {
@@ -784,6 +784,18 @@ class DatapointsAPI(APIClient):
                 ... }
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False)
+
+            If we have created a timeseries set with 'unit_external_id' we can use the 'target_unit' parameter to convert the datapoints to the desired unit.
+            In the example below, we assume that the timeseries is set with unit_external_id 'temperature:deg_c' and id='42'.
+
+                >>> client.time_series.data.retrieve(
+                ...   id=42, start="2w-ago", limit=None, target_unit="temperature:deg_f")
+
+            Or alternatively, we can use the 'target_unit_system' parameter to convert the datapoints to the desired unit system.
+
+                >>> client.time_series.data.retrieve(
+                ...   id=42, start="2w-ago", limit=None, target_unit_system="Imperial")
+
         """
         query = _DatapointsQuery(
             start=start,
