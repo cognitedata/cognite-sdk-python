@@ -1177,7 +1177,7 @@ class APIClient:
         return {
             to_camel_case(prop.name): {"set": []} if prop.is_container else {"setNull": True}
             for prop in update_attributes
-            if prop.is_nullable
+            if prop.is_nullable and not prop.is_beta
         }
 
     @staticmethod

@@ -1164,7 +1164,7 @@ def convert_resource_to_patch_object_test_cases():
                 "securityCategories": {"set": []},
             },
         },
-        id="Replace TimeSeries",
+        id="Replace TimeSeries and ignore beta property",
     )
     yield pytest.param(
         TimeSeries(id=42, description="updated"),
