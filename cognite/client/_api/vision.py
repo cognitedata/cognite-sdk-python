@@ -107,7 +107,11 @@ class VisionAPI(APIClient):
             status_path="/extract/",
             items=self._process_file_ids(file_ids, file_external_ids),
             features=features,
-            parameters=parameters.dump(camel_case=True) if parameters is not None else None,
+            parameters=parameters
+            if isinstance(parameters, dict)
+            else parameters.dump(camel_case=True)
+            if parameters is not None
+            else None,
             job_cls=VisionExtractJob,
             headers={"cdf-version": "beta"} if len(beta_features) > 0 else None,
         )
