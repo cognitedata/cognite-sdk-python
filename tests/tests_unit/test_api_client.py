@@ -5,7 +5,7 @@ import math
 import random
 import unittest
 from collections import namedtuple
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, Literal, cast
 
 import pytest
 from requests import Response
@@ -15,6 +15,7 @@ from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import Token
+from cognite.client.data_classes import TimeSeries, TimeSeriesUpdate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -1139,6 +1140,48 @@ class TestStandardSearch:
         )
 
 
+def convert_resource_to_patch_object_test_cases():
+    yield pytest.param(
+        # Is String is ignored as it cannot be updated.
+        TimeSeries(id=123, name="bla", is_string=False),
+        TimeSeriesUpdate._get_update_properties(),
+        "patch",
+        {"id": 123, "update": {"name": {"set": "bla"}}},
+        id="Patch TimeSeries",
+    )
+    yield pytest.param(
+        TimeSeries(external_id="myTimeseries", name="bla"),
+        TimeSeriesUpdate._get_update_properties(),
+        "replace",
+        {
+            "externalId": "myTimeseries",
+            "update": {
+                "name": {"set": "bla"},
+                "unit": {"setNull": True},
+                "assetId": {"setNull": True},
+                "description": {"setNull": True},
+                "dataSetId": {"setNull": True},
+                "securityCategories": {"set": []},
+            },
+        },
+        id="Replace TimeSeries",
+    )
+    yield pytest.param(
+        TimeSeries(id=42, description="updated"),
+        TimeSeriesUpdate._get_update_properties(),
+        "replace_ignore_null",
+        {"id": 42, "update": {"description": {"set": "updated"}}},
+        id="Replace TimeSeries with ignore null",
+    )
+    yield pytest.param(
+        TimeSeries(id=42, metadata={"myNew": "metadataValue"}),
+        TimeSeriesUpdate._get_update_properties(),
+        "patch",
+        {"id": 42, "update": {"metadata": {"add": {"myNew": "metadataValue"}}}},
+        id="Patch TimeSeries with container property",
+    )
+
+
 class TestHelpers:
     @pytest.mark.parametrize(
         "method, path, expected",
@@ -1208,6 +1251,20 @@ class TestHelpers:
         res = Response()
         res._content = content
         assert APIClient._get_response_content_safe(res) == expected
+
+    @pytest.mark.parametrize(
+        "resource, update_attributes, mode, expected_object", list(convert_resource_to_patch_object_test_cases())
+    )
+    def test_convert_resource_to_patch_object(
+        self,
+        resource: CogniteResource,
+        update_attributes: list[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"],
+        expected_object: dict[str, dict[str, dict]],
+    ):
+        actual = APIClient._convert_resource_to_patch_object(resource, update_attributes, mode)
+
+        assert actual == expected_object
 
 
 class TestConnectionPooling:
