@@ -258,7 +258,7 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:
-    return sum(1 if a is not None else 0 for a in args) == 1
+    return sum(a is not None for a in args) == 1
 
 
 def rename_and_exclude_keys(

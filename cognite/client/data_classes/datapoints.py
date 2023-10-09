@@ -165,6 +165,7 @@ class DatapointsArray(CogniteResource):
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
         granularity: str | None = None,
         timestamp: NumpyDatetime64NSArray | None = None,
         value: NumpyFloat64Array | NumpyObjArray | None = None,
@@ -184,6 +185,7 @@ class DatapointsArray(CogniteResource):
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.granularity = granularity
         self.timestamp = timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
         self.value = value
@@ -206,6 +208,7 @@ class DatapointsArray(CogniteResource):
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
         }
 
@@ -392,7 +395,8 @@ class Datapoints(CogniteResource):
         external_id (str | None): External id of the timeseries the datapoints belong to
         is_string (bool | None): Whether the time series is string valued or not.
         is_step (bool | None): Whether the time series is a step series or not.
-        unit (str | None): The physical unit of the time series.
+        unit (str | None): The physical unit of the time series (free-text field).
+        unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (Sequence[str] | Sequence[float] | None): The data values. Can be string or numeric
@@ -416,6 +420,7 @@ class Datapoints(CogniteResource):
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
         granularity: str | None = None,
         timestamp: Sequence[int] | None = None,
         value: Sequence[str] | Sequence[float] | None = None,
@@ -436,6 +441,7 @@ class Datapoints(CogniteResource):
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.granularity = granularity
         self.timestamp = timestamp or []  # Needed in __len__
         self.value = value
@@ -503,6 +509,7 @@ class Datapoints(CogniteResource):
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
@@ -583,6 +590,7 @@ class Datapoints(CogniteResource):
             is_string=dps_object["isString"],
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
+            unit_external_id=dps_object.get("unitExternalId"),
         )
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
@@ -603,6 +611,7 @@ class Datapoints(CogniteResource):
             self.is_string = other_dps.is_string
             self.is_step = other_dps.is_step
             self.unit = other_dps.unit
+            self.unit_external_id = other_dps.unit_external_id
 
         for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
             value = getattr(self, attr)
@@ -615,7 +624,7 @@ class Datapoints(CogniteResource):
         self, get_empty_lists: bool = False, get_error: bool = True
     ) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
-        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "granularity"}
+        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "unit_external_id", "granularity"}
         for attr, value in self.__dict__.copy().items():
             if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
                 if value is not None or attr == "timestamp":
@@ -680,7 +689,6 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self.data.clear()
 
         # This implementation takes advantage of the ordering of the duplicated in the __init__ method
-
         has_external_ids = set()
         for ext_id, items in self._external_id_to_item.items():
             if not isinstance(items, list):

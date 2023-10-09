@@ -328,16 +328,7 @@ class Transformation(CogniteResource):
         ret = super().dump(camel_case=camel_case)
 
         for name, prop in ret.items():
-            if isinstance(
-                prop,
-                (
-                    OidcCredentials,
-                    NonceCredentials,
-                    TransformationDestination,
-                    SessionDetails,
-                    TransformationSchedule,
-                ),
-            ):
+            if hasattr(prop, "dump"):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
 
