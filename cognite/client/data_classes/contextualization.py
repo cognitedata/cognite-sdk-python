@@ -892,7 +892,7 @@ class VisionExtractJob(VisionJob):
                                     creating_user=creating_user or None,
                                 )
                                 annotations.append(annotation)
-                        else:
+                        elif isinstance(annotation_type, str):
                             annotation = Annotation(
                                 annotated_resource_id=item.file_id,
                                 annotation_type=annotation_type,
@@ -905,6 +905,8 @@ class VisionExtractJob(VisionJob):
                             )
 
                             annotations.append(annotation)
+                        else:
+                            raise TypeError("annotation_type must be str or dict")
 
         return annotations
 
