@@ -17,6 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.32.0] - 2023-10-10
+### Fixed
+- Ref to openapi doc in Vision extract docstring 
+- Parameters to Vision models can be given as Python dict (updated doc accordingly). 
+- Don't throw exception when trying to save empty list of vision extract predictions as annotations. This is to avoid having to wrap this method in try-except for every invocation of the method.
+
+### Added
+- Support for new computer vision models in Vision extract service: digital gauge reader, dial gauge reader, level gauge reader and valve state detection.
+
 ## [6.31.0] - 2023-10-09
 ### Added
 Support for setting and fetching TimeSeries and Datapoints with "real" units (`unit_external_id`).

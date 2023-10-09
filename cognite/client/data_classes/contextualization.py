@@ -16,7 +16,12 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     PropertySpec,
 )
-from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
+from cognite.client.data_classes.annotation_types.images import (
+    AssetLink,
+    KeypointCollectionWithObjectDetection,
+    ObjectDetection,
+    TextRegion,
+)
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
@@ -542,6 +547,10 @@ class VisionFeature(str, Enum):
     # The features below are in beta
     INDUSTRIAL_OBJECT_DETECTION = "IndustrialObjectDetection"
     PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION = "PersonalProtectiveEquipmentDetection"
+    DIAL_GAUGE_DETECTION = "DialGaugeDetection"
+    LEVEL_GAUGE_DETECTION = "LevelGaugeDetection"
+    DIGITAL_GAUGE_DETECTION = "DigitalGaugeDetection"
+    VALVE_DETECTION = "ValveDetection"
 
     @classmethod
     def beta_features(cls) -> set[VisionFeature]:
@@ -556,6 +565,10 @@ class VisionExtractPredictions(VisionResource):
     industrial_object_predictions: list[ObjectDetection] | None = None
     people_predictions: list[ObjectDetection] | None = None
     personal_protective_equipment_predictions: list[ObjectDetection] | None = None
+    digital_gauge_predictions: list[ObjectDetection] | None = None
+    dial_gauge_predictions: list[KeypointCollectionWithObjectDetection] | None = None
+    level_gauge_predictions: list[KeypointCollectionWithObjectDetection] | None = None
+    valve_predictions: list[KeypointCollectionWithObjectDetection] | None = None
 
 
 VISION_FEATURE_MAP: dict[str, Any] = {
@@ -564,15 +577,32 @@ VISION_FEATURE_MAP: dict[str, Any] = {
     "industrial_object_predictions": ObjectDetection,
     "people_predictions": ObjectDetection,
     "personal_protective_equipment_predictions": ObjectDetection,
+    "digital_gauge_predictions": ObjectDetection,
+    "dial_gauge_predictions": KeypointCollectionWithObjectDetection,
+    "level_gauge_predictions": KeypointCollectionWithObjectDetection,
+    "valve_predictions": KeypointCollectionWithObjectDetection,
 }
 
 
-VISION_ANNOTATION_TYPE_MAP: dict[str, str] = {
+VISION_ANNOTATION_TYPE_MAP: dict[str, str | dict[str, str]] = {
     "text_predictions": "images.TextRegion",
     "asset_tag_predictions": "images.AssetLink",
     "industrial_object_predictions": "images.ObjectDetection",
     "people_predictions": "images.ObjectDetection",
     "personal_protective_equipment_predictions": "images.ObjectDetection",
+    "digital_gauge_predictions": "images.ObjectDetection",
+    "dial_gauge_predictions": {
+        "keypoint_collection": "images.KeypointCollection",
+        "object_detection": "images.ObjectDetection",
+    },
+    "level_gauge_predictions": {
+        "keypoint_collection": "images.KeypointCollection",
+        "object_detection": "images.ObjectDetection",
+    },
+    "valve_predictions": {
+        "keypoint_collection": "images.KeypointCollection",
+        "object_detection": "images.ObjectDetection",
+    },
 }
 
 
@@ -604,6 +634,32 @@ class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
 
 @dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
+    pass
+
+
+@dataclass
+class DialGaugeDetection(VisionResource, ThresholdParameter):
+    min_level: float | None = None
+    max_level: float | None = None
+    dead_angle: float | None = None
+    non_linear_angle: float | None = None
+
+
+@dataclass
+class LevelGaugeDetection(VisionResource, ThresholdParameter):
+    min_level: float | None = None
+    max_level: float | None = None
+
+
+@dataclass
+class DigitalGaugeDetection(VisionResource, ThresholdParameter):
+    comma_position: int | None = None
+    min_num_digits: int | None = None
+    max_num_digits: int | None = None
+
+
+@dataclass
+class ValveDetection(VisionResource, ThresholdParameter):
     pass
 
 
@@ -697,6 +753,10 @@ class FeatureParameters(VisionResource):
     people_detection_parameters: PeopleDetectionParameters | None = None
     industrial_object_detection_parameters: IndustrialObjectDetectionParameters | None = None
     personal_protective_equipment_detection_parameters: PersonalProtectiveEquipmentDetectionParameters | None = None
+    digital_gauge_detection_parameters: DigitalGaugeDetection | None = None
+    dial_gauge_detection_parameters: DialGaugeDetection | None = None
+    level_gauge_detection_parameters: LevelGaugeDetection | None = None
+    valve_detection_parameters: ValveDetection | None = None
 
 
 class VisionJob(ContextualizationJob):
@@ -811,22 +871,44 @@ class VisionExtractJob(VisionJob):
         creating_app: str | None = None,
         creating_app_version: str | None = None,
     ) -> list[Annotation]:
-        return [
-            Annotation(
-                annotated_resource_id=item.file_id,
-                annotation_type=VISION_ANNOTATION_TYPE_MAP[prediction_type],
-                data=data,
-                annotated_resource_type="file",
-                status="suggested",
-                creating_app=creating_app or "cognite-sdk-python",
-                creating_app_version=creating_app_version or self._cognite_client.version,
-                creating_user=creating_user or None,
-            )
-            for item in self.items or []
-            if item.predictions is not None
-            for prediction_type, prediction_data_list in item.predictions.dump().items()
-            for data in prediction_data_list
-        ]
+        annotations = []
+
+        for item in self.items or []:
+            if item.predictions is not None:
+                for prediction_type, prediction_data_list in item.predictions.dump().items():
+                    for data in prediction_data_list:
+                        # check if multiple annotations represent the same prediction (e.g. in case of dial gauges, level gauges and valves)
+                        annotation_type = VISION_ANNOTATION_TYPE_MAP[prediction_type]
+                        if isinstance(annotation_type, dict):
+                            for key, value in annotation_type.items():
+                                annotation = Annotation(
+                                    annotated_resource_id=item.file_id,
+                                    annotation_type=value,
+                                    data=data[key],
+                                    annotated_resource_type="file",
+                                    status="suggested",
+                                    creating_app=creating_app or "cognite-sdk-python",
+                                    creating_app_version=creating_app_version or self._cognite_client.version,
+                                    creating_user=creating_user or None,
+                                )
+                                annotations.append(annotation)
+                        elif isinstance(annotation_type, str):
+                            annotation = Annotation(
+                                annotated_resource_id=item.file_id,
+                                annotation_type=annotation_type,
+                                data=data,
+                                annotated_resource_type="file",
+                                status="suggested",
+                                creating_app=creating_app or "cognite-sdk-python",
+                                creating_app_version=creating_app_version or self._cognite_client.version,
+                                creating_user=creating_user or None,
+                            )
+
+                            annotations.append(annotation)
+                        else:
+                            raise TypeError("annotation_type must be str or dict")
+
+        return annotations
 
     def save_predictions(
         self,
@@ -850,9 +932,8 @@ class VisionExtractJob(VisionJob):
             annotations = self._predictions_to_annotations(
                 creating_user=creating_user, creating_app=creating_app, creating_app_version=creating_app_version
             )
-            if annotations:
-                return self._cognite_client.annotations.suggest(annotations=annotations)
-            raise CogniteException("Extract job does not contain any predictions.")
+
+            return self._cognite_client.annotations.suggest(annotations=annotations if annotations else [])
 
         raise CogniteException(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
