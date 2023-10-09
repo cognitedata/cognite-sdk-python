@@ -266,7 +266,7 @@ class TestTimeSeriesHelperMethods:
 
     def test_get_count__string_fails(self, test_ts_string):
         assert test_ts_string.is_string is True
-        with pytest.raises(ValueError, match="String time series does not support count aggregate."):
+        with pytest.raises(RuntimeError, match="String time series does not support count aggregate."):
             test_ts_string.count()
 
     def test_get_latest(self, test_ts_numeric, test_ts_string):
