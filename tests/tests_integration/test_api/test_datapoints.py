@@ -613,9 +613,9 @@ class TestRetrieveRawDatapointsAPI:
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(value=res.values)
 
-        assert math.isclose(res.value[0], -40, abs_tol=0.5)
-        assert math.isclose(res.value[1], 32, abs_tol=0.5)
-        assert math.isclose(res.value[2], 212, abs_tol=0.5)
+        assert math.isclose(res.value[0], -40)
+        assert math.isclose(res.value[1], 32)
+        assert math.isclose(res.value[2], 212)
 
     def test_unit_external_id__is_overridden_if_converted(
         self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries
@@ -1113,7 +1113,7 @@ class TestRetrieveAggregateDatapointsAPI:
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(max=res.values)
 
-        assert math.isclose(res.max[0], 212, abs_tol=0.5)
+        assert math.isclose(res.max[0], 212)
 
 
 @pytest.fixture(scope="session")

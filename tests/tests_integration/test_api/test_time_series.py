@@ -1,4 +1,3 @@
-import platform
 from datetime import datetime
 from unittest import mock
 
@@ -114,13 +113,8 @@ class TestTimeSeriesAPI:
         assert 1 == cognite_client.time_series._post.call_count
 
     def test_list_timeseries_with_target_unit(self, cognite_client: CogniteClient) -> None:
-        system = platform.system()
-        ts1 = TimeSeries(
-            external_id=f"test_list_timeseries_with_target_unit:{system}:1", unit_external_id="temperature:deg_c"
-        )
-        ts2 = TimeSeries(
-            external_id=f"test_list_timeseries_with_target_unit:{system}:2", unit_external_id="temperature:deg_f"
-        )
+        ts1 = TimeSeries(external_id="test_list_timeseries_with_target_unit:1", unit_external_id="temperature:deg_c")
+        ts2 = TimeSeries(external_id="test_list_timeseries_with_target_unit:2", unit_external_id="temperature:deg_f")
         new_ts = TimeSeriesList([ts1, ts2])
         retrieved = cognite_client.time_series.retrieve_multiple(
             external_ids=new_ts.as_external_ids(), ignore_unknown_ids=True
@@ -130,13 +124,13 @@ class TestTimeSeriesAPI:
 
         listed = cognite_client.time_series.list(
             unit_external_id="temperature:deg_c",
-            external_id_prefix=f"test_list_timeseries_with_target_unit:{system}",
+            external_id_prefix="test_list_timeseries_with_target_unit",
             limit=2,
         )
 
         assert len(listed) == 1
         assert listed[0].unit_external_id == "temperature:deg_c"
-        assert listed[0].external_id == f"test_list_timeseries_with_target_unit:{system}:1"
+        assert listed[0].external_id == "test_list_timeseries_with_target_unit:1"
 
     def test_partitioned_list(self, cognite_client, post_spy):
         mintime = datetime(2019, 1, 1).timestamp() * 1000
