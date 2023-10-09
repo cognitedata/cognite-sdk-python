@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.30.2] - 2023-10-09
+### Fixed
+- Serialization of `Transformation` or `TransformationList` no longer fails in `json.dumps` due to unhandled composite objects.
+
 ## [6.30.1] - 2023-10-06
 ### Added
 - Support for metadata on Workflow executions. Set custom metadata when triggering a workflow (`workflows.executions.trigger()`). The metadata is included in results from `workflows.executions.list()` and `workflows.executions.retrieve_detailed()`.
