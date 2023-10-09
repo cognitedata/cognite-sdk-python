@@ -49,15 +49,13 @@ from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import assert_type, split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import classify_error, execute_tasks, get_priority_executor
+from cognite.client.utils._concurrency import classify_error, execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
-    from concurrent.futures import Future
-
-    from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+    from concurrent.futures import Future, ThreadPoolExecutor
 
 
 SortSpec: TypeAlias = Union[
@@ -1172,7 +1170,7 @@ class _AssetHierarchyCreator:
 
     def _create(
         self,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         insert_fn: Callable[[list[Asset]], _TaskResult],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
@@ -1209,7 +1207,7 @@ class _AssetHierarchyCreator:
         self,
         assets: list[Asset],
         *,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         insert_fn: Callable,
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],

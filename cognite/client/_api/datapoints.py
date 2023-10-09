@@ -61,7 +61,7 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     split_into_n_parts,
 )
-from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
+from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import (
@@ -86,13 +86,12 @@ else:
     )
 
 if TYPE_CHECKING:
-    from concurrent.futures import Future
+    from concurrent.futures import Future, ThreadPoolExecutor
 
     import pandas as pd
 
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
-    from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
 
 TSQueryList = List[_SingleTSQueryBase]
@@ -182,6 +181,7 @@ class DpsFetchStrategy(ABC):
         return self._finalize_tasks(ordered_results, resource_lst=DatapointsArrayList)
 
     def _finalize_tasks(self, ordered_results: list[BaseConcurrentTask], resource_lst: type[TResLst]) -> TResLst:
+        # TODO(haakonvt): Do 'get_result' earlier (as soon as ready)
         return resource_lst(
             [ts_task.get_result() for ts_task in ordered_results],
             cognite_client=self.dps_client._cognite_client,
@@ -202,7 +202,7 @@ class DpsFetchStrategy(ABC):
         return res.items
 
     @abstractmethod
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
+    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
         raise NotImplementedError
 
 
@@ -231,7 +231,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         dps_payload["items"] = [item]
         return self._request_datapoints(dps_payload)
 
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
+    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
 
         # Run until all top level tasks are complete:
@@ -260,7 +260,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
     def _create_initial_tasks(
         self,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         use_numpy: bool,
     ) -> tuple[dict[Future, BaseDpsFetchSubtask], dict[_SingleTSQueryBase, BaseConcurrentTask]]:
         futures_dct: dict[Future, BaseDpsFetchSubtask] = {}
@@ -274,7 +274,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
     def _queue_new_subtasks(
         self,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         futures_dct: dict[Future, BaseDpsFetchSubtask],
         new_subtasks: Sequence[BaseDpsFetchSubtask],
     ) -> None:
@@ -340,7 +340,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.agg_subtask_pool: list[PoolSubtaskType] = []
         self.subtask_pools = (self.agg_subtask_pool, self.raw_subtask_pool)
 
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
+    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing, which
         # are string, which are sparse... We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
@@ -373,7 +373,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _fetch_until_complete(
         self,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         futures_dct: dict[Future, list[BaseDpsFetchSubtask]],
         ts_task_lookup: dict[_SingleTSQueryBase, BaseConcurrentTask],
     ) -> None:
@@ -397,7 +397,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 return None
 
     def _create_initial_tasks(
-        self, pool: PriorityThreadPoolExecutor
+        self, pool: ThreadPoolExecutor
     ) -> tuple[dict[_SingleTSQueryBase, int], dict[Future, tuple[TSQueryList, TSQueryList]]]:
         initial_query_limits: dict[_SingleTSQueryBase, int] = {}
         initial_futures_dct: dict[Future, tuple[TSQueryList, TSQueryList]] = {}
@@ -456,7 +456,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _queue_new_subtasks(
         self,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         futures_dct: dict[Future, list[BaseDpsFetchSubtask]],
     ) -> None:
         while pool._work_queue.empty() and any(self.subtask_pools):

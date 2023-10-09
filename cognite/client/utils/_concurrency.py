@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-import inspect
 from collections import UserList
 from concurrent.futures import CancelledError, ThreadPoolExecutor
 from copy import copy
@@ -18,7 +17,6 @@ from typing import (
 )
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
-from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -177,9 +175,6 @@ class MainThreadExecutor(TaskExecutor):
         self._work_queue = AlwaysEmpty()
 
     def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
-        if "priority" in inspect.signature(fn).parameters:
-            raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
-        kwargs.pop("priority", None)
         return SyncFuture(fn, *args, **kwargs)
 
     def shutdown(self, wait: bool = False) -> None:
@@ -207,7 +202,6 @@ _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
 
 class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
-    priority_executor_type: Literal["priority_threadpool", "mainthread"] = "priority_threadpool"
 
 
 def get_executor(max_workers: int) -> TaskExecutor:
@@ -227,18 +221,6 @@ def get_executor(max_workers: int) -> TaskExecutor:
     else:
         raise RuntimeError(f"Invalid executor type '{ConcurrencySettings.executor_type}'")
     return executor
-
-
-def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
-    if max_workers < 1:
-        raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
-
-    if ConcurrencySettings.priority_executor_type == "priority_threadpool":
-        return PriorityThreadPoolExecutor(max_workers)
-    elif ConcurrencySettings.priority_executor_type == "mainthread":
-        return MainThreadExecutor()  # type: ignore [return-value]
-
-    raise RuntimeError(f"Invalid priority-queue executor type '{ConcurrencySettings.priority_executor_type}'")
 
 
 def execute_tasks(
