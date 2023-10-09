@@ -126,7 +126,7 @@ class TestTimeSeriesAPI:
             external_ids=new_ts.as_external_ids(), ignore_unknown_ids=True
         )
         if not retrieved:
-            cognite_client.time_series.create(new_ts)
+            cognite_client.time_series.upsert(new_ts, mode="replace")
 
         listed = cognite_client.time_series.list(
             unit_external_id="temperature:deg_c",
