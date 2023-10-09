@@ -501,7 +501,7 @@ class RawRowsAPI(APIClient):
         if columns is None:
             return None
         if not isinstance(columns, list):
-            raise ValueError("Expected a list for argument columns")
+            raise TypeError("Expected a list for argument columns")
         if len(columns) == 0:
             return ","
         else:

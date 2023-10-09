@@ -40,7 +40,7 @@ class DataModelingId(AbstractDataclass):
             return cls(*data)
         elif isinstance(data, dict):
             return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        raise ValueError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
@@ -73,7 +73,7 @@ class VersionedDataModelingId(AbstractDataclass):
             return cls(*data)
         elif isinstance(data, dict):
             return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        raise ValueError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)

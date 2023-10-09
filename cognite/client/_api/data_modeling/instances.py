@@ -858,7 +858,7 @@ class InstancesAPI(APIClient):
 
         for histogram in histogram_seq:
             if not isinstance(histogram, Histogram):
-                raise ValueError(f"Not a histogram: {histogram}")
+                raise TypeError(f"Not a histogram: {histogram}")
 
         body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
         if filter:
