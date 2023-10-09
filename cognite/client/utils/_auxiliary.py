@@ -20,7 +20,6 @@ from typing import (
 )
 from urllib.parse import quote
 
-import cognite.client
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -168,7 +167,9 @@ def import_legacy_protobuf() -> bool:
 
 
 def get_current_sdk_version() -> str:
-    return cognite.client.__version__
+    from cognite.client import __version__
+
+    return __version__
 
 
 @functools.lru_cache(maxsize=1)

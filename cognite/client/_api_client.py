@@ -28,7 +28,6 @@ import requests.utils
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
-from cognite.client import utils
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
@@ -43,8 +42,16 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._concurrency import TaskExecutor
+from cognite.client.utils._auxiliary import (
+    assert_type,
+    get_current_sdk_version,
+    get_user_agent,
+    interpolate_and_url_encode,
+    is_unlimited,
+    json_dump_default,
+    split_into_chunks,
+)
+from cognite.client.utils._concurrency import TaskExecutor, collect_exc_info_and_raise, execute_tasks
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierCore,
@@ -176,7 +183,7 @@ class APIClient:
 
         if json_payload:
             try:
-                data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default, allow_nan=False)
+                data = _json.dumps(json_payload, default=json_dump_default, allow_nan=False)
             except ValueError as e:
                 # A lot of work to give a more human friendly error message when nans and infs are present:
                 msg = "Out of range float values are not JSON compliant"
@@ -218,13 +225,13 @@ class APIClient:
         self._refresh_auth_header(headers)
         headers["content-type"] = "application/json"
         headers["accept"] = accept
-        headers["x-cdp-sdk"] = f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}"
+        headers["x-cdp-sdk"] = f"CognitePythonSDK:{get_current_sdk_version()}"
         headers["x-cdp-app"] = self._config.client_name
         headers["cdf-version"] = api_subversion or self._api_subversion
         if "User-Agent" in headers:
-            headers["User-Agent"] += " " + utils._auxiliary.get_user_agent()
+            headers["User-Agent"] += " " + get_user_agent()
         else:
-            headers["User-Agent"] = utils._auxiliary.get_user_agent()
+            headers["User-Agent"] = get_user_agent()
         headers.update(additional_headers)
         return headers
 
@@ -284,9 +291,7 @@ class APIClient:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
             res = self._get(
-                url_path=utils._auxiliary.interpolate_and_url_encode(
-                    resource_path + "/{}", str(identifier.as_primitive())
-                ),
+                url_path=interpolate_and_url_encode(resource_path + "/{}", str(identifier.as_primitive())),
                 params=params,
                 headers=headers,
             )
@@ -354,13 +359,11 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = utils._concurrency.execute_tasks(
-            self._post, tasks, max_workers=self._config.max_workers, executor=executor
-        )
+        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
 
         if tasks_summary.exceptions:
             try:
-                utils._concurrency.collect_exc_info_and_raise(tasks_summary.exceptions)
+                collect_exc_info_and_raise(tasks_summary.exceptions)
             except CogniteNotFoundError:
                 if identifiers.is_singleton():
                     return None
@@ -504,7 +507,7 @@ class APIClient:
             return res.json()["items"]
 
         while len(next_cursors) > 0:
-            tasks_summary = utils._concurrency.execute_tasks(
+            tasks_summary = execute_tasks(
                 get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
             )
             tasks_summary.raise_first_encountered_exception()
@@ -618,7 +621,7 @@ class APIClient:
             return retrieved_items
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = utils._concurrency.execute_tasks(get_partition, tasks, max_workers=partitions)
+        tasks_summary = execute_tasks(get_partition, tasks, max_workers=partitions)
         tasks_summary.raise_first_encountered_exception()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
@@ -633,8 +636,8 @@ class APIClient:
         keys: Sequence[str] | None = None,
         headers: dict | None = None,
     ) -> list[T]:
-        utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
-        utils._auxiliary.assert_type(fields, "fields", [list], allow_none=True)
+        assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        assert_type(fields, "fields", [list], allow_none=True)
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
@@ -746,7 +749,7 @@ class APIClient:
             body["search"] = {"query": query}
 
         if filter is not None:
-            utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
+            assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
             if isinstance(filter, CogniteFilter):
                 dumped_filter = filter.dump(camel_case=True)
             elif isinstance(filter, dict):
@@ -832,9 +835,7 @@ class APIClient:
             (resource_path, task_items, params, headers)
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = utils._concurrency.execute_tasks(
-            self._post, tasks, max_workers=self._config.max_workers, executor=executor
-        )
+        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
 
         def unwrap_element(el: T) -> CogniteResource | T:
             if isinstance(el, dict):
@@ -885,9 +886,7 @@ class APIClient:
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = utils._concurrency.execute_tasks(
-            self._post, tasks, max_workers=self._config.max_workers, executor=executor
-        )
+        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
@@ -963,7 +962,7 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
@@ -1080,7 +1079,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
     ) -> T_CogniteResourceList:
-        utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):

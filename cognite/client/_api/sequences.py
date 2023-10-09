@@ -7,7 +7,6 @@ from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -24,6 +23,8 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.sequences import SequenceProperty, SequenceSort, SortableSequenceProperty
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import assert_type
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
@@ -486,7 +487,7 @@ class SequencesAPI(APIClient):
                 >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=seq.columns))
 
         """
-        utils._auxiliary.assert_type(sequence, "sequences", [SequenceType, Sequence])
+        assert_type(sequence, "sequences", [SequenceType, Sequence])
         if isinstance(sequence, SequenceType):
             sequence = [self._clean_columns(seq) for seq in sequence]
         else:
@@ -935,7 +936,7 @@ class SequencesDataAPI(APIClient):
 
         row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
         tasks = [({**base_obj, **rows},) for rows in row_objs]
-        summary = utils._concurrency.execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks()
 
     def insert_dataframe(
@@ -1055,9 +1056,7 @@ class SequencesDataAPI(APIClient):
                 id=post_obj.get("id"), external_id=post_obj.get("externalId"), rows=seqdata, columns=columns
             )
 
-        tasks_summary = utils._concurrency.execute_tasks(
-            _fetch_sequence, [(x,) for x in post_objs], max_workers=self._config.max_workers
-        )
+        tasks_summary = execute_tasks(_fetch_sequence, [(x,) for x in post_objs], max_workers=self._config.max_workers)
         tasks_summary.raise_first_encountered_exception()
         results = tasks_summary.joined_results()
         if len(post_objs) == 1:

@@ -4,7 +4,6 @@ from typing import Any
 
 from requests import Response
 
-from cognite.client import utils
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
@@ -32,6 +31,7 @@ from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
+from cognite.client.utils._auxiliary import get_current_sdk_version
 
 
 class CogniteClient:
@@ -111,7 +111,7 @@ class CogniteClient:
         Returns:
             str: The current SDK version
         """
-        return utils._auxiliary.get_current_sdk_version()
+        return get_current_sdk_version()
 
     @property
     def config(self) -> ClientConfig:

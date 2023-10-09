@@ -20,7 +20,6 @@ from typing import (
     overload,
 )
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import find_duplicates, local_import
 from cognite.client.utils._identifier import Identifier
@@ -34,6 +33,7 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
+from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 Aggregate = Literal[
     "average",
@@ -455,7 +455,7 @@ class Datapoints(CogniteResource):
 
     def __str__(self) -> str:
         item = self.dump()
-        item["datapoints"] = utils._time.convert_time_attributes_to_datetime(item["datapoints"])
+        item["datapoints"] = convert_time_attributes_to_datetime(item["datapoints"])
         return json.dumps(item, indent=4)
 
     def __len__(self) -> int:
@@ -809,7 +809,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
     def __str__(self) -> str:
         item = self.dump()
         for i in item:
-            i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
+            i["datapoints"] = convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(  # type: ignore [override]
