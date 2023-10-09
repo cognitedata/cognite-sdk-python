@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -17,6 +16,8 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
+from cognite.client.utils._auxiliary import assert_type, interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
 if TYPE_CHECKING:
@@ -146,7 +147,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.create(name="My Model")
         """
-        utils._auxiliary.assert_type(name, "name", [str, Sequence])
+        assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name_processed: dict[str, Any] | Sequence[dict[str, Any]] = {"name": name}
         else:
@@ -226,7 +227,7 @@ class ThreeDRevisionsAPI(APIClient):
         return self._list_generator(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             chunk_size=chunk_size,
             filter={"published": published},
@@ -253,7 +254,7 @@ class ThreeDRevisionsAPI(APIClient):
         """
         return self._retrieve(
             cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifier=InternalId(id),
         )
 
@@ -282,7 +283,7 @@ class ThreeDRevisionsAPI(APIClient):
         return self._create_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             items=revision,
         )
 
@@ -310,7 +311,7 @@ class ThreeDRevisionsAPI(APIClient):
         return self._list(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             filter={"published": published},
             limit=limit,
@@ -354,7 +355,7 @@ class ThreeDRevisionsAPI(APIClient):
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             update_cls=ThreeDModelRevisionUpdate,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             items=item,
         )
 
@@ -374,7 +375,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = c.three_d.revisions.delete(model_id=1, id=1)
         """
         self._delete_multiple(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
@@ -395,9 +396,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id)
         body = {"fileId": file_id}
         self._post(resource_path, json=body)
 
@@ -436,9 +435,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.list_nodes(model_id=1, revision_id=1, limit=10)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
@@ -478,9 +475,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
@@ -513,9 +508,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
@@ -546,7 +539,7 @@ class ThreeDFilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.files.retrieve(1)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
+        path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
         return self._get(path).content
 
 
@@ -581,7 +574,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.list(model_id=1, revision_id=1)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._list(
             list_cls=ThreeDAssetMappingList,
             resource_cls=ThreeDAssetMapping,
@@ -614,7 +607,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._create_multiple(
             list_cls=ThreeDAssetMappingList, resource_cls=ThreeDAssetMapping, resource_path=path, items=asset_mapping
         )
@@ -638,15 +631,15 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> mapping_to_delete = c.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
                 >>> res = c.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
-        utils._auxiliary.assert_type(asset_mapping, "asset_mapping", [Sequence, ThreeDAssetMapping])
+        path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        assert_type(asset_mapping, "asset_mapping", [Sequence, ThreeDAssetMapping])
         if isinstance(asset_mapping, ThreeDAssetMapping):
             asset_mapping = [asset_mapping]
-        chunks = utils._auxiliary.split_into_chunks(
+        chunks = split_into_chunks(
             [ThreeDAssetMapping(a.node_id, a.asset_id).dump(camel_case=True) for a in asset_mapping], self._DELETE_LIMIT
         )
         tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
-        summary = utils._concurrency.execute_tasks(self._post, tasks, self._config.max_workers)
+        summary = execute_tasks(self._post, tasks, self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el),

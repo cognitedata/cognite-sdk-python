@@ -49,6 +49,7 @@ Contents
    functions
    data_modeling
    workflow_orchestration
+   unit_catalog
    deprecated
    base_data_classes
    exceptions

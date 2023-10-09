@@ -697,7 +697,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> import cognite.client.data_classes.filters as filters
+                >>> from cognite.client.data_classes import filters
                 >>> c = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
                 >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"),

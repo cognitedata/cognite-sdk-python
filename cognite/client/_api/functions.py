@@ -15,7 +15,6 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Sequence, cast
 from zipfile import ZipFile
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -33,7 +32,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
-from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._auxiliary import assert_type, is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._session import create_session_and_return_nonce
 
@@ -187,8 +186,8 @@ class FunctionsAPI(APIClient):
         elif function_handle:
             _validate_function_handle(function_handle)
             file_id = self._zip_and_upload_handle(function_handle, name, external_id)
-        utils._auxiliary.assert_type(cpu, "cpu", [Number], allow_none=True)
-        utils._auxiliary.assert_type(memory, "memory", [Number], allow_none=True)
+        assert_type(cpu, "cpu", [Number], allow_none=True)
+        assert_type(memory, "memory", [Number], allow_none=True)
 
         sleep_time = 1.0  # seconds
         for i in range(MAX_RETRIES):
@@ -350,8 +349,8 @@ class FunctionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.functions.retrieve_multiple(external_ids=["func1", "func2"])
         """
-        utils._auxiliary.assert_type(ids, "id", [Sequence], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [Sequence], allow_none=True)
+        assert_type(ids, "id", [Sequence], allow_none=True)
+        assert_type(external_ids, "external_id", [Sequence], allow_none=True)
         return self._retrieve_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             resource_cls=Function,
@@ -665,7 +664,7 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    constructors = cast(Any, utils._auxiliary.local_import("pip._internal.req.constructors"))
+    constructors = cast(Any, local_import("pip._internal.req.constructors"))
     install_req_from_line = constructors.install_req_from_line
     parsed_reqs: list[str] = []
     for req in requirements:

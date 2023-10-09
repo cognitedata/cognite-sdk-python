@@ -20,7 +20,6 @@ from typing import (
 )
 from urllib.parse import quote
 
-import cognite.client
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -168,7 +167,9 @@ def import_legacy_protobuf() -> bool:
 
 
 def get_current_sdk_version() -> str:
-    return cognite.client.__version__
+    from cognite.client import __version__
+
+    return __version__
 
 
 @functools.lru_cache(maxsize=1)
@@ -257,7 +258,7 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:
-    return sum(1 if a is not None else 0 for a in args) == 1
+    return sum(a is not None for a in args) == 1
 
 
 def rename_and_exclude_keys(

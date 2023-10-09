@@ -7,7 +7,6 @@ from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -24,6 +23,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
@@ -416,7 +416,7 @@ class SequenceData(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
 
         options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
         if column_names not in options:
@@ -474,7 +474,7 @@ class SequenceDataList(CogniteResourceList[SequenceData]):
         Returns:
             pandas.DataFrame: The sequence data list as a pandas DataFrame.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)
 
 

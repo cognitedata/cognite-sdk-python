@@ -146,14 +146,15 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         workflow_external_id: str,
         version: str,
         input: dict | None = None,
+        metadata: dict | None = None,
     ) -> WorkflowExecution:
         """`Trigger a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
         Args:
             workflow_external_id (str): External id of the workflow.
             version (str): Version of the workflow.
-            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the strind "${workflow.input}"
-                                See tip below for more information.
+            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
+            metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
 
         Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
@@ -189,6 +190,8 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         body = {"authentication": {"nonce": nonce}}
         if input is not None:
             body["input"] = input
+        if metadata is not None:
+            body["metadata"] = metadata
 
         response = self._post(
             url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",

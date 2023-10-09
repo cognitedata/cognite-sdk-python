@@ -39,6 +39,7 @@ class TimeSeries(CogniteResource):
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
+        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
         asset_id (int | None): Asset ID of equipment linked to this time series.
         is_step (bool | None): Whether the time series is a step series or not.
         description (str | None): Description of the time series.
@@ -58,6 +59,7 @@ class TimeSeries(CogniteResource):
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
         asset_id: int | None = None,
         is_step: bool | None = None,
         description: str | None = None,
@@ -74,6 +76,7 @@ class TimeSeries(CogniteResource):
         self.is_string = is_string
         self.metadata = metadata
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.asset_id = asset_id
         self.is_step = is_step
         self.description = description
@@ -153,6 +156,8 @@ class TimeSeriesFilter(CogniteFilter):
     Args:
         name (str | None): Filter on name.
         unit (str | None): Filter on unit.
+        unit_external_id (str | None): Filter on unit external ID.
+        unit_quantity (str | None): Filter on unit quantity.
         is_string (bool | None): Filter on isString.
         is_step (bool | None): Filter on isStep.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -169,6 +174,8 @@ class TimeSeriesFilter(CogniteFilter):
         self,
         name: str | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -182,6 +189,8 @@ class TimeSeriesFilter(CogniteFilter):
     ) -> None:
         self.name = name
         self.unit = unit
+        self.unit_external_id = unit_external_id
+        self.unit_quantity = unit_quantity
         self.is_string = is_string
         self.is_step = is_step
         self.metadata = metadata
@@ -250,6 +259,10 @@ class TimeSeriesUpdate(CogniteUpdate):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "unit")
 
     @property
+    def unit_external_id(self) -> _PrimitiveTimeSeriesUpdate:
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "unitExternalId")
+
+    @property
     def asset_id(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "assetId")
 
@@ -278,6 +291,7 @@ class TimeSeriesUpdate(CogniteUpdate):
             # TimeSeries does not support setting metadata to an empty array.
             PropertySpec("metadata", is_container=True, is_nullable=False),
             PropertySpec("unit"),
+            PropertySpec("unit_external_id", is_beta=True),
             PropertySpec("asset_id"),
             PropertySpec("description"),
             PropertySpec("is_step", is_nullable=False),

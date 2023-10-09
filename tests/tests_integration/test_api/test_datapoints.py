@@ -7,6 +7,7 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 from __future__ import annotations
 
 import itertools
+import math
 import random
 import re
 from contextlib import nullcontext as does_not_raise
@@ -313,6 +314,19 @@ def parametrized_values_uniform_index_fails(testrun_uid):
         )
 
 
+@pytest.fixture(scope="module")
+def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeries:
+    timeseries = TimeSeries(
+        external_id="test_retrieve_datapoints_in_target_unit",
+        name="test_retrieve_datapoints_in_target_unit",
+        is_string=False,
+        unit_external_id="temperature:deg_c",
+    )
+    created_timeseries = cognite_client.time_series.upsert(timeseries, mode="patch")
+    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+    return created_timeseries
+
+
 class TestRetrieveRawDatapointsAPI:
     """Note: Since `retrieve` and `retrieve_arrays` endpoints should give identical results,
     except for the data container types, all tests run both endpoints.
@@ -576,6 +590,54 @@ class TestRetrieveRawDatapointsAPI:
                     assert len(r) == 0
                     assert isinstance(r.is_step, bool)
                     assert isinstance(r.is_string, bool)
+
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        res = retrieve_method(external_id=timeseries.external_id, end=3, **kwargs)
+
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(value=res.values)
+
+        assert math.isclose(res.value[0], -40)
+        assert math.isclose(res.value[1], 32)
+        assert math.isclose(res.value[2], 212)
+
+    @pytest.mark.parametrize("retrieve_method_name", ("retrieve", "retrieve_arrays"))
+    def test_unit_external_id__is_overridden_if_converted(
+        self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries, retrieve_method_name: str
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        assert timeseries.unit_external_id == "temperature:deg_c"
+
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+        res = retrieve_method(
+            id=[
+                {"id": timeseries.id},
+                {"id": timeseries.id, "target_unit": "temperature:deg_f"},
+                {"id": timeseries.id, "target_unit": "temperature:k"},
+            ],
+            end=3,
+        )
+        # Ensure unit_external_id is unchanged (Celsius):
+        assert res[0].unit_external_id == timeseries.unit_external_id
+        # ...and ensure it has changed for converted units (Fahrenheit or Kelvin):
+        assert res[1].unit_external_id == "temperature:deg_f"
+        assert res[2].unit_external_id == "temperature:k"
 
 
 class TestRetrieveAggregateDatapointsAPI:
@@ -1031,6 +1093,30 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(id=ts_string.id)) == 2
             assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
+
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        res = retrieve_method(external_id=timeseries.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
+
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(max=res.values)
+
+        assert math.isclose(res.max[0], 212)
 
 
 @pytest.fixture(scope="session")

@@ -17,9 +17,39 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.32.0] - 2023-10-10
+### Fixed
+- Ref to openapi doc in Vision extract docstring 
+- Parameters to Vision models can be given as Python dict (updated doc accordingly). 
+- Don't throw exception when trying to save empty list of vision extract predictions as annotations. This is to avoid having to wrap this method in try-except for every invocation of the method.
+
+### Added
+- Support for new computer vision models in Vision extract service: digital gauge reader, dial gauge reader, level gauge reader and valve state detection.
+
+## [6.31.0] - 2023-10-09
+### Added
+Support for setting and fetching TimeSeries and Datapoints with "real" units (`unit_external_id`).
+- TimeSeries has a new field `unit_external_id`, which can be set when creating or updating it. This ID must refer to a
+  valid unit in the UnitCatalog, see `client.units.list` for reference.
+- If the `unit_external_id` is set for a TimeSeries, then you may retrieve datapoints from that time series in any compatible
+  units. You do this by specifying the `target_unit` (or `target_unit_system`) in a call to any of the datapoints `retrieve`
+  methods, `retrieve`, `retrieve_arrays`, `retrieve_dataframe`, or `retrieve_dataframe_in_tz`.
+
+## [6.30.2] - 2023-10-09
+### Fixed
+- Serialization of `Transformation` or `TransformationList` no longer fails in `json.dumps` due to unhandled composite objects.
+
+## [6.30.1] - 2023-10-06
+### Added
+- Support for metadata on Workflow executions. Set custom metadata when triggering a workflow (`workflows.executions.trigger()`). The metadata is included in results from `workflows.executions.list()` and `workflows.executions.retrieve_detailed()`.
+
+## [6.30.0] - 2023-10-06
+### Added
+- Support for the UnitCatalog with the implementation `client.units`.
+
 ## [6.29.2] - 2023-10-04
 ### Fixed
-- Calling some of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter could cause a `CogniteAPIError` with a 400 code. This is now fixed. 
+- Calling some of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter could cause a `CogniteAPIError` with a 400 code. This is now fixed.
 
 ## [6.29.1] - 2023-10-04
 ### Added
@@ -27,7 +57,7 @@ Changes are grouped as follows
 
 ## [6.29.0] - 2023-10-04
 ### Added
-- Added parameter `resolve_duplicate_file_names` to `client.files.download`. 
+- Added parameter `resolve_duplicate_file_names` to `client.files.download`.
   This will keep all the files when downloading to local machine, even if they have the same name.
 
 ## [6.28.5] - 2023-10-03
