@@ -617,13 +617,15 @@ class TestRetrieveRawDatapointsAPI:
         assert math.isclose(res.value[1], 32)
         assert math.isclose(res.value[2], 212)
 
+    @pytest.mark.parametrize("retrieve_method_name", ("retrieve", "retrieve_arrays"))
     def test_unit_external_id__is_overridden_if_converted(
-        self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries
+        self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries, retrieve_method_name: str
     ) -> None:
         timeseries = timeseries_degree_c_minus40_0_100
         assert timeseries.unit_external_id == "temperature:deg_c"
 
-        res = cognite_client.time_series.data.retrieve(
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+        res = retrieve_method(
             id=[
                 {"id": timeseries.id},
                 {"id": timeseries.id, "target_unit": "temperature:deg_f"},
@@ -631,8 +633,9 @@ class TestRetrieveRawDatapointsAPI:
             ],
             end=3,
         )
-        # Ensure unit_external_id is unchanged (Celsius), or changed (Fahrenheit or Kelvin):
-        assert res[0].unit_external_id == "temperature:deg_c"
+        # Ensure unit_external_id is unchanged (Celsius):
+        assert res[0].unit_external_id == timeseries.unit_external_id
+        # ...and ensure it has changed for converted units (Fahrenheit or Kelvin):
         assert res[1].unit_external_id == "temperature:deg_f"
         assert res[2].unit_external_id == "temperature:k"
 

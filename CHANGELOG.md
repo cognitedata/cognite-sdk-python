@@ -19,14 +19,12 @@ Changes are grouped as follows
 
 ## [6.31.0] - 2023-10-09
 ### Added
-Support for the setting and fetching TimeSeries and Datapoints with `units`.
-- TimeSeries has a new field `unit_external_id`, which can be set when creating or updating a TimeSeries. This ID must
-  refer to a unit in the UnitCatalog, `client.units.list`.
-- If the `unit_external_id` is set for a TimeSeries, then you can retrieve datapoints from that timeseries with the unit
-  converted to the unit specified by the `target_unit` or `target_unit_system` in the datapoints `retrieve` methods,
-  `client.time_series.data.retrieve`, `client.time_series.data.retrieve_arrays`, `client.time_series.data.retrieve_dataframe`,
-  `client.time_series.data.retrieve_dataframe_in_tz`.
-
+Support for setting and fetching TimeSeries and Datapoints with "real" units (`unit_external_id`).
+- TimeSeries has a new field `unit_external_id`, which can be set when creating or updating it. This ID must refer to a
+  valid unit in the UnitCatalog, see `client.units.list` for reference.
+- If the `unit_external_id` is set for a TimeSeries, then you may retrieve datapoints from that time series in any compatible
+  units. You do this by specifying the `target_unit` (or `target_unit_system`) in a call to any of the datapoints `retrieve`
+  methods, `retrieve`, `retrieve_arrays`, `retrieve_dataframe`, or `retrieve_dataframe_in_tz`.
 
 ## [6.30.2] - 2023-10-09
 ### Fixed
