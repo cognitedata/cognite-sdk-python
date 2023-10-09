@@ -328,6 +328,8 @@ class PropertySpec:
     name: str
     is_container: bool = False
     is_nullable: bool = True
+    # Used to skip replace when the value is None
+    is_beta: bool = False
 
 
 class CogniteUpdate:

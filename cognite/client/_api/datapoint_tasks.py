@@ -32,7 +32,7 @@ from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
-from cognite.client.utils._auxiliary import import_legacy_protobuf, is_unlimited
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, import_legacy_protobuf, is_unlimited
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import (
@@ -81,6 +81,8 @@ class CustomDatapointsQuery(TypedDict, total=False):
     end: int | str | datetime | None
     aggregates: list[str] | None
     granularity: str | None
+    target_unit: str | None
+    target_unit_system: str | None
     limit: int | None
     include_outside_points: bool | None
     ignore_unknown_ids: bool | None
@@ -100,6 +102,8 @@ class CustomDatapoints(TypedDict, total=False):
     end: int
     aggregates: list[str] | None
     granularity: str | None
+    target_unit: str | None
+    target_unit_system: str | None
     limit: int
     include_outside_points: bool
 
@@ -118,6 +122,8 @@ class _DatapointsQuery:
     external_id: DatapointsExternalId | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
+    target_unit: str | None = None
+    target_unit_system: str | None = None
     limit: int | None = None
     include_outside_points: bool = False
     ignore_unknown_ids: bool = False
@@ -144,23 +150,23 @@ class _SingleTSQueryValidator:
             limit=user_query.limit,
             aggregates=user_query.aggregates,
             granularity=user_query.granularity,
+            target_unit=user_query.target_unit,
+            target_unit_system=user_query.target_unit_system,
             include_outside_points=user_query.include_outside_points,
             ignore_unknown_ids=user_query.ignore_unknown_ids,
         )
+        self._user_query_is_valid = False
+        self._user_query_requires_beta_api_subversion = False
+
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
         # exception 'end not after start' if both are set to the same value.
         self.__time_now = timestamp_to_ms("now")
 
-    def _ts_to_ms_frozen_now(self, ts: int | str | datetime | None, default: int) -> int:
-        # Time 'now' is frozen for all queries in a single call from the user, leading to identical
-        # results e.g. "4d-ago" and "now"
-        if ts is None:
-            return default
-        elif isinstance(ts, str):
-            return self.__time_now - time_ago_to_ms(ts)
-        else:
-            return timestamp_to_ms(ts)
+    def beta_api_subversion_is_needed(self) -> bool:
+        if self._user_query_is_valid:
+            return self._user_query_requires_beta_api_subversion
+        raise RuntimeError("user query is invalid or validation has not run yet")
 
     def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
         queries = []
@@ -171,8 +177,19 @@ class _SingleTSQueryValidator:
             xid_queries = self._validate_multiple_xid(self.user_query.external_id)
             queries.extend(xid_queries)
         if queries:
+            self._user_query_is_valid = True
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
+
+    def _ts_to_ms_frozen_now(self, ts: int | str | datetime | None, default: int) -> int:
+        # Time 'now' is frozen for all queries in a single call from the user, leading to identical
+        # results e.g. "4d-ago" and "now"
+        if ts is None:
+            return default
+        elif isinstance(ts, str):
+            return self.__time_now - time_ago_to_ms(ts)
+        else:
+            return timestamp_to_ms(ts)
 
     def _validate_multiple_id(self, id: DatapointsId) -> list[_SingleTSQueryBase]:
         return self._validate_id_or_xid(id, "id", numbers.Integral)
@@ -240,6 +257,8 @@ class _SingleTSQueryValidator:
             "end",
             "aggregates",
             "granularity",
+            "target_unit",
+            "target_unit_system",
             "limit",
             "include_outside_points",
             "ignore_unknown_ids",
@@ -253,8 +272,14 @@ class _SingleTSQueryValidator:
 
     def _validate_and_create_query(self, dct: DatapointsQueryId | DatapointsQueryExternalId) -> _SingleTSQueryBase:
         limit = self._verify_limit(dct["limit"])
-        granularity, aggregates = dct["granularity"], dct["aggregates"]
 
+        target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
+        if exactly_one_is_not_none(target_unit, target_unit_system):
+            self._user_query_requires_beta_api_subversion = True
+        elif target_unit is not None and target_unit_system is not None:
+            raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
+
+        granularity, aggregates = dct["granularity"], dct["aggregates"]
         if not (granularity is None or isinstance(granularity, str)):
             raise TypeError(f"Expected `granularity` to be of type `str` or None, not {type(granularity)}")
 
@@ -301,6 +326,8 @@ class _SingleTSQueryValidator:
             "identifier": identifier,
             "start": start,
             "end": end,
+            "target_unit": dct["target_unit"],
+            "target_unit_system": dct["target_unit_system"],
             "limit": limit,
             "ignore_unknown_ids": dct["ignore_unknown_ids"],
         }
@@ -357,6 +384,8 @@ class _SingleTSQueryBase:
         end: int,
         max_query_limit: int,
         limit: int | None,
+        target_unit: str | None,
+        target_unit_system: str | None,
         include_outside_points: bool,
         ignore_unknown_ids: bool,
     ) -> None:
@@ -365,6 +394,8 @@ class _SingleTSQueryBase:
         self.end = end
         self.max_query_limit = max_query_limit
         self.limit = limit
+        self.target_unit = target_unit
+        self.target_unit_system = target_unit_system
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
 
@@ -427,13 +458,19 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
         return True
 
     def to_payload(self) -> dict[str, Any]:
-        return {
+        payload = {
             **self.identifier.as_dict(),
             "start": self.start,
             "end": self.end,
             "limit": self.capped_limit,
             "includeOutsidePoints": self.include_outside_points,
         }
+
+        if self.target_unit is not None:
+            payload["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            payload["targetUnitSystem"] = self.target_unit_system
+        return payload
 
 
 class _SingleTSQueryRawLimited(_SingleTSQueryRaw):
@@ -470,7 +507,7 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
         return list(map(to_camel_case, self.aggregates))
 
     def to_payload(self) -> dict[str, Any]:
-        return {
+        payload = {
             **self.identifier.as_dict(),
             "start": self.start,
             "end": self.end,
@@ -479,6 +516,11 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
             "limit": self.capped_limit,
             "includeOutsidePoints": self.include_outside_points,
         }
+        if self.target_unit is not None:
+            payload["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            payload["targetUnitSystem"] = self.target_unit_system
+        return payload
 
 
 class _SingleTSQueryAggLimited(_SingleTSQueryAgg):
@@ -555,6 +597,7 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
         "is_string": res.isString,
         "is_step": res.isStep,
         "unit": res.unit,
+        "unit_external_id": res.unitExternalId,
     }
 
 
@@ -586,6 +629,8 @@ class BaseDpsFetchSubtask:
         priority: int,
         max_query_limit: int,
         is_raw_query: bool,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
     ) -> None:
         self.start = start
         self.end = end
@@ -594,6 +639,8 @@ class BaseDpsFetchSubtask:
         self.priority = priority
         self.is_raw_query = is_raw_query
         self.max_query_limit = max_query_limit
+        self.target_unit = target_unit
+        self.target_unit_system = target_unit_system
 
         self.is_done = False
 
@@ -622,15 +669,18 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
         return self._create_payload_item()
 
     def _create_payload_item(self) -> CustomDatapoints:
-        return CustomDatapoints(
-            {
-                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-                "start": self.start,
-                "end": self.end,
-                "limit": 0,  # Not a bug; it just returns the outside points
-                "includeOutsidePoints": True,
-            }
-        )
+        output = {
+            **self.identifier.as_dict(),
+            "start": self.start,
+            "end": self.end,
+            "limit": 0,  # Not a bug; it just returns the outside points
+            "includeOutsidePoints": True,
+        }
+        if self.target_unit is not None:
+            output["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            output["targetUnitSystem"] = self.target_unit_system
+        return CustomDatapoints(output)  # type: ignore [misc]
 
     def store_partial_result(self, res: DataPointListItem) -> None:
         # `Oneof` field `datapointType` can be either `numericDatapoints` or `stringDatapoints`
@@ -683,15 +733,19 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         return self._create_payload_item(math.inf if remaining is None else remaining)
 
     def _create_payload_item(self, remaining_limit: float) -> CustomDatapoints:
-        return CustomDatapoints(
-            {
-                **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-                "start": self.next_start,
-                "end": self.end,
-                "limit": min(remaining_limit, self.max_query_limit),
-                **self.agg_kwargs,
-            }
-        )
+        output = {
+            **self.identifier.as_dict(),
+            "start": self.next_start,
+            "end": self.end,
+            "limit": min(remaining_limit, self.max_query_limit),
+            **self.agg_kwargs,
+        }
+        if self.target_unit is not None:
+            output["targetUnit"] = self.target_unit
+        if self.target_unit_system is not None:
+            output["targetUnitSystem"] = self.target_unit_system
+
+        return CustomDatapoints(output)  # type: ignore [misc]
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         if self.parent.ts_info is None:
@@ -910,6 +964,8 @@ class BaseConcurrentTask:
                 identifier=self.query.identifier,
                 aggregates=self.query.aggregates_cc,
                 granularity=self.query.granularity,
+                target_unit=self.query.target_unit,
+                target_unit_system=self.query.target_unit_system,
                 max_query_limit=self.query.max_query_limit,
                 is_raw_query=self.query.is_raw_query,
             )

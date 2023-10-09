@@ -313,6 +313,7 @@ class APIClient:
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource | None:
         ...
 
@@ -328,6 +329,7 @@ class APIClient:
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -342,6 +344,7 @@ class APIClient:
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -359,7 +362,12 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
+        tasks_summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            executor=executor,
+        )
 
         if tasks_summary.exceptions:
             try:
@@ -790,6 +798,7 @@ class APIClient:
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -806,6 +815,7 @@ class APIClient:
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -821,6 +831,7 @@ class APIClient:
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -835,7 +846,12 @@ class APIClient:
             (resource_path, task_items, params, headers)
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
+        summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            executor=executor,
+        )
 
         def unwrap_element(el: T) -> CogniteResource | T:
             if isinstance(el, dict):
@@ -907,6 +923,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -921,6 +938,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -934,6 +952,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -962,7 +981,9 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
+        )
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
@@ -981,13 +1002,16 @@ class APIClient:
         update_cls: type[CogniteUpdate],
         mode: Literal["patch", "replace"],
         input_resource_cls: type[CogniteResource] | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
         try:
-            result = self._update_multiple(items, list_cls, resource_cls, update_cls, mode=mode)
+            result = self._update_multiple(
+                items, list_cls, resource_cls, update_cls, mode=mode, api_subversion=api_subversion
+            )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
             items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
@@ -1015,7 +1039,11 @@ class APIClient:
             try:
                 if to_create:
                     created = self._create_multiple(
-                        to_create, list_cls=list_cls, resource_cls=resource_cls, input_resource_cls=input_resource_cls
+                        to_create,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        input_resource_cls=input_resource_cls,
+                        api_subversion=api_subversion,
                     )
                 if to_update:
                     updated = self._update_multiple(
@@ -1024,6 +1052,7 @@ class APIClient:
                         resource_cls=resource_cls,
                         update_cls=update_cls,
                         mode=mode,
+                        api_subversion=api_subversion,
                     )
             except CogniteAPIError as api_error:
                 successful = list(api_error.successful)
@@ -1046,7 +1075,7 @@ class APIClient:
             if not_found_error.successful:
                 identifiers = IdentifierSequence.of(*not_found_error.successful)
                 successful_resources = self._retrieve_multiple(
-                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers
+                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers, api_subversion=api_subversion
                 )
                 if isinstance(successful_resources, resource_cls):
                     successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
@@ -1078,6 +1107,7 @@ class APIClient:
         resource_path: str | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
@@ -1090,6 +1120,7 @@ class APIClient:
             json={"search": search, "filter": filter, "limit": limit},
             params=params,
             headers=headers,
+            api_subversion=api_subversion,
         )
         return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
@@ -1146,7 +1177,7 @@ class APIClient:
         return {
             to_camel_case(prop.name): {"set": []} if prop.is_container else {"setNull": True}
             for prop in update_attributes
-            if prop.is_nullable
+            if prop.is_nullable and not prop.is_beta
         }
 
     @staticmethod
