@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from cognite.client import utils
 from cognite.client.data_classes import Asset
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
@@ -23,6 +22,7 @@ from cognite.client.data_classes.geospatial import (
     PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import local_import
 from tests.utils import set_request_limit
 
 FIXED_SRID = 121111 + random.randint(0, 1_000)
@@ -503,11 +503,11 @@ class TestGeospatialAPI:
             "lastUpdatedTime",
             "assetIds",
         ]
-        geopandas = utils._auxiliary.local_import("geopandas")
-        assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
+        geopandas = local_import("geopandas")
+        assert type(gdf.dtypes["position"]) is geopandas.array.GeometryDtype
 
     def test_from_geopandas_basic(self, cognite_client, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame(
             {
                 "externalId": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
@@ -522,8 +522,8 @@ class TestGeospatialAPI:
                 "pressure": [2121.0, 2121.0, 2121.0, 2121.0],
             }
         )
-        utils._auxiliary.local_import("shapely.wkt")
-        geopandas = utils._auxiliary.local_import("geopandas")
+        local_import("shapely.wkt")
+        geopandas = local_import("geopandas")
         df["position"] = geopandas.GeoSeries.from_wkt(df["position"])
         gdf = geopandas.GeoDataFrame(df, geometry="position")
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
@@ -531,7 +531,7 @@ class TestGeospatialAPI:
         assert len(res) == 4
 
     def test_from_geopandas_flexible(self, cognite_client, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame(
             {
                 "some_unique_id": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
@@ -546,8 +546,8 @@ class TestGeospatialAPI:
                 "some_pressure": [2121.0, 2121.0, 2121.0, 2121.0],
             }
         )
-        utils._auxiliary.local_import("shapely.wkt")
-        geopandas = utils._auxiliary.local_import("geopandas")
+        local_import("shapely.wkt")
+        geopandas = local_import("geopandas")
         df["some_position"] = geopandas.GeoSeries.from_wkt(df["some_position"])
         gdf = geopandas.GeoDataFrame(df, geometry="some_position")
         fl = FeatureList.from_geopandas(

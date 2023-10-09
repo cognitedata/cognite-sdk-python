@@ -4,7 +4,7 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, MutableMapping
 
-import cognite.client as cc
+import cognite.client as cc  # Do not import individual entities
 from cognite.client._http_client import _RetryTracker
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import CredentialProvider

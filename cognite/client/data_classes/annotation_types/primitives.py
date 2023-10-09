@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource
+from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._text import convert_dict_to_case
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class VisionResource(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = cast(Any, local_import("pandas"))
         return pd.Series(self.dump(camel_case), name="value").to_frame()
 
 
