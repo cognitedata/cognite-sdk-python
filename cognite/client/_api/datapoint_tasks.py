@@ -169,7 +169,6 @@ class _SingleTSQueryValidator:
         raise RuntimeError("user query is invalid or validation has not run yet")
 
     def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
-        self._user_query_is_valid
         queries = []
         if self.user_query.id is not None:
             id_queries = self._validate_multiple_id(self.user_query.id)
@@ -598,6 +597,7 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
         "is_string": res.isString,
         "is_step": res.isStep,
         "unit": res.unit,
+        "unit_external_id": res.unitExternalId,
     }
 
 
