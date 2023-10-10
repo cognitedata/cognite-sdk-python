@@ -192,7 +192,7 @@ class FunctionsAPI(APIClient):
         sleep_time = 1.0  # seconds
         for i in range(MAX_RETRIES):
             file = self._cognite_client.files.retrieve(id=file_id)
-            if file is not None and file.uploaded:
+            if file and file.uploaded:
                 break
             time.sleep(sleep_time)
             sleep_time *= 2
