@@ -276,28 +276,48 @@ class Instances(TransformationDestination):
 
 
 class OidcCredentials:
+    """
+    Class that represents OpenID Connect (OIDC) credentials used to authenticate towards Cognite Data Fusion (CDF).
+
+    Note:
+        Is currently only used to specify inputs to TransformationsAPI like source_oidc_credentials and
+        destination_oidc_credentials.
+
+    Args:
+        client_id (str): Your application's client id.
+        client_secret (str): Your application's client secret
+        scopes (str | list[str]): A list of scopes or a comma-separated string (for backwards compatibility).
+        token_uri (str): OAuth token url
+        audience (str | None): Audience (optional)
+        cdf_project_name (str | None): Name of CDF project (optional)
+    """
+
     def __init__(
         self,
         client_id: str,
         client_secret: str,
-        scopes: str,
+        scopes: str | list[str],
         token_uri: str,
         audience: str | None = None,
         cdf_project_name: str | None = None,
     ) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
-        self.scopes = scopes
         self.token_uri = token_uri
         self.audience = audience
         self.cdf_project_name = cdf_project_name
+
+        # For backwards compatibility, we accept scopes as a comma-separated string.
+        if isinstance(scopes, str):
+            scopes = scopes.split(",")
+        self.scopes = scopes
 
     def as_credential_provider(self) -> OAuthClientCredentials:
         return OAuthClientCredentials(
             token_url=self.token_uri,
             client_id=self.client_id,
             client_secret=self.client_secret,
-            scopes=self.scopes.split(","),
+            scopes=self.scopes,
             audience=self.audience,
         )
 
