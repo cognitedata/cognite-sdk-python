@@ -324,6 +324,8 @@ class TimeSeriesProperty(EnumProperty):
     external_id = "externalId"
     name = "name"
     unit = "unit"
+    unit_external_id = "unitExternalId"
+    unit_quantity = "unitQuantity"
     asset_id = "assetId"
     asset_root_id = "assetRootId"
     created_time = "createdTime"
