@@ -215,7 +215,7 @@ class TestEventsAPI:
 
         count = cognite_client.events.aggregate_count(EventProperty.type, advanced_filter=is_integration_test)
 
-        assert count >= sum(1 for e in event_list if e.type)
+        assert count >= sum(bool(e.type) for e in event_list)
 
     def test_aggregate_type_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         f = filters

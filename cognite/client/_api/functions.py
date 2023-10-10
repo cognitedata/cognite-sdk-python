@@ -192,11 +192,10 @@ class FunctionsAPI(APIClient):
         sleep_time = 1.0  # seconds
         for i in range(MAX_RETRIES):
             file = self._cognite_client.files.retrieve(id=file_id)
-            if file is None or not file.uploaded:
-                time.sleep(sleep_time)
-                sleep_time *= 2
-            else:
+            if file is not None and file.uploaded:
                 break
+            time.sleep(sleep_time)
+            sleep_time *= 2
         else:
             raise OSError("Could not retrieve file from files API")
 
@@ -436,7 +435,7 @@ class FunctionsAPI(APIClient):
                         for filename in files:
                             zf.write(Path(root, filename))
 
-                overwrite = True if external_id else False
+                overwrite = bool(external_id)
                 file = self._cognite_client.files.upload_bytes(
                     zip_path.read_bytes(), name=f"{name}.zip", external_id=external_id, overwrite=overwrite
                 )
@@ -465,7 +464,7 @@ class FunctionsAPI(APIClient):
                 if docstr_requirements:
                     zf.write(requirements_path, arcname=REQUIREMENTS_FILE_NAME)
 
-            overwrite = True if external_id else False
+            overwrite = bool(external_id)
             file = self._cognite_client.files.upload_bytes(
                 zip_path.read_bytes(), name=f"{name}.zip", external_id=external_id, overwrite=overwrite
             )
@@ -476,8 +475,8 @@ class FunctionsAPI(APIClient):
         folder: str | None, file_id: int | None, function_handle: Callable[..., Any] | None
     ) -> None:
         source_code_options = {"folder": folder, "file_id": file_id, "function_handle": function_handle}
-        given_source_code_options = [key for key in source_code_options.keys() if source_code_options[key]]
-        if len(given_source_code_options) < 1:
+        given_source_code_options = [key for key in source_code_options if source_code_options[key]]
+        if not given_source_code_options:
             raise TypeError("Exactly one of the arguments folder, file_id and handle is required, but none were given.")
         elif len(given_source_code_options) > 1:
             raise TypeError(
@@ -599,7 +598,7 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
 def _validate_function_handle(handle_obj: Callable | ast.FunctionDef) -> None:
     if isinstance(handle_obj, ast.FunctionDef):
         name = handle_obj.name
-        accepts_args = set(arg.arg for arg in handle_obj.args.args)
+        accepts_args = {arg.arg for arg in handle_obj.args.args}
     else:
         name = handle_obj.__name__
         accepts_args = set(signature(handle_obj).parameters)
@@ -686,14 +685,9 @@ def _get_fn_docstring_requirements(fn: Callable) -> list[str]:
     Returns:
         list[str]: A (possibly empty) list of requirements.
     """
-    docstr = getdoc(fn)
-
-    if docstr:
-        reqs = _extract_requirements_from_doc_string(docstr)
-        if reqs:
-            parsed_reqs = _validate_and_parse_requirements(reqs)
-            return parsed_reqs
-
+    if docstr := getdoc(fn):
+        if reqs := _extract_requirements_from_doc_string(docstr):
+            return _validate_and_parse_requirements(reqs)
     return []
 
 
