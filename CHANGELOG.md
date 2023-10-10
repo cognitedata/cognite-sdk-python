@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.32.1] - 2023-10-10
+### Added
+* Missing `unit_external_id` and `unit_quantity` fields on `TimeSeriesProperty`. 
+
+
 ## [6.32.0] - 2023-10-10
 ### Fixed
 - Ref to openapi doc in Vision extract docstring 
