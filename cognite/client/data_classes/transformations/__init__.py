@@ -27,14 +27,13 @@ from cognite.client.data_classes.transformations.jobs import TransformationJob, 
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._logging import COGNITE_LOGGER_NAME
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-logger = logging.getLogger(COGNITE_LOGGER_NAME)
+logger = logging.getLogger(__name__)
 
 
 class SessionDetails:

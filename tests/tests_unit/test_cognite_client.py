@@ -8,7 +8,7 @@ from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
 from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
-from cognite.client.utils._logging import COGNITE_LOGGER_NAME, DebugLogFormatter
+from cognite.client.utils._logging import DebugLogFormatter
 
 BASE_URL = "http://blabla.cognitedata.com"
 TOKEN_URL = "https://test.com/token"
@@ -77,7 +77,7 @@ class TestCogniteClient:
 
     def test_client_debug_mode(self):
         CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla"), debug=True))
-        log = logging.getLogger(COGNITE_LOGGER_NAME)
+        log = logging.getLogger("cognite.client")
         assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
         log.handlers = []
         log.propagate = False
