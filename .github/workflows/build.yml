@@ -38,7 +38,6 @@ jobs:
           diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
           diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
 
-
   build_docs:
     runs-on: ubuntu-latest
     steps:

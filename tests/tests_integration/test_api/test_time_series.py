@@ -112,6 +112,26 @@ class TestTimeSeriesAPI:
         assert 0 == len(res)
         assert 1 == cognite_client.time_series._post.call_count
 
+    def test_list_timeseries_with_target_unit(self, cognite_client: CogniteClient) -> None:
+        ts1 = TimeSeries(external_id="test_list_timeseries_with_target_unit:1", unit_external_id="temperature:deg_c")
+        ts2 = TimeSeries(external_id="test_list_timeseries_with_target_unit:2", unit_external_id="temperature:deg_f")
+        new_ts = TimeSeriesList([ts1, ts2])
+        retrieved = cognite_client.time_series.retrieve_multiple(
+            external_ids=new_ts.as_external_ids(), ignore_unknown_ids=True
+        )
+        if not retrieved:
+            cognite_client.time_series.upsert(new_ts, mode="replace")
+
+        listed = cognite_client.time_series.list(
+            unit_external_id="temperature:deg_c",
+            external_id_prefix="test_list_timeseries_with_target_unit",
+            limit=2,
+        )
+
+        assert len(listed) == 1
+        assert listed[0].unit_external_id == "temperature:deg_c"
+        assert listed[0].external_id == "test_list_timeseries_with_target_unit:1"
+
     def test_partitioned_list(self, cognite_client, post_spy):
         mintime = datetime(2019, 1, 1).timestamp() * 1000
         maxtime = datetime(2019, 5, 15).timestamp() * 1000
@@ -139,6 +159,14 @@ class TestTimeSeriesAPI:
         res = cognite_client.time_series.update(update_ts)
         assert "newname" == res.name
         assert res.metadata == {}
+
+    def test_update_target_unit(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
+        update_ts = TimeSeriesUpdate(new_ts.id).unit_external_id.set("temperature:deg_c")
+
+        res = cognite_client.time_series.update(update_ts)
+        retrieved = cognite_client.time_series.retrieve(id=new_ts.id)
+        assert "temperature:deg_c" == res.unit_external_id
+        assert "temperature:deg_c" == retrieved.unit_external_id
 
     def test_delete_with_nonexisting(self, cognite_client):
         a = cognite_client.time_series.create(TimeSeries(name="any"))
@@ -266,7 +294,7 @@ class TestTimeSeriesHelperMethods:
 
     def test_get_count__string_fails(self, test_ts_string):
         assert test_ts_string.is_string is True
-        with pytest.raises(ValueError, match="String time series does not support count aggregate."):
+        with pytest.raises(RuntimeError, match="String time series does not support count aggregate."):
             test_ts_string.count()
 
     def test_get_latest(self, test_ts_numeric, test_ts_string):

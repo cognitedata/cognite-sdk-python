@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource
+from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._text import convert_dict_to_case
 
 if TYPE_CHECKING:
@@ -27,6 +27,8 @@ class VisionResource(CogniteResource):
                 continue
             if isinstance(v, list) and all(isinstance(item, VisionResource) for item in v):
                 v = [item.dump(camel_case) for item in v]
+            elif isinstance(v, dict) and all(isinstance(item, VisionResource) for item in v.values()):
+                v = {item_key: item_value.dump(camel_case) for item_key, item_value in v.items()}
             elif isinstance(v, VisionResource):
                 v = v.dump(camel_case)
             dumped[k] = v
@@ -42,7 +44,7 @@ class VisionResource(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = cast(Any, local_import("pandas"))
         return pd.Series(self.dump(camel_case), name="value").to_frame()
 
 
@@ -52,10 +54,7 @@ class Point(VisionResource):
     y: float
 
 
-PointDict = Dict[str, float]
-
-
-def _process_vertices(vertices: list[PointDict] | list[Point]) -> list[Point]:
+def _process_vertices(vertices: list[dict[str, float]] | list[Point]) -> list[Point]:
     processed_vertices: list[Point] = []
     for v in vertices:
         if isinstance(v, Point):
@@ -92,9 +91,26 @@ class Polygon(VisionResource):
 
 
 @dataclass
-class PolyLine(VisionResource):
+class Polyline(VisionResource):
     # A valid polyline contains *at least* two vertices
     vertices: list[Point]
 
     def __post_init__(self) -> None:
         self.vertices = _process_vertices(self.vertices)
+
+
+@dataclass
+class Keypoint(VisionResource):
+    point: Point
+    confidence: float | None = None
+
+    def __post_init__(self) -> None:
+        if isinstance(self.point, dict):
+            self.point = Point(**self.point)
+
+
+@dataclass
+class Attribute(VisionResource):
+    type: Literal["boolean", "numerical"]
+    value: bool | float
+    description: str | None = None

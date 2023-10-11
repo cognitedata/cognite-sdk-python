@@ -505,7 +505,7 @@ class InstancesAPI(APIClient):
         thread_name = f"instances-sync-subscriber-{random_string(10)}"
         thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
         thread.start()
-
+        subscription_context._thread = thread
         return subscription_context
 
     @classmethod
@@ -697,7 +697,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> import cognite.client.data_classes.filters as filters
+                >>> from cognite.client.data_classes import filters
                 >>> c = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
                 >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"),
@@ -858,7 +858,7 @@ class InstancesAPI(APIClient):
 
         for histogram in histogram_seq:
             if not isinstance(histogram, Histogram):
-                raise ValueError(f"Not a histogram: {histogram}")
+                raise TypeError(f"Not a histogram: {histogram}")
 
         body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
         if filter:

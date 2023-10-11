@@ -62,6 +62,7 @@ from cognite.client.utils._auxiliary import (
     split_into_n_parts,
 )
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import (
     _unit_in_days,
@@ -114,13 +115,18 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _Datapoints
     all_queries = validator.validate_and_create_single_queries()
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
+    api_subversion = None
+    if validator.beta_api_subversion_is_needed():
+        api_subversion = "beta"
+        dps_client._unit_warning.warn()
+
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= max_workers:
         # Start shooting requests from the hip immediately:
-        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
+        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
     # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
     # guesstimation of dps density - then chunk away:
-    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
+    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
 
 
 def split_queries_into_raw_and_aggs(all_queries: TSQueryList) -> tuple[TSQueryList, TSQueryList]:
@@ -138,12 +144,14 @@ class DpsFetchStrategy(ABC):
         agg_queries: TSQueryList,
         raw_queries: TSQueryList,
         max_workers: int,
+        api_subversion: str | None,
     ) -> None:
         self.dps_client = dps_client
         self.all_queries = all_queries
         self.agg_queries = agg_queries
         self.raw_queries = raw_queries
         self.max_workers = max_workers
+        self.api_subversion = api_subversion
         self.n_queries = len(all_queries)
 
         # Fetching datapoints relies on protobuf, which, depending on OS and major version used
@@ -186,6 +194,7 @@ class DpsFetchStrategy(ABC):
             url_path=f"{self.dps_client._RESOURCE_PATH}/list",
             accept="application/protobuf",
             timeout=self.dps_client._config.timeout,
+            api_subversion=self.api_subversion,
         ).content
 
     def _request_datapoints(self, payload: DatapointsPayload) -> Sequence[DataPointListItem]:
@@ -446,7 +455,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
-        self, pool: PriorityThreadPoolExecutor, futures_dct: dict[Future, list[BaseDpsFetchSubtask]]
+        self,
+        pool: PriorityThreadPoolExecutor,
+        futures_dct: dict[Future, list[BaseDpsFetchSubtask]],
     ) -> None:
         while pool._work_queue.empty() and any(self.subtask_pools):
             # While the number of unstarted tasks is 0 and we have unqueued subtasks in one of the pools,
@@ -594,6 +605,7 @@ class DatapointsAPI(APIClient):
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
         self._GRANULARITY_HOURS_LIMIT = 100_000
+        self._unit_warning = FeaturePreviewWarning("beta", "alpha", feature_name="Datapoints Target Unit")
 
     def retrieve(
         self,
@@ -604,6 +616,8 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
@@ -624,6 +638,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -741,7 +757,7 @@ class DatapointsAPI(APIClient):
                 ...     start=MIN_TIMESTAMP_MS,
                 ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
 
-            The last example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
+            Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
 
                 >>> ts1 = 1337
                 >>> ts2 = {
@@ -761,6 +777,18 @@ class DatapointsAPI(APIClient):
                 ... }
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False)
+
+            If we have created a timeseries set with 'unit_external_id' we can use the 'target_unit' parameter to convert the datapoints to the desired unit.
+            In the example below, we assume that the timeseries is set with unit_external_id 'temperature:deg_c' and id='42'.
+
+                >>> client.time_series.data.retrieve(
+                ...   id=42, start="2w-ago", limit=None, target_unit="temperature:deg_f")
+
+            Or alternatively, we can use the 'target_unit_system' parameter to convert the datapoints to the desired unit system.
+
+                >>> client.time_series.data.retrieve(
+                ...   id=42, start="2w-ago", limit=None, target_unit_system="Imperial")
+
         """
         query = _DatapointsQuery(
             start=start,
@@ -769,11 +797,14 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
+
         dps_lst = fetcher.fetch_all_datapoints()
         if not query.is_single_identifier:
             return dps_lst
@@ -790,6 +821,8 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
@@ -805,6 +838,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -865,11 +900,14 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
+
         dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
             return dps_lst
@@ -886,6 +924,8 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
@@ -905,6 +945,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -974,11 +1016,14 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
+
         if not uniform_index:
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
                 column_names, include_aggregate_name, include_granularity_name
@@ -1011,6 +1056,8 @@ class DatapointsAPI(APIClient):
         end: datetime,
         aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
         granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
@@ -1046,6 +1093,8 @@ class DatapointsAPI(APIClient):
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
+            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
@@ -1114,6 +1163,8 @@ class DatapointsAPI(APIClient):
                     end=end,
                     aggregates=aggregates,
                     granularity=granularity,
+                    target_unit=target_unit,
+                    target_unit_system=target_unit_system,
                     ignore_unknown_ids=ignore_unknown_ids,
                     uniform_index=uniform_index,
                     include_aggregate_name=include_aggregate_name,
@@ -1148,6 +1199,8 @@ class DatapointsAPI(APIClient):
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
             **{identifiers[0].name(): queries},  # type: ignore [arg-type]
         )
         assert isinstance(arrays, DatapointsArrayList)  # mypy

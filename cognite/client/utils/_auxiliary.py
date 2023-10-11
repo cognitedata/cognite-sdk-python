@@ -20,7 +20,6 @@ from typing import (
 )
 from urllib.parse import quote
 
-import cognite.client
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -168,7 +167,9 @@ def import_legacy_protobuf() -> bool:
 
 
 def get_current_sdk_version() -> str:
-    return cognite.client.__version__
+    from cognite.client import __version__
+
+    return __version__
 
 
 @functools.lru_cache(maxsize=1)
@@ -232,7 +233,7 @@ def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list] | 
         collection = list(collection.items())
         return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
-    raise ValueError(f"Can only split list or dict, not {type(collection)}")
+    raise TypeError(f"Can only split list or dict, not {type(collection)}")
 
 
 def convert_true_match(true_match: dict | list | tuple[int | str, int | str]) -> dict:
@@ -257,7 +258,7 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:
-    return sum(1 if a is not None else 0 for a in args) == 1
+    return sum(a is not None for a in args) == 1
 
 
 def rename_and_exclude_keys(

@@ -5,8 +5,8 @@ import json
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, List, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._text import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
@@ -205,9 +205,9 @@ class FeatureList(CogniteResourceList[Feature]):
                 >>> gdf.head()
         """
         df = self.to_pandas(camel_case)
-        wkt = cast(Any, utils._auxiliary.local_import("shapely.wkt"))
+        wkt = cast(Any, local_import("shapely.wkt"))
         df[geometry] = df[geometry].apply(lambda g: wkt.loads(g["wkt"]))
-        geopandas = cast(Any, utils._auxiliary.local_import("geopandas"))
+        geopandas = cast(Any, local_import("geopandas"))
         return geopandas.GeoDataFrame(df, geometry=geometry)
 
     @staticmethod

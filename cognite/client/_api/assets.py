@@ -29,7 +29,6 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -49,8 +48,8 @@ from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, Sor
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import classify_error, get_priority_executor
+from cognite.client.utils._auxiliary import assert_type, split_into_chunks, split_into_n_parts
+from cognite.client.utils._concurrency import classify_error, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
@@ -578,7 +577,7 @@ class AssetsAPI(APIClient):
                 >>> asset = Asset(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = c.assets.create(asset)
         """
-        utils._auxiliary.assert_type(asset, "asset", [Asset, Sequence])
+        assert_type(asset, "asset", [Asset, Sequence])
         return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset)
 
     def create_hierarchy(
@@ -708,7 +707,7 @@ class AssetsAPI(APIClient):
             raise ValueError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
 
         if not isinstance(assets, AssetHierarchy):
-            utils._auxiliary.assert_type(assets, "assets", [Sequence])
+            assert_type(assets, "assets", [Sequence])
             assets = AssetHierarchy(assets, ignore_orphans=True)
 
         return _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
@@ -1016,7 +1015,7 @@ class AssetsAPI(APIClient):
     def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
         tasks = [{"parent_ids": chunk, "limit": -1} for chunk in split_into_chunks(ids, 100)]
-        tasks_summary = utils._concurrency.execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results
         children = []
