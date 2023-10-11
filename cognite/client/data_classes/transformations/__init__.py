@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import logging
+import warnings
 from abc import abstractmethod
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Awaitable, Literal, cast
@@ -31,9 +31,6 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
-
-logger = logging.getLogger(__name__)
 
 
 class SessionDetails:
@@ -267,10 +264,12 @@ class Transformation(CogniteResource):
                 # This is fine, we might be missing SessionsACL. The OIDC credentials will then be passed
                 # directly to the backend service. We do however not catch CogniteAuthError as that would
                 # mean the credentials are invalid.
-                logger.debug(
+                msg = (
                     f"Unable to create a session and get a nonce towards {project=} using the provided "
                     f"{credentials_name} credentials: {err!r}"
+                    "\nProvided OIDC credentials will be passed on to the transformation service."
                 )
+                warnings.warn(msg, UserWarning)
         return ret
 
     def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
