@@ -55,7 +55,7 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, (EnumProperty, NoCaseConversionPropertyList)):
+    if isinstance(property_, EnumProperty) or type(property_) is NoCaseConversionPropertyList:
         return property_.as_reference()
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
