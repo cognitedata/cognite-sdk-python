@@ -281,7 +281,7 @@ class TestSequencesAPI:
         count = cognite_client.sequences.aggregate_cardinality_values(
             SequenceProperty.asset_id, advanced_filter=is_integration_test
         )
-        assert count >= len([s.asset_id is not None for s in sequence_list])
+        assert count >= len([s.asset_id for s in sequence_list if s.asset_id is not None])
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
         f = filters
