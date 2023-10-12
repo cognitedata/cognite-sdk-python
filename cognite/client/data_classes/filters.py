@@ -8,7 +8,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConversionPropertyList
 from cognite.client.data_classes.labels import Label
-from cognite.client.utils._text import iterable_to_case, to_camel_case
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
@@ -55,12 +55,12 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, EnumProperty) or type(property_) is NoCaseConversionPropertyList:
+    if isinstance(property_, (EnumProperty, NoCaseConversionPropertyList)):
         return property_.as_reference()
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):
-        return type(property_)(iterable_to_case(property_, camel_case))
+        return type(property_)(map(to_camel_case, property_)) if camel_case else property_
     else:
         raise ValueError(f"Invalid property format {property_}")
 
