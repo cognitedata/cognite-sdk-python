@@ -3,9 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator, Sequence
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import (
-    DEFAULT_LIMIT_READ,
-)
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DatapointSubscriptionBatch,

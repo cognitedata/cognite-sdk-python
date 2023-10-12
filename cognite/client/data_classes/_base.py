@@ -512,6 +512,11 @@ class CogniteFilter:
 T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
 
 
+class NoCaseConversionPropertyList(list):
+    def as_reference(self) -> list[str]:
+        return list(self)
+
+
 class EnumProperty(Enum):
     @staticmethod
     def _generate_next_value_(name: str, *_: Any) -> str:
