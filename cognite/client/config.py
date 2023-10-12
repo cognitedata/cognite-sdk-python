@@ -82,12 +82,9 @@ class ClientConfig:
         self.headers = headers or {}
         self.timeout = timeout or 30
         self.file_transfer_timeout = file_transfer_timeout or 600
-        self.debug = debug
 
         if debug:
-            from cognite.client.utils._logging import _configure_logger_for_debug_mode
-
-            _configure_logger_for_debug_mode()
+            self.debug = True
 
         if not global_config.disable_pypi_version_check:
             with suppress(Exception):  # PyPI might be unreachable, if so, skip version check
@@ -95,6 +92,21 @@ class ClientConfig:
 
                 _check_client_has_newest_major_version()
         self._validate_config()
+
+    @property
+    def debug(self) -> bool:
+        from cognite.client.utils._logging import _is_debug_logging_enabled
+
+        return _is_debug_logging_enabled()
+
+    @debug.setter
+    def debug(self, value: bool) -> None:
+        from cognite.client.utils._logging import _configure_logger_for_debug_mode, _disable_debug_logging
+
+        if value:
+            _configure_logger_for_debug_mode()
+        else:
+            _disable_debug_logging()
 
     def _validate_config(self) -> None:
         if not self.project:

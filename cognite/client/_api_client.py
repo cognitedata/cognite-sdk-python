@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-log = logging.getLogger("cognite-sdk")
+log = logging.getLogger(__name__)
 
 T = TypeVar("T")
 

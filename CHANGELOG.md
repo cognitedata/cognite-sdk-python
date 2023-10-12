@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.32.3] - 2023-10-06
+### Added
+- Ability to toggle the SDK debug logging on/off by setting `config.debug` property on a CogniteClient to True (enable) or False (disable).
+
 ## [6.32.2] - 2023-10-10
 ### Added
 - The credentials class used in TransformationsAPI, `OidcCredentials`, now also accepts `scopes` as a list of strings

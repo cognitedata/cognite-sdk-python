@@ -36,3 +36,25 @@ to the API, you can either pass the :code:`max_workers` attribute when you insta
 If you are working with multiple instances of :ref:`cognite_client:CogniteClient`, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
 You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
+
+Debug logging
+-------------
+If you need to know the details of the http requests the SDK sends under the hood, you can enable debug logging. One way
+is to pass :code:`debug=True` argument to :ref:`ClientConfig <class_client_ClientConfig>`. Alternatively, you can toggle debug
+logging on and off by setting the :code:`debug` attribute on the :ref:`ClientConfig <class_client_ClientConfig>` object.
+
+.. code:: python
+
+    from cognite.client import CogniteClient, ClientConfig
+    from cognite.client.credentials import Token
+    client = CogniteClient(
+        ClientConfig(
+            client_name="my-client",
+            project="myproj",
+            credentials=Token("verysecret"),
+            debug=True,
+        )
+    )
+    print(client.config.debug)   # True, all http request details will be logged
+    client.config.debug = False  # disable debug logging
+    client.config.debug = True   # enable debug logging again
