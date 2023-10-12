@@ -505,7 +505,7 @@ class InstancesAPI(APIClient):
         thread_name = f"instances-sync-subscriber-{random_string(10)}"
         thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
         thread.start()
-
+        subscription_context._thread = thread
         return subscription_context
 
     @classmethod

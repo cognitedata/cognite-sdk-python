@@ -17,15 +17,27 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.32.4] - 2023-10-12
+### Fixed
+- Filters using e.g. metadata keys no longer dumps the key in camel case.
+
+## [6.32.3] - 2023-10-12
+### Added
+- Ability to toggle the SDK debug logging on/off by setting `config.debug` property on a CogniteClient to True (enable) or False (disable).
+
+## [6.32.2] - 2023-10-10
+### Added
+- The credentials class used in TransformationsAPI, `OidcCredentials`, now also accepts `scopes` as a list of strings
+  (used to be comma separated string only).
+
 ## [6.32.1] - 2023-10-10
 ### Added
-* Missing `unit_external_id` and `unit_quantity` fields on `TimeSeriesProperty`. 
+- Missing `unit_external_id` and `unit_quantity` fields on `TimeSeriesProperty`.
 
-
-## [6.32.0] - 2023-10-10
+## [6.32.0] - 2023-10-09
 ### Fixed
-- Ref to openapi doc in Vision extract docstring 
-- Parameters to Vision models can be given as Python dict (updated doc accordingly). 
+- Ref to openapi doc in Vision extract docstring
+- Parameters to Vision models can be given as Python dict (updated doc accordingly).
 - Don't throw exception when trying to save empty list of vision extract predictions as annotations. This is to avoid having to wrap this method in try-except for every invocation of the method.
 
 ### Added

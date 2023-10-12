@@ -647,7 +647,7 @@ class TestInstancesSync:
             while State.invocation_count != value and (abs(time.time() - start_time) > max_wait_seconds):
                 time.sleep(0.1)
 
-        cognite_client.data_modeling.instances.subscribe(my_query, callback)
+        context = cognite_client.data_modeling.instances.subscribe(my_query, callback, poll_delay_seconds=2)
 
         try:
             cognite_client.data_modeling.instances.apply(nodes=new_1994_movie)
@@ -657,3 +657,14 @@ class TestInstancesSync:
             wait_for_invocation_count_to_have_value(2)
         finally:
             cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
+
+        assert context.is_alive()
+        context.cancel()
+        # May take some time for the thread to actually die, so we check in a loop for a little while
+        for i in range(10):
+            if context.is_alive():
+                time.sleep(1)
+            else:
+                return
+        else:
+            assert not context.is_alive()

@@ -20,6 +20,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
+    NoCaseConversionPropertyList,
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -493,7 +494,7 @@ class SequenceProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 class SortableSequenceProperty(EnumProperty):
@@ -507,7 +508,7 @@ class SortableSequenceProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 SortableSequencePropertyLike: TypeAlias = Union[SortableSequenceProperty, str, List[str]]

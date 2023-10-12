@@ -17,6 +17,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
+    NoCaseConversionPropertyList,
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -271,7 +272,7 @@ class EventProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
@@ -292,7 +293,7 @@ class SortableEventProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]
