@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, List, Mapping, Sequence, Tuple, Union, ca
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import EnumProperty, Geometry
+from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConversionPropertyList
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import to_camel_case
 
@@ -35,35 +35,32 @@ FilterValueList = Union[Sequence[RawValue], PropertyReferenceValue, ParameterVal
 
 def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
     if isinstance(filter_value, PropertyReferenceValue):
-        return {
-            "property": filter_value.property.as_reference()
-            if isinstance(filter_value.property, EnumProperty)
-            else filter_value.property
-        }
+        if isinstance(filter_value.property, EnumProperty):
+            return {"property": filter_value.property.as_reference()}
+        return {"property": filter_value.property}
+
     if isinstance(filter_value, ParameterValue):
         return {"parameter": filter_value.parameter}
-    else:
-        return filter_value
+    return filter_value
 
 
 def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
     if isinstance(value, Mapping) and len(value.keys()) == 1:
-        (value_key,) = value
+        ((value_key, to_load),) = value.items()
         if value_key == "property":
-            return PropertyReferenceValue(value[value_key])
+            return PropertyReferenceValue(to_load)
         if value_key == "parameter":
-            return ParameterValue(value[value_key])
+            return ParameterValue(to_load)
     return value
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, EnumProperty):
+    if isinstance(property_, (EnumProperty, NoCaseConversionPropertyList)):
         return property_.as_reference()
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):
-        output = [to_camel_case(p) if camel_case else p for p in property_]
-        return tuple(output) if isinstance(property_, tuple) else output
+        return type(property_)(map(to_camel_case, property_)) if camel_case else property_
     else:
         raise ValueError(f"Invalid property format {property_}")
 

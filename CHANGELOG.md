@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.32.3] - 2023-10-06
+## [6.32.4] - 2023-10-12
+### Fixed
+- Filters using e.g. metadata keys no longer dumps the key in camel case.
+
+## [6.32.3] - 2023-10-12
 ### Added
 - Ability to toggle the SDK debug logging on/off by setting `config.debug` property on a CogniteClient to True (enable) or False (disable).
 
@@ -30,7 +34,7 @@ Changes are grouped as follows
 ### Added
 - Missing `unit_external_id` and `unit_quantity` fields on `TimeSeriesProperty`.
 
-## [6.32.0] - 2023-10-10
+## [6.32.0] - 2023-10-09
 ### Fixed
 - Ref to openapi doc in Vision extract docstring
 - Parameters to Vision models can be given as Python dict (updated doc accordingly).

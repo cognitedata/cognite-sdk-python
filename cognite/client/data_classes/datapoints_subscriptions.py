@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    NoCaseConversionPropertyList,
     PropertySpec,
     T_CogniteResource,
 )
@@ -361,7 +362,7 @@ class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
 
 
 def _metadata(key: str) -> list[str]:
-    return ["metadata", key]
+    return NoCaseConversionPropertyList(["metadata", key])
 
 
 class DatapointSubscriptionFilterProperties(EnumProperty):

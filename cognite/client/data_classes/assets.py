@@ -39,6 +39,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
+    NoCaseConversionPropertyList,
     PropertySpec,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
@@ -889,7 +890,7 @@ class AssetProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 AssetPropertyLike: TypeAlias = Union[AssetProperty, str, List[str]]
@@ -907,7 +908,7 @@ class SortableAssetProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 SortableAssetPropertyLike: TypeAlias = Union[SortableAssetProperty, str, List[str]]

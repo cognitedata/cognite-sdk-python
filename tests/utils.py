@@ -23,7 +23,7 @@ def all_subclasses(base: type) -> list[type]:
     """
     return sorted(
         filter(
-            lambda sub: str(sub).startswith("<class 'cognite.client"),
+            lambda sub: sub.__module__.startswith("cognite.client"),
             set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
         ),
         key=str,
