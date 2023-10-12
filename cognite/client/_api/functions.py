@@ -32,7 +32,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
-from cognite.client.utils._auxiliary import assert_type, exactly_one_is_not_none, is_unlimited, local_import
+from cognite.client.utils._auxiliary import assert_type, is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._session import create_session_and_return_nonce
 
@@ -475,10 +475,11 @@ class FunctionsAPI(APIClient):
         folder: str | None, file_id: int | None, function_handle: Callable[..., Any] | None
     ) -> None:
         source_code_options = {"folder": folder, "file_id": file_id, "function_handle": function_handle}
-        # TODO: Fix
-        # exactly_one_is_not_none(source_code_options)
+        # TODO: Fix to use exactly_one_is_not_none function
         given_source_code_options = [key for key in source_code_options if source_code_options[key]]
-        if not exactly_one_is_not_none(given_source_code_options):
+        if not given_source_code_options:
+            raise TypeError("Exactly one of the arguments folder, file_id and handle is required, but none were given.")
+        elif len(given_source_code_options) > 1:
             raise TypeError(
                 "Exactly one of the arguments folder, file_id and handle is required, but "
                 + ", ".join(given_source_code_options)

@@ -48,8 +48,9 @@ def root_asset(cognite_client: CogniteClient) -> Asset:
         name="integration_test:root_asset",
         external_id="integration_test:root_asset",
     )
-    retrieved = cognite_client.assets.retrieve_multiple(external_ids=[root_asset.external_id], ignore_unknown_ids=True)
-    if retrieved:
+    if retrieved := cognite_client.assets.retrieve_multiple(
+        external_ids=[root_asset.external_id], ignore_unknown_ids=True
+    ):
         return retrieved[0]
     return cognite_client.assets.create(root_asset)
 
@@ -280,8 +281,7 @@ class TestSequencesAPI:
         count = cognite_client.sequences.aggregate_cardinality_values(
             SequenceProperty.asset_id, advanced_filter=is_integration_test
         )
-        assert count >= len(s.asset_id is not None for s in sequence_list)
-        assert count >= sum(s.asset_id is not None for s in sequence_list)
+        assert count >= len([s.asset_id is not None for s in sequence_list])
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
         f = filters
