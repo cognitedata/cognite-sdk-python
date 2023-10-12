@@ -6,11 +6,6 @@ from contextlib import suppress
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
-from cognite.client.utils._logging import (
-    _configure_logger_for_debug_mode,
-    _disable_debug_logging,
-    _is_debug_logging_enabled,
-)
 
 
 class GlobalConfig:
@@ -89,7 +84,7 @@ class ClientConfig:
         self.file_transfer_timeout = file_transfer_timeout or 600
 
         if debug:
-            _configure_logger_for_debug_mode()
+            self.debug = True
 
         if not global_config.disable_pypi_version_check:
             with suppress(Exception):  # PyPI might be unreachable, if so, skip version check
@@ -100,10 +95,14 @@ class ClientConfig:
 
     @property
     def debug(self) -> bool:
+        from cognite.client.utils._logging import _is_debug_logging_enabled
+
         return _is_debug_logging_enabled()
 
     @debug.setter
     def debug(self, value: bool) -> None:
+        from cognite.client.utils._logging import _configure_logger_for_debug_mode, _disable_debug_logging
+
         if value:
             _configure_logger_for_debug_mode()
         else:
