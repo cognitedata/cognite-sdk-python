@@ -572,44 +572,61 @@ class InstancesAPI(APIClient):
                 >>> nodes = [NodeApply("mySpace", "myNodeId")]
                 >>> res = c.data_modeling.instances.apply(nodes)
 
-            Create two nodes with data with an one to many edge, and a one to one edge
+            Create two nodes with data with a one-to-many edge
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
-                >>> person = NodeApply("mySpace", "person:arnold_schwarzenegger", sources=[
-                ...                        NodeOrEdgeData(
-                ...                               ViewId("mySpace", "PersonView", "v1"),
-                ...                               {"name": "Arnold Schwarzenegger", "birthYear": 1947})
-                ... ])
-                >>> actor = NodeApply("mySpace", "actor:arnold_schwarzenegger", sources=[
-                ...                        NodeOrEdgeData(
-                ...                               ViewId("mySpace", "ActorView", "v1"),
-                ...                               {"wonOscar": False,
-                ...                               # This is a one-to-one edge from actor to person
-                ...                                "person": {"space": "mySpace", "externalId": "person:arnold_schwarzenegger"}})
-                ... ])
-                >>> # This is one to many edge, in this case from Person to role
-                >>> # (a person can have multiple roles, in this model for example Actor and Director)
-                >>> person_to_actor = EdgeApply(space="mySpace",
-                ...                                       external_id="relation:arnold_schwarzenegger:actor",
-                ...                                       type=("Person", "roles"),
-                ...                                       start_node=("person", "arnold_schwarzenegger"),
-                ...                                       end_node=("actor", "arnold_schwarzenegger"),
+                >>> actor = NodeApply(
+                ...     space="actors",
+                ...     external_id="arnold_schwarzenegger",
+                ...     sources=[
+                ...         NodeOrEdgeData(
+                ...             ViewId("mySpace", "PersonView", "v1"),
+                ...             {"name": "Arnold Schwarzenegger", "birthYear": 1947}
+                ...         ),
+                ...         NodeOrEdgeData(
+                ...             ViewId("mySpace", "ActorView", "v1"),
+                ...             {"wonOscar": False}
+                ...         )
+                ...     ]
                 ... )
-                >>> res = c.data_modeling.instances.apply([person, actor], [person_to_actor])
+                >>> movie = NodeApply(
+                ...     space="movies",
+                ...     external_id="Terminator",
+                ...     sources=[
+                ...         NodeOrEdgeData(
+                ...             ViewId("mySpace", "MovieView", "v1"),
+                ...             {"title": "Terminator", "releaseYear": 1984}
+                ...         )
+                ...     ]
+                ... )
+                ... # This is one-to-many edge, in this case from a person to a movie
+                >>> actor_to_movie = EdgeApply(
+                ...     space="actors",
+                ...     external_id="relation:arnold_schwarzenegger:terminator",
+                ...     type=("types", "acts-in"),
+                ...     start_node=("actors", "arnold_schwarzenegger"),
+                ...     end_node=("movies", "Terminator"),
+                ... )
+                >>> res = c.data_modeling.instances.apply([actor, movie], [actor_to_movie])
 
-            Create new edge an automatically create end nodes.
+            Create new edge and automatically create end nodes.
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply
                 >>> c = CogniteClient()
-                >>> edge = EdgeApply(space="mySpace",
-                ...                            external_id="relation:sylvester_stallone:actor",
-                ...                            type=("Person", "roles"),
-                ...                            start_node=("person", "sylvester_stallone"),
-                ...                            end_node=("actor", "sylvester_stallone"),
+                >>> actor_to_movie = EdgeApply(
+                ...     space="actors",
+                ...     external_id="relation:arnold_schwarzenegger:terminator",
+                ...     type=("types", "acts-in"),
+                ...     start_node=("actors", "arnold_schwarzenegger"),
+                ...     end_node=("movies", "Terminator"),
                 ... )
-                >>> res = c.data_modeling.instances.apply(edges=edge, auto_create_start_nodes=True, auto_create_end_nodes=True)
+                >>> res = c.data_modeling.instances.apply(
+                ...     edges=actor_to_movie,
+                ...     auto_create_start_nodes=True,
+                ...     auto_create_end_nodes=True
+                ... )
 
         """
         other_parameters = {
