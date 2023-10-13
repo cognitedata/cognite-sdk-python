@@ -134,15 +134,7 @@ class Function(CogniteResource):
         Returns:
             FunctionSchedulesList: List of function schedules
         """
-        schedules_by_external_id = self._cognite_client.functions.schedules.list(
-            function_external_id=self.external_id, limit=limit
-        )
-        schedules_by_id = self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
-
-        if is_unlimited(limit):
-            limit = self._cognite_client.functions.schedules._LIST_LIMIT_CEILING
-
-        return (schedules_by_external_id + schedules_by_id)[:limit]
+        return self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
 
     def retrieve_call(self, id: int) -> FunctionCall | None:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
