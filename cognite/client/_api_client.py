@@ -229,7 +229,7 @@ class APIClient:
         headers["x-cdp-app"] = self._config.client_name
         headers["cdf-version"] = api_subversion or self._api_subversion
         if "User-Agent" in headers:
-            headers["User-Agent"] += " " + get_user_agent()
+            headers["User-Agent"] += f" {get_user_agent()}"
         else:
             headers["User-Agent"] = get_user_agent()
         headers.update(additional_headers)
@@ -259,11 +259,7 @@ class APIClient:
         if method not in valid_methods:
             raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
-        if method in ["GET", "PUT", "PATCH"]:
-            return True
-        if method == "POST" and self._url_is_retryable(path):
-            return True
-        return False
+        return method in ["GET", "PUT", "PATCH"] or method == "POST" and self._url_is_retryable(path)
 
     @classmethod
     @functools.lru_cache(64)
@@ -275,10 +271,7 @@ class APIClient:
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
-        for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
-            if re.match(pattern, path):
-                return True
-        return False
+        return any(re.match(pattern, path) for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS)
 
     def _retrieve(
         self,
