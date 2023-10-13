@@ -17,14 +17,12 @@ class TestFunctionsAPI:
         res = cognite_client.functions.retrieve_multiple(external_ids=["this does not exist"], ignore_unknown_ids=True)
         assert len(res) == 0
 
-    def test_function_get_schedules(self, cognite_client: CogniteClient):
+    def test_function_list_schedules_unlimited(self, cognite_client: CogniteClient):
+        expected_unique_schedules = 100
+
         fn = cognite_client.functions.retrieve(external_id="integration_test-dummy")
-
-        schedules = fn.list_schedules(limit=15)
-        assert len({s.cron_expression for s in schedules}) == len({s.id for s in schedules}) == 15
-
-    def test_function_get_schedules_unlimited(self, cognite_client: CogniteClient):
-        fn = cognite_client.functions.retrieve(external_id="integration_test-dummy")
-
         schedules = fn.list_schedules(limit=-1)
-        assert len({s.cron_expression for s in schedules}) == len({s.id for s in schedules}) == 100
+
+        assert len(schedules) == expected_unique_schedules
+        assert len({s.id for s in schedules}) == expected_unique_schedules
+        assert len({s.cron_expression for s in schedules}) == expected_unique_schedules
