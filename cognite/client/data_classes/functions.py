@@ -13,7 +13,6 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
