@@ -1,12 +1,12 @@
 import datetime
 import re
 from typing import List, Tuple
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry, FunctionSchedule
+from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry
 from cognite.client.utils._time import datetime_to_ms
 from tests.utils import jsgz_load
 
