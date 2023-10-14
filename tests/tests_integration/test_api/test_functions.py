@@ -18,9 +18,9 @@ class TestFunctionsAPI:
         assert len(res) == 0
 
     def test_function_list_schedules_unlimited(self, cognite_client: CogniteClient):
-        expected_unique_schedules = 100
-
-        fn = cognite_client.functions.retrieve(external_id="integration_test-dummy")
+        expected_unique_schedules = 5
+        # This is an integration test dummy function that purposefully doesn't have an external id.
+        fn = cognite_client.functions.retrieve(id=2495645514618888)
         schedules = fn.list_schedules(limit=-1)
 
         assert len(schedules) == expected_unique_schedules
