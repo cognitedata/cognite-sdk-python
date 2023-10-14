@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.33.1] - 2023-10-14
+### Fixed
+- `Function.list_schedules()` would return schedules unrelated to the function if the function did not have an external id.
+
 ## [6.33.0] - 2023-10-13
 ### Added
 - Support for providing `DirectRelationReference` and `NodeId` as direct relation values when
