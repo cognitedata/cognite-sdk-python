@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.33.2] - 2023-10-16
+### Fixed
+- When fetching datapoints from "a few time series" (implementation detail), all missing, non-ignoreable time series
+  are now raised together in a `CogniteNotFoundError` rather than only the first encountered.
+
 ## [6.33.1] - 2023-10-14
 ### Fixed
 - `Function.list_schedules()` would return schedules unrelated to the function if the function did not have an external id.

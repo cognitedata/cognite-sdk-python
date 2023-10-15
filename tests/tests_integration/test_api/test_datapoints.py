@@ -332,6 +332,9 @@ class TestRetrieveRawDatapointsAPI:
     except for the data container types, all tests run both endpoints.
     """
 
+    def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self):
+        pass
+
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points_only(
         self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after
