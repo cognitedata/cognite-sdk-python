@@ -10,6 +10,7 @@ import itertools
 import math
 import random
 import re
+import unittest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 from typing import Literal
@@ -332,8 +333,34 @@ class TestRetrieveRawDatapointsAPI:
     except for the data container types, all tests run both endpoints.
     """
 
-    def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self):
-        pass
+    def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
+        # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
+        # non-ignoreable ts would be raised in a CogniteNotFoundError.
+        ts_exists1, ts_exists2 = outside_points_ts
+        missing_xid = "nope-doesnt-exist " * 3
+
+        with set_max_workers(cognite_client, 6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+            with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'") as err:
+                cognite_client.time_series.data.retrieve(
+                    id=[
+                        ts_exists1.id,
+                        # Only id=456 should be raised from 'id':
+                        {"id": 456, "ignore_unknown_ids": False},
+                        123,
+                    ],
+                    external_id=[
+                        # Only xid on next line should be raised from 'xid':
+                        {"external_id": f"{missing_xid}1", "ignore_unknown_ids": False},
+                        ts_exists2.external_id,
+                        f"{missing_xid}2",
+                    ],
+                    ignore_unknown_ids=True,
+                )
+            assert len(err.value.not_found) == 2
+            unittest.TestCase().assertCountEqual(  # Asserts equal, but ignores ordering
+                err.value.not_found,
+                [{"id": 456}, {"external_id": f"{missing_xid}1"}],
+            )
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points_only(
@@ -487,13 +514,13 @@ class TestRetrieveRawDatapointsAPI:
         "n_ts, ignore_unknown_ids, mock_out_eager_or_chunk, expected_raise",
         [
             (1, True, "ChunkingDpsFetcher", does_not_raise()),
-            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (3, True, "ChunkingDpsFetcher", does_not_raise()),
-            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (10, True, "EagerDpsFetcher", does_not_raise()),
-            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (50, True, "EagerDpsFetcher", does_not_raise()),
-            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
         ],
     )
     def test_retrieve_unknown__check_raises_or_returns_existing_only(
