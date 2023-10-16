@@ -97,6 +97,7 @@ class FunctionsAPI(APIClient):
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
         skip_folder_validation: bool = False,
+        data_set_id: int | None = None,
     ) -> Function:
         '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
@@ -132,6 +133,7 @@ class FunctionsAPI(APIClient):
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
+            data_set_id (int | None): Data set to upload the function code to.
 
         Returns:
             Function: The created function.
@@ -182,10 +184,10 @@ class FunctionsAPI(APIClient):
 
         if folder:
             validate_function_folder(folder, function_path, skip_folder_validation)
-            file_id = self._zip_and_upload_folder(folder, name, external_id)
+            file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
         elif function_handle:
             _validate_function_handle(function_handle)
-            file_id = self._zip_and_upload_handle(function_handle, name, external_id)
+            file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
         assert_type(cpu, "cpu", [Number], allow_none=True)
         assert_type(memory, "memory", [Number], allow_none=True)
 
@@ -421,7 +423,13 @@ class FunctionsAPI(APIClient):
         res = self._get("/functions/limits")
         return FunctionsLimits._load(res.json())
 
-    def _zip_and_upload_folder(self, folder: str, name: str, external_id: str | None = None) -> int:
+    def _zip_and_upload_folder(
+        self,
+        folder: str,
+        name: str,
+        external_id: str | None = None,
+        data_set_id: int | None = None,
+    ) -> int:
         name = _sanitize_filename(name)
         current_dir = os.getcwd()
         os.chdir(folder)
@@ -437,13 +445,23 @@ class FunctionsAPI(APIClient):
 
                 overwrite = bool(external_id)
                 file = self._cognite_client.files.upload_bytes(
-                    zip_path.read_bytes(), name=f"{name}.zip", external_id=external_id, overwrite=overwrite
+                    zip_path.read_bytes(),
+                    name=f"{name}.zip",
+                    external_id=external_id,
+                    overwrite=overwrite,
+                    data_set_id=data_set_id,
                 )
                 return cast(int, file.id)
         finally:
             os.chdir(current_dir)
 
-    def _zip_and_upload_handle(self, function_handle: Callable, name: str, external_id: str | None = None) -> int:
+    def _zip_and_upload_handle(
+        self,
+        function_handle: Callable,
+        name: str,
+        external_id: str | None = None,
+        data_set_id: int | None = None,
+    ) -> int:
         name = _sanitize_filename(name)
         docstr_requirements = _get_fn_docstring_requirements(function_handle)
 
@@ -466,7 +484,11 @@ class FunctionsAPI(APIClient):
 
             overwrite = bool(external_id)
             file = self._cognite_client.files.upload_bytes(
-                zip_path.read_bytes(), name=f"{name}.zip", external_id=external_id, overwrite=overwrite
+                zip_path.read_bytes(),
+                name=f"{name}.zip",
+                external_id=external_id,
+                overwrite=overwrite,
+                data_set_id=data_set_id,
             )
             return cast(int, file.id)
 
