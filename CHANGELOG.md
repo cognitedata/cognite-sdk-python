@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.33.2] - 2023-10-16
 ### Added
-- `functions.create()` now supports `data_set_id` paramenter that allows you to explictly set the data set the function code will be uploaded to for deployment. Specifying a data set can help resolve the error 403 that happens due to missing permissions to create files not scoped to a data set.
+- `functions.create()` now supports `data_set_id` parameter that allows you to explicitly set the data set the function code will be uploaded to for deployment. Specifying a data set can help resolve the error 403 that happens due to missing permissions to create files not scoped to a data set.
 
 ## [6.33.1] - 2023-10-14
 ### Fixed
