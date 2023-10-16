@@ -586,8 +586,8 @@ class DatapointsAPI(APIClient):
         **Performance guide**:
             In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
 
-            1. For best speed, and significantly lower memory usage, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
-            2. Unlimited queries are fastest as they are trivial to parallelize. Thus, specifying a large finite `limit` like 1 million, comes with a performance penalty as data is fetched serially.
+            1. For best speed, and significantly lower memory usage, consider using ``retrieve_arrays(...)`` which uses ``numpy.ndarrays`` for data storage.
+            2. Only unlimited queries with (``limit=None``) are fetched in parallel so specifying a large finite ``limit`` like 1 million, comes with severe performance penalty as data is fetched serially.
             3. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't set start=0 (1970).
 
         Args:
@@ -597,14 +597,14 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
+            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Datapoints | DatapointsList | None: A ``Datapoints`` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            Datapoints | DatapointsList | None: A ``Datapoints`` object containing the requested data, or a ``DatapointsList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -626,7 +626,7 @@ class DatapointsAPI(APIClient):
                 ...    aggregates=["max", "average"],
                 ...    granularity="1d")
 
-            In the two code examples above, we have a `dps` object (an instance of ``Datapoints``), and a `dps_lst` object (an instance of `DatapointsList`).
+            In the two code examples above, we have a `dps` object (an instance of ``Datapoints``), and a `dps_lst` object (an instance of ``DatapointsList``).
             On `dps`, which in this case contains raw datapoints, you may access the underlying data directly by using the `.value` attribute. This works for
             both numeric and string (raw) datapoints, but not aggregates - they must be accessed by their respective names, because you're allowed to fetch up
             to 10 aggregates simultaneously, and they are stored on the same object::
@@ -663,7 +663,7 @@ class DatapointsAPI(APIClient):
                 ...     granularity="1h")
 
             When requesting multiple time series, an easy way to get the datapoints of a specific one is to use the `.get` method
-            on the returned `DatapointsList` object, then specify if you want `id` or `external_id`. Note: If you fetch a time series
+            on the returned ``DatapointsList`` object, then specify if you want `id` or `external_id`. Note: If you fetch a time series
             by using `id`, you can still access it with its `external_id` (and the opposite way around), if you know it::
 
                 >>> from datetime import datetime, timezone
@@ -797,8 +797,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
+            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -808,7 +808,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            **Note:** For more usage examples, see TODO: ADD LINK `DatapointsAPI.retrieve` method (which accepts exactly the same arguments).
+            **Note:** For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
             Get weekly ``min`` and ``max`` aggregates for a time series with id=42 since the year 2000, then compute the range of values:
 
@@ -904,8 +904,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
+            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -1052,8 +1052,8 @@ class DatapointsAPI(APIClient):
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
-            target_unit (str | None): The unit externalId of the data points returned. If the time series does not have a unitExternalId that can be converted to the targetUnit, an error will be returned. Cannot be used with targetUnitSystem.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with targetUnit.
+            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
