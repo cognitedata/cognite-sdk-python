@@ -19,7 +19,24 @@ from typing import (
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 
 if TYPE_CHECKING:
+    from concurrent.futures import Future
     from types import TracebackType
+
+_T = TypeVar("_T")
+
+
+def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T]]]:
+    from cognite.client._constants import _RUNNING_IN_BROWSER
+
+    if not _RUNNING_IN_BROWSER:
+        from concurrent.futures import as_completed
+    else:
+        from copy import copy
+
+        def as_completed(fs: Iterable[Future[_T]], timeout: float | None = None) -> Iterator[Future[_T]]:
+            return iter(copy(fs))
+
+    return as_completed
 
 
 class TasksSummary:

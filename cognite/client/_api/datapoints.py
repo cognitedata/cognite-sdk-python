@@ -39,7 +39,6 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.data_classes.datapoints import (
     Aggregate,
     Datapoints,
@@ -58,7 +57,7 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     split_into_n_parts,
 )
-from cognite.client.utils._concurrency import execute_tasks, get_executor
+from cognite.client.utils._concurrency import execute_tasks, get_executor, import_as_completed
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import (
@@ -91,20 +90,13 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+as_completed = import_as_completed()
+
 _TSQueryList = List[_SingleTSQueryBase]
 PoolSubtaskType = Tuple[float, int, BaseDpsFetchSubtask]
 
 _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
-
-
-if not _RUNNING_IN_BROWSER:
-    from concurrent.futures import as_completed
-else:
-    from copy import copy
-
-    def as_completed(fs: Iterable[Future[_T]], timeout: float | None = None) -> Iterator[Future[_T]]:
-        return iter(copy(fs))
 
 
 def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
@@ -319,7 +311,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
-        self.counter = itertools.count()
+        self._counter = itertools.count().__next__
         # To chunk efficiently, we have subtask pools (heap queues) that we use to prioritise subtasks
         # when building/combining subtasks into a full query:
         self.raw_subtask_pool: list[PoolSubtaskType] = []
@@ -432,7 +424,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             # We leverage how tuples are compared to prioritise items. First `payload limit` (to easily group
             # smaller queries), then counter to always break ties, but keep order (never use tasks themselves):
             limit = min(task.parent.get_remaining_limit(), task.max_query_limit)
-            new_subtask: PoolSubtaskType = (limit, next(self.counter), task)
+            new_subtask: PoolSubtaskType = (limit, self._counter(), task)
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
