@@ -18,7 +18,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteFileCreateError
 from tests.utils import jsgz_load, set_request_limit
 
 
@@ -656,6 +656,63 @@ class TestFilesAPI:
             .source.set(None),
             FileMetadataUpdate,
         )
+
+    @pytest.mark.parametrize(
+        ["data_set_id", "api_error", "expected_error", "expected_error_message"],
+        [
+            (
+                12345,
+                CogniteAPIError(
+                    message="Resource not found. This may also be due to insufficient access rights.",
+                    code=403,
+                    x_request_id="abc123",
+                ),
+                CogniteFileCreateError,
+                "Could not create a file due to insufficient access rights.",
+            ),
+            (
+                None,
+                CogniteAPIError(
+                    message="Resource not found. This may also be due to insufficient access rights.",
+                    code=403,
+                    x_request_id="abc123",
+                ),
+                CogniteFileCreateError,
+                "Could not create a file due to insufficient access rights. Try to provide a data_set_id.",
+            ),
+            (
+                12345,
+                CogniteAPIError(message="Bad request.", code=400, x_request_id="abc123"),
+                CogniteAPIError,
+                "Bad request.",
+            ),
+            (
+                None,
+                CogniteAPIError(message="Bad request.", code=400, x_request_id="abc123"),
+                CogniteAPIError,
+                "Bad request.",
+            ),
+        ],
+    )
+    def test_upload_bytes_post_error(
+        self,
+        cognite_client,
+        data_set_id: int,
+        api_error: CogniteAPIError,
+        expected_error: type(CogniteAPIError),
+        expected_error_message: str,
+    ):
+        def raise_api_error(*args, **kwargs):
+            raise api_error
+
+        cognite_client.files._post = raise_api_error
+
+        with pytest.raises(expected_error) as e:
+            cognite_client.files.upload_bytes(content=b"content", name="bla", data_set_id=data_set_id)
+
+        assert e.value.message == expected_error_message
+        assert e.value.code == api_error.code
+        assert e.value.x_request_id == api_error.x_request_id
 
 
 @pytest.fixture
