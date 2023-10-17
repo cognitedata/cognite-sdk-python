@@ -30,7 +30,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteFileCreateError, CogniteFileUploadError, CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteFileCreateError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
