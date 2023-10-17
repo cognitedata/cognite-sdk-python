@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,
@@ -33,6 +33,7 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractJob,
     VisionExtractPredictions,
 )
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 
 object_detection_sample = ObjectDetection(
@@ -304,7 +305,7 @@ class TestVisionResource:
         ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_dump_list"],
     )
     def test_to_pandas(self, item: VisionResource, exp_df_data, exp_df_index, camel_case: bool) -> None:
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
 
         res = item.to_pandas(camel_case)
         exp = pd.DataFrame(exp_df_data, index=exp_df_index)
