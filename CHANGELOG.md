@@ -22,6 +22,8 @@ Changes are grouped as follows
 - When fetching datapoints from "a few time series" (implementation detail), all missing, non-ignorable time series
   are now raised together in a `CogniteNotFoundError` rather than only the first encountered.
 
+### Improved
+- Datapoints fetching has a lower peak memory consumption when fetching from multiple time series simultaneously.
 ## [6.33.1] - 2023-10-14
 ### Fixed
 - `Function.list_schedules()` would return schedules unrelated to the function if the function did not have an external id.
