@@ -24,6 +24,7 @@ Changes are grouped as follows
 
 ### Improved
 - Datapoints fetching has a lower peak memory consumption when fetching from multiple time series simultaneously.
+
 ## [6.33.1] - 2023-10-14
 ### Fixed
 - `Function.list_schedules()` would return schedules unrelated to the function if the function did not have an external id.
