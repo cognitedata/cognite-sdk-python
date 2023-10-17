@@ -32,9 +32,11 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
-from cognite.client.utils._auxiliary import assert_type, is_unlimited, local_import
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

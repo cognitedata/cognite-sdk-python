@@ -23,11 +23,15 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.sequences import SequenceProperty, SequenceSort, SortableSequenceProperty
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
-from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import (
+    assert_type,
+    prepare_filter_sort,
+    process_asset_subtree_ids,
+    process_data_set_ids,
+)
 
 if TYPE_CHECKING:
     import pandas

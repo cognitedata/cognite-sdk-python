@@ -10,8 +10,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, cast, overload
 
-from cognite.client.exceptions import CogniteImportError
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
     from datetime import tzinfo
@@ -42,6 +41,8 @@ def import_zoneinfo() -> type[ZoneInfo]:
         return ZoneInfo
 
     except ImportError as e:
+        from cognite.client.exceptions import CogniteImportError
+
         raise CogniteImportError(
             "ZoneInfo is part of the standard library starting with Python >=3.9. In earlier versions "
             "you need to install a backport. This is done automatically for you when installing with the pandas "

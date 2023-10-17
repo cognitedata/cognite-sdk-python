@@ -27,8 +27,9 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, local_import
+from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime

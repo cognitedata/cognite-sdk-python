@@ -4,7 +4,7 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
     import pandas

@@ -10,9 +10,9 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractJob,
     VisionFeature,
 )
-from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._validation import assert_type
 
 
 class VisionAPI(APIClient):

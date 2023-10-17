@@ -21,8 +21,9 @@ from typing import (
 )
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import find_duplicates, local_import
+from cognite.client.utils._auxiliary import find_duplicates, no_op
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dataframes_with_nullable_int_cols,
     notebook_display_with_fallback,
@@ -295,7 +296,7 @@ class DatapointsArray(CogniteResource):
     def _dtype_fix(self) -> Callable:
         if self.is_string:
             # Return no-op as array contains just references to vanilla python objects:
-            return lambda s: s
+            return no_op
         # Using .item() on numpy scalars gives us vanilla python types:
         return op.methodcaller("item")
 

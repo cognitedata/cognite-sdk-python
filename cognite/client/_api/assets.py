@@ -48,17 +48,22 @@ from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, Sor
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import assert_type, split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import classify_error, execute_tasks, get_priority_executor
+from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
+from cognite.client.utils._concurrency import classify_error, execute_tasks, get_executor
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._importing import import_as_completed
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import (
+    assert_type,
+    prepare_filter_sort,
+    process_asset_subtree_ids,
+    process_data_set_ids,
+)
 
 if TYPE_CHECKING:
-    from concurrent.futures import Future
+    from concurrent.futures import Future, ThreadPoolExecutor
 
-    from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
-
+as_completed = import_as_completed()
 
 SortSpec: TypeAlias = Union[
     AssetSort,
@@ -1131,11 +1136,6 @@ class AssetsAPI(APIClient):
         )
 
 
-class _CreateTask(NamedTuple):
-    items: set[Asset]
-    priority: int
-
-
 class _TaskResult(NamedTuple):
     successful: list[Asset]
     failed: list[Asset]
@@ -1156,15 +1156,15 @@ class _AssetHierarchyCreator:
         # Each thread needs to store its latest exception:
         self.latest_exception: dict[int, Exception | None] = {}
 
-        self.__counter = itertools.count().__next__
+        self._counter = itertools.count().__next__
 
     def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
         insert_fn = functools.partial(self._insert, upsert=upsert, upsert_mode=upsert_mode)
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        with get_priority_executor(max_workers=self.max_workers) as pool:
-            created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)
+        pool = get_executor(max_workers=self.max_workers)
+        created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
 
         if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
             self._raise_latest_exception(all_exceptions, created_assets)
@@ -1172,7 +1172,7 @@ class _AssetHierarchyCreator:
 
     def _create(
         self,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         insert_fn: Callable[[list[Asset]], _TaskResult],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
@@ -1192,7 +1192,7 @@ class _AssetHierarchyCreator:
         futures = queue_fn(insert_dct.pop(None))
 
         while futures:
-            futures.remove(fut := next(pool.as_completed(futures)))
+            futures.remove(fut := next(as_completed(futures)))
             new_assets, failed, unknown = fut.result()
             created_assets.extend(new_assets)
             if unknown or failed:
@@ -1209,7 +1209,7 @@ class _AssetHierarchyCreator:
         self,
         assets: list[Asset],
         *,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         insert_fn: Callable,
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
@@ -1217,7 +1217,7 @@ class _AssetHierarchyCreator:
         if not assets:
             return set()
         return {
-            pool.submit(insert_fn, task.items, priority=self.n_assets - task.priority)
+            pool.submit(insert_fn, task)
             for task in self._split_and_prioritise_assets(assets, insert_dct, subtree_count)
         }
 
@@ -1326,7 +1326,7 @@ class _AssetHierarchyCreator:
         to_create: list[Asset],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
-    ) -> Iterator[_CreateTask]:
+    ) -> Iterator[set[Asset]]:
         # We want to dive as deep down the hierarchy as possible while prioritising assets with the biggest
         # subtree, that way we more quickly get into a state with enough unblocked parents to always keep
         # our worker threads fed with create-requests.
@@ -1337,7 +1337,7 @@ class _AssetHierarchyCreator:
             for chunk in split_into_n_parts(to_create, n=n_parts)
         ]
         # Also, to not waste worker threads on tiny requests, we might recombine:
-        tasks.sort(key=lambda task: len(task.items))
+        tasks.sort(key=len)
         yield from self._recombine_chunks(tasks, limit=self.create_limit)
 
     @staticmethod
@@ -1345,14 +1345,14 @@ class _AssetHierarchyCreator:
         return {"items": [asset.dump(camel_case=True) for asset in assets]}
 
     @staticmethod
-    def _recombine_chunks(lst: list[_CreateTask], limit: int) -> Iterator[_CreateTask]:
+    def _recombine_chunks(lst: list[set[Asset]], limit: int) -> Iterator[set[Asset]]:
         task = lst[0]
         for next_task in lst[1:]:
-            if len(task.items) + len(next_task.items) > limit:
+            if len(task) + len(next_task) > limit:
                 yield task
                 task = next_task
             else:
-                task = _CreateTask(task.items | next_task.items, max(task.priority, next_task.priority))
+                task |= next_task
         yield task
 
     def _extend_with_unblocked_from_subtree(
@@ -1360,10 +1360,9 @@ class _AssetHierarchyCreator:
         to_create: set[Asset],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
-    ) -> _CreateTask:
-        pri_q = [(-subtree_count[cast(str, asset.external_id)], self.__counter(), asset) for asset in to_create]
+    ) -> set[Asset]:
+        pri_q = [(-subtree_count[cast(str, asset.external_id)], self._counter(), asset) for asset in to_create]
         heapq.heapify(pri_q)
-        priority = -pri_q[0][0]  # No child asset can have a larger subtree than its parent
 
         while pri_q:  # Queue should seriously be spelled q
             *_, asset = heapq.heappop(pri_q)
@@ -1373,9 +1372,9 @@ class _AssetHierarchyCreator:
             if len(to_create) == self.create_limit:
                 break
             for child in insert_dct.get(asset.external_id, []):
-                heapq.heappush(pri_q, (-subtree_count[cast(str, child.external_id)], self.__counter(), child))
+                heapq.heappush(pri_q, (-subtree_count[cast(str, child.external_id)], self._counter(), child))
 
-        return _CreateTask(to_create, priority)
+        return to_create
 
     @staticmethod
     def _pop_child_assets(assets: Iterable[Asset], insert_dct: dict[str | None, list[Asset]]) -> Iterator[Asset]:

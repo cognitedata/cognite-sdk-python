@@ -22,7 +22,7 @@ from cognite.client.data_classes.geospatial import (
     PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._importing import local_import
 from tests.utils import set_request_limit
 
 FIXED_SRID = 121111 + random.randint(0, 1_000)
