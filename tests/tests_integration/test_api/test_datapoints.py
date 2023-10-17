@@ -335,7 +335,7 @@ class TestRetrieveRawDatapointsAPI:
 
     def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
         # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
-        # non-ignoreable ts would be raised in a CogniteNotFoundError.
+        # non-ignorable ts would be raised in a CogniteNotFoundError.
         ts_exists1, ts_exists2 = outside_points_ts
         missing_xid = "nope-doesnt-exist " * 3
 

@@ -48,11 +48,17 @@ from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, Sor
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import assert_type, split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import classify_error, execute_tasks, get_executor, import_as_completed
+from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
+from cognite.client.utils._concurrency import classify_error, execute_tasks, get_executor
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._importing import import_as_completed
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import (
+    assert_type,
+    prepare_filter_sort,
+    process_asset_subtree_ids,
+    process_data_set_ids,
+)
 
 if TYPE_CHECKING:
     from concurrent.futures import Future, ThreadPoolExecutor

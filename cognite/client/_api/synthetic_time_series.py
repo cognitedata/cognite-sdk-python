@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
-from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import timestamp_to_ms
 
 if TYPE_CHECKING:

@@ -16,9 +16,10 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
-from cognite.client.utils._auxiliary import assert_type, interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
+from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

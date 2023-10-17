@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.33.2] - 2023-10-16
 ### Fixed
-- When fetching datapoints from "a few time series" (implementation detail), all missing, non-ignoreable time series
+- When fetching datapoints from "a few time series" (implementation detail), all missing, non-ignorable time series
   are now raised together in a `CogniteNotFoundError` rather than only the first encountered.
 
 ## [6.33.1] - 2023-10-14

@@ -24,8 +24,8 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:

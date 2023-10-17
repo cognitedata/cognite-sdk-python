@@ -34,8 +34,9 @@ from sortedcontainers import SortedDict, SortedList
 from typing_extensions import NotRequired
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
-from cognite.client.utils._auxiliary import exactly_one_is_not_none, import_legacy_protobuf, is_unlimited
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._importing import import_legacy_protobuf
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
@@ -437,7 +438,7 @@ class _SingleTSQueryBase:
 
     @property
     @abstractmethod
-    def get_task_orchestrator(self) -> type[BaseTaskOrchestrator]:
+    def task_orchestrator(self) -> type[BaseTaskOrchestrator]:
         ...
 
     @abstractmethod
@@ -487,7 +488,7 @@ class _SingleTSQueryRawLimited(_SingleTSQueryRaw):
         assert isinstance(limit, int)
 
     @property
-    def get_task_orchestrator(self) -> type[SerialLimitedRawTaskOrchestrator]:
+    def task_orchestrator(self) -> type[SerialLimitedRawTaskOrchestrator]:
         return SerialLimitedRawTaskOrchestrator
 
 
@@ -496,7 +497,7 @@ class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
         super().__init__(limit=limit, **kwargs)
 
     @property
-    def get_task_orchestrator(self) -> type[ConcurrentUnlimitedRawTaskOrchestrator]:
+    def task_orchestrator(self) -> type[ConcurrentUnlimitedRawTaskOrchestrator]:
         return ConcurrentUnlimitedRawTaskOrchestrator
 
 
@@ -537,7 +538,7 @@ class _SingleTSQueryAggLimited(_SingleTSQueryAgg):
         assert isinstance(limit, int)
 
     @property
-    def get_task_orchestrator(self) -> type[SerialLimitedAggTaskOrchestrator]:
+    def task_orchestrator(self) -> type[SerialLimitedAggTaskOrchestrator]:
         return SerialLimitedAggTaskOrchestrator
 
 
@@ -546,7 +547,7 @@ class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
         super().__init__(limit=limit, **kwargs)
 
     @property
-    def get_task_orchestrator(self) -> type[ConcurrentUnlimitedAggTaskOrchestrator]:
+    def task_orchestrator(self) -> type[ConcurrentUnlimitedAggTaskOrchestrator]:
         return ConcurrentUnlimitedAggTaskOrchestrator
 
 
@@ -753,6 +754,17 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.max_splitting_factor = max_splitting_factor
         self.split_subidx: int = 0  # Actual value doesn't matter (any int will do)
 
+    @property
+    def _static_params(self) -> dict[str, Any]:
+        return dict(
+            parent=self.parent,
+            identifier=self.identifier,
+            aggregates=self.aggregates,
+            granularity=self.granularity,
+            max_query_limit=self.max_query_limit,
+            is_raw_query=self.is_raw_query,
+        )
+
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         self.prev_start = self.next_start
         super().store_partial_result(res)
@@ -782,17 +794,9 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         # Find a `delta_ms` that's a multiple of granularity in ms (trivial for raw queries):
         boundaries = split_time_range(last_ts, self.end, n_new_tasks, self.parent.offset_next)
         self.end = boundaries[1]  # We shift end of 'self' backwards
-        static_params: dict[str, Any] = {
-            "parent": self.parent,
-            "identifier": self.identifier,
-            "aggregates": self.aggregates,
-            "granularity": self.granularity,
-            "max_query_limit": self.max_query_limit,
-            "is_raw_query": self.is_raw_query,
-        }
         split_idxs = self._create_subtasks_idxs(n_new_tasks)
         new_subtasks = [
-            SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, **static_params)
+            SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, **self._static_params)
             for start, end, idx in zip(boundaries[1:-1], boundaries[2:], split_idxs)
         ]
         self.parent.subtasks.update(new_subtasks)

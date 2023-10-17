@@ -49,17 +49,15 @@ from cognite.client.data_classes.datapoints import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
-    assert_type,
     exactly_one_is_not_none,
     find_duplicates,
-    import_legacy_protobuf,
-    local_import,
     split_into_chunks,
     split_into_n_parts,
 )
-from cognite.client.utils._concurrency import execute_tasks, get_executor, import_as_completed
+from cognite.client.utils._concurrency import execute_tasks, get_executor
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
     _unit_in_days,
     align_large_granularity,
@@ -71,7 +69,7 @@ from cognite.client.utils._time import (
     to_pandas_freq,
     validate_timezone,
 )
-from cognite.client.utils._validation import validate_user_input_dict_with_identifier
+from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
@@ -254,9 +252,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         futures_dct: dict[Future, BaseDpsFetchSubtask] = {}
         ts_task_lookup = {}
         for query in self.all_queries:
-            ts_task = ts_task_lookup[query] = query.get_task_orchestrator(
-                query=query, eager_mode=True, use_numpy=use_numpy
-            )
+            ts_task = ts_task_lookup[query] = query.task_orchestrator(query=query, eager_mode=True, use_numpy=use_numpy)
             for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
                 payload = DatapointsPayload(items=[subtask.get_next_payload_item()], ignoreUnknownIds=False)
                 future = pool.submit(self._request_datapoints, payload)
@@ -288,7 +284,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
             if not err.missing or err.code != 400:
                 raise
             # The query decides if we can ignore it. If not, we store it so that we later can
-            # raise one exception with -all- missing-non-ignoreable time series:
+            # raise one exception with -all- missing-non-ignorable time series:
             if not ts_task.query.ignore_unknown_ids:
                 missing_to_raise.add(ts_task.query)
 
@@ -381,7 +377,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         for query_chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
             # Agg and raw limits are independent in the query, so we max out on both:
             items = []
-            for queries, max_lim in zip(query_chunks, [self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW]):
+            for queries, max_lim in zip(query_chunks, (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW)):
                 maxed_limits = self._find_initial_query_limits([q.capped_limit for q in queries], max_lim)
                 initial_query_limits.update(chunk_query_limits := dict(zip(queries, maxed_limits)))
                 for query, limit in chunk_query_limits.items():
@@ -408,7 +404,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
         # Align initial res with corresponding queries and create tasks:
         ts_tasks = {
-            query: query.get_task_orchestrator(
+            query: query.task_orchestrator(
                 query=query,
                 eager_mode=False,
                 use_numpy=use_numpy,

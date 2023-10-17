@@ -6,8 +6,8 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
-from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import assert_type
 
 
 class TransformationNotificationsAPI(APIClient):

@@ -5,6 +5,8 @@ import reprlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Sequence
 
+from cognite.client.utils._auxiliary import no_op
+
 if TYPE_CHECKING:
     from cognite.client.data_classes import AssetHierarchy
 
@@ -85,7 +87,7 @@ class CogniteMultiException(CogniteException):
         self.successful = successful or []
         self.failed = failed or []
         self.unknown = unknown or []
-        self._unwrap_fn = unwrap_fn or (lambda x: x)
+        self._unwrap_fn = unwrap_fn or no_op
 
     def _get_multi_exception_summary(self) -> str:
         if len(self.successful) == 0 and len(self.unknown) == 0 and len(self.failed) == 0:

@@ -43,7 +43,6 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
-    assert_type,
     get_current_sdk_version,
     get_user_agent,
     interpolate_and_url_encode,
@@ -60,6 +59,7 @@ from cognite.client.utils._identifier import (
     SingletonIdentifierSequence,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
+from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

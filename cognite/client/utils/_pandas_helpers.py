@@ -8,7 +8,7 @@ from numbers import Integral
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.exceptions import CogniteImportError
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
