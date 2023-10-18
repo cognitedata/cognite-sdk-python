@@ -515,7 +515,6 @@ class TestFunctionsAPI:
 
         cognite_client.functions.create(name="myfunction", function_handle=function_handle, data_set_id=999)
 
-
     def test_delete_single_id(self, mock_functions_delete_response, cognite_client):
         _ = cognite_client.functions.delete(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_functions_delete_response.calls[0].request.body)
@@ -1137,9 +1136,7 @@ def fns_api_with_mock_client(cognite_client):
 def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle):
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes.return_value = FileMetadata(id=123)
-    file_id = fns_api_with_mock_client._zip_and_upload_handle(
-        function_handle, name="name", external_id=xid
-    )
+    file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle, name="name", external_id=xid)
     assert file_id == 123
 
     mock.files.upload_bytes.assert_called_once()
@@ -1156,9 +1153,7 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
         ("xid", True),
     ),
 )
-def test__zip_and_upload_handle__zip_file_content(
-    fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs
-):
+def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
     def validate_file_upload_call(*args, **kwargs):
         assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
@@ -1182,9 +1177,7 @@ def test__zip_and_upload_handle__zip_file_content(
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes = validate_file_upload_call
 
-    file_id = fns_api_with_mock_client._zip_and_upload_handle(
-        function_handle_with_reqs, name="name", external_id=xid
-    )
+    file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle_with_reqs, name="name", external_id=xid)
     assert file_id == 123
 
 
@@ -1201,9 +1194,7 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
     mock.files.upload_bytes.return_value = FileMetadata(id=123, data_set_id=None)
 
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
-    file_id = fns_api_with_mock_client._zip_and_upload_folder(
-        folder, name="name", external_id=xid
-    )
+    file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
     assert file_id == 123
 
     mock.files.upload_bytes.assert_called_once()
@@ -1245,7 +1236,5 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
     mock.files.upload_bytes = validate_file_upload_call
 
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
-    file_id = fns_api_with_mock_client._zip_and_upload_folder(
-        folder, name="name", external_id=xid
-    )
+    file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
     assert file_id == 123
