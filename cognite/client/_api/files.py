@@ -571,7 +571,7 @@ class FilesAPI(APIClient):
                 dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
                 msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
                 raise CogniteFileCreateError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
-            raise e
+            raise
 
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
