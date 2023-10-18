@@ -480,7 +480,8 @@ class TestInstancesAPI:
 
         # Assert
         assert error.value.code == 400
-        assert "View not found" in error.value.message
+        assert "One or more views do not exist: " in error.value.message
+        assert view_id.as_source_identifier() in error.value.message
 
     def test_dump_json_serialize_load_node(self, movie_nodes: NodeList) -> None:
         # Arrange

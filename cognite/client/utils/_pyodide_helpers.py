@@ -40,7 +40,6 @@ def patch_sdk_for_pyodide() -> None:
 
     # - Set all usage of thread pool executors to use dummy/serial-implementations:
     cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
-    cc.utils._concurrency.ConcurrencySettings.priority_executor_type = "mainthread"
 
     # - Auto-ignore protobuf warning for the user (as they can't fix this):
     warnings.filterwarnings(

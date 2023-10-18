@@ -7,10 +7,10 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
-from cognite.client.utils._auxiliary import assert_type, is_unlimited
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._validation import process_data_set_ids
+from cognite.client.utils._validation import assert_type, process_data_set_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

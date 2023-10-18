@@ -6,14 +6,14 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import (
-    assert_type,
     interpolate_and_url_encode,
     is_unlimited,
-    local_import,
     split_into_chunks,
 )
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._importing import local_import
+from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
     import pandas

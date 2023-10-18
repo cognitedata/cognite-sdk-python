@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, List, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
