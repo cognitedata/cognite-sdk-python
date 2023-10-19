@@ -19,7 +19,7 @@ from tests.utils import jsgz_load
 
 @pytest.fixture
 def mock_3d_model_response(rsps, cognite_client):
-    response_body = {"items": [{"name": "My Model", "id": 1000, "createdTime": 0, "data_set_id":1, "metadata":{"key1": "value1", "key2": "value2"}}]}
+    response_body = {"items": [{"name": "My Model", "id": 1000, "createdTime": 0}]}
     url_pattern = re.compile(re.escape(cognite_client.three_d._get_base_url_with_base_path()) + "/3d/models.*")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -77,15 +77,15 @@ class Test3DModels:
         assert mock_retrieve_3d_model_response.calls[0].response.json() == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_3d_model_response):
-        res = cognite_client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+        res = cognite_client.three_d.models.create(name="My Model")
         assert isinstance(res, ThreeDModel)
-        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model", "data_set_id":1, "metadata":{"key1": "value1", "key2": "value2"}}]}
+        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_model_response):
-        res = cognite_client.three_d.models.create(name=["My Model"], data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+        res = cognite_client.three_d.models.create(name=["My Model"])
         assert isinstance(res, ThreeDModelList)
-        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model", "data_set_id":1, "metadata":{"key1": "value1", "key2": "value2"}}]}
+        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
 
