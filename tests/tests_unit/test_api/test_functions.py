@@ -504,6 +504,17 @@ class TestFunctionsAPI:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", file_id=1234, memory="0.5")
 
+    def test_create_upload_with_data_set_id(self, mock_functions_create_response, cognite_client, function_handle):
+        cognite_client.files = MagicMock(spec=cognite_client.files)
+
+        def mock_upload_bytes(*args, **kwargs):
+            assert kwargs.get("data_set_id") == 999
+            return FileMetadata(id=FUNCTION_ID, data_set_id=kwargs.get("data_set_id"))
+
+        cognite_client.files.upload_bytes.side_effect = mock_upload_bytes
+
+        cognite_client.functions.create(name="myfunction", function_handle=function_handle, data_set_id=999)
+
     def test_delete_single_id(self, mock_functions_delete_response, cognite_client):
         _ = cognite_client.functions.delete(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_functions_delete_response.calls[0].request.body)
@@ -1114,7 +1125,14 @@ def fns_api_with_mock_client(cognite_client):
     return cognite_client.functions
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle):
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes.return_value = FileMetadata(id=123)
@@ -1124,14 +1142,21 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
     assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
-    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
     def validate_file_upload_call(*args, **kwargs):
         assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
-        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
             assert zip_file.testzip() is None
@@ -1156,10 +1181,17 @@ def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid,
     assert file_id == 123
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite):
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes.return_value = FileMetadata(id=123)
+    mock.files.upload_bytes.return_value = FileMetadata(id=123, data_set_id=None)
 
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
     file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
@@ -1168,14 +1200,21 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
     assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
-    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite):
     def validate_file_upload_call(*args, **kwargs):
         assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
-        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
             assert zip_file.testzip() is None
@@ -1191,7 +1230,7 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
                 ]
                 # We use splitlines to ignore line ending differences between OSs:
                 assert py_file.read().decode("utf-8").splitlines() == expected_lines
-        return FileMetadata(id=123)
+        return FileMetadata(id=123, data_set_id=None)
 
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes = validate_file_upload_call

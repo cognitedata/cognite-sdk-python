@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.33.3] - 2023-10-18
+### Added
+- `functions.create()` now accepts a `data_set_id` parameter. Note: This is not for the Cognite function, but for the zipfile containing
+  the source code files that is uploaded on the user's behalf (from which the function is then created). Specifying a data set may
+  help resolve the error 'Resource not found' (403) that happens when a user is not allowed to create files outside a data set.
+
 ## [6.33.2] - 2023-10-16
 ### Fixed
 - When fetching datapoints from "a few time series" (implementation detail), all missing, non-ignorable time series

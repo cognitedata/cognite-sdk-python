@@ -327,3 +327,7 @@ class ModelFailedException(Exception):
 
     def __str__(self) -> str:
         return f"{self.typename} {self.id} failed with error '{self.error_message}'"
+
+
+class CogniteAuthorizationError(CogniteAPIError):
+    ...
