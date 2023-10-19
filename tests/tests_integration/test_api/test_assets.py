@@ -452,7 +452,7 @@ class TestAssetsAPICreateHierarchy:
         with create_hierarchy_with_cleanup(cognite_client, assets) as created:
             assert len(assets) == len(created)
             # Make sure `.get` has the exact same mapping keys:
-            assert set(AssetList(assets)._external_id_to_item) == set(created._external_id_to_item)
+            assert set(AssetList(assets).as_external_ids()) == set(created.as_external_ids())
 
     @pytest.mark.parametrize(
         "n_id, n_xid, pass_hierarchy",
@@ -470,14 +470,14 @@ class TestAssetsAPICreateHierarchy:
         self, n_id, n_xid, pass_hierarchy, cognite_client, root_test_asset_subtree
     ):
         assets = generate_orphan_assets(n_id, n_xid, sample_from=root_test_asset_subtree)
-        expected = set(AssetList(assets)._external_id_to_item)
+        expected = set(AssetList(assets).as_external_ids())
         if pass_hierarchy:
             assets = AssetHierarchy(assets, ignore_orphans=True)
 
         with create_hierarchy_with_cleanup(cognite_client, assets) as created:
             assert len(assets) == len(created)
             # Make sure `.get` has the exact same mapping keys:
-            assert expected == set(created._external_id_to_item)
+            assert expected == set(created.as_external_ids())
 
     def test_orphans__blocked_if_passed_as_asset_hierarchy_instance(self, cognite_client, root_test_asset_subtree):
         assets = generate_orphan_assets(2, 2, sample_from=root_test_asset_subtree)
@@ -607,7 +607,7 @@ class TestAssetsAPICreateHierarchy:
             cognite_client, assets, upsert=True, upsert_mode=upsert_mode
         ) as patch_created:
             assert len(patch_created) == 4
-            assert set(AssetList(assets)._external_id_to_item) == set(patch_created._external_id_to_item)
+            assert set(AssetList(assets).as_external_ids()) == set(patch_created.as_external_ids())
             # 1+3 because 3 additional calls were made:
             # 1) Try create all (fail), 2) create non-duplicated (success), 3) update duplicated (success)
             assert 1 + 3 == cognite_client.assets._post.call_count

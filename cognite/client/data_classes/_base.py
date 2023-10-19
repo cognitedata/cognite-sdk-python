@@ -204,12 +204,9 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
                 )
         self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
-        self._identifier_to_items = {}
-        self._create_identifier_mappings()
 
-    @abstractmethod
-    def _create_identifier_mappings(self) -> None:
-        raise NotImplementedError
+        self._identifier_to_items: dict[tuple[str, str | int], T_CogniteResource] = {}
+        self._create_identifier_mappings()
 
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
@@ -759,8 +756,8 @@ class ExtIdTransformerMixin(Sequence[HasExternalId], ABC):
 
 class IdAndExtIdTransformerMixin(IdTransformerMixin, ExtIdTransformerMixin, ABC):
     def _create_identifier_mappings(self) -> None:
-        super()._create_identifier_mappings()  # update ids
-        super(IdTransformerMixin, self)._create_identifier_mappings()  # update external ids
+        super()._create_identifier_mappings()  # updates ids
+        super(IdTransformerMixin, self)._create_identifier_mappings()  # updates external ids (yes)
 
     def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
         """Get an item from this list by 'id' or 'external_id'.
