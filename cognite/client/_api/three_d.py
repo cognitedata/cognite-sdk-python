@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -131,11 +131,14 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(self, name: str | Sequence[str]) -> ThreeDModel | ThreeDModelList:
+    def create(self, name: str | Sequence[str], data_set_id: Optional[int] = None, metadata: Optional[dict[str, str]] = None) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
             name (str | Sequence[str]): The name of the 3d model(s) to create.
+            data_set_id (int | None): The id of the dataset this 3D model belongs to.
+            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
+                Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
 
         Returns:
             ThreeDModel | ThreeDModelList: The created 3d model(s).
@@ -146,14 +149,14 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.three_d.models.create(name="My Model")
+                >>> res = c.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
         """
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
-            name_processed: dict[str, Any] | Sequence[dict[str, Any]] = {"name": name}
+            item_processed = [{"name": name, "dataSetId": data_set_id, "metadata": metadata}]
         else:
-            name_processed = [{"name": n} for n in name]
-        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
+            item_processed = [{"name": n, "dataSetId": data_set_id, "metadata": metadata} for n in name]
+        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
 
     def update(
         self, item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]

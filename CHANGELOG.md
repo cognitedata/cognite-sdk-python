@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.34.1] - 2023-10-23
+### Added
+- Support for setting `data_set_id` and `metadata` in `ThreeDModelsAPI.create`.
+- Support for updating `data_set_id` in `ThreeDModelsAPI.update`.
+
 ## [6.34.0] - 2023-10-20
 ### Fixed
 - `PropertyType`s no longer fail on instantiation, but warn on missing SDK support for the new property(-ies).
