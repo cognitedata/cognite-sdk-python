@@ -329,5 +329,5 @@ class ModelFailedException(Exception):
         return f"{self.typename} {self.id} failed with error '{self.error_message}'"
 
 
-class CogniteFileCreateError(CogniteAPIError):
+class CogniteAuthorizationError(CogniteAPIError):
     ...

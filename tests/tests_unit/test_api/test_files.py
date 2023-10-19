@@ -18,7 +18,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteAPIError, CogniteFileCreateError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.utils import jsgz_load, set_request_limit
 
 
@@ -667,7 +667,7 @@ class TestFilesAPI:
                     code=403,
                     x_request_id="abc123",
                 ),
-                CogniteFileCreateError,
+                CogniteAuthorizationError,
                 "Could not create a file due to insufficient access rights.",
             ),
             (
@@ -677,7 +677,7 @@ class TestFilesAPI:
                     code=403,
                     x_request_id="abc123",
                 ),
-                CogniteFileCreateError,
+                CogniteAuthorizationError,
                 "Could not create a file due to insufficient access rights. Try to provide a data_set_id.",
             ),
             (

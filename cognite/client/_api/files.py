@@ -30,7 +30,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteAPIError, CogniteFileCreateError, CogniteFileUploadError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
@@ -570,7 +570,7 @@ class FilesAPI(APIClient):
             if e.code == 403 and "insufficient access rights" in e.message:
                 dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
                 msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
-                raise CogniteFileCreateError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
         returned_file_metadata = res.json()
