@@ -27,7 +27,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
+from cognite.client.utils._auxiliary import fast_dict_load, get_identifiers, json_dump_default
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
@@ -204,14 +204,12 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
                 )
         self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
-        self._id_to_item, self._external_id_to_item = {}, {}
-        if self.data:
-            if hasattr(self.data[0], "external_id"):
-                self._external_id_to_item = {
-                    item.external_id: item for item in self.data if item.external_id is not None
-                }
-            if hasattr(self.data[0], "id"):
-                self._id_to_item = {item.id: item for item in self.data if item.id is not None}
+        self._identifier_to_items = {}
+        self._create_identifier_mappings()
+
+    @abstractmethod
+    def _create_identifier_mappings(self) -> None:
+        raise NotImplementedError
 
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
@@ -242,10 +240,9 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     # TODO: We inherit a lot from UserList that we don't actually support...
     def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
         other_res_list = type(self)(other)  # See if we can accept the types
-        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+        if set(self._identifier_to_items).isdisjoint(other_res_list._identifier_to_items):
             super().extend(other)
-            self._external_id_to_item.update(other_res_list._external_id_to_item)
-            self._id_to_item.update(other_res_list._id_to_item)
+            self._identifier_to_items.update(other_res_list._identifier_to_items)
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
@@ -259,21 +256,6 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             list[dict[str, Any]]: A list of dicts representing the instance.
         """
         return [resource.dump(camel_case) for resource in self.data]
-
-    def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
-        """Get an item from this list by id or external_id.
-
-        Args:
-            id (int | None): The id of the item to get.
-            external_id (str | None): The external_id of the item to get.
-
-        Returns:
-            T_CogniteResource | None: The requested item
-        """
-        IdentifierSequence.load(id, external_id).assert_singleton()
-        if id:
-            return self._id_to_item.get(id)
-        return self._external_id_to_item.get(external_id)
 
     def to_pandas(
         self,
@@ -716,96 +698,170 @@ class HasKey(Protocol):
 
 
 class IdTransformerMixin(Sequence[HasInternalId], ABC):
-    def as_ids(self) -> list[int]:
+    def _create_identifier_mappings(self) -> None:
+        self._identifier_to_items.update(
+            {("id", item.id): item for item in self.data if item.id is not None},
+        )
+
+    def get(self, id: int) -> T_CogniteResource | None:
+        """Get an item from this list by 'id'.
+
+        Args:
+            id (int): The id of the item to get.
+        Returns:
+            T_CogniteResource | None: The requested item
+        """
+        return self._identifier_to_items.get(("id", id))
+
+    def as_ids(self, ignore_missing: bool = False) -> list[int]:
         """
         Returns the ids of all resources.
 
+        Args:
+            ignore_missing (bool): Skip when resources are missing 'id' instead of raising.
         Raises:
-            ValueError: If any resource in the list does not have an id.
+            ValueError: If any resource in the list does not have an 'id'.
         Returns:
             list[int]: The ids of all resources in the list.
         """
-        ids: list[int] = []
-        for x in self:
-            if x.id is None:
-                raise ValueError(f"All {type(x).__name__} must have 'id'")
-            ids.append(x.id)
-        return ids
+        return get_identifiers(self, "id", ignore_missing)
 
 
 class ExtIdTransformerMixin(Sequence[HasExternalId], ABC):
-    def as_external_ids(self) -> list[str]:
+    def _create_identifier_mappings(self) -> None:
+        self._identifier_to_items.update(
+            {("external_id", item.external_id): item for item in self.data if item.external_id is not None},
+        )
+
+    def get(self, external_id: str) -> T_CogniteResource | None:
+        """Get an item from this list by 'external_id'.
+
+        Args:
+            external_id (str): The external_id of the item to get.
+        Returns:
+            T_CogniteResource | None: The requested item
+        """
+        return self._identifier_to_items.get(("external_id", external_id))
+
+    def as_external_ids(self, ignore_missing: bool = False) -> list[str]:
         """
         Returns the external ids of all resources.
 
+        Args:
+            ignore_missing (bool): Skip when resources are missing 'external id' instead of raising.
         Raises:
-            ValueError: If any resource in the list does not have an external id.
+            ValueError: If any resource in the list does not have an 'external id'.
         Returns:
             list[str]: The external ids of all resources in the list.
         """
-        external_ids: list[str] = []
-        for x in self:
-            if x.external_id is None:
-                raise ValueError(f"All {type(x).__name__} must have 'external_id'")
-            external_ids.append(x.external_id)
-        return external_ids
+        return get_identifiers(self, "external_id", ignore_missing)
 
 
 class IdAndExtIdTransformerMixin(IdTransformerMixin, ExtIdTransformerMixin, ABC):
-    ...
+    def _create_identifier_mappings(self) -> None:
+        super()._create_identifier_mappings()  # update ids
+        super(IdTransformerMixin, self)._create_identifier_mappings()  # update external ids
+
+    def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
+        """Get an item from this list by 'id' or 'external_id'.
+
+        Args:
+            id (int | None): The id of the item to get.
+            external_id (str | None): The external_id of the item to get.
+        Returns:
+            T_CogniteResource | None: The requested item
+        """
+        IdentifierSequence.load(id, external_id).assert_singleton()
+        if id:
+            return self._identifier_to_items.get(("id", id))
+        return self._identifier_to_items.get(("external_id", external_id))
 
 
 class NameTransformerMixin(Sequence[HasName], ABC):
-    def as_names(self) -> list[str]:
+    def _create_identifier_mappings(self) -> None:
+        self._identifier_to_items.update(
+            {("name", item.name): item for item in self.data if item.name is not None},
+        )
+
+    def get(self, name: str) -> T_CogniteResource | None:
+        """Get an item from this list by 'name'.
+
+        Args:
+            name (str): The name of the item to get.
+        Returns:
+            T_CogniteResource | None: The requested item
+        """
+        return self._identifier_to_items.get(("name", name))
+
+    def as_names(self, ignore_missing: bool = False) -> list[str]:
         """
         Returns the name of all resources.
 
+        Args:
+            ignore_missing (bool): Skip when resources are missing 'name' instead of raising.
         Raises:
-            ValueError: If any resource in the list does not have an name.
+            ValueError: If any resource in the list does not have a 'name'.
         Returns:
             list[str]: The names of all resources in the list.
         """
-        names: list[str] = []
-        for x in self:
-            if x.name is None:
-                raise ValueError(f"All {type(x).__name__} must have 'name'")
-            names.append(x.name)
-        return names
+        return get_identifiers(self, "name", ignore_missing)
 
 
 class KeyTransformerMixin(Sequence[HasKey], ABC):
-    def as_keys(self) -> list[str]:
+    def _create_identifier_mappings(self) -> None:
+        self._identifier_to_items.update(
+            {("key", item.key): item for item in self.data if item.key is not None},
+        )
+
+    def get(self, key: str) -> T_CogniteResource | None:
+        """Get an item from this list by 'key'.
+
+        Args:
+            key (str): The key of the item to get.
+        Returns:
+            T_CogniteResource | None: The requested item
         """
-        Returns the key of all resources.
+        return self._identifier_to_items.get(("key", key))
 
+    def as_keys(self, ignore_missing: bool = False) -> list[str]:
+        """
+        Returns the keys of all resources.
+
+        Args:
+            ignore_missing (bool): Skip when resources are missing 'key' instead of raising.
         Raises:
-            ValueError: If any resource in the list does not have an key.
-
+            ValueError: If any resource in the list does not have a 'key'.
         Returns:
             list[str]: The keys of all resources in the list.
         """
-        keys: list[str] = []
-        for x in self:
-            if x.key is None:
-                raise ValueError(f"All {type(x).__name__} must have 'key'")
-            keys.append(x.key)
-        return keys
+        return get_identifiers(self, "key", ignore_missing)
 
 
 class UserIdentTransformerMixin(Sequence[HasUserIdentifier], ABC):
-    def as_user_identifiers(self) -> list[str]:
+    def _create_identifier_mappings(self) -> None:
+        self._identifier_to_items.update(
+            {("user_identifier", item.user_identifier): item for item in self.data if item.user_identifier is not None}
+        )
+
+    def get(self, user_identifier: str) -> T_CogniteResource | None:
+        """Get an item from this list by 'user_identifier'.
+
+        Args:
+            user_identifier (str): The user_identifier of the item to get.
+        Returns:
+            T_CogniteResource | None: The requested item
         """
-        Returns the user identifier of all resources.
+        return self._identifier_to_items.get(("user_identifier", user_identifier))
 
+    def as_user_identifiers(self, ignore_missing: bool = False) -> list[str]:
+        """
+        Returns the user identifiers of all resources.
+
+        Args:
+            ignore_missing (bool): Skip when resources are missing 'user identifier' instead of raising.
         Raises:
-            ValueError: If any resource in the list does not have a user identifier.
-
+            ValueError: If any resource in the list does not have a 'user identifier'.
         Returns:
             list[str]: The user identifiers of all resources in the list.
         """
-        user_identifiers: list[str] = []
-        for x in self:
-            if x.user_identifier is None:
-                raise ValueError(f"All {type(x).__name__} must have 'user_identifier'")
-            user_identifiers.append(x.user_identifier)
-        return user_identifiers
+        return get_identifiers(self, "user_identifier", ignore_missing)

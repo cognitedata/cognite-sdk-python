@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import math
 import numbers
+import operator as op
 import platform
 import warnings
 from decimal import Decimal
@@ -28,7 +29,7 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-    from cognite.client.data_classes._base import T_CogniteResource
+    from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
 T = TypeVar("T")
@@ -216,3 +217,12 @@ def rename_and_exclude_keys(
     aliases = aliases or {}
     exclude = exclude or set()
     return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}
+
+
+def get_identifiers(res_lst: T_CogniteResourceList, attr: str, ignore_missing: bool) -> list:
+    if not res_lst:
+        return []
+    identifiers = list(map(op.attrgetter(attr), res_lst))
+    if not ignore_missing and None in identifiers:
+        raise ValueError(f"All {type(res_lst[0]).__name__} must have '{attr}', or pass 'ignore_missing=True'")
+    return identifiers
