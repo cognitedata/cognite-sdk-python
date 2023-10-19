@@ -77,15 +77,15 @@ class Test3DModels:
         assert mock_retrieve_3d_model_response.calls[0].response.json() == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_3d_model_response):
-        res = cognite_client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+        res = cognite_client.three_d.models.create(name="My Model")
         assert isinstance(res, ThreeDModel)
-        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name":"My Model", "data_set_id":1, "metadata":{"key1": "value1", "key2": "value2"}}]}
+        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{'dataSetId': None, 'metadata': None, "name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_model_response):
-        res = cognite_client.three_d.models.create(name=["My Model"], data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+        res = cognite_client.three_d.models.create(name=["My Model"])
         assert isinstance(res, ThreeDModelList)
-        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name":"My Model", "data_set_id":1, "metadata":{"key1": "value1", "key2": "value2"}}]}
+        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{'dataSetId': None, 'metadata': None, "name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
 
