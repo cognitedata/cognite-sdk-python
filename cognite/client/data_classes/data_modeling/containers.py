@@ -23,7 +23,7 @@ class ContainerCore(DataModelingResource):
     """Represent the physical storage of data. This is the base class for the read and write version.
 
     Args:
-        space (str): The workspace for the view, a unique identifier for the space.
+        space (str): The workspace for the container, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
         description (str | None): Textual description of the view
@@ -85,7 +85,7 @@ class ContainerApply(ContainerCore):
     """Represent the physical storage of data. This is the write format of the container
 
     Args:
-        space (str): The workspace for the view, a unique identifier for the space.
+        space (str): The workspace for the container, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
         description (str | None): Textual description of the view
@@ -114,7 +114,7 @@ class Container(ContainerCore):
     """Represent the physical storage of data. This is the read format of the container
 
     Args:
-        space (str): The workspace for the view, a unique identifier for the space.
+        space (str): The workspace for the container, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.

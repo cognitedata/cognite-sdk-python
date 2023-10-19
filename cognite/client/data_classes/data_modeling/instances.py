@@ -103,7 +103,7 @@ class NodeOrEdgeData:
 class InstanceCore(DataModelingResource):
     """A node or edge
     Args:
-        space (str): The workspace for the instance.a unique identifier for the space.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         instance_type (Literal["node", "edge"]): No description.
     """
@@ -118,7 +118,7 @@ class InstanceApply(InstanceCore):
     """A node or edge. This is the write version of the instance.
 
     Args:
-        space (str): The workspace for the instance.a unique identifier for the space.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         instance_type (Literal["node", "edge"]): No description.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -244,7 +244,7 @@ class Instance(InstanceCore):
     """A node or edge. This is the read version of the instance.
 
     Args:
-        space (str): The workspace for the instance.a unique identifier for the space.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -299,7 +299,7 @@ class InstanceApplyResult(InstanceCore):
 
     Args:
         instance_type (Literal["node", "edge"]): The type of instance.
-        space (str): The workspace for the instance.a unique identifier for the space.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version of the instance.
         was_modified (bool): Whether the instance was modified by the ingestion.
@@ -382,7 +382,7 @@ class NodeApply(InstanceApply):
     """A node. This is the write version of the node.
 
     Args:
-        space (str): The workspace for the node.a unique identifier for the space.
+        space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the node and/or container the container(s) making up this node.
@@ -405,7 +405,7 @@ class Node(Instance):
     """A node. This is the read version of the node.
 
     Args:
-        space (str): The workspace for the node.a unique identifier for the space.
+        space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -462,7 +462,7 @@ class NodeApplyResult(InstanceApplyResult):
     """A node. This represents the update on the node.
 
     Args:
-        space (str): The workspace for the node a unique identifier for the space.
+        space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
         version (str): DMS version of the node.
         was_modified (bool): Whether the node was modified by the ingestion.
@@ -555,7 +555,7 @@ class Edge(Instance):
     """An Edge. This is the read version of the edge.
 
     Args:
-        space (str): The workspace for the edge an unique identifier for the space.
+        space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
         version (str): DMS version.
         type (DirectRelationReference): The type of edge.
@@ -642,7 +642,7 @@ class EdgeApplyResult(InstanceApplyResult):
     """An Edge. This represents the update on the edge.
 
     Args:
-        space (str): The workspace for the edge a unique identifier for the space.
+        space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
         version (str): DMS version.
         was_modified (bool): Whether the edge was modified by the ingestion.
