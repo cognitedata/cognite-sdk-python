@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -1214,10 +1214,10 @@ class APIClient:
 
         if res.history:
             for res_hist in res.history:
-                log.debug(
+                logger.debug(
                     f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
                 )
-        log.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
+        logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     def _log_request(self, res: Response, **kwargs: Any) -> None:
@@ -1242,7 +1242,7 @@ class APIClient:
             # If this fails, it means we are running in a browser (pyodide) with patched requests package:
             http_protocol = "XMLHTTP"
 
-        log.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
+        logger.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
 
     @staticmethod
     def _get_response_content_safe(res: Response) -> str:

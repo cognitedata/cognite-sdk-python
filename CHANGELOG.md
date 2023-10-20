@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.34.0] - 2023-10-20
+### Fixed
+- `PropertyType`s no longer fail on instantiation, but warn on missing SDK support for the new property(-ies).
+
+### Added
+- `PropertyType`s `Float32`, `Float64`, `Int32`, `Int64` now support `unit`.
+
 ## [6.33.3] - 2023-10-18
 ### Added
 - `functions.create()` now accepts a `data_set_id` parameter. Note: This is not for the Cognite function, but for the zipfile containing
