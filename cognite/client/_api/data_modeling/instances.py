@@ -89,7 +89,7 @@ _DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
     }
 )
 
-_LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class _NodeOrEdgeList(CogniteResourceList):
@@ -470,7 +470,7 @@ class InstancesAPI(APIClient):
                 setattr(_poll_delay, "has_been_invoked", True)
             else:
                 delay = seconds
-            _LOGGER.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
+            logger.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
             time.sleep(delay)
 
         def _do_subscribe() -> None:
@@ -486,7 +486,7 @@ class InstancesAPI(APIClient):
                 try:
                     callback(result)
                 except Exception:
-                    _LOGGER.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
+                    logger.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
                     time.sleep(next(error_backoff))
                     continue
 
