@@ -215,7 +215,7 @@ class DatapointsArray(CogniteResource):
 
     @typing.no_type_check
     @classmethod
-    def load(
+    def load(  # type: ignore [no-untyped-def]
         cls,
         dps_dct: dict[str, int | str | bool | npt.NDArray],  # type: ignore [override]
         cognite_client: CogniteClient | None = None,
