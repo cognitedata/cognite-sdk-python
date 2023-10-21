@@ -379,7 +379,7 @@ class NonceCredentials:
         return basic_obj_dump(self, camel_case)
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> NonceCredentials:
+    def load(cls, data: dict[str, Any]) -> NonceCredentials:
         """Load data into the instance.
 
         Args:

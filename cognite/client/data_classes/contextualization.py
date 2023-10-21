@@ -595,6 +595,22 @@ class VisionExtractPredictions(VisionResource):
                     "personalProtectiveEquipmentPredictions", []
                 )
             ],
+            digital_gauge_predictions=[
+                ObjectDetection.load(digital_gauge_prediction)
+                for digital_gauge_prediction in resource.get("digitalGaugePredictions", [])
+            ],
+            dial_gauge_predictions=[
+                KeypointCollectionWithObjectDetection.load(dial_gauge_prediction)
+                for dial_gauge_prediction in resource.get("dialGaugePredictions", [])
+            ],
+            level_gauge_predictions=[
+                KeypointCollectionWithObjectDetection.load(level_gauge_prediction)
+                for level_gauge_prediction in resource.get("levelGaugePredictions", [])
+            ],
+            valve_predictions=[
+                KeypointCollectionWithObjectDetection.load(valve_prediction)
+                for valve_prediction in resource.get("valvePredictions", [])
+            ],
         )
 
 

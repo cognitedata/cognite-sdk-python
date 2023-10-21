@@ -312,6 +312,14 @@ class Transformation(CogniteResource):
 
         if isinstance(instance.destination_session, dict):
             instance.destination_session = SessionDetails.load(instance.destination_session)
+        if isinstance(instance.source_nonce, dict):
+            instance.source_nonce = NonceCredentials.load(instance.source_nonce)
+        if isinstance(instance.destination_nonce, dict):
+            instance.destination_nonce = NonceCredentials.load(instance.destination_nonce)
+        if isinstance(instance.source_oidc_credentials, dict):
+            instance.source_oidc_credentials = OidcCredentials.load(instance.source_oidc_credentials)
+        if isinstance(instance.destination_oidc_credentials, dict):
+            instance.destination_oidc_credentials = OidcCredentials.load(instance.destination_oidc_credentials)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
