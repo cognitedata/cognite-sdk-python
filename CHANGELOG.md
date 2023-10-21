@@ -17,6 +17,8 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.0.0] - 2023-10-24
+
 ## [6.34.0] - 2023-10-20
 ### Fixed
 - `PropertyType`s no longer fail on instantiation, but warn on missing SDK support for the new property(-ies).
