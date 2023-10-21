@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -89,10 +89,9 @@ class SourceFile(CogniteResource):
             output["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location:
             output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
-        for key in ["metadata", "labels", "asset_ids"]:
-            # Remove empty lists and dicts:
-            if not output[key]:
-                del output[key]
+        for key in ["metadata", "labels", "asset_ids", "assetIds"]:
+            # Remove empty lists and dicts:            if key in output and not output[key]:
+            del output[key]
         return output
 
 
@@ -212,6 +211,11 @@ class Highlight(CogniteResource):
             "name": self.name,
             "content": self.content,
         }
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(name=resource["name"], content=resource["content"])
 
 
 @dataclass

@@ -22,6 +22,12 @@ from cognite.client.data_classes import DataPointSubscriptionCreate, Relationshi
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.workflows import (
+    FunctionTaskOutput,
+    FunctionTaskParameters,
+    WorkflowTaskOutput,
+    WorkflowTaskParameters,
+)
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string
@@ -281,7 +287,7 @@ class FakeCogniteResourceGenerator:
                 # Special case for Geometry to avoid recursion.
                 value = None
             else:
-                value = self.create_value(type_hint_by_name[name])
+                value = self.create_value(type_hint_by_name[name], var_name=name)
 
             if parameter.kind in {parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL}:
                 positional_arguments.append(value)
@@ -330,7 +336,13 @@ class FakeCogniteResourceGenerator:
                 # Remove filters which are only used by data modeling classes
                 implementations.remove(filters.HasData)
                 implementations.remove(filters.Nested)
-            selected = self._random.choice(implementations)
+            if type_ is WorkflowTaskOutput:
+                # For Workflow Output has to match the input type
+                selected = FunctionTaskOutput
+            elif type_ is WorkflowTaskParameters:
+                selected = FunctionTaskParameters
+            else:
+                selected = self._random.choice(implementations)
             return self.create_instance(selected)
         elif isinstance(type_, enum.EnumMeta):
             return self._random.choice(list(type_))
