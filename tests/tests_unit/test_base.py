@@ -227,10 +227,7 @@ class TestCogniteResource:
 
         # Act
         dumped = instance.dump(camel_case=True)
-        try:
-            json_serialised = json.dumps(dumped)
-        except TypeError:
-            raise
+        json_serialised = json.dumps(dumped)
         json_deserialised = json.loads(json_serialised)
         loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client)
 
