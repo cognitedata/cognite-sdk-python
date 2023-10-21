@@ -23,7 +23,7 @@ Changes are grouped as follows
 ### Added
 - Support for `through` on node result set expressions.
 ### Fixed
-- `unit` on properties in data modeling. This was typed as a string, but it is in fact a direct relation.
+- `unit` on properties in data modelling. This was typed as a string, but it is in fact a direct relation.
 
 ## [6.34.2] - 2023-10-23
 ### Fixed
