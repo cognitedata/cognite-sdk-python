@@ -226,7 +226,7 @@ class FilterWithPropertyAndValue(FilterWithProperty, ABC):
         return {"property": self._dump_property(camel_case_property), "value": _dump_filter_value(self._value)}
 
 
-class FilterWithPropertyAndValueList(FilterWithProperty):
+class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
     _filter_name = "propertyAndValueListFilter"
 
     def __init__(self, property: PropertyReference, values: FilterValueList) -> None:

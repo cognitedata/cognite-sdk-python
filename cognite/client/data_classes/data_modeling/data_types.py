@@ -57,6 +57,9 @@ class PropertyType(ABC):
         data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
 
         if type_cls := _TYPE_LOOKUP.get(type_):
+            if type_cls is DirectRelation:
+                return DirectRelation.load(data)
+
             try:
                 return type_cls(**data)
             except TypeError:

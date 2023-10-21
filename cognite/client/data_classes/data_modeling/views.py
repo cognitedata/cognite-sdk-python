@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -45,7 +47,7 @@ class ViewCore(DataModelingResource):
         self.version = version
 
     @classmethod
-    def _load(cls, resource: dict | str) -> ViewCore:
+    def _load(cls, resource: dict | str) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "implements" in data:
             data["implements"] = [ViewId.load(v) for v in data["implements"]] or None
@@ -102,12 +104,12 @@ class ViewApply(ViewCore):
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict | str) -> ViewApply:
+    def _load(cls, resource: dict | str) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewPropertyApply.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(ViewApply, super()._load(data))
+        return super()._load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -171,12 +173,12 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict | str) -> View:
+    def _load(cls, resource: dict | str) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewProperty.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(View, super()._load(data))
+        return super()._load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
