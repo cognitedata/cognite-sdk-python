@@ -132,6 +132,14 @@ class KeypointCollection(VisionResource):
             confidence=resource.get("confidence"),
         )
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.attributes is not None:
+            dumped["attributes"] = {k: v.dump(camel_case=camel_case) for k, v in self.attributes.items()}
+        if self.keypoints is not None:
+            dumped["keypoints"] = {k: v.dump(camel_case=camel_case) for k, v in self.keypoints.items()}
+        return dumped
+
 
 @dataclass
 class KeypointCollectionWithObjectDetection(VisionResource):
@@ -151,3 +159,11 @@ class KeypointCollectionWithObjectDetection(VisionResource):
             object_detection=ObjectDetection.load(resource["objectDetection"], cognite_client),
             keypoint_collection=KeypointCollection.load(resource["keypointCollection"], cognite_client),
         )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.object_detection is not None:
+            dumped["objectDetection"] = self.object_detection.dump(camel_case=camel_case)
+        if self.keypoint_collection is not None:
+            dumped["keypointCollection"] = self.keypoint_collection.dump(camel_case=camel_case)
+        return dumped
