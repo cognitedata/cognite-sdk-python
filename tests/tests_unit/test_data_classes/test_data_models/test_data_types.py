@@ -19,12 +19,19 @@ class TestPropertyType:
         "data",
         [
             {"type": "text", "collation": "ucs_basic", "list": False},
-            {"type": "int32", "list": True},
+            {"type": "int32", "list": True, "unit": "temperature:deg_c"},
             {"type": "timeseries", "list": False},
         ],
     )
     def test_load_dump(self, data: dict) -> None:
         actual = PropertyType.load(data).dump(camel_case=True)
+
+        assert data == actual
+
+    def test_load_ignore_unknown_properties(self) -> None:
+        data = {"type": "float64", "list": True, "unit": "known", "super_unit": "unknown"}
+        actual = PropertyType.load(data).dump(camel_case=True)
+        data.pop("super_unit")
 
         assert data == actual
 

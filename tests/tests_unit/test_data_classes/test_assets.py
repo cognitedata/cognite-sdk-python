@@ -108,7 +108,9 @@ class TestAssetList:
         "resource_class, resource_list_class, method",
         [(FileMetadata, FileMetadataList, "files"), (Event, EventList, "events")],
     )
-    def test_get_related_resources_should_not_return_duplicates(self, resource_class, resource_list_class, method):
+    def test_get_related_resources_should_not_return_duplicates(
+        self, resource_class, resource_list_class, method, cognite_client
+    ):
         r1 = resource_class(id=1)
         r2 = resource_class(id=2)
         r3 = resource_class(id=3)
@@ -116,12 +118,11 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_cognite_client = mock.MagicMock()
-        mock_method = getattr(mock_cognite_client, method)
+        mock_method = getattr(cognite_client, method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
 
-        assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=mock_cognite_client)
+        assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=cognite_client)
         assets._retrieve_chunk_size = 1
 
         resources = getattr(assets, method)()
@@ -269,7 +270,7 @@ class TestAssetHierarchy:
     def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_id(self, n):
         assets = [Asset(name=c, external_id=c, parent_id=ord(c)) for c in string.ascii_letters[:n]]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
-        # Parent ID links are never considered orphans (offline validation impossible as ID cant be set):
+        # Parent ID links are never considered orphans (offline validation impossible as ID can't be set):
         assert len(hierarchy.orphans) == 0
         hierarchy.is_valid(on_error="raise")
 

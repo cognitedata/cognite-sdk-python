@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from contextlib import nullcontext as does_not_raise
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pytest
 from responses import RequestsMock
@@ -22,7 +22,7 @@ from tests.utils import jsgz_load
 
 
 @pytest.fixture
-def mock_post_response_body() -> Dict[str, Any]:
+def mock_post_response_body() -> dict[str, Any]:
     return {
         "status": JobStatus.QUEUED.value,
         "createdTime": 934875934785,
@@ -40,7 +40,7 @@ def mock_post_response_body() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def mock_get_response_body_ok() -> Dict[str, Any]:
+def mock_get_response_body_ok() -> dict[str, Any]:
     return {
         "status": JobStatus.COMPLETED.value,
         "createdTime": 934875934785,
@@ -72,7 +72,7 @@ def mock_get_response_body_ok() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def mock_post_extract(rsps: RequestsMock, mock_post_response_body: Dict[str, Any]) -> RequestsMock:
+def mock_post_extract(rsps: RequestsMock, mock_post_response_body: dict[str, Any]) -> RequestsMock:
     rsps.add(
         rsps.POST,
         re.compile(".*?/context/vision/extract"),
@@ -83,7 +83,7 @@ def mock_post_extract(rsps: RequestsMock, mock_post_response_body: Dict[str, Any
 
 
 @pytest.fixture
-def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: Dict[str, Any]) -> RequestsMock:
+def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]) -> RequestsMock:
     rsps.add(
         rsps.GET,
         re.compile(".*?/context/vision/extract/\\d+"),
@@ -94,7 +94,7 @@ def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: Dict[str, An
 
 
 @pytest.fixture
-def mock_get_extract_empty_predictions(rsps: RequestsMock, mock_get_response_body_ok: Dict[str, Any]) -> RequestsMock:
+def mock_get_extract_empty_predictions(rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]) -> RequestsMock:
     response_copy = deepcopy(mock_get_response_body_ok)
     response_copy["items"][0]["predictions"]["assetTagPredictions"] = []
     rsps.add(
@@ -145,7 +145,7 @@ class TestVisionExtract:
                 ),
                 None,
             ),
-            (list(VisionFeature.beta_features())[0], None, None),
+            (next(iter(VisionFeature.beta_features())), None, None),
         ],
         ids=[
             "invalid_feature",
@@ -161,9 +161,9 @@ class TestVisionExtract:
         self,
         mock_post_extract: RequestsMock,
         mock_get_extract: RequestsMock,
-        features: Union[VisionFeature, List[VisionFeature]],
-        parameters: Optional[FeatureParameters],
-        error_message: Optional[str],
+        features: VisionFeature | list[VisionFeature],
+        parameters: FeatureParameters | None,
+        error_message: str | None,
         cognite_client: CogniteClient,
     ) -> None:
         VAPI = cognite_client.vision
@@ -267,5 +267,4 @@ class TestVisionExtract:
         assert isinstance(retrieved_job, VisionExtractJob)
         assert retrieved_job.job_id == job.job_id
 
-        with pytest.raises(CogniteException, match="Extract job does not contain any predictions."):
-            retrieved_job.save_predictions()
+        assert retrieved_job.save_predictions() == []

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
-from typing import Any, cast
+import time
+from typing import Any, ClassVar, cast
 
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
     DataModel,
     DirectRelationReference,
@@ -32,7 +34,13 @@ from cognite.client.data_classes.data_modeling import (
     filters,
     query,
 )
-from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
+from cognite.client.data_classes.data_modeling.query import (
+    NodeResultSetExpression,
+    Query,
+    QueryResult,
+    Select,
+    SourceSelector,
+)
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -296,9 +304,14 @@ class TestInstancesAPI:
         assert cognite_client.data_modeling.instances.retrieve(("myNonExistingSpace", "myImaginaryNode")).nodes == []
 
     def test_iterate_over_instances(self, cognite_client: CogniteClient) -> None:
-        for nodes in cognite_client.data_modeling.instances(chunk_size=2, limit=-1):
-            assert isinstance(nodes, NodeList)
-            assert len(nodes) <= 2
+        iterator = cognite_client.data_modeling.instances(chunk_size=2)
+        first_iter = next(iterator)
+        assert isinstance(first_iter, NodeList)
+        assert len(first_iter) <= 2
+
+        second_iter = next(iterator)
+        assert isinstance(second_iter, NodeList)
+        assert len(second_iter) <= 2
 
     def test_apply_invalid_node_data(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
@@ -437,7 +450,7 @@ class TestInstancesAPI:
     def test_aggregate_count_persons(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
         view_id = person_view.as_id()
-        count_agg = aggregations.Count("externalId")
+        count_agg = aggregations.Count("name")
 
         # Act
         counts = cognite_client.data_modeling.instances.aggregate(
@@ -467,7 +480,8 @@ class TestInstancesAPI:
 
         # Assert
         assert error.value.code == 400
-        assert "View not found" in error.value.message
+        assert "One or more views do not exist: " in error.value.message
+        assert view_id.as_source_identifier() in error.value.message
 
     def test_dump_json_serialize_load_node(self, movie_nodes: NodeList) -> None:
         # Arrange
@@ -533,27 +547,27 @@ class TestInstancesAPI:
         result = cognite_client.data_modeling.instances.query(my_query)
 
         # Assert
-        assert len(result["movies"]) > 0, "Add at least one movie withe release year before 2000"
+        assert len(result["movies"]) > 0, "Add at least one movie with release year before 2000"
         assert all(
             cast(int, movie.properties.get(movie_id, {}).get("releaseYear")) < 2000 for movie in result["movies"]
         )
         assert result["movies"] == sorted(result["movies"], key=lambda x: x.properties.get(movie_id, {}).get("title"))
-        assert len(result["actors"]) > 0, "Add at leas one actor that acted in the movies released before 2000"
+        assert len(result["actors"]) > 0, "Add at least one actor that acted in the movies released before 2000"
         assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
         assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
 
+
+class TestInstancesSync:
     def test_sync_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:
-        # Arrange
         movie_id = movie_view.as_id()
-        q = query
-        f = filters
-        movies_released_1994 = q.NodeResultSetExpression(filter=f.Equals(movie_id.as_property_ref("releaseYear"), 1994))
-        my_query = q.Query(
+        movies_released_1994 = NodeResultSetExpression(
+            filter=filters.Equals(movie_id.as_property_ref("releaseYear"), 1994)
+        )
+        my_query = Query(
             with_={"movies": movies_released_1994},
-            select={"movies": q.Select([q.SourceSelector(movie_id, ["title", "releaseYear"])])},
+            select={"movies": Select([SourceSelector(movie_id, ["title", "releaseYear"])])},
         )
 
-        # Act
         result = cognite_client.data_modeling.instances.sync(my_query)
         assert len(result["movies"]) > 0, "Add at least one movie released in 1994"
 
@@ -582,3 +596,76 @@ class TestInstancesAPI:
             assert new_result["movies"][0].external_id == new_1994_movie.external_id
         finally:
             cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
+
+    def test_subscribe_to_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:
+        # Arrange
+        movie_id = movie_view.as_id()
+        movies_released_1994 = NodeResultSetExpression(
+            filter=filters.Equals(movie_id.as_property_ref("releaseYear"), 1994)
+        )
+        my_query = Query(
+            with_={"movies": movies_released_1994},
+            select={"movies": Select([SourceSelector(movie_id, [".*"])])},
+        )
+
+        class State:
+            invocation_count: ClassVar[int] = 0
+
+        def callback(result: QueryResult) -> None:
+            State.invocation_count += 1
+
+        new_1994_movie = NodeApply(
+            space=movie_view.space,
+            external_id="movie:forrest_gump",
+            sources=[
+                NodeOrEdgeData(
+                    source=movie_id,
+                    properties={
+                        "title": "Forrest Gump",
+                        "releaseYear": 1994,
+                        "runTimeMinutes": 142,
+                    },
+                )
+            ],
+        )
+
+        updated_1994_movie = NodeApply(
+            space=movie_view.space,
+            external_id="movie:forrest_gump",
+            sources=[
+                NodeOrEdgeData(
+                    source=movie_id,
+                    properties={
+                        "runTimeMinutes": 200,
+                    },
+                )
+            ],
+        )
+
+        def wait_for_invocation_count_to_have_value(value: int) -> None:
+            max_wait_seconds = 5
+            start_time = time.time()
+            while State.invocation_count != value and (abs(time.time() - start_time) > max_wait_seconds):
+                time.sleep(0.1)
+
+        context = cognite_client.data_modeling.instances.subscribe(my_query, callback, poll_delay_seconds=2)
+
+        try:
+            cognite_client.data_modeling.instances.apply(nodes=new_1994_movie)
+            wait_for_invocation_count_to_have_value(1)
+
+            cognite_client.data_modeling.instances.apply(nodes=updated_1994_movie)
+            wait_for_invocation_count_to_have_value(2)
+        finally:
+            cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
+
+        assert context.is_alive()
+        context.cancel()
+        # May take some time for the thread to actually die, so we check in a loop for a little while
+        for i in range(10):
+            if context.is_alive():
+                time.sleep(1)
+            else:
+                return
+        else:
+            assert not context.is_alive()

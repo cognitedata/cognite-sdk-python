@@ -18,6 +18,7 @@ from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api.diagrams import DiagramsAPI
+from cognite.client._api.documents import DocumentPreviewAPI, DocumentsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import (
@@ -56,7 +57,10 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
+from cognite.client._api.units import UnitAPI, UnitSystemAPI
+from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
+from cognite.client._api.workflows import WorkflowAPI, WorkflowExecutionAPI, WorkflowTaskAPI, WorkflowVersionAPI
 
 
 class CogniteClientMock(MagicMock):
@@ -90,6 +94,8 @@ class CogniteClientMock(MagicMock):
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
 
         self.diagrams = MagicMock(spec_set=DiagramsAPI)
+        self.documents = MagicMock(spec=DocumentsAPI)
+        self.documents.previews = MagicMock(spec_set=DocumentPreviewAPI)
         self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
         self.events = MagicMock(spec_set=EventsAPI)
 
@@ -109,6 +115,7 @@ class CogniteClientMock(MagicMock):
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
+        self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
@@ -147,6 +154,14 @@ class CogniteClientMock(MagicMock):
         self.transformations.schema = MagicMock(spec_set=TransformationSchemaAPI)
 
         self.vision = MagicMock(spec_set=VisionAPI)
+
+        self.workflows = MagicMock(spec=WorkflowAPI)
+        self.workflows.versions = MagicMock(spec_set=WorkflowVersionAPI)
+        self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
+        self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
+
+        self.units = MagicMock(spec=UnitAPI)
+        self.units.systems = MagicMock(spec_set=UnitSystemAPI)
 
 
 @contextmanager
@@ -200,6 +215,6 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>         assert "Something went wrong" == e.message
     """
     cognite_client_mock = CogniteClientMock()
-    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[assignment]
+    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
     yield cognite_client_mock
-    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[assignment]
+    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]

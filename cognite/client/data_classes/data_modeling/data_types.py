@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import inspect
+import logging
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import ClassVar, Optional
+from typing import Any, ClassVar
 
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+
+logger = logging.getLogger(__name__)
 
 _PROPERTY_ALIAS = {"list": "isList"}
 _PROPERTY_ALIAS_INV = {"isList": "list", "is_list": "list"}
@@ -35,10 +39,11 @@ class DirectRelationReference:
         return self.space, self.external_id
 
 
+@dataclass
 class PropertyType(ABC):
     _type: ClassVar[str]
 
-    def dump(self, camel_case: bool = False) -> dict:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self._type
         output = rename_and_exclude_keys(output, aliases=_PROPERTY_ALIAS_INV)
@@ -51,32 +56,16 @@ class PropertyType(ABC):
         type_ = data["type"]
         data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
 
-        if type_ == "text":
-            return Text(**data)
-        elif type_ == "boolean":
-            return Boolean(**data)
-        elif type_ == "float32":
-            return Float32(**data)
-        elif type_ == "float64":
-            return Float64(**data)
-        elif type_ == "int32":
-            return Int32(**data)
-        elif type_ == "int64":
-            return Int64(**data)
-        elif type_ == "timestamp":
-            return Timestamp(**data)
-        elif type_ == "date":
-            return Date(**data)
-        elif type_ == "json":
-            return Json(**data)
-        elif type_ == "timeseries":
-            return TimeSeriesReference(**data)
-        elif type_ == "file":
-            return FileReference(**data)
-        elif type_ == "sequence":
-            return SequenceReference(**data)
-        elif type_ == "direct":
-            return DirectRelation.load(data)
+        if type_cls := _TYPE_LOOKUP.get(type_):
+            try:
+                return type_cls(**data)
+            except TypeError:
+                not_supported = set(data).difference(inspect.signature(type_cls).parameters) - {"type"}
+                logger.warning(
+                    f"For '{type_cls.__name__}', the following properties are not yet supported in the SDK (ignored): "
+                    f"{not_supported}. Try updating to the latest SDK version!"
+                )
+                return type_cls(**{k: v for k, v in data.items() if k not in not_supported})
 
         raise ValueError(f"Invalid type {type_}.")
 
@@ -104,26 +93,6 @@ class Boolean(ListablePropertyType):
 
 
 @dataclass
-class Float32(ListablePropertyType):
-    _type = "float32"
-
-
-@dataclass
-class Float64(ListablePropertyType):
-    _type = "float64"
-
-
-@dataclass
-class Int32(ListablePropertyType):
-    _type = "int32"
-
-
-@dataclass
-class Int64(ListablePropertyType):
-    _type = "int64"
-
-
-@dataclass
 class Timestamp(ListablePropertyType):
     _type = "timestamp"
 
@@ -136,6 +105,32 @@ class Date(ListablePropertyType):
 @dataclass
 class Json(ListablePropertyType):
     _type = "json"
+
+
+@dataclass
+class ListablePropertyTypeWithUnit(ListablePropertyType):
+    _type = "listable_with_unit"
+    unit: str | None = None
+
+
+@dataclass
+class Float32(ListablePropertyTypeWithUnit):
+    _type = "float32"
+
+
+@dataclass
+class Float64(ListablePropertyTypeWithUnit):
+    _type = "float64"
+
+
+@dataclass
+class Int32(ListablePropertyTypeWithUnit):
+    _type = "int32"
+
+
+@dataclass
+class Int64(ListablePropertyTypeWithUnit):
+    _type = "int64"
 
 
 @dataclass
@@ -161,7 +156,7 @@ class SequenceReference(CDFExternalIdReference):
 @dataclass
 class DirectRelation(PropertyType):
     _type = "direct"
-    container: Optional[ContainerId] = None
+    container: ContainerId | None = None
 
     def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)
@@ -172,3 +167,20 @@ class DirectRelation(PropertyType):
     @classmethod
     def load(cls, data: dict) -> DirectRelation:
         return cls(container=ContainerId.load(container) if (container := data.get("container")) else None)
+
+
+_TYPE_LOOKUP = {
+    "text": Text,
+    "boolean": Boolean,
+    "float32": Float32,
+    "float64": Float64,
+    "int32": Int32,
+    "int64": Int64,
+    "timestamp": Timestamp,
+    "date": Date,
+    "json": Json,
+    "timeseries": TimeSeriesReference,
+    "file": FileReference,
+    "sequence": SequenceReference,
+    "direct": DirectRelation,
+}

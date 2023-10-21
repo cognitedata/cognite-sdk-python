@@ -13,23 +13,17 @@ from typing import (
     Any,
     Callable,
     Collection,
-    Dict,
-    Generator,
     Iterator,
-    List,
     Literal,
-    Optional,
     Sequence,
-    Tuple,
-    Union,
     cast,
     overload,
 )
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import find_duplicates, local_import
+from cognite.client.utils._auxiliary import find_duplicates, no_op
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dataframes_with_nullable_int_cols,
     notebook_display_with_fallback,
@@ -40,6 +34,7 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
+from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 Aggregate = Literal[
     "average",
@@ -89,9 +84,9 @@ class LatestDatapointQuery:
         before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
     """
 
-    id: Optional[int] = None
-    external_id: Optional[str] = None
-    before: Union[None, int, str, datetime] = None
+    id: int | None = None
+    external_id: str | None = None
+    before: None | int | str | datetime = None
 
     def __post_init__(self) -> None:
         # Ensure user have just specified one of id/xid:
@@ -102,35 +97,35 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Union[str, float]): The data value. Can be string or numeric
-        average (float): The integral average value in the aggregate period
-        max (float): The maximum value in the aggregate period
-        min (float): The minimum value in the aggregate period
-        count (int): The number of datapoints in the aggregate period
-        sum (float): The sum of the datapoints in the aggregate period
-        interpolation (float): The interpolated value of the series in the beginning of the aggregate
-        step_interpolation (float): The last value before or at the beginning of the aggregate.
-        continuous_variance (float): The variance of the interpolated underlying function.
-        discrete_variance (float): The variance of the datapoint values.
-        total_variation (float): The total variation of the interpolated underlying function.
+        timestamp (int | None): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (str | float | None): The data value. Can be string or numeric
+        average (float | None): The integral average value in the aggregate period
+        max (float | None): The maximum value in the aggregate period
+        min (float | None): The minimum value in the aggregate period
+        count (int | None): The number of datapoints in the aggregate period
+        sum (float | None): The sum of the datapoints in the aggregate period
+        interpolation (float | None): The interpolated value of the series in the beginning of the aggregate
+        step_interpolation (float | None): The last value before or at the beginning of the aggregate.
+        continuous_variance (float | None): The variance of the interpolated underlying function.
+        discrete_variance (float | None): The variance of the datapoint values.
+        total_variation (float | None): The total variation of the interpolated underlying function.
     """
 
     def __init__(
         self,
-        timestamp: Optional[int] = None,
-        value: Optional[Union[str, float]] = None,
-        average: Optional[float] = None,
-        max: Optional[float] = None,
-        min: Optional[float] = None,
-        count: Optional[int] = None,
-        sum: Optional[float] = None,
-        interpolation: Optional[float] = None,
-        step_interpolation: Optional[float] = None,
-        continuous_variance: Optional[float] = None,
-        discrete_variance: Optional[float] = None,
-        total_variation: Optional[float] = None,
-    ):
+        timestamp: int | None = None,
+        value: str | float | None = None,
+        average: float | None = None,
+        max: float | None = None,
+        min: float | None = None,
+        count: int | None = None,
+        sum: float | None = None,
+        interpolation: float | None = None,
+        step_interpolation: float | None = None,
+        continuous_variance: float | None = None,
+        discrete_variance: float | None = None,
+        total_variation: float | None = None,
+    ) -> None:
         self.timestamp = timestamp
         self.value = value
         self.average = average
@@ -151,7 +146,7 @@ class Datapoint(CogniteResource):
             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
-            pandas.DataFrame
+            pandas.DataFrame: pandas.DataFrame
         """
         pd = cast(Any, local_import("pandas"))
 
@@ -166,30 +161,32 @@ class DatapointsArray(CogniteResource):
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-        is_string: Optional[bool] = None,
-        is_step: Optional[bool] = None,
-        unit: Optional[str] = None,
-        granularity: Optional[str] = None,
-        timestamp: Optional[NumpyDatetime64NSArray] = None,
-        value: Optional[Union[NumpyFloat64Array, NumpyObjArray]] = None,
-        average: Optional[NumpyFloat64Array] = None,
-        max: Optional[NumpyFloat64Array] = None,
-        min: Optional[NumpyFloat64Array] = None,
-        count: Optional[NumpyInt64Array] = None,
-        sum: Optional[NumpyFloat64Array] = None,
-        interpolation: Optional[NumpyFloat64Array] = None,
-        step_interpolation: Optional[NumpyFloat64Array] = None,
-        continuous_variance: Optional[NumpyFloat64Array] = None,
-        discrete_variance: Optional[NumpyFloat64Array] = None,
-        total_variation: Optional[NumpyFloat64Array] = None,
-    ):
+        id: int | None = None,
+        external_id: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        granularity: str | None = None,
+        timestamp: NumpyDatetime64NSArray | None = None,
+        value: NumpyFloat64Array | NumpyObjArray | None = None,
+        average: NumpyFloat64Array | None = None,
+        max: NumpyFloat64Array | None = None,
+        min: NumpyFloat64Array | None = None,
+        count: NumpyInt64Array | None = None,
+        sum: NumpyFloat64Array | None = None,
+        interpolation: NumpyFloat64Array | None = None,
+        step_interpolation: NumpyFloat64Array | None = None,
+        continuous_variance: NumpyFloat64Array | None = None,
+        discrete_variance: NumpyFloat64Array | None = None,
+        total_variation: NumpyFloat64Array | None = None,
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.granularity = granularity
         self.timestamp = timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
         self.value = value
@@ -205,45 +202,54 @@ class DatapointsArray(CogniteResource):
         self.total_variation = total_variation
 
     @property
-    def _ts_info(self) -> Dict[str, Any]:
+    def _ts_info(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "external_id": self.external_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
         }
 
     @classmethod
-    def load(cls, dps_dct: Union[Dict, str], cognite_client: CogniteClient | None = None) -> DatapointsArray:
-        dps_dct = json.loads(dps_dct) if isinstance(dps_dct, str) else dps_dct
-        if "timestamp" in dps_dct:
-            assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
-            # Since pandas always uses nanoseconds for datetime, we stick with the same
-            # (also future-proofs the SDK; ns is coming!):
-            dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
-            return cls(**convert_all_keys_to_snake_case(dps_dct))
-
-        array_by_attr = {}
-        if "datapoints" in dps_dct:
-            datapoints_by_attr = defaultdict(list)
-            for row in dps_dct["datapoints"]:
-                for attr, value in row.items():
-                    datapoints_by_attr[attr].append(value)
-            for attr, values in datapoints_by_attr.items():
-                array_by_attr[attr] = np.array(values)
-                if attr == "timestamp":
-                    dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
-        return cls(
-            id=dps_dct.get("id"),
-            external_id=dps_dct.get("externalId"),
-            is_step=dps_dct.get("isStep"),
-            is_string=dps_dct.get("isString"),
-            unit=dps_dct.get("unit"),
-            granularity=dps_dct.get("granularity"),
-            **convert_all_keys_to_snake_case(array_by_attr),
-        )
+    def load(  # type: ignore [override]
+        cls,
+        dps_dct: dict[str, int | str | bool | npt.NDArray],
+    ) -> DatapointsArray:
+        assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
+        # Since pandas always uses nanoseconds for datetime, we stick with the same
+        # (also future-proofs the SDK; ns is coming!):
+        dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
+        return cls(**convert_all_keys_to_snake_case(dps_dct))
+    # dps_dct = json.loads(dps_dct) if isinstance(dps_dct, str) else dps_dct
+    # if "timestamp" in dps_dct:
+    #     assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
+    #     # Since pandas always uses nanoseconds for datetime, we stick with the same
+    #     # (also future-proofs the SDK; ns is coming!):
+    #     dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
+    #     return cls(**convert_all_keys_to_snake_case(dps_dct))
+    #
+    # array_by_attr = {}
+    # if "datapoints" in dps_dct:
+    #     datapoints_by_attr = defaultdict(list)
+    #     for row in dps_dct["datapoints"]:
+    #         for attr, value in row.items():
+    #             datapoints_by_attr[attr].append(value)
+    #     for attr, values in datapoints_by_attr.items():
+    #         array_by_attr[attr] = np.array(values)
+    #         if attr == "timestamp":
+    #             dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
+    # return cls(
+    #     id=dps_dct.get("id"),
+    #     external_id=dps_dct.get("externalId"),
+    #     is_step=dps_dct.get("isStep"),
+    #     is_string=dps_dct.get("isString"),
+    #     unit=dps_dct.get("unit"),
+    #     granularity=dps_dct.get("granularity"),
+    #     **convert_all_keys_to_snake_case(array_by_attr),
+    # )
 
     @classmethod
     def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
@@ -282,7 +288,7 @@ class DatapointsArray(CogniteResource):
     def __getitem__(self, item: slice) -> DatapointsArray:
         ...
 
-    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, DatapointsArray]:
+    def __getitem__(self, item: int | slice) -> Datapoint | DatapointsArray:
         if isinstance(item, slice):
             return self._slice(item)
         attrs, arrays = self._data_fields()
@@ -292,13 +298,21 @@ class DatapointsArray(CogniteResource):
         )
 
     def _slice(self, part: slice) -> DatapointsArray:
-        data: Dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
+        data: dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
         return DatapointsArray(**self._ts_info, **data)
 
     def __iter__(self) -> Iterator[Datapoint]:
+        """Iterate over datapoints
+
+        Warning:
+            For efficient storage, datapoints are not stored as a sequence of (singular) Datapoint
+            objects, so these are created on demand while iterating (slow).
+
+        Returns:
+            Iterator[Datapoint]: No description."""
         # Let's not create a single Datapoint more than we have too:
         attrs, arrays = self._data_fields()
-        yield from (
+        return (
             Datapoint(
                 timestamp=self._dtype_fix(row[0]) // 1_000_000, **dict(zip(attrs[1:], map(self._dtype_fix, row[1:])))
             )
@@ -309,11 +323,11 @@ class DatapointsArray(CogniteResource):
     def _dtype_fix(self) -> Callable:
         if self.is_string:
             # Return no-op as array contains just references to vanilla python objects:
-            return lambda s: s
+            return no_op
         # Using .item() on numpy scalars gives us vanilla python types:
         return op.methodcaller("item")
 
-    def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
+    def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         data_field_tuples = [
             (attr, arr)
             for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first!
@@ -322,7 +336,7 @@ class DatapointsArray(CogniteResource):
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays  # type: ignore [return-value]
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> dict[str, Any]:
         """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
@@ -330,7 +344,7 @@ class DatapointsArray(CogniteResource):
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
-            Dict[str, Any]: A dictionary representing the instance.
+            dict[str, Any]: A dictionary representing the instance.
         """
         attrs, arrays = self._data_fields()
         if not convert_timestamps:  # Eh.. so.. we still have to convert...
@@ -357,7 +371,7 @@ class DatapointsArray(CogniteResource):
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
 
@@ -405,53 +419,57 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int): Id of the timeseries the datapoints belong to
-        external_id (str): External id of the timeseries the datapoints belong to
-        is_string (bool): Whether the time series is string valued or not.
-        is_step (bool): Whether the time series is a step series or not.
-        unit (str): The physical unit of the time series.
-        granularity (str): The granularity of the aggregate datapoints (does not apply to raw data)
-        timestamp (List[int]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Union[List[str], List[float]]): The data values. Can be string or numeric
-        average (List[float]): The integral average values in the aggregate period
-        max (List[float]): The maximum values in the aggregate period
-        min (List[float]): The minimum values in the aggregate period
-        count (List[int]): The number of datapoints in the aggregate periods
-        sum (List[float]): The sum of the datapoints in the aggregate periods
-        interpolation (List[float]): The interpolated values of the series in the beginning of the aggregates
-        step_interpolation (List[float]): The last values before or at the beginning of the aggregates.
-        continuous_variance (List[float]): The variance of the interpolated underlying function.
-        discrete_variance (List[float]): The variance of the datapoint values.
-        total_variation (List[float]): The total variation of the interpolated underlying function.
+        id (int | None): Id of the timeseries the datapoints belong to
+        external_id (str | None): External id of the timeseries the datapoints belong to
+        is_string (bool | None): Whether the time series is string valued or not.
+        is_step (bool | None): Whether the time series is a step series or not.
+        unit (str | None): The physical unit of the time series (free-text field).
+        unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
+        granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
+        timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (Sequence[str] | Sequence[float] | None): The data values. Can be string or numeric
+        average (list[float] | None): The integral average values in the aggregate period
+        max (list[float] | None): The maximum values in the aggregate period
+        min (list[float] | None): The minimum values in the aggregate period
+        count (list[int] | None): The number of datapoints in the aggregate periods
+        sum (list[float] | None): The sum of the datapoints in the aggregate periods
+        interpolation (list[float] | None): The interpolated values of the series in the beginning of the aggregates
+        step_interpolation (list[float] | None): The last values before or at the beginning of the aggregates.
+        continuous_variance (list[float] | None): The variance of the interpolated underlying function.
+        discrete_variance (list[float] | None): The variance of the datapoint values.
+        total_variation (list[float] | None): The total variation of the interpolated underlying function.
+        error (list[None | str] | None): No description.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-        is_string: Optional[bool] = None,
-        is_step: Optional[bool] = None,
-        unit: Optional[str] = None,
-        granularity: Optional[str] = None,
-        timestamp: Optional[Sequence[int]] = None,
-        value: Optional[Union[Sequence[str], Sequence[float]]] = None,
-        average: Optional[List[float]] = None,
-        max: Optional[List[float]] = None,
-        min: Optional[List[float]] = None,
-        count: Optional[List[int]] = None,
-        sum: Optional[List[float]] = None,
-        interpolation: Optional[List[float]] = None,
-        step_interpolation: Optional[List[float]] = None,
-        continuous_variance: Optional[List[float]] = None,
-        discrete_variance: Optional[List[float]] = None,
-        total_variation: Optional[List[float]] = None,
-        error: Optional[List[Union[None, str]]] = None,
-    ):
+        id: int | None = None,
+        external_id: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        granularity: str | None = None,
+        timestamp: Sequence[int] | None = None,
+        value: Sequence[str] | Sequence[float] | None = None,
+        average: list[float] | None = None,
+        max: list[float] | None = None,
+        min: list[float] | None = None,
+        count: list[int] | None = None,
+        sum: list[float] | None = None,
+        interpolation: list[float] | None = None,
+        step_interpolation: list[float] | None = None,
+        continuous_variance: list[float] | None = None,
+        discrete_variance: list[float] | None = None,
+        total_variation: list[float] | None = None,
+        error: list[None | str] | None = None,
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.granularity = granularity
         self.timestamp = timestamp or []  # Needed in __len__
         self.value = value
@@ -467,11 +485,11 @@ class Datapoints(CogniteResource):
         self.total_variation = total_variation
         self.error = error
 
-        self.__datapoint_objects: Optional[List[Datapoint]] = None
+        self.__datapoint_objects: list[Datapoint] | None = None
 
     def __str__(self) -> str:
         item = self.dump()
-        item["datapoints"] = utils._time.convert_time_attributes_to_datetime(item["datapoints"])
+        item["datapoints"] = convert_time_attributes_to_datetime(item["datapoints"])
         return json.dumps(item, indent=4)
 
     def __len__(self) -> int:
@@ -479,7 +497,7 @@ class Datapoints(CogniteResource):
 
     def __eq__(self, other: Any) -> bool:
         return (
-            type(self) == type(other)
+            type(self) is type(other)
             and self.id == other.id
             and self.external_id == other.external_id
             and list(self._get_non_empty_data_fields()) == list(other._get_non_empty_data_fields())
@@ -493,7 +511,7 @@ class Datapoints(CogniteResource):
     def __getitem__(self, item: slice) -> Datapoints:
         ...
 
-    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, Datapoints]:
+    def __getitem__(self, item: int | slice) -> Datapoint | Datapoints:
         if isinstance(item, slice):
             return self._slice(item)
         dp_args = {}
@@ -501,17 +519,17 @@ class Datapoints(CogniteResource):
             dp_args[attr] = values[item]
         return Datapoint(**dp_args)
 
-    def __iter__(self) -> Generator[Datapoint, None, None]:
+    def __iter__(self) -> Iterator[Datapoint]:
         yield from self.__get_datapoint_objects()
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the datapoints into a json serializable Python data type.
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Defaults to False.
 
         Returns:
-            Dict[str, Any]: A dictionary representing the instance.
+            dict[str, Any]: A dictionary representing the instance.
         """
         dumped = {
             "id": self.id,
@@ -519,6 +537,7 @@ class Datapoints(CogniteResource):
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
@@ -588,9 +607,9 @@ class Datapoints(CogniteResource):
     @classmethod
     def load(  # type: ignore [override]
         cls,
-        dps_object: Dict[str, Any],
-        expected_fields: Optional[List[str]] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        dps_object: dict[str, Any],
+        expected_fields: list[str] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
@@ -599,6 +618,7 @@ class Datapoints(CogniteResource):
             is_string=dps_object["isString"],
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
+            unit_external_id=dps_object.get("unitExternalId"),
         )
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
@@ -619,6 +639,7 @@ class Datapoints(CogniteResource):
             self.is_string = other_dps.is_string
             self.is_step = other_dps.is_step
             self.unit = other_dps.unit
+            self.unit_external_id = other_dps.unit_external_id
 
         for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
             value = getattr(self, attr)
@@ -629,9 +650,9 @@ class Datapoints(CogniteResource):
 
     def _get_non_empty_data_fields(
         self, get_empty_lists: bool = False, get_error: bool = True
-    ) -> List[Tuple[str, Any]]:
+    ) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
-        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "granularity"}
+        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "unit_external_id", "granularity"}
         for attr, value in self.__dict__.copy().items():
             if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
                 if value is not None or attr == "timestamp":
@@ -639,7 +660,7 @@ class Datapoints(CogniteResource):
                         non_empty_data_fields.append((attr, value))
         return non_empty_data_fields
 
-    def __get_datapoint_objects(self) -> List[Datapoint]:
+    def __get_datapoint_objects(self) -> list[Datapoint]:
         if self.__datapoint_objects is not None:
             return self.__datapoint_objects
         fields = self._get_non_empty_data_fields(get_error=False)
@@ -666,7 +687,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -696,7 +717,6 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self.data.clear()
 
         # This implementation takes advantage of the ordering of the duplicated in the __init__ method
-
         has_external_ids = set()
         for ext_id, items in self._external_id_to_item.items():
             if not isinstance(items, list):
@@ -726,22 +746,22 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 
     def get(  # type: ignore [override]
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-    ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
-        """Get a specific DatapointsArray from this list by id or exernal_id.
+        id: int | None = None,
+        external_id: str | None = None,
+    ) -> DatapointsArray | list[DatapointsArray] | None:
+        """Get a specific DatapointsArray from this list by id or external_id.
 
         Note: For duplicated time series, returns a list of DatapointsArray.
 
         Args:
-            id (int): The id of the item(s) to get.
-            external_id (str): The external_id of the item(s) to get.
+            id (int | None): The id of the item(s) to get.
+            external_id (str | None): The external_id of the item(s) to get.
 
         Returns:
-            Union[None, DatapointsArray, List[DatapointsArray]]: The requested item(s)
+            DatapointsArray | list[DatapointsArray] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)  # type: ignore [return-value]
+        return super().get(id, external_id)
 
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
@@ -755,7 +775,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
 
@@ -769,7 +789,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 
         return concat_dataframes_with_nullable_int_cols(dfs)
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> List[Dict[str, Any]]:
+    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -777,7 +797,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
-            List[Dict[str, Any]]: A list of dicts representing the instance.
+            list[dict[str, Any]]: A list of dicts representing the instance.
         """
         return [dps.dump(camel_case, convert_timestamps) for dps in self]
 
@@ -785,7 +805,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 class DatapointsList(CogniteResourceList[Datapoints]):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -805,27 +825,27 @@ class DatapointsList(CogniteResourceList[Datapoints]):
 
     def get(  # type: ignore [override]
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-    ) -> Union[None, Datapoints, List[Datapoints]]:
-        """Get a specific Datapoints from this list by id or exernal_id.
+        id: int | None = None,
+        external_id: str | None = None,
+    ) -> Datapoints | list[Datapoints] | None:
+        """Get a specific Datapoints from this list by id or external_id.
 
         Note: For duplicated time series, returns a list of Datapoints.
 
         Args:
-            id (int): The id of the item(s) to get.
-            external_id (str): The external_id of the item(s) to get.
+            id (int | None): The id of the item(s) to get.
+            external_id (str | None): The external_id of the item(s) to get.
 
         Returns:
-            Union[None, Datapoints, List[Datapoints]]: The requested item(s)
+            Datapoints | list[Datapoints] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)  # type: ignore [return-value]
+        return super().get(id, external_id)
 
     def __str__(self) -> str:
         item = self.dump()
         for i in item:
-            i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
+            i["datapoints"] = convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(  # type: ignore [override]
@@ -837,7 +857,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
 

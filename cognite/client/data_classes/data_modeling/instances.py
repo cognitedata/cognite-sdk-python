@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import threading
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,25 +18,22 @@ from typing import (
     Literal,
     Mapping,
     MutableMapping,
-    Optional,
     Tuple,
-    Type,
     TypeVar,
     Union,
     ValuesView,
     cast,
     overload,
 )
-
 from typing_extensions import TypeAlias
-
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
+from cognite.client.data_classes._base import CogniteResourceList
+from cognite.client.data_classes.aggregations import AggregatedNumberedValue
+from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -50,9 +49,20 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
-
-PropertyValue: TypeAlias = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
+PropertyValue: TypeAlias = Union[
+    str,
+    int,
+    float,
+    bool,
+    dict,
+    List[str],
+    List[int],
+    List[float],
+    List[bool],
+    List[dict],
+    NodeId,
+    DirectRelationReference,
+]
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
 
@@ -88,7 +98,16 @@ class NodeOrEdgeData:
         )
 
     def dump(self, camel_case: bool = False) -> dict:
-        output: Dict[str, Any] = {"properties": dict(self.properties.items())}
+        properties: dict[str, PropertyValue] = {}
+        for key, value in self.properties.items():
+            if isinstance(value, NodeId):
+                # We don't want to dump the instance_type field when serializing NodeId in this context
+                properties[key] = value.dump(camel_case, include_instance_type=False)
+            elif isinstance(value, DirectRelationReference):
+                properties[key] = value.dump(camel_case)
+            else:
+                properties[key] = value
+        output: dict[str, Any] = {"properties": properties}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
                 output["source"] = self.source.dump(camel_case)
@@ -102,12 +121,12 @@ class NodeOrEdgeData:
 class InstanceCore(DataModelingResource):
     """A node or edge
     Args:
-        instance_type (Literal["node", "edge"]) The type of instance.
-        space (str): The workspace for the instance.a unique identifier for the space.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
+        instance_type (Literal["node", "edge"]): No description.
     """
 
-    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node"):
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node") -> None:
         self.instance_type = instance_type
         self.space = space
         self.external_id = external_id
@@ -117,17 +136,11 @@ class InstanceApply(InstanceCore):
     """A node or edge. This is the write version of the instance.
 
     Args:
-        space (str): The workspace for the instance.a unique identifier for the space.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]) The type of instance.
-        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                If no existingVersion is specified, the ingestion will always overwrite any
-                                existing data for the edge (for the specified container or instance). If existingVersion is
-                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the instance and/or
-                        container the container(s) making up this node.
+        instance_type (Literal["node", "edge"]): No description.
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -135,9 +148,9 @@ class InstanceApply(InstanceCore):
         space: str,
         external_id: str,
         instance_type: Literal["node", "edge"] = "node",
-        existing_version: Optional[int] = None,
-        sources: Optional[list[NodeOrEdgeData]] = None,
-    ):
+        existing_version: int | None = None,
+        sources: list[NodeOrEdgeData] | None = None,
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
@@ -150,7 +163,7 @@ class InstanceApply(InstanceCore):
         return output
 
     @classmethod
-    def _load(cls: Type[T_Instance_Apply], data: dict | str) -> T_Instance_Apply:
+    def _load(cls: type[T_Instance_Apply], data: dict | str) -> T_Instance_Apply:
         data = data if isinstance(data, dict) else json.loads(data)
         data = convert_all_keys_to_snake_case(data)
         if cls is not InstanceApply:
@@ -168,7 +181,7 @@ _T = TypeVar("_T")
 
 
 class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]):
-    def __init__(self, properties: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]):
+    def __init__(self, properties: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]) -> None:
         self.data = properties
 
     @classmethod
@@ -214,7 +227,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         return view_id in self.data
 
     @overload
-    def get(self, view: ViewIdentifier) -> Optional[MutableMapping[PropertyIdentifier, PropertyValue]]:
+    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None:
         ...
 
     @overload
@@ -226,8 +239,8 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
     def get(
         self,
         view: ViewIdentifier,
-        default: Optional[Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T] = None,
-    ) -> Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T:
+        default: MutableMapping[PropertyIdentifier, PropertyValue] | None | _T | None = None,
+    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | None | _T:
         view_id = ViewId.load(view)
         return self.data.get(view_id, default)
 
@@ -250,15 +263,15 @@ class Instance(InstanceCore):
     """A node or edge. This is the read version of the instance.
 
     Args:
-        space (str): The workspace for the instance.a unique identifier for the space.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        instance_type (Literal["node", "edge"]) The type of instance.
-        properties (Properties): Properties of the instance.
+        instance_type (Literal["node", "edge"]): The type of instance.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (Properties | None): Properties of the instance.
+        **_ (Any): This is used to capture any changes in the API without breaking the SDK.
     """
 
     def __init__(
@@ -269,10 +282,10 @@ class Instance(InstanceCore):
         last_updated_time: int,
         created_time: int,
         instance_type: Literal["node", "edge"] = "node",
-        deleted_time: Optional[int] = None,
-        properties: Optional[Properties] = None,
+        deleted_time: int | None = None,
+        properties: Properties | None = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
         self.last_updated_time = last_updated_time
@@ -281,14 +294,14 @@ class Instance(InstanceCore):
         self.properties: Properties = properties or Properties({})
 
     @classmethod
-    def _load(cls: Type[T_Instance], data: dict | str) -> T_Instance:
+    def _load(cls: type[T_Instance], data: dict | str) -> T_Instance:
         data = json.loads(data) if isinstance(data, str) else data
         if "properties" in data:
             data["properties"] = Properties.load(data["properties"])
         res = super()._load(data)
         return res
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if "properties" in dumped:
             dumped["properties"] = self.properties.dump()
@@ -304,13 +317,14 @@ class InstanceApplyResult(InstanceCore):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]) The type of instance.
-        space (str): The workspace for the instance.a unique identifier for the space.
+        instance_type (Literal["node", "edge"]): The type of instance.
+        space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version of the instance.
         was_modified (bool): Whether the instance was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -323,7 +337,7 @@ class InstanceApplyResult(InstanceCore):
         last_updated_time: int,
         created_time: int,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
         self.was_modified = was_modified
@@ -335,11 +349,11 @@ class InstanceAggregationResult(DataModelingResource):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        aggregates (list[AggregatedNumberedValue]) : List of aggregated values.
-        group (dict[str, str | int | float | bool]) : The grouping used for the aggregation.
+        aggregates (list[AggregatedNumberedValue]): List of aggregated values.
+        group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
     """
 
-    def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]):
+    def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]) -> None:
         self.aggregates = aggregates
         self.group = group
 
@@ -352,7 +366,7 @@ class InstanceAggregationResult(DataModelingResource):
             data (dict | str): The json string or dictionary.
 
         Returns:
-            An instance.
+            InstanceAggregationResult: An instance.
 
         """
         data = json.loads(data) if isinstance(data, str) else data
@@ -370,7 +384,7 @@ class InstanceAggregationResult(DataModelingResource):
             camel_case (bool): Whether to convert the keys to camel case.
 
         Returns:
-            A dictionary with the instance results.
+            dict[str, Any]: A dictionary with the instance results.
 
         """
         return {
@@ -387,25 +401,19 @@ class NodeApply(InstanceApply):
     """A node. This is the write version of the node.
 
     Args:
-        space (str): The workspace for the node.a unique identifier for the space.
+        space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
-        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                If no existingVersion is specified, the ingestion will always overwrite any
-                                existing data for the edge (for the specified container or node). If existingVersion is
-                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the node and/or
-                        container the container(s) making up this node.
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the node and/or container the container(s) making up this node.
     """
 
     def __init__(
         self,
         space: str,
         external_id: str,
-        existing_version: Optional[int] = None,
-        sources: Optional[list[NodeOrEdgeData]] = None,
-    ):
+        existing_version: int | None = None,
+        sources: list[NodeOrEdgeData] | None = None,
+    ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
 
     def as_id(self) -> NodeId:
@@ -416,14 +424,14 @@ class Node(Instance):
     """A node. This is the read version of the node.
 
     Args:
-        space (str): The workspace for the node.a unique identifier for the space.
+        space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties (dict[Space, dict[PropertyIdentifier, dict[str, PropertyValue]]]): Properties of the node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (Properties | None): Properties of the node.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -433,10 +441,10 @@ class Node(Instance):
         version: str,
         last_updated_time: int,
         created_time: int,
-        deleted_time: Optional[int] = None,
-        properties: Optional[Properties] = None,
+        deleted_time: int | None = None,
+        properties: Properties | None = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
 
     def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> NodeApply:
@@ -448,15 +456,10 @@ class Node(Instance):
 
         Args:
             source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                    If no existingVersion is specified, the ingestion will always overwrite any
-                                    existing data for the edge (for the specified container or instance). If existingVersion is
-                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                    then the item will be skipped instead of failing the ingestion request.
+            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
-            A write node, NodeApply
+            NodeApply: A write node, NodeApply
 
         """
         return NodeApply(
@@ -478,12 +481,13 @@ class NodeApplyResult(InstanceApplyResult):
     """A node. This represents the update on the node.
 
     Args:
-        space (str): The workspace for the node a unique identifier for the space.
+        space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
         version (str): DMS version of the node.
         was_modified (bool): Whether the node was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -495,7 +499,7 @@ class NodeApplyResult(InstanceApplyResult):
         last_updated_time: int,
         created_time: int,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(
             instance_type="node",
             space=space,
@@ -516,17 +520,11 @@ class EdgeApply(InstanceApply):
     Args:
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                If no existingVersion is specified, the ingestion will always overwrite any
-                                existing data for the edge (for the specified container or edge). If existingVersion is
-                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the edge and/or
-                        container the container(s) making up this node.
+        type (DirectRelationReference | tuple[str, str]): The type of edge.
+        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the edge and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -536,9 +534,9 @@ class EdgeApply(InstanceApply):
         type: DirectRelationReference | tuple[str, str],
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
-        existing_version: Optional[int] = None,
-        sources: Optional[list[NodeOrEdgeData]] = None,
-    ):
+        existing_version: int | None = None,
+        sources: list[NodeOrEdgeData] | None = None,
+    ) -> None:
         super().__init__(space, external_id, "edge", existing_version, sources)
         self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
         self.start_node = (
@@ -564,7 +562,7 @@ class EdgeApply(InstanceApply):
     @classmethod
     def _load(cls, data: dict | str) -> EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
-        instance = cast(EdgeApply, super()._load(data))
+        instance = super()._load(data)
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])
@@ -573,10 +571,10 @@ class EdgeApply(InstanceApply):
 
 
 class Edge(Instance):
-    """An Edge.  This is the read version of the edge.
+    """An Edge. This is the read version of the edge.
 
     Args:
-        space (str): The workspace for the edge an unique identifier for the space.
+        space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
         version (str): DMS version.
         type (DirectRelationReference): The type of edge.
@@ -584,8 +582,9 @@ class Edge(Instance):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (Properties | None): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -598,18 +597,16 @@ class Edge(Instance):
         created_time: int,
         start_node: DirectRelationReference,
         end_node: DirectRelationReference,
-        deleted_time: Optional[int] = None,
-        properties: Optional[Properties] = None,
+        deleted_time: int | None = None,
+        properties: Properties | None = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
 
-    def as_apply(
-        self, source: ViewIdentifier | ContainerIdentifier, existing_version: Optional[int] = None
-    ) -> EdgeApply:
+    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int | None = None) -> EdgeApply:
         """
         This is a convenience function for converting the read to a write edge.
 
@@ -618,15 +615,10 @@ class Edge(Instance):
 
         Args:
             source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                    If no existingVersion is specified, the ingestion will always overwrite any
-                                    existing data for the edge (for the specified container or instance). If existingVersion is
-                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                    then the item will be skipped instead of failing the ingestion request.
+            existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
-            A write edge, EdgeApply
+            EdgeApply: A write edge, EdgeApply
         """
         return EdgeApply(
             space=self.space,
@@ -657,7 +649,7 @@ class Edge(Instance):
     @classmethod
     def _load(cls, data: dict | str) -> Edge:
         data = json.loads(data) if isinstance(data, str) else data
-        instance = cast(Edge, super()._load(data))
+        instance = super()._load(data)
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])
@@ -669,12 +661,13 @@ class EdgeApplyResult(InstanceApplyResult):
     """An Edge. This represents the update on the edge.
 
     Args:
-        space (str): The workspace for the edge a unique identifier for the space.
+        space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
         version (str): DMS version.
         was_modified (bool): Whether the edge was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -686,7 +679,7 @@ class EdgeApplyResult(InstanceApplyResult):
         last_updated_time: int,
         created_time: int,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(
             instance_type="edge",
             space=space,
@@ -741,9 +734,11 @@ class NodeList(CogniteResourceList[Node]):
 
 
 class NodeListWithCursor(NodeList):
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(
+        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(resources, cognite_client)
-        self.cursor: str | None = None
+        self.cursor = cursor
 
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
@@ -786,9 +781,11 @@ class EdgeList(CogniteResourceList[Edge]):
 
 
 class EdgeListWithCursor(EdgeList):
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(
+        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(resources, cognite_client)
-        self.cursor: str | None = None
+        self.cursor = cursor
 
 
 @dataclass
@@ -805,16 +802,14 @@ class InstancesApply:
     edges: EdgeApplyList
 
 
-class InstanceSort(CogniteFilter):
+class InstanceSort(DataModelingSort):
     def __init__(
         self,
         property: list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
-    ):
-        self.property = property
-        self.direction = direction
-        self.nulls_first = nulls_first
+    ) -> None:
+        super().__init__(property, direction, nulls_first)
 
 
 @dataclass
@@ -861,3 +856,17 @@ class InstancesDeleteResult:
 
     nodes: list[NodeId]
     edges: list[EdgeId]
+
+
+@dataclass
+class SubscriptionContext:
+    last_successful_sync: datetime | None = None
+    last_successful_callback: datetime | None = None
+    _canceled: bool = False
+    _thread: threading.Thread | None = None
+
+    def cancel(self) -> None:
+        self._canceled = True
+
+    def is_alive(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()

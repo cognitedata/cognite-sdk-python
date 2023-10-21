@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
@@ -22,7 +22,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -34,7 +34,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -44,8 +44,8 @@ class ViewsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: Optional[int] = None,
-        limit: Optional[int] = None,
+        chunk_size: int | None = None,
+        limit: int | None = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -56,16 +56,15 @@ class ViewsAPI(APIClient):
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
 
         Args:
-            chunk_size (int, optional): Number of views to return in each chunk. Defaults to yielding one view at a time.
-            limit (int, optional): Maximum number of views to return. Default to return all items.
-            space: (str | None): The space to query.
+            chunk_size (int | None): Number of views to return in each chunk. Defaults to yielding one view at a time.
+            limit (int | None): Maximum number of views to return. Defaults to returning all items.
+            space (str | None): (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
-        Yields:
-            Union[View, ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
+        Returns:
+            Iterator[View] | Iterator[ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
         return self._list_generator(
@@ -82,8 +81,8 @@ class ViewsAPI(APIClient):
 
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
 
-        Yields:
-            View: yields Views one by one.
+        Returns:
+            Iterator[View]: yields Views one by one.
         """
         return self()
 
@@ -102,12 +101,12 @@ class ViewsAPI(APIClient):
         """`Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
 
         Args:
-            ids (ViewId | Sequence[ViewId]): View identifier(s)
+            ids (ViewIdentifier | Sequence[ViewIdentifier]): View identifier(s)
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
 
         Returns:
-            Optional[View]: Requested view or None if it does not exist.
+            ViewList: Requested view or None if it does not exist.
 
         Examples:
 
@@ -133,9 +132,9 @@ class ViewsAPI(APIClient):
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
 
         Args:
-            ids (ViewId | Sequence[ViewId]): View dentifier(s)
+            ids (ViewIdentifier | Sequence[ViewIdentifier]): View identifier(s)
         Returns:
-            The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
+            list[ViewId]: The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
             Delete views by id::
@@ -157,7 +156,7 @@ class ViewsAPI(APIClient):
 
     def list(
         self,
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -166,12 +165,10 @@ class ViewsAPI(APIClient):
         """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
 
         Args:
-            limit (int, optional): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None
-                to return all items.
-            space: (str | None): The space to query.
+            limit (int | None): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            space (str | None): (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
         Returns:
@@ -217,7 +214,7 @@ class ViewsAPI(APIClient):
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
 
         Args:
-            view (view: ViewApply | Sequence[ViewApply]): View or views of views to create or update.
+            view (ViewApply | Sequence[ViewApply]): View(s) to create or update.
 
         Returns:
             View | ViewList: Created view(s)

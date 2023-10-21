@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Sequence, cast
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.templates import (
     GraphQlResponse,
     TemplateGroup,
@@ -19,6 +18,7 @@ from cognite.client.data_classes.templates import (
     ViewResolveItem,
     ViewResolveList,
 )
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 class TemplatesAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.groups = TemplateGroupsAPI(config, api_version, cognite_client)
         self.versions = TemplateGroupVersionsAPI(config, api_version, cognite_client)
@@ -72,7 +72,7 @@ class TemplatesAPI(APIClient):
                 >>> result = c.templates.graphql_query("template-group-ext-id", 1, query)
         """
         path = "/templategroups/{}/versions/{}/graphql"
-        path = utils._auxiliary.interpolate_and_url_encode(path, external_id, version)
+        path = interpolate_and_url_encode(path, external_id, version)
         response = self._post(path, {"query": query})
         return GraphQlResponse.load(response.json())
 
@@ -80,16 +80,14 @@ class TemplatesAPI(APIClient):
 class TemplateGroupsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups"
 
-    def create(
-        self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
-    ) -> Union[TemplateGroup, TemplateGroupList]:
+    def create(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Create one or more template groups.`
 
         Args:
-            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]])
+            template_groups (TemplateGroup | Sequence[TemplateGroup]): No description.
 
         Returns:
-            Union[TemplateGroup, TemplateGroupList]: Created template group(s)
+            TemplateGroup | TemplateGroupList: Created template group(s)
 
         Examples:
             Create a new template group:
@@ -103,17 +101,15 @@ class TemplateGroupsAPI(APIClient):
         """
         return self._create_multiple(list_cls=TemplateGroupList, resource_cls=TemplateGroup, items=template_groups)
 
-    def upsert(
-        self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
-    ) -> Union[TemplateGroup, TemplateGroupList]:
+    def upsert(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Upsert one or more template groups.`
         Will overwrite existing template group(s) with the same external id(s).
 
         Args:
-            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]])
+            template_groups (TemplateGroup | Sequence[TemplateGroup]): No description.
 
         Returns:
-            Union[TemplateGroup, TemplateGroupList]: Created template group(s)
+            TemplateGroup | TemplateGroupList: Created template group(s)
 
         Examples:
             Upsert a template group:
@@ -128,7 +124,7 @@ class TemplateGroupsAPI(APIClient):
         path = self._RESOURCE_PATH + "/upsert"
         is_single = not isinstance(template_groups, list)
         if is_single:
-            template_groups_processed: List[TemplateGroup] = cast(List[TemplateGroup], [template_groups])
+            template_groups_processed: list[TemplateGroup] = cast(List[TemplateGroup], [template_groups])
         else:
             template_groups_processed = cast(List[TemplateGroup], template_groups)
         updated = self._post(
@@ -164,14 +160,13 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT, owners: Optional[Sequence[str]] = None) -> TemplateGroupList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ, owners: Sequence[str] | None = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
-            owners (Sequence[str]): Include template groups that have any of these values in their `owner` field.
-            limit (int): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int | None): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            owners (Sequence[str] | None): Include template groups that have any of these values in their `owner` field.
 
         Returns:
             TemplateGroupList: List of requested template groups
@@ -196,15 +191,12 @@ class TemplateGroupsAPI(APIClient):
             sort=None,
         )
 
-    def delete(self, external_ids: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_ids: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template groups.`
 
         Args:
-            external_ids (Union[str, Sequence[str]]): External ID or list of external ids
+            external_ids (str | Sequence[str]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
 
         Examples:
             Delete template groups by external id:
@@ -263,26 +255,25 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> template_group_version = TemplateGroupVersion(schema)
                 >>> c.templates.versions.upsert(template_group.external_id, template_group_version)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
         version_res = self._post(resource_path, version.dump(camel_case=True)).json()
         return TemplateGroupVersion.load(version_res)
 
     def list(
         self,
         external_id: str,
-        limit: int = LIST_LIMIT_DEFAULT,
-        min_version: Optional[int] = None,
-        max_version: Optional[int] = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        min_version: int | None = None,
+        max_version: int | None = None,
     ) -> TemplateGroupVersionList:
         """`Lists versions of a specified template group.`
         Up to 1000 template group version can be retrieved in one operation.
 
         Args:
             external_id (str): The external id of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-            min_version: (Optional[int]): Exclude versions with a version number smaller than this.
-            max_version: (Optional[int]): Exclude versions with a version number larger than this.
+            limit (int | None): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            min_version (int | None): (Optional[int]): Exclude versions with a version number smaller than this.
+            max_version (int | None): (Optional[int]): Exclude versions with a version number larger than this.
 
         Returns:
             TemplateGroupVersionList: List of requested template group versions
@@ -294,7 +285,7 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> template_group_list = c.templates.versions.list("template-group-ext-id", limit=5)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
         filter = {}
         if min_version is not None:
             filter["minVersion"] = min_version
@@ -316,9 +307,6 @@ class TemplateGroupVersionsAPI(APIClient):
             external_id (str): External ID of the template group.
             version (int): The version of the template group to delete.
 
-        Returns:
-            None
-
         Examples:
             Delete template groups by external id:
 
@@ -326,7 +314,7 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.versions.delete("sdk-test-group", 1)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
         self._post(resource_path + "/delete", {"version": version})
 
 
@@ -334,17 +322,17 @@ class TemplateInstancesAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/instances"
 
     def create(
-        self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]
-    ) -> Union[TemplateInstance, TemplateInstanceList]:
+        self, external_id: str, version: int, instances: TemplateInstance | Sequence[TemplateInstance]
+    ) -> TemplateInstance | TemplateInstanceList:
         """`Create one or more template instances.`
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group to create instances for.
-            instances (Union[TemplateInstance, Sequence[TemplateInstance]]): The instances to create.
+            instances (TemplateInstance | Sequence[TemplateInstance]): The instances to create.
 
         Returns:
-            Union[TemplateInstance, TemplateInstanceList]: Created template instance(s).
+            TemplateInstance | TemplateInstanceList: Created template instance(s).
 
         Examples:
             Create new template instances for Covid-19 spread:
@@ -370,54 +358,52 @@ class TemplateInstancesAPI(APIClient):
                 >>>                               )
                 >>> c.templates.instances.create("sdk-test-group", 1, [template_instance_1, template_instance_2])
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._create_multiple(
             list_cls=TemplateInstanceList, resource_cls=TemplateInstance, resource_path=resource_path, items=instances
         )
 
     def upsert(
-        self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]
-    ) -> Union[TemplateInstance, TemplateInstanceList]:
+        self, external_id: str, version: int, instances: TemplateInstance | Sequence[TemplateInstance]
+    ) -> TemplateInstance | TemplateInstanceList:
         """`Upsert one or more template instances.`
         Will overwrite existing instances.
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group to create instances for.
-            instances (Union[TemplateInstance, Sequence[TemplateInstance]]): The instances to create.
+            instances (TemplateInstance | Sequence[TemplateInstance]): The instances to create.
 
         Returns:
-            Union[TemplateInstance, TemplateInstanceList]: Created template instance(s).
+            TemplateInstance | TemplateInstanceList: Created template instance(s).
 
         Examples:
             Create new template instances for Covid-19 spread:
 
-             >>> from cognite.client import CogniteClient
-             >>> from cognite.client.data_classes import TemplateInstance
-             >>> c = CogniteClient()
-             >>> template_instance_1 = TemplateInstance(external_id="norway",
-             >>>        template_name="Country",
-             >>>        field_resolvers={
-             >>>            "name": ConstantResolver("Norway"),
-             >>>            "demographics": ConstantResolver("norway_demographics"),
-             >>>            "deaths": ConstantResolver("Norway_deaths"),
-             >>>            "confirmed": ConstantResolver("Norway_confirmed"),
-             >>>        }
-             >>>    )
-             >>> template_instance_2 = TemplateInstance(external_id="norway_demographics",
-             >>>       template_name="Demographics",
-             >>>       field_resolvers={
-             >>>           "populationSize": ConstantResolver(5328000),
-             >>>           "growthRate": ConstantResolver(0.02)
-             >>>           }
-             >>>   )
-             >>> c.templates.instances.upsert("sdk-test-group", 1, [template_instance_1, template_instance_2])
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import TemplateInstance
+            >>> c = CogniteClient()
+            >>> template_instance_1 = TemplateInstance(external_id="norway",
+            >>>        template_name="Country",
+            >>>        field_resolvers={
+            >>>            "name": ConstantResolver("Norway"),
+            >>>            "demographics": ConstantResolver("norway_demographics"),
+            >>>            "deaths": ConstantResolver("Norway_deaths"),
+            >>>            "confirmed": ConstantResolver("Norway_confirmed"),
+            >>>        }
+            >>>    )
+            >>> template_instance_2 = TemplateInstance(external_id="norway_demographics",
+            >>>       template_name="Demographics",
+            >>>       field_resolvers={
+            >>>           "populationSize": ConstantResolver(5328000),
+            >>>           "growthRate": ConstantResolver(0.02)
+            >>>           }
+            >>>   )
+            >>> c.templates.instances.upsert("sdk-test-group", 1, [template_instance_1, template_instance_2])
         """
         if isinstance(instances, TemplateInstance):
             instances = [instances]
-        resource_path = (
-            utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
         updated = self._post(
             resource_path, {"items": [instance.dump(camel_case=True) for instance in instances]}
         ).json()["items"]
@@ -427,14 +413,16 @@ class TemplateInstancesAPI(APIClient):
         return res
 
     def update(
-        self, external_id: str, version: int, item: Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]
-    ) -> Union[TemplateInstance, TemplateInstanceList]:
+        self, external_id: str, version: int, item: TemplateInstanceUpdate | Sequence[TemplateInstanceUpdate]
+    ) -> TemplateInstance | TemplateInstanceList:
         """`Update one or more template instances`
         Args:
-            item (Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]): Templates instance(s) to update
+            external_id (str): No description.
+            version (int): No description.
+            item (TemplateInstanceUpdate | Sequence[TemplateInstanceUpdate]): Templates instance(s) to update
 
         Returns:
-            Union[TemplateInstance, TemplateInstanceList]: Updated template instance(s)
+            TemplateInstance | TemplateInstanceList: Updated template instance(s)
 
         Examples:
             Perform a partial update on a template instance::
@@ -445,7 +433,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> my_update = TemplateInstanceUpdate(external_id="test").field_resolvers.add({ "name": ConstantResolver("Norway") })
                 >>> res = c.templates.instances.update("sdk-test-group", 1, my_update)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._update_multiple(
             list_cls=TemplateInstanceList,
             resource_cls=TemplateInstance,
@@ -475,7 +463,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.templates.instances.retrieve_multiple(external_id="sdk-test-group", version=1, external_ids=["abc", "def"])
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
         return self._retrieve_multiple(
             list_cls=TemplateInstanceList,
@@ -489,9 +477,9 @@ class TemplateInstancesAPI(APIClient):
         self,
         external_id: str,
         version: int,
-        limit: int = LIST_LIMIT_DEFAULT,
-        data_set_ids: Optional[Sequence[int]] = None,
-        template_names: Optional[Sequence[str]] = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        data_set_ids: Sequence[int] | None = None,
+        template_names: Sequence[str] | None = None,
     ) -> TemplateInstanceList:
         """`Lists instances in a template group.`
         Up to 1000 template instances can be retrieved in one operation.
@@ -499,10 +487,9 @@ class TemplateInstancesAPI(APIClient):
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-            data_set_ids: (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
-            template_names: (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
+            limit (int | None): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            data_set_ids (Sequence[int] | None): (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
+            template_names (Sequence[str] | None): (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
 
         Returns:
             TemplateInstanceList: List of requested template instances
@@ -514,8 +501,8 @@ class TemplateInstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> template_instances_list = c.templates.instances.list("template-group-ext-id", 1, limit=5)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        filter: Dict[str, Any] = {}
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        filter: dict[str, Any] = {}
         if data_set_ids is not None:
             filter["dataSetIds"] = data_set_ids
         if template_names is not None:
@@ -540,9 +527,6 @@ class TemplateInstancesAPI(APIClient):
             external_ids (Sequence[str]): The external ids of the template instances to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
-        Returns:
-            None
-
         Examples:
             Delete template groups by external id:
 
@@ -550,7 +534,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.instances.delete("sdk-test-group", 1, external_ids=["a", "b"])
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         self._delete_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
@@ -562,16 +546,16 @@ class TemplateInstancesAPI(APIClient):
 class TemplateViewsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/views"
 
-    def create(self, external_id: str, version: int, views: Union[View, Sequence[View]]) -> Union[View, ViewList]:
+    def create(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
         """`Create one or more template views.`
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group to create views for.
-            views (Union[View, Sequence[View]]): The views to create.
+            views (View | Sequence[View]): The views to create.
 
         Returns:
-            Union[View, ViewList]: Created view(s).
+            View | ViewList: Created view(s).
 
         Examples:
             Create new views:
@@ -595,19 +579,19 @@ class TemplateViewsAPI(APIClient):
                 >>>        )
                 >>> c.templates.views.create("sdk-test-group", 1, [view])
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._create_multiple(list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views)
 
-    def upsert(self, external_id: str, version: int, views: Union[View, Sequence[View]]) -> Union[View, ViewList]:
+    def upsert(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
         """`Upsert one or more template views.`
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group to create views for.
-            views (Union[View, Sequence[View]]): The views to create.
+            views (View | Sequence[View]): The views to create.
 
         Returns:
-            Union[View, ViewList]: Created view(s).
+            View | ViewList: Created view(s).
 
         Examples:
             Upsert new views:
@@ -633,9 +617,7 @@ class TemplateViewsAPI(APIClient):
         """
         if isinstance(views, View):
             views = [views]
-        resource_path = (
-            utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
         updated = self._post(resource_path, {"items": [view.dump(camel_case=True) for view in views]}).json()["items"]
         res = ViewList.load(updated, cognite_client=self._cognite_client)
         if len(res) == 1:
@@ -647,8 +629,8 @@ class TemplateViewsAPI(APIClient):
         external_id: str,
         version: int,
         view_external_id: str,
-        input: Optional[Dict[str, Any]],
-        limit: int = LIST_LIMIT_DEFAULT,
+        input: dict[str, Any] | None,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ViewResolveList:
         """`Resolves a View.`
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
@@ -656,9 +638,9 @@ class TemplateViewsAPI(APIClient):
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            input (Optional[Dict[str, any]]): The input for the View.
-            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            view_external_id (str): No description.
+            input (dict[str, Any] | None): The input for the View.
+            limit (int | None): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ViewResolveList: The resolved items.
@@ -670,7 +652,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.views.resolve("template-group-ext-id", 1, "view", { "startTime": 10 }, limit=5)
         """
-        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/resolve"
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/resolve"
         return self._list(
             list_cls=ViewResolveList,
             resource_cls=ViewResolveItem,
@@ -680,15 +662,14 @@ class TemplateViewsAPI(APIClient):
             other_params={"externalId": view_external_id, "input": input},
         )
 
-    def list(self, external_id: str, version: int, limit: int = LIST_LIMIT_DEFAULT) -> ViewList:
+    def list(self, external_id: str, version: int, limit: int | None = DEFAULT_LIMIT_READ) -> ViewList:
         """`Lists view in a template group.`
         Up to 1000 views can be retrieved in one operation.
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int | None): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ViewList: List of requested views
@@ -700,14 +681,14 @@ class TemplateViewsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.views.list("template-group-ext-id", 1, limit=5)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._list(list_cls=ViewList, resource_cls=View, resource_path=resource_path, method="POST", limit=limit)
 
     def delete(
         self,
         external_id: str,
         version: int,
-        view_external_id: Union[Sequence[str], str],
+        view_external_id: Sequence[str] | str,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more views.`
@@ -715,11 +696,8 @@ class TemplateViewsAPI(APIClient):
         Args:
             external_id (str): External ID of the template group.
             version (int): The version of the template group.
-            view_external_id (Union[Sequence[str], str]): The external ids of the views to delete
+            view_external_id (Sequence[str] | str): The external ids of the views to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
 
         Examples:
             Delete views by external id:
@@ -728,7 +706,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.views.delete("sdk-test-group", 1, external_id=["a", "b"])
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         self._delete_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(external_ids=view_external_id),

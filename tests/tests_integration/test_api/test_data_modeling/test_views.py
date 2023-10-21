@@ -1,27 +1,43 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
+    ContainerApply,
     ContainerId,
+    ContainerProperty,
     DataModel,
+    DirectRelation,
+    DirectRelationReference,
     MappedPropertyApply,
     Space,
+    Text,
     View,
     ViewApply,
     ViewId,
     ViewList,
 )
+from cognite.client.data_classes.data_modeling.views import SingleHopConnectionDefinitionApply
 from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="session")
 def movie_views(movie_model: DataModel[View]) -> ViewList:
     return ViewList(movie_model.views)
+
+
+@pytest.fixture()
+def person_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Person"))
+
+
+@pytest.fixture()
+def movie_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Movie"))
 
 
 class TestViewsAPI:
@@ -219,3 +235,76 @@ class TestViewsAPI:
 
         # Assert
         assert view == view_loaded
+
+    def test_apply_different_property_types(
+        self, cognite_client: CogniteClient, integration_test_space: Space, person_view: View, movie_view: View
+    ) -> None:
+        # Arrange
+        new_container = ContainerApply(
+            space=integration_test_space.space,
+            external_id="Critic",
+            name="Critic",
+            description="This is a test container, and should not persist.",
+            properties={
+                "reviews": ContainerProperty(type=Text(is_list=True)),
+                "person": ContainerProperty(
+                    type=DirectRelation(
+                        container=ContainerId(
+                            space=integration_test_space.space,
+                            external_id="Person",
+                        )
+                    )
+                ),
+            },
+        )
+
+        new_view = ViewApply(
+            space=integration_test_space.space,
+            external_id="Critic",
+            version="v1",
+            description="This i a test view, and should not persist.",
+            name="Critic",
+            properties={
+                "name": MappedPropertyApply(
+                    container=ContainerId(
+                        space=integration_test_space.space,
+                        external_id="Person",
+                    ),
+                    container_property_identifier="name",
+                    name="fullName",
+                ),
+                "person": MappedPropertyApply(
+                    container=new_container.as_id(),
+                    container_property_identifier="person",
+                    name="person",
+                    source=person_view.as_id(),
+                ),
+                "reviews": MappedPropertyApply(
+                    container=new_container.as_id(),
+                    container_property_identifier="reviews",
+                    name="reviews",
+                ),
+                "movies": SingleHopConnectionDefinitionApply(
+                    type=DirectRelationReference(
+                        space=integration_test_space.space,
+                        external_id="Critic.movies",
+                    ),
+                    source=movie_view.as_id(),
+                    name="movies",
+                    direction="outwards",
+                ),
+            },
+        )
+
+        try:
+            # Act
+            created_container = cognite_client.data_modeling.containers.apply(new_container)
+            created_view = cognite_client.data_modeling.views.apply(new_view)
+
+            # Assert
+            assert created_container.created_time
+            assert created_view.created_time
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.views.delete(new_view.as_id())
+            cognite_client.data_modeling.containers.delete(new_container.as_id())

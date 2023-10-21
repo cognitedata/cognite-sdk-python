@@ -24,7 +24,7 @@ def new_transformation(cognite_client):
         name="any",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
-        query="select 'test-sdk-transfornations' as externalId, 'test-sdk-transfornations' as name",
+        query="select 'test-sdk-transformations' as externalId, 'test-sdk-transformations' as name",
         source_oidc_credentials=OidcCredentials(
             client_id=creds.client_id,
             client_secret=creds.client_secret,

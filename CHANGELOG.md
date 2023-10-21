@@ -69,6 +69,268 @@ methods is `json` and `yaml` serializable.
   `destination` and `status` were not loaded into appropriate data structures. 
 * In transformations, `TransformationSchemaMapType` `dump` was not `json` serializable.
 
+## [6.34.0] - 2023-10-20
+### Fixed
+- `PropertyType`s no longer fail on instantiation, but warn on missing SDK support for the new property(-ies).
+
+### Added
+- `PropertyType`s `Float32`, `Float64`, `Int32`, `Int64` now support `unit`.
+
+## [6.33.3] - 2023-10-18
+### Added
+- `functions.create()` now accepts a `data_set_id` parameter. Note: This is not for the Cognite function, but for the zipfile containing
+  the source code files that is uploaded on the user's behalf (from which the function is then created). Specifying a data set may
+  help resolve the error 'Resource not found' (403) that happens when a user is not allowed to create files outside a data set.
+
+## [6.33.2] - 2023-10-16
+### Fixed
+- When fetching datapoints from "a few time series" (implementation detail), all missing, non-ignorable time series
+  are now raised together in a `CogniteNotFoundError` rather than only the first encountered.
+
+### Improved
+- Datapoints fetching has a lower peak memory consumption when fetching from multiple time series simultaneously.
+
+## [6.33.1] - 2023-10-14
+### Fixed
+- `Function.list_schedules()` would return schedules unrelated to the function if the function did not have an external id.
+
+## [6.33.0] - 2023-10-13
+### Added
+- Support for providing `DirectRelationReference` and `NodeId` as direct relation values when
+ingesting node and edge data.
+
+## [6.32.4] - 2023-10-12
+### Fixed
+- Filters using e.g. metadata keys no longer dumps the key in camel case.
+
+## [6.32.3] - 2023-10-12
+### Added
+- Ability to toggle the SDK debug logging on/off by setting `config.debug` property on a CogniteClient to True (enable) or False (disable).
+
+## [6.32.2] - 2023-10-10
+### Added
+- The credentials class used in TransformationsAPI, `OidcCredentials`, now also accepts `scopes` as a list of strings
+  (used to be comma separated string only).
+
+## [6.32.1] - 2023-10-10
+### Added
+- Missing `unit_external_id` and `unit_quantity` fields on `TimeSeriesProperty`.
+
+## [6.32.0] - 2023-10-09
+### Fixed
+- Ref to openapi doc in Vision extract docstring
+- Parameters to Vision models can be given as Python dict (updated doc accordingly).
+- Don't throw exception when trying to save empty list of vision extract predictions as annotations. This is to avoid having to wrap this method in try-except for every invocation of the method.
+
+### Added
+- Support for new computer vision models in Vision extract service: digital gauge reader, dial gauge reader, level gauge reader and valve state detection.
+
+## [6.31.0] - 2023-10-09
+### Added
+Support for setting and fetching TimeSeries and Datapoints with "real" units (`unit_external_id`).
+- TimeSeries has a new field `unit_external_id`, which can be set when creating or updating it. This ID must refer to a
+  valid unit in the UnitCatalog, see `client.units.list` for reference.
+- If the `unit_external_id` is set for a TimeSeries, then you may retrieve datapoints from that time series in any compatible
+  units. You do this by specifying the `target_unit` (or `target_unit_system`) in a call to any of the datapoints `retrieve`
+  methods, `retrieve`, `retrieve_arrays`, `retrieve_dataframe`, or `retrieve_dataframe_in_tz`.
+
+## [6.30.2] - 2023-10-09
+### Fixed
+- Serialization of `Transformation` or `TransformationList` no longer fails in `json.dumps` due to unhandled composite objects.
+
+## [6.30.1] - 2023-10-06
+### Added
+- Support for metadata on Workflow executions. Set custom metadata when triggering a workflow (`workflows.executions.trigger()`). The metadata is included in results from `workflows.executions.list()` and `workflows.executions.retrieve_detailed()`.
+
+## [6.30.0] - 2023-10-06
+### Added
+- Support for the UnitCatalog with the implementation `client.units`.
+
+## [6.29.2] - 2023-10-04
+### Fixed
+- Calling some of the methods `assets.filter()`, `events.filter()`, `sequences.filter()`, `time_series.filter()` without a `sort` parameter could cause a `CogniteAPIError` with a 400 code. This is now fixed.
+
+## [6.29.1] - 2023-10-04
+### Added
+- Convenience method `to_text` on the `FunctionCallLog` class which simplifies printing out function call logs.
+
+## [6.29.0] - 2023-10-04
+### Added
+- Added parameter `resolve_duplicate_file_names` to `client.files.download`.
+  This will keep all the files when downloading to local machine, even if they have the same name.
+
+## [6.28.5] - 2023-10-03
+### Fixed
+- Bugfix for serialization of Workflows' `DynamicTasksParameters` during `workflows.versions.upsert` and `workflows.execution.retrieve_detailed`
+
+## [6.28.4] - 2023-10-03
+### Fixed
+- Overload data_set/create for improved type safety
+
+## [6.28.3] - 2023-10-03
+### Fixed
+- When uploading files as strings using `client.files.upload_bytes` the wrong encoding is used on Windows, which is causing
+  part of the content to be lost when uploading. This is now fixed.
+
+## [6.28.2] - 2023-10-02
+### Fixed
+- When cache lookup did not yield a token for `CredentialProvider`s like `OAuthDeviceCode` or `OAuthInteractive`, a
+  `TypeError` could be raised instead of initiating their authentication flow.
+
+## [6.28.1] - 2023-09-30
+### Improved
+- Warning when using alpha/beta features.
+
+## [6.28.0] - 2023-09-26
+### Added
+- Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
+
+## [6.27.0] - 2023-09-13
+### Changed
+- Reduce concurrency in data modeling client to 1
+
+## [6.26.0] - 2023-09-22
+### Added
+- Support `partition` and `cursor` parameters on `time_series.subscriptions.iterate_data`
+- Include the `cursor` attribute on `DatapointSubscriptionBatch`, which is yielded in every iteration
+of `time_series.subscriptions.iterate_data`.
+
+## [6.25.3] - 2023-09-19
+### Added
+- Support for setting and retrieving `data_set_id` in data class `client.data_classes.ThreeDModel`.
+
+## [6.25.2] - 2023-09-12
+### Fixed
+- Using the `HasData` filter would raise an API error in CDF.
+
+## [6.25.1] - 2023-09-15
+### Fixed
+- Using nonce credentials now works as expected for `transformations.[create, update]`. Previously, the attempt to create
+  a session would always fail, leading to nonce credentials never being used (full credentials were passed to- and
+  stored in the transformations backend service).
+- Additionally, the automatic creation of a session no longer fails silently when an `CogniteAuthError` is encountered
+  (which happens when the credentials are invalid).
+- While processing source- and destination credentials in `client.transformations.[create, update]`, an `AttributeError`
+  can no longer be raised (by not specifying project).
+### Added
+- `TransformationList` now correctly inherits the two (missing) helper methods `as_ids()` and `as_external_ids()`.
+
+## [6.25.0] - 2023-09-14
+### Added
+- Support for `ignore_unknown_ids` in `client.functions.retrieve_multiple` method.
+
+## [6.24.1] - 2023-09-13
+### Fixed
+- Bugfix for `AssetsAPI.create_hierarchy` when running in upsert mode: It could skip certain updates above
+  the single-request create limit (currently 1000 assets).
+
+## [6.24.0] - 2023-09-12
+### Fixed
+- Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `CogniteFileUploadError` is raised based on upload response.
+
+## [6.23.0] - 2023-09-08
+### Added
+- Supporting for deleting constraints and indexes on containers.
+
+### Changed
+- The abstract class `Index` can no longer be instantiated. Use BTreeIndex or InvertedIndex instead.
+
+## [6.22.0] - 2023-09-08
+### Added
+- `client.data_modeling.instances.subscribe` which lets you subscribe to a given
+data modeling query and receive updates through a provided callback.
+- Example on how to use the subscribe method to sync nodes to a local sqlite db.
+
+## [6.21.1] - 2023-09-07
+### Fixed
+- Concurrent usage of the `CogniteClient` could result in API calls being made with the wrong value for `api_subversion`.
+
+## [6.21.0] - 2023-09-06
+### Added
+- Supporting pattern mode and extra configuration for diagram detect in beta.
+
+## [6.20.0] - 2023-09-05
+### Fixed
+- When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
+  the verification process. This could leave leftover modules still in scope, possibly affecting subsequent calls. This is
+  now done in a separate process to guarantee it has no side-effects on the main process.
+- For pyodide/WASM users, a backup implementation is used, with an improved cleanup procedure.
+
+### Added
+- The import-check in `client.functions.create` (when `folder` is used) can now be disabled by passing
+  `skip_folder_validation=True`. Basic validation is still done, now additionally by parsing the AST.
+
+## [6.19.0] - 2023-09-04
+## Added
+- Now possible to retrieve and update translation and scale of 3D model revisions.
+
+## [6.18.0] - 2023-09-04
+### Added
+- Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+
+### Improved
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
+
+## [6.17.0] - 2023-09-01
+### Added
+- Support for the UserProfilesAPI with the implementation `client.iam.user_profiles`.
+
+## [6.16.0] - 2023-09-01
+### Added
+- Support for `ignore_unknown_ids` in `client.relationships.retrieve_multiple` method.
+
+## [6.15.3] - 2023-08-30
+### Fixed
+- Uploading files using `client.files.upload` now works when running with `pyodide`.
+
+## [6.15.2] - 2023-08-29
+### Improved
+- Improved error message for `CogniteMissingClientError`. Now includes the type of object missing the `CogniteClient` reference.
+
+## [6.15.1] - 2023-08-29
+### Fixed
+- Bugfix for `InstanceSort._load` that always raised `TypeError` (now public, `.load`). Also, indirect fix for `Select.load` for non-empty `sort`.
+
+## [6.15.0] - 2023-08-23
+### Added
+- Support for the DocumentsAPI with the implementation `client.documents`.
+- Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the
+  `.filter()` method, for example, `client.events.filter`.
+- Extended aggregation support for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the five
+  methods `.aggregate_count(...)`, `aggregate_cardinality_values(...)`, `aggregate_cardinality_properties(...)`,
+  `.aggregate_unique_values(...)`, and `.aggregate_unique_properties(...)`. For example,
+  `client.assets.aggregate_count(...)`.
+- Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList`, `SequenceList`,
+  `FileMetaDataList`, `FunctionList`, `ExtractionPipelineList`, and `DataSetList`.
+
+### Deprecated
+- Added `DeprecationWarning` to methods `client.assets.aggregate_metadata_keys` and
+  `client.assets.aggregate_metadata_values`. The use parameter the `fields` in
+  `client.events.aggregate_unique_values` will also lead to a deprecation warning. The reason is that the endpoints
+  these methods are using have been deprecated in the CDF API.
+
+## [6.14.2] - 2023-08-22
+### Fixed
+- All data modeling endpoints will now be retried. This was not the case for POST endpoints.
+
+## [6.14.1] - 2023-08-19
+### Fixed
+- Passing `sources` as a tuple no longer raises `ValueError` in `InstancesAPI.retrieve`.
+
+## [6.14.0] - 2023-08-14
+### Changed
+- Don't terminate client.time_series.subscriptions.iterate_data() when `has_next=false` as more data
+may be returned in the future. Instead we return the `has_next` field in the batch, and let the user
+decide whether to terminate iteration. This is a breaking change, but this particular API is still
+in beta and thus we reserve the right to break it without bumping the major version.
+
+## [6.13.3] - 2023-08-14
+### Fixed
+- Fixed bug in `ViewApply.properties` had type hint `ConnectionDefinition` instead of `ConnectionDefinitionApply`.
+- Fixed bug in `dump` methods of `ViewApply.properties` causing the return code `400` with message
+  `Request had 1 constraint violations. Please fix the request and try again. [type must not be null]` to be returned
+  from the CDF API.
+
 ## [6.13.2] - 2023-08-11
 ### Fixed
 - Fixed bug in `Index.load` that would raise `TypeError` when trying to load `indexes`, when an unexpected field was
@@ -199,8 +461,8 @@ methods is `json` and `yaml` serializable.
 
 ## [6.5.5] - 2023-06-28
 ### Fixed
-- A bug where we would raise the wrong exception when errors on occured on `data_modeling.spaces.delete`
-- A bug causing incosistent MRO in DataModelList
+- A bug where we would raise the wrong exception when errors on occurred on `data_modeling.spaces.delete`
+- A bug causing inconsistent MRO in DataModelList
 
 ## [6.5.4] - 2023-06-28
 ### Added
@@ -260,7 +522,7 @@ but we accept the cost of breaking a few consumers now early on the really nail 
 - Make VersionedDataModelingId:load accept `tuple[str, str]`
 - Rename ConstraintIdentifier to Constraint - it was not an id but the definition itself
 - Rename IndexIdentifier to Index - it was not an id but the definition itself
-- Rename ContainerPropertyIdentifier to ContaienrProperty - it was not an id but the definition itself
+- Rename ContainerPropertyIdentifier to ContainerProperty - it was not an id but the definition itself
 
 ### Removed
 - Redundant EdgeApply:create method. It simply mirrored the EdgeApply constructor.
@@ -387,7 +649,7 @@ have to specify the instance type in each tuple
 
 ## [6.0.0] - 2023-04-19
 ### Removed
-- Removed support for legacy auth (apikeys, serviceaccounts, login.status)
+- Removed support for legacy auth (API keys, service accounts, login.status)
 - Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
 - Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
 - Removed the deprecated `client.extraction_pipeline_runs` accessor attribute. The extraction pipeline run API can only be accessed through `client.extraction_pipelines.runs` now.
@@ -824,7 +1086,7 @@ It will also cache the token between runs.
 ### Changed
 - Client configuration no longer respects any environment variables. There are other libraries better
 suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
-been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+been several reports of envvar name clash issues in tools built on top the SDK. We therefore
 consider this something that should be handled by the application consuming the SDK. All configuration of
 `cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
 `max_connection_pool_size` and other options which apply to all client instances are now configured through

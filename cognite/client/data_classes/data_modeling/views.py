@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, Literal, Optional, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -30,12 +30,12 @@ class ViewCore(DataModelingResource):
         space: str,
         external_id: str,
         version: str,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
         filter: Filter | None = None,
-        implements: Optional[list[ViewId]] = None,
+        implements: list[ViewId] | None = None,
         **_: Any,
-    ):
+    ) -> None:
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -52,7 +52,7 @@ class ViewCore(DataModelingResource):
         if "filter" in data:
             data["filter"] = Filter.load(data["filter"])
 
-        return cast(ViewCore, super()._load(data))
+        return super()._load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -78,11 +78,12 @@ class ViewApply(ViewCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        filter (dict): A filter Domain Specific Language (DSL) used to create advanced filter queries.
-        implements (list): References to the views from where this view will inherit properties and edges.
         version (str): DMS version.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
+        implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
+        properties (dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None): No description.
     """
 
     def __init__(
@@ -90,12 +91,12 @@ class ViewApply(ViewCore):
         space: str,
         external_id: str,
         version: str,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
         filter: Filter | None = None,
-        implements: Optional[list[ViewId]] = None,
-        properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinition]] = None,
-    ):
+        implements: list[ViewId] | None = None,
+        properties: dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None = None,
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
         self.properties = properties
@@ -122,17 +123,18 @@ class View(ViewCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        filter (dict): A filter Domain Specific Language (DSL) used to create advanced filter queries.
-        implements (list): References to the views from where this view will inherit properties and edges.
         version (str): DMS version.
+        properties (dict[str, MappedProperty | ConnectionDefinition]): View with included properties and expected edges, indexed by a unique space-local identifier.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
+        implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
         writable (bool): Whether the view supports write operations.
         used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        properties (dict): View with included properties and expected edges, indexed by a unique space-local identifier.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -143,15 +145,15 @@ class View(ViewCore):
         properties: dict[str, MappedProperty | ConnectionDefinition],
         last_updated_time: int,
         created_time: int,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
         filter: Filter | None = None,
-        implements: Optional[list[ViewId]] = None,
+        implements: list[ViewId] | None = None,
         writable: bool = False,
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(
             space,
             external_id,
@@ -189,9 +191,15 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinition]]] = None
+        properties: dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None = None
         if self.properties:
-            properties = {k: (v.as_apply() if isinstance(v, MappedProperty) else v) for k, v in self.properties.items()}
+            for k, v in self.properties.items():
+                if isinstance(v, (MappedProperty, SingleHopConnectionDefinition)):
+                    if properties is None:
+                        properties = {}
+                    properties[k] = v.as_apply()
+                else:
+                    raise NotImplementedError(f"Unsupported conversion to apply for property type {type(v)}")
 
         return ViewApply(
             space=self.space,
@@ -243,18 +251,17 @@ class ViewFilter(CogniteFilter):
     Args:
         space (str | None): The space to query
         include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-        all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                             which is determined based on the 'createdTime' field.
+        all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
         include_global (bool): Whether to include global views.
     """
 
     def __init__(
         self,
-        space: Optional[str] = None,
+        space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ):
+    ) -> None:
         self.space = space
         self.include_inherited_properties = include_inherited_properties
         self.all_versions = all_versions
@@ -305,10 +312,19 @@ class MappedPropertyApply(ViewPropertyApply):
         return output
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output = asdict(self)
-        output["container"] = self.container.dump(camel_case)
-        if camel_case:
-            return convert_all_keys_to_camel_case_recursive(output)
+        output: dict[str, Any] = {
+            "container": self.container.dump(camel_case, include_type=True),
+            (
+                "containerPropertyIdentifier" if camel_case else "container_property_identifier"
+            ): self.container_property_identifier,
+        }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+        if self.source is not None:
+            output["source"] = self.source.dump(camel_case, include_type=True)
+
         return output
 
 
@@ -398,10 +414,23 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
+    def as_apply(self) -> SingleHopConnectionDefinitionApply:
+        return SingleHopConnectionDefinitionApply(
+            type=self.type,
+            source=self.source,
+            name=self.name,
+            description=self.description,
+            edge_source=self.edge_source,
+            direction=self.direction,
+        )
+
 
 @dataclass
 class ConnectionDefinitionApply(ViewPropertyApply):
     ...
+
+
+T_ConnectionDefinitionApply = TypeVar("T_ConnectionDefinitionApply", bound=ConnectionDefinitionApply)
 
 
 @dataclass
@@ -425,15 +454,18 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
-        output = asdict(self)
+        output: dict[str, Any] = {
+            "type": self.type.dump(camel_case),
+            "source": self.source.dump(camel_case, include_type=True),
+            "direction": self.direction,
+        }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+        if self.edge_source is not None:
+            output[("edgeSource" if camel_case else "edge_source")] = self.edge_source.dump(
+                camel_case, include_type=True
+            )
 
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-
-        if self.source:
-            output["source"] = self.source.dump(camel_case)
-
-        if self.edge_source:
-            output["edge_source"] = self.edge_source.dump(camel_case)
-
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        return output

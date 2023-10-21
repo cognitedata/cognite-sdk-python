@@ -27,6 +27,7 @@ class DataPointListItem(google.protobuf.message.Message):
     ISSTEP_FIELD_NUMBER: builtins.int
     UNIT_FIELD_NUMBER: builtins.int
     NEXTCURSOR_FIELD_NUMBER: builtins.int
+    UNITEXTERNALID_FIELD_NUMBER: builtins.int
     NUMERICDATAPOINTS_FIELD_NUMBER: builtins.int
     STRINGDATAPOINTS_FIELD_NUMBER: builtins.int
     AGGREGATEDATAPOINTS_FIELD_NUMBER: builtins.int
@@ -36,6 +37,7 @@ class DataPointListItem(google.protobuf.message.Message):
     isStep: builtins.bool
     unit: builtins.str
     nextCursor: builtins.str
+    unitExternalId: builtins.str
     @property
     def numericDatapoints(self) -> data_points_pb2.NumericDatapoints: ...
     @property
@@ -51,12 +53,13 @@ class DataPointListItem(google.protobuf.message.Message):
         isStep: builtins.bool = ...,
         unit: builtins.str = ...,
         nextCursor: builtins.str = ...,
+        unitExternalId: builtins.str = ...,
         numericDatapoints: data_points_pb2.NumericDatapoints | None = ...,
         stringDatapoints: data_points_pb2.StringDatapoints | None = ...,
         aggregateDatapoints: data_points_pb2.AggregateDatapoints | None = ...,
     ) -> None: ...
     def HasField(self, field_name: typing_extensions.Literal["aggregateDatapoints", b"aggregateDatapoints", "datapointType", b"datapointType", "numericDatapoints", b"numericDatapoints", "stringDatapoints", b"stringDatapoints"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["aggregateDatapoints", b"aggregateDatapoints", "datapointType", b"datapointType", "externalId", b"externalId", "id", b"id", "isStep", b"isStep", "isString", b"isString", "nextCursor", b"nextCursor", "numericDatapoints", b"numericDatapoints", "stringDatapoints", b"stringDatapoints", "unit", b"unit"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["aggregateDatapoints", b"aggregateDatapoints", "datapointType", b"datapointType", "externalId", b"externalId", "id", b"id", "isStep", b"isStep", "isString", b"isString", "nextCursor", b"nextCursor", "numericDatapoints", b"numericDatapoints", "stringDatapoints", b"stringDatapoints", "unit", b"unit", "unitExternalId", b"unitExternalId"]) -> None: ...
     def WhichOneof(self, oneof_group: typing_extensions.Literal["datapointType", b"datapointType"]) -> typing_extensions.Literal["numericDatapoints", "stringDatapoints", "aggregateDatapoints"] | None: ...
 
 global___DataPointListItem = DataPointListItem

@@ -72,7 +72,7 @@ def other_schedule(cognite_client, other_transformation):
 
 
 @pytest.mark.skipif(
-    os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    os.getenv("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
 )
 class TestTransformationSchedulesAPI:
     def test_create(self, new_schedule: TransformationSchedule):

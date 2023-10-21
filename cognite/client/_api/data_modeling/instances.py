@@ -1,12 +1,30 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Type, Union, cast, overload
+import logging
+import random
+import time
+from collections.abc import Iterable
+from datetime import datetime, timezone
+from threading import Thread
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterator,
+    List,
+    Literal,
+    Sequence,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
-from cognite.client.data_classes.data_modeling.aggregations import (
+from cognite.client.data_classes.aggregations import (
     Aggregation,
     Histogram,
     HistogramValue,
@@ -35,19 +53,43 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    SubscriptionContext,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
 )
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+from cognite.client.utils._retry import Backoff
+from cognite.client.utils._text import random_string
 
 from ._data_modeling_executor import get_data_modeling_executor
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+_DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Nested,
+        filters.HasData,
+        filters.MatchAll,
+        filters.Overlaps,
+    }
+)
+
+logger = logging.getLogger(__name__)
 
 
 class _NodeOrEdgeList(CogniteResourceList):
@@ -55,7 +97,7 @@ class _NodeOrEdgeList(CogniteResourceList):
 
     @classmethod
     def load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[Node | Edge] = [
@@ -68,8 +110,8 @@ class _NodeOrEdgeList(CogniteResourceList):
 
 
 class _NodeOrEdgeResourceAdapter:
-    @classmethod
-    def load(cls, data: str | dict, cognite_client: Optional[CogniteClient] = None) -> Node | Edge:
+    @staticmethod
+    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return Node._load(data)
@@ -81,7 +123,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
     @classmethod
     def load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
@@ -95,10 +137,8 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 
 class _NodeOrEdgeApplyResultAdapter:
-    @classmethod
-    def _load(
-        cls, data: str | dict, cognite_client: Optional[CogniteClient] = None
-    ) -> NodeApplyResult | EdgeApplyResult:
+    @staticmethod
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult._load(data)
@@ -106,8 +146,8 @@ class _NodeOrEdgeApplyResultAdapter:
 
 
 class _NodeOrEdgeApplyAdapter:
-    @classmethod
-    def load(cls, data: str | dict, cognite_client: Optional[CogniteClient] = None) -> NodeApply | EdgeApply:
+    @staticmethod
+    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApply._load(data)
@@ -183,18 +223,18 @@ class InstancesAPI(APIClient):
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
 
         Args:
-            chunk_size (int, optional): Number of data_models to return in each chunk. Defaults to yielding
-                                        one instance at a time.
-            instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
-            limit (int, optional): Maximum number of instances to return. Default to return all items.
+            chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
+            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId] | ViewId): Views to retrieve properties from.
-            sort (list[InstanceSort | dict] | InstanceSort | dict): How you want the listed instances information ordered.
-            filter (dict | Filter): Advanced filtering of instances.
+            sources (list[ViewId] | ViewId | None): Views to retrieve properties from.
+            sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
+            filter (Filter | dict | None): Advanced filtering of instances.
 
-        Yields:
-            Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
+        Returns:
+            Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -223,10 +263,11 @@ class InstancesAPI(APIClient):
     def __iter__(self) -> Iterator[Node]:
         """Iterate over instances
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
-        Yields:
-            Instance: yields Instances one by one.
+
+        Returns:
+            Iterator[Node]: yields Instances one by one.
         """
-        return cast(Iterator[Node], self(None, "node"))
+        return self(None, "node")
 
     def retrieve(
         self,
@@ -235,12 +276,12 @@ class InstancesAPI(APIClient):
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         include_typing: bool = False,
     ) -> InstancesResult:
-        """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence(View) None): Retrieve properties from the listed - by reference - views.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
@@ -330,14 +371,14 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> InstancesDeleteResult:
-        """`Delete one or more instances <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/deleteBulk>`_
+        """`Delete one or more instances <https://developer.cognite.com/api#tag/Instances/operation/deleteBulk>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
 
         Returns:
-            The instance(s) which has been deleted. Empty list if nothing was deleted.
+            InstancesDeleteResult: The instance(s) which has been deleted. Empty list if nothing was deleted.
 
         Examples:
 
@@ -374,6 +415,99 @@ class InstancesAPI(APIClient):
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
 
+    def subscribe(
+        self,
+        query: Query,
+        callback: Callable[[QueryResult], None],
+        poll_delay_seconds: float = 30,
+        throttle_seconds: float = 1,
+    ) -> SubscriptionContext:
+        """Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
+        in a background thread, and only invokes the callback when there are actual changes to the result set(s).
+
+        We do not support chaining result sets when subscribing to a query.
+
+        Args:
+            query (Query): The query to subscribe to.
+            callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
+            poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
+            throttle_seconds (float): The time to wait between polls despite data being present.
+        Returns:
+            SubscriptionContext: An object that can be used to cancel the subscription.
+
+        Examples:
+
+            Subscrie to a given query and print the changed data:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import Query, QueryResult, NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.filters import Range
+                >>>
+                >>> c = CogniteClient()
+                >>> def just_print_the_result(result: QueryResult) -> None:
+                ...     print(result)
+                ...
+                >>> view_id = ViewId("someSpace", "someView", "v1")
+                >>> filter = Range(view_id.as_property_ref("releaseYear"), lt=2000)
+                >>> query = Query(
+                ...     with_={"movies": NodeResultSetExpression(filter=filter)},
+                ...     select={"movies": Select([SourceSelector(view_id, ["releaseYear"])])}
+                ... )
+                >>> subscription_context = c.data_modeling.instances.subscribe(query, just_print_the_result)
+                >>> subscription_context.cancel()
+        """
+        for result_set_expression in query.with_.values():
+            if result_set_expression.from_ is not None:
+                raise ValueError("Cannot chain result sets when subscribing to a query")
+
+        subscription_context = SubscriptionContext()
+
+        def _poll_delay(seconds: float) -> None:
+            if not hasattr(_poll_delay, "has_been_invoked"):
+                # smear if first invocation
+                delay = random.uniform(0, poll_delay_seconds)
+                setattr(_poll_delay, "has_been_invoked", True)
+            else:
+                delay = seconds
+            logger.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
+            time.sleep(delay)
+
+        def _do_subscribe() -> None:
+            cursors = query.cursors
+            error_backoff = Backoff(max_wait=30)
+            while not subscription_context._canceled:
+                # No need to resync if we encountered an error in the callback last iteration
+                if not error_backoff.has_progressed():
+                    query.cursors = cursors
+                    result = self.sync(query)
+                    subscription_context.last_successful_sync = datetime.now(tz=timezone.utc)
+
+                try:
+                    callback(result)
+                except Exception:
+                    logger.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
+                    time.sleep(next(error_backoff))
+                    continue
+
+                subscription_context.last_successful_callback = datetime.now(tz=timezone.utc)
+                # only progress the cursor if the callback executed successfully
+                cursors = result.cursors
+
+                data_is_present = any(len(instances) > 0 for instances in result.data.values())
+                if data_is_present:
+                    _poll_delay(throttle_seconds)
+                else:
+                    _poll_delay(poll_delay_seconds)
+
+                error_backoff.reset()
+
+        thread_name = f"instances-sync-subscriber-{random_string(10)}"
+        thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
+        thread.start()
+        subscription_context._thread = thread
+        return subscription_context
+
     @classmethod
     def _create_other_params(
         cls,
@@ -385,11 +519,7 @@ class InstancesAPI(APIClient):
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
-            other_params["sources"] = (
-                [cls._dump_instance_source(source) for source in sources]
-                if isinstance(sources, Sequence)
-                else [cls._dump_instance_source(sources)]
-            )
+            other_params["sources"] = cls._dump_instance_source(sources)
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
                 other_params["sort"] = [cls._dump_instance_sort(sort)]
@@ -399,17 +529,14 @@ class InstancesAPI(APIClient):
             other_params["instanceType"] = instance_type
         return other_params
 
-    @classmethod
-    def _dump_instance_source(cls, source: ViewIdentifier | View) -> dict:
-        instance_source: ViewIdentifier
-        if isinstance(source, View):
-            instance_source = source.as_id()
-        else:
-            instance_source = source
-        return {"source": ViewId.load(instance_source).dump(camel_case=True)}
+    @staticmethod
+    def _dump_instance_source(sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]) -> list[dict]:
+        return [
+            {"source": ViewId.load(dct).dump(camel_case=True)} for dct in _load_identifier(sources, "view").as_dicts()
+        ]
 
-    @classmethod
-    def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
+    @staticmethod
+    def _dump_instance_sort(sort: InstanceSort | dict) -> dict:
         return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
     def apply(
@@ -422,25 +549,16 @@ class InstancesAPI(APIClient):
         skip_on_version_conflict: bool = False,
         replace: bool = False,
     ) -> InstancesApplyResult:
-        """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/applyNodeAndEdges>`_
+        """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
-            nodes (NodeApply | Sequence[NodeApply] | None = None): Nodes to apply
-            edges (EdgeApply | Sequence[EdgeApply] | None = None): Edges to apply
-            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default,
-                                            the start node of an edge must exist before it can be ingestested.
-            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default,
-                                          the end node of an edge must exist before it can be ingestested.
+            nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
+            edges (EdgeApply | Sequence[EdgeApply] | None): Edges to apply
+            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
+            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
-            skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input,
-                                             the default behaviour is that the entire ingestion will fail when version
-                                             conflicts occur. If skipOnVersionConflict is set to true, items with
-                                             version conflicts will be skipped instead. If no version is specified for
-                                             nodes/edges, it will do the writing directly.
-            replace (bool): How do we behave when a property value exists? Do we replace all matching and existing
-                            values with the supplied values (true)? Or should we merge in new values for properties
-                            together with the existing values (false)? Note: This setting applies for all nodes or
-                            edges specified in the ingestion call.
+            skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
+            replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
         Returns:
             InstancesApplyResult: Created instance(s)
 
@@ -454,44 +572,61 @@ class InstancesAPI(APIClient):
                 >>> nodes = [NodeApply("mySpace", "myNodeId")]
                 >>> res = c.data_modeling.instances.apply(nodes)
 
-            Create two nodes with data with an one to many edge, and a one to one edge
+            Create two nodes with data with a one-to-many edge
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
-                >>> person = NodeApply("mySpace", "person:arnold_schwarzenegger", sources=[
-                ...                        NodeOrEdgeData(
-                ...                               ViewId("mySpace", "PersonView", "v1"),
-                ...                               {"name": "Arnold Schwarzenegger", "birthYear": 1947})
-                ... ])
-                >>> actor = NodeApply("mySpace", "actor:arnold_schwarzenegger", sources=[
-                ...                        NodeOrEdgeData(
-                ...                               ViewId("mySpace", "ActorView", "v1"),
-                ...                               {"wonOscar": False,
-                ...                               # This is a one-to-one edge from actor to person
-                ...                                "person": {"space": "mySpace", "externalId": "person:arnold_schwarzenegger"}})
-                ... ])
-                >>> # This is one to many edge, in this case from Person to role
-                >>> # (a person can have multiple roles, in this model for example Actor and Director)
-                >>> person_to_actor = EdgeApply(space="mySpace",
-                ...                                       external_id="relation:arnold_schwarzenegger:actor",
-                ...                                       type=("Person", "roles"),
-                ...                                       start_node=("person", "arnold_schwarzenegger"),
-                ...                                       end_node=("actor", "arnold_schwarzenegger"),
+                >>> actor = NodeApply(
+                ...     space="actors",
+                ...     external_id="arnold_schwarzenegger",
+                ...     sources=[
+                ...         NodeOrEdgeData(
+                ...             ViewId("mySpace", "PersonView", "v1"),
+                ...             {"name": "Arnold Schwarzenegger", "birthYear": 1947}
+                ...         ),
+                ...         NodeOrEdgeData(
+                ...             ViewId("mySpace", "ActorView", "v1"),
+                ...             {"wonOscar": False}
+                ...         )
+                ...     ]
                 ... )
-                >>> res = c.data_modeling.instances.apply([person, actor], [person_to_actor])
+                >>> movie = NodeApply(
+                ...     space="movies",
+                ...     external_id="Terminator",
+                ...     sources=[
+                ...         NodeOrEdgeData(
+                ...             ViewId("mySpace", "MovieView", "v1"),
+                ...             {"title": "Terminator", "releaseYear": 1984}
+                ...         )
+                ...     ]
+                ... )
+                ... # This is one-to-many edge, in this case from a person to a movie
+                >>> actor_to_movie = EdgeApply(
+                ...     space="actors",
+                ...     external_id="relation:arnold_schwarzenegger:terminator",
+                ...     type=("types", "acts-in"),
+                ...     start_node=("actors", "arnold_schwarzenegger"),
+                ...     end_node=("movies", "Terminator"),
+                ... )
+                >>> res = c.data_modeling.instances.apply([actor, movie], [actor_to_movie])
 
-            Create new edge an automatically create end nodes.
+            Create new edge and automatically create end nodes.
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply
                 >>> c = CogniteClient()
-                >>> edge = EdgeApply(space="mySpace",
-                ...                            external_id="relation:sylvester_stallone:actor",
-                ...                            type=("Person", "roles"),
-                ...                            start_node=("person", "sylvester_stallone"),
-                ...                            end_node=("actor", "sylvester_stallone"),
+                >>> actor_to_movie = EdgeApply(
+                ...     space="actors",
+                ...     external_id="relation:arnold_schwarzenegger:terminator",
+                ...     type=("types", "acts-in"),
+                ...     start_node=("actors", "arnold_schwarzenegger"),
+                ...     end_node=("movies", "Terminator"),
                 ... )
-                >>> res = c.data_modeling.instances.apply(edges=edge, auto_create_start_nodes=True, auto_create_end_nodes=True)
+                >>> res = c.data_modeling.instances.apply(
+                ...     edges=actor_to_movie,
+                ...     auto_create_start_nodes=True,
+                ...     auto_create_end_nodes=True
+                ... )
 
         """
         other_parameters = {
@@ -528,7 +663,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList:
         ...
 
@@ -540,7 +675,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> EdgeList:
         ...
 
@@ -551,7 +686,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList | EdgeList:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -559,15 +694,12 @@ class InstancesAPI(APIClient):
             view (ViewId): View to search in.
             query (str): Query string that will be parsed and used for search.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            properties (list[str]): Optional array of properties you want to search through.
-                                    If you do not specify one or more properties, the service will
-                                    search all text fields within the view.
-            filter (dict | Filter): Advnanced filtering of instances.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
+            properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            filter (Filter | dict | None): Advanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
-            EdgeList | NodeList: Search result with matching nodes or edges.
+            NodeList | EdgeList: Search result with matching nodes or edges.
 
         Examples:
 
@@ -582,15 +714,16 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> import cognite.client.data_classes.filters as filters
+                >>> from cognite.client.data_classes import filters
                 >>> c = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
                 >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"),
                 ... query="Quentin", properties=["name"], filter=born_after_1970)
 
         """
+        self._validate_filter(filter)
         if instance_type == "node":
-            list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
+            list_cls: type[NodeList] | type[EdgeList] = NodeList
         elif instance_type == "edge":
             list_cls = EdgeList
         else:
@@ -614,7 +747,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -622,15 +755,11 @@ class InstancesAPI(APIClient):
             view (ViewId): View to to aggregate over.
             aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            group_by (Optional[Sequence[str]]): The selection of fields to group the results by when doing aggregations.
-                                  You can specify up to 5 items to group by.
-            query (Optional[str]): Query string that will be parsed and used for search.
-            properties (Optional[Sequence[str]]): Optional array of properties you want to search through.
-                                    If you do not specify one or more properties, the service will
-                                    search all text fields within the view.
-            filter (Optional[Filter]): Advnanced filtering of instances.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
+            group_by (Sequence[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
+            query (str | None): Query string that will be parsed and used for search.
+            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            filter (Filter | None): Advanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             InstanceAggregationResultList: Node or edge aggregation results.
@@ -649,7 +778,9 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+
+        self._validate_filter(filter)
+        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
         body["aggregates"] = [
             agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregate_seq
@@ -675,7 +806,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue:
         ...
 
@@ -688,7 +819,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]:
         ...
 
@@ -700,7 +831,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -708,16 +839,13 @@ class InstancesAPI(APIClient):
             view (ViewId): View to to aggregate over.
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            query (Optional[str]): Query string that will be parsed and used for search.
-            properties (Optional[Sequence[str]]): Optional array of properties you want to search through.
-                                    If you do not specify one or more properties, the service will
-                                    search all text fields within the view.
-            filter (Optional[Filter]): Advnanced filtering of instances.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
+            query (str | None): Query string that will be parsed and used for search.
+            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            filter (Filter | None): Advanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
-            list[HistogramValue]: Node or edge aggregation results.
+            HistogramValue | list[HistogramValue]: Node or edge aggregation results.
 
         Examples:
 
@@ -732,7 +860,9 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+
+        self._validate_filter(filter)
+        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
         if isinstance(histograms, Sequence):
             histogram_seq: Sequence[Histogram] = histograms
@@ -745,7 +875,7 @@ class InstancesAPI(APIClient):
 
         for histogram in histogram_seq:
             if not isinstance(histogram, Histogram):
-                raise ValueError(f"Not a histogram: {histogram}")
+                raise TypeError(f"Not a histogram: {histogram}")
 
         body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
         if filter:
@@ -768,7 +898,7 @@ class InstancesAPI(APIClient):
         recursive edge traversal, chaining of result sets, and granular property selection.
 
         Args:
-            query: Query.
+            query (Query): Query.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -785,15 +915,15 @@ class InstancesAPI(APIClient):
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
-                ...         with_ = {
-                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
-                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
-                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
-                ...         },
-                ...         select = {
-                ...             "actors": Select(
-                ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
-                ...         },
+                ...     with_ = {
+                ...         "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...         "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...         "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...     },
+                ...     select = {
+                ...         "actors": Select(
+                ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
+                ...     },
                 ... )
                 >>> res = c.data_modeling.instances.query(query)
         """
@@ -805,7 +935,7 @@ class InstancesAPI(APIClient):
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
-            query: Query.
+            query (Query): Query.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -815,6 +945,7 @@ class InstancesAPI(APIClient):
             Find actors in movies released before 2000 sorted by actor name:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
@@ -822,15 +953,15 @@ class InstancesAPI(APIClient):
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
-                ...         with_ = {
-                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
-                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
-                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
-                ...         },
-                ...         select = {
-                ...             "actors": Select(
-                ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
-                ...         },
+                ...     with_ = {
+                ...         "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...         "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...         "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...     },
+                ...     select = {
+                ...         "actors": Select(
+                ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
+                ...     },
                 ... )
                 >>> res = c.data_modeling.instances.sync(query)
                 >>> # Added a new movie with actors released before 2000
@@ -858,7 +989,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList:
@@ -870,7 +1001,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> EdgeList:
@@ -881,23 +1012,22 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:
-        """`List instances <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/advancedListInstance>`_
+        """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence(View) | None): Views to retrieve properties from.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
-            sort (Sequence[InstanceSost] | InstanceSort | dict): How you want the listed instances information ordered.
-            filter (dict | Filter): Advanced filtering of instances.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
+            limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
+            filter (Filter | dict | None): Advanced filtering of instances.
 
         Returns:
-            Union[EdgeList, NodeList]: List of requested instances
+            NodeList | EdgeList: List of requested instances
 
         Examples:
 
@@ -921,6 +1051,7 @@ class InstancesAPI(APIClient):
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -944,3 +1075,6 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
             ),
         )
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)

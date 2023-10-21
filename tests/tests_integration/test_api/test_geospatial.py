@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from cognite.client import utils
 from cognite.client.data_classes import Asset
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
@@ -23,6 +22,7 @@ from cognite.client.data_classes.geospatial import (
     PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._importing import local_import
 from tests.utils import set_request_limit
 
 FIXED_SRID = 121111 + random.randint(0, 1_000)
@@ -73,10 +73,9 @@ def test_feature_type(cognite_client):
 def large_feature_type(cognite_client):
     external_id = f"FT_{uuid.uuid4().hex[:10]}"
     feature_type_spec = FeatureType(
-        external_id=external_id, properties={f"attr{i}": {"type": "LONG"} for i in range(0, 80)}
+        external_id=external_id, properties={f"attr{i}": {"type": "LONG"} for i in range(80)}
     )
-    feature_type = cognite_client.geospatial.create_feature_types(feature_type_spec)
-    yield feature_type
+    yield cognite_client.geospatial.create_feature_types(feature_type_spec)
     cognite_client.geospatial.delete_feature_types(external_id=external_id)
 
 
@@ -178,9 +177,9 @@ def another_test_feature(cognite_client, test_feature_type):
 def many_features(cognite_client, large_feature_type):
     specs = [
         Feature(
-            external_id=f"F_{uuid.uuid4().hex[:10]}", **{f"attr{i}": random.randint(10000, 20000) for i in range(0, 80)}
+            external_id=f"F_{uuid.uuid4().hex[:10]}", **{f"attr{i}": random.randint(10000, 20000) for i in range(80)}
         )
-        for _ in range(0, 2000)
+        for _ in range(2000)
     ]
     features = cognite_client.geospatial.create_features(large_feature_type.external_id, specs)
     yield features
@@ -273,18 +272,18 @@ class TestGeospatialAPI:
         assert res.asset_ids == [new_asset.id]
 
     def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
-        res = cognite_client.geospatial.update_features(
+        results = cognite_client.geospatial.update_features(
             feature_type_external_id=test_feature_type.external_id,
             feature=[
-                Feature(external_id=test_features[idx].external_id, temperature=6.237, pressure=12.21, volume=34.43)
-                for idx in range(0, len(test_features))
+                Feature(external_id=test_feat.external_id, temperature=6.237, pressure=12.21, volume=34.43)
+                for test_feat in test_features
             ],
             allow_crs_transformation=allow_crs_transformation,
             chunk_size=2,
         )
-        for idx in range(0, len(test_features)):
-            assert res[idx].external_id == test_features[idx].external_id
-            assert res[idx].temperature == 6.237
+        for res, test_feat in zip(results, test_features):
+            assert res.external_id == test_feat.external_id
+            assert res.temperature == 6.237
 
     def test_search_single_feature(self, cognite_client, test_feature_type, test_feature):
         res = cognite_client.geospatial.search_features(
@@ -504,11 +503,11 @@ class TestGeospatialAPI:
             "lastUpdatedTime",
             "assetIds",
         ]
-        geopandas = utils._auxiliary.local_import("geopandas")
-        assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
+        geopandas = local_import("geopandas")
+        assert type(gdf.dtypes["position"]) is geopandas.array.GeometryDtype
 
     def test_from_geopandas_basic(self, cognite_client, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame(
             {
                 "externalId": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
@@ -523,8 +522,8 @@ class TestGeospatialAPI:
                 "pressure": [2121.0, 2121.0, 2121.0, 2121.0],
             }
         )
-        utils._auxiliary.local_import("shapely.wkt")
-        geopandas = utils._auxiliary.local_import("geopandas")
+        local_import("shapely.wkt")
+        geopandas = local_import("geopandas")
         df["position"] = geopandas.GeoSeries.from_wkt(df["position"])
         gdf = geopandas.GeoDataFrame(df, geometry="position")
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
@@ -532,7 +531,7 @@ class TestGeospatialAPI:
         assert len(res) == 4
 
     def test_from_geopandas_flexible(self, cognite_client, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame(
             {
                 "some_unique_id": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
@@ -547,8 +546,8 @@ class TestGeospatialAPI:
                 "some_pressure": [2121.0, 2121.0, 2121.0, 2121.0],
             }
         )
-        utils._auxiliary.local_import("shapely.wkt")
-        geopandas = utils._auxiliary.local_import("geopandas")
+        local_import("shapely.wkt")
+        geopandas = local_import("geopandas")
         df["some_position"] = geopandas.GeoSeries.from_wkt(df["some_position"])
         gdf = geopandas.GeoDataFrame(df, geometry="some_position")
         fl = FeatureList.from_geopandas(

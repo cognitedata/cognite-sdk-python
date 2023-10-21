@@ -113,7 +113,7 @@ def mock_get_sequence_data_many_columns(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "ceid" + str(i)} for i in range(0, 200)],
+        "columns": [{"externalId": f"ceid{i}"} for i in range(200)],
         "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
     }
     rsps.add(
@@ -321,7 +321,7 @@ class TestSequences:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"externalIdPrefix": "e"},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
@@ -331,7 +331,7 @@ class TestSequences:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     def test_search_with_filter(self, cognite_client, mock_seq_response):
@@ -502,7 +502,7 @@ class TestSequences:
         assert r1.__eq__(r2)
         assert str(r1) == str(r2)
         assert r1.dump() == r2.dump()
-        list_request = [call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url][0]
+        list_request = next(call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url)
         response = list_request.response.json()
         data_dump = r1.dump(camel_case=True)
         for f in ["columns", "rows", "id"]:
@@ -558,7 +558,7 @@ class TestSequencesPandasIntegration:
     def test_retrieve_dataframe_columns_many_extid(self, cognite_client, mock_get_sequence_data_many_columns):
         data = cognite_client.sequences.data.retrieve(external_id="foo", start=1000000, end=1100000)
         assert isinstance(data, SequenceData)
-        assert ["ceid" + str(i) for i in range(200)] == list(data.to_pandas().columns)
+        assert [f"ceid{i}" for i in range(200)] == list(data.to_pandas().columns)
 
     def test_retrieve_dataframe_convert_null(self, cognite_client, mock_seq_response, mock_get_sequence_data_with_null):
         df = cognite_client.sequences.data.retrieve_dataframe(external_id="foo", start=0, end=None)
@@ -591,7 +591,7 @@ class TestSequencesPandasIntegration:
         assert isinstance(df, pd.DataFrame)
         assert df.empty
 
-    def test_sequencess_to_pandas(self, cognite_client, mock_seq_response):
+    def test_sequences_to_pandas(self, cognite_client, mock_seq_response):
         import pandas as pd
 
         df = cognite_client.sequences.retrieve(id=1).to_pandas()

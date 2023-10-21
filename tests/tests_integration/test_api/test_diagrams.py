@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import pytest
 
 from cognite.client.data_classes.contextualization import (
@@ -14,8 +16,8 @@ ELEVEN_PAGE_PNID_EXTERNAL_ID = "functional_tests.pdf"
 FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID = "5functional_tests.pdf"
 
 
-@pytest.mark.skip
 class TestPNIDParsingIntegration:
+    @pytest.mark.skip
     def test_run_diagram_detect(self, cognite_client):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
         file_id = PNID_FILE_ID
@@ -57,8 +59,8 @@ class TestPNIDParsingIntegration:
         assert len(succeeded) == 1
         assert len(failed) == 0
 
+    @pytest.mark.skip
     def test_run_diagram_detect_with_page_range(self, cognite_client):
-
         entities = [{"name": "PH-ME-P-0156-001", "id": 1}, {"name": "PH-ME-P-0156-002", "id": 2}]
         # References to the above are expected on page 6 and page 11, and repeating every 11 pages.
 
@@ -80,3 +82,24 @@ class TestPNIDParsingIntegration:
         assert set(pages_with_annotations_per_subjob[0]) == {6, 11}
         assert set(pages_with_annotations_per_subjob[1]) == {6, 11}
         assert set(pages_with_annotations_per_subjob[2]) == {50, 55}
+
+    def test_run_diagram_detect_in_pattern_mode(self, cognite_client_beta):
+        entities = [
+            {"sample": "[PH]-ME-P-0156-001", "resourceType": "file_reference"},
+            {"sample": "23-TI-92101-01", "resourceType": "instrument"},
+        ]
+        detected = cognite_client_beta.diagrams.detect(
+            file_references=[
+                FileReference(file_external_id=ELEVEN_PAGE_PNID_EXTERNAL_ID, first_page=11, last_page=11),
+            ],
+            entities=entities,
+            pattern_mode=True,
+        )
+
+        result = detected.result
+        detected_by_resource_type = defaultdict(list)
+        for annotation in result["items"][0]["annotations"]:
+            detected_by_resource_type[annotation["entities"][0]["resourceType"]].append(annotation)
+
+        assert len(detected_by_resource_type["file_reference"]) >= 10  # 14 seen when making the test
+        assert len(detected_by_resource_type["instrument"]) >= 60  # 72 seen when making the test

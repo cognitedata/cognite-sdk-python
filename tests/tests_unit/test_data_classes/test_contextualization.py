@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, get_args, get_type_hints
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -11,7 +11,7 @@ from cognite.client.testing import monkeypatch_cognite_client
 
 
 @pytest.fixture
-def mock_base_job_response() -> Dict[str, Any]:
+def mock_base_job_response() -> dict[str, Any]:
     return {
         "status": "Completed",
         "createdTime": 1666601590000,
@@ -39,12 +39,22 @@ def mock_update_status_completed(self):
 class TestVisionExtractPredictions:
     def test_visionextractpredictions_in_sync_with_vision_feature_map(self) -> None:
         """This test ensures that the mapping and VisionExtractPredictions class is 'in sync'"""
+
+        # Needed in local namespace for type lookup:
+        from cognite.client.data_classes.annotation_types.images import (  # noqa F401
+            AssetLink,
+            ObjectDetection,
+            TextRegion,
+            KeypointCollectionWithObjectDetection,
+        )
+
+        local_namespace = locals()
+        annots_as_set = {
+            (k, local_namespace.get(v.replace("list[", "").replace("] | None", "")))
+            for k, v in VisionExtractPredictions.__annotations__.items()
+        }
         mapping_as_set = set(VISION_FEATURE_MAP.items())
-        (annot_dct := get_type_hints(VisionExtractPredictions)).pop("_cognite_client")
-        # Unwrap the first level of type hints, (MUST be an Optional), since Optional[X] == Union[X, None].
-        # Unwrap the second level of type hint (i.e., the List[...]):
-        annots_as_set = {(k, get_args(get_args(a)[0])[0]) for k, a in annot_dct.items()}
-        assert mapping_as_set == annots_as_set
+        assert mapping_as_set == annots_as_set, "type annots. must follow this pattern: <list[SomeCls] | None>"
 
 
 class TestContextualizationJob:

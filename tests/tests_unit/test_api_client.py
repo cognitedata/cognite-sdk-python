@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import unittest
 from collections import namedtuple
-from typing import Any
+from typing import Any, ClassVar, Literal, cast
 
 import pytest
 from requests import Response
+from responses import matchers
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import Token
+from cognite.client.data_classes import TimeSeries, TimeSeriesUpdate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -83,7 +86,7 @@ class TestBasicRequests:
             rsps.add(method, BASE_URL + URL_PATH, status=500, json={"error": "Server error"})
             rsps.add(method, BASE_URL + URL_PATH, status=400, json={"error": {"code": 400, "message": "Client error"}})
 
-    request_cases = [
+    request_cases: ClassVar = [
         lambda api_client: RequestCase(
             name="post", method=api_client._post, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}
         ),
@@ -219,6 +222,7 @@ class SomeResource(CogniteResource):
         self.y = y
         self.id = id
         self.external_id = external_id
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SomeResourceList(CogniteResourceList):
@@ -258,12 +262,8 @@ class TestStandardRetrieve:
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
-        assert (
-            cognite_client
-            == api_client_with_token._retrieve(
-                cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1)
-            )._cognite_client
-        )
+        res = api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
+        assert cognite_client == res._cognite_client
 
 
 class TestStandardRetrieveMultiple:
@@ -390,15 +390,13 @@ class TestStandardRetrieveMultiple:
         assert {"id": 2} in e.value.not_found
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, mock_by_ids):
-        assert (
-            cognite_client
-            == api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(1, 2),
-            )._cognite_client
+        res = api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(1, 2),
         )
+        assert cognite_client == res._cognite_client
 
     def test_over_limit_concurrent(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"items": [{"x": 1, "y": 2}]})
@@ -462,7 +460,7 @@ class TestStandardList:
         assert "Client Error" == e.value.message
 
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
-    ITEMS_TO_GET_WHILE_AUTOPAGING = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
+    ITEMS_TO_GET_WHILE_AUTOPAGING: ClassVar = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
 
     def test_list_partitions(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
@@ -673,18 +671,15 @@ class TestStandardList:
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
-        assert (
-            cognite_client
-            == api_client_with_token._list(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
-            )._cognite_client
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
         )
-        assert (
-            cognite_client
-            == api_client_with_token._list(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
-            )._cognite_client
+        assert cognite_client == res._cognite_client
+
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         )
+        assert cognite_client == res._cognite_client
 
 
 class TestStandardAggregate:
@@ -1009,14 +1004,33 @@ class TestStandardUpdate:
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
 
-    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps):
+    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps, monkeypatch):
+        # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
+        # execution order. Depending on whether the 400 or 500 hits the first or second task,
+        # the following asserts fail (ordering issue). Thus, we use 'matchers.json_params_matcher'
+        # to make sure the responses match the two tasks.
+
+        # Note 2: The matcher function expects request.body to not be gzipped (it just does .decode("utf-8")
+        # which fails, making the matching functions useless.. so we temporarily turn off gzip for this test
+        monkeypatch.setattr(global_config, "disable_gzip", True)
+
         rsps.add(
             rsps.POST,
             BASE_URL + URL_PATH + "/update",
             status=400,
             json={"error": {"message": "Missing ids", "missing": [{"id": 0}]}},
+            match=[matchers.json_params_matcher({"items": [{"update": {}, "id": 0}]})],
         )
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=500, json={"error": {"message": "Server Error"}})
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=500,
+            json={"error": {"message": "Server Error"}},
+            match=[matchers.json_params_matcher({"items": [{"update": {}, "externalId": "abc"}]})],
+        )
+        items = [SomeResource(external_id="abc"), SomeResource(id=0)]
+        random.shuffle(items)
+
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteAPIError) as e:
                 api_client_with_token._update_multiple(
@@ -1024,7 +1038,7 @@ class TestStandardUpdate:
                     list_cls=SomeResourceList,
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
-                    items=[SomeResource(id=0), SomeResource(external_id="abc")],
+                    items=items,
                 )
         assert ["abc"] == e.value.unknown
         assert [0] == e.value.failed
@@ -1126,6 +1140,48 @@ class TestStandardSearch:
         )
 
 
+def convert_resource_to_patch_object_test_cases():
+    yield pytest.param(
+        # Is String is ignored as it cannot be updated.
+        TimeSeries(id=123, name="bla", is_string=False),
+        TimeSeriesUpdate._get_update_properties(),
+        "patch",
+        {"id": 123, "update": {"name": {"set": "bla"}}},
+        id="Patch TimeSeries",
+    )
+    yield pytest.param(
+        TimeSeries(external_id="myTimeseries", name="bla"),
+        TimeSeriesUpdate._get_update_properties(),
+        "replace",
+        {
+            "externalId": "myTimeseries",
+            "update": {
+                "name": {"set": "bla"},
+                "unit": {"setNull": True},
+                "assetId": {"setNull": True},
+                "description": {"setNull": True},
+                "dataSetId": {"setNull": True},
+                "securityCategories": {"set": []},
+            },
+        },
+        id="Replace TimeSeries and ignore beta property",
+    )
+    yield pytest.param(
+        TimeSeries(id=42, description="updated"),
+        TimeSeriesUpdate._get_update_properties(),
+        "replace_ignore_null",
+        {"id": 42, "update": {"description": {"set": "updated"}}},
+        id="Replace TimeSeries with ignore null",
+    )
+    yield pytest.param(
+        TimeSeries(id=42, metadata={"myNew": "metadataValue"}),
+        TimeSeriesUpdate._get_update_properties(),
+        "patch",
+        {"id": 42, "update": {"metadata": {"add": {"myNew": "metadataValue"}}}},
+        id="Patch TimeSeries with container property",
+    )
+
+
 class TestHelpers:
     @pytest.mark.parametrize(
         "method, path, expected",
@@ -1151,6 +1207,11 @@ class TestHelpers:
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/byids", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/datasets/aggregate", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/relationships/list", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/spaces", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/instances", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/containers", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/views", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/datamodels", True),
         ],
     )
     def test_is_retryable(self, api_client_with_token, method, path, expected):
@@ -1163,14 +1224,12 @@ class TestHelpers:
         with pytest.raises(ValueError, match="is not valid"):
             api_client_with_token._is_retryable(method, path)
 
-    def test_is_retryable_add(self, api_client_with_token):
-        APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS.add("/assets/bloop")
-        assert (
-            api_client_with_token._is_retryable(
-                "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
-            )
-            is True
-        )
+    def test_is_retryable_add(self, api_client_with_token, monkeypatch: pytest.MonkeyPatch):
+        rperp = APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS | {"/assets/bloop"}
+        monkeypatch.setattr(APIClient, "_RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS", rperp)
+
+        test_url = "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
+        assert api_client_with_token._is_retryable("POST", test_url) is True
 
     @pytest.mark.parametrize(
         "before, after",
@@ -1192,6 +1251,20 @@ class TestHelpers:
         res = Response()
         res._content = content
         assert APIClient._get_response_content_safe(res) == expected
+
+    @pytest.mark.parametrize(
+        "resource, update_attributes, mode, expected_object", list(convert_resource_to_patch_object_test_cases())
+    )
+    def test_convert_resource_to_patch_object(
+        self,
+        resource: CogniteResource,
+        update_attributes: list[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"],
+        expected_object: dict[str, dict[str, dict]],
+    ):
+        actual = APIClient._convert_resource_to_patch_object(resource, update_attributes, mode)
+
+        assert actual == expected_object
 
 
 class TestConnectionPooling:

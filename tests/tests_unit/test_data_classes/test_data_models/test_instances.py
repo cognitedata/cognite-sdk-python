@@ -3,6 +3,7 @@ from cognite.client.data_classes.data_modeling import (
     DirectRelationReference,
     EdgeApply,
     NodeApply,
+    NodeId,
     NodeOrEdgeData,
 )
 
@@ -31,6 +32,26 @@ class TestEdgeApply:
             },
             "endNode": {"space": "mySpace", "externalId": "actor.external_id"},
         }
+
+
+class TestNodeOrEdgeData:
+    def test_direct_relation_serialization(self) -> None:
+        data = NodeOrEdgeData(
+            source=ContainerId("IntegrationTestsImmutable", "Case"),
+            properties=dict(
+                name="Integration test",
+                some_direct_relation=DirectRelationReference("space", "external_id"),
+                another_direct_relation_type=NodeId("space", "external_id"),
+            ),
+        )
+        assert {
+            "properties": {
+                "another_direct_relation_type": {"external_id": "external_id", "space": "space"},
+                "name": "Integration test",
+                "some_direct_relation": {"external_id": "external_id", "space": "space"},
+            },
+            "source": {"external_id": "Case", "space": "IntegrationTestsImmutable", "type": "container"},
+        } == data.dump()
 
 
 class TestNodeApply:

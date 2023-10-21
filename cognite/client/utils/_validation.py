@@ -1,12 +1,31 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping, Sequence, Tuple, Union
 
+from typing_extensions import TypeAlias
+
+from cognite.client.data_classes._base import T_CogniteSort
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client.utils._identifier import T_ID
+
+
+SortSpec: TypeAlias = Union[
+    T_CogniteSort,
+    str,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
+
+
+def assert_type(var: Any, var_name: str, types: list[type], allow_none: bool = False) -> None:
+    if var is None:
+        if not allow_none:
+            raise TypeError(f"{var_name} cannot be None")
+    elif not isinstance(var, tuple(types)):
+        raise TypeError(f"{var_name!r} must be one of types {types}, not {type(var)}")
 
 
 def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[str]) -> dict[str, T_ID]:
@@ -45,3 +64,13 @@ process_data_set_ids: Callable[
 process_asset_subtree_ids: Callable[
     [int | Sequence[int] | None, str | Sequence[str] | None], list[dict[str, int | str]] | None
 ] = functools.partial(_process_identifiers, id_name="asset_subtree")
+
+
+def prepare_filter_sort(
+    sort: SortSpec | list[SortSpec] | None, sort_type: type[T_CogniteSort]
+) -> list[dict[str, Any]] | None:
+    if sort is not None:
+        if not isinstance(sort, list):
+            sort = [sort]
+        return [sort_type.load(item).dump(camel_case=True) for item in sort]
+    return None

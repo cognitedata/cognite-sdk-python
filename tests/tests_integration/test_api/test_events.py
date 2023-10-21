@@ -5,10 +5,11 @@ from unittest import mock
 
 import pytest
 
-import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventUpdate
+from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, filters
+from cognite.client.data_classes.events import EventProperty, SortableEventProperty
 from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.utils import timestamp_to_ms
 from tests.utils import set_request_limit
 
 
@@ -18,6 +19,37 @@ def new_event(cognite_client):
     yield event
     cognite_client.events.delete(id=event.id)
     assert cognite_client.events.retrieve(event.id) is None
+
+
+@pytest.fixture
+def event_list(cognite_client: CogniteClient) -> EventList:
+    prefix = "integration_test:"
+    events = EventList(
+        [
+            Event(
+                external_id=f"{prefix}event1_lorem_ipsum",
+                description="This is a a test event with some lorem ipsum text.",
+                start_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 42)),
+                metadata={
+                    "timezone": "Europe/Oslo",
+                },
+            ),
+            Event(
+                external_id=f"{prefix}event2",
+                description="This is also a test event, this time without the same text as the other one.",
+                end_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 43)),
+                type="lorem ipsum",
+                metadata={
+                    "timezone": "America/New_York",
+                    "some_other_key": "some_other_value",
+                },
+            ),
+        ]
+    )
+    retrieved = cognite_client.events.retrieve_multiple(external_ids=events.as_external_ids(), ignore_unknown_ids=True)
+    if len(retrieved) == len(events):
+        return retrieved
+    return cognite_client.events.upsert(events, mode="replace")
 
 
 @pytest.fixture
@@ -94,9 +126,7 @@ class TestEventsAPI:
         assert 0 == len(res)
 
     def test_search(self, cognite_client):
-        res = cognite_client.events.search(
-            filter=EventFilter(start_time={"min": cognite.client.utils._time.timestamp_to_ms("2d-ago")})
-        )
+        res = cognite_client.events.search(filter=EventFilter(start_time={"min": 1691574120000}))
         assert len(res) > 0
 
     def test_update(self, cognite_client, new_event):
@@ -148,3 +178,85 @@ class TestEventsAPI:
             cognite_client.events.delete(
                 external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
+
+    def test_filter_search(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
+
+        result = cognite_client.events.filter(
+            f.And(is_integration_test, has_lorem_ipsum), sort=SortableEventProperty.external_id
+        )
+
+        assert len(result) == 1, "Expected only one event to match the filter"
+        assert result[0].external_id == "integration_test:event1_lorem_ipsum"
+
+    def test_filter_search_without_sort(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
+
+        result = cognite_client.events.filter(f.And(is_integration_test, has_lorem_ipsum), sort=None)
+
+        assert len(result) == 1, "Expected only one event to match the filter"
+        assert result[0].external_id == "integration_test:event1_lorem_ipsum"
+
+    def test_aggregate_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+
+        count = cognite_client.events.aggregate_count(advanced_filter=is_integration_test)
+
+        assert count >= len(event_list)
+
+    def test_aggregate_has_type(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+
+        count = cognite_client.events.aggregate_count(EventProperty.type, advanced_filter=is_integration_test)
+
+        assert count >= len([e for e in event_list if e.type])
+
+    def test_aggregate_type_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+
+        count = cognite_client.events.aggregate_cardinality_values(
+            EventProperty.type, advanced_filter=is_integration_test
+        )
+
+        assert count >= len({e.type for e in event_list if e.type})
+
+    def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+
+        count = cognite_client.events.aggregate_cardinality_properties(
+            EventProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert count >= len({k for e in event_list for k in e.metadata})
+
+    def test_aggregate_unique_types(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+
+        result = cognite_client.events.aggregate_unique_values(
+            property=EventProperty.type, advanced_filter=is_integration_test
+        )
+
+        assert result
+        assert set(result.unique) >= {e.type for e in event_list if e.type}
+
+    def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+
+        result = cognite_client.events.aggregate_unique_properties(
+            EventProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert result
+        assert {tuple(item.value["property"]) for item in result} >= {
+            ("metadata", key.casefold()) for a in event_list for key in a.metadata or []
+        }

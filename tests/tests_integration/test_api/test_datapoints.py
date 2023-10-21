@@ -7,9 +7,10 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 from __future__ import annotations
 
 import itertools
+import math
 import random
 import re
-import time
+import unittest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 from typing import Literal
@@ -208,106 +209,158 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
     (-100, 101, False, False),
 ]
 
-# To avoid the `xdist` error "different tests were collected between...", we must make sure all parallel test-runners
-# generate the same tests (randomized test data) so we must set a fixed seed... but we also want different random
-# test data over time (...thats the whole point), so we set seed based on time, but round to have some buffer:
-SEED = round(time.time(), -3)
-
 
 @pytest.fixture(scope="module", autouse=True)
-def make_dps_tests_reproducible():
+def make_dps_tests_reproducible(testrun_uid):
+    # To avoid the `xdist` error "different tests were collected between...", we must make sure all parallel test-runners
+    # generate the same tests (randomized test data) so we must set a fixed seed... but we also want different random
+    # test data over time (...thats the whole point), so we set seed based on a unique run ID created by pytest-xdist:
     print(  # noqa: T201
-        f"Random seed used in datapoints integration tests: {SEED}. If any datapoints test failed - and you weren't "
-        "the cause, please create a new (Github) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
+        f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints test failed - and you weren't "
+        "the cause, please create a new (GitHub) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
     )
-    with rng_context(SEED):  # Internal state of `random` will be reset after exiting contextmanager
+    with rng_context(testrun_uid):  # Internal state of `random` will be reset after exiting contextmanager
         yield
 
 
-# We also have some test data that depend on random input: (TODO: consider moving into respective tests)
-with rng_context(SEED + 42):
-    PARAMETRIZED_VALUES_ALL_UNKNOWN_SINGLE_MULTIPLE_GIVEN = (
-        # Single identifier given as base type (int/str) or as dict
-        (1, "ChunkingDpsFetcher", random_cognite_ids(1)[0], None, [None, None]),
-        (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1)[0], [None, None]),
-        (1, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, None, [None, None]),
-        (1, "ChunkingDpsFetcher", None, {"external_id": random_cognite_external_ids(1)[0]}, [None, None]),
-        # Single identifier given as length-1 list:
-        (1, "ChunkingDpsFetcher", random_cognite_ids(1), None, DPS_LST_TYPES),
-        (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1), DPS_LST_TYPES),
-        # Single identifier given by BOTH id and external id:
-        (2, "ChunkingDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        (
-            2,
-            "ChunkingDpsFetcher",
-            {"id": random_cognite_ids(1)[0]},
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (2, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        (
-            2,
-            "ChunkingDpsFetcher",
-            random_cognite_ids(1)[0],
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (1, "EagerDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        (
-            1,
-            "EagerDpsFetcher",
-            {"id": random_cognite_ids(1)[0]},
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (
-            1,
-            "EagerDpsFetcher",
-            random_cognite_ids(1)[0],
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (1, "EagerDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        # Multiple identifiers given by single identifier:
-        (4, "ChunkingDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
-        (4, "ChunkingDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
-        (2, "EagerDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
-        (2, "EagerDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
-        # Multiple identifiers given by BOTH identifiers:
-        (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (
-            5,
-            "ChunkingDpsFetcher",
-            [{"id": id} for id in random_cognite_ids(2)],
-            [{"external_id": xid} for xid in random_cognite_external_ids(2)],
-            DPS_LST_TYPES,
-        ),
-        (
-            3,
-            "EagerDpsFetcher",
-            [{"id": id} for id in random_cognite_ids(2)],
-            [{"external_id": xid} for xid in random_cognite_external_ids(2)],
-            DPS_LST_TYPES,
-        ),
-    )
+# We also have some test data that depend on random input:
+@pytest.fixture
+def parametrized_values_all_unknown_single_multiple_given(testrun_uid):
+    with rng_context(testrun_uid + "42"):
+        return (
+            # Single identifier given as base type (int/str) or as dict
+            (1, "ChunkingDpsFetcher", random_cognite_ids(1)[0], None, [None, None]),
+            (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1)[0], [None, None]),
+            (1, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, None, [None, None]),
+            (1, "ChunkingDpsFetcher", None, {"external_id": random_cognite_external_ids(1)[0]}, [None, None]),
+            # Single identifier given as length-1 list:
+            (1, "ChunkingDpsFetcher", random_cognite_ids(1), None, DPS_LST_TYPES),
+            (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1), DPS_LST_TYPES),
+            # Single identifier given by BOTH id and external id:
+            (2, "ChunkingDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                random_cognite_external_ids(1)[0],
+                DPS_LST_TYPES,
+            ),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                random_cognite_ids(1)[0],
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (1, "EagerDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            (
+                1,
+                "EagerDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (
+                1,
+                "EagerDpsFetcher",
+                random_cognite_ids(1)[0],
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (1, "EagerDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            # Multiple identifiers given by single identifier:
+            (4, "ChunkingDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
+            (4, "ChunkingDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
+            (2, "EagerDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
+            (2, "EagerDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
+            # Multiple identifiers given by BOTH identifiers:
+            (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (
+                5,
+                "ChunkingDpsFetcher",
+                [{"id": id} for id in random_cognite_ids(2)],
+                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                DPS_LST_TYPES,
+            ),
+            (
+                3,
+                "EagerDpsFetcher",
+                [{"id": id} for id in random_cognite_ids(2)],
+                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                DPS_LST_TYPES,
+            ),
+        )
 
-    PARAMETRIZED_VALUES_UNIFORM_INDEX_FAILS = (
-        # Fail because of raw request:
-        ([None, "1s"], [None, random_aggregates(1)], [None, None]),
-        # Fail because of multiple granularities:
-        (["1m", "60s"], [random_aggregates(1), random_aggregates(1)], [None, None]),
-        # Fail because of finite limit:
-        (["1d", "1d"], [random_aggregates(1), random_aggregates(1)], [123, None]),
+
+@pytest.fixture
+def parametrized_values_uniform_index_fails(testrun_uid):
+    with rng_context(testrun_uid + "1337"):
+        return (
+            # Fail because of raw request:
+            ([None, "1s"], [None, random_aggregates(1)], [None, None]),
+            # Fail because of multiple granularities:
+            (["1m", "60s"], [random_aggregates(1), random_aggregates(1)], [None, None]),
+            # Fail because of finite limit:
+            (["1d", "1d"], [random_aggregates(1), random_aggregates(1)], [123, None]),
+        )
+
+
+@pytest.fixture(scope="module")
+def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeries:
+    timeseries = TimeSeries(
+        external_id="test_retrieve_datapoints_in_target_unit",
+        name="test_retrieve_datapoints_in_target_unit",
+        is_string=False,
+        unit_external_id="temperature:deg_c",
     )
+    created_timeseries = cognite_client.time_series.upsert(timeseries, mode="patch")
+    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+    return created_timeseries
 
 
 class TestRetrieveRawDatapointsAPI:
-    """Note: Since `retrieve` and `retrieve_arrays` endspoints should give identical results,
+    """Note: Since `retrieve` and `retrieve_arrays` endpoints should give identical results,
     except for the data container types, all tests run both endpoints.
     """
+
+    def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
+        # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
+        # non-ignorable ts would be raised in a CogniteNotFoundError.
+        ts_exists1, ts_exists2 = outside_points_ts
+        missing_xid = "nope-doesnt-exist " * 3
+
+        with set_max_workers(cognite_client, 6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+            with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'") as err:
+                cognite_client.time_series.data.retrieve(
+                    id=[
+                        ts_exists1.id,
+                        # Only id=456 should be raised from 'id':
+                        {"id": 456, "ignore_unknown_ids": False},
+                        123,
+                    ],
+                    external_id=[
+                        # Only xid on next line should be raised from 'xid':
+                        {"external_id": f"{missing_xid}1", "ignore_unknown_ids": False},
+                        ts_exists2.external_id,
+                        f"{missing_xid}2",
+                    ],
+                    ignore_unknown_ids=True,
+                )
+            assert len(err.value.not_found) == 2
+            unittest.TestCase().assertCountEqual(  # Asserts equal, but ignores ordering
+                err.value.not_found,
+                [{"id": 456}, {"external_id": f"{missing_xid}1"}],
+            )
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points_only(
@@ -461,13 +514,13 @@ class TestRetrieveRawDatapointsAPI:
         "n_ts, ignore_unknown_ids, mock_out_eager_or_chunk, expected_raise",
         [
             (1, True, "ChunkingDpsFetcher", does_not_raise()),
-            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (3, True, "ChunkingDpsFetcher", does_not_raise()),
-            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (10, True, "EagerDpsFetcher", does_not_raise()),
-            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (50, True, "EagerDpsFetcher", does_not_raise()),
-            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
         ],
     )
     def test_retrieve_unknown__check_raises_or_returns_existing_only(
@@ -502,13 +555,12 @@ class TestRetrieveRawDatapointsAPI:
                     assert exp_len == len(res_lst)
                     validate_raw_datapoints_lst([ts_exists] * exp_len, res_lst)
 
-    @pytest.mark.parametrize(
-        "max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types",
-        PARAMETRIZED_VALUES_ALL_UNKNOWN_SINGLE_MULTIPLE_GIVEN,
-    )
+    @pytest.mark.parametrize("test_id", range(24))  # not populated here because test data depend on deterministic rng
     def test_retrieve__all_unknown_single_multiple_given(
-        self, max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types, cognite_client, retrieve_endpoints
+        self, test_id, cognite_client, retrieve_endpoints, parametrized_values_all_unknown_single_multiple_given
     ):
+        test_data = parametrized_values_all_unknown_single_multiple_given[test_id]
+        max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types = test_data
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res = endpoint(
@@ -568,6 +620,54 @@ class TestRetrieveRawDatapointsAPI:
                     assert len(r) == 0
                     assert isinstance(r.is_step, bool)
                     assert isinstance(r.is_string, bool)
+
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        res = retrieve_method(external_id=timeseries.external_id, end=3, **kwargs)
+
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(value=res.values)
+
+        assert math.isclose(res.value[0], -40)
+        assert math.isclose(res.value[1], 32)
+        assert math.isclose(res.value[2], 212)
+
+    @pytest.mark.parametrize("retrieve_method_name", ("retrieve", "retrieve_arrays"))
+    def test_unit_external_id__is_overridden_if_converted(
+        self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries, retrieve_method_name: str
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        assert timeseries.unit_external_id == "temperature:deg_c"
+
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+        res = retrieve_method(
+            id=[
+                {"id": timeseries.id},
+                {"id": timeseries.id, "target_unit": "temperature:deg_f"},
+                {"id": timeseries.id, "target_unit": "temperature:k"},
+            ],
+            end=3,
+        )
+        # Ensure unit_external_id is unchanged (Celsius):
+        assert res[0].unit_external_id == timeseries.unit_external_id
+        # ...and ensure it has changed for converted units (Fahrenheit or Kelvin):
+        assert res[1].unit_external_id == "temperature:deg_f"
+        assert res[2].unit_external_id == "temperature:k"
 
 
 class TestRetrieveAggregateDatapointsAPI:
@@ -1023,6 +1123,30 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(id=ts_string.id)) == 2
             assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
+
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        res = retrieve_method(external_id=timeseries.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
+
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(max=res.values)
+
+        assert math.isclose(res.max[0], 212)
 
 
 @pytest.fixture(scope="session")
@@ -1562,8 +1686,11 @@ class TestRetrieveDataFrameAPI:
         assert (res_df[[c1, c3, *cx]].count() == [limit] * (len(cx) + 2)).all()
         assert (res_df[[c2, c4]].count() == [limit + 2] * 2).all()
 
-    @pytest.mark.parametrize("granularity_lst, aggregates_lst, limits", PARAMETRIZED_VALUES_UNIFORM_INDEX_FAILS)
-    def test_uniform_index_fails(self, granularity_lst, aggregates_lst, limits, cognite_client, one_mill_dps_ts):
+    @pytest.mark.parametrize("test_id", range(3))
+    def test_uniform_index_fails(
+        self, test_id, parametrized_values_uniform_index_fails, cognite_client, one_mill_dps_ts
+    ):
+        granularity_lst, aggregates_lst, limits = parametrized_values_uniform_index_fails[test_id]
         with pytest.raises(ValueError, match="Cannot return a uniform index"):
             cognite_client.time_series.data.retrieve_dataframe(
                 uniform_index=True,

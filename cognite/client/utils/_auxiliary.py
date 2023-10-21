@@ -1,50 +1,68 @@
-"""Utilities for Cognite API SDK
-
-This module provides helper methods and different utilities for the Cognite API Python SDK.
-
-This module is protected and should not be used by end-users.
-"""
 from __future__ import annotations
 
 import functools
-import importlib
 import math
 import numbers
 import platform
 import warnings
 from decimal import Decimal
-from types import ModuleType
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Dict,
     Hashable,
     Iterable,
     Iterator,
-    List,
-    Optional,
     Sequence,
-    Set,
-    Tuple,
     TypeVar,
-    Union,
     overload,
 )
 from urllib.parse import quote
 
-import cognite.client
-from cognite.client.exceptions import CogniteImportError
-from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case, to_snake_case
+from cognite.client.utils._text import (
+    convert_all_keys_to_camel_case,
+    convert_all_keys_to_snake_case,
+    to_camel_case,
+    to_snake_case,
+)
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes._base import T_CogniteResource
+
 
 T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
 
 
-def is_unlimited(limit: Optional[Union[float, int]]) -> bool:
+def no_op(x: T) -> T:
+    return x
+
+
+def is_unlimited(limit: float | int | None) -> bool:
     return limit in {None, -1, math.inf}
 
 
-def basic_obj_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
+@functools.lru_cache(None)
+def get_accepted_params(cls: type[T_CogniteResource]) -> dict[str, str]:
+    return {to_camel_case(k): k for k in vars(cls()) if not k.startswith("_")}
+
+
+def fast_dict_load(
+    cls: type[T_CogniteResource], item: dict[str, Any], cognite_client: CogniteClient | None
+) -> T_CogniteResource:
+    instance = cls(cognite_client=cognite_client)
+    # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
+    accepted = get_accepted_params(cls)  # type: ignore [arg-type]
+    for camel_attr, value in item.items():
+        try:
+            setattr(instance, accepted[camel_attr], value)
+        except KeyError:
+            pass
+    return instance
+
+
+def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     if camel_case:
         return convert_all_keys_to_camel_case(vars(obj))
     return convert_all_keys_to_snake_case(vars(obj))
@@ -55,7 +73,7 @@ def handle_renamed_argument(
     new_arg_name: str,
     old_arg_name: str,
     fn_name: str,
-    kw_dct: Dict[str, Any],
+    kw_dct: dict[str, Any],
     required: bool = True,
 ) -> T:
     old_arg = kw_dct.pop(old_arg_name, None)
@@ -78,7 +96,7 @@ def handle_renamed_argument(
     return old_arg
 
 
-def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: Dict[str, Any]) -> T:
+def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: dict[str, Any]) -> T:
     new_arg_name = to_snake_case(old_arg_name)
     return handle_renamed_argument(new_arg, new_arg_name, old_arg_name, fn_name, kw_dct)
 
@@ -93,64 +111,14 @@ def json_dump_default(x: Any) -> Any:
     raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
-def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = False) -> None:
-    if var is None:
-        if not allow_none:
-            raise TypeError(f"{var_name} cannot be None")
-    elif not isinstance(var, tuple(types)):
-        raise TypeError(f"{var_name!r} must be one of types {types}, not {type(var)}")
-
-
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
     return path.format(*[quote(str(arg), safe="") for arg in args])
 
 
-@overload
-def local_import(m1: str, /) -> ModuleType:
-    ...
-
-
-@overload
-def local_import(m1: str, m2: str, /) -> Tuple[ModuleType, ModuleType]:
-    ...
-
-
-@overload
-def local_import(m1: str, m2: str, m3: str, /) -> Tuple[ModuleType, ModuleType, ModuleType]:
-    ...
-
-
-@overload
-def local_import(m1: str, m2: str, m3: str, m4: str, /) -> Tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
-    ...
-
-
-def local_import(*module: str) -> Union[ModuleType, Tuple[ModuleType, ...]]:
-    assert_type(module, "module", [tuple])
-    if len(module) == 1:
-        name = module[0]
-        try:
-            return importlib.import_module(name)
-        except ImportError as e:
-            raise CogniteImportError(name.split(".")[0]) from e
-
-    modules = []
-    for name in module:
-        try:
-            modules.append(importlib.import_module(name))
-        except ImportError as e:
-            raise CogniteImportError(name.split(".")[0]) from e
-    return tuple(modules)
-
-
-def import_legacy_protobuf() -> bool:
-    from google.protobuf import __version__ as pb_version
-
-    return 4 > int(pb_version.split(".")[0])
-
-
 def get_current_sdk_version() -> str:
-    return cognite.client.__version__
+    from cognite.client import __version__
+
+    return __version__
 
 
 @functools.lru_cache(maxsize=1)
@@ -182,7 +150,7 @@ def _check_client_has_newest_major_version() -> None:
 
 
 @overload
-def split_into_n_parts(seq: List[T], *, n: int) -> Iterator[List[T]]:
+def split_into_n_parts(seq: list[T], *, n: int) -> Iterator[list[T]]:
     ...
 
 
@@ -197,16 +165,16 @@ def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
 
 
 @overload
-def split_into_chunks(collection: List, chunk_size: int) -> List[List]:
+def split_into_chunks(collection: list, chunk_size: int) -> list[list]:
     ...
 
 
 @overload
-def split_into_chunks(collection: Dict, chunk_size: int) -> List[Dict]:
+def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]:
     ...
 
 
-def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> Union[List[List], List[Dict]]:
+def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list] | list[dict]:
     if isinstance(collection, list):
         return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
 
@@ -214,10 +182,10 @@ def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> Union[L
         collection = list(collection.items())
         return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
-    raise ValueError(f"Can only split list or dict, not {type(collection)}")
+    raise TypeError(f"Can only split list or dict, not {type(collection)}")
 
 
-def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Union[int, str]]]) -> dict:
+def convert_true_match(true_match: dict | list | tuple[int | str, int | str]) -> dict:
     if isinstance(true_match, Sequence) and len(true_match) == 2:
         converted_true_match = {}
         for i, fromto in enumerate(["source", "target"]):
@@ -232,18 +200,18 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
         raise ValueError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
 
 
-def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:
-    seen: Set[THashable] = set()
+def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
+    seen: set[THashable] = set()
     add = seen.add  # skip future attr lookups for perf
     return {x for x in seq if x in seen or add(x)}
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:
-    return sum(1 if a is not None else 0 for a in args) == 1
+    return sum(a is not None for a in args) == 1
 
 
 def rename_and_exclude_keys(
-    dct: dict[str, Any], aliases: Optional[dict[str, str]] = None, exclude: Optional[set[str]] = None
+    dct: dict[str, Any], aliases: dict[str, str] | None = None, exclude: set[str] | None = None
 ) -> dict[str, Any]:
     aliases = aliases or {}
     exclude = exclude or set()

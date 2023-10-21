@@ -198,6 +198,18 @@ class TestRelationshipscognite_client:
         assert res[0].source == asset
         assert res[0].target == time_series
 
+    def test_retrieve_unknown_raises_error(self, cognite_client: CogniteClient):
+        with pytest.raises(CogniteNotFoundError) as e:
+            cognite_client.relationships.retrieve_multiple(external_ids=["this does not exist"])
+
+        assert e.value.not_found[0]["externalId"] == "this does not exist"
+
+    def test_retrieve_unknown_ignore_unknowns(self, cognite_client: CogniteClient):
+        res = cognite_client.relationships.retrieve_multiple(
+            external_ids=["this does not exist"], ignore_unknown_ids=True
+        )
+        assert len(res) == 0
+
     def test_deletes_ignore_unknown_ids(self, cognite_client):
         cognite_client.relationships.delete(external_id=["non_existing_rel"], ignore_unknown_ids=True)
 

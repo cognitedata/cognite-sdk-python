@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.containers import (
     Container,
     ContainerApply,
@@ -11,8 +11,10 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerList,
 )
 from cognite.client.data_classes.data_modeling.ids import (
+    ConstraintIdentifier,
     ContainerId,
     ContainerIdentifier,
+    IndexIdentifier,
     _load_identifier,
 )
 
@@ -28,7 +30,7 @@ class ContainersAPI(APIClient):
         chunk_size: None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[Container]:
         ...
 
@@ -38,7 +40,7 @@ class ContainersAPI(APIClient):
         chunk_size: int,
         space: str | None = None,
         include_global: bool = False,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[ContainerList]:
         ...
 
@@ -47,20 +49,20 @@ class ContainersAPI(APIClient):
         chunk_size: int | None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[Container] | Iterator[ContainerList]:
         """Iterate over containers
 
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
 
         Args:
-            chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
-            space (str, optional): The space to query.
-            include_global (bool, optional): Whether the global containers should be returned.
-            limit (int, optional): Maximum number of containers to return. Default to return all items.
+            chunk_size (int | None): Number of containers to return in each chunk. Defaults to yielding one container a time.
+            space (str | None): The space to query.
+            include_global (bool): Whether the global containers should be returned.
+            limit (int | None): Maximum number of containers to return. Defaults to returning all items.
 
-        Yields:
-            Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
+        Returns:
+            Iterator[Container] | Iterator[ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
         filter = ContainerFilter(space, include_global)
         return self._list_generator(
@@ -77,10 +79,10 @@ class ContainersAPI(APIClient):
 
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
 
-        Yields:
-            Container: yields Containers one by one.
+        Returns:
+            Iterator[Container]: yields Containers one by one.
         """
-        return cast(Iterator[Container], self())
+        return self()
 
     @overload
     def retrieve(self, ids: ContainerIdentifier) -> Container | None:
@@ -94,10 +96,10 @@ class ContainersAPI(APIClient):
         """`Retrieve one or more container by id(s). <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
-            ids (ContainerId | Sequence[ContainerId]): Identifier for container(s).
+            ids (ContainerIdentifier | Sequence[ContainerIdentifier]): Identifier for container(s).
 
         Returns:
-            Optional[Container]: Requested container or None if it does not exist.
+            Container | ContainerList | None: Requested container or None if it does not exist.
 
         Examples:
 
@@ -124,9 +126,9 @@ class ContainersAPI(APIClient):
         """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
 
         Args:
-            id (ContainerId | Sequence[ContainerId): The container identifier(s).
+            id (ContainerIdentifier | Sequence[ContainerIdentifier]): The container identifier(s).
         Returns:
-            The container(s) which has been deleted. Empty list if nothing was deleted.
+            list[ContainerId]: The container(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
             Delete containers by id::
@@ -146,16 +148,79 @@ class ContainersAPI(APIClient):
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
+    def delete_constraints(self, id: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
+        """`Delete one or more constraints <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerConstraints>`_
+
+        Args:
+            id (Sequence[ConstraintIdentifier]): The constraint identifier(s).
+        Returns:
+            list[ConstraintIdentifier]: The constraints(s) which have been deleted.
+        Examples:
+
+            Delete constraints by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.data_modeling.containers.delete_constraints(
+                ...     [(ContainerId("mySpace", "myContainer"), "myConstraint")]
+                ... )
+        """
+        return self._delete_constraints_or_indexes(id, "constraints")
+
+    def delete_indexes(self, id: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
+        """`Delete one or more indexes <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerIndexes>`_
+
+        Args:
+            id (Sequence[IndexIdentifier]): The index identifier(s).
+        Returns:
+            list[IndexIdentifier]: The indexes(s) which has been deleted.
+        Examples:
+
+            Delete indexes by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.data_modeling.containers.delete_indexes(
+                ...     [(ContainerId("mySpace", "myContainer"), "myIndex")]
+                ... )
+        """
+        return self._delete_constraints_or_indexes(id, "indexes")
+
+    def _delete_constraints_or_indexes(
+        self,
+        id: Sequence[ConstraintIdentifier] | Sequence[IndexIdentifier],
+        constraint_or_index: Literal["constraints", "indexes"],
+    ) -> list[tuple[ContainerId, str]]:
+        res = self._post(
+            url_path=f"{self._RESOURCE_PATH}/{constraint_or_index}/delete",
+            json={
+                "items": [
+                    {
+                        "space": constraint_id[0].space,
+                        "containerExternalId": constraint_id[0].external_id,
+                        "identifier": constraint_id[1],
+                    }
+                    for constraint_id in id
+                ]
+            },
+        )
+        return [
+            (ContainerId(space=item["space"], external_id=item["containerExternalId"]), item["identifier"])
+            for item in res.json()["items"]
+        ]
+
     def list(
-        self, space: str | None = None, limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT, include_global: bool = False
+        self,
+        space: str | None = None,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
+        include_global: bool = False,
     ) -> ContainerList:
         """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_
 
         Args:
-            space (str, optional): The space to query
-            limit (int, optional): Maximum number of containers to return. Default to 10. Set to -1, float("inf") or None
-                to return all items.
-            include_global (bool, optional): Whether the global containers should be returned.
+            space (str | None): The space to query
+            limit (int | None): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            include_global (bool): Whether the global containers should be returned.
 
         Returns:
             ContainerList: List of requested containers
@@ -204,7 +269,7 @@ class ContainersAPI(APIClient):
         """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
 
         Args:
-            container (container: ContainerApply | Sequence[ContainerApply]): Container or containers of containers to create or update.
+            container (ContainerApply | Sequence[ContainerApply]): Container(s) to create or update.
 
         Returns:
             Container | ContainerList: Created container(s)

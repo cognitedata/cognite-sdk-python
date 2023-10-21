@@ -77,7 +77,7 @@ class TestCogniteClient:
 
     def test_client_debug_mode(self):
         CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla"), debug=True))
-        log = logging.getLogger("cognite-sdk")
+        log = logging.getLogger("cognite.client")
         assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
         log.handlers = []
         log.propagate = False
@@ -110,6 +110,6 @@ class TestInstantiateWithClient:
         assert cls(cognite_client=c)._cognite_client == c
 
     @pytest.mark.parametrize("cls", [AssetList, Event, FileMetadataList, TimeSeriesList])
-    def test_intantiate_resource_lists_with_cognite_client(self, cls, client_config_w_token_factory):
+    def test_instantiate_resource_lists_with_cognite_client(self, cls, client_config_w_token_factory):
         c = CogniteClient(client_config_w_token_factory)
         assert cls([], cognite_client=c)._cognite_client == c

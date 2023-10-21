@@ -2,6 +2,7 @@ import json
 import os
 import re
 from io import BufferedReader
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -17,7 +18,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.utils import jsgz_load, set_request_limit
 
 
@@ -108,16 +109,16 @@ def mock_file_download_response(rsps, cognite_client):
         rsps.POST,
         cognite_client.files._get_base_url_with_base_path() + "/files/byids",
         status=200,
-        json={"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]},
+        json={"items": [{"id": 1, "name": "file1"}, {"id": 10, "externalId": "2", "name": "file2"}]},
     )
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
         response = {}
-        if "id" in identifier:
+        if identifier.get("id") == 1:
             response = {"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]}
-        elif "externalId" in identifier:
-            response = {"items": [{"externalId": "2", "downloadUrl": "https://download.file2.here"}]}
+        if identifier.get("id") == 10:
+            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.file2.here"}]}
         return 200, {}, json.dumps(response)
 
     rsps.add_callback(
@@ -128,6 +129,40 @@ def mock_file_download_response(rsps, cognite_client):
     )
     rsps.add(rsps.GET, "https://download.file1.here", status=200, body="content1")
     rsps.add(rsps.GET, "https://download.file2.here", status=200, body="content2")
+    yield rsps
+
+
+@pytest.fixture
+def mock_file_download_response_with_folder_structure_same_name(rsps, cognite_client):
+    rsps.add(
+        rsps.POST,
+        cognite_client.files._get_base_url_with_base_path() + "/files/byids",
+        status=200,
+        json={
+            "items": [
+                {"id": 1, "name": "file_a", "directory": "/rootdir/subdir"},
+                {"id": 10, "externalId": "2", "name": "file_a"},
+            ]
+        },
+    )
+
+    def download_link_callback(request):
+        identifier = jsgz_load(request.body)["items"][0]
+        response = {}
+        if identifier.get("id") == 1:
+            response = {"items": [{"id": 1, "downloadUrl": "https://download.fileFromSubdir.here"}]}
+        if identifier.get("id") == 10:
+            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.fileNoDir.here"}]}
+        return 200, {}, json.dumps(response)
+
+    rsps.add_callback(
+        rsps.POST,
+        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink",
+        callback=download_link_callback,
+        content_type="application/json",
+    )
+    rsps.add(rsps.GET, "https://download.fileFromSubdir.here", status=200, body="contentSubDir")
+    rsps.add(rsps.GET, "https://download.fileNoDir.here", status=200, body="contentNoDir")
     yield rsps
 
 
@@ -147,9 +182,9 @@ def mock_file_download_response_one_fails(rsps, cognite_client):
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
-        if "id" in identifier:
+        if identifier.get("id") == 1:
             return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
-        elif "externalId" in identifier:
+        elif identifier.get("id") == 2:
             return (400, {}, json.dumps({"error": {"message": "User error", "code": 400}}))
 
     rsps.add_callback(
@@ -363,7 +398,7 @@ class TestFilesAPI:
     def test_search(self, cognite_client, mock_files_response):
         res = cognite_client.files.search(filter=FileMetadataFilter(external_id_prefix="abc"))
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
@@ -371,7 +406,7 @@ class TestFilesAPI:
     def test_search_dict_filter(self, cognite_client, mock_files_response, filter_field):
         res = cognite_client.files.search(filter={filter_field: "abc"})
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
@@ -491,6 +526,67 @@ class TestFilesAPI:
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
 
+    @pytest.mark.parametrize(
+        "input_list,expected_output_list",
+        [
+            (["a.txt", "a.txt"], ["a.txt", "a(1).txt"]),
+            (["a.txt", "a.txt", "a(1).txt"], ["a.txt", "a(2).txt", "a(1).txt"]),
+            (["a.txt", "file", "a(1).txt", "a.txt", "file"], ["a.txt", "file", "a(1).txt", "a(2).txt", "file(1)"]),
+            (
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                ],
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a(1).txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a(1).txt")),
+                ],
+            ),
+            (
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch.tar.gz"))],
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch(1).tar.gz"))],
+            ),
+        ],
+    )
+    def test_create_unique_file_names(self, cognite_client, input_list, expected_output_list):
+        assert cognite_client.files._create_unique_file_names(input_list) == expected_output_list
+
+    def test_download_with_duplicate_names(
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
+    ):
+        cognite_client.files.download(
+            directory=tmp_path,
+            id=[1],
+            external_id=["2"],
+            keep_directory_structure=False,
+            resolve_duplicate_file_names=True,
+        )
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
+        )
+        fp1 = tmp_path / "file_a"
+        fp2 = tmp_path / "file_a(1)"
+        assert fp1.is_file()
+        assert fp2.is_file()
+
+    def test_download_with_folder_structure(
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
+    ):
+        cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"], keep_directory_structure=True)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
+        )
+        fp1 = tmp_path / "rootdir/subdir/file_a"
+        fp2 = tmp_path / "file_a"
+        assert fp1.is_file()
+        assert fp2.is_file()
+        assert fp1.read_text() == "contentSubDir"
+        assert fp2.read_text() == "contentNoDir"
+
     @pytest.fixture
     def mock_byids_response__file_with_double_dots(self, rsps, cognite_client):
         filename = "../file1"
@@ -560,6 +656,63 @@ class TestFilesAPI:
             .source.set(None),
             FileMetadataUpdate,
         )
+
+    @pytest.mark.parametrize(
+        ["data_set_id", "api_error", "expected_error", "expected_error_message"],
+        [
+            (
+                12345,
+                CogniteAPIError(
+                    message="Resource not found. This may also be due to insufficient access rights.",
+                    code=403,
+                    x_request_id="abc123",
+                ),
+                CogniteAuthorizationError,
+                "Could not create a file due to insufficient access rights.",
+            ),
+            (
+                None,
+                CogniteAPIError(
+                    message="Resource not found. This may also be due to insufficient access rights.",
+                    code=403,
+                    x_request_id="abc123",
+                ),
+                CogniteAuthorizationError,
+                "Could not create a file due to insufficient access rights. Try to provide a data_set_id.",
+            ),
+            (
+                12345,
+                CogniteAPIError(message="Bad request.", code=400, x_request_id="abc123"),
+                CogniteAPIError,
+                "Bad request.",
+            ),
+            (
+                None,
+                CogniteAPIError(message="Bad request.", code=400, x_request_id="abc123"),
+                CogniteAPIError,
+                "Bad request.",
+            ),
+        ],
+    )
+    def test_upload_bytes_post_error(
+        self,
+        cognite_client,
+        data_set_id: int,
+        api_error: CogniteAPIError,
+        expected_error: type(CogniteAPIError),
+        expected_error_message: str,
+    ):
+        def raise_api_error(*args, **kwargs):
+            raise api_error
+
+        cognite_client.files._post = raise_api_error
+
+        with pytest.raises(expected_error) as e:
+            cognite_client.files.upload_bytes(content=b"content", name="bla", data_set_id=data_set_id)
+
+        assert e.value.message == expected_error_message
+        assert e.value.code == api_error.code
+        assert e.value.x_request_id == api_error.x_request_id
 
 
 @pytest.fixture

@@ -4,7 +4,9 @@ import pytest
 from _pytest.mark import ParameterSet
 
 import cognite.client.data_classes.filters as f
+from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.filters import Filter
+from tests.utils import all_subclasses
 
 
 def load_and_dump_equals_data() -> Iterator[ParameterSet]:
@@ -54,7 +56,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
                         "lte": "2021-01-01T00:00:00Z",
                     }
                 },
-                {"hasData": {"views": [("space", "viewExternalId", "v1")], "containers": []}},
+                {"hasData": [{"type": "view", "space": "space", "externalId": "viewExternalId", "version": "v1"}]},
             ]
         },
         id="And hasData and overlaps",
@@ -97,9 +99,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
 @pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
 def test_load_and_dump_equals(raw_data: dict) -> None:
     parsed = Filter.load(raw_data)
-
     dumped = parsed.dump()
-
     assert dumped == raw_data
 
 
@@ -138,7 +138,7 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
             },
             {
                 "or": [
-                    {"hasData": {"views": [], "containers": [("space", "container")]}},
+                    {"hasData": [{"type": "container", "space": "space", "externalId": "container"}]},
                     {
                         "overlaps": {
                             "startProperty": ["space", "container", "prop1"],
@@ -163,3 +163,14 @@ def test_dump_filter(user_filter: Filter, expected: dict) -> None:
 def test_unknown_filter_type() -> None:
     with pytest.raises(ValueError, match="Unknown filter type: unknown"):
         Filter.load({"unknown": {}})
+
+
+@pytest.mark.parametrize("property_cls", filter(lambda cls: hasattr(cls, "metadata_key"), all_subclasses(EnumProperty)))
+def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> None:
+    # Bug prior to 6.32.4 would dump user given keys in camelCase
+    flt = f.Equals(property_cls.metadata_key("key_foo_Bar_baz"), "value_foo Bar_baz")  # type: ignore [attr-defined]
+    dumped = flt.dump(camel_case=True)["equals"]
+
+    # property may contain more (static) values, so we just verify the end:
+    assert dumped["property"][-2:] == ["metadata", "key_foo_Bar_baz"]
+    assert dumped["value"] == "value_foo Bar_baz"

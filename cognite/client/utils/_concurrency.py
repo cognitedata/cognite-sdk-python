@@ -1,46 +1,33 @@
 from __future__ import annotations
 
 import functools
-import inspect
 from collections import UserList
-from concurrent.futures import CancelledError, ThreadPoolExecutor
-from copy import copy
+from concurrent.futures import ThreadPoolExecutor
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Literal,
-    Optional,
     Protocol,
     Sequence,
-    Tuple,
     TypeVar,
-    Union,
 )
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
-from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
-
-if TYPE_CHECKING:
-    from types import TracebackType
+from cognite.client.utils._auxiliary import no_op
 
 
 class TasksSummary:
     def __init__(
-        self, successful_tasks: List, unknown_tasks: List, failed_tasks: List, results: List, exceptions: List
-    ):
+        self, successful_tasks: list, unknown_tasks: list, failed_tasks: list, results: list, exceptions: list
+    ) -> None:
         self.successful_tasks = successful_tasks
         self.unknown_tasks = unknown_tasks
         self.failed_tasks = failed_tasks
         self.results = results
         self.exceptions = exceptions
 
-    def joined_results(self, unwrap_fn: Optional[Callable] = None) -> list:
-        unwrap_fn = unwrap_fn or (lambda x: x)
+    def joined_results(self, unwrap_fn: Callable | None = None) -> list:
+        unwrap_fn = unwrap_fn or no_op
         joined_results: list = []
         for result in self.results:
             unwrapped = unwrap_fn(result)
@@ -52,13 +39,13 @@ class TasksSummary:
 
     def raise_compound_exception_if_failed_tasks(
         self,
-        task_unwrap_fn: Optional[Callable] = None,
-        task_list_element_unwrap_fn: Optional[Callable] = None,
-        str_format_element_fn: Optional[Callable] = None,
+        task_unwrap_fn: Callable | None = None,
+        task_list_element_unwrap_fn: Callable | None = None,
+        str_format_element_fn: Callable | None = None,
     ) -> None:
         if not self.exceptions:
             return None
-        task_unwrap_fn = (lambda x: x) if task_unwrap_fn is None else task_unwrap_fn
+        task_unwrap_fn = no_op if task_unwrap_fn is None else task_unwrap_fn
         if task_list_element_unwrap_fn is not None:
             successful = []
             for t in self.successful_tasks:
@@ -78,19 +65,24 @@ class TasksSummary:
             self.exceptions, successful=successful, failed=failed, unknown=unknown, unwrap_fn=str_format_element_fn
         )
 
+    def raise_first_encountered_exception(self) -> None:
+        # TODO: Change to 'raise_compound_exception_if_failed_tasks' in next major version?
+        if self.exceptions:
+            raise self.exceptions[0]
+
 
 def collect_exc_info_and_raise(
-    exceptions: List[Exception],
-    successful: Optional[List] = None,
-    failed: Optional[List] = None,
-    unknown: Optional[List] = None,
-    unwrap_fn: Optional[Callable] = None,
+    exceptions: list[Exception],
+    successful: list | None = None,
+    failed: list | None = None,
+    unknown: list | None = None,
+    unwrap_fn: Callable | None = None,
 ) -> None:
-    missing: List = []
-    duplicated: List = []
+    missing: list = []
+    duplicated: list = []
     missing_exc = None
     dup_exc = None
-    unknown_exc: Optional[Exception] = None
+    unknown_exc: Exception | None = None
     for exc in exceptions:
         if isinstance(exc, CogniteAPIError):
             if exc.code in [400, 422] and exc.missing is not None:
@@ -145,20 +137,14 @@ class TaskFuture(Protocol[T_Result]):
 
 
 class SyncFuture(TaskFuture[T_Result]):
-    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
+    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
         self._task = functools.partial(fn, *args, **kwargs)
-        self._result: Optional[T_Result] = None
-        self._is_cancelled = False
+        self._result: T_Result | None = None
 
     def result(self) -> T_Result:
-        if self._is_cancelled:
-            raise CancelledError
         if self._result is None:
             self._result = self._task()
         return self._result
-
-    def cancel(self) -> None:
-        self._is_cancelled = True
 
 
 class MainThreadExecutor(TaskExecutor):
@@ -178,28 +164,7 @@ class MainThreadExecutor(TaskExecutor):
         self._work_queue = AlwaysEmpty()
 
     def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
-        if "priority" in inspect.signature(fn).parameters:
-            raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
-        kwargs.pop("priority", None)
         return SyncFuture(fn, *args, **kwargs)
-
-    def shutdown(self, wait: bool = False) -> None:
-        return None
-
-    @staticmethod
-    def as_completed(it: Iterable[SyncFuture]) -> Iterator[SyncFuture]:
-        return iter(copy(it))
-
-    def __enter__(self) -> MainThreadExecutor:
-        return self
-
-    def __exit__(
-        self,
-        type: Optional[type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
-    ) -> None:
-        self.shutdown()
 
 
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
@@ -208,7 +173,6 @@ _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
 
 class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
-    priority_executor_type: Literal["priority_threadpool", "mainthread"] = "priority_threadpool"
 
 
 def get_executor(max_workers: int) -> TaskExecutor:
@@ -230,23 +194,11 @@ def get_executor(max_workers: int) -> TaskExecutor:
     return executor
 
 
-def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
-    if max_workers < 1:
-        raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
-
-    if ConcurrencySettings.priority_executor_type == "priority_threadpool":
-        return PriorityThreadPoolExecutor(max_workers)
-    elif ConcurrencySettings.priority_executor_type == "mainthread":
-        return MainThreadExecutor()  # type: ignore [return-value]
-
-    raise RuntimeError(f"Invalid priority-queue executor type '{ConcurrencySettings.priority_executor_type}'")
-
-
 def execute_tasks(
     func: Callable[..., T_Result],
-    tasks: Union[Sequence[Tuple], List[Dict]],
+    tasks: Sequence[tuple] | list[dict],
     max_workers: int,
-    executor: Optional[TaskExecutor] = None,
+    executor: TaskExecutor | None = None,
 ) -> TasksSummary:
     """
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can

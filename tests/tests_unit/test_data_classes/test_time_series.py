@@ -103,7 +103,7 @@ def mock_get_first_dp_in_ts(mock_ts_by_ids_response, cognite_client):
 
 class TestTimeSeries:
     def test_get_count__string_raises(self, cognite_client, mock_ts_by_ids_response):
-        with pytest.raises(ValueError, match="String time series does not support count aggregate"):
+        with pytest.raises(RuntimeError, match="String time series does not support count aggregate"):
             cognite_client.time_series.retrieve(id=1).count()
 
     def test_get_latest(self, cognite_client, mock_get_latest_dp_in_ts):

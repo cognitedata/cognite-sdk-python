@@ -3,18 +3,12 @@ from __future__ import annotations
 import numbers
 from abc import ABC
 from typing import (
-    Dict,
     Generic,
-    Iterable,
-    List,
     Literal,
     NoReturn,
-    Optional,
     Protocol,
     Sequence,
-    Tuple,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -38,7 +32,7 @@ class Identifier(Generic[T_ID]):
         self.__value: T_ID = value
 
     @classmethod
-    def of_either(cls, id: Optional[int], external_id: Optional[str]) -> Identifier:
+    def of_either(cls, id: int | None, external_id: str | None) -> Identifier:
         if id is external_id is None:
             raise ValueError("Exactly one of id or external id must be specified, got neither")
         elif id is not None:
@@ -49,7 +43,7 @@ class Identifier(Generic[T_ID]):
         return Identifier(id or external_id)
 
     @classmethod
-    def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> Identifier:
+    def load(cls, id: int | None = None, external_id: str | None = None) -> Identifier:
         if id is not None:
             return Identifier(id)
         if external_id is not None:
@@ -57,7 +51,7 @@ class Identifier(Generic[T_ID]):
         raise ValueError("At least one of id and external id must be specified")
 
     def name(self, camel_case: bool = False) -> str:
-        if isinstance(self.__value, int):
+        if self.is_id:
             return "id"
         return "externalId" if camel_case else "external_id"
 
@@ -66,17 +60,46 @@ class Identifier(Generic[T_ID]):
 
     @property
     def is_id(self) -> bool:
-        return isinstance(self.as_primitive(), int)
+        return isinstance(self.__value, int)
 
     @property
     def is_external_id(self) -> bool:
-        return isinstance(self.as_primitive(), str)
+        return isinstance(self.__value, str)
 
-    def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
+    def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         return {self.name(camel_case): self.__value}
 
-    def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
+    def as_tuple(self, camel_case: bool = True) -> tuple[str, T_ID]:
         return self.name(camel_case), self.__value
+
+
+class UserIdentifier:
+    def __init__(self, value: str) -> None:
+        self.__value: str = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "userIdentifier" if camel_case else "user_identifier"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
+
+
+class WorkflowVersionIdentifier:
+    def __init__(self, version: str, workflow_external_id: str) -> None:
+        self.__version: str = version
+        self.__workflow_external_id: str = workflow_external_id
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {
+            "version": self.__version,
+            ("workflowExternalId" if camel_case else "workflow_external_id"): self.__workflow_external_id,
+        }
+
+    def as_primitive(self) -> NoReturn:
+        raise AttributeError(f"Not supported for {type(self).__name__} implementation")
 
 
 class DataModelingIdentifier:
@@ -119,7 +142,7 @@ T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
 
 
 class IdentifierSequenceCore(Generic[T_Identifier], ABC):
-    def __init__(self, identifiers: List[T_Identifier], is_singleton: bool) -> None:
+    def __init__(self, identifiers: list[T_Identifier], is_singleton: bool) -> None:
         if not identifiers:
             raise ValueError("No identifiers specified")
         self._identifiers = identifiers
@@ -142,9 +165,9 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         self.assert_singleton()
         return cast(SingletonIdentifierSequence, self)
 
-    def chunked(self, chunk_size: int) -> Iterable[IdentifierSequence]:
+    def chunked(self: T_IdentifierSequenceCore, chunk_size: int) -> list[T_IdentifierSequenceCore]:
         return [
-            IdentifierSequence(chunk, is_singleton=self.is_singleton())
+            type(self)(chunk, is_singleton=self.is_singleton())
             for chunk in split_into_chunks(self._identifiers, chunk_size)
         ]
 
@@ -158,7 +181,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         return len(self) == len(set(self.as_primitives()))
 
     @staticmethod
-    def unwrap_identifier(identifier: Union[str, int, Dict]) -> Union[str, int]:
+    def unwrap_identifier(identifier: str | int | dict) -> str | int:
         if isinstance(identifier, (str, int)):
             return identifier
         if "externalId" in identifier:
@@ -170,19 +193,22 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
 
 
+T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierSequenceCore)
+
+
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @overload
     @classmethod
-    def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
+    def of(cls, *ids: list[int | str]) -> IdentifierSequence:
         ...
 
     @overload
     @classmethod
-    def of(cls, *ids: Union[int, str]) -> IdentifierSequence:
+    def of(cls, *ids: int | str) -> IdentifierSequence:
         ...
 
     @classmethod
-    def of(cls, *ids: Union[int, str, Sequence[int | str]]) -> IdentifierSequence:
+    def of(cls, *ids: int | str | Sequence[int | str]) -> IdentifierSequence:
         if len(ids) == 1 and isinstance(ids[0], Sequence) and not isinstance(ids[0], str):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
@@ -191,15 +217,15 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @classmethod
     def load(
         cls,
-        ids: Optional[Union[int, Sequence[int]]] = None,
-        external_ids: Optional[Union[str, Sequence[str]]] = None,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | Sequence[str] | None = None,
         *,
         id_name: str = "",
     ) -> IdentifierSequence:
         if id_name and not id_name.endswith("_"):
             id_name += "_"
         value_passed_as_primitive = False
-        all_identifiers: List[Union[int, str]] = []
+        all_identifiers: list[int | str] = []
 
         if ids is not None:
             if isinstance(ids, numbers.Integral):
@@ -231,3 +257,52 @@ class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]):
 
 class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
     ...
+
+
+class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
+    # TODO: Inferred type from inherited methods 'as_dicts' and 'as_primitives' wrongly include 'int'
+    @classmethod
+    def load(cls, user_identifiers: str | Sequence[str]) -> UserIdentifierSequence:
+        if isinstance(user_identifiers, str):
+            return cls([UserIdentifier(user_identifiers)], is_singleton=True)
+
+        elif isinstance(user_identifiers, Sequence):
+            return cls(list(map(UserIdentifier, map(str, user_identifiers))), is_singleton=False)
+
+        raise TypeError(f"user_identifiers must be of type str or Sequence[str]. Found {type(user_identifiers)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one user identifier (string) must be specified")
+
+
+class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):
+    @classmethod
+    def load(cls, workflow_ids: Sequence[dict]) -> WorkflowVersionIdentifierSequence:
+        if len(workflow_ids) == 1 and isinstance(workflow_ids[0], dict):
+            return cls(
+                [
+                    WorkflowVersionIdentifier(
+                        version=workflow_ids[0]["version"], workflow_external_id=workflow_ids[0]["workflowExternalId"]
+                    )
+                ],
+                is_singleton=True,
+            )
+        elif isinstance(workflow_ids, Sequence) and workflow_ids and isinstance(workflow_ids[0], dict):
+            return cls(
+                [WorkflowVersionIdentifier(entry["version"], entry["workflowExternalId"]) for entry in workflow_ids],
+                is_singleton=False,
+            )
+        raise TypeError(f"WorkflowIdentifier must be of type str or Sequence[str]. Found {type(workflow_ids)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one workflow version must be specified")
+
+    @staticmethod
+    def unwrap_identifier(identifier: str | dict) -> str | tuple[str, str]:  # type: ignore[override]
+        if isinstance(identifier, str):
+            return identifier
+        if "workflowExternalId" in identifier and "version" in identifier:
+            return identifier["workflowExternalId"], identifier["version"]
+        raise ValueError(f"{identifier} does not contain both 'workflowExternalId' and 'version''")

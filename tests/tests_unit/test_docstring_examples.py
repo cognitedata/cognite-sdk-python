@@ -9,6 +9,7 @@ from cognite.client._api import (
     data_sets,
     datapoints,
     datapoints_subscriptions,
+    documents,
     entity_matching,
     events,
     files,
@@ -18,6 +19,8 @@ from cognite.client._api import (
     sequences,
     three_d,
     time_series,
+    units,
+    workflows,
 )
 from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
 from cognite.client.testing import CogniteClientMock
@@ -56,6 +59,9 @@ class TestDocstringExamples:
     def test_files(self):
         run_docstring_tests(files)
 
+    def test_documents(self):
+        run_docstring_tests(documents)
+
     @pytest.mark.dsl
     def test_raw(self):
         run_docstring_tests(raw)
@@ -85,3 +91,9 @@ class TestDocstringExamples:
 
     def test_datapoint_subscriptions(self):
         run_docstring_tests(datapoints_subscriptions)
+
+    def test_workflows(self):
+        run_docstring_tests(workflows)
+
+    def test_units(self):
+        run_docstring_tests(units)

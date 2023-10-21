@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import abc
 import collections.abc
-import cProfile
 import enum
-import functools
 import gzip
 import importlib
 import inspect
@@ -16,7 +14,10 @@ import string
 import typing
 from collections import Counter
 from contextlib import contextmanager
+from typing import Mapping
 from typing import TYPE_CHECKING, Any, Literal, Type, TypeVar, cast, get_args, get_origin, get_type_hints
+
+from cognite.client.utils._importing import local_import
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -40,7 +41,7 @@ def all_subclasses(base: T_Type) -> list[T_Type]:
     """
     return sorted(
         filter(
-            lambda sub: str(sub).startswith("<class 'cognite.client"),
+            lambda sub: sub.__module__.startswith("cognite.client"),
             set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
         ),
         key=str,
@@ -64,7 +65,7 @@ def all_mock_children(mock, parent_name=()):
 
 
 @contextmanager
-def rng_context(seed: int):
+def rng_context(seed: int | str):
     """Temporarily override internal random state for deterministic behaviour without side-effects
 
     Idea stolen from pandas source `class RNGContext`.
@@ -138,24 +139,6 @@ def jsgz_load(s):
 
 
 @contextmanager
-def profilectx():
-    pr = cProfile.Profile()
-    pr.enable()
-    yield
-    pr.disable()
-    pr.print_stats(sort="cumtime")
-
-
-def profile(method):
-    @functools.wraps(method)
-    def wrapper(*args, **kwargs):
-        with profilectx():
-            method(*args, **kwargs)
-
-    return wrapper
-
-
-@contextmanager
 def set_request_limit(client, limit):
     limits = [
         "_CREATE_LIMIT",
@@ -181,7 +164,7 @@ def cdf_aggregate(
     aggregate: Literal["average", "sum", "count"],
     granularity: str,
     is_step: bool = False,
-    raw_freq: str = None,
+    raw_freq: str | None = None,
 ) -> pandas.DataFrame:
     """Aggregates the dataframe as CDF is doing it on the database layer.
 
@@ -244,6 +227,25 @@ def cdf_aggregate(
         .shift(-step)
         .iloc[::step]
     )
+
+
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+def dict_without(input_dict: Mapping[K, V], without_keys: set[str]) -> dict[K, V]:
+    """Copy `input_dict`, but exclude the keys in `without_keys`.
+
+    >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
+    >>> b = dict_without(a, {"foo", "bar"})
+    >>> b
+    {'zip': 'zap'}
+    >>> b["foo"] = "not bar"
+    >>> a
+    {'foo': 'bar', 'bar': 'baz', 'zip': 'zap'}
+    """
+    return {k: v for k, v in input_dict.items() if k not in without_keys}
 
 
 T_Object = TypeVar("T_Object", bound=object)

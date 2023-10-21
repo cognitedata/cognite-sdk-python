@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from cognite.client.data_classes._base import Geometry
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -42,6 +45,13 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
+)
+from cognite.client.data_classes.documents import (
+    Document,
+    DocumentHighlight,
+    DocumentHighlightList,
+    DocumentList,
+    SourceFile,
 )
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
 from cognite.client.data_classes.extractionpipelines import (
@@ -128,7 +138,6 @@ from cognite.client.data_classes.shared import (
     AggregateUniqueValuesResult,
     GeoLocation,
     GeoLocationFilter,
-    Geometry,
     GeometryFilter,
     TimestampRange,
 )
@@ -199,6 +208,31 @@ from cognite.client.data_classes.transformations.schema import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
+from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
+from cognite.client.data_classes.workflows import (
+    CDFTaskOutput,
+    CDFTaskParameters,
+    DynamicTaskOutput,
+    DynamicTaskParameters,
+    FunctionTaskOutput,
+    FunctionTaskParameters,
+    TransformationTaskOutput,
+    TransformationTaskParameters,
+    Workflow,
+    WorkflowDefinition,
+    WorkflowDefinitionUpsert,
+    WorkflowExecution,
+    WorkflowExecutionDetailed,
+    WorkflowExecutionList,
+    WorkflowList,
+    WorkflowTask,
+    WorkflowTaskExecution,
+    WorkflowUpsert,
+    WorkflowVersion,
+    WorkflowVersionId,
+    WorkflowVersionList,
+    WorkflowVersionUpsert,
+)
 
 __all__ = [
     "Annotation",
@@ -245,6 +279,11 @@ __all__ = [
     "FileMetadataFilter",
     "FileMetadataList",
     "FileMetadataUpdate",
+    "SourceFile",
+    "Document",
+    "DocumentList",
+    "DocumentHighlight",
+    "DocumentHighlightList",
     "ClientCredentials",
     "CreatedSession",
     "Group",
@@ -332,8 +371,8 @@ __all__ = [
     "AggregateUniqueValuesResult",
     "GeoLocation",
     "GeoLocationFilter",
-    "Geometry",
     "GeometryFilter",
+    "Geometry",
     "TimestampRange",
     "Datapoint",
     "Datapoints",
@@ -363,4 +402,28 @@ __all__ = [
     "FeatureTypeUpdateList",
     "CoordinateReferenceSystemList",
     "CoordinateReferenceSystem",
+    "UserProfile",
+    "UserProfileList",
+    "WorkflowUpsert",
+    "WorkflowExecution",
+    "WorkflowExecutionDetailed",
+    "WorkflowExecutionList",
+    "WorkflowList",
+    "WorkflowVersion",
+    "WorkflowVersionUpsert",
+    "WorkflowVersionId",
+    "WorkflowVersionList",
+    "FunctionTaskParameters",
+    "TransformationTaskParameters",
+    "CDFTaskParameters",
+    "DynamicTaskParameters",
+    "FunctionTaskOutput",
+    "TransformationTaskOutput",
+    "CDFTaskOutput",
+    "DynamicTaskOutput",
+    "WorkflowDefinition",
+    "WorkflowDefinitionUpsert",
+    "WorkflowTaskExecution",
+    "Workflow",
+    "WorkflowTask",
 ]

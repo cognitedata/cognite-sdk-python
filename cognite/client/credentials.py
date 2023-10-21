@@ -7,7 +7,7 @@ import threading
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
+from typing import Any, Callable, Protocol
 
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
@@ -20,7 +20,7 @@ _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 15  # Do not change without also updating
 
 class CredentialProvider(Protocol):
     @abstractmethod
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         raise NotImplementedError
 
 
@@ -28,7 +28,7 @@ class Token(CredentialProvider):
     """Token credential provider
 
     Args:
-        token (Union[str, Callable[[], str]): A token or a token factory.
+        token (str | Callable[[], str]): A token or a token factory.
 
     Examples:
 
@@ -41,7 +41,7 @@ class Token(CredentialProvider):
         under the hood, so it will be called while holding a thread lock (threading.Lock()).
     """
 
-    def __init__(self, token: Union[str, Callable[[], str]]) -> None:
+    def __init__(self, token: str | Callable[[], str]) -> None:
         if isinstance(token, str):
             self.__token_factory = lambda: token
 
@@ -49,7 +49,7 @@ class Token(CredentialProvider):
             token_refresh_lock = threading.Lock()
 
             def thread_safe_get_token() -> str:
-                assert not isinstance(token, str)  # unbelivable
+                assert not isinstance(token, str)  # unbelievable
                 with token_refresh_lock:
                     return token()
 
@@ -57,7 +57,7 @@ class Token(CredentialProvider):
         else:
             raise TypeError(f"'token' must be a string or a no-argument-callable returning a string, not {type(token)}")
 
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         return "Authorization", f"Bearer {self.__token_factory()}"
 
 
@@ -67,8 +67,8 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         self.token_expiry_leeway_seconds = token_expiry_leeway_seconds
 
         self.__token_refresh_lock = threading.Lock()
-        self.__access_token: Optional[str] = None
-        self.__access_token_expires_at: Optional[float] = None
+        self.__access_token: str | None = None
+        self.__access_token_expires_at: float | None = None
 
     def __getstate__(self) -> dict[str, Any]:
         # threading.Lock is not picklable, temporarily remove:
@@ -82,18 +82,18 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         self.__token_refresh_lock = threading.Lock()
 
     @abstractmethod
-    def _refresh_access_token(self) -> Tuple[str, float]:
+    def _refresh_access_token(self) -> tuple[str, float]:
         """This method should return the access_token and expiry time"""
         raise NotImplementedError
 
-    def __should_refresh_token(self, token: Optional[str], expires_at: Optional[float]) -> bool:
+    def __should_refresh_token(self, token: str | None, expires_at: float | None) -> bool:
         no_token = token is None
         token_is_expired = expires_at is None or time.time() > expires_at - self.token_expiry_leeway_seconds
         return no_token or token_is_expired
 
     @staticmethod
-    def _verify_credentials(credentials: Dict[str, Any]) -> None:
-        """The msal library doesnt raise anything when auth fails, but returns a dictionary with varying keys"""
+    def _verify_credentials(credentials: dict[str, Any]) -> None:
+        """The msal library doesn't raise anything when auth fails, but returns a dictionary with varying keys"""
         if "access_token" in credentials and "expires_in" in credentials:
             return
 
@@ -103,7 +103,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
             f"Error generating access token! Error: {credentials['error']}, error description: {err_descr}"
         )
 
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         # We lock here to ensure we don't issue a herd of refresh requests in concurrent scenarios.
         # This means we will block all requests for the duration of the token refresh.
         # TODO: Consider instead having a background thread periodically refresh the token to avoid this blocking.
@@ -131,7 +131,7 @@ class _WithMsalSerializableTokenCache:
         return token_cache
 
     @staticmethod
-    def _resolve_token_cache_path(token_cache_path: Optional[Path], client_id: str) -> Path:
+    def _resolve_token_cache_path(token_cache_path: Path | None, client_id: str) -> Path:
         return token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{client_id}.bin"
 
     def _create_client_app(self, token_cache_path: Path, client_id: str, authority_url: str) -> PublicClientApplication:
@@ -153,8 +153,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     Args:
         authority_url (str): OAuth authority url
         client_id (str): Your application's client id.
-        scopes (List[str]): A list of scopes.
-        token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        scopes (list[str]): A list of scopes.
+        token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
@@ -171,8 +171,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         self,
         authority_url: str,
         client_id: str,
-        scopes: List[str],
-        token_cache_path: Optional[Path] = None,
+        scopes: list[str],
+        token_cache_path: Path | None = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
         super().__init__(token_expiry_leeway_seconds)
@@ -203,15 +203,19 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return self.__client_id
 
     @property
-    def scopes(self) -> List[str]:
+    def scopes(self) -> list[str]:
         return self.__scopes
 
-    def _refresh_access_token(self) -> Tuple[str, float]:
-        # First check if there is a serialized token cached on disk.
+    def _refresh_access_token(self) -> tuple[str, float]:
+        # First check if a token cache exists on disk. If yes, find and use:
+        # - A valid access token.
+        # - A valid refresh token, and if so, use it automatically to redeem a new access token.
+        credentials = None
         if accounts := self.__app.get_accounts():
             credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
-        # If not, we acquire a new token using device code auth flow:
-        else:
+
+        # If we're unable to find (or acquire a new) access token, we initiate the device code auth flow:
+        if credentials is None:
             device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
             # print device code user instructions to screen
             print(f"Device code: {device_flow['message']}")  # noqa: T201
@@ -229,9 +233,9 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
     Args:
         authority_url (str): OAuth authority url
         client_id (str): Your application's client id.
-        scopes (List[str]): A list of scopes.
-        redirect_port (List[str]): Redirect port defaults to 53000.
-        token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        scopes (list[str]): A list of scopes.
+        redirect_port (int): Redirect port defaults to 53000.
+        token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
@@ -248,12 +252,11 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         self,
         authority_url: str,
         client_id: str,
-        scopes: List[str],
+        scopes: list[str],
         redirect_port: int = 53000,
-        token_cache_path: Optional[Path] = None,
+        token_cache_path: Path | None = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
-
         super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
         self.__client_id = client_id
@@ -283,15 +286,19 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         return self.__client_id
 
     @property
-    def scopes(self) -> List[str]:
+    def scopes(self) -> list[str]:
         return self.__scopes
 
-    def _refresh_access_token(self) -> Tuple[str, float]:
-        # First check if there is a serialized token cached on disk.
+    def _refresh_access_token(self) -> tuple[str, float]:
+        # First check if a token cache exists on disk. If yes, find and use:
+        # - A valid access token.
+        # - A valid refresh token, and if so, use it automatically to redeem a new access token.
+        credentials = None
         if accounts := self.__app.get_accounts():
             credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
-        # If not, we acquire a new token interactively
-        else:
+
+        # If we're unable to find (or acquire a new) access token, we initiate the interactive auth flow:
+        if credentials is None:
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
 
         self._verify_credentials(credentials)
@@ -315,14 +322,14 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            tenant_id: The Azure tenant id
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            client_id: Your application's client id.
-            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
-            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+            tenant_id (str): The Azure tenant id
+            client_id (str): Your application's client id.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
-            An OAuthInteractive instance
+            OAuthInteractive: An OAuthInteractive instance
         """
         return cls(
             authority_url=f"https://login.microsoftonline.com/{tenant_id}",
@@ -340,7 +347,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         token_url (str): OAuth token url
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
-        scopes (List[str]): A list of scopes.
+        scopes (list[str]): A list of scopes.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
         **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
@@ -363,16 +370,16 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         token_url: str,
         client_id: str,
         client_secret: str,
-        scopes: List[str],
+        scopes: list[str],
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
         **token_custom_args: Any,
-    ):
+    ) -> None:
         super().__init__(token_expiry_leeway_seconds)
         self.__token_url = token_url
         self.__client_id = client_id
         self.__client_secret = client_secret
         self.__scopes = scopes
-        self.__token_custom_args: Dict[str, Any] = token_custom_args
+        self.__token_custom_args: dict[str, Any] = token_custom_args
         self.__oauth = self._create_oauth_session()
         self._validate_token_custom_args()
 
@@ -413,14 +420,14 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__client_secret
 
     @property
-    def scopes(self) -> List[str]:
+    def scopes(self) -> list[str]:
         return self.__scopes
 
     @property
-    def token_custom_args(self) -> Dict[str, Any]:
+    def token_custom_args(self) -> dict[str, Any]:
         return self.__token_custom_args
 
-    def _refresh_access_token(self) -> Tuple[str, float]:
+    def _refresh_access_token(self) -> tuple[str, float]:
         from cognite.client.config import global_config
 
         try:
@@ -455,15 +462,15 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            tenant_id: The Azure tenant id
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            client_id: Your application's client id.
-            client_secret: Your application's client secret.
-            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
-            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+            tenant_id (str): The Azure tenant id
+            client_id (str): Your application's client id.
+            client_secret (str): Your application's client secret.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
-            An OAuthClientCredentials instance
+            OAuthClientCredentials: An OAuthClientCredentials instance
         """
         return cls(
             token_url=f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
@@ -483,7 +490,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         client_id (str): Your application's client id.
         cert_thumbprint (str): Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
         certificate (str): Your private certificate, typically read from a .pem file
-        scopes (List[str]): A list of scopes.
+        scopes (list[str]): A list of scopes.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
@@ -505,9 +512,9 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         client_id: str,
         cert_thumbprint: str,
         certificate: str,
-        scopes: List[str],
+        scopes: list[str],
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
-    ):
+    ) -> None:
         super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
         self.__client_id = client_id
@@ -538,10 +545,10 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         return self.__certificate
 
     @property
-    def scopes(self) -> List[str]:
+    def scopes(self) -> list[str]:
         return self.__scopes
 
-    def _refresh_access_token(self) -> Tuple[str, float]:
+    def _refresh_access_token(self) -> tuple[str, float]:
         credentials = self.__app.acquire_token_for_client(scopes=self.__scopes)
 
         self._verify_credentials(credentials)
