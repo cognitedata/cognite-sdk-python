@@ -17,6 +17,8 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.0.0] - 2023-10-24
+
 ## [6.38.0] - 2023-10-30
 ### Added
 - Support `onFailure` property in Workflows, allowing marking Tasks as optional in a Workflow.
@@ -33,13 +35,13 @@ Changes are grouped as follows
 ### Added
 - Support for `through` on node result set expressions.
 ### Fixed
-- `unit` on properties in data modeling. This was typed as a string, but it is in fact a direct relation.
+- `unit` on properties in data modelling. This was typed as a string, but it is in fact a direct relation.
 
 ## [6.34.2] - 2023-10-23
 ### Fixed
-- Loading a `ContainerApply` from source failed with `KeyError` if `nullable`, `autoIncrement`, or `cursorable` were not set 
-  in the `ContainerProperty` and `BTreeIndex` classes even though they are optional. This is now fixed. 
- 
+- Loading a `ContainerApply` from source failed with `KeyError` if `nullable`, `autoIncrement`, or `cursorable` were not set
+  in the `ContainerProperty` and `BTreeIndex` classes even though they are optional. This is now fixed.
+
 ## [6.34.1] - 2023-10-23
 ### Added
 - Support for setting `data_set_id` and `metadata` in `ThreeDModelsAPI.create`.
