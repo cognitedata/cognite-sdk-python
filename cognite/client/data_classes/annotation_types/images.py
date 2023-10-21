@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -48,10 +48,21 @@ class ObjectDetection(VisionResource):
         return cls(
             label=resource["label"],
             confidence=resource.get("confidence"),
+            attributes={
+                key: Attribute.load(attribute, cognite_client)
+                for key, attribute in resource.get("attributes", {}).items()
+            }
+            or None,
             bounding_box=load_resource(resource, BoundingBox, "boundingBox"),
             polygon=load_resource(resource, Polygon, "polygon"),
             polyline=load_resource(resource, Polyline, "polyline"),
         )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.attributes is not None:
+            dumped["attributes"] = {k: v.dump(camel_case=camel_case) for k, v in self.attributes.items()}
+        return dumped
 
 
 @dataclass

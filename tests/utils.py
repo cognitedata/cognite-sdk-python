@@ -427,6 +427,8 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _create_type_hint_3_10(cls, annotation: str, resource_module_vars: dict[str, Any]) -> Any:
+        if annotation.endswith(" | None"):
+            annotation = annotation[:-7]
         try:
             return eval(annotation, resource_module_vars)
         except TypeError:
