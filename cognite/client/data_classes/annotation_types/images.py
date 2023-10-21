@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import load_resource
 from cognite.client.data_classes.annotation_types.primitives import (
     Attribute,
@@ -109,6 +111,16 @@ class KeypointCollection(VisionResource):
         if isinstance(self.keypoints, dict):
             self.keypoints = {k: Keypoint(**v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
 
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            label=resource["label"],
+            keypoints={k: Keypoint.load(v) for k, v in resource["keypoints"].items()},
+            attributes=resource.get("attributes"),
+            confidence=resource.get("confidence"),
+        )
+
 
 @dataclass
 class KeypointCollectionWithObjectDetection(VisionResource):
@@ -120,3 +132,11 @@ class KeypointCollectionWithObjectDetection(VisionResource):
             self.object_detection = ObjectDetection(**self.object_detection)
         if isinstance(self.keypoint_collection, dict):
             self.keypoint_collection = KeypointCollection(**self.keypoint_collection)
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            object_detection=ObjectDetection.load(resource["objectDetection"], cognite_client),
+            keypoint_collection=KeypointCollection.load(resource["keypointCollection"], cognite_client),
+        )

@@ -139,9 +139,19 @@ class Keypoint(VisionResource):
         if isinstance(self.point, dict):
             self.point = Point(**self.point)
 
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Keypoint:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(point=Point.load(resource["point"]), confidence=resource.get("confidence"))
+
 
 @dataclass
 class Attribute(VisionResource):
     type: Literal["boolean", "numerical"]
     value: bool | float
     description: str | None = None
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Attribute:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(type=resource["type"], value=resource["value"], description=resource.get("description"))

@@ -122,7 +122,7 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
         instance = super().load(resource, cognite_client)
         if instance.contacts:
             instance.contacts = [ExtractionPipelineContact._load(contact) for contact in instance.contacts]

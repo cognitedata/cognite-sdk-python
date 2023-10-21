@@ -68,6 +68,7 @@ methods is `json` and `yaml` serializable.
 * In transformations, `TransformationJob` `dump` was not `json` serializable, and attributes
   `destination` and `status` were not loaded into appropriate data structures. 
 * In transformations, `TransformationSchemaMapType` `dump` was not `json` serializable.
+* In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
 
 ## [6.34.0] - 2023-10-20
 ### Fixed
