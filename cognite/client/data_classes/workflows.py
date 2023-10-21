@@ -175,7 +175,8 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return cls(
             external_id=function["externalId"],
             data=function.get("data"),
-            is_async_complete=resource.get("isAsyncComplete") or resource.get("asyncComplete"),
+            # API uses isAsyncComplete and asyncComplete inconsistently:
+            is_async_complete=resource.get("isAsyncComplete", resource.get("asyncComplete")),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
