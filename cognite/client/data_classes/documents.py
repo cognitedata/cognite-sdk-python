@@ -90,8 +90,9 @@ class SourceFile(CogniteResource):
         if self.geo_location:
             output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
         for key in ["metadata", "labels", "asset_ids", "assetIds"]:
-            # Remove empty lists and dicts:            if key in output and not output[key]:
-            del output[key]
+            # Remove empty lists and dicts
+            if key in output and not output[key]:
+                del output[key]
         return output
 
 

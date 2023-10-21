@@ -69,6 +69,7 @@ methods is `json` and `yaml` serializable.
   `destination` and `status` were not loaded into appropriate data structures. 
 * In transformations, `TransformationSchemaMapType` `dump` was not `json` serializable.
 * In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
+* Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
 
 ## [6.34.0] - 2023-10-20
 ### Fixed

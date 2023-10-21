@@ -800,6 +800,16 @@ class FeatureParameters(VisionResource):
             personal_protective_equipment_detection_parameters=load_resource(
                 data, PersonalProtectiveEquipmentDetectionParameters, "personalProtectiveEquipmentDetectionParameters"
             ),
+            digital_gauge_detection_parameters=load_resource(
+                data, DigitalGaugeDetection, "digitalGaugeDetectionParameters"
+            ),
+            dial_gauge_detection_parameters=load_resource(
+                data,
+                DialGaugeDetection,
+                "dialGaugeDetectionParameters",
+            ),
+            level_gauge_detection_parameters=load_resource(data, LevelGaugeDetection, "levelGaugeDetectionParameters"),
+            valve_detection_parameters=load_resource(data, ValveDetection, "valveDetectionParameters"),
         )
 
 
