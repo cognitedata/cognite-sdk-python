@@ -289,7 +289,7 @@ class Transformation(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Transformation:
-        instance =cast(Transformation, super().load(resource, cognite_client))
+        instance = cast(Transformation, super().load(resource, cognite_client))
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 

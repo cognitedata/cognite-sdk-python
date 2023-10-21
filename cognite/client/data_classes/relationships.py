@@ -113,7 +113,7 @@ class Relationship(CogniteResource):
 
     @staticmethod
     def _convert_resource(
-        resource: dict[str, Any], resource_type: str | None,  cognite_client: CogniteClient |None = None
+        resource: dict[str, Any], resource_type: str | None, cognite_client: CogniteClient | None = None
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
         resource_type = resource_type.lower() if resource_type else resource_type
         if resource_type == "timeseries":
@@ -127,6 +127,7 @@ class Relationship(CogniteResource):
         if resource_type == "event":
             return Event.load(resource, cognite_client=cognite_client)
         return resource
+
 
 class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.

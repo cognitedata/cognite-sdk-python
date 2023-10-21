@@ -14,10 +14,7 @@ import string
 import typing
 from collections import Counter
 from contextlib import contextmanager
-from typing import Mapping
-from typing import TYPE_CHECKING, Any, Literal, Type, TypeVar, cast, get_args, get_origin, get_type_hints
-
-from cognite.client.utils._importing import local_import
+from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -26,7 +23,7 @@ from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
 from cognite.client.testing import CogniteClientMock
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string
 
 if TYPE_CHECKING:
@@ -258,7 +255,7 @@ class FakeCogniteResourceGenerator:
         self._random = random.Random(seed)
         self._cognite_client = cognite_client or CogniteClientMock()
 
-    def create_instance(self, resource_cls: Type[T_Object]) -> T_Object:
+    def create_instance(self, resource_cls: type[T_Object]) -> T_Object:
         signature = inspect.signature(resource_cls.__init__)
         try:
             type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)

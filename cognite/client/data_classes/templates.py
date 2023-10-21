@@ -460,7 +460,7 @@ class GraphQlResponse(CogniteResource):
         return output
 
     @classmethod
-    def load(cls, resource: Union[dict, str], cognite_client: CogniteClient | None = None) -> GraphQlResponse:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> GraphQlResponse:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             data=resource.get("data"),

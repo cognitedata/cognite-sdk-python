@@ -38,6 +38,7 @@ class DataModelingResource(CogniteResource, ABC):
     ) -> T_DataModelingResource:
         return cls._load(resource)
 
+
 T_DataModelingResource = TypeVar("T_DataModelingResource", bound=DataModelingResource)
 
 

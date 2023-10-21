@@ -223,6 +223,7 @@ class DatapointsArray(CogniteResource):
         # (also future-proofs the SDK; ns is coming!):
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
+
     # dps_dct = json.loads(dps_dct) if isinstance(dps_dct, str) else dps_dct
     # if "timestamp" in dps_dct:
     #     assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love

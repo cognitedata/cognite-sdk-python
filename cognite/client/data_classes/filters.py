@@ -10,8 +10,6 @@ from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConv
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import to_camel_case
 
-from typing_extensions import TypeAlias
-
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 

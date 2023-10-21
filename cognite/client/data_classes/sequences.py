@@ -416,7 +416,7 @@ class SequenceData(CogniteResource):
         return {key: value for key, value in dumped.items() if value is not None}
 
     @classmethod
-    def load(cls, resource: Union[dict, str], cognite_client: CogniteClient | None = None) -> SequenceData:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SequenceData:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             id=resource.get("id"),

@@ -213,7 +213,7 @@ class TestCogniteResource:
 
     @pytest.mark.dsl
     @pytest.mark.parametrize("cognite_resource_subclass", all_concrete_subclasses(CogniteResource))
-    def test_json_serialize(self, cognite_resource_subclass: Type[CogniteResource], cognite_mock_client):
+    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
         # Arrange
         instance = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client).create_instance(
             cognite_resource_subclass
@@ -230,7 +230,7 @@ class TestCogniteResource:
 
     @pytest.mark.dsl
     @pytest.mark.parametrize("cognite_resource_subclass", all_concrete_subclasses(CogniteResource))
-    def test_yaml_serialize(self, cognite_resource_subclass: Type[CogniteResource], cognite_mock_client):
+    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
         # Arrange
         instance = FakeCogniteResourceGenerator(seed=66, cognite_client=cognite_mock_client).create_instance(
             cognite_resource_subclass

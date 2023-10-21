@@ -48,7 +48,7 @@ class ObjectDetection(VisionResource):
             confidence=resource.get("confidence"),
             bounding_box=load_resource(resource, BoundingBox, "boundingBox"),
             polygon=load_resource(resource, Polygon, "polygon"),
-            polyline=load_resource(resource, PolyLine, "polyline"),
+            polyline=load_resource(resource, Polyline, "polyline"),
         )
 
 

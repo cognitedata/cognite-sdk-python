@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Union, Sequence
+from typing import Any, Literal, Sequence, Union, cast
+
 from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil, Geometry
@@ -137,34 +138,12 @@ class GeometryFilter(dict):
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
-    def _load(cls, raw_geometry: Dict[str, Any]) -> Geometry:
+    def _load(cls, raw_geometry: dict[str, Any]) -> Geometry:
         return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
-
-class GeometryFilter(dict):
-    """Represents the points, curves and surfaces in the coordinate space.
-
-    Args: type (str): The geometry type. One of 'Point', 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-          coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
-    """
-
-    _VALID_TYPES = frozenset({"Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
-
-    def __init__(
-        self,
-        type: Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
-        coordinates: list,
-    ) -> None:
-        if type not in self._VALID_TYPES:
-            raise ValueError(f"type must be one of {self._VALID_TYPES}")
-        self.type = type
-        self.coordinates = coordinates
-
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
 
 class GeoLocation(dict):
