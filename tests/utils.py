@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import DataPointSubscriptionCreate, Relationship, filters
-from cognite.client.data_classes._base import CogniteResourceList
+from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
 from cognite.client.testing import CogniteClientMock
@@ -277,7 +277,11 @@ class FakeCogniteResourceGenerator:
             elif parameter.annotation is inspect.Parameter.empty:
                 raise ValueError(f"Parameter {name} of {resource_cls.__name__} is missing annotation")
 
-            value = self.create_value(type_hint_by_name[name])
+            if resource_cls is Geometry and name == "geometries":
+                # Special case for Geometry to avoid recursion.
+                value = None
+            else:
+                value = self.create_value(type_hint_by_name[name])
 
             if parameter.kind in {parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL}:
                 positional_arguments.append(value)
@@ -441,8 +445,9 @@ class FakeCogniteResourceGenerator:
             alternatives = [cls._create_type_hint_3_10(a.strip(), resource_module_vars) for a in annotation.split("|")]
             return typing.Union[tuple(alternatives)]
         elif annotation.startswith("dict[") and annotation.endswith("]"):
-            if Counter(annotation)[","] != 1:
-                raise NotImplementedError("Only one comma is supported in dict type hints.")
+            if Counter(annotation)[","] > 1:
+                key, rest = annotation[5:-1].split(",", 1)
+                return typing.Dict[key.strip(), cls._create_type_hint_3_10(rest.strip(), resource_module_vars)]
             key, value = annotation[5:-1].split(",")
             return typing.Dict[
                 cls._create_type_hint_3_10(key.strip(), resource_module_vars),
