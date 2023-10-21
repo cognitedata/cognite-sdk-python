@@ -289,7 +289,7 @@ class Transformation(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Transformation:
-        instance = cast(Transformation, super().load(resource, cognite_client))
+        instance = super().load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 
@@ -543,7 +543,7 @@ class TransformationPreviewResult(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
-        instance = cast(TransformationPreviewResult, super().load(resource, cognite_client))
+        instance = super().load(resource, cognite_client)
         if isinstance(instance.schema, dict):
             items = instance.schema.get("items")
             if items is not None:

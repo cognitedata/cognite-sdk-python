@@ -423,9 +423,10 @@ class ViewResolveItem(UserDict, CogniteResource):
     @classmethod
     def load(cls, data: dict | str, cognite_client: CogniteClient | None = None) -> ViewResolveItem:
         if isinstance(data, str):
-            return cls._load(json.loads(data), cognite_client=cognite_client)
+            return cls.load(json.loads(data), cognite_client=cognite_client)
         elif isinstance(data, dict):
             return cls(data, cognite_client=cognite_client)
+        raise TypeError(f"Resource must be json str or dict, not {type(data)}")
 
 
 class GraphQlError(CogniteResource):

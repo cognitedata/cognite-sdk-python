@@ -774,7 +774,7 @@ class APIClient:
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
         elif aggregate in {"uniqueValues", "uniqueProperties"}:
-            return UniqueResultList._load(json_items, cognite_client=self._cognite_client)
+            return UniqueResultList.load(json_items, cognite_client=self._cognite_client)
         else:
             raise ValueError(f"Unknown aggregate: {aggregate}")
 

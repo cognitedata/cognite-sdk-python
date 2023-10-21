@@ -130,7 +130,7 @@ class CogniteResource(_WithClientMixin):
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(
+    def load(
         cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
         if isinstance(resource, dict):
@@ -307,7 +307,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return notebook_display_with_fallback(self)
 
     @classmethod
-    def _load(
+    def load(
         cls: type[T_CogniteResourceList],
         resource_list: str | Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
@@ -725,3 +725,9 @@ class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
                 raise ValueError(f"All {type(x).__name__} must have id")
             ids.append(x.id)
         return ids
+
+
+def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
+    if (res := dct.get(key)) is not None:
+        return cls.load(res)
+    return None

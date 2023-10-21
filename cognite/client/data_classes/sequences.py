@@ -345,8 +345,10 @@ class SequenceData(CogniteResource):
         columns: SequenceType[dict[str, Any]] | None = None,
     ) -> None:
         if rows:
-            row_numbers = [r["rowNumber"] if isinstance(r, dict) else r.row_number for r in rows]
-            values = [r["values"] if isinstance(r, dict) else r.value for r in rows]
+            if not isinstance(rows, list) and rows and not isinstance(rows[0], dict):
+                raise ValueError("rows must be a list of dicts")
+            row_numbers = [r["rowNumber"] for r in rows]
+            values = [r["values"] for r in rows]
         self.id = id
         self.external_id = external_id
         self.row_numbers = row_numbers or []

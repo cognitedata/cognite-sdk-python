@@ -4,7 +4,9 @@ import json
 from abc import ABC
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
+
 from typing_extensions import Self
+
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_dict_to_case

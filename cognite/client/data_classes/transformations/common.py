@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from typing_extensions import Self
+
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.utils._auxiliary import basic_obj_dump
@@ -336,17 +338,19 @@ class OidcCredentials:
         return basic_obj_dump(self, camel_case)
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> OidcCredentials:
+    def load(cls, data: dict[str, Any]) -> Self:
         """Load data into the instance.
 
         Args:
-            data (Dict[str, Any]): A dictionary representation of the instance.
+            data (dict[str, Any]): A dictionary representation of the instance.
+        Returns:
+            Self: No description.
         """
         return cls(
-            client_id=data.get("clientId"),
-            client_secret=data.get("clientSecret"),
-            scopes=data.get("scopes"),
-            token_uri=data.get("tokenUri"),
+            client_id=data["clientId"],
+            client_secret=data["clientSecret"],
+            scopes=data["scopes"],
+            token_uri=data["tokenUri"],
             audience=data.get("audience"),
             cdf_project_name=data.get("cdfProjectName"),
         )
@@ -379,7 +383,9 @@ class NonceCredentials:
         """Load data into the instance.
 
         Args:
-            data (Dict[str, Any]): A dictionary representation of the instance.
+            data (dict[str, Any]): A dictionary representation of the instance.
+        Returns:
+            NonceCredentials: No description.
         """
         return cls(
             session_id=data["sessionId"],

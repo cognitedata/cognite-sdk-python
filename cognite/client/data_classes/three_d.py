@@ -195,7 +195,7 @@ class ThreeDModelRevision(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDModelRevision:
-        instance = super()._load(resource, cognite_client)
+        instance = super().load(resource, cognite_client)
         if isinstance(resource, dict) and instance.camera is not None:
             instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
