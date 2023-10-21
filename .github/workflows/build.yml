@@ -3,7 +3,7 @@ name: build
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, v7-release]
 
 env:
   PYTHON_VERSION: '3.8'
