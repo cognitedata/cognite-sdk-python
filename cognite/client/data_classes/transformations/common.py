@@ -407,7 +407,7 @@ class TransformationBlockedInfo:
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
+    def load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
         return cls(reason=resource["reason"], created_time=resource["createdTime"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

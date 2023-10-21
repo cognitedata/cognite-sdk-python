@@ -108,7 +108,7 @@ class Json(ListablePropertyType):
 
 
 @dataclass
-class ListablePropertyTypeWithUnit(ListablePropertyType):
+class ListablePropertyTypeWithUnit(ListablePropertyType, ABC):
     _type = "listable_with_unit"
     unit: str | None = None
 

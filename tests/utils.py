@@ -314,6 +314,9 @@ class FakeCogniteResourceGenerator:
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
+        if isinstance(type_, typing.ForwardRef):
+            type_ = type_._evaluate(globals(), self._type_checking())
+
         if var_name == "external_id" and type_ is str:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
         elif var_name == "id" and type_ is int:
