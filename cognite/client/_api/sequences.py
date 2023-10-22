@@ -1062,7 +1062,6 @@ class SequencesDataAPI(APIClient):
             post_obj.update(self._process_columns(column_external_ids=columns))
             post_obj.update({"start": start, "end": end, "limit": limit})
             seqdata: list = []
-            cols: list = []
             for data, cols in self._fetch_data(post_obj):
                 seqdata.extend(data)
             return SequenceData._load(post_obj)
@@ -1111,23 +1110,21 @@ class SequencesDataAPI(APIClient):
 
     def retrieve_dataframe(
         self,
-        start: int,
-        end: int | None,
-        column_external_ids: list[str] | None = None,
-        external_id: str | None = None,
+        external_id: int | str | list[int] | list[str],
+        start: int = 0,
+        end: int | None = None,
+        columns: list[str] | None = None,
         column_names: str | None = None,
-        id: int | None = None,
         limit: int | None = None,
     ) -> pandas.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
+            external_id (int | str | list[int] | list[str]): Identifier(s) of sequence can either be External or Internal IDs.
             start (int): (inclusive) row number to start from.
             end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
-            column_external_ids (list[str] | None): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
-            external_id (str | None): External id of sequence.
+            columns (list[str] | None): No description.
             column_names (str | None):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
-            id (int | None): Id of sequence
             limit (int | None): Maximum number of rows to return per sequence.
 
         Returns:
@@ -1143,9 +1140,7 @@ class SequencesDataAPI(APIClient):
             column_names_default = "externalId|columnExternalId"
         else:
             column_names_default = "columnExternalId"
-        identifier = external_id or id
-        assert identifier is not None
-        return self.retrieve(identifier, start, end, column_external_ids, limit).to_pandas(
+        return self.retrieve(external_id, start, end, columns, limit).to_pandas(
             column_names=column_names or column_names_default
         )
 
