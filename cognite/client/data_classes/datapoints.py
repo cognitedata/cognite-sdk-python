@@ -215,9 +215,9 @@ class DatapointsArray(CogniteResource):
 
     @typing.no_type_check
     @classmethod
-    def load(  # type: ignore [no-untyped-def]
+    def load(  # type: ignore [no-untyped-def, unused-ignore]
         cls,
-        dps_dct: dict[str, int | str | bool | npt.NDArray],  # type: ignore [override]
+        dps_dct: dict[str, int | str | bool | npt.NDArray],  # type: ignore [override, unused-ignore]
         cognite_client: CogniteClient | None = None,
     ) -> DatapointsArray:
         dps_dct = json.loads(dps_dct) if isinstance(dps_dct, str) else dps_dct
