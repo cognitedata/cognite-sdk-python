@@ -18,6 +18,9 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.0.0] - 2023-10-24
+### Changed
+- Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
+  a single or multiple items (i.e. id -> ids).
 
 ## [6.35.0] - 2023-10-25
 ### Added

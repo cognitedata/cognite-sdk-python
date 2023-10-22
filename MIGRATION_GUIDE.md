@@ -8,6 +8,13 @@ Changes are grouped as follows:
 - `Changed` for changes that do not fall into any other category
 - `Optional` for new, optional methods/features that you should be aware of - *and could take advantage of*
 
+## From v6 to v7
+
+### Changed
+
+- Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
+  a single or multiple items (i.e. id -> ids).
+
 ## From v5 to v6
 
 ### Removed
