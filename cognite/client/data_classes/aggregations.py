@@ -189,10 +189,9 @@ class Bucket:
         return {"start": self.start, "count": self.count}
 
 
-@dataclass
 class Buckets(UserList):
-    def __post_init__(self) -> None:
-        self.data = [Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in self.data]
+    def __init__(self, items: Collection) -> None:
+        super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
 
     def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
         return [bucket.dump(camel_case) for bucket in self.data]
