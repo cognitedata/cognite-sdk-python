@@ -1362,12 +1362,13 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.time_series.data.delete_range(start="1w-ago", end="now", id=1)
         """
-        start = timestamp_to_ms(start)
-        end = timestamp_to_ms(end)
-        assert end > start, "end must be larger than start"
+        start_ms = timestamp_to_ms(start)
+        end_ms = timestamp_to_ms(end)
+        if end_ms <= start_ms:
+            raise ValueError(f"{end=} must be larger than {start=}")
 
         identifier = Identifier.of_either(id, external_id).as_dict()
-        delete_dps_object = {**identifier, "inclusiveBegin": start, "exclusiveEnd": end}
+        delete_dps_object = {**identifier, "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
         self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
@@ -1512,19 +1513,17 @@ class DatapointsPoster:
         datapoints: list[dict[str, Any]] | list[tuple[int | float | datetime, int | float | str]],
     ) -> list[tuple[int, Any]]:
         assert_type(datapoints, "datapoints", [list])
-        assert len(datapoints) > 0, "No datapoints provided"
+        if not datapoints:
+            raise ValueError("No datapoints provided")
         assert_type(datapoints[0], "datapoints element", [tuple, dict])
 
-        valid_datapoints = []
         if isinstance(datapoints[0], tuple):
-            valid_datapoints = [(timestamp_to_ms(t), v) for t, v in datapoints]
-        elif isinstance(datapoints[0], dict):
-            for dp in datapoints:
-                dp = cast(Dict[str, Any], dp)
-                assert "timestamp" in dp, "A datapoint is missing the 'timestamp' key"
-                assert "value" in dp, "A datapoint is missing the 'value' key"
-                valid_datapoints.append((timestamp_to_ms(dp["timestamp"]), dp["value"]))
-        return valid_datapoints
+            return [(timestamp_to_ms(t), v) for t, v in datapoints]
+        datapoints = cast(List[Dict[str, Any]], datapoints)
+        try:
+            return [(timestamp_to_ms(dp["timestamp"]), dp["value"]) for dp in datapoints]
+        except KeyError:
+            raise KeyError("A datapoint is missing one or both keys ['value', 'timestamp'].")
 
     def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
         for dps_object in dps_object_list:

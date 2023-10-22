@@ -350,9 +350,8 @@ class CogniteUpdate:
 
     def _set(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert (
-            "remove" not in update_obj and "add" not in update_obj
-        ), "Can not call set after adding or removing fields from an update object."
+        if "remove" in update_obj or "add" in update_obj:
+            raise RuntimeError("Can not call set after adding or removing fields from an update object.")
         self._update_object[name] = {"set": value}
 
     def _set_null(self, name: str) -> None:
@@ -360,28 +359,37 @@ class CogniteUpdate:
 
     def _add(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "add" not in update_obj
-        ), "Can not call add twice on the same object, please combine your objects and pass them to add in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "add" in update_obj:
+            raise RuntimeError(
+                "Can not call add twice on the same object, please combine your objects "
+                "and pass them to add in one call."
+            )
         update_obj["add"] = value
         self._update_object[name] = update_obj
 
     def _remove(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "remove" not in update_obj
-        ), "Can not call remove twice on the same object, please combine your items and pass them to remove in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "remove" in update_obj:
+            raise RuntimeError(
+                "Can not call remove twice on the same object, please combine your items "
+                "and pass them to remove in one call."
+            )
         update_obj["remove"] = value
         self._update_object[name] = update_obj
 
     def _modify(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "modify" not in update_obj
-        ), "Can not call modify twice on the same object, please combine your items and pass them to modify in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "modify" in update_obj:
+            raise RuntimeError(
+                "Can not call modify twice on the same object, please combine your items "
+                "and pass them to modify in one call."
+            )
         update_obj["modify"] = value
         self._update_object[name] = update_obj
 
@@ -393,7 +401,9 @@ class CogniteUpdate:
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        assert camel_case is True, "snake_case is currently unsupported"  # TODO maybe (when unifying classes)
+        if camel_case is False:
+            # TODO maybe (when unifying classes)
+            raise ValueError("snake_case is currently unsupported")
         dumped: dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id
