@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from collections import UserList
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Sequence, TypeVar, Union, cast, final
 
@@ -187,20 +189,38 @@ class Bucket:
         return {"start": self.start, "count": self.count}
 
 
+@dataclass
+class Buckets(UserList):
+    def __post_init__(self) -> None:
+        self.data = [Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in self.data]
+
+    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
+        return [bucket.dump(camel_case) for bucket in self.data]
+
+    @property
+    def starts(self) -> list[float]:
+        return [bucket.start for bucket in self.data]
+
+    @property
+    def counts(self) -> list[int]:
+        return [bucket.count for bucket in self.data]
+
+
 @final
 @dataclass
 class HistogramValue(AggregatedValue):
     _aggregate: ClassVar[str] = "histogram"
     interval: float
-    buckets: list[Bucket]
+    buckets: Buckets
 
     def __post_init__(self) -> None:
-        self.buckets = [Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in self.buckets]
+        if isinstance(self.buckets, Collection):
+            self.buckets = Buckets(self.buckets)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["interval"] = self.interval
-        output["buckets"] = [bucket.dump(camel_case) for bucket in self.buckets]
+        output["buckets"] = self.buckets.dump(camel_case)
         return output
 
 
