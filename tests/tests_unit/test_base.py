@@ -220,36 +220,51 @@ class TestCogniteResource:
         ],
     )
     def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
-        # Arrange
         instance = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client).create_instance(
             cognite_resource_subclass
         )
 
-        # Act
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
         json_deserialised = json.loads(json_serialised)
         loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client)
 
-        # Assert
         assert loaded.dump() == instance.dump()
 
     @pytest.mark.dsl
-    @pytest.mark.parametrize("cognite_resource_subclass", all_concrete_subclasses(CogniteResource))
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
     def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
-        # Arrange
         instance = FakeCogniteResourceGenerator(seed=66, cognite_client=cognite_mock_client).create_instance(
             cognite_resource_subclass
         )
 
-        # Act
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
         yaml_deserialised = yaml.safe_load(yaml_serialised)
         loaded = instance.load(yaml_deserialised, cognite_client=cognite_mock_client)
 
-        # Assert
         assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_dump_default_came_case_false(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
+        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client).create_instance(
+            cognite_resource_subclass
+        )
+
+        assert instance.dump() == instance.dump(camel_case=False)
 
 
 class TestCogniteResourceList:
