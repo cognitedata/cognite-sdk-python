@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-import math
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast, overload
 from typing import Sequence as SequenceType
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -19,14 +18,15 @@ from cognite.client.data_classes._base import (
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     NoCaseConversionPropertyList,
-    PropertySpec, ExternalIDTransformerMixin,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import at_least_one_is_not_none
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     import pandas
@@ -48,6 +48,7 @@ class SequenceColumn(CogniteResource):
         created_time (int | None): Time when this column was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int | None): The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
     """
+
     def __init__(
         self,
         external_id: str | None = None,
@@ -90,7 +91,7 @@ class Sequence(CogniteResource):
         asset_id (int | None): Optional asset this sequence is associated with
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        columns (SequenceType[SequenceColumn] | None): List of column definitions
+        columns (SequenceColumnList | None): List of column definitions
         created_time (int | None): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int | None): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
         data_set_id (int | None): Data set that this sequence belongs to
@@ -105,23 +106,38 @@ class Sequence(CogniteResource):
         asset_id: int | None = None,
         external_id: str | None = None,
         metadata: dict[str, Any] | None = None,
-        columns: SequenceType[SequenceColumn] | None = None,
+        columns: SequenceColumnList | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         data_set_id: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
+        if not isinstance(columns, SequenceColumnList) and columns is not None:
+            raise ValueError("columns must be a SequenceColumnList")
         self.id = id
         self.name = name
         self.description = description
         self.asset_id = asset_id
         self.external_id = external_id
         self.metadata = metadata
-        self.columns: SequenceColumnList = SequenceColumnList(columns)
+        self.columns = columns
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        loaded = super()._load(resource, cognite_client)
+        if loaded.columns is not None:
+            loaded.columns = SequenceColumnList._load(loaded.columns)
+        return loaded
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case)
+        if self.columns is not None:
+            dumped["columns"] = self.columns.dump(camel_case)
+        return dumped
 
     def rows(self, start: int, end: int | None) -> SequenceData:
         """Retrieves rows from this sequence.
@@ -147,11 +163,11 @@ class Sequence(CogniteResource):
         return self.columns.as_external_ids()
 
     @property
-    def column_value_types(self) -> list[str]:
+    def column_value_types(self) -> list[ValueType]:
         """Retrieves list of column value types
 
         Returns:
-            list[str]: List of column value types
+            list[ValueType]: List of column value types
         """
         assert self.columns is not None
         return self.columns.value_types
@@ -193,8 +209,7 @@ class SequenceFilter(CogniteFilter):
 
 
 class SequenceColumnUpdate(CogniteUpdate):
-    """ This class is used to update a sequence column.
-    """
+    """This class is used to update a sequence column."""
 
     class _PrimitiveSequenceColumnUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> SequenceColumnUpdate:
@@ -359,19 +374,18 @@ class SequenceList(CogniteResourceList[Sequence], IdTransformerMixin):
     _RESOURCE = Sequence
 
 
-RowValues: TypeAlias = Union[int , str , float , None]
+RowValues: TypeAlias = Union[int, str, float, None]
 
 
 class SequenceRow(CogniteResource):
-    """ This class represents a row in a sequence. It is used for both read and write.
+    """This class represents a row in a sequence. It is used for both read and write.
 
     Args:
         row_number (int): The row number for this row.
-        values (SequenceType[int | str | float | None]): List of values in the order defined in the columns field.
-            Number of items must match. Null is accepted for missing values. String values must be no
-            longer than 256 characters.
+        values (SequenceType[RowValues]): List of values in the order defined in the columns field. Number of items must match. Null is accepted for missing values. String values must be no longer than 256 characters.
 
     """
+
     def __init__(self, row_number: int, values: SequenceType[RowValues]) -> None:
         self.row_number = row_number
         self.values = values
@@ -382,7 +396,7 @@ class SequenceData(CogniteResource):
 
     Args:
         rows (SequenceType[SequenceRow]): The sequence rows.
-        columns (SequenceType[T_Column]): The column information.
+        columns (SequenceColumnList): The column information.
         id (int | None): Identifier of the sequence the data belong to
         external_id (str | None): External id of the sequence the data belong to
     """
@@ -394,9 +408,14 @@ class SequenceData(CogniteResource):
         id: int | None = None,
         external_id: str | None = None,
     ) -> None:
+        if not at_least_one_is_not_none(id, external_id):
+            raise ValueError("One of id or external_id must be specified")
+
         col_length = len(columns)
         if wrong_length := [r for r in rows if len(r.values) != col_length]:
-            raise ValueError(f"Rows { [r.row_number for r in wrong_length] } have wrong number of values, expected {col_length}")
+            raise ValueError(
+                f"Rows { [r.row_number for r in wrong_length] } have wrong number of values, expected {col_length}"
+            )
         self.rows = rows
         self.columns: SequenceColumnList = columns
         self.id = id
@@ -454,9 +473,11 @@ class SequenceData(CogniteResource):
         Returns:
             dict[str, Any]: A dictionary representing the instance.
         """
-        dumped =  {
-            "columns": self.columns.dump(camel_case)
-            "rows": [{("rowNumber" if camel_case else "row_number"): r.row_number, "values": r.values} for r in self.rows],
+        dumped: dict[str, Any] = {
+            "columns": self.columns.dump(camel_case),
+            "rows": [
+                {("rowNumber" if camel_case else "row_number"): r.row_number, "values": r.values} for r in self.rows
+            ],
         }
         if self.id is not None:
             dumped["id"] = self.id
@@ -464,7 +485,15 @@ class SequenceData(CogniteResource):
             dumped[("externalId" if camel_case else "external_id")] = self.external_id
         return dumped
 
-
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            rows=[SequenceRow(**r) for r in resource["rows"]],
+            columns=SequenceColumnList._load(resource["columns"]),
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+        )
 
     def to_pandas(self, column_names: str = "columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
         """Convert the sequence data into a pandas DataFrame.
@@ -475,27 +504,28 @@ class SequenceData(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = local_import("pandas")
-
-        options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
-        if column_names not in options:
-            raise ValueError(f"Invalid column_names value '{column_names}', should be one of {options}")
-
-        column_names = (
-            column_names.replace("columnExternalId", "{columnExternalId}")
-            .replace("externalId", "{externalId}")
-            .replace("id", "{id}")
-        )
-        df_columns = [
-            column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
-            for eid in self.column_external_ids
-        ]
-        # TODO: Optimization required (None/nan):
-        return pd.DataFrame(
-            [[x if x is not None else math.nan for x in r] for r in self.values],
-            index=self.row_numbers,
-            columns=df_columns,
-        )
+        raise NotImplementedError
+        # pd = local_import("pandas")
+        #
+        # options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
+        # if column_names not in options:
+        #     raise ValueError(f"Invalid column_names value '{column_names}', should be one of {options}")
+        #
+        # column_names = (
+        #     column_names.replace("columnExternalId", "{columnExternalId}")
+        #     .replace("externalId", "{externalId}")
+        #     .replace("id", "{id}")
+        # )
+        # df_columns = [
+        #     column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
+        #     for eid in self.column_external_ids
+        # ]
+        # # TODO: Optimization required (None/nan):
+        # return pd.DataFrame(
+        #     [[x if x is not None else math.nan for x in r] for r in self.values],
+        #     index=self.row_numbers,
+        #     columns=df_columns,
+        # )
 
     @property
     def column_external_ids(self) -> list[str]:
@@ -508,11 +538,11 @@ class SequenceData(CogniteResource):
         return self.columns.as_external_ids()
 
     @property
-    def column_value_types(self) -> list[str]:
+    def column_value_types(self) -> list[ValueType]:
         """Retrieves list of column value types.
 
         Returns:
-            list[str]: List of column value types
+            list[ValueType]: List of column value types
         """
         assert self.columns is not None
         return self.columns.value_types
