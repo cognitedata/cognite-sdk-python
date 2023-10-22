@@ -163,7 +163,7 @@ class CogniteResource(_WithClientMixin):
                 if isinstance(dumped[key], dict):
                     dumped.update(dumped.pop(key))
                 else:
-                    raise AssertionError(f"Could not expand attribute '{key}'")
+                    raise ValueError(f"Could not expand attribute '{key}'")
 
         return pd.Series(dumped).to_frame(name="value")
 
