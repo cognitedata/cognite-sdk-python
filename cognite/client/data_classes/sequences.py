@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Iterator, List, Literal, TypeVar, Union, cast
 from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
@@ -338,41 +338,42 @@ class SequenceList(CogniteResourceList[Sequence], IdTransformerMixin):
     _RESOURCE = Sequence
 
 
-class SequenceData(CogniteResource):
+class SequenceRow(CogniteResource):
+    def __init__(self, row_number: int, values: SequenceType[int | str | float]) -> None:
+        self.row_number = row_number
+        self.values = values
+
+
+T_Column = TypeVar("T_View", bound=Union[str, SequenceColumn])
+
+
+class SequenceData(CogniteResource, Generic[T_Column]):
     """An object representing a list of rows from a sequence.
 
     Args:
+        rows (SequenceType[SequenceRow]): The sequence rows.
+        columns (SequenceType[T_Column]): The column information.
         id (int | None): Id of the sequence the data belong to
         external_id (str | None): External id of the sequence the data belong to
-        rows (SequenceType[dict] | None): Combined row numbers and row data object from the API. If you pass this, row_numbers/values are ignored.
-        row_numbers (SequenceType[int] | None): The data row numbers.
-        values (SequenceType[SequenceType[int | str | float]] | None): The data values, one row at a time.
-        columns (SequenceType[dict[str, Any]] | None): SequenceType[dict]: The column information, in the format returned by the API.
     """
 
     def __init__(
         self,
+        rows: SequenceType[SequenceRow],
+        columns: SequenceType[T_Column],
         id: int | None = None,
         external_id: str | None = None,
-        rows: SequenceType[dict] | None = None,
-        row_numbers: SequenceType[int] | None = None,
-        values: SequenceType[SequenceType[int | str | float]] | None = None,
-        columns: SequenceType[dict[str, Any]] | None = None,
     ) -> None:
-        if rows:
-            row_numbers = [r["rowNumber"] for r in rows]
-            values = [r["values"] for r in rows]
+        self.rows = rows
+        self.columns = columns
         self.id = id
         self.external_id = external_id
-        self.row_numbers = row_numbers or []
-        self.values = values or []
-        self.columns = columns
 
     def __str__(self) -> str:
         return json.dumps(self.dump(), indent=4)
 
     def __len__(self) -> int:
-        return len(self.row_numbers)
+        return len(self.rows)
 
     def __eq__(self, other: Any) -> bool:
         return (
