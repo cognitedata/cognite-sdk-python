@@ -453,7 +453,7 @@ class TestInstancesAPI:
         count_agg = aggregations.Count("name")
 
         # Act
-        counts = cognite_client.data_modeling.instances.aggregate(
+        count = cognite_client.data_modeling.instances.aggregate(
             view_id,
             aggregates=count_agg,
             instance_type="node",
@@ -461,8 +461,8 @@ class TestInstancesAPI:
         )
 
         # Assert
-        assert len(counts) == 1
-        assert counts[0].aggregates[0].value > 0, "Add at least one person to the view to run this test"
+        assert count.property == "name"
+        assert count.value > 0, "Add at least one person to the view to run this test"
 
     def test_aggregate_invalid_view_id(self, cognite_client: CogniteClient) -> None:
         # Arrange
