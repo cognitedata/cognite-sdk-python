@@ -199,12 +199,12 @@ def _convert_time_attrs_in_dict(item: dict, to_isoformat: bool) -> dict:
 
 
 @overload
-def convert_time_attributes_to_datetime(item: dict, to_isoformat: bool) -> dict:
+def convert_time_attributes_to_datetime(item: dict, to_isoformat: bool = ...) -> dict:
     ...
 
 
 @overload
-def convert_time_attributes_to_datetime(item: list[dict], to_isoformat: bool) -> list[dict]:
+def convert_time_attributes_to_datetime(item: list[dict], to_isoformat: bool = ...) -> list[dict]:
     ...
 
 
