@@ -18,6 +18,9 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.0.0] - 2023-10-24
+### Changed
+* `client.data_modeling.instances.aggregate` returns `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending
+  on the `aggregates` and `group_by` parameters. Previously, it always returned `InstanceAggregationResultList`.
 
 ## [6.34.0] - 2023-10-20
 ### Fixed
