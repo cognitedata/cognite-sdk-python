@@ -33,6 +33,28 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
+ValueType: TypeAlias = Literal["String", "Double", "Long"]
+
+
+class SequenceColumn(CogniteResource):
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        value_type: ValueType = "Double",
+        metadata: dict[str, Any] | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.description = description
+        self.value_type = value_type
+        self.metadata = metadata
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
 
 class Sequence(CogniteResource):
     """Information about the sequence stored in the database
@@ -44,7 +66,7 @@ class Sequence(CogniteResource):
         asset_id (int | None): Optional asset this sequence is associated with
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        columns (SequenceType[dict[str, Any]] | None): List of column definitions
+        columns (SequenceType[SequenceColumn] | None): List of column definitions
         created_time (int | None): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int | None): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
         data_set_id (int | None): Data set that this sequence belongs to
@@ -59,7 +81,7 @@ class Sequence(CogniteResource):
         asset_id: int | None = None,
         external_id: str | None = None,
         metadata: dict[str, Any] | None = None,
-        columns: SequenceType[dict[str, Any]] | None = None,
+        columns: SequenceType[SequenceColumn] | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         data_set_id: int | None = None,
