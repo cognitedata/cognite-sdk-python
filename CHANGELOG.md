@@ -70,6 +70,8 @@ methods is `json` and `yaml` serializable.
 * In transformations, `TransformationSchemaMapType` `dump` was not `json` serializable.
 * In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
 * Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
+* Bug in `WorkflowExecution.dump`
+* Bug in `PropertyType.load`
 
 ## [6.34.0] - 2023-10-20
 ### Fixed
