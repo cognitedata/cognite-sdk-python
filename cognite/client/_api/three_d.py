@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Sequence, cast
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -154,8 +154,9 @@ class ThreeDModelsAPI(APIClient):
                 >>> res = c.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
         """
         assert_type(name, "name", [str, Sequence])
+        item_processed: dict[str, Any] | list[dict[str, Any]]
         if isinstance(name, str):
-            item_processed = [{"name": name, "dataSetId": data_set_id, "metadata": metadata}]
+            item_processed = {"name": name, "dataSetId": data_set_id, "metadata": metadata}
         else:
             item_processed = [{"name": n, "dataSetId": data_set_id, "metadata": metadata} for n in name]
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
