@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Iterator, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -131,7 +131,9 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(self, name: str | Sequence[str], data_set_id: Optional[int] = None, metadata: Optional[dict[str, str]] = None) -> ThreeDModel | ThreeDModelList:
+    def create(
+        self, name: str | Sequence[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
+    ) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:

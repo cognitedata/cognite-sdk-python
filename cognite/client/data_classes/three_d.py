@@ -128,7 +128,7 @@ class ThreeDModelUpdate(CogniteUpdate):
     @property
     def metadata(self) -> _ObjectThreeDModelUpdate:
         return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "metadata")
-    
+
     @property
     def data_set_id(self) -> _ObjectThreeDModelUpdate:
         return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "data_set_id")
