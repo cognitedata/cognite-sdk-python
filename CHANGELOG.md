@@ -18,6 +18,12 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.0.0] - 2023-10-24
+### Fixed
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+  `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+  with no easy way to add a prefix.
+- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
+  the new parameter `convert_timestamps`.
 
 ## [6.35.0] - 2023-10-25
 ### Added

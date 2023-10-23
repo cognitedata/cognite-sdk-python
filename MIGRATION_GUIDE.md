@@ -8,10 +8,18 @@ Changes are grouped as follows:
 - `Changed` for changes that do not fall into any other category
 - `Optional` for new, optional methods/features that you should be aware of - *and could take advantage of*
 
+## From v6 to v7
+
+### Fixed
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+  `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+  with no easy way to add a prefix.
+- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
+  the new parameter `convert_timestamps`.
+
 ## From v5 to v6
 
 ### Removed
-
 - Removed support for legacy auth (API keys, service accounts, client.login.status()). Use OIDC to authenticate instead and use `client.iam.token.inspect()` instead of `login.status()`.
 - Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
 - Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.

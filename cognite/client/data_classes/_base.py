@@ -50,7 +50,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 
 class CogniteResponse:
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), isoformat=True)
+        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -115,7 +115,7 @@ class CogniteResource(_WithClientMixin):
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), isoformat=True)
+        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -165,7 +165,9 @@ class CogniteResource(_WithClientMixin):
         for element in ignore or []:
             dumped.pop(element, None)
 
-        dumped = convert_time_attributes_to_datetime(dumped)
+        if convert_timestamps:
+            dumped = convert_time_attributes_to_datetime(dumped)
+
         if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
             dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
 
@@ -240,7 +242,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), isoformat=True)
+        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
         return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
@@ -496,7 +498,7 @@ class CogniteFilter:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), isoformat=True)
+        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
