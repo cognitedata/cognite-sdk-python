@@ -225,8 +225,8 @@ class ContainerProperty:
             type_ = PropertyType.load(data["type"])
         return cls(
             type=type_,
-            nullable=data["nullable"],
-            auto_increment=data["autoIncrement"],
+            nullable=data.get("nullable", True),
+            auto_increment=data.get("autoIncrement", False),
             name=data.get("name"),
             default_value=data.get("defaultValue"),
             description=data.get("description"),
@@ -316,7 +316,7 @@ class BTreeIndex(Index):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> BTreeIndex:
-        return cls(properties=data["properties"], cursorable=data["cursorable"])
+        return cls(properties=data["properties"], cursorable=data.get("cursorable", False))
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
         as_dict = asdict(self)
