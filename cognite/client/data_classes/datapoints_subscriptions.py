@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
@@ -44,13 +44,13 @@ _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
 
 class DatapointSubscriptionCore(CogniteResource):
     def __init__(
-        self,
-        external_id: ExternalId,
-        partition_count: int,
-        filter: Filter | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        **_: Any,
+            self,
+            external_id: ExternalId,
+            partition_count: int,
+            filter: Filter | None = None,
+            name: str | None = None,
+            description: str | None = None,
+            **_: Any,
     ) -> None:
         self.external_id = external_id
         self.partition_count = partition_count
@@ -60,7 +60,7 @@ class DatapointSubscriptionCore(CogniteResource):
 
     @classmethod
     def _load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+            cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         if "filter" in resource:
@@ -93,16 +93,16 @@ class DatapointSubscription(DatapointSubscriptionCore):
     """
 
     def __init__(
-        self,
-        external_id: ExternalId,
-        partition_count: int,
-        created_time: int,
-        last_updated_time: int,
-        time_series_count: int,
-        filter: Filter | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        **_: Any,
+            self,
+            external_id: ExternalId,
+            partition_count: int,
+            created_time: int,
+            last_updated_time: int,
+            time_series_count: int,
+            filter: Filter | None = None,
+            name: str | None = None,
+            description: str | None = None,
+            **_: Any,
     ) -> None:
         super().__init__(external_id, partition_count, filter, name, description)
         self.time_series_count = time_series_count
@@ -126,13 +126,13 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
     """
 
     def __init__(
-        self,
-        external_id: str,
-        partition_count: int,
-        time_series_ids: list[ExternalId] | None = None,
-        filter: Filter | None = None,
-        name: str | None = None,
-        description: str | None = None,
+            self,
+            external_id: str,
+            partition_count: int,
+            time_series_ids: list[ExternalId] | None = None,
+            filter: Filter | None = None,
+            name: str | None = None,
+            description: str | None = None,
     ) -> None:
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
@@ -291,7 +291,7 @@ class DatapointSubscriptionPartition:
 
     @classmethod
     def create(
-        cls, data: tuple[int, str | None] | int | DatapointSubscriptionPartition
+            cls, data: tuple[int, str | None] | int | DatapointSubscriptionPartition
     ) -> DatapointSubscriptionPartition:
         if isinstance(data, DatapointSubscriptionPartition):
             return data
@@ -359,6 +359,10 @@ class _DatapointSubscriptionBatchWithPartitions:
 
 class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
+
+
+class DatapointSubscriptionMemberList(CogniteResourceList[TimeSeriesID]):
+    _RESOURCE = TimeSeriesID
 
 
 def _metadata(key: str) -> list[str]:

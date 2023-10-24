@@ -11,7 +11,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionList,
     DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
-    _DatapointSubscriptionBatchWithPartitions,
+    _DatapointSubscriptionBatchWithPartitions, DatapointSubscriptionMemberList, TimeSeriesID,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -126,6 +126,19 @@ class DatapointsSubscriptionAPI(APIClient):
             return result[0]
         else:
             return None
+
+    def list_member_time_series(self,
+                         external_id: str,
+                         limit: int | None = DEFAULT_LIMIT_READ
+                         ) -> DatapointSubscriptionMemberList:
+        return self._list(
+            method="GET",
+            limit=limit,
+            list_cls=DatapointSubscriptionMemberList,
+            resource_cls=TimeSeriesID,
+            resource_path="/timeseries/subscriptions/members",
+            other_params={"externalId": external_id},
+        )
 
     def update(self, update: DataPointSubscriptionUpdate) -> DatapointSubscription:
         """`Update a subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/updateSubscriptions>`_

@@ -99,6 +99,11 @@ class TestDatapointSubscriptions:
             assert created.time_series_count == len(new_subscription.time_series_ids)
             assert retrieved_subscription.external_id == new_subscription.external_id == created.external_id
 
+            time_series_in_subscription = cognite_client.time_series.subscriptions.list_member_time_series(
+                new_subscription.external_id, limit=10
+            )
+            assert set(time_series_in_subscription) == set(new_subscription.time_series_ids)
+
             # Act
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
             retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(
