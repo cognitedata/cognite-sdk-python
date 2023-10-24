@@ -101,7 +101,7 @@ class _NodeOrEdgeList(CogniteResourceList):
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[Node | Edge] = [
-            Node._load(data) if data["instanceType"] == "node" else Edge._load(data) for data in resource_list
+            Node.load(data) if data["instanceType"] == "node" else Edge.load(data) for data in resource_list
         ]
         return cls(resources, None)
 
@@ -114,8 +114,8 @@ class _NodeOrEdgeResourceAdapter:
     def load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
-            return Node._load(data)
-        return Edge._load(data)
+            return Node.load(data)
+        return Edge.load(data)
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -127,7 +127,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
-            NodeApplyResult._load(data) if data["instanceType"] == "node" else EdgeApplyResult._load(data)
+            NodeApplyResult.load(data) if data["instanceType"] == "node" else EdgeApplyResult.load(data)
             for data in resource_list
         ]
         return cls(resources, None)
@@ -138,11 +138,11 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 class _NodeOrEdgeApplyResultAdapter:
     @staticmethod
-    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
+    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
-            return NodeApplyResult._load(data)
-        return EdgeApplyResult._load(data)
+            return NodeApplyResult.load(data)
+        return EdgeApplyResult.load(data)
 
 
 class _NodeOrEdgeApplyAdapter:
@@ -150,8 +150,8 @@ class _NodeOrEdgeApplyAdapter:
     def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
-            return NodeApply._load(data)
-        return EdgeApply._load(data)
+            return NodeApply.load(data)
+        return EdgeApply.load(data)
 
 
 class InstancesAPI(APIClient):
