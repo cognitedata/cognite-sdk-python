@@ -30,7 +30,6 @@ class TestViewPropertyDefinition:
             "name": "fullName",
             "nullable": False,
             "type": {
-                "container": None,
                 "type": "direct",
                 "source": {"external_id": "myExternalId", "space": "mySpace", "version": "myVersion"},
             },
