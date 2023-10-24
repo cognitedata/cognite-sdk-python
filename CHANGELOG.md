@@ -32,11 +32,11 @@ methods is `json` and `yaml` serializable.
 * Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`, 
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
 * Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
-* Missing `dump` and `_load` methods for `ClientCredentials`.
+* Missing `dump` and `load` methods for `ClientCredentials`.
 * Literal annotation for `source_type` and `target_type` in `Relationship`
 * Type annotation for `SequenceData` attribute `rows`.
 * Type annotation for `Geometry` attribute `coordinates`
-* In transformations, `NonceCredentials` was missing `_load` method. 
+* In transformations, `NonceCredentials` was missing `load` method. 
 * In transformations, `TransformationBlockedInfo` was missing `.dump` method
 
 ### Fixed
@@ -45,7 +45,7 @@ methods is `json` and `yaml` serializable.
 * In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
 * In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
 * In `DatapointsArray`, `load` method was not compatible with `.dump` method.
-* in extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
+* In extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
 * `ExtractionPipeline.dump` attribute `contacts` was not `json` serializable.
 * `FileMetadata.dump` attributes `labels` and `geo_location` was not `json` serializable.
 * In filtering, filter `ContainsAll` was missing in `Filter.load` method.
@@ -65,9 +65,9 @@ methods is `json` and `yaml` serializable.
   were not dumped as `json` serializable.
 * `TransformationPreviewResult` was not dumping attribute `schema` as `yaml` serializable, and the 
   `load` and `dump` methods were not compatible.
-* In transformations, `TransformationJob` `dump` was not `json` serializable, and attributes
+* In transformations, `TransformationJob.dump` was not `json` serializable, and attributes
   `destination` and `status` were not loaded into appropriate data structures. 
-* In transformations, `TransformationSchemaMapType` `dump` was not `json` serializable.
+* In transformations, `TransformationSchemaMapType.dump` was not `json` serializable.
 * In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
 * Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
 * Bug in `WorkflowExecution.dump`
