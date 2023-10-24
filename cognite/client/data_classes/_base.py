@@ -393,17 +393,14 @@ class CogniteUpdate:
         update_obj["modify"] = value
         self._update_object[name] = update_obj
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): No description.
+            camel_case (Literal[True]): No description.
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case is False:
-            # TODO maybe (when unifying classes)
-            raise ValueError("snake_case is currently unsupported")
         dumped: dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id
