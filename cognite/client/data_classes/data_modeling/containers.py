@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
@@ -56,7 +58,7 @@ class ContainerCore(DataModelingResource):
         self.indexes = indexes
 
     @classmethod
-    def load(cls, resource: dict | str) -> ContainerCore:
+    def load(cls, resource: dict | str) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "constraints" in data:
             data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
@@ -225,8 +227,9 @@ class ContainerProperty:
             type_ = PropertyType.load(data["type"])
         return cls(
             type=type_,
-            nullable=data.get("nullable", True),
-            auto_increment=data.get("autoIncrement", False),
+            # If nothing is specified, we will pass through null values
+            nullable=data.get("nullable"),  # type: ignore[arg-type]
+            auto_increment=data.get("autoIncrement"),  # type: ignore[arg-type]
             name=data.get("name"),
             default_value=data.get("defaultValue"),
             description=data.get("description"),
@@ -316,7 +319,7 @@ class BTreeIndex(Index):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> BTreeIndex:
-        return cls(properties=data["properties"], cursorable=data.get("cursorable", False))
+        return cls(properties=data["properties"], cursorable=data.get("cursorable"))  # type: ignore[arg-type]
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
         as_dict = asdict(self)

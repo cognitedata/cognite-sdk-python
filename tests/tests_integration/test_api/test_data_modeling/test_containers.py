@@ -203,3 +203,21 @@ class TestContainersAPI:
 
         # Assert
         assert container == container_loaded
+
+    def test_load_and_create_only_required_fields(self, cognite_client: CogniteClient) -> None:
+        external_id = "test_load_and_create_only_required_fields"
+        data = {
+            "externalId": external_id,
+            "space": "publicdata",
+            "properties": {"name": {"type": "text"}},
+            "indexes": {"nameIdx": {"properties": ["name"], "indexType": "btree"}},
+        }
+
+        container = ContainerApply.load(data)
+
+        try:
+            created = cognite_client.data_modeling.containers.apply(container)
+
+            assert created.external_id == external_id
+        finally:
+            cognite_client.data_modeling.containers.delete(container.as_id())
