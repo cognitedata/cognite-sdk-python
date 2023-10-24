@@ -16,7 +16,6 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
-    load_resource,
 )
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,
@@ -27,7 +26,7 @@ from cognite.client.data_classes.annotation_types.images import (
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
-from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none
+from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
 from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:

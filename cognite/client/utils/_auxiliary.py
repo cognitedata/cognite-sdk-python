@@ -219,3 +219,9 @@ def rename_and_exclude_keys(
     aliases = aliases or {}
     exclude = exclude or set()
     return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}
+
+
+def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
+    if (res := dct.get(key)) is not None:
+        return cls.load(res)
+    return None

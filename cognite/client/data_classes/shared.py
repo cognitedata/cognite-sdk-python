@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence, Union, cast
+from typing import Any, Literal, Sequence, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil, Geometry
 from cognite.client.utils._text import convert_all_keys_to_camel_case
-
-Number: TypeAlias = Union[int, float]
 
 
 class TimestampRange(dict):
@@ -74,7 +72,7 @@ class GeometryFilter(dict):
 
     Args:
         type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
-        coordinates (Sequence[Number] | Sequence[Sequence[Number]] | Sequence[Sequence[Sequence[Number]]] | Sequence[Sequence[Sequence[Sequence[Number]]]]): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        coordinates (Sequence[float] | Sequence[Sequence[float]] | Sequence[Sequence[Sequence[float]]] | Sequence[Sequence[Sequence[Sequence[float]]]]): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
 
     Point:
         Coordinates of a point in 2D space, described as an array of 2 numbers.
@@ -125,10 +123,10 @@ class GeometryFilter(dict):
     def __init__(
         self,
         type: Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
-        coordinates: Sequence[Number]
-        | Sequence[Sequence[Number]]
-        | Sequence[Sequence[Sequence[Number]]]
-        | Sequence[Sequence[Sequence[Sequence[Number]]]],
+        coordinates: Sequence[float]
+        | Sequence[Sequence[float]]
+        | Sequence[Sequence[Sequence[float]]]
+        | Sequence[Sequence[Sequence[Sequence[float]]]],
     ) -> None:
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
@@ -139,7 +137,7 @@ class GeometryFilter(dict):
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
-    def _load(cls, raw_geometry: dict[str, Any]) -> Self:
+    def load(cls, raw_geometry: dict[str, Any]) -> Self:
         return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

@@ -725,9 +725,3 @@ class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
                 raise ValueError(f"All {type(x).__name__} must have id")
             ids.append(x.id)
         return ids
-
-
-def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
-    if (res := dct.get(key)) is not None:
-        return cls.load(res)
-    return None

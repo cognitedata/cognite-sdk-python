@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import load_resource
 from cognite.client.data_classes.annotation_types.primitives import (
     Attribute,
     BoundingBox,
@@ -16,6 +15,7 @@ from cognite.client.data_classes.annotation_types.primitives import (
     Polyline,
     VisionResource,
 )
+from cognite.client.utils._auxiliary import load_resource
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

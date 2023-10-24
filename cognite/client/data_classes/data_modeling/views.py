@@ -348,7 +348,7 @@ class MappedProperty(ViewProperty):
     @classmethod
     def load(cls, data: dict[str, Any]) -> MappedProperty:
         type_ = data["type"]
-        source = type_.pop("source", None)
+        source = type_.pop("source", None) or data.get("source")
 
         return cls(
             container=ContainerId.load(data["container"]),
@@ -356,7 +356,7 @@ class MappedProperty(ViewProperty):
             type=PropertyType.load(type_),
             nullable=data["nullable"],
             auto_increment=data["autoIncrement"],
-            source=ViewId.load(source) if (source := source or data.get("source")) else None,
+            source=ViewId.load(source) if source else None,
             default_value=data.get("defaultValue"),
             name=data.get("name"),
             description=data.get("description"),

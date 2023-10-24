@@ -253,7 +253,7 @@ class Asset(CogniteResource):
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location is not None:
-            result[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
         if isinstance(self.aggregates, AggregateResultItem):
             result["aggregates"] = dict(self.aggregates)
         return result

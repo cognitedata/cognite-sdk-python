@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast
 from typing import Sequence as SequenceType
 
@@ -315,12 +314,6 @@ class SequenceAggregate(dict):
 
 class SequenceList(CogniteResourceList[Sequence], IdTransformerMixin):
     _RESOURCE = Sequence
-
-
-@dataclass
-class RowValue:
-    row_number: int
-    value: int | float | str
 
 
 class SequenceData(CogniteResource):

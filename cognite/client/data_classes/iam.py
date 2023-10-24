@@ -205,8 +205,8 @@ class ClientCredentials(CogniteResource):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
-            ("clientId" if camel_case else "client_id"): self.client_id,
-            ("clientSecret" if camel_case else "client_secret"): self.client_secret,
+            "clientId" if camel_case else "client_id": self.client_id,
+            "clientSecret" if camel_case else "client_secret": self.client_secret,
         }
 
     @classmethod

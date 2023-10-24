@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class VisionResource(ABC, CogniteResource):
+class VisionResource(CogniteResource, ABC):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
