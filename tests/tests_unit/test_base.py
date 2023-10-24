@@ -127,9 +127,30 @@ class MyResponse(CogniteResponse):
         self.var_a = var_a
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def cognite_mock_client() -> CogniteClientMock:
     return CogniteClientMock()
+
+
+@pytest.fixture(scope="session")
+def cognite_mock_client_placeholder() -> CogniteClient:
+    """
+    This is used for test cases where we need to pass a CogniteClient instance, but we don't actually use it.
+
+    It is a performance optimization to avoid creating a CogniteClientMock for every test case:
+
+    * CogniteClientMock is slow to create, but is stateful so must be created for every test case.
+
+    Quick demo of difference:
+
+    * Unit test with CogniteClientMock: 27s 407ms
+    * Unit test with only creating CogniteClientMock once: 19s 765s
+    """
+
+    # We allow the mock to pass isinstance checks
+    client = MagicMock()
+    client.__class__ = CogniteClient
+    return client
 
 
 class TestCogniteResource:
@@ -219,15 +240,15 @@ class TestCogniteResource:
             for class_ in all_concrete_subclasses(CogniteResource)
         ],
     )
-    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
-        instance = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client).create_instance(
-            cognite_resource_subclass
-        )
+    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=42, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
 
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
         json_deserialised = json.loads(json_serialised)
-        loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client)
+        loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 
@@ -239,15 +260,15 @@ class TestCogniteResource:
             for class_ in all_concrete_subclasses(CogniteResource)
         ],
     )
-    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
-        instance = FakeCogniteResourceGenerator(seed=66, cognite_client=cognite_mock_client).create_instance(
-            cognite_resource_subclass
-        )
+    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=66, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
 
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
         yaml_deserialised = yaml.safe_load(yaml_serialised)
-        loaded = instance.load(yaml_deserialised, cognite_client=cognite_mock_client)
+        loaded = instance.load(yaml_deserialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 
@@ -259,8 +280,10 @@ class TestCogniteResource:
             for class_ in all_concrete_subclasses(CogniteResource)
         ],
     )
-    def test_dump_default_came_case_false(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client):
-        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client).create_instance(
+    def test_dump_default_came_case_false(
+        self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder
+    ):
+        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client_placeholder).create_instance(
             cognite_resource_subclass
         )
 

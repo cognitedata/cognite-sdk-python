@@ -257,7 +257,7 @@ T_Object = TypeVar("T_Object", bound=object)
 class FakeCogniteResourceGenerator:
     _error_msg: typing.ClassVar[str] = "Please extend this function to support generating fake data for this type"
 
-    def __init__(self, seed: int | None = None, cognite_client: CogniteClientMock | None = None):
+    def __init__(self, seed: int | None = None, cognite_client: CogniteClientMock | CogniteClient | None = None):
         self._random = random.Random(seed)
         self._cognite_client = cognite_client or CogniteClientMock()
 
