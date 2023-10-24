@@ -8,9 +8,10 @@ class TestContainerProperty:
         "data",
         [
             {"type": {"type": "direct"}},
-            {"type": "int32"},
-            {"type": "text"},
-            {"type": "file"},
+            # List is not required, but gets set and thus will be dumped
+            {"type": {"type": "int32", "list": False}},
+            {"type": {"type": "text", "list": False, "collation": "ucs_basic"}},
+            {"type": {"type": "file", "list": False}},
         ],
     )
     def test_load_dump__only_required(self, data: dict) -> None:

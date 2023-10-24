@@ -236,9 +236,12 @@ class ContainerProperty:
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = asdict(self)
-        if "type" in output and isinstance(output["type"], dict):
+        output: dict[str, str | dict] = {}
+        if self.type:
             output["type"] = self.type.dump(camel_case)
+        for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
+            if (value := getattr(self, key)) is not None:
+                output[key] = value
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
@@ -321,10 +324,12 @@ class BTreeIndex(Index):
     def load(cls, data: dict[str, Any]) -> BTreeIndex:
         return cls(properties=data["properties"], cursorable=data.get("cursorable"))  # type: ignore[arg-type]
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        as_dict["indexType" if camel_case else "index_type"] = "btree"
-        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped: dict[str, Any] = {"properties": self.properties}
+        if self.cursorable is not None:
+            dumped["cursorable"] = self.cursorable
+        dumped["indexType" if camel_case else "index_type"] = "btree"
+        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
 
 
 @dataclass(frozen=True)
@@ -335,7 +340,7 @@ class InvertedIndex(Index):
     def load(cls, data: dict[str, Any]) -> InvertedIndex:
         return cls(properties=data["properties"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        as_dict["indexType" if camel_case else "index_type"] = "inverted"
-        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped: dict[str, Any] = {"properties": self.properties}
+        dumped["indexType" if camel_case else "index_type"] = "inverted"
+        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
