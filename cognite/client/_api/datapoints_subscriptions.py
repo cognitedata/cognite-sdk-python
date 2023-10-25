@@ -9,9 +9,11 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionBatch,
     DataPointSubscriptionCreate,
     DatapointSubscriptionList,
+    DatapointSubscriptionMemberList,
     DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
-    _DatapointSubscriptionBatchWithPartitions, DatapointSubscriptionMemberList, TimeSeriesID,
+    TimeSeriesID,
+    _DatapointSubscriptionBatchWithPartitions,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -127,10 +129,9 @@ class DatapointsSubscriptionAPI(APIClient):
         else:
             return None
 
-    def list_member_time_series(self,
-                         external_id: str,
-                         limit: int | None = DEFAULT_LIMIT_READ
-                         ) -> DatapointSubscriptionMemberList:
+    def list_member_time_series(
+        self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ
+    ) -> DatapointSubscriptionMemberList:
         return self._list(
             method="GET",
             limit=limit,

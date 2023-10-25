@@ -69,7 +69,7 @@ class GeometryFilter(dict):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
+        type (Literal['Point', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']): The geometry type.
         coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
     """
 
