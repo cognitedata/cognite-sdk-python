@@ -3,7 +3,7 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from cognite.client.data_classes import Sequence, SequenceData, SequenceDataList
+from cognite.client.data_classes import Sequence, SequenceRows, SequenceRowsList
 
 
 @pytest.fixture(scope="session")
@@ -76,7 +76,7 @@ class TestSequencesDataAPI:
     def test_retrieve(self, cognite_client, small_sequence):
         dps = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=None)
 
-        assert isinstance(dps, SequenceData)
+        assert isinstance(dps, SequenceRows)
         assert len(dps) > 0
 
     def test_retrieve_latest(self, cognite_client, small_sequence):
@@ -87,7 +87,7 @@ class TestSequencesDataAPI:
         dps = cognite_client.sequences.rows.retrieve(
             id_or_external_id=[small_sequence.id, pretend_timeseries.external_id], start=0, end=None
         )
-        assert isinstance(dps, SequenceDataList)
+        assert isinstance(dps, SequenceRowsList)
         assert len(dps[0]) > 0
         assert len(dps[1]) > 0
         assert small_sequence.id == dps[0].id

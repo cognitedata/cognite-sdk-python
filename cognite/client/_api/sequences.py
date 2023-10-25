@@ -11,10 +11,10 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Sequence,
     SequenceAggregate,
-    SequenceData,
-    SequenceDataList,
     SequenceFilter,
     SequenceList,
+    SequenceRows,
+    SequenceRowsList,
     SequenceUpdate,
     filters,
 )
@@ -851,7 +851,7 @@ class SequencesRowsAPI(APIClient):
         rows: dict[int, SequenceType[int | float | str]]
         | SequenceType[tuple[int, SequenceType[int | float | str]]]
         | SequenceType[dict[str, Any]]
-        | SequenceData,
+        | SequenceRows,
         column_external_ids: SequenceType[str] | None,
         id: int | None = None,
         external_id: str | None = None,
@@ -859,7 +859,7 @@ class SequencesRowsAPI(APIClient):
         """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
         Args:
-            rows (dict[int, SequenceType[int | float | str]] | SequenceType[tuple[int, SequenceType[int | float | str]]] | SequenceType[dict[str, Any]] | SequenceData):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
+            rows (dict[int, SequenceType[int | float | str]] | SequenceType[tuple[int, SequenceType[int | float | str]]] | SequenceType[dict[str, Any]] | SequenceRows):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             column_external_ids (SequenceType[str] | None): List of external id for the columns of the sequence.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
@@ -894,7 +894,7 @@ class SequencesRowsAPI(APIClient):
                 >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
                 >>> c.sequences.data.insert(rows=data, id=1,column_external_ids=None)
         """
-        if isinstance(rows, SequenceData):
+        if isinstance(rows, SequenceRows):
             column_external_ids = rows.column_external_ids
             rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
@@ -1002,7 +1002,7 @@ class SequencesRowsAPI(APIClient):
         end: int | None = None,
         columns: SequenceType[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceData:
+    ) -> SequenceRows:
         ...
 
     @overload
@@ -1013,7 +1013,7 @@ class SequencesRowsAPI(APIClient):
         end: int | None = None,
         columns: SequenceType[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceDataList:
+    ) -> SequenceRowsList:
         ...
 
     def retrieve(
@@ -1023,7 +1023,7 @@ class SequencesRowsAPI(APIClient):
         end: int | None = None,
         columns: SequenceType[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceData | SequenceDataList:
+    ) -> SequenceRows | SequenceRowsList:
         """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
@@ -1034,7 +1034,7 @@ class SequencesRowsAPI(APIClient):
             limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
 
         Returns:
-            SequenceData | SequenceDataList: SequenceData if single identifier was given, else SequenceDataList
+            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceDataList
 
         Examples:
 
@@ -1061,13 +1061,13 @@ class SequencesRowsAPI(APIClient):
 
         identifiers = IdentifierSequence.load(ids, external_ids).as_dicts()
 
-        def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceData:
+        def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
             post_obj.update(self._process_columns(column_external_ids=columns))
             post_obj.update({"start": start, "end": end, "limit": limit})
             seqdata: list = []
             for data, cols in self._fetch_data(post_obj):
                 seqdata.extend(data)
-            return SequenceData._load(post_obj)
+            return SequenceRows._load(post_obj)
 
         tasks_summary = execute_tasks(
             _fetch_sequence, [(x,) for x in identifiers], max_workers=self._config.max_workers
@@ -1077,7 +1077,7 @@ class SequencesRowsAPI(APIClient):
         if len(identifiers) == 1:
             return results[0]
         else:
-            return SequenceDataList(results)
+            return SequenceRowsList(results)
 
     def retrieve_latest(
         self,
@@ -1085,7 +1085,7 @@ class SequencesRowsAPI(APIClient):
         external_id: str | None = None,
         column_external_ids: SequenceType[str] | None = None,
         before: int | None = None,
-    ) -> SequenceData:
+    ) -> SequenceRows:
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
 
         Args:
@@ -1095,7 +1095,7 @@ class SequencesRowsAPI(APIClient):
             before (int | None): (optional, int): Get latest datapoint before this row number.
 
         Returns:
-            SequenceData: A Datapoints object containing the requested data, or a list of such objects.
+            SequenceRows: A Datapoints object containing the requested data, or a list of such objects.
 
         Examples:
 
@@ -1109,7 +1109,7 @@ class SequencesRowsAPI(APIClient):
         res = self._do_request(
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
         ).json()
-        return SequenceData(id=res["id"], external_id=res.get("external_id"), rows=res["rows"], columns=res["columns"])
+        return SequenceRows(id=res["id"], external_id=res.get("external_id"), rows=res["rows"], columns=res["columns"])
 
     def retrieve_dataframe(
         self,

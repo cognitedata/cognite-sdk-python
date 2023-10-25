@@ -139,7 +139,7 @@ class Sequence(CogniteResource):
             dumped["columns"] = self.columns.dump(camel_case)
         return dumped
 
-    def rows(self, start: int, end: int | None) -> SequenceData:
+    def rows(self, start: int, end: int | None) -> SequenceRows:
         """Retrieves rows from this sequence.
 
         Args:
@@ -147,7 +147,7 @@ class Sequence(CogniteResource):
             end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
 
         Returns:
-            SequenceData: List of sequence data.
+            SequenceRows: List of sequence data.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
@@ -391,7 +391,7 @@ class SequenceRow(CogniteResource):
         self.values = values
 
 
-class SequenceData(CogniteResource):
+class SequenceRows(CogniteResource):
     """An object representing a list of rows from a sequence.
 
     Args:
@@ -548,8 +548,8 @@ class SequenceData(CogniteResource):
         return self.columns.value_types
 
 
-class SequenceDataList(CogniteResourceList[SequenceData]):
-    _RESOURCE = SequenceData
+class SequenceRowsList(CogniteResourceList[SequenceRows]):
+    _RESOURCE = SequenceRows
 
     def __str__(self) -> str:
         return json.dumps(self.dump(), indent=4)
