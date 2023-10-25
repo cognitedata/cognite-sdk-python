@@ -13,6 +13,7 @@ from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Sequence, cast
+import warnings
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -1041,6 +1042,10 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
+        warnings.warn(
+            "The argument 'function_external_id' will be deprecated in future versions of the SDK.",
+            DeprecationWarning,
+        )
         _get_function_identifier(function_id, function_external_id)
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
