@@ -26,6 +26,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import at_least_one_is_not_none
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     import pandas
@@ -66,6 +67,13 @@ class SequenceColumn(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        # Snake case is supported for backwards compatibility
+        resource = convert_all_keys_to_camel_case(resource)
+        return super()._load(resource, cognite_client)
+
 
 class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransformerMixin):
     _RESOURCE = SequenceColumn
@@ -90,7 +98,7 @@ class Sequence(CogniteResource):
         asset_id (int | None): Optional asset this sequence is associated with
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        columns (SequenceColumnList | None): List of column definitions
+        columns (SequenceType[SequenceColumn] | None): List of column definitions
         created_time (int | None): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int | None): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
         data_set_id (int | None): Data set that this sequence belongs to
@@ -105,7 +113,7 @@ class Sequence(CogniteResource):
         asset_id: int | None = None,
         external_id: str | None = None,
         metadata: dict[str, Any] | None = None,
-        columns: SequenceColumnList | None = None,
+        columns: SequenceType[SequenceColumn] | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         data_set_id: int | None = None,
@@ -117,9 +125,12 @@ class Sequence(CogniteResource):
         self.asset_id = asset_id
         self.external_id = external_id
         self.metadata = metadata
+        self.columns: SequenceColumnList | None
         if columns is None or isinstance(columns, SequenceColumnList):
             self.columns = columns
-        elif columns is not None and isinstance(columns, list):
+        elif isinstance(columns, SequenceType) and all(isinstance(col, SequenceColumn) for col in columns):
+            self.columns = SequenceColumnList(columns)
+        elif isinstance(columns, list):
             # Todo deprecation warning
             self.columns = SequenceColumnList._load(columns)
         else:

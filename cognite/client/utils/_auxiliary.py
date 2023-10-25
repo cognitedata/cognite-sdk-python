@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import functools
 import math
 import numbers
@@ -63,11 +62,7 @@ def fast_dict_load(
         try:
             setattr(instance, accepted[camel_attr], value)
         except KeyError:
-            with contextlib.suppress(AttributeError):
-                # Try to recover. In case snake case is passed directly in the item dict, then
-                # the attribute will not be found in the accepted dict. In this case, we try to
-                # set the attribute directly.
-                setattr(instance, camel_attr, value)
+            pass
     return instance
 
 

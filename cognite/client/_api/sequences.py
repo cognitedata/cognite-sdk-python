@@ -482,11 +482,12 @@ class SequencesAPI(APIClient):
             Create a new sequence::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence
+                >>> from cognite.client.data_classes import Sequence, SequenceColumn
                 >>> c = CogniteClient()
                 >>> column_def = [
-                ...     {"valueType": "STRING", "externalId": "user", "description": "some description"},
-                ...     {"valueType": "DOUBLE", "externalId": "amount"}]
+                ...     SequenceColumn(value_type="String", external_id="user", description="some description"),
+                ...     SequenceColumn(value_type="Double", external_id="amount")
+                ... ]
                 >>> seq = c.sequences.create(Sequence(external_id="my_sequence", columns=column_def))
 
             Create a new sequence with the same column specifications as an existing sequence::
@@ -571,16 +572,17 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate
                 >>> c = CogniteClient()
                 >>>
-                >>> my_update = SequenceUpdate(id=1).columns.add({"valueType":"STRING","externalId":"user","description":"some description"})
+                >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
                 >>> res = c.sequences.update(my_update)
 
             Add multiple new columns::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
                 >>> c = CogniteClient()
                 >>>
-                >>> column_def = [{"valueType":"STRING","externalId":"user","description":"some description"}, {"valueType":"DOUBLE","externalId":"amount"}]
+                >>> column_def = [SequenceColumn(value_type ="String",external_id="user", description ="some description"),
+                ...              SequenceColumn(value_type="Double", external_id="amount")]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = c.sequences.update(my_update)
 
@@ -867,9 +869,10 @@ class SequencesRowsAPI(APIClient):
         Examples:
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, SequenceColumn
                 >>> c = CogniteClient()
-                >>> seq = c.sequences.create(Sequence(columns=[{"valueType": "STRING", "externalId":"col_a"},{"valueType": "DOUBLE", "externalId":"col_b"}]))
+                >>> seq = c.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
+                ...     SequenceColumn(value_type": "Double", external_id ="col_b")]))
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> c.sequences.data.insert(column_external_ids=["col_a","col_b"], rows=data, id=1)
 
@@ -1040,10 +1043,10 @@ class SequencesRowsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.sequences.data.retrieve(id=1, start=0, end=None)
+                >>> res = c.sequences.data.retrieve(1)
                 >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
                 >>> single_value = res[23] # ... get the values at a single row number,
-                >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
+                >>> col = res.get_column(id_or_external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
         ids: int | SequenceType[int] | None
@@ -1104,7 +1107,7 @@ class SequencesRowsAPI(APIClient):
 
         Examples:
 
-            Getting the latest row in a sequence before row number 1000::
+            Getting the latest row in a sequence before row number 1000:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -1115,43 +1118,6 @@ class SequencesRowsAPI(APIClient):
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
         ).json()
         return SequenceRows(id=res["id"], external_id=res.get("external_id"), rows=res["rows"], columns=res["columns"])
-
-    # def retrieve_dataframe(
-    #     self,
-    #     id_or_external_id: int | str | MutableSequence[int] | MutableSequence[str],
-    #     start: int = 0,
-    #     end: int | None = None,
-    #     columns: list[str] | None = None,
-    #     column_names: str | None = None,
-    #     limit: int | None = None,
-    # ) -> pandas.DataFrame:
-    #     """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
-    #
-    #     Args:
-    #         id_or_external_id (int | str | list[int] | list[str]): Identifier(s) of sequence can either be External or Internal IDs.
-    #         start (int): (inclusive) row number to start from.
-    #         end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
-    #         columns (list[str] | None): No description.
-    #         column_names (str | None):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
-    #         limit (int | None): Maximum number of rows to return per sequence.
-    #
-    #     Returns:
-    #         pandas.DataFrame: pandas.DataFrame
-    #
-    #     Examples:
-    #
-    #             >>> from cognite.client import CogniteClient
-    #             >>> c = CogniteClient()
-    #             >>> df = c.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
-    #     """
-    #     if isinstance(id_or_external_id, SequenceType):
-    #         column_names_default = "externalId|columnExternalId"
-    #     else:
-    #         column_names_default = "columnExternalId"
-    #
-    #     return self.retrieve(id_or_external_id, start, end, columns, limit).to_pandas(
-    #         column_names=column_names or column_names_default
-    #     )
 
     def _fetch_data(self, task: dict[str, Any]) -> Iterator[dict[str, Any]]:
         remaining_limit = task.get("limit")
