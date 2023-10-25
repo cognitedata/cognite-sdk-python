@@ -989,7 +989,6 @@ class FunctionSchedulesAPI(APIClient):
         name: str,
         cron_expression: str,
         function_id: int | None = None,
-        function_external_id: str | None = None,
         client_credentials: dict | ClientCredentials | None = None,
         description: str = "",
         data: dict | None = None,
@@ -1000,7 +999,6 @@ class FunctionSchedulesAPI(APIClient):
             name (str): Name of the schedule.
             cron_expression (str): Cron expression.
             function_id (int | None): Id of the function. This is required if the schedule is created with client_credentials.
-            function_external_id (str | None): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
             client_credentials (dict | ClientCredentials | None): (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials: client_id client_secret
             description (str): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
@@ -1042,10 +1040,6 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
-        warnings.warn(
-            "The argument 'function_external_id' will be deprecated in future versions of the SDK.",
-            DeprecationWarning,
-        )
         _get_function_identifier(function_id, function_external_id)
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
