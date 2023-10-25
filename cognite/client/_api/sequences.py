@@ -1064,10 +1064,15 @@ class SequencesRowsAPI(APIClient):
         def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
             post_obj.update(self._process_columns(column_external_ids=columns))
             post_obj.update({"start": start, "end": end, "limit": limit})
-            seqdata: list = []
-            for data, cols in self._fetch_data(post_obj):
-                seqdata.extend(data)
-            return SequenceRows._load(post_obj)
+
+            row_response_iterator = self._fetch_data(post_obj)
+            # Get the External ID and ID from the first response
+            sequence_rows = next(row_response_iterator)
+            for row_response in row_response_iterator:
+                sequence_rows["rows"].extend(row_response["rows"])
+                sequence_rows["columns"].extend(row_response["columns"])
+
+            return SequenceRows._load(sequence_rows)
 
         tasks_summary = execute_tasks(
             _fetch_sequence, [(x,) for x in identifiers], max_workers=self._config.max_workers
@@ -1151,9 +1156,8 @@ class SequencesRowsAPI(APIClient):
             column_names=column_names or column_names_default
         )
 
-    def _fetch_data(self, task: dict[str, Any]) -> Iterator[tuple[list, list]]:
+    def _fetch_data(self, task: dict[str, Any]) -> Iterator[dict[str, Any]]:
         remaining_limit = task.get("limit")
-        columns: list[str] = []
         cursor = None
         if task["end"] == -1:
             task["end"] = None
@@ -1161,12 +1165,10 @@ class SequencesRowsAPI(APIClient):
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
             resp = self._post(url_path=self._DATA_PATH + "/list", json=task).json()
-            data = resp["rows"]
-            columns = columns or resp["columns"]
-            yield data, columns
+            yield resp
             cursor = resp.get("nextCursor")
             if remaining_limit:
-                remaining_limit -= len(data)
+                remaining_limit -= len(resp["rows"])
             if not cursor or (remaining_limit is not None and remaining_limit <= 0):
                 break
 

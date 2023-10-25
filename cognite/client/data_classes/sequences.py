@@ -25,7 +25,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import at_least_one_is_not_none
-from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
@@ -112,15 +111,19 @@ class Sequence(CogniteResource):
         data_set_id: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        if not isinstance(columns, SequenceColumnList) and columns is not None:
-            raise ValueError("columns must be a SequenceColumnList")
         self.id = id
         self.name = name
         self.description = description
         self.asset_id = asset_id
         self.external_id = external_id
         self.metadata = metadata
-        self.columns = columns
+        if columns is None or isinstance(columns, SequenceColumnList):
+            self.columns = columns
+        elif columns is not None and isinstance(columns, list):
+            # Todo deprecation warning
+            self.columns = SequenceColumnList._load(columns)
+        else:
+            raise ValueError("columns must be a SequenceColumnList")
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
@@ -149,8 +152,10 @@ class Sequence(CogniteResource):
         Returns:
             SequenceRows: List of sequence data.
         """
-        identifier = Identifier.load(self.id, self.external_id).as_dict()
-        return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
+        identifier = self.id or self.external_id
+        if identifier is None:
+            raise ValueError("Sequence must have id or external_id")
+        return self._cognite_client.sequences.rows.retrieve(identifier, start=start, end=end)
 
     @property
     def column_external_ids(self) -> list[str]:
@@ -390,6 +395,14 @@ class SequenceRow(CogniteResource):
         self.row_number = row_number
         self.values = values
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            row_number=resource["rowNumber"],
+            values=resource["values"],
+        )
+
 
 ColumnNames: TypeAlias = Literal[  # type: ignore[valid-type]
     "externalId",
@@ -500,7 +513,7 @@ class SequenceRows(CogniteResource):
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
-            rows=[SequenceRow(**r) for r in resource["rows"]],
+            rows=[SequenceRow._load(r) for r in resource["rows"]],
             columns=SequenceColumnList._load(resource["columns"]),
             id=resource.get("id"),
             external_id=resource.get("externalId"),

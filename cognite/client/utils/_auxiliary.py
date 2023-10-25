@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import functools
 import math
 import numbers
@@ -56,12 +57,17 @@ def fast_dict_load(
     except TypeError:
         instance = cls()
     # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
+    # Accepted: {camel_case(attribute_name): attribute_name}
     accepted = get_accepted_params(cls)  # type: ignore [arg-type]
     for camel_attr, value in item.items():
         try:
             setattr(instance, accepted[camel_attr], value)
         except KeyError:
-            pass
+            with contextlib.suppress(AttributeError):
+                # Try to recover. In case snake case is passed directly in the item dict, then
+                # the attribute will not be found in the accepted dict. In this case, we try to
+                # set the attribute directly.
+                setattr(instance, camel_attr, value)
     return instance
 
 
