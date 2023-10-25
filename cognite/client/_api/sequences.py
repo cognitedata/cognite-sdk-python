@@ -492,7 +492,7 @@ class SequencesAPI(APIClient):
 
             Create a new sequence with the same column specifications as an existing sequence::
 
-                >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=seq.columns))
+                >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=column_def))
 
         """
         assert_type(sequence, "sequences", [SequenceType, Sequence])
@@ -569,7 +569,7 @@ class SequencesAPI(APIClient):
             Add a single new column::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
                 >>> c = CogniteClient()
                 >>>
                 >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
@@ -869,10 +869,11 @@ class SequencesRowsAPI(APIClient):
         Examples:
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
 
-                >>> from cognite.client import CogniteClient, SequenceColumn
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Sequence, SequenceColumn
                 >>> c = CogniteClient()
                 >>> seq = c.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
-                ...     SequenceColumn(value_type": "Double", external_id ="col_b")]))
+                ...     SequenceColumn(value_type="Double", external_id ="col_b")]))
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> c.sequences.data.insert(column_external_ids=["col_a","col_b"], rows=data, id=1)
 
@@ -942,9 +943,10 @@ class SequencesRowsAPI(APIClient):
             Multiply data in the sequence by 2::
 
                 >>> from cognite.client import CogniteClient
+                >>> import pandas as pd
                 >>> c = CogniteClient()
-                >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
-                >>> c.sequences.data.insert_dataframe(df*2, id=123)
+                >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
+                >>> c.sequences.data.insert_dataframe(df, id=1)
         """
         dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
