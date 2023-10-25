@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, MutableSequence, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, MutableSequence, Tuple, Union, cast, overload
 from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
@@ -71,7 +71,8 @@ class SequencesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.data = SequencesDataAPI(config, api_version, cognite_client)
+        self.rows = SequencesRowsAPI(config, api_version, cognite_client)
+        self.data = self.rows
 
     def __call__(
         self,
@@ -163,7 +164,7 @@ class SequencesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.sequences.retrieve(external_id="1")
+                >>> res = c.sequences.retrieve(id_or_external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
@@ -836,7 +837,7 @@ class SequencesAPI(APIClient):
         return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
 
-class SequencesDataAPI(APIClient):
+class SequencesRowsAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
@@ -996,7 +997,7 @@ class SequencesDataAPI(APIClient):
     @overload
     def retrieve(
         self,
-        external_id: int | str,
+        id_or_external_id: int | str,
         start: int = 0,
         end: int | None = None,
         columns: SequenceType[str] | None = None,
@@ -1007,7 +1008,7 @@ class SequencesDataAPI(APIClient):
     @overload
     def retrieve(
         self,
-        external_id: MutableSequence[int] | MutableSequence[str],
+        id_or_external_id: MutableSequence[int] | MutableSequence[str],
         start: int = 0,
         end: int | None = None,
         columns: SequenceType[str] | None = None,
@@ -1017,7 +1018,7 @@ class SequencesDataAPI(APIClient):
 
     def retrieve(
         self,
-        external_id: int | str | MutableSequence[int] | MutableSequence[str],
+        id_or_external_id: int | str | MutableSequence[int] | MutableSequence[str],
         start: int = 0,
         end: int | None = None,
         columns: SequenceType[str] | None = None,
@@ -1026,7 +1027,7 @@ class SequencesDataAPI(APIClient):
         """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
-            external_id (int | str | MutableSequence[int] | MutableSequence[str]): The internal or external ID of the sequence to retrieve data from.
+            id_or_external_id (int | str | MutableSequence[int] | MutableSequence[str]): The internal or external ID of the sequence to retrieve data from.
             start (int): Row number to start from (inclusive).
             end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
             columns (SequenceType[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
@@ -1045,18 +1046,20 @@ class SequencesDataAPI(APIClient):
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
-        if isinstance(external_id, str) or (
-            isinstance(external_id, MutableSequence) and external_id and isinstance(external_id[0], str)
-        ):
-            ids, external_ids = None, external_id
-        elif isinstance(external_id, int) or (
-            isinstance(external_id, MutableSequence) and external_id and isinstance(external_id[0], int)
-        ):
-            ids, external_ids = external_id, None
+        ids: int | SequenceType[int] | None
+        external_ids: str | SequenceType[str] | None
+        if isinstance(id_or_external_id, str):
+            ids, external_ids = None, id_or_external_id
+        elif isinstance(id_or_external_id, int):
+            ids, external_ids = id_or_external_id, None
+        elif isinstance(id_or_external_id, SequenceType):
+            ids, external_ids = [identifier for identifier in id_or_external_id if isinstance(identifier, int)], [
+                identifier for identifier in id_or_external_id if isinstance(identifier, str)
+            ]
         else:
-            raise TypeError("external_id must be either a single string or int, or a list of strings or ints")
+            raise TypeError("external_id must be either a single string or int, or a sequence of strings or ints")
 
-        identifiers = IdentifierSequence.load(ids, external_ids).as_dicts()  # type: ignore [arg-type]
+        identifiers = IdentifierSequence.load(ids, external_ids).as_dicts()
 
         def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceData:
             post_obj.update(self._process_columns(column_external_ids=columns))
@@ -1110,7 +1113,7 @@ class SequencesDataAPI(APIClient):
 
     def retrieve_dataframe(
         self,
-        external_id: int | str | list[int] | list[str],
+        id_or_external_id: int | str | list[int] | list[str],
         start: int = 0,
         end: int | None = None,
         columns: list[str] | None = None,
@@ -1120,7 +1123,7 @@ class SequencesDataAPI(APIClient):
         """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
-            external_id (int | str | list[int] | list[str]): Identifier(s) of sequence can either be External or Internal IDs.
+            id_or_external_id (int | str | list[int] | list[str]): Identifier(s) of sequence can either be External or Internal IDs.
             start (int): (inclusive) row number to start from.
             end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
             columns (list[str] | None): No description.
@@ -1136,11 +1139,15 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
         """
-        if isinstance(external_id, List) or isinstance(id, List) or (id is not None and external_id is not None):
+        if (
+            isinstance(id_or_external_id, list)
+            or isinstance(id, list)
+            or (id is not None and id_or_external_id is not None)
+        ):
             column_names_default = "externalId|columnExternalId"
         else:
             column_names_default = "columnExternalId"
-        return self.retrieve(external_id, start, end, columns, limit).to_pandas(
+        return self.retrieve(id_or_external_id, start, end, columns, limit).to_pandas(
             column_names=column_names or column_names_default
         )
 

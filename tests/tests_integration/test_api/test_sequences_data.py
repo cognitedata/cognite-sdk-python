@@ -8,28 +8,28 @@ from cognite.client.data_classes import Sequence, SequenceData, SequenceDataList
 
 @pytest.fixture(scope="session")
 def named_long_str(cognite_client):
-    seq = cognite_client.sequences.retrieve(external_id="named_long_str")
+    seq = cognite_client.sequences.retrieve(id_or_external_id="named_long_str")
     assert isinstance(seq, Sequence)
     yield seq
 
 
 @pytest.fixture(scope="session")
 def string200(cognite_client):
-    seq = cognite_client.sequences.retrieve(external_id="string200")
+    seq = cognite_client.sequences.retrieve(id_or_external_id="string200")
     assert isinstance(seq, Sequence)
     yield seq
 
 
 @pytest.fixture(scope="session")
 def small_sequence(cognite_client):
-    seq = cognite_client.sequences.retrieve(external_id="small")
+    seq = cognite_client.sequences.retrieve(id_or_external_id="small")
     assert isinstance(seq, Sequence)
     yield seq
 
 
 @pytest.fixture(scope="session")
 def pretend_timeseries(cognite_client):
-    seq = cognite_client.sequences.retrieve(external_id="pretend_timeseries")
+    seq = cognite_client.sequences.retrieve(id_or_external_id="pretend_timeseries")
     assert isinstance(seq, Sequence)
     yield seq
 
@@ -84,8 +84,8 @@ class TestSequencesDataAPI:
         assert len(dps) == 1
 
     def test_retrieve_multi(self, cognite_client, small_sequence, pretend_timeseries):
-        dps = cognite_client.sequences.data.retrieve(
-            id=[small_sequence.id], external_id=pretend_timeseries.external_id, start=0, end=None
+        dps = cognite_client.sequences.rows.retrieve(
+            id_or_external_id=[small_sequence.id, pretend_timeseries.external_id], start=0, end=None
         )
         assert isinstance(dps, SequenceDataList)
         assert len(dps[0]) > 0

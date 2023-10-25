@@ -565,7 +565,7 @@ class SequenceDataList(CogniteResourceList[SequenceData]):
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
-            column_names (str):  Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
+            column_names (str): Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
 
         Returns:
             pandas.DataFrame: The sequence data list as a pandas DataFrame.
