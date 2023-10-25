@@ -627,7 +627,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["id", "external_id"] = "external_id",
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: bool = False,
-    ) -> dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame] | pandas.DataFrame:  # type: ignore[override]
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame]:  # type: ignore[override]
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
@@ -636,7 +636,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
             concat (bool): Whether to concatenate the sequences into a single DataFrame or return a dictionary of DataFrames. Defaults to False.
 
         Returns:
-            dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame] | pandas.DataFrame: The sequence data list as a pandas DataFrame.
+            pandas.DataFrame | dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame]: The sequence data list as a pandas DataFrame.
         """
         pd = local_import("pandas")
         if concat:
