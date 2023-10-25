@@ -74,6 +74,21 @@ class SequenceColumn(CogniteResource):
         resource = convert_all_keys_to_camel_case(resource)
         return super()._load(resource, cognite_client)
 
+    def as_write(self) -> Self:
+        """
+        Returns the write version of the Sequence Column
+
+        Returns:
+            Self: Write version of the Sequence Column
+        """
+        return type(self)(
+            external_id=self.external_id,
+            name=self.name,
+            description=self.description,
+            value_type=self.value_type,
+            metadata=self.metadata.copy() if self.metadata is not None else None,
+        )
+
 
 class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransformerMixin):
     _RESOURCE = SequenceColumn
@@ -86,6 +101,9 @@ class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransfor
             list[ValueType]: List of column value types
         """
         return [c.value_type for c in self]
+
+    def as_write(self) -> SequenceColumnList:
+        return type(self)([col.as_write() for col in self])
 
 
 class Sequence(CogniteResource):
@@ -499,6 +517,11 @@ class SequenceRows(CogniteResource):
         """Returns an iterator over tuples of (row number, values)."""
         for row in self.rows:
             yield row.row_number, list(row.values)
+
+    @property
+    def values(self) -> list[list[RowValues]]:
+        """Returns an iterator over values."""
+        return [list(row.values) for row in self.rows]
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the sequence data into a json serializable Python data type.

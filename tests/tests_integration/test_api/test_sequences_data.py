@@ -3,48 +3,51 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceRows, SequenceRowsList
 
 
 @pytest.fixture(scope="session")
 def named_long_str(cognite_client):
-    seq = cognite_client.sequences.retrieve(id_or_external_id="named_long_str")
+    seq = cognite_client.sequences.retrieve(external_id="named_long_str")
     assert isinstance(seq, Sequence)
     yield seq
 
 
 @pytest.fixture(scope="session")
 def string200(cognite_client):
-    seq = cognite_client.sequences.retrieve(id_or_external_id="string200")
+    seq = cognite_client.sequences.retrieve(external_id="string200")
     assert isinstance(seq, Sequence)
     yield seq
 
 
 @pytest.fixture(scope="session")
-def small_sequence(cognite_client):
-    seq = cognite_client.sequences.retrieve(id_or_external_id="small")
+def small_sequence(cognite_client: CogniteClient) -> Sequence:
+    seq = cognite_client.sequences.retrieve(external_id="small")
     assert isinstance(seq, Sequence)
     yield seq
 
 
 @pytest.fixture(scope="session")
 def pretend_timeseries(cognite_client):
-    seq = cognite_client.sequences.retrieve(id_or_external_id="pretend_timeseries")
+    seq = cognite_client.sequences.retrieve(external_id="pretend_timeseries")
     assert isinstance(seq, Sequence)
     yield seq
 
 
 @pytest.fixture(scope="session")
-def new_seq(cognite_client):
-    seq = cognite_client.sequences.create(Sequence(columns=[{"valueType": "STRING"}]))
+def new_seq(cognite_client) -> Sequence:
+    seq = cognite_client.sequences.create(
+        Sequence(columns=[{"valueType": "STRING", "externalId": "col0"}], external_id="new_seq")
+    )
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(seq.id) is None
 
 
 @pytest.fixture(scope="session")
-def new_small_seq(cognite_client, small_sequence):
-    seq = cognite_client.sequences.create(Sequence(columns=small_sequence.columns))
+def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence):
+    seq = cognite_client.sequences.create(Sequence(columns=small_sequence.columns.as_write()))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(seq.id) is None
@@ -60,7 +63,11 @@ def new_seq_long(cognite_client):
 
 @pytest.fixture(scope="session")
 def new_seq_mixed(cognite_client):
-    seq = cognite_client.sequences.create(Sequence(columns=[{"valueType": "DOUBLE"}, {"valueType": "STRING"}]))
+    seq = cognite_client.sequences.create(
+        Sequence(
+            columns=[{"valueType": "DOUBLE", "externalId": "column0"}, {"valueType": "STRING", "externalId": "column1"}]
+        )
+    )
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(seq.id) is None
@@ -74,7 +81,7 @@ def post_spy(cognite_client):
 
 class TestSequencesDataAPI:
     def test_retrieve(self, cognite_client, small_sequence):
-        dps = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=None)
+        dps = cognite_client.sequences.data.retrieve(id_or_external_id=small_sequence.id)
 
         assert isinstance(dps, SequenceRows)
         assert len(dps) > 0
@@ -94,21 +101,21 @@ class TestSequencesDataAPI:
         assert pretend_timeseries.external_id == dps[1].external_id
 
     def test_retrieve_multi_dataframe(self, cognite_client, small_sequence, pretend_timeseries):
-        df = cognite_client.sequences.data.retrieve_dataframe(
-            id=[small_sequence.id, pretend_timeseries.id], start=0, end=None, column_names="id"
-        )
+        df = cognite_client.sequences.data.retrieve(
+            id_or_external_id=[small_sequence.id, pretend_timeseries.id], start=0, end=None
+        ).to_pandas(column_names="id", concat=True)
         assert df.shape[0] > 0
         assert 3 == df.shape[1]
         assert all([str(small_sequence.id), str(small_sequence.id), str(pretend_timeseries.id)] == df.columns)
 
     def test_retrieve_dataframe(self, cognite_client, small_sequence):
-        df = cognite_client.sequences.data.retrieve_dataframe(id=small_sequence.id, start=0, end=5)
+        df = cognite_client.sequences.data.retrieve(id_or_external_id=small_sequence.id, start=0, end=5).to_pandas()
         assert df.shape[0] == 4
         assert df.shape[1] == 2
         assert np.diff(df.index).all()
 
     def test_insert_dataframe(self, cognite_client, small_sequence, new_small_seq):
-        df = cognite_client.sequences.data.retrieve_dataframe(id=small_sequence.id, start=0, end=5)
+        df = cognite_client.sequences.data.retrieve(id_or_external_id=small_sequence.id, start=0, end=5).to_pandas()
         cognite_client.sequences.data.insert_dataframe(df, id=new_small_seq.id)
 
     def test_insert(self, cognite_client, new_seq):
@@ -126,48 +133,50 @@ class TestSequencesDataAPI:
         cognite_client.sequences.data.insert(data, id=new_seq_mixed.id, column_external_ids=["column0", "column1"])
 
     def test_insert_copy(self, cognite_client, small_sequence, new_small_seq):
-        data = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=5)
+        data = cognite_client.sequences.data.retrieve(id_or_external_id=small_sequence.id, start=0, end=5)
         cognite_client.sequences.data.insert(rows=data, id=new_small_seq.id, column_external_ids=None)
 
     def test_delete_multiple(self, cognite_client, new_seq):
         cognite_client.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
 
     def test_retrieve_paginate(self, cognite_client, string200, post_spy):
-        data = cognite_client.sequences.data.retrieve(start=1, end=996, id=string200.id)
+        data = cognite_client.sequences.data.retrieve(start=1, end=996, id_or_external_id=string200.id)
         assert 200 == len(data.values[0])
         assert 995 == len(data)
         assert 4 == cognite_client.sequences.data._post.call_count  # around 300 rows per request for this case
 
     def test_retrieve_paginate_max(self, cognite_client, pretend_timeseries, post_spy):
-        data = cognite_client.sequences.data.retrieve(start=0, end=None, id=pretend_timeseries.id)
+        data = cognite_client.sequences.data.retrieve(start=0, end=None, id_or_external_id=pretend_timeseries.id)
         assert 1 == len(data.values[0])
         assert 54321 == len(data)
         assert 6 == cognite_client.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
     def test_retrieve_paginate_limit_small(self, cognite_client, pretend_timeseries, post_spy):
-        data = cognite_client.sequences.data.retrieve(start=0, end=None, id=pretend_timeseries.id, limit=23)
+        data = cognite_client.sequences.data.retrieve(
+            start=0, end=None, id_or_external_id=pretend_timeseries.id, limit=23
+        )
         assert 1 == len(data.values[0])
         assert 23 == len(data)
         assert 1 == cognite_client.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
     def test_retrieve_paginate_limit_paged(self, cognite_client, pretend_timeseries, post_spy):
-        data = cognite_client.sequences.data.retrieve_dataframe(
-            start=0, end=None, id=pretend_timeseries.id, limit=40023
-        )
+        data = cognite_client.sequences.data.retrieve(
+            start=0, end=None, id_or_external_id=pretend_timeseries.id, limit=40023
+        ).to_pandas()
         assert 1 == data.shape[1]
         assert 40023 == data.shape[0]
         assert 5 == cognite_client.sequences.data._post.call_count
 
     def test_retrieve_one_column(self, cognite_client, named_long_str):
         dps = cognite_client.sequences.data.retrieve(
-            id=named_long_str.id, start=42, end=43, column_external_ids=["strcol"]
+            id_or_external_id=named_long_str.id, start=42, end=43, columns=["strcol"]
         )
         assert 1 == len(dps)
         assert 1 == len(dps.column_external_ids)
         assert isinstance(dps.values[0][0], str)
 
     def test_retrieve_mixed(self, cognite_client, named_long_str):
-        dps = cognite_client.sequences.data.retrieve(id=named_long_str.id, start=42, end=43)
+        dps = cognite_client.sequences.data.retrieve(id_or_external_id=named_long_str.id, start=42, end=43)
         assert 1 == len(dps)
         assert isinstance(dps.values[0][0], int)
         assert isinstance(dps.values[0][1], str)
@@ -178,7 +187,7 @@ class TestSequencesDataAPI:
             dps.get_column("missingcol")
 
     def test_retrieve_paginate_end_coinciding_with_page(self, cognite_client, string200, post_spy):
-        cognite_client.sequences.data.retrieve(start=1, end=118, id=string200.id)
+        cognite_client.sequences.data.retrieve(start=1, end=118, id_or_external_id=string200.id)
         assert 1 == cognite_client.sequences.data._post.call_count
 
     def test_delete_range(self, cognite_client, new_seq_long):

@@ -1075,7 +1075,6 @@ class SequencesRowsAPI(APIClient):
             sequence_rows = next(row_response_iterator)
             for row_response in row_response_iterator:
                 sequence_rows["rows"].extend(row_response["rows"])
-                sequence_rows["columns"].extend(row_response["columns"])
 
             return SequenceRows._load(sequence_rows)
 
@@ -1119,7 +1118,7 @@ class SequencesRowsAPI(APIClient):
         res = self._do_request(
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
         ).json()
-        return SequenceRows(id=res["id"], external_id=res.get("external_id"), rows=res["rows"], columns=res["columns"])
+        return SequenceRows._load(res)
 
     def _fetch_data(self, task: dict[str, Any]) -> Iterator[dict[str, Any]]:
         remaining_limit = task.get("limit")
