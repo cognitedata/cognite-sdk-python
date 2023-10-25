@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Sequence, cast
 import warnings
+from typing import TYPE_CHECKING, Any, List, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -25,6 +25,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
+
+
+def templates_deprecation_warning() -> None:
+    return warnings.warn(
+        "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
+        UserWarning,
+    )
 
 
 class TemplatesAPI(APIClient):
@@ -72,10 +79,7 @@ class TemplatesAPI(APIClient):
                 >>>    '''
                 >>> result = c.templates.graphql_query("template-group-ext-id", 1, query)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         path = "/templategroups/{}/versions/{}/graphql"
         path = interpolate_and_url_encode(path, external_id, version)
         response = self._post(path, {"query": query})
@@ -104,10 +108,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> template_group_2 = TemplateGroup("sdk-test-group-2", "This is another test group")
                 >>> c.templates.groups.create([template_group_1, template_group_2])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         return self._create_multiple(list_cls=TemplateGroupList, resource_cls=TemplateGroup, items=template_groups)
 
     def upsert(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
@@ -130,10 +131,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> template_group_2 = TemplateGroup("sdk-test-group-2", "This is another test group")
                 >>> c.templates.groups.upsert([template_group_1, template_group_2])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         path = self._RESOURCE_PATH + "/upsert"
         is_single = not isinstance(template_groups, list)
         if is_single:
@@ -165,10 +163,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.templates.groups.retrieve_multiple(external_ids=["abc", "def"])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
         return self._retrieve_multiple(
             list_cls=TemplateGroupList,
@@ -195,10 +190,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> template_group_list = c.templates.groups.list(limit=5)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling (FDM).",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         filter = {}
         if owners is not None:
             filter["owners"] = owners
@@ -226,10 +218,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.groups.delete(external_ids=["a", "b"])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         self._delete_multiple(
             wrap_ids=True,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
@@ -280,10 +269,7 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> template_group_version = TemplateGroupVersion(schema)
                 >>> c.templates.versions.upsert(template_group.external_id, template_group_version)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
         version_res = self._post(resource_path, version.dump(camel_case=True)).json()
         return TemplateGroupVersion._load(version_res)
@@ -314,10 +300,7 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> template_group_list = c.templates.versions.list("template-group-ext-id", limit=5)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
         filter = {}
         if min_version is not None:
@@ -347,10 +330,7 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.versions.delete("sdk-test-group", 1)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
         self._post(resource_path + "/delete", {"version": version})
 
@@ -395,10 +375,7 @@ class TemplateInstancesAPI(APIClient):
                 >>>                               )
                 >>> c.templates.instances.create("sdk-test-group", 1, [template_instance_1, template_instance_2])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._create_multiple(
             list_cls=TemplateInstanceList, resource_cls=TemplateInstance, resource_path=resource_path, items=instances
@@ -442,10 +419,7 @@ class TemplateInstancesAPI(APIClient):
             >>>   )
             >>> c.templates.instances.upsert("sdk-test-group", 1, [template_instance_1, template_instance_2])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         if isinstance(instances, TemplateInstance):
             instances = [instances]
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
@@ -478,10 +452,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> my_update = TemplateInstanceUpdate(external_id="test").field_resolvers.add({ "name": ConstantResolver("Norway") })
                 >>> res = c.templates.instances.update("sdk-test-group", 1, my_update)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._update_multiple(
             list_cls=TemplateInstanceList,
@@ -512,10 +483,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.templates.instances.retrieve_multiple(external_id="sdk-test-group", version=1, external_ids=["abc", "def"])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -554,10 +522,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> template_instances_list = c.templates.instances.list("template-group-ext-id", 1, limit=5)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         filter: dict[str, Any] = {}
         if data_set_ids is not None:
@@ -591,10 +556,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.instances.delete("sdk-test-group", 1, external_ids=["a", "b"])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         self._delete_multiple(
             resource_path=resource_path,
@@ -640,10 +602,7 @@ class TemplateViewsAPI(APIClient):
                 >>>        )
                 >>> c.templates.views.create("sdk-test-group", 1, [view])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._create_multiple(list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views)
 
@@ -680,10 +639,7 @@ class TemplateViewsAPI(APIClient):
                 >>>        )
                 >>> c.templates.views.upsert("sdk-test-group", 1, [view])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         if isinstance(views, View):
             views = [views]
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
@@ -721,10 +677,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.views.resolve("template-group-ext-id", 1, "view", { "startTime": 10 }, limit=5)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/resolve"
         return self._list(
             list_cls=ViewResolveList,
@@ -754,10 +707,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.views.list("template-group-ext-id", 1, limit=5)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._list(list_cls=ViewList, resource_cls=View, resource_path=resource_path, method="POST", limit=limit)
 
@@ -783,10 +733,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.views.delete("sdk-test-group", 1, external_id=["a", "b"])
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
-            DeprecationWarning,
-        )
+        templates_deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         self._delete_multiple(
             resource_path=resource_path,
