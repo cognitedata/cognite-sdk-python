@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -699,7 +701,7 @@ class TestFilesAPI:
         cognite_client,
         data_set_id: int,
         api_error: CogniteAPIError,
-        expected_error: type(CogniteAPIError),
+        expected_error: type[CogniteAPIError],
         expected_error_message: str,
     ):
         def raise_api_error(*args, **kwargs):
