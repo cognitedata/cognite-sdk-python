@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
-from typing_extensions import Self
-
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
@@ -30,7 +28,7 @@ class ContainerCore(DataModelingResource):
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
         description (str | None): Textual description of the view
         name (str | None): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all'] | None): Should this operation apply to nodes, edges or both.
+        used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
         **_ (Any): No description.
@@ -58,7 +56,7 @@ class ContainerCore(DataModelingResource):
         self.indexes = indexes
 
     @classmethod
-    def load(cls, resource: dict | str) -> Self:
+    def load(cls, resource: dict | str) -> ContainerCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "constraints" in data:
             data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
@@ -92,7 +90,7 @@ class ContainerApply(ContainerCore):
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
         description (str | None): Textual description of the view
         name (str | None): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all'] | None): Should this operation apply to nodes, edges or both.
+        used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
     """
@@ -124,7 +122,7 @@ class Container(ContainerCore):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str | None): Textual description of the view
         name (str | None): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
+        used_for (Literal["node", "edge", "all"]): Should this operation apply to nodes, edges or both.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
         **_ (Any): No description.
@@ -227,21 +225,17 @@ class ContainerProperty:
             type_ = PropertyType.load(data["type"])
         return cls(
             type=type_,
-            # If nothing is specified, we will pass through null values
-            nullable=data.get("nullable"),  # type: ignore[arg-type]
-            auto_increment=data.get("autoIncrement"),  # type: ignore[arg-type]
+            nullable=data["nullable"],
+            auto_increment=data["autoIncrement"],
             name=data.get("name"),
             default_value=data.get("defaultValue"),
             description=data.get("description"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output: dict[str, str | dict] = {}
-        if self.type:
+        output = asdict(self)
+        if "type" in output and isinstance(output["type"], dict):
             output["type"] = self.type.dump(camel_case)
-        for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
-            if (value := getattr(self, key)) is not None:
-                output[key] = value
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
@@ -322,14 +316,12 @@ class BTreeIndex(Index):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> BTreeIndex:
-        return cls(properties=data["properties"], cursorable=data.get("cursorable"))  # type: ignore[arg-type]
+        return cls(properties=data["properties"], cursorable=data["cursorable"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        dumped: dict[str, Any] = {"properties": self.properties}
-        if self.cursorable is not None:
-            dumped["cursorable"] = self.cursorable
-        dumped["indexType" if camel_case else "index_type"] = "btree"
-        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        as_dict = asdict(self)
+        as_dict["indexType" if camel_case else "index_type"] = "btree"
+        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
 
 
 @dataclass(frozen=True)
@@ -340,7 +332,7 @@ class InvertedIndex(Index):
     def load(cls, data: dict[str, Any]) -> InvertedIndex:
         return cls(properties=data["properties"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        dumped: dict[str, Any] = {"properties": self.properties}
-        dumped["indexType" if camel_case else "index_type"] = "inverted"
-        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        as_dict = asdict(self)
+        as_dict["indexType" if camel_case else "index_type"] = "inverted"
+        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
