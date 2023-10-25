@@ -912,7 +912,7 @@ class SequencesRowsAPI(APIClient):
             raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = Identifier.of_either(id, external_id).as_dict()
-        base_obj.update(self._process_columns(column_external_ids))
+        base_obj.update(self._wrap_columns(column_external_ids))
 
         if len(all_rows) > 0:
             rows_per_request = min(
@@ -993,11 +993,11 @@ class SequencesRowsAPI(APIClient):
         sequence = self._cognite_client.sequences.retrieve(id=id, external_id=external_id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_dict()
-        post_obj.update(self._process_columns(column_external_ids=[sequence.column_external_ids[0]]))
+        post_obj.update(self._wrap_columns(column_external_ids=sequence.column_external_ids))
         post_obj.update({"start": start, "end": end})
-        for data, _ in self._fetch_data(post_obj):
-            if data:
-                self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
+        for resp in self._fetch_data(post_obj):
+            if rows := resp["rows"]:
+                self.delete(rows=[r["rowNumber"] for r in rows], external_id=external_id, id=id)
 
     @overload
     def retrieve(
@@ -1067,7 +1067,7 @@ class SequencesRowsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids, external_ids).as_dicts()
 
         def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
-            post_obj.update(self._process_columns(column_external_ids=columns))
+            post_obj.update(self._wrap_columns(column_external_ids=columns))
             post_obj.update({"start": start, "end": end, "limit": limit})
 
             row_response_iterator = self._fetch_data(post_obj)
@@ -1137,7 +1137,7 @@ class SequencesRowsAPI(APIClient):
             if not cursor or (remaining_limit is not None and remaining_limit <= 0):
                 break
 
-    def _process_columns(self, column_external_ids: SequenceType[str] | None) -> dict[str, SequenceType[str]]:
+    def _wrap_columns(self, column_external_ids: SequenceType[str] | None) -> dict[str, SequenceType[str]]:
         if column_external_ids is None:
             return {}  # for defaults
         return {"columns": column_external_ids}
