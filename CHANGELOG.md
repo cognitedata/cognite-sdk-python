@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.35.0] - 2023-10-25
+### Added
+- Support for `through` on node result set expressions.
+### Fixed
+- `unit` on properties in data modeling. This was typed as a string, but it is in fact a direct relation.
+
 ## [6.34.2] - 2023-10-23
 ### Fixed
 - Loading a `ContainerApply` from source failed with `KeyError` if `nullable`, `autoIncrement`, or `cursorable` were not set 
