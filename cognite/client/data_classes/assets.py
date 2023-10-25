@@ -257,9 +257,9 @@ class Asset(CogniteResource):
 
     def to_pandas(  # type: ignore [override]
         self,
-        expand_metadata: bool = True,
+        expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
-        expand_aggregates: bool = True,
+        expand_aggregates: bool = False,
         aggregates_prefix: str = "aggregates.",
         ignore: list[str] | None = None,
         camel_case: bool = False,
@@ -268,12 +268,12 @@ class Asset(CogniteResource):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand_metadata (bool): Expand the metadata into separate rows.
+            expand_metadata (bool): Expand the metadata into separate rows (default: False).
             metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
-            expand_aggregates (bool): Expand the aggregates into separate rows.
+            expand_aggregates (bool): Expand the aggregates into separate rows (default: False).
             aggregates_prefix (str): Prefix to use for the aggregates rows, if expanded.
             ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
