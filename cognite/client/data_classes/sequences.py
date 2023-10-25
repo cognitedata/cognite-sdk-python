@@ -460,9 +460,10 @@ class SequenceRows(CogniteResource):
         ...
 
     def __getitem__(self, item: int | slice) -> list[RowValues] | list[list[RowValues]]:
-        # slow, should be replaced by dict cache if it sees more than incidental use
         if isinstance(item, slice):
-            return [list(self.rows[i].values) for i in range(item.start or 0, item.stop or len(self), item.step or 1)]
+            raise TypeError("Slicing is not supported for SequenceRows")
+            # Todo: Solution below needs more work
+            # return [list(self.rows[i].values) for i in range(item.start or 0, item.stop or len(self), item.step or 1)]
         else:
             return list(self.rows[item].values)
 
