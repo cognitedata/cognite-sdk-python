@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast, get_args, overload
 from typing import Sequence as SequenceType
 
 from typing_extensions import Self, TypeAlias
@@ -391,6 +391,17 @@ class SequenceRow(CogniteResource):
         self.values = values
 
 
+ColumnNames: TypeAlias = Literal[  # type: ignore[valid-type]
+    "externalId",
+    "id",
+    "columnExternalId",
+    "id|columnExternalId",
+    "externalId|columnExternalId",
+]
+
+_VALID_COLUMN_NAMES = set(get_args(ColumnNames))
+
+
 class SequenceRows(CogniteResource):
     """An object representing a list of rows from a sequence.
 
@@ -495,37 +506,42 @@ class SequenceRows(CogniteResource):
             external_id=resource.get("externalId"),
         )
 
-    def to_pandas(self, column_names: str = "columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
+    def to_pandas(self, column_names: ColumnNames = "columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
-            column_names (str):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId".
+            column_names (ColumnNames): Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId".
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        raise NotImplementedError
-        # pd = local_import("pandas")
-        #
-        # options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
-        # if column_names not in options:
-        #     raise ValueError(f"Invalid column_names value '{column_names}', should be one of {options}")
-        #
-        # column_names = (
-        #     column_names.replace("columnExternalId", "{columnExternalId}")
-        #     .replace("externalId", "{externalId}")
-        #     .replace("id", "{id}")
-        # )
-        # df_columns = [
-        #     column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
-        #     for eid in self.column_external_ids
-        # ]
-        # # TODO: Optimization required (None/nan):
-        # return pd.DataFrame(
-        #     [[x if x is not None else math.nan for x in r] for r in self.values],
-        #     index=self.row_numbers,
-        #     columns=df_columns,
-        # )
+        pd = local_import("pandas")
+
+        if column_names not in _VALID_COLUMN_NAMES:
+            raise ValueError(
+                f"Invalid column_names value '{column_names}', should be one of {list(_VALID_COLUMN_NAMES)}"
+            )
+
+        column_names = (
+            column_names.replace("columnExternalId", "{columnExternalId}")
+            .replace("externalId", "{externalId}")
+            .replace("id", "{id}")
+        )
+        df_columns = [
+            column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
+            for eid in self.column_external_ids
+        ]
+        index = []
+        values = []
+        for i, row in self.items():
+            index.append(i)
+            values.append(row)
+
+        return pd.DataFrame(
+            values,
+            index=index,
+            columns=df_columns,
+        ).replace({None: pd.NA})
 
     @property
     def column_external_ids(self) -> list[str]:
@@ -554,24 +570,59 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
     def __str__(self) -> str:
         return json.dumps(self.dump(), indent=4)
 
-    # def to_pandas(
-    #     self,
-    #     camel_case: bool = False,
-    #     expand_metadata: bool = False,
-    #     metadata_prefix: str = "metadata.",
-    # ) -> pandas.DataFrame:
+    @overload  # type: ignore[override]
+    def to_pandas(
+        self,
+        key: Literal["id", "external_id"] = "external_id",
+        column_names: ColumnNames = "externalId|columnExternalId",
+        concat: Literal[True] = True,
+    ) -> pandas.DataFrame:
+        ...
 
-    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
+    @overload  # type: ignore[override]
+    def to_pandas(
+        self,
+        key: Literal["external_id"] = "external_id",
+        column_names: ColumnNames = "externalId|columnExternalId",
+        concat: Literal[False] = False,
+    ) -> dict[str, pandas.DataFrame]:
+        ...
+
+    @overload  # type: ignore[override]
+    def to_pandas(
+        self,
+        key: Literal["id"],
+        column_names: ColumnNames = "externalId|columnExternalId",
+        concat: Literal[False] = False,
+    ) -> dict[int, pandas.DataFrame]:
+        ...
+
+    def to_pandas(
+        self,
+        key: Literal["id", "external_id"] = "external_id",
+        column_names: ColumnNames = "externalId|columnExternalId",
+        concat: bool = False,
+    ) -> dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame] | pandas.DataFrame:  # type: ignore[override]
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
-            column_names (str): Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
+            key (Literal["id", "external_id"]): If concat = False, this decides which field to use as key in the dictionary. Defaults to "external_id".
+            column_names (ColumnNames): Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
+            concat (bool): Whether to concatenate the sequences into a single DataFrame or return a dictionary of DataFrames. Defaults to False.
 
         Returns:
-            pandas.DataFrame: The sequence data list as a pandas DataFrame.
+            dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame] | pandas.DataFrame: The sequence data list as a pandas DataFrame.
         """
         pd = local_import("pandas")
-        return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)
+        if concat:
+            return pd.concat([seq.to_pandas(column_names) for seq in self], axis=1)
+
+        if key == "external_id":
+            return {seq.external_id: seq.to_pandas(column_names) for seq in self}
+        elif key == "id":
+            return {seq.id: seq.to_pandas(column_names) for seq in self}
+
+        raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")
 
 
 class SequenceProperty(EnumProperty):
