@@ -102,7 +102,8 @@ class TestDatapointSubscriptions:
             time_series_in_subscription = cognite_client.time_series.subscriptions.list_member_time_series(
                 new_subscription.external_id, limit=10
             )
-            assert set(time_series_in_subscription) == set(new_subscription.time_series_ids)
+            retrieved_time_series_external_ids = [ts.external_id for ts in time_series_in_subscription]
+            assert sorted(new_subscription.time_series_ids) == sorted(retrieved_time_series_external_ids)
 
             # Act
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
