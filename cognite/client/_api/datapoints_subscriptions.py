@@ -132,6 +132,27 @@ class DatapointsSubscriptionAPI(APIClient):
     def list_member_time_series(
         self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ
     ) -> DatapointSubscriptionMemberList:
+        """`List time series in a subscription <https://api-docs.cognite.com/20230101-beta/tag/Data-point-subscriptions/operation/listSubscriptionMembers>`_
+
+        Retrieve a list of time series (IDs) that the subscription is currently retrieving updates from
+
+        Args:
+            external_id (str): External ID of the subscription to retrieve members of.
+            limit (int | None): Maximum number of time series to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            DatapointSubscriptionMemberList: List of time series in the subscription.
+
+        Examples:
+
+            List time series in a subscription:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
+                >>> c = CogniteClient()
+                >>> members = c.time_series.subscriptions.list_member_time_series("my_subscription")
+                >>> external_ids = [ts.external_id for ts in members]
+        """
         return self._list(
             method="GET",
             limit=limit,
