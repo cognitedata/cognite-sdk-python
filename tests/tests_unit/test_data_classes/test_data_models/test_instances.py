@@ -116,7 +116,7 @@ class TestNode:
         node = Node(
             space="IntegrationTestsImmutable",
             external_id="shop:case:integration_test",
-            version="1",
+            version=1,
             type=DirectRelationReference("someSpace", "someType"),
             last_updated_time=123,
             created_time=123,
@@ -132,5 +132,5 @@ class TestNode:
             "properties": {},
             "space": "IntegrationTestsImmutable",
             "type": {"externalId": "someType", "space": "someSpace"},
-            "version": "1",
+            "version": 1,
         }
