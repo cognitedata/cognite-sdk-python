@@ -642,6 +642,8 @@ class SequenceData(SequenceRows):
         rows_parsed: list[SequenceRow]
         if rows and isinstance(rows, list) and rows and isinstance(rows[0], dict):
             rows_parsed = [SequenceRow.load(r) for r in rows]
+        elif rows and isinstance(rows, list) and rows and isinstance(rows[0], SequenceRow):
+            rows_parsed = rows
         elif (row_numbers and values) and not rows:
             if len(row_numbers) != len(values):
                 raise ValueError(
@@ -653,11 +655,11 @@ class SequenceData(SequenceRows):
 
         if columns is None:
             raise ValueError("columns must be specified")
-
+        is_column_loaded = isinstance(columns, SequenceType) and columns and isinstance(columns[0], SequenceColumn)
         super().__init__(
             id=id,
             external_id=external_id,
-            columns=SequenceColumnList.load(columns),
+            columns=SequenceColumnList.load(columns) if not is_column_loaded else SequenceColumnList(columns),
             rows=rows_parsed,
         )
 
