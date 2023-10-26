@@ -530,27 +530,23 @@ Upsert sequences
 
 Retrieve data
 ^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
-
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
+.. automethod:: cognite.client._api.sequences.SequencesRowsAPI.retrieve
 
 Insert rows into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert
+.. automethod:: cognite.client._api.sequences.SequencesRowsAPI.insert
 
 Insert a pandas dataframe into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert_dataframe
+.. automethod:: cognite.client._api.sequences.SequencesRowsAPI.insert_dataframe
 
 Delete rows from a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete
+.. automethod:: cognite.client._api.sequences.SequencesRowsAPI.delete
 
 Delete a range of rows from a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete_range
+.. automethod:: cognite.client._api.sequences.SequencesRowsAPI.delete_range
 
 Sequence Data classes
 ^^^^^^^^^^^^^^^^^^^^^

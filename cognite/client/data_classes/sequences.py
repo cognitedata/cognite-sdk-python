@@ -650,7 +650,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["id", "external_id"] = "external_id",
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: bool = False,
-    ) -> pandas.DataFrame | dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame]:  # type: ignore[override]
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame]:
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
