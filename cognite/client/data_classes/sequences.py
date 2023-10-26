@@ -68,11 +68,11 @@ class SequenceColumn(CogniteResource):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         # Snake case is supported for backwards compatibility
         resource = convert_all_keys_to_camel_case(resource)
-        return super()._load(resource, cognite_client)
+        return super().load(resource, cognite_client)
 
     def as_write(self) -> Self:
         """
@@ -150,7 +150,7 @@ class Sequence(CogniteResource):
             self.columns = SequenceColumnList(columns)
         elif isinstance(columns, list):
             # Todo deprecation warning
-            self.columns = SequenceColumnList._load(columns)
+            self.columns = SequenceColumnList.load(columns)
         else:
             raise ValueError("columns must be a SequenceColumnList")
         self.created_time = created_time
@@ -159,10 +159,10 @@ class Sequence(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        loaded = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        loaded = super().load(resource, cognite_client)
         if loaded.columns is not None:
-            loaded.columns = SequenceColumnList._load(loaded.columns)
+            loaded.columns = SequenceColumnList.load(loaded.columns)
         return loaded
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -425,7 +425,7 @@ class SequenceRow(CogniteResource):
         self.values = values
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             row_number=resource["rowNumber"],
@@ -545,11 +545,11 @@ class SequenceRows(CogniteResource):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
-            rows=[SequenceRow._load(r) for r in resource["rows"]],
-            columns=SequenceColumnList._load(resource["columns"]),
+            rows=[SequenceRow.load(r) for r in resource["rows"]],
+            columns=SequenceColumnList.load(resource["columns"]),
             id=resource.get("id"),
             external_id=resource.get("externalId"),
         )

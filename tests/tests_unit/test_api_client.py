@@ -34,7 +34,7 @@ URL_PATH = "/someurl"
 RESPONSE = {"any": "ok"}
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def api_client_with_token_factory(cognite_client):
     return APIClient(
         ClientConfig(
@@ -50,7 +50,7 @@ def api_client_with_token_factory(cognite_client):
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def api_client_with_token(cognite_client):
     return APIClient(
         ClientConfig(

@@ -850,10 +850,10 @@ class SequencesRowsAPI(APIClient):
 
     def insert(
         self,
-        rows: dict[int, SequenceType[int | float | str]]
+        rows: SequenceRows
+        | dict[int, SequenceType[int | float | str]]
         | SequenceType[tuple[int, SequenceType[int | float | str]]]
-        | SequenceType[dict[str, Any]]
-        | SequenceRows,
+        | SequenceType[dict[str, Any]],
         column_external_ids: SequenceType[str] | None,
         id: int | None = None,
         external_id: str | None = None,
@@ -861,7 +861,7 @@ class SequencesRowsAPI(APIClient):
         """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
         Args:
-            rows (dict[int, SequenceType[int | float | str]] | SequenceType[tuple[int, SequenceType[int | float | str]]] | SequenceType[dict[str, Any]] | SequenceRows):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
+            rows (SequenceRows | dict[int, SequenceType[int | float | str]] | SequenceType[tuple[int, SequenceType[int | float | str]]] | SequenceType[dict[str, Any]]):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             column_external_ids (SequenceType[str] | None): List of external id for the columns of the sequence.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
@@ -1076,7 +1076,7 @@ class SequencesRowsAPI(APIClient):
             for row_response in row_response_iterator:
                 sequence_rows["rows"].extend(row_response["rows"])
 
-            return SequenceRows._load(sequence_rows)
+            return SequenceRows.load(sequence_rows)
 
         tasks_summary = execute_tasks(
             _fetch_sequence, [(x,) for x in identifiers], max_workers=self._config.max_workers
@@ -1118,7 +1118,7 @@ class SequencesRowsAPI(APIClient):
         res = self._do_request(
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
         ).json()
-        return SequenceRows._load(res)
+        return SequenceRows.load(res)
 
     def _fetch_data(self, task: dict[str, Any]) -> Iterator[dict[str, Any]]:
         remaining_limit = task.get("limit")

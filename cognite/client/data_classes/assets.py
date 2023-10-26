@@ -161,13 +161,13 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
+        instance = super().load(resource, cognite_client)
         if isinstance(resource, dict) and instance.aggregates is not None:
             instance.aggregates = AggregateResultItem(**instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
     def __hash__(self) -> int:
@@ -252,6 +252,10 @@ class Asset(CogniteResource):
         result = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location is not None:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        if isinstance(self.aggregates, AggregateResultItem):
+            result["aggregates"] = dict(self.aggregates)
         return result
 
     def to_pandas(

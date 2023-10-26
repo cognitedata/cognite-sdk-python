@@ -162,6 +162,12 @@ class ResultSetExpression(ABC):
                 "from_": query_node.get("from"),
                 "filter": Filter.load(query_node["filter"]) if "filter" in query_node else None,
             }
+            if (through := query_node.get("through")) is not None:
+                node["through"] = [
+                    through["view"]["space"],
+                    through["view"]["externalId"] + "/" + through["view"]["version"],
+                    through["identifier"],
+                ]
             return NodeResultSetExpression(sort=sort, limit=query.get("limit"), **node)
         elif "edges" in query:
             query_edge = query["edges"]
@@ -191,8 +197,10 @@ class NodeResultSetExpression(ResultSetExpression):
         filter: Filter | None = None,
         sort: list[InstanceSort] | None = None,
         limit: int | None = None,
+        through: list[str] | tuple[str, str, str] | None = None,
     ):
         super().__init__(from_=from_, filter=filter, limit=limit, sort=sort)
+        self.through = through
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = {"nodes": {}}
@@ -201,6 +209,18 @@ class NodeResultSetExpression(ResultSetExpression):
             nodes["from"] = self.from_
         if self.filter:
             nodes["filter"] = self.filter.dump()
+        if self.through:
+            if len(self.through) != 3:
+                raise ValueError(f"`through` must be on the form (space, view/version, property), was {self.through}")
+            nodes["through"] = {
+                "view": {
+                    "type": "view",
+                    "space": self.through[0],
+                    "externalId": self.through[1].split("/")[0],
+                    "version": self.through[1].split("/")[1],
+                },
+                "identifier": self.through[2],
+            }
 
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
@@ -282,9 +302,9 @@ class QueryResult(UserDict):
             if not values:
                 instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
             elif values[0]["instanceType"] == "node":
-                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor)
+                instance[key] = NodeListWithCursor([Node.load(node) for node in values], cursor)
             elif values[0]["instanceType"] == "edge":
-                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor)
+                instance[key] = EdgeListWithCursor([Edge.load(edge) for edge in values], cursor)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
@@ -44,8 +44,8 @@ class TransformationJobMetric(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJobMetric:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJobMetric:
+        instance = super().load(resource, cognite_client)
         return instance
 
 
@@ -250,11 +250,23 @@ class TransformationJob(CogniteResource):
 
         return self
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.destination:
+            output["destination"] = self.destination.type
+        if self.status:
+            output["status"] = self.status.value
+        return output
+
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJob:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJob:
+        instance = super().load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
+        elif isinstance(instance.destination, str):
+            instance.destination = TransformationDestination(type=instance.destination)
+        if isinstance(instance.status, str):
+            instance.status = TransformationJobStatus(instance.status)
         return instance
 
     def __hash__(self) -> int:

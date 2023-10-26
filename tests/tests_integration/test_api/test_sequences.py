@@ -221,7 +221,7 @@ class TestSequencesAPI:
             name="my preexisting sequence",
             columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
         )
-        preexisting_update = Sequence._load(preexisting.dump(camel_case=True))
+        preexisting_update = Sequence.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting sequence updated"
 
         try:

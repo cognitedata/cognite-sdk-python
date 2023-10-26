@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 import warnings
 from dataclasses import dataclass
@@ -25,7 +26,7 @@ from cognite.client.data_classes.annotation_types.images import (
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
-from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none
+from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
 from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
@@ -163,7 +164,7 @@ class ContextualizationJob(CogniteResource):
         status_path: str,
         cognite_client: Any,
     ) -> T_ContextualizationJob:
-        obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
+        obj = cls.load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
         obj._status_path = status_path
         # '_load' does not see properties (real attribute stored under a different name, e.g. '_items' not 'items'):
         if "items" in data and hasattr(obj, "items"):
@@ -294,7 +295,7 @@ class EntityMatchingModel(CogniteResource):
         response = self._cognite_client.entity_matching._post(
             self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
         )
-        return self._load(response.json(), cognite_client=self._cognite_client)
+        return self.load(response.json(), cognite_client=self._cognite_client)
 
     @staticmethod
     def _flatten_entity(entity: dict | CogniteResource) -> dict:
@@ -410,7 +411,7 @@ class DiagramConvertItem(CogniteResource):
     @property
     def pages(self) -> DiagramConvertPageList:
         assert self.results is not None
-        return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
+        return DiagramConvertPageList.load(self.results, cognite_client=self._cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -444,14 +445,14 @@ class DiagramConvertResults(ContextualizationJob):
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramConvertItem._load(found[0], cognite_client=self._cognite_client)
+        return DiagramConvertItem.load(found[0], cognite_client=self._cognite_client)
 
     @property
     def items(self) -> list[DiagramConvertItem] | None:
         """returns a list of all results by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
-                DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
+                DiagramConvertItem.load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
         return self._items
 
@@ -511,14 +512,14 @@ class DiagramDetectResults(ContextualizationJob):
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramDetectItem._load(found[0], cognite_client=self._cognite_client)
+        return DiagramDetectItem.load(found[0], cognite_client=self._cognite_client)
 
     @property
     def items(self) -> list[DiagramDetectItem] | None:
         """Returns a list of all results by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
-                DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
+                DiagramDetectItem.load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
         return self._items
 
@@ -569,6 +570,47 @@ class VisionExtractPredictions(VisionResource):
     dial_gauge_predictions: list[KeypointCollectionWithObjectDetection] | None = None
     level_gauge_predictions: list[KeypointCollectionWithObjectDetection] | None = None
     valve_predictions: list[KeypointCollectionWithObjectDetection] | None = None
+
+    @classmethod
+    def load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> VisionExtractPredictions:
+        resource = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            text_predictions=[
+                TextRegion.load(text_prediction) for text_prediction in resource.get("textPredictions", [])
+            ],
+            asset_tag_predictions=[
+                AssetLink.load(asset_tag_prediction) for asset_tag_prediction in resource.get("assetTagPredictions", [])
+            ],
+            industrial_object_predictions=[
+                ObjectDetection.load(industrial_object_prediction)
+                for industrial_object_prediction in resource.get("industrialObjectPredictions", [])
+            ],
+            people_predictions=[
+                ObjectDetection.load(people_prediction) for people_prediction in resource.get("peoplePredictions", [])
+            ],
+            personal_protective_equipment_predictions=[
+                ObjectDetection.load(personal_protective_equipment_prediction)
+                for personal_protective_equipment_prediction in resource.get(
+                    "personalProtectiveEquipmentPredictions", []
+                )
+            ],
+            digital_gauge_predictions=[
+                ObjectDetection.load(digital_gauge_prediction)
+                for digital_gauge_prediction in resource.get("digitalGaugePredictions", [])
+            ],
+            dial_gauge_predictions=[
+                KeypointCollectionWithObjectDetection.load(dial_gauge_prediction)
+                for dial_gauge_prediction in resource.get("dialGaugePredictions", [])
+            ],
+            level_gauge_predictions=[
+                KeypointCollectionWithObjectDetection.load(level_gauge_prediction)
+                for level_gauge_prediction in resource.get("levelGaugePredictions", [])
+            ],
+            valve_predictions=[
+                KeypointCollectionWithObjectDetection.load(valve_prediction)
+                for valve_prediction in resource.get("valvePredictions", [])
+            ],
+        )
 
 
 VISION_FEATURE_MAP: dict[str, Any] = {
@@ -758,6 +800,33 @@ class FeatureParameters(VisionResource):
     level_gauge_detection_parameters: LevelGaugeDetection | None = None
     valve_detection_parameters: ValveDetection | None = None
 
+    @classmethod
+    def load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            text_detection_parameters=load_resource(data, TextDetectionParameters, "textDetectionParameters"),
+            asset_tag_detection_parameters=load_resource(
+                data, AssetTagDetectionParameters, "assetTagDetectionParameters"
+            ),
+            people_detection_parameters=load_resource(data, PeopleDetectionParameters, "peopleDetectionParameters"),
+            industrial_object_detection_parameters=load_resource(
+                data, IndustrialObjectDetectionParameters, "industrialObjectDetectionParameters"
+            ),
+            personal_protective_equipment_detection_parameters=load_resource(
+                data, PersonalProtectiveEquipmentDetectionParameters, "personalProtectiveEquipmentDetectionParameters"
+            ),
+            digital_gauge_detection_parameters=load_resource(
+                data, DigitalGaugeDetection, "digitalGaugeDetectionParameters"
+            ),
+            dial_gauge_detection_parameters=load_resource(
+                data,
+                DialGaugeDetection,
+                "dialGaugeDetectionParameters",
+            ),
+            level_gauge_detection_parameters=load_resource(data, LevelGaugeDetection, "levelGaugeDetectionParameters"),
+            valve_detection_parameters=load_resource(data, ValveDetection, "valveDetectionParameters"),
+        )
+
 
 class VisionJob(ContextualizationJob):
     def update_status(self) -> str:
@@ -794,9 +863,9 @@ class VisionExtractItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> VisionExtractItem:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> VisionExtractItem:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
-        extracted_item = super()._load(resource, cognite_client=cognite_client)
+        extracted_item = super().load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):
             extracted_item._predictions_dict = extracted_item.predictions
             extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)
@@ -845,14 +914,14 @@ class VisionExtractJob(VisionJob):
         found = [item for item in self.result["items"] if item.get("fileId") == file_id]
         if not found:
             raise IndexError(f"File with id {file_id} not found in results")
-        return VisionExtractItem._load(found[0], cognite_client=self._cognite_client)
+        return VisionExtractItem.load(found[0], cognite_client=self._cognite_client)
 
     @property
     def items(self) -> list[VisionExtractItem] | None:
         """Returns a list of all predictions by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
-                VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
+                VisionExtractItem.load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
         return self._items
 
