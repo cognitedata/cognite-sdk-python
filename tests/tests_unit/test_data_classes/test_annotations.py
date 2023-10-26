@@ -61,7 +61,7 @@ class TestAnnotation:
 
     def test_load(self, annotation: Annotation) -> None:
         resource = json.dumps(annotation.dump(camel_case=True))
-        loaded_annotation = Annotation._load(resource, cognite_client=None)
+        loaded_annotation = Annotation.load(resource, cognite_client=None)
         assert annotation == loaded_annotation
 
 
