@@ -37,6 +37,20 @@ Changes are grouped as follows:
   `OidcCredentials`, instead of `dict`s.
 - Loading `TransformationPreviewResuld` the attribute `.schema` now returns `TRansformationSchemaColumnList` instead of `list[dict]`.
 - Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
+- The `client.sequences.data.retrieve` method has changed signature: 
+  The parameter `columns_external_id` is renamed `columns`, the parameters `id` and `external_id` have 
+  been replaced by `id_or_external_id`. This is to better match the API and have a consistent overload implementation.
+- The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
+  backwards compatibility, but will be removed in the next major version. However, all API methods now return
+  `SequenceRows` instead of `SequenceData`.
+- The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
+-The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
+
+### Removed
+- The method `client.sequences.data.retrieve_dataframe` is removed. The same is achieved with 
+  `client.sequences.data.retrieve(...).to_pandas(...)`
+- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
+  explicitly by the user.
 
 ## From v5 to v6
 
