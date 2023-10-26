@@ -92,8 +92,8 @@ class Relationship(CogniteResource):
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Relationship:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Relationship:
+        instance = super().load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
         if instance.target is not None:
@@ -105,20 +105,27 @@ class Relationship(CogniteResource):
         result: dict[str, Any] = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.source is not None and not isinstance(self.source, dict):
+            result["source"] = self.source.dump(camel_case)
+        if self.target is not None and not isinstance(self.target, dict):
+            result["target"] = self.target.dump(camel_case)
         return result
 
+    @staticmethod
     def _convert_resource(
-        self, resource: dict[str, Any], resource_type: str | None
-    ) -> dict[str, Any] | CogniteResource:
-        resource_map: dict[str, type[CogniteResource]] = {
-            "timeSeries": TimeSeries,
-            "asset": Asset,
-            "sequence": Sequence,
-            "file": FileMetadata,
-            "event": Event,
-        }
-        if resource_type in resource_map:
-            return resource_map[resource_type]._load(resource, self._cognite_client)
+        resource: dict[str, Any], resource_type: str | None, cognite_client: CogniteClient | None = None
+    ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
+        resource_type = resource_type.lower() if resource_type else resource_type
+        if resource_type == "timeseries":
+            return TimeSeries.load(resource, cognite_client=cognite_client)
+        if resource_type == "asset":
+            return Asset.load(resource, cognite_client=cognite_client)
+        if resource_type == "sequence":
+            return Sequence.load(resource, cognite_client=cognite_client)
+        if resource_type == "file":
+            return FileMetadata.load(resource, cognite_client=cognite_client)
+        if resource_type == "event":
+            return Event.load(resource, cognite_client=cognite_client)
         return resource
 
 

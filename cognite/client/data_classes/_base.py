@@ -71,7 +71,7 @@ class CogniteResponse:
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> CogniteResponse:
+    def load(cls, api_response: dict[str, Any]) -> CogniteResponse:
         raise NotImplementedError
 
     def to_pandas(self) -> pandas.DataFrame:
@@ -130,13 +130,13 @@ class CogniteResource(_WithClientMixin):
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(
+    def load(
         cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
         if isinstance(resource, dict):
             return fast_dict_load(cls, resource, cognite_client=cognite_client)
         elif isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
+            return cls.load(json.loads(resource), cognite_client=cognite_client)
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
@@ -307,15 +307,15 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return notebook_display_with_fallback(self)
 
     @classmethod
-    def _load(
+    def load(
         cls: type[T_CogniteResourceList],
         resource_list: str | Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
-            return cls._load(json.loads(resource_list), cognite_client=cognite_client)
+            return cls.load(json.loads(resource_list), cognite_client=cognite_client)
         elif isinstance(resource_list, Iterable):
-            resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
+            resources = [cls._RESOURCE.load(resource, cognite_client=cognite_client) for resource in resource_list]
             return cls(resources, cognite_client=cognite_client)
         else:
             raise NotImplementedError(f"Resource list must be iterable or json str, not {type(resource_list)}")
@@ -594,7 +594,7 @@ class Geometry(dict):
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
-    def _load(cls, raw_geometry: dict[str, Any]) -> Geometry:
+    def load(cls, raw_geometry: dict[str, Any]) -> Geometry:
         return cls(
             type=raw_geometry["type"],
             coordinates=raw_geometry["coordinates"],

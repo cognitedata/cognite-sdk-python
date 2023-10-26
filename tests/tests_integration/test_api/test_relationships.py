@@ -247,7 +247,7 @@ class TestRelationshipscognite_client:
             source_type="asset",
             target_type="asset",
         )
-        preexisting_update = Relationship._load(preexisting.dump(camel_case=True))
+        preexisting_update = Relationship.load(preexisting.dump(camel_case=True))
         preexisting_update.target_external_id = asset1.external_id
 
         try:
