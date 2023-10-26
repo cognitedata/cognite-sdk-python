@@ -627,7 +627,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
     ) -> pandas.DataFrame:
         ...
 
-    @overload  # type: ignore[override]
+    @overload
     def to_pandas(
         self,
         key: Literal["external_id"] = "external_id",
@@ -636,7 +636,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
     ) -> dict[str, pandas.DataFrame]:
         ...
 
-    @overload  # type: ignore[override]
+    @overload
     def to_pandas(
         self,
         key: Literal["id"],
