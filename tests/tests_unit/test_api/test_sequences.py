@@ -594,7 +594,7 @@ class TestSequencesPandasIntegration:
     def test_sequences_to_pandas(self, cognite_client, mock_seq_response):
         import pandas as pd
 
-        df = cognite_client.sequences.retrieve(id=1).to_pandas()
+        df = cognite_client.sequences.retrieve(id=1).to_pandas(expand_metadata=True, metadata_prefix="")
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert "string" == df.loc["description"][0]
