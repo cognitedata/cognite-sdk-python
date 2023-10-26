@@ -71,7 +71,7 @@ class SequencesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.rows = SequencesRowsAPI(config, api_version, cognite_client)
+        self.rows = SequencesDataAPI(config, api_version, cognite_client)
         self.data = self.rows
 
     def __call__(
@@ -839,7 +839,7 @@ class SequencesAPI(APIClient):
         return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
 
-class SequencesRowsAPI(APIClient):
+class SequencesDataAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
