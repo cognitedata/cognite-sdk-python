@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
     CogniteListUpdate,
@@ -199,11 +201,17 @@ class ThreeDModelRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDModelRevision:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        instance = super().load(resource, cognite_client)
         if isinstance(resource, dict) and instance.camera is not None:
             instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if isinstance(self.camera, RevisionCameraProperties):
+            result["camera"] = dict(self.camera)
+        return result
 
 
 class ThreeDModelRevisionUpdate(CogniteUpdate):
@@ -322,11 +330,17 @@ class ThreeDNode(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDNode:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDNode:
+        instance = super().load(resource, cognite_client)
         if isinstance(resource, dict) and instance.bounding_box is not None:
             instance.bounding_box = BoundingBox3D(**instance.bounding_box)
         return instance
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if isinstance(self.bounding_box, BoundingBox3D):
+            result[("boundingBox" if camel_case else "bounding_box")] = dict(self.bounding_box)
+        return result
 
 
 class ThreeDNodeList(CogniteResourceList[ThreeDNode]):

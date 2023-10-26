@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, ClassVar, cast
 
@@ -62,23 +62,31 @@ class PropertyType(ABC):
         data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
 
         if type_cls := _TYPE_LOOKUP.get(type_):
-            if type_cls is DirectRelation:
-                return cast(Self, DirectRelation.load(data))
+            if issubclass(type_cls, LoadablePropertyType):
+                return cast(Self, type_cls.load(data))
             try:
-                return type_cls(**data)
+                return cast(Self, type_cls(**data))
             except TypeError:
                 not_supported = set(data).difference(inspect.signature(type_cls).parameters) - {"type"}
                 logger.warning(
                     f"For '{type_cls.__name__}', the following properties are not yet supported in the SDK (ignored): "
                     f"{not_supported}. Try updating to the latest SDK version!"
                 )
-                return type_cls(**{k: v for k, v in data.items() if k not in not_supported})
+                return cast(Self, type_cls(**{k: v for k, v in data.items() if k not in not_supported}))
 
         raise ValueError(f"Invalid type {type_}.")
 
 
 @dataclass
-class ListablePropertyType(PropertyType):
+class LoadablePropertyType(ABC):
+    @classmethod
+    @abstractmethod
+    def load(cls, data: dict) -> Self:
+        ...
+
+
+@dataclass
+class ListablePropertyType(PropertyType, ABC):
     is_list: bool = False
 
 
@@ -89,7 +97,7 @@ class Text(ListablePropertyType):
 
 
 @dataclass
-class Primitive(ListablePropertyType):
+class Primitive(ListablePropertyType, ABC):
     ...
 
 
@@ -114,15 +122,21 @@ class Json(ListablePropertyType):
 
 
 @dataclass
-class ListablePropertyTypeWithUnit(ListablePropertyType):
+class ListablePropertyTypeWithUnit(ListablePropertyType, LoadablePropertyType, ABC):
     unit: NodeId | None = None
 
     @classmethod
     def load(cls, data: dict) -> Self:
-        loaded = super().load(data)
-        if isinstance(loaded.unit, dict):
-            loaded.unit = NodeId.load(loaded.unit)
-        return loaded
+        data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
+        unit = None
+        if (unit_raw := data.get("unit")) and isinstance(unit_raw, dict):
+            unit = NodeId.load(unit_raw)
+        elif unit_raw:
+            unit = unit_raw
+        return cls(
+            is_list=data["is_list"],
+            unit=unit,
+        )
 
 
 @dataclass
@@ -146,7 +160,7 @@ class Int64(ListablePropertyTypeWithUnit):
 
 
 @dataclass
-class CDFExternalIdReference(ListablePropertyType):
+class CDFExternalIdReference(ListablePropertyType, ABC):
     ...
 
 
@@ -166,7 +180,7 @@ class SequenceReference(CDFExternalIdReference):
 
 
 @dataclass
-class DirectRelation(PropertyType):
+class DirectRelation(PropertyType, LoadablePropertyType):
     _type = "direct"
     container: ContainerId | None = None
 
@@ -181,13 +195,10 @@ class DirectRelation(PropertyType):
 
     @classmethod
     def load(cls, data: dict) -> Self:
-        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        return output
+        return cls(container=ContainerId.load(container) if (container := data.get("container")) else None)
 
 
-_TYPE_LOOKUP = {
+_TYPE_LOOKUP: dict[str, type[PropertyType]] = {
     "text": Text,
     "boolean": Boolean,
     "float32": Float32,

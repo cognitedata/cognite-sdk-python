@@ -266,7 +266,7 @@ class DatapointsSubscriptionAPI(APIClient):
             start = None
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-            batch = _DatapointSubscriptionBatchWithPartitions._load(res.json())
+            batch = _DatapointSubscriptionBatchWithPartitions.load(res.json())
 
             cursor = batch.partitions[0].cursor
             assert cursor is not None
