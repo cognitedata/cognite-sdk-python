@@ -45,7 +45,7 @@ class TestWorkflowId:
         ],
     )
     def test_serialization(self, workflow_id: WorkflowVersionId):
-        assert WorkflowVersionId._load(workflow_id.dump(camel_case=True)).dump() == workflow_id.dump()
+        assert WorkflowVersionId.load(workflow_id.dump(camel_case=True)).dump() == workflow_id.dump()
 
 
 class TestWorkflowIds:
@@ -73,7 +73,7 @@ class TestWorkflowIds:
         ],
     )
     def test_load(self, resource: Any, expected: WorkflowIds):
-        assert WorkflowIds._load(resource) == expected
+        assert WorkflowIds.load(resource) == expected
 
 
 class TestWorkflowExecutionDetailed:
@@ -84,7 +84,7 @@ class TestWorkflowExecutionDetailed:
             return json.load(f)
 
     def test_dump(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
         dumped = wf_execution.dump(camel_case=False)
         dumped_camel = wf_execution.dump(camel_case=True)
         assert dumped["metadata"] == {"supervisor": "Jimmy", "best_number": 42}
@@ -99,7 +99,7 @@ class TestWorkflowExecutionDetailed:
         assert dumped["input"] == dumped_camel["input"]
 
     def test_load(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
         assert wf_execution.id == "7b6bf517-4812-4874-b227-fa7db36830a3"
         assert wf_execution.workflow_external_id == "TestWorkflowTypeBidProcess"
         assert wf_execution.version == "latest"
@@ -117,7 +117,7 @@ class TestWorkflowExecutionDetailed:
         }
 
     def test_definition_parsed_correctly(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
         assert wf_execution.workflow_definition.hash_ == "8AE17296EE6BCCD0B7D9C184E100A5F98069553C"
 
         expected = [
@@ -156,7 +156,7 @@ class TestWorkflowExecutionDetailed:
             assert actual_task.depends_on == expected_task.depends_on
 
     def test_executed_tasks_parsed_correctly(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
 
         expected = [
             ("38b3e696-adcb-4bf8-9217-747449f55289", "function", "completed", 1453249902969082),

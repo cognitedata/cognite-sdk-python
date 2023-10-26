@@ -444,14 +444,12 @@ class TestTransformationsAPI:
 
     def test_preview(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
-        assert (
-            query_result.schema is not None
-            and query_result.results is not None
-            and len(query_result.schema) == 2
-            and len(query_result.results) == 1
-            and query_result.results[0]["id"] == 1
-            and query_result.results[0]["name"] == "asd"
-        )
+        assert query_result.schema is not None
+        assert query_result.results is not None
+        assert len(query_result.schema) == 2
+        assert len(query_result.results) == 1
+        assert query_result.results[0]["id"] == 1
+        assert query_result.results[0]["name"] == "asd"
 
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
