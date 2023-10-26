@@ -338,7 +338,7 @@ class TestPandasIntegration:
         import pandas as pd
 
         asset = cognite_client.assets.retrieve(id=1)
-        df = asset.to_pandas()
+        df = asset.to_pandas(expand_metadata=True, metadata_prefix="")
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert 1 == df.loc["id"][0]
