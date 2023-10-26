@@ -122,7 +122,7 @@ class Json(ListablePropertyType):
 
 
 @dataclass
-class ListablePropertyTypeWithUnit(ListablePropertyType, LoadablePropertyType):
+class ListablePropertyTypeWithUnit(ListablePropertyType, LoadablePropertyType, ABC):
     unit: NodeId | None = None
 
     @classmethod
