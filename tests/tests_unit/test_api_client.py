@@ -343,13 +343,15 @@ class TestStandardRetrieveMultiple:
         assert 400 == e.value.code
 
     def test_ids_all_None(self, api_client_with_token):
-        with pytest.raises(ValueError, match="No identifiers specified"):
-            api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(),
-            )
+        result = api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(),
+        )
+
+        assert isinstance(result, SomeResourceList)
+        assert len(result) == 0
 
     def test_single_id_not_found(self, api_client_with_token, rsps):
         rsps.add(

@@ -54,13 +54,10 @@ class TestIdentifierSequence:
         else:
             assert identifiers.as_primitives() == expected
 
-    @pytest.mark.parametrize(
-        "ids, external_ids, exception, match",
-        [(None, None, ValueError, "No identifiers specified")],
-    )
-    def test_process_ids_fail(self, ids, external_ids, exception, match) -> None:
-        with pytest.raises(exception, match=match):
-            IdentifierSequence.load(ids, external_ids)
+    def test_process_ids_empty(self) -> None:
+        sequence = IdentifierSequence.load(None, None)
+
+        assert len(sequence) == 0
 
     @pytest.mark.parametrize(
         "id, external_id, expected",

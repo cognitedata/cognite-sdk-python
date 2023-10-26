@@ -415,3 +415,18 @@ class TestAPIClientAdvancedAggregate:
             for key in event.metadata
             if key.startswith("shop")
         )
+
+
+class TestAPIClientRetrieveMultiple:
+    def test_retrieve_multiple_empty(self, cognite_client: CogniteClient) -> None:
+        res = cognite_client.events.retrieve_multiple(external_ids=[])
+
+        assert isinstance(res, EventList)
+        assert len(res) == 0
+
+
+class TestAPIClientDelete:
+    def test_delete_empty(self, cognite_client: CogniteClient) -> None:
+        res = cognite_client.events.delete(external_id=[])
+
+        assert res is None

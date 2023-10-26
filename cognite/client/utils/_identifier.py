@@ -143,8 +143,6 @@ T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
 
 class IdentifierSequenceCore(Generic[T_Identifier], ABC):
     def __init__(self, identifiers: list[T_Identifier], is_singleton: bool) -> None:
-        if not identifiers:
-            raise ValueError("No identifiers specified")
         self._identifiers = identifiers
         self.__is_singleton = is_singleton
 
