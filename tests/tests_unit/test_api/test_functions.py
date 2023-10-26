@@ -904,7 +904,7 @@ class TestFunctionSchedulesAPI:
         assert len(res) == 1
 
     def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.list(function_id=123, function_external_id="my-func")
         assert (
             "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
@@ -947,7 +947,7 @@ class TestFunctionSchedulesAPI:
         assert expected == res.dump(camel_case=True)
 
     def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.create(
                 name="my-schedule",
                 function_id=123,
@@ -1026,7 +1026,7 @@ class TestFunctionCallsAPI:
         assert mock_function_calls_filter_response.calls[1].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_calls_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.list(function_id=123, function_external_id="my-function")
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
@@ -1042,7 +1042,7 @@ class TestFunctionCallsAPI:
         assert mock_function_calls_retrieve_response.calls[1].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_call_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.retrieve(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
@@ -1062,7 +1062,7 @@ class TestFunctionCallsAPI:
     def test_function_call_logs_by_function_id_and_function_external_id_raises(
         self, mock_function_call_logs_response, cognite_client
     ):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_logs(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
@@ -1105,7 +1105,7 @@ class TestFunctionCallsAPI:
         assert mock_function_call_response_response.calls[0].response.json()["response"] == res
 
     def test_function_call_response_by_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_response(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )

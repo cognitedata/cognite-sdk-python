@@ -277,13 +277,10 @@ class CogniteAuthError(CogniteException):
     ...
 
 
-class CogniteAssetHierarchyError(CogniteException, AssertionError):
+class CogniteAssetHierarchyError(CogniteException):
     """Cognite Asset Hierarchy validation Error.
 
     Raised if the given assets form an invalid hierarchy (by CDF standards).
-
-    Note:
-        For historical reasons, we make the error catchable as an AssertionError.
 
     Args:
         message (str): The error message to output.

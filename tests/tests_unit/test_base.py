@@ -528,23 +528,23 @@ class TestCogniteUpdate:
 
     def test_add_or_remove_after_set_raises_error(self):
         update = MyUpdate(1).object.set({"key": "value"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.add({"key2": "value2"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.remove(["key2"])
 
     def test_set_after_add_or_removeraises_error(self):
         update = MyUpdate(1).object.add({"key": "value"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.set({"key2": "value2"})
 
     def test_add_object_and_remove(self):
         update = MyUpdate(1).object.add({"key": "value"})
         update.object.remove(["key2"])
         assert {"id": 1, "update": {"object": {"add": {"key": "value"}, "remove": ["key2"]}}} == update.dump()
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.add({"key": "overwrite"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.remove(["key2", "key4"])
 
     def test_remove_object(self):

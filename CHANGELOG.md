@@ -31,53 +31,56 @@ methods is `json` and `yaml` serializable.
   the new parameter `convert_timestamps`.
 
 ### Changed
-* The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
-* The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
-* All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
+- The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
+- The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
+- All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
+- All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
+- `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
+
 
 ### Added
-* Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
+- Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
-* Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
-* Missing `dump` and `load` methods for `ClientCredentials`.
-* Literal annotation for `source_type` and `target_type` in `Relationship`
-* Type annotation for `SequenceData` attribute `rows`.
-* Type annotation for `Geometry` attribute `coordinates`
-* In transformations, `NonceCredentials` was missing `load` method.
-* In transformations, `TransformationBlockedInfo` was missing `.dump` method
+- Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
+- Missing `dump` and `load` methods for `ClientCredentials`.
+- Literal annotation for `source_type` and `target_type` in `Relationship`
+- Type annotation for `SequenceData` attribute `rows`.
+- Type annotation for `Geometry` attribute `coordinates`
+- In transformations, `NonceCredentials` was missing `load` method.
+- In transformations, `TransformationBlockedInfo` was missing `.dump` method
 
 ### Fixed
-* `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
-* In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
-* In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
-* In `DatapointsArray`, `load` method was not compatible with `.dump` method.
-* In extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
-* `ExtractionPipeline.dump` attribute `contacts` was not `json` serializable.
-* `FileMetadata.dump` attributes `labels` and `geo_location` was not `json` serializable.
-* In filtering, filter `ContainsAll` was missing in `Filter.load` method.
-* Annotation for `cpu` and `memory` in `Function`.
-* `GeospatialComputedResponse.dump` attribute `items` was not `yaml` serializable
-* `Relationship.dump` was not `json` serializable.
-* `Geometry.dump` was not `json` serializable.
-* In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load `errors`
+- `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
+- In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
+- In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
+- In `DatapointsArray`, `load` method was not compatible with `.dump` method.
+- In extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
+- `ExtractionPipeline.dump` attribute `contacts` was not `json` serializable.
+- `FileMetadata.dump` attributes `labels` and `geo_location` was not `json` serializable.
+- In filtering, filter `ContainsAll` was missing in `Filter.load` method.
+- Annotation for `cpu` and `memory` in `Function`.
+- `GeospatialComputedResponse.dump` attribute `items` was not `yaml` serializable
+- `Relationship.dump` was not `json` serializable.
+- `Geometry.dump` was not `json` serializable.
+- In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load `errors`
   `GraphQlError`.
-* `ThreeDModelRevision` attribute `camera` was not dumped as `yaml` serializable and
+- `ThreeDModelRevision` attribute `camera` was not dumped as `yaml` serializable and
   not loaded as `RevisionCameraProperties`.
-* `ThreeDNode` attribute `bounding_box` was not dumped as `yaml` serializable and
+- `ThreeDNode` attribute `bounding_box` was not dumped as `yaml` serializable and
   not loaded as `BoundingBox3D`.
-* `Transformation` attributes `source_nonce`, `source_oidc_credential`, `destination_nonce`,
+- `Transformation` attributes `source_nonce`, `source_oidc_credential`, `destination_nonce`,
   and `destination_oidc_credentials` were not dumped as `json` serializable and `loaded` with
   the appropriate data structure. In addition, `TransformationBlockedInfo` and `TransformationJob`
   were not dumped as `json` serializable.
-* `TransformationPreviewResult` was not dumping attribute `schema` as `yaml` serializable, and the
+- `TransformationPreviewResult` was not dumping attribute `schema` as `yaml` serializable, and the
   `load` and `dump` methods were not compatible.
-* In transformations, `TransformationJob.dump` was not `json` serializable, and attributes
+- In transformations, `TransformationJob.dump` was not `json` serializable, and attributes
   `destination` and `status` were not loaded into appropriate data structures.
-* In transformations, `TransformationSchemaMapType.dump` was not `json` serializable.
-* In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
-* Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
-* Bug in `WorkflowExecution.dump`
-* Bug in `PropertyType.load`
+- In transformations, `TransformationSchemaMapType.dump` was not `json` serializable.
+- In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
+- Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
+- Bug in `WorkflowExecution.dump`
+- Bug in `PropertyType.load`
 
 ## [6.39.6] - 2023-11-13
 ## Fixed

@@ -579,7 +579,7 @@ class TestStandardList:
             elif len(resource_chunk) == 500:
                 total_resources += 500
             else:
-                raise AssertionError("resource chunk length was not 1000 or 500")
+                raise ValueError("resource chunk length was not 1000 or 500")
         assert 11500 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging_2589")
