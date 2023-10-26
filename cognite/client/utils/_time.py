@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from datetime import tzinfo
@@ -164,44 +165,51 @@ def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
 
 
 TIME_ATTRIBUTES = {
-    "start_time",
-    "end_time",
-    "last_updated_time",
     "created_time",
-    "timestamp",
+    "creation_time",
+    "deleted_time",
+    "end_time",
+    "expiration_time",
+    "last_failure",
+    "last_indexed_time",
+    "last_seen",
+    "last_success",
+    "last_updated_time",
+    "modified_time",
     "scheduled_execution_time",
     "source_created_time",
     "source_modified_time",
+    "start_time",
+    "timestamp",
+    "uploaded_time",
 }
+TIME_ATTRIBUTES |= set(map(to_camel_case, TIME_ATTRIBUTES))
 
 
-def _convert_time_attributes_in_dict(item: dict) -> dict:
-    new_item = {}
-    for k, v in item.items():
-        if k in TIME_ATTRIBUTES:
-            try:
-                v = str(ms_to_datetime(v).replace(tzinfo=None))
-            except ValueError:
-                pass
-        new_item[k] = v
-    return new_item
+def _convert_and_isoformat_time_attrs_in_dict(item: dict) -> dict:
+    for k in TIME_ATTRIBUTES.intersection(item):
+        try:
+            item[k] = ms_to_datetime(item[k]).isoformat(sep=" ", timespec="milliseconds")
+        except ValueError:
+            pass
+    return item
 
 
 @overload
-def convert_time_attributes_to_datetime(item: dict) -> dict:
+def convert_and_isoformat_time_attrs(item: dict) -> dict:
     ...
 
 
 @overload
-def convert_time_attributes_to_datetime(item: list[dict]) -> list[dict]:
+def convert_and_isoformat_time_attrs(item: list[dict]) -> list[dict]:
     ...
 
 
-def convert_time_attributes_to_datetime(item: dict | list[dict]) -> dict | list[dict]:
+def convert_and_isoformat_time_attrs(item: dict | list[dict]) -> dict | list[dict]:
     if isinstance(item, dict):
-        return _convert_time_attributes_in_dict(item)
+        return _convert_and_isoformat_time_attrs_in_dict(item)
     if isinstance(item, list):
-        return list(map(_convert_time_attributes_in_dict, item))
+        return [_convert_and_isoformat_time_attrs_in_dict(it) for it in item]
     raise TypeError("item must be dict or list of dicts")
 
 
