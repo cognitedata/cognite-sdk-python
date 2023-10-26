@@ -16,6 +16,10 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
+ 
+## [6.34.3] - 2023-10-26
+### Added
+- Support for `subworkflow` tasks in `workflows`.
 
 ## [6.34.2] - 2023-10-23
 ### Fixed
