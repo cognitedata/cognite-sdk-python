@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast, get_args, overload
 from typing import Sequence as SequenceType
 
@@ -149,7 +150,10 @@ class Sequence(CogniteResource):
         elif isinstance(columns, SequenceType) and all(isinstance(col, SequenceColumn) for col in columns):
             self.columns = SequenceColumnList(columns)
         elif isinstance(columns, list):
-            # Todo deprecation warning
+            warnings.warn(
+                "Columns is no longer a dict, you should first load the list of dictionaries using SequenceColumnList.load([{...}, {...}])",
+                DeprecationWarning,
+            )
             self.columns = SequenceColumnList.load(columns)
         else:
             raise ValueError("columns must be a SequenceColumnList")
@@ -610,6 +614,41 @@ class SequenceRows(CogniteResource):
         """
         assert self.columns is not None
         return self.columns.value_types
+
+
+class SequenceData(SequenceRows):
+    def __init__(
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        rows: SequenceType[dict] | None = None,
+        row_numbers: SequenceType[int] | None = None,
+        values: SequenceType[SequenceType[int | str | float]] | None = None,
+        columns: SequenceType[dict[str, Any]] | None = None,
+    ):
+        warnings.warn("SequenceData is deprecated, use SequenceRows instead", DeprecationWarning)
+        # Conversion for backwards compatibility
+        rows_parsed: list[SequenceRow]
+        if rows and isinstance(rows, list) and rows and isinstance(rows[0], dict):
+            rows_parsed = [SequenceRow.load(r) for r in rows]
+        elif (row_numbers and values) and not rows:
+            if len(row_numbers) != len(values):
+                raise ValueError(
+                    f"row_numbers and values must have same length, got {len(row_numbers)} and {len(values)}"
+                )
+            rows_parsed = [SequenceRow(row_number, value) for row_number, value in zip(row_numbers, values)]
+        else:
+            raise ValueError("Either rows or both row_numbers and values must be specified")
+
+        if columns is None:
+            raise ValueError("columns must be specified")
+
+        super().__init__(
+            id=id,
+            external_id=external_id,
+            columns=SequenceColumnList.load(columns),
+            rows=rows_parsed,
+        )
 
 
 class SequenceRowsList(CogniteResourceList[SequenceRows]):
