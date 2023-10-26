@@ -12,7 +12,7 @@ Changes are grouped as follows:
 
 ### Removed
 
-- Removed the deprecated 'function_external_id' parameter when creating a Cognite Function Schedule. Future instantiations are to be done without this parameter now.
+- Removed the deprecated `function_external_id` parameter when creating a Cognite Function schedule. This only worked when using API keys - which are long gone.
 
 ## From v5 to v6
 
