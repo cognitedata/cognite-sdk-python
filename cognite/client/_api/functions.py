@@ -229,7 +229,7 @@ class FunctionsAPI(APIClient):
             function["indexUrl"] = index_url
 
         res = self._post(url, json={"items": [function]})
-        return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
+        return Function.load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
@@ -293,7 +293,7 @@ class FunctionsAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
@@ -403,7 +403,7 @@ class FunctionsAPI(APIClient):
         url = f"/functions/{id}/call"
         res = self._post(url, json={"data": data, "nonce": nonce})
 
-        function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
+        function_call = FunctionCall.load(res.json(), cognite_client=self._cognite_client)
         if wait:
             function_call.wait()
         return function_call
@@ -423,7 +423,7 @@ class FunctionsAPI(APIClient):
                 >>> limits = c.functions.limits()
         """
         res = self._get("/functions/limits")
-        return FunctionsLimits._load(res.json())
+        return FunctionsLimits.load(res.json())
 
     def _zip_and_upload_folder(
         self,
@@ -525,7 +525,7 @@ class FunctionsAPI(APIClient):
                 >>> status = c.functions.activate()
         """
         res = self._post("/functions/status")
-        return FunctionsStatus._load(res.json())
+        return FunctionsStatus.load(res.json())
 
     def status(self) -> FunctionsStatus:
         """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
@@ -542,7 +542,7 @@ class FunctionsAPI(APIClient):
                 >>> status = c.functions.status()
         """
         res = self._get("/functions/status")
-        return FunctionsStatus._load(res.json())
+        return FunctionsStatus.load(res.json())
 
 
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
@@ -889,7 +889,7 @@ class FunctionCallsAPI(APIClient):
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
-        return FunctionCallLog._load(self._get(resource_path).json()["items"])
+        return FunctionCallLog.load(self._get(resource_path).json()["items"])
 
 
 class FunctionSchedulesAPI(APIClient):
@@ -980,7 +980,7 @@ class FunctionSchedulesAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionSchedulesList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     # TODO: Major version 7, remove 'function_external_id' which only worked when using API-keys.
     def create(
@@ -1062,7 +1062,7 @@ class FunctionSchedulesAPI(APIClient):
             body["items"][0]["data"] = data
 
         res = self._post(self._RESOURCE_PATH, json=body)
-        return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
+        return FunctionSchedule.load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:
         """`Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_

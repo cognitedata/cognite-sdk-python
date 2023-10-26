@@ -158,7 +158,7 @@ class TestEventsAPI:
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.subtype = "mySubType1"
 
         try:

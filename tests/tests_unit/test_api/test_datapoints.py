@@ -396,7 +396,7 @@ class TestDatapointsObject:
         assert Datapoints(id=1, timestamp=[1, 2], value=[1, 2]) == dps[:2]
 
     def test_load(self, cognite_client):
-        res = Datapoints._load(
+        res = Datapoints.load(
             {
                 "id": 1,
                 "externalId": "1",
@@ -415,7 +415,7 @@ class TestDatapointsObject:
         assert res.is_string is False
 
     def test_load_string(self, cognite_client):
-        res = Datapoints._load(
+        res = Datapoints.load(
             {
                 "id": 1,
                 "externalId": "1",
