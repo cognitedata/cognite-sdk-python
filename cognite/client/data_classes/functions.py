@@ -416,7 +416,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response: dict) -> FunctionsLimits:
+    def load(cls, api_response: dict) -> FunctionsLimits:
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -437,5 +437,5 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def _load(cls, api_response: dict) -> FunctionsStatus:
+    def load(cls, api_response: dict) -> FunctionsStatus:
         return cls(status=api_response["status"])

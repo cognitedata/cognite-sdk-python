@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
     CogniteListUpdate,
@@ -194,7 +196,7 @@ class ThreeDModelRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDModelRevision:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         instance = super().load(resource, cognite_client)
         if isinstance(resource, dict) and instance.camera is not None:
             instance.camera = RevisionCameraProperties(**instance.camera)

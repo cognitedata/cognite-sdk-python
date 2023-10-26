@@ -230,7 +230,7 @@ class Nodes(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Nodes:
+    def load(cls, resource: dict[str, Any]) -> Nodes:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -250,7 +250,7 @@ class Edges(TransformationDestination):
         self.edge_type = edge_type
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Edges:
+    def load(cls, resource: dict[str, Any]) -> Edges:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -270,7 +270,7 @@ class Instances(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Instances:
+    def load(cls, resource: dict[str, Any]) -> Instances:
         inst = cls(**resource)
         if isinstance(inst.data_model, dict):
             inst.data_model = DataModelInfo(**convert_all_keys_to_snake_case(inst.data_model))
@@ -431,6 +431,6 @@ def _load_destination_dct(dct: dict[str, Any]) -> RawTable | Nodes | Edges | Seq
         "instances": Instances,
     }
     if destination_type in nested:
-        return nested[destination_type]._load(snake_dict)
+        return nested[destination_type].load(snake_dict)
 
     return TransformationDestination(destination_type)

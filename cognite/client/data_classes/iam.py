@@ -83,7 +83,7 @@ class ProjectSpec(CogniteResponse):
         self.groups = groups
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> ProjectSpec:
+    def load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
@@ -102,10 +102,10 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> TokenInspection:
+    def load(cls, api_response: dict[str, Any]) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
-            projects=[ProjectSpec._load(p) for p in api_response["projects"]],
+            projects=[ProjectSpec.load(p) for p in api_response["projects"]],
             capabilities=api_response["capabilities"],
         )
 
@@ -146,7 +146,7 @@ class CreatedSession(CogniteResponse):
         self.client_id = client_id
 
     @classmethod
-    def _load(cls, response: dict[str, Any]) -> CreatedSession:
+    def load(cls, response: dict[str, Any]) -> CreatedSession:
         return cls(
             id=response["id"],
             status=response["status"],

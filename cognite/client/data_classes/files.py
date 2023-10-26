@@ -96,7 +96,7 @@ class FileMetadata(CogniteResource):
         instance = super().load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

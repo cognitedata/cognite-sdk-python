@@ -1023,7 +1023,7 @@ class GeospatialAPI(APIClient):
             headers={"Content-Type": "application/binary"},
             timeout=self._config.timeout,
         )
-        return RasterMetadata._load(res.json(), cognite_client=self._cognite_client)
+        return RasterMetadata.load(res.json(), cognite_client=self._cognite_client)
 
     def delete_raster(
         self,

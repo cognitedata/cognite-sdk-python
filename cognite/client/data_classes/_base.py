@@ -71,7 +71,7 @@ class CogniteResponse:
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> CogniteResponse:
+    def load(cls, api_response: dict[str, Any]) -> CogniteResponse:
         raise NotImplementedError
 
     def to_pandas(self) -> pandas.DataFrame:
@@ -594,7 +594,7 @@ class Geometry(dict):
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
-    def _load(cls, raw_geometry: dict[str, Any]) -> Geometry:
+    def load(cls, raw_geometry: dict[str, Any]) -> Geometry:
         return cls(
             type=raw_geometry["type"],
             coordinates=raw_geometry["coordinates"],

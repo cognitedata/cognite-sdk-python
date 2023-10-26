@@ -147,17 +147,17 @@ class Filter(ABC):
         elif filter_name == GeoJSONIntersects._filter_name:
             return GeoJSONIntersects(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == GeoJSONDisjoint._filter_name:
             return GeoJSONDisjoint(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == GeoJSONWithin._filter_name:
             return GeoJSONWithin(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == InAssetSubtree._filter_name:
             return InAssetSubtree(

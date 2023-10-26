@@ -423,7 +423,7 @@ class FunctionsAPI(APIClient):
                 >>> limits = c.functions.limits()
         """
         res = self._get("/functions/limits")
-        return FunctionsLimits._load(res.json())
+        return FunctionsLimits.load(res.json())
 
     def _zip_and_upload_folder(
         self,
@@ -525,7 +525,7 @@ class FunctionsAPI(APIClient):
                 >>> status = c.functions.activate()
         """
         res = self._post("/functions/status")
-        return FunctionsStatus._load(res.json())
+        return FunctionsStatus.load(res.json())
 
     def status(self) -> FunctionsStatus:
         """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
@@ -542,7 +542,7 @@ class FunctionsAPI(APIClient):
                 >>> status = c.functions.status()
         """
         res = self._get("/functions/status")
-        return FunctionsStatus._load(res.json())
+        return FunctionsStatus.load(res.json())
 
 
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:

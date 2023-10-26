@@ -357,7 +357,7 @@ class RasterMetadata:
             setattr(self, key, properties[key])
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> RasterMetadata:
+    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> RasterMetadata:
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)

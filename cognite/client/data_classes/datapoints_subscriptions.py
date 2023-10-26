@@ -223,7 +223,7 @@ class DataDeletion:
     exclusive_end: int | None
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DataDeletion:
+    def load(cls, data: dict[str, Any]) -> DataDeletion:
         return cls(inclusive_begin=data["inclusiveBegin"], exclusive_end=data.get("exclusiveEnd"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -240,7 +240,7 @@ class DatapointsUpdate:
     deletes: list[DataDeletion]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DatapointsUpdate:
+    def load(cls, data: dict[str, Any]) -> DatapointsUpdate:
         datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
         if (values := data["upserts"]) and ("value" in values[0]):
             datapoints["upserts"] = Datapoints.load(
@@ -252,7 +252,7 @@ class DatapointsUpdate:
                 }
             )
         if values := data["deletes"]:
-            datapoints["deletes"] = [DataDeletion._load(value) for value in values]
+            datapoints["deletes"] = [DataDeletion.load(value) for value in values]
         return cls(
             time_series=TimeSeriesID.load(data["timeSeries"], None),
             **datapoints,
@@ -273,7 +273,7 @@ class SubscriptionTimeSeriesUpdate:
     removed: list[TimeSeriesID]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
+    def load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
         return cls(
             added=[TimeSeriesID.load(added) for added in data.get("added", [])],
             removed=[TimeSeriesID.load(added) for added in data.get("removed", [])],
@@ -302,7 +302,7 @@ class DatapointSubscriptionPartition:
         return cls(data)
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
+    def load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
         return cls(index=data["index"], cursor=data.get("cursor") or data.get("nextCursor"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -337,13 +337,13 @@ class _DatapointSubscriptionBatchWithPartitions:
     partitions: list[DatapointSubscriptionPartition]
 
     @classmethod
-    def _load(cls, resource: dict | str) -> _DatapointSubscriptionBatchWithPartitions:
+    def load(cls, resource: dict | str) -> _DatapointSubscriptionBatchWithPartitions:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
-            updates=[DatapointsUpdate._load(u) for u in resource["updates"]],
-            partitions=[DatapointSubscriptionPartition._load(p) for p in resource["partitions"]],
+            updates=[DatapointsUpdate.load(u) for u in resource["updates"]],
+            partitions=[DatapointSubscriptionPartition.load(p) for p in resource["partitions"]],
             has_next=resource["hasNext"],
-            subscription_changes=SubscriptionTimeSeriesUpdate._load(resource.get("subscriptionChanges", [])),
+            subscription_changes=SubscriptionTimeSeriesUpdate.load(resource.get("subscriptionChanges", [])),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

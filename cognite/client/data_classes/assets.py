@@ -167,7 +167,7 @@ class Asset(CogniteResource):
             instance.aggregates = AggregateResultItem(**instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
     def __hash__(self) -> int:

@@ -167,7 +167,7 @@ class GeoLocation(dict):
     properties = CognitePropertyClassUtil.declare_property("properties")
 
     @classmethod
-    def _load(cls, raw_geo_location: dict[str, Any]) -> GeoLocation:
+    def load(cls, raw_geo_location: dict[str, Any]) -> GeoLocation:
         return cls(
             type=raw_geo_location.get("type", "Feature"),
             geometry=raw_geo_location["geometry"],
@@ -197,7 +197,7 @@ class GeoLocationFilter(dict):
     shape = CognitePropertyClassUtil.declare_property("shape")
 
     @classmethod
-    def _load(cls, raw_geo_location_filter: dict[str, Any]) -> GeoLocationFilter:
+    def load(cls, raw_geo_location_filter: dict[str, Any]) -> GeoLocationFilter:
         return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

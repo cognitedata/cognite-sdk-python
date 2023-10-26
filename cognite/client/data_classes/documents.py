@@ -80,7 +80,7 @@ class SourceFile(CogniteResource):
         resource = json.loads(resource) if isinstance(resource, str) else resource
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -174,7 +174,7 @@ class Document(CogniteResource):
         if isinstance(instance.source_file, dict):
             instance.source_file = SourceFile.load(instance.source_file)
         if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

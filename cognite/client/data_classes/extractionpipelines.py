@@ -47,7 +47,7 @@ class ExtractionPipelineContact(dict):
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
     @classmethod
-    def _load(cls, data: str | dict) -> ExtractionPipelineContact:
+    def load(cls, data: str | dict) -> ExtractionPipelineContact:
         data = json.loads(data) if isinstance(data, str) else data
         return cls(
             name=data["name"], email=data["email"], role=data["role"], send_notification=data["sendNotification"]
@@ -125,7 +125,7 @@ class ExtractionPipeline(CogniteResource):
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
         instance = super().load(resource, cognite_client)
         if instance.contacts:
-            instance.contacts = [ExtractionPipelineContact._load(contact) for contact in instance.contacts]
+            instance.contacts = [ExtractionPipelineContact.load(contact) for contact in instance.contacts]
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
