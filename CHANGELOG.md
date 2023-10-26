@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.0.0] - 2023-10-24
 ### Removed
-- Removed 'function_external_id' argument for creating a Cognite Function Schedule.
+- Removed `function_external_id` argument for creating a Cognite Function schedule (only worked with API keys.)
 
 ## [6.35.0] - 2023-10-25
 ### Added
