@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 from operator import attrgetter
-from typing import Any, Generic, Literal, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResourceList
 from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class DataModelCore(DataModelingResource):
@@ -75,7 +80,7 @@ class DataModelApply(DataModelCore):
             return ViewApply.load(view_data)
 
     @classmethod
-    def load(cls, resource: dict | str) -> DataModelApply:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "views" in data:
             data["views"] = [cls._load_view(v) for v in data["views"]] or None
@@ -136,12 +141,12 @@ class DataModel(DataModelCore, Generic[T_View]):
             return View.load(view_data)
 
     @classmethod
-    def load(cls, resource: dict | str) -> DataModel:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "views" in data:
             data["views"] = [cls._load_view(v) for v in data["views"]] or None
 
-        return cast(DataModel, super().load(data))
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

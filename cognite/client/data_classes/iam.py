@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
@@ -82,7 +83,7 @@ class ProjectSpec(CogniteResponse):
         self.groups = groups
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> ProjectSpec:
+    def load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
@@ -101,10 +102,10 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> TokenInspection:
+    def load(cls, api_response: dict[str, Any]) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
-            projects=[ProjectSpec._load(p) for p in api_response["projects"]],
+            projects=[ProjectSpec.load(p) for p in api_response["projects"]],
             capabilities=api_response["capabilities"],
         )
 
@@ -145,7 +146,7 @@ class CreatedSession(CogniteResponse):
         self.client_id = client_id
 
     @classmethod
-    def _load(cls, response: dict[str, Any]) -> CreatedSession:
+    def load(cls, response: dict[str, Any]) -> CreatedSession:
         return cls(
             id=response["id"],
             status=response["status"],
@@ -201,3 +202,14 @@ class ClientCredentials(CogniteResource):
     def __init__(self, client_id: str, client_secret: str) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {
+            "clientId" if camel_case else "client_id": self.client_id,
+            "clientSecret" if camel_case else "client_secret": self.client_secret,
+        }
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ClientCredentials:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(client_id=resource["clientId"], client_secret=resource["clientSecret"])

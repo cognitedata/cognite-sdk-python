@@ -1,7 +1,6 @@
 import datetime
 import re
 from typing import List, Tuple
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -12,19 +11,12 @@ from tests.utils import jsgz_load
 
 
 @pytest.fixture
-def mock_client():
-    # We allow the mock to pass isinstance checks
-    (client := MagicMock()).__class__ = CogniteClient
-    return client
+def empty_function(cognite_mock_client_placeholder: CogniteClient):
+    return Function(id=123, cognite_client=cognite_mock_client_placeholder)
 
 
 @pytest.fixture
-def empty_function(mock_client):
-    return Function(id=123, cognite_client=mock_client)
-
-
-@pytest.fixture
-def function(mock_client):
+def function(cognite_mock_client_placeholder: CogniteClient):
     return Function(
         id=123,
         name="my-function",
@@ -36,7 +28,7 @@ def function(mock_client):
         function_path="handler.py",
         created_time="2020-06-19 08:49:37",
         secrets={},
-        cognite_client=mock_client,
+        cognite_client=cognite_mock_client_placeholder,
     )
 
 
