@@ -215,7 +215,7 @@ class TestSequencesAPI:
             name="my preexisting sequence",
             columns=[{"externalId": "col1", "valueType": "STRING"}],
         )
-        preexisting_update = Sequence._load(preexisting.dump(camel_case=True))
+        preexisting_update = Sequence.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting sequence updated"
 
         try:
