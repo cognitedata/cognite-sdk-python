@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from abc import ABC
+from typing import TYPE_CHECKING, Any, Literal
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, basic_instance_dump
 from cognite.client.utils._auxiliary import json_dump_default
@@ -11,7 +14,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataModelingResource(CogniteResource):
+class DataModelingResource(CogniteResource, ABC):
     def __repr__(self) -> str:
         args = []
         if hasattr(self, "space"):
@@ -27,18 +30,9 @@ class DataModelingResource(CogniteResource):
         return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
 
     @classmethod
-    def load(cls: type[T_DataModelingResource], data: dict | str) -> T_DataModelingResource:
-        data = json.loads(data) if isinstance(data, str) else data
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        data = json.loads(resource) if isinstance(resource, str) else resource
         return cls(**convert_all_keys_to_snake_case(data))
-
-    @classmethod
-    def _load(
-        cls: type[T_DataModelingResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_DataModelingResource:
-        return cls.load(resource)
-
-
-T_DataModelingResource = TypeVar("T_DataModelingResource", bound=DataModelingResource)
 
 
 class DataModelingSort:
@@ -62,7 +56,7 @@ class DataModelingSort:
         return str(self)
 
     @classmethod
-    def load(cls: type[T_DataModelingSort], resource: dict) -> T_DataModelingSort:
+    def load(cls, resource: dict) -> Self:
         if not isinstance(resource, dict):
             raise TypeError(f"Resource must be mapping, not {type(resource)}")
 
@@ -76,6 +70,3 @@ class DataModelingSort:
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return basic_instance_dump(self, camel_case=camel_case)
-
-
-T_DataModelingSort = TypeVar("T_DataModelingSort", bound=DataModelingSort)
