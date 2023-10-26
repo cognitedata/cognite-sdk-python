@@ -67,7 +67,7 @@ def _get_function_identifier(function_id: int | None, function_external_id: str 
     identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
     if identifier.is_singleton():
         return identifier[0]
-    raise AssertionError("Exactly one of function_id and function_external_id must be specified")
+    raise ValueError("Exactly one of function_id and function_external_id must be specified")
 
 
 class FunctionsAPI(APIClient):
@@ -964,9 +964,9 @@ class FunctionSchedulesAPI(APIClient):
             try:
                 IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
             except ValueError:
-                raise AssertionError(
+                raise ValueError(
                     "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
-                )
+                ) from None
 
         if is_unlimited(limit):
             limit = self._LIST_LIMIT_CEILING
