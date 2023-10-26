@@ -46,6 +46,9 @@ class PropertyType(ABC):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self._type
+        for key in list(output):
+            if output[key] is None:
+                output.pop(key)
         output = rename_and_exclude_keys(output, aliases=_PROPERTY_ALIAS_INV)
         return convert_all_keys_recursive(output, camel_case)
 
@@ -163,8 +166,11 @@ class DirectRelation(PropertyType):
 
     def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)
-        if "container" in output and isinstance(output["container"], dict):
-            output["container"]["type"] = "container"
+        if "container" in output:
+            if isinstance(output["container"], dict):
+                output["container"]["type"] = "container"
+            elif output["container"] is None:
+                output.pop("container")
         return output
 
     @classmethod

@@ -73,6 +73,16 @@ methods is `json` and `yaml` serializable.
 * Bug in `WorkflowExecution.dump`
 * Bug in `PropertyType.load`
 
+## [6.34.2] - 2023-10-23
+### Fixed
+- Loading a `ContainerApply` from source failed with `KeyError` if `nullable`, `autoIncrement`, or `cursorable` were not set
+  in the `ContainerProperty` and `BTreeIndex` classes even though they are optional. This is now fixed.
+
+## [6.34.1] - 2023-10-23
+### Added
+- Support for setting `data_set_id` and `metadata` in `ThreeDModelsAPI.create`.
+- Support for updating `data_set_id` in `ThreeDModelsAPI.update`.
+
 ## [6.34.0] - 2023-10-20
 ### Fixed
 - `PropertyType`s no longer fail on instantiation, but warn on missing SDK support for the new property(-ies).
