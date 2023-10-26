@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from typing_extensions import Self
+
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.utils._auxiliary import basic_obj_dump
@@ -228,7 +230,7 @@ class Nodes(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Nodes:
+    def load(cls, resource: dict[str, Any]) -> Nodes:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -248,7 +250,7 @@ class Edges(TransformationDestination):
         self.edge_type = edge_type
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Edges:
+    def load(cls, resource: dict[str, Any]) -> Edges:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -268,7 +270,7 @@ class Instances(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Instances:
+    def load(cls, resource: dict[str, Any]) -> Instances:
         inst = cls(**resource)
         if isinstance(inst.data_model, dict):
             inst.data_model = DataModelInfo(**convert_all_keys_to_snake_case(inst.data_model))
@@ -339,6 +341,24 @@ class OidcCredentials:
         """
         return basic_obj_dump(self, camel_case)
 
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> Self:
+        """Load data into the instance.
+
+        Args:
+            data (dict[str, Any]): A dictionary representation of the instance.
+        Returns:
+            Self: No description.
+        """
+        return cls(
+            client_id=data["clientId"],
+            client_secret=data["clientSecret"],
+            scopes=data["scopes"],
+            token_uri=data["tokenUri"],
+            audience=data.get("audience"),
+            cdf_project_name=data.get("cdfProjectName"),
+        )
+
 
 class NonceCredentials:
     def __init__(
@@ -362,6 +382,21 @@ class NonceCredentials:
         """
         return basic_obj_dump(self, camel_case)
 
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> NonceCredentials:
+        """Load data into the instance.
+
+        Args:
+            data (dict[str, Any]): A dictionary representation of the instance.
+        Returns:
+            NonceCredentials: No description.
+        """
+        return cls(
+            session_id=data["sessionId"],
+            nonce=data["nonce"],
+            cdf_project_name=data["cdfProjectName"],
+        )
+
 
 class TransformationBlockedInfo:
     """Information about the reason why and when a transformation is blocked.
@@ -376,8 +411,11 @@ class TransformationBlockedInfo:
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
+    def load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
         return cls(reason=resource["reason"], created_time=resource["createdTime"])
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
 
 
 def _load_destination_dct(dct: dict[str, Any]) -> RawTable | Nodes | Edges | SequenceRows | TransformationDestination:
@@ -397,6 +435,6 @@ def _load_destination_dct(dct: dict[str, Any]) -> RawTable | Nodes | Edges | Seq
         "instances": Instances,
     }
     if destination_type in nested:
-        return nested[destination_type]._load(snake_dict)
+        return nested[destination_type].load(snake_dict)
 
     return TransformationDestination(destination_type)

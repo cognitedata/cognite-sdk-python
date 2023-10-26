@@ -335,7 +335,7 @@ class TestVisionExtractItem:
         ids=["valid_vision_extract_item_no_predictions", "valid_vision_extract_item"],
     )
     def test_load(self, resource: dict[str, Any], expected_item: VisionExtractItem) -> None:
-        vision_extract_item = VisionExtractItem._load(resource)
+        vision_extract_item = VisionExtractItem.load(resource)
         assert vision_extract_item == expected_item
 
     @pytest.mark.parametrize(

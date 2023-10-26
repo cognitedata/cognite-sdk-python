@@ -92,12 +92,20 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FileMetadata:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FileMetadata:
+        instance = super().load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        return result
 
 
 class FileMetadataFilter(CogniteFilter):

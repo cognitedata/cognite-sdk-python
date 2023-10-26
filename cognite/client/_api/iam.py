@@ -56,7 +56,7 @@ class GroupsAPI(APIClient):
                 >>> res = c.iam.groups.list()
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList._load(res.json()["items"])
+        return GroupList.load(res.json()["items"])
 
     def create(self, group: Group | Sequence[Group]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
@@ -177,7 +177,7 @@ class TokenAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.token.inspect()
         """
-        return TokenInspection._load(self._get("/api/v1/token/inspect").json())
+        return TokenInspection.load(self._get("/api/v1/token/inspect").json())
 
 
 class SessionsAPI(APIClient):
@@ -200,7 +200,7 @@ class SessionsAPI(APIClient):
             client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
 
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
-        return CreatedSession._load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
+        return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
     def revoke(self, id: int | Sequence[int]) -> SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
@@ -214,7 +214,7 @@ class SessionsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return SessionList.load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: str | None = None) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_

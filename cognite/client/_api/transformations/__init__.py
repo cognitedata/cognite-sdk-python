@@ -367,7 +367,7 @@ class TransformationsAPI(APIClient):
         id = {"externalId": transformation_external_id, "id": transformation_id}
 
         response = self._post(json=id, url_path=self._RESOURCE_PATH + "/run")
-        job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
+        job = TransformationJob.load(response.json(), cognite_client=self._cognite_client)
 
         if wait:
             return job.wait(timeout=timeout)
@@ -482,6 +482,6 @@ class TransformationsAPI(APIClient):
         }
 
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
-        result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
+        result = TransformationPreviewResult.load(response.json(), cognite_client=self._cognite_client)
 
         return result

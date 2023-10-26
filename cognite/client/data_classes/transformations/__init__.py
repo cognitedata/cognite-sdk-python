@@ -53,7 +53,7 @@ class SessionDetails:
         self.project_name = project_name
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> SessionDetails:
+    def load(cls, resource: dict[str, Any]) -> SessionDetails:
         return cls(
             session_id=resource.get("sessionId"),
             client_id=resource.get("clientId"),
@@ -288,30 +288,38 @@ class Transformation(CogniteResource):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Transformation:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Transformation:
+        instance = super().load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 
         if isinstance(instance.running_job, dict):
-            instance.running_job = TransformationJob._load(instance.running_job, cognite_client=cognite_client)
+            instance.running_job = TransformationJob.load(instance.running_job, cognite_client=cognite_client)
 
         if isinstance(instance.last_finished_job, dict):
-            instance.last_finished_job = TransformationJob._load(
+            instance.last_finished_job = TransformationJob.load(
                 instance.last_finished_job, cognite_client=cognite_client
             )
 
         if isinstance(instance.blocked, dict):
-            instance.blocked = TransformationBlockedInfo._load(instance.blocked)
+            instance.blocked = TransformationBlockedInfo.load(instance.blocked)
 
         if isinstance(instance.schedule, dict):
-            instance.schedule = TransformationSchedule._load(instance.schedule, cognite_client=cognite_client)
+            instance.schedule = TransformationSchedule.load(instance.schedule, cognite_client=cognite_client)
 
         if isinstance(instance.source_session, dict):
-            instance.source_session = SessionDetails._load(instance.source_session)
+            instance.source_session = SessionDetails.load(instance.source_session)
 
         if isinstance(instance.destination_session, dict):
-            instance.destination_session = SessionDetails._load(instance.destination_session)
+            instance.destination_session = SessionDetails.load(instance.destination_session)
+        if isinstance(instance.source_nonce, dict):
+            instance.source_nonce = NonceCredentials.load(instance.source_nonce)
+        if isinstance(instance.destination_nonce, dict):
+            instance.destination_nonce = NonceCredentials.load(instance.destination_nonce)
+        if isinstance(instance.source_oidc_credentials, dict):
+            instance.source_oidc_credentials = OidcCredentials.load(instance.source_oidc_credentials)
+        if isinstance(instance.destination_oidc_credentials, dict):
+            instance.destination_oidc_credentials = OidcCredentials.load(instance.destination_oidc_credentials)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -542,12 +550,14 @@ class TransformationPreviewResult(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
+        instance = super().load(resource, cognite_client)
         if isinstance(instance.schema, dict):
             items = instance.schema.get("items")
             if items is not None:
-                instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
+                instance.schema = TransformationSchemaColumnList.load(items, cognite_client=cognite_client)
+        elif isinstance(instance.schema, list):
+            instance.schema = TransformationSchemaColumnList.load(instance.schema, cognite_client=cognite_client)
         if isinstance(instance.results, dict):
             items = instance.results.get("items")
             if items is not None:
@@ -563,6 +573,7 @@ class TransformationPreviewResult(CogniteResource):
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = super().dump(camel_case=camel_case)
-        ret["schema"] = ret["schema"].dump(camel_case=camel_case)
-        return ret
+        output = super().dump(camel_case=camel_case)
+        if self.schema:
+            output["schema"] = self.schema.dump(camel_case=camel_case)
+        return output

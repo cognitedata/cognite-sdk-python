@@ -46,7 +46,7 @@ class UserProfile(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> UserProfile:
+    def load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> UserProfile:
         if isinstance(resource, str):
             resource = cast(dict[str, Any], json.loads(resource))
         to_load = {

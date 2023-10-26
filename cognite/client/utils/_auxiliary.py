@@ -51,7 +51,10 @@ def get_accepted_params(cls: type[T_CogniteResource]) -> dict[str, str]:
 def fast_dict_load(
     cls: type[T_CogniteResource], item: dict[str, Any], cognite_client: CogniteClient | None
 ) -> T_CogniteResource:
-    instance = cls(cognite_client=cognite_client)
+    try:
+        instance = cls(cognite_client=cognite_client)
+    except TypeError:
+        instance = cls()
     # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
     accepted = get_accepted_params(cls)  # type: ignore [arg-type]
     for camel_attr, value in item.items():
@@ -216,3 +219,9 @@ def rename_and_exclude_keys(
     aliases = aliases or {}
     exclude = exclude or set()
     return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}
+
+
+def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
+    if (res := dct.get(key)) is not None:
+        return cls.load(res)
+    return None

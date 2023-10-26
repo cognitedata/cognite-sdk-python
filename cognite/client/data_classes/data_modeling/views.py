@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -22,6 +24,9 @@ from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
 )
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ViewCore(DataModelingResource):
@@ -45,7 +50,7 @@ class ViewCore(DataModelingResource):
         self.version = version
 
     @classmethod
-    def load(cls, resource: dict | str) -> ViewCore:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "implements" in data:
             data["implements"] = [ViewId.load(v) for v in data["implements"]] or None
@@ -102,12 +107,12 @@ class ViewApply(ViewCore):
         self.properties = properties
 
     @classmethod
-    def load(cls, resource: dict | str) -> ViewApply:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewPropertyApply.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(ViewApply, super().load(data))
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -171,12 +176,12 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def load(cls, resource: dict | str) -> View:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewProperty.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(View, super().load(data))
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -342,23 +347,25 @@ class MappedProperty(ViewProperty):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> MappedProperty:
-        output = cls(**convert_all_keys_to_snake_case(data))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        if "type" in data:
-            if data["type"].get("type") == "direct":
-                type_data = data["type"]
-                source = type_data.pop("source", None)
-                output.type = DirectRelation.load(type_data)
-                output.source = ViewId.load(source) if source else None
-            else:
-                output.type = PropertyType.load(data["type"])
-        return output
+        type_ = data["type"]
+        source = type_.pop("source", None) or data.get("source")
+
+        return cls(
+            container=ContainerId.load(data["container"]),
+            container_property_identifier=data["containerPropertyIdentifier"],
+            type=PropertyType.load(type_),
+            nullable=data["nullable"],
+            auto_increment=data["autoIncrement"],
+            source=ViewId.load(source) if source else None,
+            default_value=data.get("defaultValue"),
+            name=data.get("name"),
+            description=data.get("description"),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self.type.dump(camel_case)
-        if self.source:
+        if self.source and isinstance(self.type, DirectRelation):
             output["type"]["source"] = output.pop("source", None)
         if camel_case:
             return convert_all_keys_to_camel_case_recursive(output)

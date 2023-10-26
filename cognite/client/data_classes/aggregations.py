@@ -136,7 +136,7 @@ class AggregatedValue(ABC):
 
 
 @dataclass
-class AggregatedNumberedValue(AggregatedValue):
+class AggregatedNumberedValue(AggregatedValue, ABC):
     _aggregate: ClassVar[str] = "number"
 
     value: float
@@ -324,7 +324,7 @@ class UniqueResult(CogniteResource):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> UniqueResult:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> UniqueResult:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             count=resource["count"],

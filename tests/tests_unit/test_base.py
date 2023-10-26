@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
@@ -23,7 +24,8 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
-from tests.utils import all_subclasses
+from cognite.client.testing import CogniteClientMock
+from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
 
 
 class MyResource(CogniteResource):
@@ -125,6 +127,11 @@ class MyResponse(CogniteResponse):
         self.var_a = var_a
 
 
+@pytest.fixture()
+def cognite_mock_client() -> CogniteClientMock:
+    return CogniteClientMock()
+
+
 class TestCogniteResource:
     def test_dump(self):
         assert {"var_a": 1} == MyResource(1).dump()
@@ -134,15 +141,15 @@ class TestCogniteResource:
         assert {"varA": 1} == MyResource(1).dump(camel_case=True)
 
     def test_load(self):
-        assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
-        assert MyResource().dump() == MyResource._load({"var_a": 1, "var_b": 2}).dump()
-        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}).dump()
+        assert MyResource(1).dump() == MyResource.load({"varA": 1}).dump()
+        assert MyResource().dump() == MyResource.load({"var_a": 1, "var_b": 2}).dump()
+        assert {"var_a": 1} == MyResource.load({"varA": 1, "varC": 1}).dump()
 
     def test_load_unknown_attribute(self):
-        assert {"var_a": 1, "var_b": 2} == MyResource._load({"varA": 1, "varB": 2, "varC": 3}).dump()
+        assert {"var_a": 1, "var_b": 2} == MyResource.load({"varA": 1, "varB": 2, "varC": 3}).dump()
 
     def test_load_object_attr(self):
-        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
+        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource.load({"varA": 1, "varB": {"camelCase": 1}}).dump()
 
     def test_eq(self):
         assert MyResource(1, "s") == MyResource(1, "s")
@@ -204,6 +211,63 @@ class TestCogniteResource:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=42, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        json_serialised = json.dumps(dumped)
+        json_deserialised = json.loads(json_serialised)
+        loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=66, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        yaml_serialised = yaml.safe_dump(dumped)
+        yaml_deserialised = yaml.safe_load(yaml_serialised)
+        loaded = instance.load(yaml_deserialised, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_dump_default_came_case_false(
+        self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder
+    ):
+        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client_placeholder).create_instance(
+            cognite_resource_subclass
+        )
+
+        assert instance.dump() == instance.dump(camel_case=False)
+
 
 class TestCogniteResourceList:
     def test_dump(self):
@@ -264,13 +328,13 @@ class TestCogniteResourceList:
         pd.testing.assert_frame_equal(expected_df, actual_df)
 
     def test_load(self):
-        resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
+        resource_list = MyResourceList.load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
 
         assert {"var_a": 1, "var_b": 2} == resource_list[0].dump()
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
 
     def test_load_unknown_attribute(self):
-        assert [{"var_a": 1, "var_b": 2}] == MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
+        assert [{"var_a": 1, "var_b": 2}] == MyResourceList.load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
 
     def test_indexing(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
@@ -527,7 +591,7 @@ class TestCogniteResponse:
     def test_load(self):
         # No base implementation of _load for CogniteResponse subclasses
         with pytest.raises(NotImplementedError):
-            MyResponse._load({"varA": 1})
+            MyResponse.load({"varA": 1})
 
     def test_dump(self):
         assert {"var_a": 1} == MyResponse(1).dump()

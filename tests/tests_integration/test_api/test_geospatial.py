@@ -760,5 +760,5 @@ class TestGeospatialAPI:
         )
         items = res.items
         assert len(items) == 1
-        assert items[0]["output"]["srid"] == test_crs.srid
-        assert items[0]["output"]["wkt"] == "POLYGON((0 0,10 0,10 10,0 10,0 0))"
+        assert items[0].output["srid"] == test_crs.srid
+        assert items[0].output["wkt"] == "POLYGON((0 0,10 0,10 10,0 10,0 0))"

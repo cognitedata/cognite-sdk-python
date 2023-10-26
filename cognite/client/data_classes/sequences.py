@@ -338,6 +338,8 @@ class SequenceData(CogniteResource):
         columns: SequenceType[dict[str, Any]] | None = None,
     ) -> None:
         if rows:
+            if not isinstance(rows, list) and rows and not isinstance(rows[0], dict):
+                raise ValueError("rows must be a list of dicts")
             row_numbers = [r["rowNumber"] for r in rows]
             values = [r["values"] for r in rows]
         self.id = id
@@ -407,6 +409,18 @@ class SequenceData(CogniteResource):
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {key: value for key, value in dumped.items() if value is not None}
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SequenceData:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            columns=resource.get("columns"),
+            rows=resource.get("rows"),
+            row_numbers=resource.get("rowNumbers"),
+            values=resource.get("values"),
+        )
 
     def to_pandas(self, column_names: str = "columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
         """Convert the sequence data into a pandas DataFrame.

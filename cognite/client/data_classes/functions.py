@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-from numbers import Number
 from typing import TYPE_CHECKING, cast
 
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -34,8 +33,8 @@ class Function(CogniteResource):
         created_time (int | None): Created time in UNIX.
         secrets (dict | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (Number | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
-        memory (Number | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
+        cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
+        memory (float | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
         runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
@@ -56,8 +55,8 @@ class Function(CogniteResource):
         created_time: int | None = None,
         secrets: dict | None = None,
         env_vars: dict | None = None,
-        cpu: Number | None = None,
-        memory: Number | None = None,
+        cpu: float | None = None,
+        memory: float | None = None,
         runtime: str | None = None,
         runtime_version: str | None = None,
         metadata: dict | None = None,
@@ -417,7 +416,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response: dict) -> FunctionsLimits:
+    def load(cls, api_response: dict) -> FunctionsLimits:
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -438,5 +437,5 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def _load(cls, api_response: dict) -> FunctionsStatus:
+    def load(cls, api_response: dict) -> FunctionsStatus:
         return cls(status=api_response["status"])

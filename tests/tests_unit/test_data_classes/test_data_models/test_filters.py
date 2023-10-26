@@ -122,8 +122,8 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
         f.Or(
             f.HasData(containers=[("space", "container")]),
             f.Overlaps(
-                start_property=("space", "container", "prop1"),
-                end_property=("space", "container", "prop2"),
+                start_property=["space", "container", "prop1"],
+                end_property=["space", "container", "prop2"],
                 lt=f.ParameterValue("lt"),
             ),
         ),
@@ -141,8 +141,8 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
                     {"hasData": [{"type": "container", "space": "space", "externalId": "container"}]},
                     {
                         "overlaps": {
-                            "startProperty": ("space", "container", "prop1"),
-                            "endProperty": ("space", "container", "prop2"),
+                            "startProperty": ["space", "container", "prop1"],
+                            "endProperty": ["space", "container", "prop2"],
                             "lt": {"parameter": "lt"},
                         }
                     },

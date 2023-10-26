@@ -302,9 +302,9 @@ class QueryResult(UserDict):
             if not values:
                 instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
             elif values[0]["instanceType"] == "node":
-                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor)
+                instance[key] = NodeListWithCursor([Node.load(node) for node in values], cursor)
             elif values[0]["instanceType"] == "edge":
-                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor)
+                instance[key] = EdgeListWithCursor([Edge.load(edge) for edge in values], cursor)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
 

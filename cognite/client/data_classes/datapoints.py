@@ -213,16 +213,41 @@ class DatapointsArray(CogniteResource):
             "granularity": self.granularity,
         }
 
+    @typing.no_type_check
     @classmethod
-    def _load(  # type: ignore [override]
+    def load(
         cls,
         dps_dct: dict[str, int | str | bool | npt.NDArray],
+        cognite_client: CogniteClient | None = None,
     ) -> DatapointsArray:
-        assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
-        # Since pandas always uses nanoseconds for datetime, we stick with the same
-        # (also future-proofs the SDK; ns is coming!):
-        dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
-        return cls(**convert_all_keys_to_snake_case(dps_dct))
+        dps_dct = json.loads(dps_dct) if isinstance(dps_dct, str) else dps_dct
+        if "timestamp" in dps_dct:
+            assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
+            # Since pandas always uses nanoseconds for datetime, we stick with the same
+            # (also future-proofs the SDK; ns is coming!):
+            dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
+            return cls(**convert_all_keys_to_snake_case(dps_dct))
+
+        array_by_attr = {}
+        if "datapoints" in dps_dct:
+            datapoints_by_attr = defaultdict(list)
+            for row in dps_dct["datapoints"]:
+                for attr, value in row.items():
+                    datapoints_by_attr[attr].append(value)
+            for attr, values in datapoints_by_attr.items():
+                array_by_attr[attr] = np.array(values)
+                if attr == "timestamp":
+                    dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
+        return cls(
+            id=dps_dct.get("id"),
+            external_id=dps_dct.get("externalId"),
+            is_step=dps_dct.get("isStep"),
+            is_string=dps_dct.get("isString"),
+            unit=dps_dct.get("unit"),
+            granularity=dps_dct.get("granularity"),
+            unit_external_id=dps_dct.get("unitExternalId"),
+            **convert_all_keys_to_snake_case(array_by_attr),
+        )
 
     @classmethod
     def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
@@ -578,7 +603,7 @@ class Datapoints(CogniteResource):
         return df
 
     @classmethod
-    def _load(  # type: ignore [override]
+    def load(  # type: ignore [override]
         cls,
         dps_object: dict[str, Any],
         expected_fields: list[str] | None = None,

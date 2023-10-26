@@ -25,7 +25,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
@@ -46,7 +46,7 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-PropertyValue = Union[
+PropertyValue: TypeAlias = Union[
     str,
     int,
     float,
@@ -60,8 +60,8 @@ PropertyValue = Union[
     NodeId,
     DirectRelationReference,
 ]
-Space = str
-PropertyIdentifier = str
+Space: TypeAlias = str
+PropertyIdentifier: TypeAlias = str
 
 
 @dataclass
@@ -78,7 +78,21 @@ class NodeOrEdgeData:
 
     @classmethod
     def load(cls, data: dict) -> NodeOrEdgeData:
-        return cls(**convert_all_keys_to_snake_case(data))
+        try:
+            source_type = data["source"]["type"]
+        except KeyError as e:
+            raise ValueError("source must be a dict with a type key") from e
+        source: ContainerId | ViewId
+        if source_type == "container":
+            source = ContainerId.load(data["source"])
+        elif source_type == "view":
+            source = ViewId.load(data["source"])
+        else:
+            raise ValueError(f"source type must be container or view, but was {source_type}")
+        return cls(
+            source=source,
+            properties=data["properties"],
+        )
 
     def dump(self, camel_case: bool = False) -> dict:
         properties: dict[str, PropertyValue] = {}
@@ -146,8 +160,8 @@ class InstanceApply(InstanceCore):
         return output
 
     @classmethod
-    def load(cls, data: dict | str) -> Self:
-        data = data if isinstance(data, dict) else json.loads(data)
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        data = resource if isinstance(resource, dict) else json.loads(resource)
         data = convert_all_keys_to_snake_case(data)
         if cls is not InstanceApply:
             # NodeApply and EdgeApply does not support instance type
@@ -184,6 +198,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         for view_id, properties in self.data.items():
             view_id_str = f"{view_id.external_id}/{view_id.version}"
             props[view_id.space][view_id_str] = cast(Dict[PropertyIdentifier, PropertyValue], properties)
+        # Defaultdict is not yaml serializable
         return dict(props)
 
     def items(self) -> ItemsView[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]:
@@ -271,12 +286,11 @@ class Instance(InstanceCore):
         self.properties: Properties = properties or Properties({})
 
     @classmethod
-    def load(cls, data: dict | str) -> Self:
-        data = json.loads(data) if isinstance(data, str) else data
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data:
             data["properties"] = Properties.load(data["properties"])
-        res = super().load(data)
-        return res
+        return super().load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)
@@ -335,18 +349,19 @@ class InstanceAggregationResult(DataModelingResource):
         self.group = group
 
     @classmethod
-    def load(cls, data: dict | str) -> InstanceAggregationResult:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """
         Loads an instance from a json string or dictionary.
 
         Args:
-            data (dict | str): The json string or dictionary.
+            resource (dict | str): No description.
+            cognite_client (CogniteClient | None): No description.
 
         Returns:
-            InstanceAggregationResult: An instance.
+            Self: An instance.
 
         """
-        data = json.loads(data) if isinstance(data, str) else data
+        data = json.loads(resource) if isinstance(resource, str) else resource
 
         return cls(
             aggregates=[AggregatedNumberedValue.load(agg) for agg in data["aggregates"]],
@@ -579,8 +594,8 @@ class EdgeApply(InstanceApply):
         return output
 
     @classmethod
-    def load(cls, data: dict | str) -> EdgeApply:
-        data = json.loads(data) if isinstance(data, str) else data
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        data = json.loads(resource) if isinstance(resource, str) else resource
         instance = super().load(data)
 
         instance.type = DirectRelationReference.load(data["type"])
@@ -666,8 +681,8 @@ class Edge(Instance):
         return output
 
     @classmethod
-    def load(cls, data: dict | str) -> Edge:
-        data = json.loads(data) if isinstance(data, str) else data
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        data = json.loads(resource) if isinstance(resource, str) else resource
         instance = super().load(data)
 
         instance.type = DirectRelationReference.load(data["type"])

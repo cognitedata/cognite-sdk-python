@@ -271,7 +271,7 @@ class TestAssetsAPI:
             external_id="test_upsert_2_asset_one_preexisting:preexisting",
             name="my preexisting asset",
         )
-        preexisting_update = Asset._load(preexisting.dump(camel_case=True))
+        preexisting_update = Asset.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting asset updated"
 
         try:

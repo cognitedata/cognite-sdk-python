@@ -17,17 +17,73 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.0.0] - 2023-11-14
+This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
+in sequence produces an equal object to the original, for example,
+`my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
+methods is `json` and `yaml` serializable.
+
+### Changed
+* The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
+* The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
+
+### Added
+
+* Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
+  `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
+* Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
+* Missing `dump` and `load` methods for `ClientCredentials`.
+* Literal annotation for `source_type` and `target_type` in `Relationship`
+* Type annotation for `SequenceData` attribute `rows`.
+* Type annotation for `Geometry` attribute `coordinates`
+* In transformations, `NonceCredentials` was missing `load` method.
+* In transformations, `TransformationBlockedInfo` was missing `.dump` method
+
+### Fixed
+
+* `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
+* In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
+* In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
+* In `DatapointsArray`, `load` method was not compatible with `.dump` method.
+* In extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
+* `ExtractionPipeline.dump` attribute `contacts` was not `json` serializable.
+* `FileMetadata.dump` attributes `labels` and `geo_location` was not `json` serializable.
+* In filtering, filter `ContainsAll` was missing in `Filter.load` method.
+* Annotation for `cpu` and `memory` in `Function`.
+* `GeospatialComputedResponse.dump` attribute `items` was not `yaml` serializable
+* `Relationship.dump` was not `json` serializable.
+* `Geometry.dump` was not `json` serializable.
+* In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load `errors`
+  `GraphQlError`.
+* `ThreeDModelRevision` attribute `camera` was not dumped as `yaml` serializable and
+  not loaded as `RevisionCameraProperties`.
+* `ThreeDNode` attribute `bounding_box` was not dumped as `yaml` serializable and
+  not loaded as `BoundingBox3D`.
+* `Transformation` attributes `source_nonce`, `source_oidc_credential`, `destination_nonce`,
+  and `destination_oidc_credentials` were not dumped as `json` serializable and `loaded` with
+  the appropriate data structure. In addition, `TransformationBlockedInfo` and `TransformationJob`
+  were not dumped as `json` serializable.
+* `TransformationPreviewResult` was not dumping attribute `schema` as `yaml` serializable, and the
+  `load` and `dump` methods were not compatible.
+* In transformations, `TransformationJob.dump` was not `json` serializable, and attributes
+  `destination` and `status` were not loaded into appropriate data structures.
+* In transformations, `TransformationSchemaMapType.dump` was not `json` serializable.
+* In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
+* Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
+* Bug in `WorkflowExecution.dump`
+* Bug in `PropertyType.load`
+
 ## [6.39.6] - 2023-11-13
 ## Fixed
-- HTTP status code retry strategy for RAW and labels. `/rows/insert` and `/rows/delete` will now 
-be retried for all status codes in `config.status_forcelist` (default 429, 502, 503, 504), while 
-`/dbs/{db}` and `/tables/{table}` will now only be retried for 429s and connection errors as those 
-endpoints are not idempotent. Also `labels/list` will now also be retried.
+- HTTP status code retry strategy for RAW and labels. `/rows/insert` and `/rows/delete` will now
+be retried for all status codes in `config.status_forcelist` (default 429, 502, 503, 504), while
+`/dbs/{db}` and `/tables/{table}` will now only be retried for 429s and connection errors as those
+endpoints are not idempotent.
+- Also, `labels/list` will now also be retried.
 
 ## [6.39.5] - 2023-11-12
 ## Fixed
-- The `.apply()` methods of `MappedProperty` was missing property `source`.
-  This is now fixed.
+- The `.apply()` methods of `MappedProperty` now has the missing property `source`.
 
 ## [6.39.4] - 2023-11-09
 ## Fixed
@@ -36,7 +92,7 @@ endpoints are not idempotent. Also `labels/list` will now also be retried.
 
 ## [6.39.3] - 2023-11-08
 ## Fixed
-- The newely introduced parameter `connectionType` was assumed to be required from the API. This is not the case.
+- The newly introduced parameter `connectionType` was assumed to be required from the API. This is not the case.
 
 ## [6.39.2] - 2023-11-08
 ## Fixed

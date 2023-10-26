@@ -649,6 +649,6 @@ class ThreeDAssetMappingAPI(APIClient):
         summary = execute_tasks(self._post, tasks, self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el),
+            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping.load(el),
             str_format_element_fn=lambda el: (el.asset_id, el.node_id),
         )

@@ -1231,10 +1231,10 @@ class DatapointsAPI(APIClient):
         fetcher = RetrieveLatestDpsFetcher(id, external_id, before, ignore_unknown_ids, self)
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
-            return DatapointsList._load(res, cognite_client=self._cognite_client)
+            return DatapointsList.load(res, cognite_client=self._cognite_client)
         elif not res and ignore_unknown_ids:
             return None
-        return Datapoints._load(res[0], cognite_client=self._cognite_client)
+        return Datapoints.load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,
