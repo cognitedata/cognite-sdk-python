@@ -26,6 +26,7 @@ methods is `json` and `yaml` serializable.
 ### Changed
 * The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
 * The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
+* All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
 
 ### Added
 
