@@ -427,6 +427,6 @@ class TestAPIClientRetrieveMultiple:
 
 class TestAPIClientDelete:
     def test_delete_empty(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.events.delete(external_ids=[])
+        res = cognite_client.events.delete(external_id=[])
 
         assert res is None
