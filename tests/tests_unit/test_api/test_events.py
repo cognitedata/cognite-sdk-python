@@ -240,7 +240,7 @@ class TestPandasIntegration:
     def test_event_to_pandas(self, cognite_client, mock_events_response):
         import pandas as pd
 
-        df = cognite_client.events.retrieve(id=1).to_pandas(camel_case=True)
+        df = cognite_client.events.retrieve(id=1).to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]

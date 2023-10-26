@@ -34,7 +34,7 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
-from cognite.client.utils._time import convert_time_attributes_to_datetime
+from cognite.client.utils._time import convert_and_isoformat_time_attrs
 
 Aggregate = Literal[
     "average",
@@ -487,7 +487,7 @@ class Datapoints(CogniteResource):
 
     def __str__(self) -> str:
         item = self.dump()
-        item["datapoints"] = convert_time_attributes_to_datetime(item["datapoints"])
+        item["datapoints"] = convert_and_isoformat_time_attrs(item["datapoints"])
         return json.dumps(item, indent=4)
 
     def __len__(self) -> int:
@@ -843,7 +843,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
     def __str__(self) -> str:
         item = self.dump()
         for i in item:
-            i["datapoints"] = convert_time_attributes_to_datetime(i["datapoints"])
+            i["datapoints"] = convert_and_isoformat_time_attrs(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(  # type: ignore [override]

@@ -32,7 +32,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
-from cognite.client.utils._time import convert_time_attributes_to_datetime
+from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
 if TYPE_CHECKING:
     import pandas
@@ -50,7 +50,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 
 class CogniteResponse:
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -115,7 +115,7 @@ class CogniteResource(_WithClientMixin):
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -140,30 +140,37 @@ class CogniteResource(_WithClientMixin):
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata",), ignore: list[str] | None = None, camel_case: bool = False
+        self,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand (Sequence[str]): List of row keys to expand, only works if the value is a Dict. Will expand metadata by default.
-            ignore (list[str] | None): List of row keys to not include when converting to a data frame.
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            expand_metadata (bool): Expand the metadata into separate rows (default: False).
+            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        ignore = [] if ignore is None else ignore
         pd = cast(Any, local_import("pandas"))
         dumped = self.dump(camel_case=camel_case)
 
-        for element in ignore:
-            del dumped[element]
-        for key in expand:
-            if key in dumped:
-                if isinstance(dumped[key], dict):
-                    dumped.update(dumped.pop(key))
-                else:
-                    raise AssertionError(f"Could not expand attribute '{key}'")
+        for element in ignore or []:
+            dumped.pop(element, None)
+
+        if convert_timestamps:
+            for k in TIME_ATTRIBUTES.intersection(dumped):
+                dumped[k] = pd.Timestamp(dumped[k], unit="ms")
+
+        if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
+            dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
 
         return pd.Series(dumped).to_frame(name="value")
 
@@ -236,7 +243,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
@@ -492,7 +499,7 @@ class CogniteFilter:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
