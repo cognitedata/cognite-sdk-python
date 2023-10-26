@@ -499,7 +499,7 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeries
                 >>> c = CogniteClient()
-                >>> ts = c.time_series.create(TimeSeries(name="my ts"))
+                >>> ts = c.time_series.create(TimeSeries(name=tsname, data_set_id=dataset, external_id=tsname))
         """
         api_subversion = self._get_subapiversion_item(time_series)
 
