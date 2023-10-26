@@ -23,13 +23,19 @@ in sequence produces an equal object to the original, for example,
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
 methods is `json` and `yaml` serializable.
 
+### Fixed
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+  `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+  with no easy way to add a prefix. Also, it no longer expands metadata by default.
+- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
+  the new parameter `convert_timestamps`.
+
 ### Changed
 * The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
 * The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
 * All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
 
 ### Added
-
 * Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
 * Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
@@ -41,7 +47,6 @@ methods is `json` and `yaml` serializable.
 * In transformations, `TransformationBlockedInfo` was missing `.dump` method
 
 ### Fixed
-
 * `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
 * In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
 * In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
