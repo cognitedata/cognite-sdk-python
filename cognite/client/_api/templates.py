@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
-def templates_deprecation_warning() -> None:
-    return warnings.warn(
+def _templates_deprecation_warning() -> None:
+    warnings.warn(
         "Templates will be removed in a future version of the SDK. Please migrate to Data Modeling. "
         "Read more at: https://docs.cognite.com/cdf/data_modeling/",
         UserWarning,
