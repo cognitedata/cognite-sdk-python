@@ -3,7 +3,7 @@ from cognite.client.data_classes.geospatial import Feature, FeatureList
 
 class TestFeature:
     def test_load_feature(self):
-        feature = Feature._load(
+        feature = Feature.load(
             {
                 "firstName": "name",
                 "temperature_Hot": 12.0,
@@ -44,7 +44,7 @@ class TestFeature:
 
 class TestFeatureList:
     def test_load_feature_list(self):
-        features = FeatureList._load(
+        features = FeatureList.load(
             [
                 {
                     "firstName": "name",
