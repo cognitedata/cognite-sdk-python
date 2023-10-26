@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.0.0] - 2023-08-14 
+## [7.0.0] - 2023-08-24 
 This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example, 
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump` 
@@ -72,6 +72,12 @@ methods is `json` and `yaml` serializable.
 * Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
 * Bug in `WorkflowExecution.dump`
 * Bug in `PropertyType.load`
+
+## [6.35.0] - 2023-10-25
+### Added
+- Support for `through` on node result set expressions.
+### Fixed
+- `unit` on properties in data modelling. This was typed as a string, but it is in fact a direct relation.
 
 ## [6.34.2] - 2023-10-23
 ### Fixed

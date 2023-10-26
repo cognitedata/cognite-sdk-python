@@ -11,18 +11,22 @@ from cognite.client.data_classes.data_modeling import query as q
 def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
     raw = {
         "nodes": {
-            "filter": {"equals": {"property": ["node", "externalId"], "value": {"parameter": "airplaneExternalId"}}}
+            "filter": {"equals": {"property": ["node", "externalId"], "value": {"parameter": "airplaneExternalId"}}},
+            "from": "bla",
+            "through": {
+                "view": {"type": "view", "space": "some", "externalId": "extid", "version": "v1"},
+                "identifier": "bla",
+            },
         },
         "limit": 1,
     }
     loaded_node = q.NodeResultSetExpression(
-        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}), limit=1
+        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}),
+        limit=1,
+        from_="bla",
+        through=["some", "extid/v1", "bla"],
     )
-    yield pytest.param(
-        raw,
-        loaded_node,
-        id="Documentation Example",
-    )
+    yield pytest.param(raw, loaded_node, id="Documentation Example")
 
     raw = {
         "nodes": {
@@ -33,11 +37,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
         filter=f.Range(lt=2000, property=["IntegrationTestsImmutable", "Movie/2", "releaseYear"])
     )
 
-    yield pytest.param(
-        raw,
-        loaded_node,
-        id="Filter Node on Range",
-    )
+    yield pytest.param(raw, loaded_node, id="Filter Node on Range")
 
     raw = {
         "edges": {
@@ -50,11 +50,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
     loaded_edge = q.EdgeResultSetExpression(
         filter=f.Equals(property=["edge", "type"], value={"space": "MovieSpace", "externalId": "Movie.actors"})
     )
-    yield pytest.param(
-        raw,
-        loaded_edge,
-        id="Filter Edge on Type",
-    )
+    yield pytest.param(raw, loaded_edge, id="Filter Edge on Type")
 
 
 class TestResultSetExpressions:
