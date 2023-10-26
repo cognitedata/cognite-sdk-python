@@ -4,9 +4,11 @@ import inspect
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
-from cognite.client.data_classes.data_modeling.ids import ContainerId
+from typing_extensions import Self
+
+from cognite.client.data_classes.data_modeling.ids import ContainerId, NodeId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
@@ -46,14 +48,14 @@ class PropertyType(ABC):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self._type
-        for key in list(output):
+        for key in list(output.keys()):
             if output[key] is None:
                 output.pop(key)
         output = rename_and_exclude_keys(output, aliases=_PROPERTY_ALIAS_INV)
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls, data: dict) -> PropertyType:
+    def load(cls, data: dict) -> Self:
         if "type" not in data:
             raise ValueError("Property types are required to have a type")
         type_ = data["type"]
@@ -61,7 +63,7 @@ class PropertyType(ABC):
 
         if type_cls := _TYPE_LOOKUP.get(type_):
             if type_cls is DirectRelation:
-                return DirectRelation.load(data)
+                return cast(Self, DirectRelation.load(data))
             try:
                 return type_cls(**data)
             except TypeError:
@@ -77,7 +79,6 @@ class PropertyType(ABC):
 
 @dataclass
 class ListablePropertyType(PropertyType):
-    _type = "listable"
     is_list: bool = False
 
 
@@ -89,7 +90,7 @@ class Text(ListablePropertyType):
 
 @dataclass
 class Primitive(ListablePropertyType):
-    _type = "primitive"
+    ...
 
 
 @dataclass
@@ -114,8 +115,14 @@ class Json(ListablePropertyType):
 
 @dataclass
 class ListablePropertyTypeWithUnit(ListablePropertyType):
-    _type = "listable_with_unit"
-    unit: str | None = None
+    unit: NodeId | None = None
+
+    @classmethod
+    def load(cls, data: dict) -> Self:
+        loaded = super().load(data)
+        if isinstance(loaded.unit, dict):
+            loaded.unit = NodeId.load(loaded.unit)
+        return loaded
 
 
 @dataclass
@@ -140,7 +147,7 @@ class Int64(ListablePropertyTypeWithUnit):
 
 @dataclass
 class CDFExternalIdReference(ListablePropertyType):
-    _type = "cdf_external_reference"
+    ...
 
 
 @dataclass
@@ -173,7 +180,7 @@ class DirectRelation(PropertyType):
         return output
 
     @classmethod
-    def load(cls, data: dict) -> DirectRelation:
+    def load(cls, data: dict) -> Self:
         output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
         if isinstance(data.get("container"), dict):
             output.container = ContainerId.load(data["container"])
