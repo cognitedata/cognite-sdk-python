@@ -37,9 +37,7 @@ def pretend_timeseries(cognite_client):
 
 @pytest.fixture(scope="session")
 def new_seq(cognite_client) -> Sequence:
-    seq = cognite_client.sequences.create(
-        Sequence(columns=[{"valueType": "STRING", "externalId": "col0"}], external_id="new_seq")
-    )
+    seq = cognite_client.sequences.create(Sequence(columns=[{"valueType": "STRING", "externalId": "col0"}]))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(seq.id) is None
@@ -65,7 +63,10 @@ def new_seq_long(cognite_client):
 def new_seq_mixed(cognite_client):
     seq = cognite_client.sequences.create(
         Sequence(
-            columns=[{"valueType": "DOUBLE", "externalId": "column0"}, {"valueType": "STRING", "externalId": "column1"}]
+            columns=[
+                {"valueType": "DOUBLE", "externalId": "column0"},
+                {"valueType": "STRING", "externalId": "column1"},
+            ],
         )
     )
     yield seq
