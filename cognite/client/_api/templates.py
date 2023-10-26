@@ -29,7 +29,8 @@ if TYPE_CHECKING:
 
 def templates_deprecation_warning() -> None:
     return warnings.warn(
-        "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling.",
+        "Templates will be removed in a future version of the SDK. Please migrate to Data Modeling. "
+        "Read more at: https://docs.cognite.com/cdf/data_modeling/",
         UserWarning,
     )
 
