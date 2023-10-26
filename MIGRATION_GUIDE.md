@@ -16,7 +16,9 @@ Changes are grouped as follows:
 - `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
   the new parameter `convert_timestamps`.
 
-## Changed
+### Changed
+- All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
+- `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
 - Loading `ObjectDetection` attributes `.attributes`, `.bounding_box`, `.polygon` and
   `.polyline` now returns types `dict[str, Attribute]`, `BoundingBox`,
   `Polygon` and `Polyline` instead of `dicts`.
