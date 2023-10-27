@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, Geometry, T_CogniteResource
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, Geometry
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -139,9 +140,8 @@ class GeoLocation(CogniteResource):
         self.properties = properties
 
     @classmethod
-    def load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             type=resource["type"],
             geometry=Geometry.load(resource["geometry"]),
@@ -168,9 +168,8 @@ class GeoLocationFilter(CogniteResource):
         self.shape = shape
 
     @classmethod
-    def load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    def load(cls: type[Self], resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(relation=resource["relation"], shape=GeometryFilter.load(resource["shape"]))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

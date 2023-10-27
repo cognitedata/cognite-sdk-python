@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
@@ -112,10 +114,13 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
+    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         instance = super().load(resource, cognite_client)
-        if instance.contacts:
-            instance.contacts = [ExtractionPipelineContact.load(contact) for contact in instance.contacts]
+        if isinstance(instance.contacts, list):
+            instance.contacts = [
+                ExtractionPipelineContact.load(contact) if isinstance(contact, dict) else contact
+                for contact in instance.contacts
+            ]
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

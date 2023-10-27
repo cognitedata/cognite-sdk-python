@@ -24,7 +24,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
@@ -590,11 +590,12 @@ class Geometry(CogniteResource):
         self.geometries = geometries and list(geometries)
 
     @classmethod
-    def load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Geometry:
+    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
-            type=data["type"],
-            coordinates=data["coordinates"],
-            geometries=(geometries := data.get("geometries", None)) and [cls.load(g) for g in geometries],
+            type=resource["type"],
+            coordinates=resource["coordinates"],
+            geometries=(geometries := resource.get("geometries", None)) and [cls.load(g) for g in geometries],
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

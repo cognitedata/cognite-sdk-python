@@ -194,7 +194,7 @@ class ThreeDModelRevision(CogniteResource):
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         instance = super().load(resource, cognite_client)
-        if isinstance(resource, dict) and instance.camera is not None:
+        if isinstance(instance.camera, dict):
             instance.camera = RevisionCameraProperties.load(instance.camera)
         return instance
 
@@ -323,7 +323,7 @@ class ThreeDNode(CogniteResource):
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDNode:
         instance = super().load(resource, cognite_client)
-        if isinstance(resource, dict) and instance.bounding_box is not None:
+        if isinstance(instance.bounding_box, dict):
             instance.bounding_box = BoundingBox3D.load(instance.bounding_box)
         return instance
 

@@ -29,6 +29,7 @@ class CountAggregate(CogniteResource):
 
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> CountAggregate:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(count=resource["count"])
 
 
@@ -245,8 +246,10 @@ class CompoundFilter(AggregationFilter):
 
 
 def _dump_value(value: FilterValue) -> dict[str, str] | str | bool | int | float:
-    if isinstance(value, Label):
+    if isinstance(value, Label) and value.external_id is not None:
         return {"externalId": value.external_id}
+    elif isinstance(value, Label):
+        raise ValueError("Label must have external_id set")
     return value
 
 

@@ -152,7 +152,7 @@ class EventFilter(CogniteFilter):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.end_time and isinstance(self.end_time, EndTimeFilter):
-            dumped["endTime" if camel_case else "end_time"] = self.end_time
+            dumped["endTime" if camel_case else "end_time"] = self.end_time.dump(camel_case)
         keys = (
             ["startTime", "activeAtTime", "createdTime", "lastUpdatedTime"]
             if camel_case

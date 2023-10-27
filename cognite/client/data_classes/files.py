@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -91,10 +93,10 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FileMetadata:
+    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         instance = super().load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
-        if instance.geo_location is not None:
+        if isinstance(instance.geo_location, dict):
             instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
@@ -124,8 +126,8 @@ class FileMetadataFilter(CogniteFilter):
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        source_created_time (dict[str, Any] | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-        source_modified_time (dict[str, Any] | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+        source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+        source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
         uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
@@ -146,8 +148,8 @@ class FileMetadataFilter(CogniteFilter):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         uploaded_time: dict[str, Any] | TimestampRange | None = None,
-        source_created_time: dict[str, Any] | None = None,
-        source_modified_time: dict[str, Any] | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
@@ -183,9 +185,9 @@ class FileMetadataFilter(CogniteFilter):
         if isinstance(self.geo_location, GeoLocationFilter):
             result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
         keys = (
-            ["createdTime", "lastUpdatedTime", "uploadedTime"]
+            ["createdTime", "lastUpdatedTime", "uploadedTime", "sourceCreatedTime", "sourceModifiedTime"]
             if camel_case
-            else ["created_time", "last_updated_time", "uploaded_time"]
+            else ["created_time", "last_updated_time", "uploaded_time", "source_created_time", "source_modified_time"]
         )
         for key in keys:
             if key in result and isinstance(result[key], TimestampRange):

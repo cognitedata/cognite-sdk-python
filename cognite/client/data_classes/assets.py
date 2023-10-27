@@ -24,7 +24,7 @@ from typing import (
 )
 
 from graphlib import TopologicalSorter
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -153,12 +153,12 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
+    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         instance = super().load(resource, cognite_client)
-        if isinstance(resource, dict) and instance.aggregates is not None:
+        if isinstance(instance.aggregates, dict):
             instance.aggregates = AggregateResultItem.load(instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
-        if instance.geo_location is not None:
+        if isinstance(instance.geo_location, dict):
             instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
@@ -511,7 +511,7 @@ class AssetFilter(CogniteFilter):
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         if isinstance(self.geo_location, GeoLocationFilter):
-            result["geoLocationFilter" if camel_case else "geo_location_filter"] = self.geo_location.dump(camel_case)
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
         if isinstance(self.created_time, TimestampRange):
             result["createdTime" if camel_case else "created_time"] = self.created_time.dump(camel_case)
         if isinstance(self.last_updated_time, TimestampRange):
