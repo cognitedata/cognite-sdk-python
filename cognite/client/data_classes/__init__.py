@@ -123,7 +123,6 @@ from cognite.client.data_classes.relationships import (
 )
 from cognite.client.data_classes.sequences import (
     Sequence,
-    SequenceAggregate,
     SequenceColumnUpdate,
     SequenceData,
     SequenceDataList,
@@ -131,6 +130,7 @@ from cognite.client.data_classes.sequences import (
     SequenceList,
     SequenceUpdate,
 )
+from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.shared import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -168,7 +168,6 @@ from cognite.client.data_classes.three_d import (
 )
 from cognite.client.data_classes.time_series import (
     TimeSeries,
-    TimeSeriesAggregate,
     TimeSeriesFilter,
     TimeSeriesList,
     TimeSeriesUpdate,
@@ -239,6 +238,7 @@ __all__ = [
     "AnnotationUpdate",
     "AggregateResultItem",
     "Asset",
+    "CountAggregate",
     "AssetAggregate",
     "AssetFilter",
     "AssetHierarchy",
@@ -300,7 +300,6 @@ __all__ = [
     "RelationshipList",
     "RelationshipUpdate",
     "Sequence",
-    "SequenceAggregate",
     "SequenceColumnUpdate",
     "SequenceData",
     "SequenceDataList",
@@ -331,7 +330,6 @@ __all__ = [
     "ThreeDNode",
     "ThreeDNodeList",
     "TimeSeries",
-    "TimeSeriesAggregate",
     "TimeSeriesFilter",
     "TimeSeriesList",
     "TimeSeriesUpdate",

@@ -11,7 +11,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Sequence,
-    SequenceAggregate,
+    CountAggregate,
     SequenceData,
     SequenceDataList,
     SequenceFilter,

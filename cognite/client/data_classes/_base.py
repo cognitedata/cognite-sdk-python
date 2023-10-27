@@ -584,15 +584,13 @@ class Geometry(CogniteResource):
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
-        self.geometries = geometries
+        self.geometries = list(geometries)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
+        dumped = super().dump(camel_case)
         if self.geometries:
-            output["geometries"] = [g.dump(camel_case) for g in self.geometries]
-        else:
-            output.pop("geometries", None)
-        return output
+            dumped["geometries"] = [g.dump(camel_case) for g in self.geometries]
+        return dumped
 
 
 SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]

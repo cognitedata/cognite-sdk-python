@@ -98,12 +98,6 @@ class Label(CogniteResource):
             return None
         return [convert_label(label) for label in labels]
 
-    @classmethod
-    def load(cls, raw_label: dict[str, Any]) -> Label:
-        return cls(external_id=raw_label["externalId"])
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
 class LabelFilter(CogniteFilter):

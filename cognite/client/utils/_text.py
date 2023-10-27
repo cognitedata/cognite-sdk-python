@@ -38,8 +38,10 @@ def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
 
 
 def convert_all_keys_to_camel_case(dct: dict[str, Any]) -> dict[str, Any]:
-    return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
-
+    try:
+        return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
+    except AttributeError as e:
+        raise TypeError("Expected a dictionary") from e
 
 def convert_all_keys_to_camel_case_recursive(dct: dict[str, Any]) -> dict[str, Any]:
     """Converts all the dictionary keys from snake to camel cases included nested objects.

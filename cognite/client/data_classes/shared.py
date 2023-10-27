@@ -165,7 +165,10 @@ class GeoLocationFilter(CogniteResource):
 
     @classmethod
     def load(cls, raw_geo_location_filter: dict[str, Any]) -> GeoLocationFilter:
-        return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
+        return cls(relation=raw_geo_location_filter["relation"], shape=GeoLocationFilter.load(raw_geo_location_filter["shape"]))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        dumped = super().dump(camel_case)
+        if self.shape:
+            dumped["shape"] = self.dump(camel_case)
+        return dumped
