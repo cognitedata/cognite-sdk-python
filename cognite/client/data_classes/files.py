@@ -8,7 +8,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -290,7 +289,7 @@ class FileMetadataUpdate(CogniteUpdate):
         ]
 
 
-class FileAggregate(dict):
+class FileAggregate(CogniteResource):
     """Aggregation results for files
 
     Args:
@@ -298,11 +297,8 @@ class FileAggregate(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **_: Any) -> None:
         self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class FileMetadataList(CogniteResourceList[FileMetadata], IdTransformerMixin):

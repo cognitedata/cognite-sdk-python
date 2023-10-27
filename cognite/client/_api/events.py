@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Iterator, Literal, Sequence, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
@@ -221,6 +222,10 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_type = c.events.aggregate(filter={"type": "failure"})
         """
+        warnings.warn(
+            "This method is deprecated. Use aggregate_count, aggregate_unique_values, aggregate_cardinality_values, aggregate_cardinality_properties, or aggregate_unique_properties instead.",
+            DeprecationWarning,
+        )
         return self._aggregate(filter=filter, cls=AggregateResult)
 
     def aggregate_unique_values(

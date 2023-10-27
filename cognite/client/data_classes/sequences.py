@@ -13,7 +13,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
@@ -295,21 +294,6 @@ class SequenceUpdate(CogniteUpdate):
             PropertySpec("data_set_id"),
             # PropertySpec("columns", is_list=True),
         ]
-
-
-class SequenceAggregate(dict):
-    """No description.
-
-    Args:
-        count (int | None): No description.
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class SequenceList(CogniteResourceList[Sequence], IdTransformerMixin):

@@ -8,7 +8,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -156,7 +155,7 @@ class DataSetUpdate(CogniteUpdate):
         ]
 
 
-class DataSetAggregate(dict):
+class DataSetAggregate(CogniteResource):
     """Aggregation group of data sets
 
     Args:
@@ -164,11 +163,8 @@ class DataSetAggregate(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **_: Any) -> None:
         self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class DataSetList(CogniteResourceList[DataSet], IdTransformerMixin):

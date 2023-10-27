@@ -9,7 +9,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class RevisionCameraProperties(dict):
+class RevisionCameraProperties(CogniteResource):
     """Initial camera position and target.
 
     Args:
@@ -29,16 +28,12 @@ class RevisionCameraProperties(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, target: list[float] | None = None, position: list[float] | None = None, **kwargs: Any) -> None:
+    def __init__(self, target: list[float] | None = None, position: list[float] | None = None, **_: Any) -> None:
         self.target = target
         self.position = position
-        self.update(kwargs)
-
-    target = CognitePropertyClassUtil.declare_property("target")
-    position = CognitePropertyClassUtil.declare_property("position")
 
 
-class BoundingBox3D(dict):
+class BoundingBox3D(CogniteResource):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:
@@ -47,13 +42,9 @@ class BoundingBox3D(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, max: list[float] | None = None, min: list[float] | None = None, **kwargs: Any) -> None:
+    def __init__(self, max: list[float] | None = None, min: list[float] | None = None, **_: Any) -> None:
         self.max = max
         self.min = min
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
 
 
 class ThreeDModel(CogniteResource):

@@ -16,6 +16,15 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
+class CountAggregate(CogniteResource):
+    """
+    [DEPRECATED] This represents the result of a count aggregation.
+    """
+
+    def __init__(self, count: int):
+        self.count = count
+
+
 @dataclass
 class Aggregation(ABC):
     _aggregation_name: ClassVar[str]

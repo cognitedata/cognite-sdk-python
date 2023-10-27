@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
 )
@@ -70,7 +69,7 @@ class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
     _RESOURCE = LabelDefinition
 
 
-class Label(dict):
+class Label(CogniteResource):
     """A label assigned to a resource.
 
     Args:
@@ -78,11 +77,8 @@ class Label(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, external_id: str | None = None, **kwargs: Any) -> None:
+    def __init__(self, external_id: str | None = None, **_: Any) -> None:
         self.external_id = external_id
-        self.update(kwargs)
-
-    external_id = CognitePropertyClassUtil.declare_property("externalId")
 
     @classmethod
     def _load_list(cls, labels: Sequence[str | dict | LabelDefinition | Label] | None) -> list[Label] | None:
@@ -110,7 +106,7 @@ class Label(dict):
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
-class LabelFilter(dict, CogniteFilter):
+class LabelFilter(CogniteFilter):
     """Return only the resource matching the specified label constraints.
 
     Args:
@@ -150,6 +146,3 @@ class LabelFilter(dict, CogniteFilter):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         keys = map(to_camel_case, self.keys()) if camel_case else self.keys()
         return dict(zip(keys, map(self._wrap_labels, self.values())))
-
-    contains_any = CognitePropertyClassUtil.declare_property("containsAny")
-    contains_all = CognitePropertyClassUtil.declare_property("containsAll")

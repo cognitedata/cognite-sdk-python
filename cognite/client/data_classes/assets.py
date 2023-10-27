@@ -32,7 +32,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
@@ -59,7 +58,7 @@ if TYPE_CHECKING:
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
-class AssetAggregate(dict):
+class AssetAggregate(CogniteResource):
     """Aggregation group of assets
 
     Args:
@@ -67,14 +66,11 @@ class AssetAggregate(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **_: Any) -> None:
         self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
-class AggregateResultItem(dict):
+class AggregateResultItem(CogniteResource):
     """Aggregated metrics of the asset
 
     Args:
@@ -89,16 +85,11 @@ class AggregateResultItem(dict):
         child_count: int | None = None,
         depth: int | None = None,
         path: list[dict[str, Any]] | None = None,
-        **kwargs: Any,
+        **_: Any,
     ) -> None:
         self.child_count = child_count
         self.depth = depth
         self.path = path
-        self.update(kwargs)
-
-    child_count = CognitePropertyClassUtil.declare_property("childCount")
-    depth = CognitePropertyClassUtil.declare_property("depth")
-    path = CognitePropertyClassUtil.declare_property("path")
 
 
 class Asset(CogniteResource):

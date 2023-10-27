@@ -6,6 +6,7 @@ import itertools
 import math
 import operator as op
 import threading
+import warnings
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
@@ -263,6 +264,9 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
+        warnings.warn(
+            f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, cls=AssetAggregate)
 
     def aggregate_count(

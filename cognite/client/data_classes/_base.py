@@ -180,23 +180,6 @@ class CogniteResource(_WithClientMixin):
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 
 
-class CognitePropertyClassUtil:
-    @staticmethod
-    def declare_property(schema_name: str) -> property:
-        return (
-            property(lambda s: s[schema_name] if schema_name in s else None)
-            .setter(lambda s, v: CognitePropertyClassUtil._property_setter(s, schema_name, v))
-            .deleter(lambda s: s.pop(schema_name, None))
-        )
-
-    @staticmethod
-    def _property_setter(self: Any, schema_name: str, value: Any) -> None:
-        if value is None:
-            self.pop(schema_name, None)
-        else:
-            self[schema_name] = value
-
-
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
     _RESOURCE: type[T_CogniteResource]
     __cognite_client: CogniteClient | None
@@ -541,7 +524,7 @@ class EnumProperty(Enum):
         return [self.value]
 
 
-class Geometry(dict):
+class Geometry(CogniteResource):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
@@ -602,17 +585,6 @@ class Geometry(dict):
         self.type = type
         self.coordinates = coordinates
         self.geometries = geometries
-
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
-
-    @classmethod
-    def load(cls, raw_geometry: dict[str, Any]) -> Geometry:
-        return cls(
-            type=raw_geometry["type"],
-            coordinates=raw_geometry["coordinates"],
-            geometries=raw_geometry.get("geometries"),
-        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)

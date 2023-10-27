@@ -10,7 +10,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
@@ -26,7 +25,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class EndTimeFilter(dict):
+class EndTimeFilter(CogniteResource):
     """Either range between two timestamps or isNull filter condition.
 
     Args:
@@ -36,17 +35,10 @@ class EndTimeFilter(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(
-        self, max: int | None = None, min: int | None = None, is_null: bool | None = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None, **_: Any) -> None:
         self.max = max
         self.min = min
         self.is_null = is_null
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
-    is_null = CognitePropertyClassUtil.declare_property("isNull")
 
 
 class Event(CogniteResource):
