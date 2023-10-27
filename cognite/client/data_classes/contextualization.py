@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import time
 import warnings
 from dataclasses import dataclass
@@ -572,8 +571,7 @@ class VisionExtractPredictions(VisionResource):
     valve_predictions: list[KeypointCollectionWithObjectDetection] | None = None
 
     @classmethod
-    def _load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> VisionExtractPredictions:
-        resource = json.loads(data) if isinstance(data, str) else data
+    def _load(cls, resource: dict[str, Any], cognite_client: Any = None) -> VisionExtractPredictions:
         return cls(
             text_predictions=[
                 TextRegion._load(text_prediction) for text_prediction in resource.get("textPredictions", [])
@@ -802,30 +800,33 @@ class FeatureParameters(VisionResource):
     valve_detection_parameters: ValveDetection | None = None
 
     @classmethod
-    def _load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
-        data = json.loads(data) if isinstance(data, str) else data
+    def _load(cls, resource: dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
         return cls(
-            text_detection_parameters=load_resource(data, TextDetectionParameters, "textDetectionParameters"),
+            text_detection_parameters=load_resource(resource, TextDetectionParameters, "textDetectionParameters"),
             asset_tag_detection_parameters=load_resource(
-                data, AssetTagDetectionParameters, "assetTagDetectionParameters"
+                resource, AssetTagDetectionParameters, "assetTagDetectionParameters"
             ),
-            people_detection_parameters=load_resource(data, PeopleDetectionParameters, "peopleDetectionParameters"),
+            people_detection_parameters=load_resource(resource, PeopleDetectionParameters, "peopleDetectionParameters"),
             industrial_object_detection_parameters=load_resource(
-                data, IndustrialObjectDetectionParameters, "industrialObjectDetectionParameters"
+                resource, IndustrialObjectDetectionParameters, "industrialObjectDetectionParameters"
             ),
             personal_protective_equipment_detection_parameters=load_resource(
-                data, PersonalProtectiveEquipmentDetectionParameters, "personalProtectiveEquipmentDetectionParameters"
+                resource,
+                PersonalProtectiveEquipmentDetectionParameters,
+                "personalProtectiveEquipmentDetectionParameters",
             ),
             digital_gauge_detection_parameters=load_resource(
-                data, DigitalGaugeDetection, "digitalGaugeDetectionParameters"
+                resource, DigitalGaugeDetection, "digitalGaugeDetectionParameters"
             ),
             dial_gauge_detection_parameters=load_resource(
-                data,
+                resource,
                 DialGaugeDetection,
                 "dialGaugeDetectionParameters",
             ),
-            level_gauge_detection_parameters=load_resource(data, LevelGaugeDetection, "levelGaugeDetectionParameters"),
-            valve_detection_parameters=load_resource(data, ValveDetection, "valveDetectionParameters"),
+            level_gauge_detection_parameters=load_resource(
+                resource, LevelGaugeDetection, "levelGaugeDetectionParameters"
+            ),
+            valve_detection_parameters=load_resource(resource, ValveDetection, "valveDetectionParameters"),
         )
 
 

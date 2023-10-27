@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -54,11 +53,10 @@ class UnitID(CogniteResource):
         self.name = name
 
     @classmethod
-    def _load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> Self:
-        loaded = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            unit_external_id=loaded["unitExternalId"],
-            name=loaded["name"],
+            unit_external_id=resource["unitExternalId"],
+            name=resource["name"],
         )
 
 

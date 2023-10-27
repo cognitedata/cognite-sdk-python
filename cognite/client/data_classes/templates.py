@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections import UserDict
 from typing import TYPE_CHECKING, Any, ClassVar, Union, cast
 
@@ -264,27 +263,23 @@ class TemplateInstance(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TemplateInstance:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    if key == "fieldResolvers":
-                        setattr(
-                            instance,
-                            snake_case_key,
-                            {
-                                key: TemplateInstance._field_resolver_load(field_resolver)
-                                for key, field_resolver in value.items()
-                            },
-                        )
-                    else:
-                        setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TemplateInstance:
+        instance = cls(cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            if hasattr(instance, snake_case_key):
+                if key == "fieldResolvers":
+                    setattr(
+                        instance,
+                        snake_case_key,
+                        {
+                            key: TemplateInstance._field_resolver_load(field_resolver)
+                            for key, field_resolver in value.items()
+                        },
+                    )
+                else:
+                    setattr(instance, snake_case_key, value)
+        return instance
 
     @staticmethod
     def _field_resolver_load(resource: dict, cognite_client: CogniteClient | None = None) -> CogniteResource:
@@ -399,17 +394,13 @@ class View(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    value = value if key != "source" else Source._load(value, cognite_client)
-                    setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+        instance = cls(cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            if hasattr(instance, snake_case_key):
+                value = value if key != "source" else Source._load(value, cognite_client)
+                setattr(instance, snake_case_key, value)
+        return instance
 
 
 class ViewResolveItem(UserDict, CogniteResource):
@@ -421,12 +412,8 @@ class ViewResolveItem(UserDict, CogniteResource):
         return self.data
 
     @classmethod
-    def _load(cls, data: dict | str, cognite_client: CogniteClient | None = None) -> ViewResolveItem:
-        if isinstance(data, str):
-            return cls._load(json.loads(data), cognite_client=cognite_client)
-        elif isinstance(data, dict):
-            return cls(data, cognite_client=cognite_client)
-        raise TypeError(f"Resource must be json str or dict, not {type(data)}")
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ViewResolveItem:
+        return cls(data, cognite_client=cognite_client)
 
 
 class GraphQlError(CogniteResource):
