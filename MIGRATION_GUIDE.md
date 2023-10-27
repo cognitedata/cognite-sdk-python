@@ -19,6 +19,8 @@ Changes are grouped as follows:
 ### Changed
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
 - `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
+- Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
+  a single or multiple items (i.e. id -> ids).
 - Loading `ObjectDetection` attributes `.attributes`, `.bounding_box`, `.polygon` and
   `.polyline` now returns types `dict[str, Attribute]`, `BoundingBox`,
   `Polygon` and `Polyline` instead of `dicts`.

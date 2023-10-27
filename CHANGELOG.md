@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.0.0] - 2023-08-24
+## [7.0.0] - 2023-11-01
 This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example,
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
@@ -36,13 +36,16 @@ methods is `json` and `yaml` serializable.
 - All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
 - `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
+- Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
+  a single or multiple items (i.e. id -> ids).
 - The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
 
 
 ### Added
+- Deprecation warning for all Templates API methods.
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
-- Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
+- Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization`.
 - Missing `dump` and `load` methods for `ClientCredentials`.
 - Literal annotation for `source_type` and `target_type` in `Relationship`
 - Type annotation for `SequenceData` attribute `rows`.
