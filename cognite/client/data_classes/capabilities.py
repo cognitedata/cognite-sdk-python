@@ -28,22 +28,19 @@ class Scope(ABC):
     def load(cls, resource: dict | str) -> Self:
         resource = resource if isinstance(resource, dict) else json.loads(resource)
         ((name, data),) = resource.items()
-        scope_cls = _SCOPE_CLASS_BY_NAME.get(name, UnknownScope)
-        if scope_cls is UnknownScope:
-            data["name"] = name
         data = convert_all_keys_to_snake_case(data)
-
-        return cast(Self, scope_cls(**data))
+        if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
+            return cast(Self, scope_cls(**data))
+        return cast(Self, UnknownScope(name=name, data=data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        if isinstance(self, UnknownScope):
+            return {self.name: self.data}
+
         data = asdict(self)
         if camel_case:
             data = convert_all_keys_to_camel_case(data)
-        if isinstance(self, UnknownScope):
-            scope_name = self.name
-        else:
-            scope_name = self._scope_name
-        return {scope_name: data}
+        return {self._scope_name: data}
 
 
 @dataclass(frozen=True)
@@ -113,6 +110,9 @@ class UnknownScope(Scope):
     name: str
     data: dict[str, Any]
 
+    def __getitem__(self, item: str) -> Any:
+        return self.data[item]
+
 
 _SCOPE_CLASS_BY_NAME: dict[str, type[Scope]] = {
     c._scope_name: c for c in Scope.__subclasses__() if not issubclass(c, UnknownScope)
@@ -141,17 +141,17 @@ class Capability(ABC):
     def load(cls, resource: dict | str) -> Self:
         resource = resource if isinstance(resource, dict) else json.loads(resource)
         ((name, data),) = resource.items()
-        capability_cls = _CAPABILITY_CLASS_BY_NAME.get(name, UnknownAcl)
-        try:
-            args: dict[str, Any] = dict(
-                actions=[capability_cls.Action(action) for action in data["actions"]], scope=Scope.load(data["scope"])
+        if capability_cls := _CAPABILITY_CLASS_BY_NAME.get(name):
+            return cast(
+                Self,
+                capability_cls(
+                    actions=[capability_cls.Action(action) for action in data["actions"]],
+                    scope=Scope.load(data["scope"]),
+                ),
             )
-        except ValueError:
-            raise
 
-        if capability_cls is UnknownAcl:
-            args["capability_name"] = name
-        return cast(Self, capability_cls(**args))
+        actions = enum.Enum("Action", {action.title(): action for action in data["actions"]}, type=_ActionBase)  # type: ignore [misc]
+        return cast(Self, UnknownAcl(capability_name=name, actions=list(actions), scope=Scope.load(data["scope"])))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         data = {
@@ -174,6 +174,7 @@ class UnknownAcl(Capability):
 
     _valid_scopes = frozenset()
     capability_name: str
+    scope: Scope
 
 
 @dataclass
