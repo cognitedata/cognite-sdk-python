@@ -40,9 +40,10 @@ methods is `json` and `yaml` serializable.
   a single or multiple items (i.e. id -> ids).
 
 ### Added
+- Deprecation warning for all Templates API methods.
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
-- Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
+- Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization`.
 - Missing `dump` and `load` methods for `ClientCredentials`.
 - Literal annotation for `source_type` and `target_type` in `Relationship`
 - Type annotation for `SequenceData` attribute `rows`.
