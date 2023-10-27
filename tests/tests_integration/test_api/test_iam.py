@@ -5,7 +5,7 @@ import os
 import pytest
 
 from cognite.client.data_classes import Group, SecurityCategory
-from cognite.client.data_classes.capabilities import AllScope, EventsAcl
+from cognite.client.data_classes.capabilities import EventsAcl
 from cognite.client.utils._text import random_string
 
 
@@ -21,7 +21,7 @@ class TestGroupsAPI:
             group = cognite_client.iam.groups.create(
                 Group(
                     name="bla",
-                    capabilities=[EventsAcl([EventsAcl.Action.Read], AllScope())],
+                    capabilities=[EventsAcl([EventsAcl.Action.Read], EventsAcl.Scope.AllScope())],
                     metadata=metadata,
                 )
             )

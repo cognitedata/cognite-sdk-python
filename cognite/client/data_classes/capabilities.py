@@ -16,12 +16,8 @@ from cognite.client.utils._text import (
 )
 
 
-class _ActionBase(enum.Enum):
-    ...
-
-
 @dataclass(frozen=True)
-class Scope(ABC):
+class ScopeBase(ABC):
     _scope_name: ClassVar[str]
 
     @classmethod
@@ -44,23 +40,23 @@ class Scope(ABC):
 
 
 @dataclass(frozen=True)
-class AllScope(Scope):
+class AllScope(ScopeBase):
     _scope_name = "all"
 
 
 @dataclass(frozen=True)
-class CurrentUserScope(Scope):
+class CurrentUserScope(ScopeBase):
     _scope_name = "currentuserScope"
 
 
 @dataclass(frozen=True)
-class DataSetScope(Scope):
+class DataSetScope(ScopeBase):
     _scope_name = "datasetScope"
     data_set_ids: list[int]
 
 
 @dataclass(frozen=True)
-class IDScope(Scope):
+class IDScope(ScopeBase):
     _scope_name = "idScope"
     ids: list[int]
 
@@ -77,7 +73,7 @@ class DatabaseTableScope:
 
 
 @dataclass(frozen=True)
-class TableScope(Scope):
+class TableScope(ScopeBase):
     _scope_name = "tableScope"
     dbs_to_tables: dict[str, DatabaseTableScope]
 
@@ -89,19 +85,19 @@ class AssetRootIDScope(IDScope):
 
 
 @dataclass(frozen=True)
-class ExperimentsScope(Scope):
+class ExperimentsScope(ScopeBase):
     _scope_name = "experimentscope"
     experiments: list[str]
 
 
 @dataclass(frozen=True)
-class SpaceIDScope(Scope):
+class SpaceIDScope(ScopeBase):
     _scope_name = "spaceIdScope"
     ids: list[str]
 
 
 @dataclass(frozen=True)
-class UnknownScope(Scope):
+class UnknownScope(ScopeBase):
     """
     This class is used for scopes that are not implemented in this version of the SDK.
     Typically, experimental scopes or new scopes that have recently been added to the API.
@@ -114,28 +110,23 @@ class UnknownScope(Scope):
         return self.data[item]
 
 
-_SCOPE_CLASS_BY_NAME: dict[str, type[Scope]] = {
-    c._scope_name: c for c in Scope.__subclasses__() if not issubclass(c, UnknownScope)
+_SCOPE_CLASS_BY_NAME: dict[str, type[ScopeBase]] = {
+    c._scope_name: c for c in ScopeBase.__subclasses__() if not issubclass(c, UnknownScope)
 }
 
 
 @dataclass
 class Capability(ABC):
-    class Action(_ActionBase):
+    _capability_name: ClassVar[str]
+
+    class Action(enum.Enum):
         ...
 
-    _valid_scopes: ClassVar[frozenset[type[Scope]]]
-    _capability_name: ClassVar[str]
-    actions: Sequence[_ActionBase]
-    scope: Scope
+    class Scope(enum.Enum):
+        ...
 
-    @property
-    def available_actions(self) -> list[_ActionBase]:
-        return list(self.Action)
-
-    @property
-    def available_scopes(self) -> frozenset[type[Scope]]:
-        return self._valid_scopes
+    actions: Sequence
+    scope: ScopeBase
 
     @classmethod
     def load(cls, resource: dict | str) -> Self:
@@ -146,11 +137,13 @@ class Capability(ABC):
                 Self,
                 capability_cls(
                     actions=[capability_cls.Action(action) for action in data["actions"]],
-                    scope=Scope.load(data["scope"]),
+                    scope=ScopeBase.load(data["scope"]),
                 ),
             )
 
-        return cast(Self, UnknownAcl(capability_name=name, actions=data["actions"], scope=Scope.load(data["scope"])))
+        return cast(
+            Self, UnknownAcl(capability_name=name, actions=data["actions"], scope=ScopeBase.load(data["scope"]))
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         if isinstance(self, UnknownAcl):
@@ -170,456 +163,582 @@ class UnknownAcl(Capability):
     Typically, experimental capabilities or new capabilities that have recently been added to the API.
     """
 
-    _valid_scopes = frozenset()
     capability_name: str
-    actions: list[str]  # type: ignore[assignment]
-    scope: Scope
+    actions: list[str]
+    scope: ScopeBase
 
 
 @dataclass
 class AnalyticsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "analyticsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Execute = "EXECUTE"
         List = "LIST"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "analyticsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class AnnotationsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "annotationsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
         Suggest = "SUGGEST"
         Review = "REVIEW"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "annotationsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class AssetsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "assetsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "assetsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class DataSetsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "datasetsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
         Owner = "OWNER"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "datasetsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class DigitalTwinAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "digitalTwinAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "digitalTwinAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class EntityMatchingAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "entitymatchingAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "entitymatchingAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class EventsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "eventsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "eventsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class ExtractionPipelinesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "extractionPipelinesAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, IDScope, DataSetScope})
-    _capability_name = "extractionPipelinesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        ID = IDScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | IDScope | DataSetScope
 
 
 @dataclass
 class ExtractionsRunAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "extractionRunsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope, ExtractionPipelineScope})
-    _capability_name = "extractionRunsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+        ExtractionPipeline = ExtractionPipelineScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | ExtractionPipelineScope
 
 
 @dataclass
 class FilesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "filesAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "filesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class FunctionsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "functionsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "functionsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class GeospatialAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "geospatialAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "geospatialAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class GeospatialCrsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "geospatialCrsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "geospatialCrsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class GroupsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "groupsAcl"
+
+    class Action(enum.Enum):
         Create = "CREATE"
         Delete = "DELETE"
         Read = "READ"
         List = "LIST"
         Update = "UPDATE"
 
-    _valid_scopes = frozenset({AllScope, CurrentUserScope})
-    _capability_name = "groupsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        CurrentUser = CurrentUserScope
+
     actions: Sequence[Action]
     scope: AllScope | CurrentUserScope
 
 
 @dataclass
 class LabelsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "labelsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "labelsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class ModelHostingAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "modelHostingAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "modelHostingAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class ProjectsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "projectsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
         List = "LIST"
         Update = "UPDATE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "projectsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class RawAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "rawAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
         List = "LIST"
 
-    _valid_scopes = frozenset({AllScope, TableScope})
-    _capability_name = "rawAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        Table = TableScope
+
     actions: Sequence[Action]
     scope: AllScope | TableScope
 
 
 @dataclass
 class RelationshipsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "relationshipsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "relationshipsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class RoboticsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "roboticsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
         Create = "CREATE"
         Update = "UPDATE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "roboticsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class SecurityCategoriesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "securityCategoriesAcl"
+
+    class Action(enum.Enum):
         MemberOf = "MEMBEROF"
         List = "LIST"
         Create = "CREATE"
         Update = "UPDATE"
         Delete = "DELETE"
 
-    _valid_scopes = frozenset({AllScope, IDScope})
-    _capability_name = "securityCategoriesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        ID = IDScope
+
     actions: Sequence[Action]
     scope: AllScope | IDScope
 
 
 @dataclass
 class SeismicAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "seismicAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "seismicAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class SequencesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "sequencesAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "sequencesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class SessionsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "sessionsAcl"
+
+    class Action(enum.Enum):
         List = "LIST"
         Create = "CREATE"
         Delete = "DELETE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "sessionsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class ThreeDAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "threedAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Create = "CREATE"
         Update = "UPDATE"
         Delete = "DELETE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "threedAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class TimeSeriesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "timeSeriesAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope, IDScope, AssetRootIDScope})
-    _capability_name = "timeSeriesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+        ID = IDScope
+        AssetRootID = AssetRootIDScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | IDScope | AssetRootIDScope
 
 
 @dataclass
 class TimeSeriesSubscriptionsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "timeSeriesSubscriptionsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "timeSeriesSubscriptionsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class TransformationsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "transformationsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "transformationsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        DataSet = DataSetScope
+
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
 @dataclass
 class TypesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "typesAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "typesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class WellsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "wellsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "wellsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class ExperimentsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "experimentAcl"
+
+    class Action(enum.Enum):
         Use = "USE"
 
-    _valid_scopes = frozenset({})
-    _capability_name = "experimentAcl"
+    class Scope(enum.Enum):
+        ...
+
     actions: Sequence[Action]
 
 
 @dataclass
 class TemplateGroupsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "templateGroupsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "templateGroupsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class TemplateInstancesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "templateInstancesAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "templateInstancesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class DataModelInstancesAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "dataModelInstancesAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, SpaceIDScope})
-    _capability_name = "dataModelInstancesAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        SpaceID = SpaceIDScope
+
     actions: Sequence[Action]
     scope: AllScope | SpaceIDScope
 
 
 @dataclass
 class DataModelsAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "dataModelsAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope, SpaceIDScope})
-    _capability_name = "dataModelsAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+        SpaceID = SpaceIDScope
+
     actions: Sequence[Action]
     scope: AllScope | SpaceIDScope
 
 
 @dataclass
 class WorkflowOrchestrationAcl(Capability):
-    class Action(_ActionBase):
+    _capability_name = "workflowOrchestrationAcl"
+
+    class Action(enum.Enum):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
-    _capability_name = "workflowOrchestrationAcl"
+    class Scope(enum.Enum):
+        All = AllScope
+
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
