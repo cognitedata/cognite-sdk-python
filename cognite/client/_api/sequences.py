@@ -1052,7 +1052,7 @@ class SequencesDataAPI(APIClient):
                 >>> res = c.sequences.data.retrieve(id=1)
                 >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
                 >>> single_value = res[23] # ... get the values at a single row number,
-                >>> col = res.get_column(id_or_external_id='columnExtId') # ... get the array of values for a specific column,
+                >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
         identifiers = IdentifierSequence.load(id, external_id).as_dicts()

@@ -944,7 +944,7 @@ class DatapointsAPI(APIClient):
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names:
 
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id_or_external_id=["foo", "bar"],
+                ...     external_id=["foo", "bar"],
                 ...     aggregates=["average"],
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
@@ -954,7 +954,7 @@ class DatapointsAPI(APIClient):
 
                 >>> import pandas as pd
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id_or_external_id="foo",
+                ...     external_id="foo",
                 ...     start=pd.Timestamp("2023-01-01"),
                 ...     end=pd.Timestamp("2023-02-01"),
                 ...     )
@@ -1083,7 +1083,7 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client.utils import ZoneInfo
                 >>> client = CogniteClient()
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id_or_external_id=["foo", "bar"],
+                ...     external_id=["foo", "bar"],
                 ...     aggregates=["sum", "continuous_variance"],
                 ...     granularity="1quarter",
                 ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
