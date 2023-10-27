@@ -20,6 +20,7 @@ from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
     DataPointSubscriptionCreate,
+    EndTimeFilter,
     Relationship,
     SequenceData,
     filters,
@@ -319,6 +320,10 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is SequenceData:
             # Rows are given in two ways, removing one.
             keyword_arguments.pop("rows", None)
+        elif resource_cls is EndTimeFilter:
+            # EndTimeFilter requires either is null or (max and/or min)
+            keyword_arguments.pop("is_null", None)
+
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:

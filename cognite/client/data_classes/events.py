@@ -36,6 +36,9 @@ class EndTimeFilter(CogniteResource):
     """
 
     def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None, **_: Any) -> None:
+        if is_null is not None and (max is not None or min is not None):
+            raise ValueError("is_null cannot be used with min or max values")
+
         self.max = max
         self.min = min
         self.is_null = is_null

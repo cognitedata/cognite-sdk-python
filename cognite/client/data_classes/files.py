@@ -188,8 +188,8 @@ class FileMetadataFilter(CogniteFilter):
             else ["created_time", "last_updated_time", "uploaded_time"]
         )
         for key in keys:
-            if key in result:
-                result[key] = TimestampRange.dump(result[key], camel_case)
+            if key in result and isinstance(result[key], TimestampRange):
+                result[key] = result[key].dump(camel_case)
         return result
 
 

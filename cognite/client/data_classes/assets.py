@@ -510,6 +510,13 @@ class AssetFilter(CogniteFilter):
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
+        if isinstance(self.geo_location, GeoLocationFilter):
+            result["geoLocationFilter" if camel_case else "geo_location_filter"] = self.geo_location.dump(camel_case)
+        if isinstance(self.created_time, TimestampRange):
+            result["createdTime" if camel_case else "created_time"] = self.created_time.dump(camel_case)
+        if isinstance(self.last_updated_time, TimestampRange):
+            result["lastUpdatedTime" if camel_case else "last_updated_time"] = self.last_updated_time.dump(camel_case)
+
         return result
 
 

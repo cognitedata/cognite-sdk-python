@@ -42,7 +42,10 @@ if TYPE_CHECKING:
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     # TODO: Consider using inheritance?
-    dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
+    try:
+        dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
+    except TypeError:
+        dumped = {k: v for k, v in obj.__dict__.items() if v is not None and not k.startswith("_")}
     if camel_case:
         return convert_all_keys_to_camel_case(dumped)
     return dumped
