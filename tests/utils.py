@@ -457,8 +457,6 @@ class FakeCogniteResourceGenerator:
         except TypeError:
             # Python 3.10 Type Hint
             return cls._type_hint_3_10_to_8(annotation, resource_module_vars)
-        except NameError:
-            raise
 
     @classmethod
     def _type_hint_3_10_to_8(cls, annotation: str, resource_module_vars: dict[str, Any]) -> Any:
