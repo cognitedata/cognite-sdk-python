@@ -3,8 +3,8 @@ from __future__ import annotations
 import enum
 import json
 from abc import ABC
-from dataclasses import asdict, dataclass
-from typing import Any, ClassVar, cast
+from dataclasses import asdict, dataclass, field
+from typing import Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
@@ -16,27 +16,8 @@ from cognite.client.utils._text import (
 )
 
 
-class _Action(enum.Enum):
-    # Read = "READ"
-    # Write = "WRITE"
-    # List = "LIST"
-    # Owner = "OWNER"
-    # Create = "CREATE"
-    # Update = "UPDATE"
-    # Delete = "DELETE"
-    # Suggest = "SUGGEST"
-    # Review = "REVIEW"
-    # MemberOf = "MEMBEROF"
-    # Use = "USE"
-    # Execute = "EXECUTE"
-
-    @classmethod
-    def _missing_(cls, value: str) -> _Action | None:
-        value = value.casefold()
-        for member in cls:
-            if member.casefold() == value:
-                return member
-        return None
+class _ActionBase(enum.Enum):
+    ...
 
 
 @dataclass(frozen=True)
@@ -50,7 +31,7 @@ class Scope(ABC):
         scope_cls = _SCOPE_CLASS_BY_NAME.get(name, UnknownScope)
         if scope_cls is UnknownScope:
             data["name"] = name
-        data = convert_all_keys_to_snake_case(resource[name])
+        data = convert_all_keys_to_snake_case(data)
 
         return cast(Self, scope_cls(**data))
 
@@ -134,16 +115,16 @@ _SCOPE_CLASS_BY_NAME: dict[str, type[Scope]] = {
 
 @dataclass
 class Capability(ABC):
-    class Action(_Action):
+    class Action(_ActionBase):
         ...
 
     _valid_scopes: ClassVar[frozenset[type[Scope]]]
     _capability_name: ClassVar[str]
-    actions: list[_Action]
+    actions: Sequence[_ActionBase]
     scope: Scope
 
     @property
-    def available_actions(self) -> list[_Action]:
+    def available_actions(self) -> list[_ActionBase]:
         return list(self.Action)
 
     @property
@@ -185,255 +166,389 @@ class UnknownAcl(Capability):
     capability_name: str
 
 
-# @dataclass
-# class AnalyticsAcl(Capability):
-#     _valid_scopes = frozenset({AllScope})
-#     _valid_actions = frozenset({_Action.Read, _Action.Execute, _Action.List})
-#     _capability_name = "analyticsAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class AnnotationsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write, _Action.Suggest, _Action.Review})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "annotationsAcl"
-#     scope: AllScope = field(default_factory=AllScope)
+@dataclass
+class AnalyticsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Execute = "EXECUTE"
+        List = "LIST"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "analyticsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class AnnotationsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+        Suggest = "SUGGEST"
+        Review = "REVIEW"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "annotationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class AssetsAcl(Capability):
-    class Action(_Action):
+    class Action(_ActionBase):
         Read = "READ"
         Write = "WRITE"
 
     _valid_scopes = frozenset({AllScope, DataSetScope})
     _capability_name = "assetsAcl"
-    actions: list[Action]
+    actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
 
-# @dataclass
-# class DataSetsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write, _Action.Owner})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "dataSetsAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class DigitalTwinAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "digitalTwinAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class EntityMatchingAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "entityMatchingAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class EventsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "eventsAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class ExtractionPipelineAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, IDScope, DataSetScope})
-#     _capability_name = "extractionPipelineAcl"
-#     scope: AllScope | IDScope | DataSetScope
-#
-#
-# @dataclass
-# class ExtractionRunAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope, ExtractionPipelineScope})
-#     _capability_name = "extractionRunAcl"
-#     scope: AllScope | DataSetScope | ExtractionPipelineScope
-#
-#
-# @dataclass
-# class FilesAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "filesAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class FunctionsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "functionsAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class GeospatialAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "geospatialAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class GeospatialCrsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "geospatialCrsAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class GroupsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write, _Action.Create, _Action.Update, _Action.Delete})
-#     _valid_scopes = frozenset({AllScope, CurrentUserScope})
-#     _capability_name = "groupsAcl"
-#     scope: AllScope | CurrentUserScope
-#
-#
-# @dataclass
-# class LabelsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "labelsAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class ModelHostingAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "modelHostingAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class ProjectsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write, _Action.List, _Action.Update})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "projectsAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class RawAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write, _Action.List})
-#     _valid_scopes = frozenset({AllScope, TableScope})
-#     _capability_name = "rawAcl"
-#     scope: AllScope | TableScope
-#
-#
-# @dataclass
-# class RelationshipsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "relationshipsAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class RoboticsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write, _Action.Create, _Action.Update})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "roboticsAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class SecurityCategoriesAcl(Capability):
-#     _valid_actions = frozenset({_Action.MemberOf, _Action.List, _Action.Create, _Action.Delete})
-#     _valid_scopes = frozenset({AllScope, IDScope})
-#     _capability_name = "securityCategoriesAcl"
-#     scope: AllScope | IDScope
-#
-#
-# @dataclass
-# class SeismicAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "seismicAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class SequencesAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "sequencesAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class SessionsAcl(Capability):
-#     _valid_actions = frozenset({_Action.List, _Action.Create})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "sessionsAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class ThreeDAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write, _Action.Update, _Action.Delete})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "threeDAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class TimeSeriesAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope, IDScope, AssetRootIDScope})
-#     _capability_name = "timeSeriesAcl"
-#     scope: AllScope | DataSetScope | IDScope | AssetRootIDScope
-#
-#
-# @dataclass
-# class TimeSeriesSubscriptionAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "timeSeriesSubscriptionAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class TransformationsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope, DataSetScope})
-#     _capability_name = "transformationsAcl"
-#     scope: AllScope | DataSetScope
-#
-#
-# @dataclass
-# class TypesAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "typesAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class WellsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Read, _Action.Write})
-#     _valid_scopes = frozenset({AllScope})
-#     _capability_name = "wellsAcl"
-#     scope: AllScope = field(default_factory=AllScope)
-#
-#
-# @dataclass
-# class ExperimentsAcl(Capability):
-#     _valid_actions = frozenset({_Action.Use})
-#     _valid_scopes = frozenset({})
-#     _capability_name = "experimentsAcl"
+@dataclass
+class DataSetsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+        Owner = "OWNER"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "dataSetsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class DigitalTwinAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "digitalTwinAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class EntityMatchingAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "entityMatchingAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class EventsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "eventsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class ExtractionPipelineAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, IDScope, DataSetScope})
+    _capability_name = "extractionPipelineAcl"
+    actions: Sequence[Action]
+    scope: AllScope | IDScope | DataSetScope
+
+
+@dataclass
+class ExtractionRunAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope, ExtractionPipelineScope})
+    _capability_name = "extractionRunAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope | ExtractionPipelineScope
+
+
+@dataclass
+class FilesAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "filesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class FunctionsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "functionsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class GeospatialAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "geospatialAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class GeospatialCrsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "geospatialCrsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class GroupsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+        List = "LIST"
+        Update = "UPDATE"
+
+    _valid_scopes = frozenset({AllScope, CurrentUserScope})
+    _capability_name = "groupsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | CurrentUserScope
+
+
+@dataclass
+class LabelsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "labelsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class ModelHostingAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "modelHostingAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class ProjectsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+        List = "LIST"
+        Update = "UPDATE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "projectsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class RawAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+        List = "LIST"
+
+    _valid_scopes = frozenset({AllScope, TableScope})
+    _capability_name = "rawAcl"
+    actions: Sequence[Action]
+    scope: AllScope | TableScope
+
+
+@dataclass
+class RelationshipsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "relationshipsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class RoboticsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+        Create = "CREATE"
+        Update = "UPDATE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "roboticsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class SecurityCategoriesAcl(Capability):
+    class Action(_ActionBase):
+        MemberOf = "MEMBEROF"
+        List = "LIST"
+        Create = "CREATE"
+        Delete = "DELETE"
+
+    _valid_scopes = frozenset({AllScope, IDScope})
+    _capability_name = "securityCategoriesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | IDScope
+
+
+@dataclass
+class SeismicAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "seismicAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class SequencesAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "sequencesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class SessionsAcl(Capability):
+    class Action(_ActionBase):
+        List = "LIST"
+        Create = "CREATE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "sessionsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class ThreeDAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+        Update = "UPDATE"
+        Delete = "DELETE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "threeDAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class TimeSeriesAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope, IDScope, AssetRootIDScope})
+    _capability_name = "timeSeriesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope | IDScope | AssetRootIDScope
+
+
+@dataclass
+class TimeSeriesSubscriptionAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "timeSeriesSubscriptionAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class TransformationsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope, DataSetScope})
+    _capability_name = "transformationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+
+@dataclass
+class TypesAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "typesAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class WellsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "wellsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class ExperimentsAcl(Capability):
+    class Action(_ActionBase):
+        Use = "USE"
+
+    _valid_scopes = frozenset({})
+    _capability_name = "experimentsAcl"
+    actions: Sequence[Action]
 
 
 _CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {

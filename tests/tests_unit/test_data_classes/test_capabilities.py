@@ -18,7 +18,7 @@ class TestCapabilities:
                 }
             },
             {
-                "securityCategoriesAcl": {"actions": ["MEMBEROF", "LIST"], "scope": {"idScope": [1, 2, 3]}},
+                "securityCategoriesAcl": {"actions": ["MEMBEROF", "LIST"], "scope": {"idScope": {"ids": [1, 2, 3]}}},
             },
         ],
     )
