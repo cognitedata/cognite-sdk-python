@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -17,6 +19,9 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ContainerCore(DataModelingResource):
@@ -56,7 +61,7 @@ class ContainerCore(DataModelingResource):
         self.indexes = indexes
 
     @classmethod
-    def load(cls, resource: dict | str) -> ContainerCore:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "constraints" in data:
             data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
@@ -64,7 +69,7 @@ class ContainerCore(DataModelingResource):
             data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
         if "properties" in data:
             data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
-        return super().load(data)
+        return super().load(data, cognite_client)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -225,17 +230,21 @@ class ContainerProperty:
             type_ = PropertyType.load(data["type"])
         return cls(
             type=type_,
-            nullable=data["nullable"],
-            auto_increment=data["autoIncrement"],
+            # If nothing is specified, we will pass through null values
+            nullable=data.get("nullable"),  # type: ignore[arg-type]
+            auto_increment=data.get("autoIncrement"),  # type: ignore[arg-type]
             name=data.get("name"),
             default_value=data.get("defaultValue"),
             description=data.get("description"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        output = asdict(self)
-        if "type" in output and isinstance(output["type"], dict):
+        output: dict[str, str | dict] = {}
+        if self.type:
             output["type"] = self.type.dump(camel_case)
+        for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
+            if (value := getattr(self, key)) is not None:
+                output[key] = value
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
@@ -316,12 +325,14 @@ class BTreeIndex(Index):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> BTreeIndex:
-        return cls(properties=data["properties"], cursorable=data["cursorable"])
+        return cls(properties=data["properties"], cursorable=data.get("cursorable"))  # type: ignore[arg-type]
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        as_dict["indexType" if camel_case else "index_type"] = "btree"
-        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped: dict[str, Any] = {"properties": self.properties}
+        if self.cursorable is not None:
+            dumped["cursorable"] = self.cursorable
+        dumped["indexType" if camel_case else "index_type"] = "btree"
+        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
 
 
 @dataclass(frozen=True)
@@ -332,7 +343,7 @@ class InvertedIndex(Index):
     def load(cls, data: dict[str, Any]) -> InvertedIndex:
         return cls(properties=data["properties"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        as_dict["indexType" if camel_case else "index_type"] = "inverted"
-        return convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped: dict[str, Any] = {"properties": self.properties}
+        dumped["indexType" if camel_case else "index_type"] = "inverted"
+        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped

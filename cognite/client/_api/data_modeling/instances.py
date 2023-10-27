@@ -98,7 +98,7 @@ class _NodeOrEdgeList(CogniteResourceList):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
     @classmethod
-    def _load(
+    def load(
         cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
@@ -113,7 +113,7 @@ class _NodeOrEdgeList(CogniteResourceList):
 
 class _NodeOrEdgeResourceAdapter:
     @staticmethod
-    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
+    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return Node.load(data)
@@ -124,7 +124,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
     _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
 
     @classmethod
-    def _load(
+    def load(
         cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
@@ -140,7 +140,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 class _NodeOrEdgeApplyResultAdapter:
     @staticmethod
-    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
+    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult.load(data)
@@ -149,7 +149,7 @@ class _NodeOrEdgeApplyResultAdapter:
 
 class _NodeOrEdgeApplyAdapter:
     @staticmethod
-    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
+    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApply.load(data)
@@ -738,7 +738,7 @@ class InstancesAPI(APIClient):
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
-        return list_cls._load(res.json()["items"], cognite_client=None)
+        return list_cls.load(res.json()["items"], cognite_client=None)
 
     @overload
     def aggregate(
@@ -842,7 +842,7 @@ class InstancesAPI(APIClient):
             body["properties"] = [properties] if isinstance(properties, str) else properties
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
-        result_list = InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
+        result_list = InstanceAggregationResultList.load(res.json()["items"], cognite_client=None)
         if group_by is not None:
             return result_list
 

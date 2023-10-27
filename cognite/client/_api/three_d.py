@@ -131,11 +131,16 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(self, name: str | Sequence[str]) -> ThreeDModel | ThreeDModelList:
+    def create(
+        self, name: str | Sequence[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
+    ) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
             name (str | Sequence[str]): The name of the 3d model(s) to create.
+            data_set_id (int | None): The id of the dataset this 3D model belongs to.
+            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
+                Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
 
         Returns:
             ThreeDModel | ThreeDModelList: The created 3d model(s).
@@ -146,14 +151,15 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.three_d.models.create(name="My Model")
+                >>> res = c.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
         """
         assert_type(name, "name", [str, Sequence])
+        item_processed: dict[str, Any] | list[dict[str, Any]]
         if isinstance(name, str):
-            name_processed: dict[str, Any] | Sequence[dict[str, Any]] = {"name": name}
+            item_processed = {"name": name, "dataSetId": data_set_id, "metadata": metadata}
         else:
-            name_processed = [{"name": n} for n in name]
-        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
+            item_processed = [{"name": n, "dataSetId": data_set_id, "metadata": metadata} for n in name]
+        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
 
     def update(
         self, item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]
@@ -643,6 +649,6 @@ class ThreeDAssetMappingAPI(APIClient):
         summary = execute_tasks(self._post, tasks, self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el),
+            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping.load(el),
             str_format_element_fn=lambda el: (el.asset_id, el.node_id),
         )

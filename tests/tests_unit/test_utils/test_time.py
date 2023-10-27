@@ -215,19 +215,44 @@ class TestObjectTimeConversion:
     @pytest.mark.parametrize(
         "item, expected_output",
         [
-            ({"created_time": 0}, {"created_time": "1970-01-01 00:00:00"}),
-            ({"last_updated_time": 0}, {"last_updated_time": "1970-01-01 00:00:00"}),
-            ({"start_time": 0}, {"start_time": "1970-01-01 00:00:00"}),
-            ({"end_time": 0}, {"end_time": "1970-01-01 00:00:00"}),
+            ({"created_time": 0}, {"created_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"last_updated_time": 0}, {"last_updated_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"start_time": 0}, {"start_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"end_time": 0}, {"end_time": "1970-01-01 00:00:00.000+00:00"}),
             ({"not_a_time": 0}, {"not_a_time": 0}),
-            ([{"created_time": 0}], [{"created_time": "1970-01-01 00:00:00"}]),
-            ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00"}]),
-            ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00"}]),
-            ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00"}]),
-            ([{"source_created_time": 0}], [{"source_created_time": "1970-01-01 00:00:00"}]),
-            ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00"}]),
+            ({"expirationTime": -41103211}, {"expirationTime": "1969-12-31 12:34:56.789+00:00"}),
+            ({"lastSuccess": -1}, {"lastSuccess": "1969-12-31 23:59:59.999+00:00"}),
+            ({"scheduledExecutionTime": 1}, {"scheduledExecutionTime": "1970-01-01 00:00:00.001+00:00"}),
+            ({"uploaded_time": 123456789}, {"uploaded_time": "1970-01-02 10:17:36.789+00:00"}),
+            ([{"created_time": 0}], [{"created_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"source_created_time": 0}], [{"source_created_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00.000+00:00"}]),
             ([{"not_a_time": 0}], [{"not_a_time": 0}]),
             ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
+        ],
+    )
+    def test_convert_time_attributes_to_isoformat(self, item, expected_output):
+        assert expected_output == convert_time_attributes_to_datetime(item, to_isoformat=True)
+
+    @pytest.mark.parametrize(
+        "item, expected_output",
+        [
+            (
+                {"expirationTime": -41103211},
+                {"expirationTime": datetime(1969, 12, 31, 12, 34, 56, 789000, tzinfo=timezone.utc)},
+            ),
+            ([{"lastSuccess": -1}], [{"lastSuccess": datetime(1969, 12, 31, 23, 59, 59, 999000, tzinfo=timezone.utc)}]),
+            (
+                {"scheduled_execution_time": 1},
+                {"scheduled_execution_time": datetime(1970, 1, 1, 0, 0, 0, 1000, tzinfo=timezone.utc)},
+            ),
+            (
+                [{"uploaded_time": 123456789}],
+                [{"uploaded_time": datetime(1970, 1, 2, 10, 17, 36, 789000, tzinfo=timezone.utc)}],
+            ),
         ],
     )
     def test_convert_time_attributes_to_datetime(self, item, expected_output):

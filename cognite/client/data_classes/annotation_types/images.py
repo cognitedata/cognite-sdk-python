@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+from typing_extensions import Self
 
 from cognite.client.data_classes.annotation_types.primitives import (
     Attribute,
@@ -11,6 +15,10 @@ from cognite.client.data_classes.annotation_types.primitives import (
     Polyline,
     VisionResource,
 )
+from cognite.client.utils._auxiliary import load_resource
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass
@@ -34,6 +42,28 @@ class ObjectDetection(VisionResource):
         if isinstance(self.attributes, dict):
             self.attributes = {k: Attribute(**v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
 
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ObjectDetection:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            label=resource["label"],
+            confidence=resource.get("confidence"),
+            attributes={
+                key: Attribute.load(attribute, cognite_client)
+                for key, attribute in resource.get("attributes", {}).items()
+            }
+            or None,
+            bounding_box=load_resource(resource, BoundingBox, "boundingBox"),
+            polygon=load_resource(resource, Polygon, "polygon"),
+            polyline=load_resource(resource, Polyline, "polyline"),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.attributes is not None:
+            dumped["attributes"] = {k: v.dump(camel_case=camel_case) for k, v in self.attributes.items()}
+        return dumped
+
 
 @dataclass
 class TextRegion(VisionResource):
@@ -44,6 +74,15 @@ class TextRegion(VisionResource):
     def __post_init__(self) -> None:
         if isinstance(self.text_region, dict):
             self.text_region = BoundingBox(**self.text_region)
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TextRegion:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            text=resource["text"],
+            text_region=BoundingBox.load(resource["textRegion"]),
+            confidence=resource.get("confidence"),
+        )
 
 
 @dataclass
@@ -59,6 +98,16 @@ class AssetLink(VisionResource):
         if isinstance(self.asset_ref, dict):
             self.asset_ref = CdfResourceRef(**self.asset_ref)
 
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> AssetLink:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            text=resource["text"],
+            text_region=BoundingBox.load(resource["textRegion"]),
+            asset_ref=CdfResourceRef.load(resource["assetRef"]),
+            confidence=resource.get("confidence"),
+        )
+
 
 @dataclass
 class KeypointCollection(VisionResource):
@@ -73,6 +122,24 @@ class KeypointCollection(VisionResource):
         if isinstance(self.keypoints, dict):
             self.keypoints = {k: Keypoint(**v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
 
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            label=resource["label"],
+            keypoints={k: Keypoint.load(v) for k, v in resource["keypoints"].items()},
+            attributes=resource.get("attributes"),
+            confidence=resource.get("confidence"),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.attributes is not None:
+            dumped["attributes"] = {k: v.dump(camel_case=camel_case) for k, v in self.attributes.items()}
+        if self.keypoints is not None:
+            dumped["keypoints"] = {k: v.dump(camel_case=camel_case) for k, v in self.keypoints.items()}
+        return dumped
+
 
 @dataclass
 class KeypointCollectionWithObjectDetection(VisionResource):
@@ -84,3 +151,19 @@ class KeypointCollectionWithObjectDetection(VisionResource):
             self.object_detection = ObjectDetection(**self.object_detection)
         if isinstance(self.keypoint_collection, dict):
             self.keypoint_collection = KeypointCollection(**self.keypoint_collection)
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            object_detection=ObjectDetection.load(resource["objectDetection"], cognite_client),
+            keypoint_collection=KeypointCollection.load(resource["keypointCollection"], cognite_client),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.object_detection is not None:
+            dumped["objectDetection"] = self.object_detection.dump(camel_case=camel_case)
+        if self.keypoint_collection is not None:
+            dumped["keypointCollection"] = self.keypoint_collection.dump(camel_case=camel_case)
+        return dumped

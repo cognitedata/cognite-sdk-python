@@ -34,7 +34,7 @@ URL_PATH = "/someurl"
 RESPONSE = {"any": "ok"}
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def api_client_with_token_factory(cognite_client):
     return APIClient(
         ClientConfig(
@@ -50,7 +50,7 @@ def api_client_with_token_factory(cognite_client):
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def api_client_with_token(cognite_client):
     return APIClient(
         ClientConfig(
@@ -342,13 +342,15 @@ class TestStandardRetrieveMultiple:
         assert 400 == e.value.code
 
     def test_ids_all_None(self, api_client_with_token):
-        with pytest.raises(ValueError, match="No identifiers specified"):
-            api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(),
-            )
+        result = api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(),
+        )
+
+        assert isinstance(result, SomeResourceList)
+        assert len(result) == 0
 
     def test_single_id_not_found(self, api_client_with_token, rsps):
         rsps.add(
@@ -576,7 +578,7 @@ class TestStandardList:
             elif len(resource_chunk) == 500:
                 total_resources += 500
             else:
-                raise AssertionError("resource chunk length was not 1000 or 500")
+                raise ValueError("resource chunk length was not 1000 or 500")
         assert 11500 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging_2589")

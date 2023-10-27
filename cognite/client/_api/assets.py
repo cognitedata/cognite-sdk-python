@@ -517,7 +517,7 @@ class AssetsAPI(APIClient):
         """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
+            path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -1231,7 +1231,7 @@ class _AssetHierarchyCreator:
     ) -> _TaskResult:
         try:
             resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
-            successful = list(map(Asset._load, resp.json()["items"]))
+            successful = list(map(Asset.load, resp.json()["items"]))
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
             self._set_latest_exception(err)
@@ -1279,7 +1279,7 @@ class _AssetHierarchyCreator:
     def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
         try:
             resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
-            updated = [Asset._load(item) for item in resp.json()["items"]]
+            updated = [Asset.load(item) for item in resp.json()["items"]]
             self._set_latest_exception(None)  # Update worked, so we hide exception
             return updated
         except Exception as err:

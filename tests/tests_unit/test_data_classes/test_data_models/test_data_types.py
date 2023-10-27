@@ -1,8 +1,10 @@
 import pytest
 
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     DirectRelationReference,
+    Float32,
     PropertyType,
 )
 
@@ -41,3 +43,11 @@ class TestDirectRelation:
         data = {"type": "direct", "container": {"space": "mySpace", "externalId": "myId", "type": "container"}}
 
         assert data == DirectRelation.load(data).dump(camel_case=True)
+
+
+class TestUnitSupport:
+    def test_load_dump_property_with_unit(self) -> None:
+        data = {"type": "float32", "list": False, "unit": {"space": "cdf_units", "externalId": "temperature:celsius"}}
+        property = Float32.load(data)
+        assert isinstance(property.unit, NodeId)
+        assert data == property.dump(camel_case=True)

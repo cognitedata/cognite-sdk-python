@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import inspect
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
-from cognite.client.data_classes.data_modeling.ids import ContainerId
+from typing_extensions import Self
+
+from cognite.client.data_classes.data_modeling.ids import ContainerId, NodeId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
@@ -46,33 +48,45 @@ class PropertyType(ABC):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self._type
+        for key in list(output.keys()):
+            if output[key] is None:
+                output.pop(key)
         output = rename_and_exclude_keys(output, aliases=_PROPERTY_ALIAS_INV)
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls, data: dict) -> PropertyType:
+    def load(cls, data: dict) -> Self:
         if "type" not in data:
             raise ValueError("Property types are required to have a type")
         type_ = data["type"]
         data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
 
         if type_cls := _TYPE_LOOKUP.get(type_):
+            if issubclass(type_cls, LoadablePropertyType):
+                return cast(Self, type_cls.load(data))
             try:
-                return type_cls(**data)
+                return cast(Self, type_cls(**data))
             except TypeError:
                 not_supported = set(data).difference(inspect.signature(type_cls).parameters) - {"type"}
                 logger.warning(
                     f"For '{type_cls.__name__}', the following properties are not yet supported in the SDK (ignored): "
                     f"{not_supported}. Try updating to the latest SDK version!"
                 )
-                return type_cls(**{k: v for k, v in data.items() if k not in not_supported})
+                return cast(Self, type_cls(**{k: v for k, v in data.items() if k not in not_supported}))
 
         raise ValueError(f"Invalid type {type_}.")
 
 
 @dataclass
-class ListablePropertyType(PropertyType):
-    _type = "listable"
+class LoadablePropertyType(ABC):
+    @classmethod
+    @abstractmethod
+    def load(cls, data: dict) -> Self:
+        ...
+
+
+@dataclass
+class ListablePropertyType(PropertyType, ABC):
     is_list: bool = False
 
 
@@ -83,8 +97,8 @@ class Text(ListablePropertyType):
 
 
 @dataclass
-class Primitive(ListablePropertyType):
-    _type = "primitive"
+class Primitive(ListablePropertyType, ABC):
+    ...
 
 
 @dataclass
@@ -108,9 +122,21 @@ class Json(ListablePropertyType):
 
 
 @dataclass
-class ListablePropertyTypeWithUnit(ListablePropertyType):
-    _type = "listable_with_unit"
-    unit: str | None = None
+class ListablePropertyTypeWithUnit(ListablePropertyType, LoadablePropertyType, ABC):
+    unit: NodeId | None = None
+
+    @classmethod
+    def load(cls, data: dict) -> Self:
+        data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
+        unit = None
+        if (unit_raw := data.get("unit")) and isinstance(unit_raw, dict):
+            unit = NodeId.load(unit_raw)
+        elif unit_raw:
+            unit = unit_raw
+        return cls(
+            is_list=data["is_list"],
+            unit=unit,
+        )
 
 
 @dataclass
@@ -134,8 +160,8 @@ class Int64(ListablePropertyTypeWithUnit):
 
 
 @dataclass
-class CDFExternalIdReference(ListablePropertyType):
-    _type = "cdf_external_reference"
+class CDFExternalIdReference(ListablePropertyType, ABC):
+    ...
 
 
 @dataclass
@@ -154,25 +180,25 @@ class SequenceReference(CDFExternalIdReference):
 
 
 @dataclass
-class DirectRelation(PropertyType):
+class DirectRelation(PropertyType, LoadablePropertyType):
     _type = "direct"
     container: ContainerId | None = None
 
     def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)
-        if "container" in output and isinstance(output["container"], dict):
-            output["container"]["type"] = "container"
+        if "container" in output:
+            if isinstance(output["container"], dict):
+                output["container"]["type"] = "container"
+            elif output["container"] is None:
+                output.pop("container")
         return output
 
     @classmethod
-    def load(cls, data: dict) -> DirectRelation:
-        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        return output
+    def load(cls, data: dict) -> Self:
+        return cls(container=ContainerId.load(container) if (container := data.get("container")) else None)
 
 
-_TYPE_LOOKUP = {
+_TYPE_LOOKUP: dict[str, type[PropertyType]] = {
     "text": Text,
     "boolean": Boolean,
     "float32": Float32,
