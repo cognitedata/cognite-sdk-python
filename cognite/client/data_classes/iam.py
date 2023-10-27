@@ -71,9 +71,6 @@ class Group(CogniteResource):
 class GroupList(CogniteResourceList[Group]):
     _RESOURCE = Group
 
-    def as_write(self) -> GroupList:
-        return GroupList([g.as_write() for g in self.data])
-
 
 class SecurityCategory(CogniteResource):
     """No description.

@@ -98,6 +98,12 @@ class ExperimentsScope(Scope):
 
 
 @dataclass(frozen=True)
+class SpaceIDScope(Scope):
+    _scope_name = "spaceIdScope"
+    ids: list[str]
+
+
+@dataclass(frozen=True)
 class UnknownScope(Scope):
     """
     This class is used for scopes that are not implemented in this version of the SDK.
@@ -588,10 +594,10 @@ class DataModelInstancesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
+    _valid_scopes = frozenset({AllScope, SpaceIDScope})
     _capability_name = "dataModelInstancesAcl"
     actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
+    scope: AllScope | SpaceIDScope
 
 
 @dataclass
@@ -600,10 +606,10 @@ class DataModelsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    _valid_scopes = frozenset({AllScope})
+    _valid_scopes = frozenset({AllScope, SpaceIDScope})
     _capability_name = "dataModelsAcl"
     actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
+    scope: AllScope | SpaceIDScope
 
 
 @dataclass
