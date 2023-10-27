@@ -165,7 +165,7 @@ class FilesAPI(APIClient):
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
-        file_metadata = FileMetadata._load(returned_file_metadata)
+        file_metadata = FileMetadata.load(returned_file_metadata)
         return (file_metadata, upload_url)
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> FileMetadata | None:
@@ -585,7 +585,7 @@ class FilesAPI(APIClient):
                 code=upload_response.status_code,
             )
 
-        return FileMetadata._load(returned_file_metadata)
+        return FileMetadata.load(returned_file_metadata)
 
     def retrieve_download_urls(
         self,
@@ -822,7 +822,8 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        assert path.parent.is_dir(), f"{path.parent} is not a directory"
+        if not path.parent.is_dir():
+            raise NotADirectoryError(f"{path.parent} is not a directory")
         identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)

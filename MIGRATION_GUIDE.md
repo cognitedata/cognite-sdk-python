@@ -9,16 +9,46 @@ Changes are grouped as follows:
 - `Optional` for new, optional methods/features that you should be aware of - *and could take advantage of*
 
 ## From v6 to v7
+### Fixed
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+  `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+  with no easy way to add a prefix. Also, it no longer expands metadata by default.
+- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
+  the new parameter `convert_timestamps`.
 
 ### Changed
-
+- All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
+- `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
 - Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
   a single or multiple items (i.e. id -> ids).
+- Loading `ObjectDetection` attributes `.attributes`, `.bounding_box`, `.polygon` and
+  `.polyline` now returns types `dict[str, Attribute]`, `BoundingBox`,
+  `Polygon` and `Polyline` instead of `dicts`.
+- Loading `TextRegion` attribute `.text_region` now return `BoundingBox` instead of `dict`.
+- Loading `AssetLink` attribute `.text_region` and `.asset_ref` returns `BoundingBox` and `CdfResourceRef` instead of `dict`.
+- Loading `KeypointCollection` attributes `.keypoints` and `.attributes` return `dict[str, Keypoint]` and
+  `dict[str, Attribute]` instead of `dict`.
+- Loading `VisionExtractPredictions` the attributes `text_predictions`, `asset_tag_prediction`,
+  `industrial_object_prediction`, `people_predictions`, `personal_protective_equipment_predictions`,
+  `digital_gauge_predictions`, `dial_gauge_predictions`, `level_gauge_predictions`, `valve_predictions`
+   now returns `dict[str, TextRegion]`, `list[AssetLink]`, `list[ObjectDetection]`, `list[KeypoinpCollectionWithObjectDetection]` instead of `dict`.
+- Loading `FeatureParameters` the attributes `text_detection_parameters`, `asset_tag_detection_parameters`,
+  `industrial_object_prediction_parameters`, `personal_protective_equipment_parameters`,
+  `digital_gauge_parameters`, `dial_gauge_detection_parameters`, `level_gauge_parameters`, `valve_detection_parameters`
+   now returns `TextDetectionParameter`, `AssetTagDetectionParameters`, `PeopleDetectionParameters`,
+  `IndustrialObjectDetectionParameters`, `PersonalProtectiveEquimentDetectionParamters`, `DigitalGaugeDetection`,
+  `ValveDetection` instead of `dict`.
+- Loading `ExtractionPipeline` the attribute `.contacts` now returns `list[xtractionPipelineContact]` instead of `dict`.
+- Loading `GeospatialComputedResponse` the attribute `.items` now returns `GeospatialComputedItemList` instead of `list[dict]`.
+- Loading `Transformation` the attributes `.running_job`, `.last_finished_job`, `.blocked`, `.schedule` `.source_session`,
+  `.destination_session`, `.source_nonce`, `destination_nonce`, `.source_oidc_credentials`, `.destinatoin_oidc_credentials`
+  now returns `TransformationJob`, `TransformatoinBlockedInfo`, `TransformationSchedule`, `SessionDetails`, `NonceCredentials`
+  `OidcCredentials`, instead of `dict`s.
+- Loading `TransformationPreviewResuld` the attribute `.schema` now returns `TRansformationSchemaColumnList` instead of `list[dict]`.
+- Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
 
 ## From v5 to v6
-
 ### Removed
-
 - Removed support for legacy auth (API keys, service accounts, client.login.status()). Use OIDC to authenticate instead and use `client.iam.token.inspect()` instead of `login.status()`.
 - Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
 - Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
@@ -26,7 +56,6 @@ Changes are grouped as follows:
 - Removed the deprecated `external_id` attribute on `ExtractionPipelineRun`. This has been replaced with `extpipe_external_id`.
 
 ## From v4 to v5
-
 ### Dependency
 - Required dependency, `protobuf`.
 - Optional dependency, `numpy` (performance benefits, but requires refactoring).
