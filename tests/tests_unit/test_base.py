@@ -25,6 +25,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
+from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
 
 
@@ -266,6 +267,25 @@ class TestCogniteResource:
         )
 
         assert instance.dump() == instance.dump(camel_case=False)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_dump_correct_case(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(seed=3, cognite_client=cognite_mock_client_placeholder).create_instance(
+            cognite_resource_subclass
+        )
+
+        camel_dumped = instance.dump(camel_case=True)
+        snake_dumped = instance.dump(camel_case=False)
+
+        assert sorted(camel_dumped.keys()) == sorted(convert_all_keys_to_camel_case(camel_dumped).keys())
+        assert sorted(snake_dumped.keys()) == sorted(convert_all_keys_to_snake_case(snake_dumped).keys())
 
 
 class TestCogniteResourceList:
