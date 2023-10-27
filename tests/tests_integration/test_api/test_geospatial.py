@@ -544,27 +544,34 @@ class TestGeospatialAPI:
         res = cognite_client.geospatial.create_features(test_feature_type.external_id, fl)
         assert len(res) == 4
 
-    def test_aggregate(self, cognite_client, test_feature_type, test_features):
+    def test_aggregate__temperature_property_min_max(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["min", "max"],
+            output={
+                "min": {"min": {"property": "temperature"}},
+                "max": {"max": {"property": "temperature"}},
+            },
         )
         assert res[0].min == 3.4
         assert res[0].max == 23.4
 
+    def test_aggregate__range_gt_lt(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
             filter={"range": {"property": "temperature", "gt": 12.0, "lt": 13.0}},
-            property="temperature",
-            aggregates=["count"],
+            output={"count": {"count": {"property": "temperature"}}},
         )
         assert res[0].count == 1
 
+    def test_aggregate__temperature_property_min_max_groupby_xid(
+        self, cognite_client, test_feature_type, test_features
+    ):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["min", "max"],
+            output={
+                "min": {"min": {"property": "temperature"}},
+                "max": {"max": {"property": "temperature"}},
+            },
             group_by=["externalId"],
         )
         assert len(res) == 4
@@ -572,8 +579,7 @@ class TestGeospatialAPI:
     def test_aggregate_with_order_by(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["count"],
+            output={"count": {"count": {"property": "temperature"}}},
             group_by=["externalId"],
             order_by=[OrderSpec("externalId", "DESC")],
         )
@@ -581,8 +587,7 @@ class TestGeospatialAPI:
         external_ids.reverse()
         res_asc = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["count"],
+            output={"count": {"count": {"property": "temperature"}}},
             group_by=["externalId"],
             order_by=[OrderSpec("externalId", "ASC")],
         )
