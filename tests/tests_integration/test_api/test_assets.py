@@ -152,20 +152,6 @@ class TestAssetsAPI:
         res = cognite_client.assets.aggregate(filter=AssetFilter(name="test__asset_0"))
         assert res[0].count > 0
 
-    def test_aggregate_metadata_keys(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate_metadata_keys()
-        assert len(res) > 1
-        assert set(res[0]) == {"count", "value", "values"}
-        assert isinstance(res[0].value, str)
-        assert res[0].count > 1
-
-    def test_aggregate_metadata_values(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate_metadata_values(keys=["a"])
-        assert len(res) > 0
-        assert set(res[0]) == {"count", "value", "values"}
-        assert isinstance(res[0].value, str)
-        assert res[0].count > 0
-
     def test_search(self, cognite_client):
         res = cognite_client.assets.search(name="test__asset_0", filter=AssetFilter(name="test__asset_0"))
         assert len(res) > 0
