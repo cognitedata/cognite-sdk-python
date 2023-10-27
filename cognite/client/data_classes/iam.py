@@ -17,9 +17,9 @@ class Group(CogniteResource):
     """No description.
 
     Args:
-        name (str | None): Name of the group
+        name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability | dict[str, Any]] | None): No description.
+        capabilities (list[Capability] | None): No description.
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
@@ -29,9 +29,9 @@ class Group(CogniteResource):
 
     def __init__(
         self,
-        name: str | None = None,
+        name: str,
         source_id: str | None = None,
-        capabilities: list[Capability | dict[str, Any]] | None = None,
+        capabilities: list[Capability] | None = None,
         id: int | None = None,
         is_deleted: bool | None = None,
         deleted_time: int | None = None,
@@ -49,13 +49,10 @@ class Group(CogniteResource):
 
     def as_write(self) -> Self:
         """Returns a GroupUpdate object with the current values"""
-        capabilities: list[Capability | dict[str, Any]] | None = None
-        if self.capabilities is not None:
-            capabilities = [c.copy() if isinstance(c, dict) else c for c in self.capabilities]
         return type(self)(
             name=self.name,
             source_id=self.source_id,
-            capabilities=capabilities,
+            capabilities=self.capabilities,
             metadata=self.metadata and self.metadata.copy(),
         )
 

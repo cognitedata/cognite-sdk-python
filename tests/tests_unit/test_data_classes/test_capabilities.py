@@ -17,6 +17,9 @@ class TestCapabilities:
                     "scope": {"dataSetScope": {"dataSetIds": [1, 2, 3]}},
                 }
             },
+            {
+                "securityCategoriesAcl": {"actions": ["MemberOf", "List"], "scope": {"idscope": [1, 2, 3]}},
+            },
         ],
     )
     def test_load_dump(self, raw: dict[str, Any]) -> None:
