@@ -36,6 +36,7 @@ methods is `json` and `yaml` serializable.
 - All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
 - `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
+- The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
 
 
 ### Added
@@ -48,6 +49,7 @@ methods is `json` and `yaml` serializable.
 - Type annotation for `Geometry` attribute `coordinates`
 - In transformations, `NonceCredentials` was missing `load` method.
 - In transformations, `TransformationBlockedInfo` was missing `.dump` method
+- `capabilities` in `cognite.client.data_classes` with data classes for all CDF capabilities.
 
 ### Fixed
 - `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.

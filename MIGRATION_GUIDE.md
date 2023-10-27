@@ -44,6 +44,7 @@ Changes are grouped as follows:
   `OidcCredentials`, instead of `dict`s.
 - Loading `TransformationPreviewResuld` the attribute `.schema` now returns `TRansformationSchemaColumnList` instead of `list[dict]`.
 - Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
+- The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
 
 ## From v5 to v6
 ### Removed
