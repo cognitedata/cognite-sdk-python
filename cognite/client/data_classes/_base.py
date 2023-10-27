@@ -26,7 +26,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.exceptions import CogniteImportError, CogniteMissingClientError
 from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
@@ -136,7 +136,12 @@ class CogniteResource(_WithClientMixin):
         if isinstance(resource, dict):
             return fast_dict_load(cls, resource, cognite_client=cognite_client)
         elif isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
+            try:
+                yaml = local_import("yaml")
+                loaded = yaml.safe_load(resource)
+            except CogniteImportError:
+                loaded = json.loads(resource)
+            return cls.load(loaded, cognite_client=cognite_client)
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
