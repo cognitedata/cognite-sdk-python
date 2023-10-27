@@ -5,7 +5,19 @@ from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Sequence, TypeVar, Union, cast, final
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Iterator,
+    Sequence,
+    SupportsIndex,
+    TypeVar,
+    Union,
+    cast,
+    final,
+    overload,
+)
 
 from typing_extensions import TypeAlias
 
@@ -190,7 +202,12 @@ class Bucket:
 
 
 class Buckets(UserList):
-    def __init__(self, items: Collection) -> None:
+    def __init__(self, items: Collection[Any]) -> None:
+        if invalid := [item for item in items if not isinstance(item, Bucket)]:
+            raise TypeError(
+                f"All buckets for class {type(self).__name__!r}' must be of type "
+                f"{Bucket.__name__!r}, got {len(invalid)} items, first invalid of type {type(invalid[0])!r}."
+            )
         super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
 
     def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
@@ -203,6 +220,27 @@ class Buckets(UserList):
     @property
     def counts(self) -> list[int]:
         return [bucket.count for bucket in self.data]
+
+    # The following methods are needed for proper type hinting
+    def pop(self, i: int = -1) -> Bucket:
+        return super().pop(i)
+
+    def __iter__(self) -> Iterator[Bucket]:
+        return super().__iter__()
+
+    @overload
+    def __getitem__(self, item: SupportsIndex) -> Bucket:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Buckets:
+        ...
+
+    def __getitem__(self, item: SupportsIndex | slice) -> Bucket | Buckets:
+        value = self.data[item]
+        if isinstance(item, slice):
+            return type(self)(value)
+        return cast(Bucket, value)
 
 
 @final
