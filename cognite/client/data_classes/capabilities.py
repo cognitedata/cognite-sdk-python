@@ -408,21 +408,6 @@ class LabelsAcl(Capability):
 
 
 @dataclass
-class ModelHostingAcl(Capability):
-    _capability_name = "modelHostingAcl"
-
-    class Action(enum.Enum):
-        Read = "READ"
-        Write = "WRITE"
-
-    class Scope:
-        All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
-
-@dataclass
 class ProjectsAcl(Capability):
     _capability_name = "projectsAcl"
 
