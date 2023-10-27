@@ -50,6 +50,7 @@ methods is `json` and `yaml` serializable.
 - Type annotation for `Geometry` attribute `coordinates`
 - In transformations, `NonceCredentials` was missing `load` method.
 - In transformations, `TransformationBlockedInfo` was missing `.dump` method
+- Support for `YAML` in all `CogniteResource.load()` methods. 
 
 ### Fixed
 - `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.

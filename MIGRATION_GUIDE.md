@@ -46,6 +46,8 @@ Changes are grouped as follows:
   `OidcCredentials`, instead of `dict`s.
 - Loading `TransformationPreviewResuld` the attribute `.schema` now returns `TRansformationSchemaColumnList` instead of `list[dict]`.
 - Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
+- All resources not inheriting from `CogniteResource`, typically nested resource, no longer support `json` string in 
+  their `load` method. The `json` conversion is assumed to be done by the `CogniteClient.load` method.
 
 ## From v5 to v6
 ### Removed
