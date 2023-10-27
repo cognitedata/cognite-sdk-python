@@ -4,15 +4,22 @@ import os
 
 import pytest
 
-from cognite.client.data_classes import Group, SecurityCategory
+from cognite.client.data_classes import Group, GroupList, SecurityCategory
 from cognite.client.data_classes.capabilities import EventsAcl
 from cognite.client.utils._text import random_string
 
 
+@pytest.fixture(scope="session")
+def group_list(cognite_client) -> GroupList:
+    groups = cognite_client.iam.groups.list(all=True)
+    assert len(groups) > 0
+    return groups
+
+
 class TestGroupsAPI:
-    def test_list(self, cognite_client):
-        res = cognite_client.iam.groups.list(all=True)
-        assert len(res) > 0
+    def test_dump_load_group_list(self, group_list: GroupList) -> None:
+        loaded = GroupList.load(group_list.dump(camel_case=True))
+        assert group_list.dump() == loaded.dump()
 
     def test_create(self, cognite_client):
         metadata = {"haha": "blabla"}
@@ -21,7 +28,7 @@ class TestGroupsAPI:
             group = cognite_client.iam.groups.create(
                 Group(
                     name="bla",
-                    capabilities=[EventsAcl([EventsAcl.Action.Read], EventsAcl.Scope.AllScope())],
+                    capabilities=[EventsAcl([EventsAcl.Action.Read], EventsAcl.Scope.All())],
                     metadata=metadata,
                 )
             )

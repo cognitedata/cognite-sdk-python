@@ -122,7 +122,7 @@ class Capability(ABC):
     class Action(enum.Enum):
         ...
 
-    class Scope(enum.Enum):
+    class Scope:
         ...
 
     actions: Sequence
@@ -177,7 +177,7 @@ class AnalyticsAcl(Capability):
         Execute = "EXECUTE"
         List = "LIST"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -194,7 +194,7 @@ class AnnotationsAcl(Capability):
         Suggest = "SUGGEST"
         Review = "REVIEW"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -209,7 +209,7 @@ class AssetsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -226,7 +226,7 @@ class DataSetsAcl(Capability):
         Write = "WRITE"
         Owner = "OWNER"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -254,7 +254,7 @@ class EntityMatchingAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -269,7 +269,7 @@ class EventsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -285,7 +285,7 @@ class ExtractionPipelinesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         ID = IDScope
         DataSet = DataSetScope
@@ -302,7 +302,7 @@ class ExtractionsRunAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
         ExtractionPipeline = ExtractionPipelineScope
@@ -319,7 +319,7 @@ class FilesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -335,7 +335,7 @@ class FunctionsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -350,7 +350,7 @@ class GeospatialAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -365,7 +365,7 @@ class GeospatialCrsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -383,7 +383,7 @@ class GroupsAcl(Capability):
         List = "LIST"
         Update = "UPDATE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         CurrentUser = CurrentUserScope
 
@@ -399,7 +399,7 @@ class LabelsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -415,7 +415,7 @@ class ModelHostingAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -432,7 +432,7 @@ class ProjectsAcl(Capability):
         List = "LIST"
         Update = "UPDATE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -448,7 +448,7 @@ class RawAcl(Capability):
         Write = "WRITE"
         List = "LIST"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         Table = TableScope
 
@@ -464,7 +464,7 @@ class RelationshipsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -482,7 +482,7 @@ class RoboticsAcl(Capability):
         Create = "CREATE"
         Update = "UPDATE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -501,7 +501,7 @@ class SecurityCategoriesAcl(Capability):
         Update = "UPDATE"
         Delete = "DELETE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         ID = IDScope
 
@@ -517,7 +517,7 @@ class SeismicAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -532,7 +532,7 @@ class SequencesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -549,7 +549,7 @@ class SessionsAcl(Capability):
         Create = "CREATE"
         Delete = "DELETE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -566,7 +566,7 @@ class ThreeDAcl(Capability):
         Update = "UPDATE"
         Delete = "DELETE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -582,7 +582,7 @@ class TimeSeriesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
         ID = IDScope
@@ -600,7 +600,7 @@ class TimeSeriesSubscriptionsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -615,7 +615,7 @@ class TransformationsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         DataSet = DataSetScope
 
@@ -631,7 +631,7 @@ class TypesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -646,7 +646,7 @@ class WellsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -660,7 +660,7 @@ class ExperimentsAcl(Capability):
     class Action(enum.Enum):
         Use = "USE"
 
-    class Scope(enum.Enum):
+    class Scope:
         ...
 
     actions: Sequence[Action]
@@ -674,7 +674,7 @@ class TemplateGroupsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -689,7 +689,7 @@ class TemplateInstancesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
@@ -704,7 +704,7 @@ class DataModelInstancesAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
 
@@ -720,7 +720,7 @@ class DataModelsAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
 
@@ -736,7 +736,7 @@ class WorkflowOrchestrationAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
-    class Scope(enum.Enum):
+    class Scope:
         All = AllScope
 
     actions: Sequence[Action]
