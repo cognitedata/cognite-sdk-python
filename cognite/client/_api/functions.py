@@ -63,11 +63,11 @@ def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identif
     raise ValueError(f'Function with external ID "{primitive}" is not found')
 
 
-def _get_function_identifier(function_id: int | None) -> Identifier:
-    identifier = IdentifierSequence.load(function_id, id_name="function")
+def _get_function_identifier(function_id: int | None, function_external_id: str | None) -> Identifier:
+    identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
     if identifier.is_singleton():
         return identifier[0]
-    raise AssertionError("Argument function_id must be specified")
+    raise AssertionError("Exactly one of function_id and function_external_id must be specified")
 
 
 class FunctionsAPI(APIClient):
@@ -729,6 +729,7 @@ class FunctionCallsAPI(APIClient):
     def list(
         self,
         function_id: int | None = None,
+        function_external_id: str | None = None,
         status: str | None = None,
         schedule_id: int | None = None,
         start_time: dict[str, int] | None = None,
@@ -739,6 +740,7 @@ class FunctionCallsAPI(APIClient):
 
         Args:
             function_id (int | None): ID of the function on which the calls were made.
+            function_external_id (str | None): External ID of the function on which the calls were made.
             status (str | None): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
             schedule_id (int | None): Schedule id from which the call belongs (if any).
             start_time (dict[str, int] | None): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -764,7 +766,7 @@ class FunctionCallsAPI(APIClient):
                 >>> calls = func.list_calls()
 
         """
-        identifier = _get_function_identifier(function_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
         filter = FunctionCallsFilter(
             status=status, schedule_id=schedule_id, start_time=start_time, end_time=end_time
@@ -779,12 +781,15 @@ class FunctionCallsAPI(APIClient):
             list_cls=FunctionCallList,
         )
 
-    def retrieve(self, call_id: int, function_id: int | None = None) -> FunctionCall | None:
+    def retrieve(
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+    ) -> FunctionCall | None:
         """`Retrieve a single function call by id. <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.
             function_id (int | None): ID of the function on which the call was made.
+            function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
             FunctionCall | None: Requested function call or None if either call ID or function identifier is not found.
@@ -804,7 +809,7 @@ class FunctionCallsAPI(APIClient):
                 >>> func = c.functions.retrieve(id=1)
                 >>> call = func.retrieve_call(id=2)
         """
-        identifier = _get_function_identifier(function_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH.format(function_id)
@@ -816,12 +821,15 @@ class FunctionCallsAPI(APIClient):
             list_cls=FunctionCallList,
         )
 
-    def get_response(self, call_id: int, function_id: int | None = None) -> dict | None:
+    def get_response(
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+    ) -> dict | None:
         """`Retrieve the response from a function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_
 
         Args:
             call_id (int): ID of the call.
             function_id (int | None): ID of the function on which the call was made.
+            function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
             dict | None: Response from the function call.
@@ -842,18 +850,21 @@ class FunctionCallsAPI(APIClient):
                 >>> response = call.get_response()
 
         """
-        identifier = _get_function_identifier(function_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_RESPONSE.format(function_id, call_id)
         return self._get(resource_path).json().get("response")
 
-    def get_logs(self, call_id: int, function_id: int | None = None) -> FunctionCallLog:
+    def get_logs(
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+    ) -> FunctionCallLog:
         """`Retrieve logs for function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.
             function_id (int | None): ID of the function on which the call was made.
+            function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
             FunctionCallLog: Log for the function call.
@@ -874,7 +885,7 @@ class FunctionCallsAPI(APIClient):
                 >>> logs = call.get_logs()
 
         """
-        identifier = _get_function_identifier(function_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
@@ -915,6 +926,7 @@ class FunctionSchedulesAPI(APIClient):
         self,
         name: str | None = None,
         function_id: int | None = None,
+        function_external_id: str | None = None,
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -924,6 +936,7 @@ class FunctionSchedulesAPI(APIClient):
         Args:
             name (str | None): Name of the function schedule.
             function_id (int | None): ID of the function the schedules are linked to.
+            function_external_id (str | None): External ID of the function the schedules are linked to.
             created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             cron_expression (str | None): Cron expression.
             limit (int | None): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
@@ -947,9 +960,9 @@ class FunctionSchedulesAPI(APIClient):
                 >>> schedules = func.list_schedules(limit=None)
 
         """
-        if function_id:
+        if function_id or function_external_id:
             try:
-                IdentifierSequence.load(ids=function_id).assert_singleton()
+                IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
             except ValueError:
                 raise AssertionError(
                     "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
@@ -961,6 +974,7 @@ class FunctionSchedulesAPI(APIClient):
         filter = FunctionSchedulesFilter(
             name=name,
             function_id=function_id,
+            function_external_id=function_external_id,
             created_time=created_time,
             cron_expression=cron_expression,
         ).dump(camel_case=True)
@@ -968,6 +982,7 @@ class FunctionSchedulesAPI(APIClient):
 
         return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    # TODO: Major version 7, remove 'function_external_id' which only worked when using API-keys.
     def create(
         self,
         name: str,
@@ -1024,7 +1039,7 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
-        _get_function_identifier(function_id)
+        _get_function_identifier(function_id, function_external_id)
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
         )
@@ -1034,6 +1049,7 @@ class FunctionSchedulesAPI(APIClient):
                     "name": name,
                     "description": description,
                     "functionId": function_id,
+                    "functionExternalId": function_external_id,
                     "cronExpression": cron_expression,
                     "nonce": nonce,
                 }
