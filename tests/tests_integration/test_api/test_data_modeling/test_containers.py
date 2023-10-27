@@ -215,7 +215,7 @@ class TestContainersAPI:
             "indexes": {"nameIdx": {"properties": ["name"], "indexType": "btree"}},
         }
 
-        container = ContainerApply._load(data)
+        container = ContainerApply.load(data)
 
         try:
             created = cognite_client.data_modeling.containers.apply(container)
