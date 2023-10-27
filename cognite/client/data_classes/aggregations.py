@@ -203,11 +203,6 @@ class Bucket:
 
 class Buckets(UserList):
     def __init__(self, items: Collection[Any]) -> None:
-        if invalid := [item for item in items if not isinstance(item, Bucket)]:
-            raise TypeError(
-                f"All buckets for class {type(self).__name__!r}' must be of type "
-                f"{Bucket.__name__!r}, got {len(invalid)} items, first invalid of type {type(invalid[0])!r}."
-            )
         super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
 
     def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
