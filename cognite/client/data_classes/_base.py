@@ -21,13 +21,14 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    final,
     overload,
 )
 
 from typing_extensions import TypeAlias
 
-from cognite.client.exceptions import CogniteImportError, CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
+from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
@@ -130,18 +131,23 @@ class CogniteResource(_WithClientMixin):
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
+    @final
+    def load(
+        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+    ) -> T_CogniteResource:
+        """Load a resource from a YAML/JSON string or dict."""
+        if isinstance(resource, str):
+            resource = load_yaml_or_json(resource)
+        return cls._load(resource, cognite_client=cognite_client)
+
+    @classmethod
     def _load(
         cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
         if isinstance(resource, dict):
             return fast_dict_load(cls, resource, cognite_client=cognite_client)
         elif isinstance(resource, str):
-            try:
-                yaml = local_import("yaml")
-                loaded = yaml.safe_load(resource)
-            except CogniteImportError:
-                loaded = json.loads(resource)
-            return cls._load(loaded, cognite_client=cognite_client)
+            return cls._load(resource, cognite_client=cognite_client)
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(

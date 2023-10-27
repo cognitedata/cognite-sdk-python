@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import json
 import math
 import numbers
 import platform
@@ -18,6 +19,7 @@ from typing import (
 )
 from urllib.parse import quote
 
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -29,6 +31,7 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.data_classes._base import T_CogniteResource
+    from cognite.client.exceptions import CogniteImportError
 
 
 T = TypeVar("T")
@@ -63,6 +66,14 @@ def fast_dict_load(
         except KeyError:
             pass
     return instance
+
+
+def load_yaml_or_json(resource: str) -> dict[str, Any]:
+    try:
+        yaml = local_import("yaml")
+        return yaml.safe_load(resource)
+    except CogniteImportError:
+        return json.loads(resource)
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
