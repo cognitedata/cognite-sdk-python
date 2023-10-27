@@ -13,12 +13,12 @@ class TestCapabilities:
         [
             {
                 "assetsAcl": {
-                    "actions": ["Read"],
-                    "scope": {"dataSetScope": {"dataSetIds": [1, 2, 3]}},
+                    "actions": ["READ"],
+                    "scope": {"datasetScope": {"dataSetIds": [1, 2, 3]}},
                 }
             },
             {
-                "securityCategoriesAcl": {"actions": ["MemberOf", "List"], "scope": {"idscope": [1, 2, 3]}},
+                "securityCategoriesAcl": {"actions": ["MEMBEROF", "LIST"], "scope": {"idScope": [1, 2, 3]}},
             },
         ],
     )

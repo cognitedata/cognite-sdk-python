@@ -47,13 +47,18 @@ class Group(CogniteResource):
         self.metadata = metadata
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def as_write(self) -> Self:
-        """Returns a GroupUpdate object with the current values"""
-        return type(self)(
-            name=self.name,
-            source_id=self.source_id,
-            capabilities=self.capabilities,
-            metadata=self.metadata and self.metadata.copy(),
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            name=resource["name"],
+            source_id=resource.get("sourceId"),
+            capabilities=[Capability.load(c) for c in resource.get("capabilities", [])],
+            id=resource.get("id"),
+            is_deleted=resource.get("isDeleted"),
+            deleted_time=resource.get("deletedTime"),
+            metadata=resource.get("metadata"),
+            cognite_client=cognite_client,
         )
 
 
