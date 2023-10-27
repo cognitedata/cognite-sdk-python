@@ -28,7 +28,8 @@ methods is `json` and `yaml` serializable.
 * The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
 * The `client.sequences.data.retrieve` method has changed signature: 
   The parameter `columns_external_id` is renamed `columns`, the parameters `id` and `external_id` have 
-  been replaced by `id_or_external_id`. This is to better match the API and have a consistent overload implementation.
+  been moved to the beginning of the signature. This is to better match the API and have a consistent overload 
+  implementation.
 * The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
   backwards compatibility, but will be removed in the next major version. However, all API methods now return
   `SequenceRows` instead of `SequenceData`.
