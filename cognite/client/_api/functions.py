@@ -982,13 +982,11 @@ class FunctionSchedulesAPI(APIClient):
 
         return FunctionSchedulesList.load(res.json()["items"], cognite_client=self._cognite_client)
 
-    # TODO: Major version 7, remove 'function_external_id' which only worked when using API-keys.
     def create(
         self,
         name: str,
         cron_expression: str,
-        function_id: int | None = None,
-        function_external_id: str | None = None,
+        function_id: int,
         client_credentials: dict | ClientCredentials | None = None,
         description: str = "",
         data: dict | None = None,
@@ -998,9 +996,8 @@ class FunctionSchedulesAPI(APIClient):
         Args:
             name (str): Name of the schedule.
             cron_expression (str): Cron expression.
-            function_id (int | None): Id of the function. This is required if the schedule is created with client_credentials.
-            function_external_id (str | None): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
-            client_credentials (dict | ClientCredentials | None): (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials: client_id client_secret
+            function_id (int): Id of the function to attach the schedule to.
+            client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
 
@@ -1041,27 +1038,20 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
-        _get_function_identifier(function_id, function_external_id)
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
         )
-        body: dict[str, list[dict[str, str | int | None | dict]]] = {
-            "items": [
-                {
-                    "name": name,
-                    "description": description,
-                    "functionId": function_id,
-                    "functionExternalId": function_external_id,
-                    "cronExpression": cron_expression,
-                    "nonce": nonce,
-                }
-            ]
+        item = {
+            "name": name,
+            "description": description,
+            "functionId": function_id,
+            "cronExpression": cron_expression,
+            "nonce": nonce,
         }
-
         if data:
-            body["items"][0]["data"] = data
+            item["data"] = data
 
-        res = self._post(self._RESOURCE_PATH, json=body)
+        res = self._post(self._RESOURCE_PATH, json={"items": [item]})
         return FunctionSchedule.load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:

@@ -9,12 +9,32 @@ Changes are grouped as follows:
 - `Optional` for new, optional methods/features that you should be aware of - *and could take advantage of*
 
 ## From v6 to v7
-### Fixed
+### Functionality
+- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
+  the new parameter `convert_timestamps`.
+
+### Deprecated
+- The Templates API is deprecated, and will be removed in a future version. Please migrate to Data Modeling.
+  Read more at: https://docs.cognite.com/cdf/data_modeling/
+
+### Removed
+- Deprecated method `aggregate_metadata_keys` on AssetsAPI. Update your query from
+  `aggregate_metadata_keys(filter=my_filter)` to `aggregate_unique_properties("metadata", filter=my_filter)`.
+- Deprecated method `aggregate_metadata_values` on AssetsAPI. Update your query from
+  `aggregate_metadata_values(keys=["country"], filter=my_filter)` to
+  `aggregate_unique_values(["metadata", "country"], filter=my_filter)`.
+- Deprecated method `update_feature_types` on GeospatialAPI, use `patch_feature_types` instead.
+
+### Function Signature
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
   `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
   with no easy way to add a prefix. Also, it no longer expands metadata by default.
-- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
-  the new parameter `convert_timestamps`.
+- Removed parameters `property` and `aggregates` for method `aggregate_unique_values` on GeospatialAPI, use the
+  `output` parameter instead.
+- Removed parameter `fields` for method `aggregate_unique_values` on EventsAPI, use the other aggregate-prefixed
+  methods instead.
+- Removed parameter `function_external_id` for method `create` on FunctionSchedulesAPI (function_id has been
+  required since the deprecation of API keys).
 
 ### Changed
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
@@ -22,8 +42,7 @@ Changes are grouped as follows:
 - Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
   a single or multiple items (i.e. id -> ids).
 - Loading `ObjectDetection` attributes `.attributes`, `.bounding_box`, `.polygon` and
-  `.polyline` now returns types `dict[str, Attribute]`, `BoundingBox`,
-  `Polygon` and `Polyline` instead of `dicts`.
+  `.polyline` now returns types `dict[str, Attribute]`, `BoundingBox`, `Polygon` and `Polyline` instead of `dicts`.
 - Loading `TextRegion` attribute `.text_region` now return `BoundingBox` instead of `dict`.
 - Loading `AssetLink` attribute `.text_region` and `.asset_ref` returns `BoundingBox` and `CdfResourceRef` instead of `dict`.
 - Loading `KeypointCollection` attributes `.keypoints` and `.attributes` return `dict[str, Keypoint]` and
@@ -31,20 +50,20 @@ Changes are grouped as follows:
 - Loading `VisionExtractPredictions` the attributes `text_predictions`, `asset_tag_prediction`,
   `industrial_object_prediction`, `people_predictions`, `personal_protective_equipment_predictions`,
   `digital_gauge_predictions`, `dial_gauge_predictions`, `level_gauge_predictions`, `valve_predictions`
-   now returns `dict[str, TextRegion]`, `list[AssetLink]`, `list[ObjectDetection]`, `list[KeypoinpCollectionWithObjectDetection]` instead of `dict`.
+   now returns `dict[str, TextRegion]`, `list[AssetLink]`, `list[ObjectDetection]`, `list[KeypointCollectionWithObjectDetection]` instead of `dict`.
 - Loading `FeatureParameters` the attributes `text_detection_parameters`, `asset_tag_detection_parameters`,
   `industrial_object_prediction_parameters`, `personal_protective_equipment_parameters`,
   `digital_gauge_parameters`, `dial_gauge_detection_parameters`, `level_gauge_parameters`, `valve_detection_parameters`
    now returns `TextDetectionParameter`, `AssetTagDetectionParameters`, `PeopleDetectionParameters`,
-  `IndustrialObjectDetectionParameters`, `PersonalProtectiveEquimentDetectionParamters`, `DigitalGaugeDetection`,
+  `IndustrialObjectDetectionParameters`, `PersonalProtectiveEquimentDetectionParameters`, `DigitalGaugeDetection`,
   `ValveDetection` instead of `dict`.
-- Loading `ExtractionPipeline` the attribute `.contacts` now returns `list[xtractionPipelineContact]` instead of `dict`.
+- Loading `ExtractionPipeline` the attribute `.contacts` now returns `list[ExtractionPipelineContact]` instead of `dict`.
 - Loading `GeospatialComputedResponse` the attribute `.items` now returns `GeospatialComputedItemList` instead of `list[dict]`.
 - Loading `Transformation` the attributes `.running_job`, `.last_finished_job`, `.blocked`, `.schedule` `.source_session`,
-  `.destination_session`, `.source_nonce`, `destination_nonce`, `.source_oidc_credentials`, `.destinatoin_oidc_credentials`
-  now returns `TransformationJob`, `TransformatoinBlockedInfo`, `TransformationSchedule`, `SessionDetails`, `NonceCredentials`
+  `.destination_session`, `.source_nonce`, `destination_nonce`, `.source_oidc_credentials`, `.destination_oidc_credentials`
+  now returns `TransformationJob`, `TransformationBlockedInfo`, `TransformationSchedule`, `SessionDetails`, `NonceCredentials`
   `OidcCredentials`, instead of `dict`s.
-- Loading `TransformationPreviewResuld` the attribute `.schema` now returns `TRansformationSchemaColumnList` instead of `list[dict]`.
+- Loading `TransformationPreviewResult` the attribute `.schema` now returns `TransformationSchemaColumnList` instead of `list[dict]`.
 - Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
 
 ## From v5 to v6

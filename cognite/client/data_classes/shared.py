@@ -53,20 +53,6 @@ class AggregateUniqueValuesResult(AggregateResult):
         self.value = value
 
 
-class AggregateBucketResult(AggregateResult):
-    """Aggregation group
-
-    Args:
-        count (int | None): Size of the bucket
-        value (int | str | None): A unique value for the bucket
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, value: int | str | None = None, **kwargs: Any) -> None:
-        super().__init__(count=count, value=value, **kwargs)
-        self.value = value
-
-
 class GeometryFilter(dict):
     """Represents the points, curves and surfaces in the coordinate space.
 

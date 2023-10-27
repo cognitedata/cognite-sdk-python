@@ -65,22 +65,6 @@ class PropertyAndSearchSpec:
         self.search_spec = search_spec
 
 
-class FeatureTypeUpdate:
-    """A representation of a feature type update in the geospatial api."""
-
-    def __init__(
-        self,
-        external_id: str | None = None,
-        add: PropertyAndSearchSpec | None = None,
-        remove: PropertyAndSearchSpec | None = None,
-        cognite_client: CogniteClient | None = None,
-    ) -> None:
-        self.external_id = external_id
-        self.add = add if add is not None else PropertyAndSearchSpec()
-        self.remove = remove if remove is not None else PropertyAndSearchSpec()
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-
 @dataclasses.dataclass
 class Patches:
     add: dict[str, Any] | None = None
@@ -92,10 +76,6 @@ class FeatureTypePatch:
     external_id: str | None = None
     property_patches: Patches | None = None
     search_spec_patches: Patches | None = None
-
-
-class FeatureTypeUpdateList:
-    _RESOURCE = FeatureTypeUpdate
 
 
 class Feature(CogniteResource):

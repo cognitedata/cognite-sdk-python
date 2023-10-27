@@ -6,7 +6,6 @@ import itertools
 import math
 import operator as op
 import threading
-import warnings
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
@@ -46,7 +45,6 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, SortableAssetProperty
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import classify_error, execute_tasks, get_executor
@@ -267,62 +265,6 @@ class AssetsAPI(APIClient):
         """
         return self._aggregate(filter=filter, cls=AssetAggregate)
 
-    def aggregate_metadata_keys(self, filter: AssetFilter | dict | None = None) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Note:
-            In the case of text fields, the values are aggregated in a case-insensitive manner
-
-        Args:
-            filter (AssetFilter | dict | None): Filter on assets with strict matching.
-
-        Returns:
-            Sequence[AggregateBucketResult]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_by_prefix = c.assets.aggregate_metadata_keys(filter={"external_id_prefix": "prefix"})
-        """
-        warnings.warn(
-            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
-        )
-        return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
-
-    def aggregate_metadata_values(
-        self, keys: Sequence[str], filter: AssetFilter | dict | None = None
-    ) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Note:
-            In the case of text fields, the values are aggregated in a case-insensitive manner
-
-        Args:
-            keys (Sequence[str]): Metadata key(s) to apply the aggregation on. Currently supports exactly one key per request.
-            filter (AssetFilter | dict | None): Filter on assets with strict matching.
-
-        Returns:
-            Sequence[AggregateBucketResult]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_by_prefix = c.assets.aggregate_metadata_values(
-                ...     keys=["someKey"],
-                ...     filter={"external_id_prefix": "prefix"}
-                ... )
-        """
-        warnings.warn(
-            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
-        )
-        return self._aggregate(filter=filter, aggregate="metadataValues", keys=keys, cls=AggregateBucketResult)
-
     def aggregate_count(
         self,
         property: AssetPropertyLike | None = None,
@@ -454,6 +396,9 @@ class AssetsAPI(APIClient):
     ) -> UniqueResultList:
         """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
+
         Args:
             property (AssetPropertyLike): The property to group by.
             advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
@@ -515,6 +460,9 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].

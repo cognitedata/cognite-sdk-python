@@ -21,16 +21,19 @@ Changes are grouped as follows
 This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example,
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
-methods is `json` and `yaml` serializable.
+methods are `json` and `yaml` serializable.
 
-### Fixed
-- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
-  `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
-  with no easy way to add a prefix. Also, it no longer expands metadata by default.
+### Added
 - `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
   the new parameter `convert_timestamps`.
 
+### Deprecated
+- The Templates API (migrate to Data Modeling).
+
 ### Changed
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+`expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+with no easy way to add a prefix. Also, it no longer expands metadata by default.
 - The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
 - The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
 - All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
@@ -40,16 +43,20 @@ methods is `json` and `yaml` serializable.
   a single or multiple items (i.e. id -> ids).
 
 ### Added
-- Deprecation warning for all Templates API methods.
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
-- Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization`.
 - Missing `dump` and `load` methods for `ClientCredentials`.
 - Literal annotation for `source_type` and `target_type` in `Relationship`
-- Type annotation for `SequenceData` attribute `rows`.
-- Type annotation for `Geometry` attribute `coordinates`
 - In transformations, `NonceCredentials` was missing `load` method.
 - In transformations, `TransformationBlockedInfo` was missing `.dump` method
+
+### Removed
+- Deprecated methods `aggregate_metadata_keys` and `aggregate_metadata_values` on AssetsAPI.
+- Deprecated method `update_feature_types` on GeospatialAPI.
+- Parameters `property` and `aggregates` for method `aggregate_unique_values` on GeospatialAPI.
+- Parameter `fields` for method `aggregate_unique_values` on EventsAPI.
+- Parameter `function_external_id` for method `create` on FunctionSchedulesAPI (function_id has been required
+  since the deprecation of API keys).
 
 ### Fixed
 - `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
@@ -64,8 +71,8 @@ methods is `json` and `yaml` serializable.
 - `GeospatialComputedResponse.dump` attribute `items` was not `yaml` serializable
 - `Relationship.dump` was not `json` serializable.
 - `Geometry.dump` was not `json` serializable.
-- In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load `errors`
-  `GraphQlError`.
+- In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load
+  `errors` `GraphQlError`.
 - `ThreeDModelRevision` attribute `camera` was not dumped as `yaml` serializable and
   not loaded as `RevisionCameraProperties`.
 - `ThreeDNode` attribute `bounding_box` was not dumped as `yaml` serializable and
@@ -137,6 +144,7 @@ endpoints are not idempotent.
 ## [6.35.0] - 2023-10-25
 ### Added
 - Support for `through` on node result set expressions.
+
 ### Fixed
 - `unit` on properties in data modeling. This was typed as a string, but it is in fact a direct relation.
 
