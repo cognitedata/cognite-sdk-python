@@ -9,10 +9,10 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionBatch,
     DataPointSubscriptionCreate,
     DatapointSubscriptionList,
-    DatapointSubscriptionMemberList,
     DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
     TimeSeriesID,
+    TimeSeriesIDList,
     _DatapointSubscriptionBatchWithPartitions,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -129,9 +129,7 @@ class DatapointsSubscriptionAPI(APIClient):
         else:
             return None
 
-    def list_member_time_series(
-        self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ
-    ) -> DatapointSubscriptionMemberList:
+    def list_member_time_series(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> TimeSeriesIDList:
         """`List time series in a subscription <https://api-docs.cognite.com/20230101-beta/tag/Data-point-subscriptions/operation/listSubscriptionMembers>`_
 
         Retrieve a list of time series (IDs) that the subscription is currently retrieving updates from
@@ -141,7 +139,7 @@ class DatapointsSubscriptionAPI(APIClient):
             limit (int | None): Maximum number of time series to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            DatapointSubscriptionMemberList: List of time series in the subscription.
+            TimeSeriesIDList: List of time series in the subscription.
 
         Examples:
 
@@ -156,7 +154,7 @@ class DatapointsSubscriptionAPI(APIClient):
         return self._list(
             method="GET",
             limit=limit,
-            list_cls=DatapointSubscriptionMemberList,
+            list_cls=TimeSeriesIDList,
             resource_cls=TimeSeriesID,
             resource_path="/timeseries/subscriptions/members",
             other_params={"externalId": external_id},

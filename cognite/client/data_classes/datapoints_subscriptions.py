@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
     T_CogniteResource,
@@ -361,7 +362,7 @@ class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
 
-class DatapointSubscriptionMemberList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
+class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
     _RESOURCE = TimeSeriesID
 
 
