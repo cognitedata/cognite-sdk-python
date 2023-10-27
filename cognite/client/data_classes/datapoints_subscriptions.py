@@ -361,7 +361,7 @@ class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
 
-class DatapointSubscriptionMemberList(CogniteResourceList[TimeSeriesID]):
+class DatapointSubscriptionMemberList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
     _RESOURCE = TimeSeriesID
 
 
