@@ -185,7 +185,11 @@ class Sequence(CogniteResource):
         Returns:
             SequenceRows: List of sequence data.
         """
-        return self._cognite_client.sequences.rows.retrieve(self.id, self.external_id, start=start, end=end)
+        if self.external_id:
+            return self._cognite_client.sequences.rows.retrieve(self.external_id, start=start, end=end)
+        elif self.id is not None:
+            return cast(SequenceRows, self._cognite_client.sequences.rows.retrieve(id=self.id, start=start, end=end))
+        raise ValueError("Sequence must have either id or external_id set")
 
     @property
     def column_external_ids(self) -> list[str]:

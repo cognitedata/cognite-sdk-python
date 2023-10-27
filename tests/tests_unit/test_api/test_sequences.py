@@ -433,7 +433,7 @@ class TestSequences:
     def test_retrieve_multi_data_mixed(
         self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col_with_zero
     ):
-        data = cognite_client.sequences.data.retrieve(id=[1, 2], external_id="a")
+        data = cognite_client.sequences.data.retrieve(external_id="a", id=[1, 2])
         assert isinstance(data, SequenceRowsList)
         assert 3 == len(data)
         assert 2 == len(data[0].column_external_ids)

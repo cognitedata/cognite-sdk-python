@@ -164,7 +164,7 @@ class SequencesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.sequences.retrieve(id_or_external_id="1")
+                >>> res = c.sequences.retrieve()
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
@@ -990,7 +990,7 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete_range(id=1, start=0, end=None)
         """
-        sequence = self._cognite_client.sequences.retrieve(id=id, external_id=external_id)
+        sequence = self._cognite_client.sequences.retrieve(external_id=external_id, id=id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj.update(self._wrap_columns(column_external_ids=sequence.column_external_ids))
@@ -999,10 +999,34 @@ class SequencesDataAPI(APIClient):
             if rows := resp["rows"]:
                 self.delete(rows=[r["rowNumber"] for r in rows], external_id=external_id, id=id)
 
+    @overload
     def retrieve(
         self,
+        external_id: str,
         id: int | SequenceType[int] | None = None,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceType[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRows:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        external_id: MutableSequence[str] | None = None,
+        id: int | SequenceType[int] | None = None,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceType[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRowsList:
+        ...
+
+    def retrieve(
+        self,
         external_id: str | MutableSequence[str] | None = None,
+        id: int | SequenceType[int] | None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceType[str] | None = None,
@@ -1011,8 +1035,8 @@ class SequencesDataAPI(APIClient):
         """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
-            id (int | SequenceType[int] | None): The internal if the sequence to retrieve from.
             external_id (str | MutableSequence[str] | None): The external id of the sequence to retrieve from.
+            id (int | SequenceType[int] | None): The internal if the sequence to retrieve from.
             start (int): Row number to start from (inclusive).
             end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
             columns (SequenceType[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
@@ -1025,7 +1049,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.sequences.data.retrieve(1)
+                >>> res = c.sequences.data.retrieve(id=1)
                 >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
                 >>> single_value = res[23] # ... get the values at a single row number,
                 >>> col = res.get_column(id_or_external_id='columnExtId') # ... get the array of values for a specific column,

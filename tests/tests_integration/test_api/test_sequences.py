@@ -31,7 +31,7 @@ def new_seq(cognite_client: CogniteClient) -> Sequence:
     seq = cognite_client.sequences.create(Sequence(name="test_temp", columns=column_def, metadata={"a": "b"}))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(seq.id) is None
+    assert cognite_client.sequences.retrieve(id=seq.id) is None
 
 
 @pytest.fixture
@@ -94,7 +94,7 @@ def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceL
 class TestSequencesAPI:
     def test_retrieve(self, cognite_client):
         listed_asset = cognite_client.sequences.list(limit=1)[0]
-        retrieved_asset = cognite_client.sequences.retrieve(listed_asset.id)
+        retrieved_asset = cognite_client.sequences.retrieve(id=listed_asset.id)
         assert retrieved_asset == listed_asset
 
     def test_retrieve_multiple(self, cognite_client):

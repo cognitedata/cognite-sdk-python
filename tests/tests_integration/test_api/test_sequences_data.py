@@ -40,7 +40,7 @@ def new_seq(cognite_client) -> Sequence:
     seq = cognite_client.sequences.create(Sequence(columns=[{"valueType": "STRING", "externalId": "col0"}]))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(seq.id) is None
+    assert cognite_client.sequences.retrieve(id=seq.id) is None
 
 
 @pytest.fixture(scope="session")
@@ -48,7 +48,7 @@ def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence):
     seq = cognite_client.sequences.create(Sequence(columns=small_sequence.columns.as_write()))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(seq.id) is None
+    assert cognite_client.sequences.retrieve(id=seq.id) is None
 
 
 @pytest.fixture(scope="session")
@@ -56,7 +56,7 @@ def new_seq_long(cognite_client):
     seq = cognite_client.sequences.create(Sequence(columns=[{"valueType": "LONG", "externalId": "a"}]))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(seq.id) is None
+    assert cognite_client.sequences.retrieve(id=seq.id) is None
 
 
 @pytest.fixture(scope="session")
@@ -71,7 +71,7 @@ def new_seq_mixed(cognite_client):
     )
     yield seq
     cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(seq.id) is None
+    assert cognite_client.sequences.retrieve(id=seq.id) is None
 
 
 @pytest.fixture
@@ -93,7 +93,7 @@ class TestSequencesDataAPI:
 
     def test_retrieve_multi(self, cognite_client, small_sequence, pretend_timeseries):
         dps = cognite_client.sequences.rows.retrieve(
-            id=small_sequence.id, external_id=pretend_timeseries.external_id, start=0, end=None
+            external_id=pretend_timeseries.external_id, id=small_sequence.id, start=0, end=None
         )
         assert isinstance(dps, SequenceRowsList)
         assert len(dps[0]) > 0
@@ -141,26 +141,26 @@ class TestSequencesDataAPI:
         cognite_client.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
 
     def test_retrieve_paginate(self, cognite_client, string200, post_spy):
-        data = cognite_client.sequences.data.retrieve(start=1, end=996, id=string200.id)
+        data = cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=996)
         assert 200 == len(data.values[0])
         assert 995 == len(data)
         assert 4 == cognite_client.sequences.data._post.call_count  # around 300 rows per request for this case
 
     def test_retrieve_paginate_max(self, cognite_client, pretend_timeseries, post_spy):
-        data = cognite_client.sequences.data.retrieve(start=0, end=None, id=pretend_timeseries.id)
+        data = cognite_client.sequences.data.retrieve(id=pretend_timeseries.id, start=0, end=None)
         assert 1 == len(data.values[0])
         assert 54321 == len(data)
         assert 6 == cognite_client.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
     def test_retrieve_paginate_limit_small(self, cognite_client, pretend_timeseries, post_spy):
-        data = cognite_client.sequences.data.retrieve(start=0, end=None, id=pretend_timeseries.id, limit=23)
+        data = cognite_client.sequences.data.retrieve(id=pretend_timeseries.id, start=0, end=None, limit=23)
         assert 1 == len(data.values[0])
         assert 23 == len(data)
         assert 1 == cognite_client.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
     def test_retrieve_paginate_limit_paged(self, cognite_client, pretend_timeseries, post_spy):
         data = cognite_client.sequences.data.retrieve(
-            start=0, end=None, id=pretend_timeseries.id, limit=40023
+            id=pretend_timeseries.id, start=0, end=None, limit=40023
         ).to_pandas()
         assert 1 == data.shape[1]
         assert 40023 == data.shape[0]
@@ -184,7 +184,7 @@ class TestSequencesDataAPI:
             dps.get_column("missingcol")
 
     def test_retrieve_paginate_end_coinciding_with_page(self, cognite_client, string200, post_spy):
-        cognite_client.sequences.data.retrieve(start=1, end=118, id=string200.id)
+        cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=118)
         assert 1 == cognite_client.sequences.data._post.call_count
 
     def test_delete_range(self, cognite_client, new_seq_long):
