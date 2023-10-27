@@ -76,7 +76,7 @@ class SourceFile(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SourceFile:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SourceFile:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.geo_location, dict):
@@ -167,12 +167,12 @@ class Document(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Document:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Document:
         resource = json.loads(resource) if isinstance(resource, str) else resource
 
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.source_file, dict):
-            instance.source_file = SourceFile.load(instance.source_file)
+            instance.source_file = SourceFile._load(instance.source_file)
         if isinstance(instance.geo_location, dict):
             instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
@@ -214,7 +214,7 @@ class Highlight(CogniteResource):
         }
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(name=resource["name"], content=resource["content"])
 
@@ -235,14 +235,14 @@ class DocumentHighlight(CogniteResource):
     document: Document
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
         resource = json.loads(resource) if isinstance(resource, str) else resource
 
         instance = cls(**convert_all_keys_to_snake_case(resource))
         if isinstance(instance.highlight, dict):
             instance.highlight = Highlight(**convert_all_keys_to_snake_case(instance.highlight))
         if isinstance(instance.document, dict):
-            instance.document = Document.load(instance.document)
+            instance.document = Document._load(instance.document)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

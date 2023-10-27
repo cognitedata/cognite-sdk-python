@@ -163,7 +163,7 @@ class InstanceApply(InstanceCore):
         return output
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = resource if isinstance(resource, dict) else json.loads(resource)
         data = convert_all_keys_to_snake_case(data)
         if cls is not InstanceApply:
@@ -292,11 +292,11 @@ class Instance(InstanceCore):
         self.properties: Properties = properties or Properties({})
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data:
             data["properties"] = Properties.load(data["properties"])
-        return super().load(data)
+        return super()._load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)
@@ -355,7 +355,7 @@ class InstanceAggregationResult(DataModelingResource):
         self.group = group
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """
         Loads an instance from a json string or dictionary.
 
@@ -558,9 +558,9 @@ class EdgeApply(InstanceApply):
         return output
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
-        instance = super().load(data)
+        instance = super()._load(data)
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])
@@ -645,9 +645,9 @@ class Edge(Instance):
         return output
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
-        instance = super().load(data)
+        instance = super()._load(data)
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])

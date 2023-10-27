@@ -101,7 +101,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
             json=body,
         )
-        return WorkflowTaskExecution.load(response.json())
+        return WorkflowTaskExecution._load(response.json())
 
 
 class WorkflowExecutionAPI(BetaWorkflowAPIClient):
@@ -139,7 +139,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             if e.code == 400:
                 return None
             raise
-        return WorkflowExecutionDetailed.load(response.json())
+        return WorkflowExecutionDetailed._load(response.json())
 
     def trigger(
         self,
@@ -197,7 +197,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
             json=body,
         )
-        return WorkflowExecution.load(response.json())
+        return WorkflowExecution._load(response.json())
 
     def list(
         self,
@@ -309,7 +309,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             json={"items": [version.dump(camel_case=True)]},
         )
 
-        return WorkflowVersion.load(response.json()["items"][0])
+        return WorkflowVersion._load(response.json()["items"][0])
 
     def delete(
         self,
@@ -374,7 +374,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 return None
             raise e
 
-        return WorkflowVersion.load(response.json())
+        return WorkflowVersion._load(response.json())
 
     def list(
         self,
@@ -471,7 +471,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
         )
-        return Workflow.load(response.json()["items"][0])
+        return Workflow._load(response.json()["items"][0])
 
     def retrieve(self, external_id: str) -> Workflow | None:
         """`Retrieve a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
@@ -497,7 +497,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             if e.code == 404:
                 return None
             raise e
-        return Workflow.load(response.json())
+        return Workflow._load(response.json())
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_

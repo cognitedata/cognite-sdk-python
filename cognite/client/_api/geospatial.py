@@ -754,7 +754,7 @@ class GeospatialAPI(APIClient):
 
         try:
             for line in res.iter_lines():
-                yield Feature.load(complexjson.loads(line))
+                yield Feature._load(complexjson.loads(line))
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 
@@ -1145,4 +1145,4 @@ class GeospatialAPI(APIClient):
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
         json = res.json()
-        return GeospatialComputedResponse.load(json, cognite_client=self._cognite_client)
+        return GeospatialComputedResponse._load(json, cognite_client=self._cognite_client)

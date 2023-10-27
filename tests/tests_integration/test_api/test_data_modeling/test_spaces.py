@@ -121,7 +121,7 @@ class TestSpacesAPI:
         # Act
         space_dump = space.dump(camel_case=True)
         space_json = json.dumps(space_dump)
-        space_loaded = Space.load(space_json)
+        space_loaded = Space._load(space_json)
 
         # Assert
         assert space == space_loaded

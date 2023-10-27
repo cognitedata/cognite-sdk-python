@@ -201,7 +201,7 @@ class EntityMatchingAPI(APIClient):
                 "ignoreMissingFields": ignore_missing_fields,
             },
         )
-        return EntityMatchingModel.load(response.json(), cognite_client=self._cognite_client)
+        return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
 
     def predict(
         self,

@@ -141,15 +141,15 @@ class TestCogniteResource:
         assert {"varA": 1} == MyResource(1).dump(camel_case=True)
 
     def test_load(self):
-        assert MyResource(1).dump() == MyResource.load({"varA": 1}).dump()
-        assert MyResource().dump() == MyResource.load({"var_a": 1, "var_b": 2}).dump()
-        assert {"var_a": 1} == MyResource.load({"varA": 1, "varC": 1}).dump()
+        assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
+        assert MyResource().dump() == MyResource._load({"var_a": 1, "var_b": 2}).dump()
+        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}).dump()
 
     def test_load_unknown_attribute(self):
-        assert {"var_a": 1, "var_b": 2} == MyResource.load({"varA": 1, "varB": 2, "varC": 3}).dump()
+        assert {"var_a": 1, "var_b": 2} == MyResource._load({"varA": 1, "varB": 2, "varC": 3}).dump()
 
     def test_load_object_attr(self):
-        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource.load({"varA": 1, "varB": {"camelCase": 1}}).dump()
+        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
 
     def test_eq(self):
         assert MyResource(1, "s") == MyResource(1, "s")
@@ -226,7 +226,7 @@ class TestCogniteResource:
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
         json_deserialised = json.loads(json_serialised)
-        loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client_placeholder)
+        loaded = instance._load(json_deserialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 
@@ -246,7 +246,7 @@ class TestCogniteResource:
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
         yaml_deserialised = yaml.safe_load(yaml_serialised)
-        loaded = instance.load(yaml_deserialised, cognite_client=cognite_mock_client_placeholder)
+        loaded = instance._load(yaml_deserialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 

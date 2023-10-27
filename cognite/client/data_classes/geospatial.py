@@ -39,9 +39,9 @@ class FeatureType(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None) -> FeatureType:
+    def _load(cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None) -> FeatureType:
         if isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
@@ -112,9 +112,9 @@ class Feature(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None) -> Feature:
+    def _load(cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None) -> Feature:
         if isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             # Keep properties defined in Feature Type as is
@@ -295,9 +295,9 @@ class FeatureAggregate(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None) -> FeatureAggregate:
+    def _load(cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None) -> FeatureAggregate:
         if isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
@@ -325,11 +325,11 @@ class CoordinateReferenceSystem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(
+    def _load(
         cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> CoordinateReferenceSystem:
         if isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
@@ -414,11 +414,11 @@ class GeospatialComputedItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(
+    def _load(
         cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> GeospatialComputedItem:
         if isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(resource=resource, cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
@@ -441,7 +441,7 @@ class GeospatialComputedResponse(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(
+    def _load(
         cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> GeospatialComputedResponse:
         resource = json.loads(resource) if isinstance(resource, str) else resource

@@ -491,7 +491,7 @@ class TestInstancesAPI:
         # Act
         node_dumped = node.dump(camel_case=True)
         node_json = json.dumps(node_dumped)
-        node_loaded = Node.load(node_json)
+        node_loaded = Node._load(node_json)
 
         # Assert
         assert node == node_loaded
@@ -504,7 +504,7 @@ class TestInstancesAPI:
         # Act
         edge_dumped = edge.dump(camel_case=True)
         edge_json = json.dumps(edge_dumped)
-        edge_loaded = Edge.load(edge_json)
+        edge_loaded = Edge._load(edge_json)
 
         # Assert
         assert edge == edge_loaded

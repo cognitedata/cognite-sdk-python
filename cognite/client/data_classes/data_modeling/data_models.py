@@ -77,14 +77,14 @@ class DataModelApply(DataModelCore):
         if "type" in view_data:
             return ViewId.load(view_data)
         else:
-            return ViewApply.load(view_data)
+            return ViewApply._load(view_data)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "views" in data:
             data["views"] = [cls._load_view(v) for v in data["views"]] or None
-        return super().load(data)
+        return super()._load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -138,15 +138,15 @@ class DataModel(DataModelCore, Generic[T_View]):
         if "type" in view_data:
             return ViewId.load(view_data)
         else:
-            return View.load(view_data)
+            return View._load(view_data)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "views" in data:
             data["views"] = [cls._load_view(v) for v in data["views"]] or None
 
-        return super().load(data)
+        return super()._load(data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

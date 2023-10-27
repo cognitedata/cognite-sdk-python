@@ -243,7 +243,7 @@ class MyTestResource(CogniteResource):
         self.foo_bar_baz = foo_bar_baz
         self._cognite_client = cognite_client
 
-    def load(*a, **kw):
+    def _load(*a, **kw):
         raise NotImplementedError
 
 

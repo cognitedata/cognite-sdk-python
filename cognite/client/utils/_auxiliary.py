@@ -223,5 +223,5 @@ def rename_and_exclude_keys(
 
 def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
     if (res := dct.get(key)) is not None:
-        return cls.load(res)
+        return cls._load(res)
     return None

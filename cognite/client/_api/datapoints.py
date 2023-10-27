@@ -1234,7 +1234,7 @@ class DatapointsAPI(APIClient):
             return DatapointsList.load(res, cognite_client=self._cognite_client)
         elif not res and ignore_unknown_ids:
             return None
-        return Datapoints.load(res[0], cognite_client=self._cognite_client)
+        return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,

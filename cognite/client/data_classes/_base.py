@@ -130,7 +130,7 @@ class CogniteResource(_WithClientMixin):
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def load(
+    def _load(
         cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
         if isinstance(resource, dict):
@@ -141,7 +141,7 @@ class CogniteResource(_WithClientMixin):
                 loaded = yaml.safe_load(resource)
             except CogniteImportError:
                 loaded = json.loads(resource)
-            return cls.load(loaded, cognite_client=cognite_client)
+            return cls._load(loaded, cognite_client=cognite_client)
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
@@ -326,7 +326,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         if isinstance(resource_list, str):
             return cls.load(json.loads(resource_list), cognite_client=cognite_client)
         elif isinstance(resource_list, Iterable):
-            resources = [cls._RESOURCE.load(resource, cognite_client=cognite_client) for resource in resource_list]
+            resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
             return cls(resources, cognite_client=cognite_client)
         else:
             raise NotImplementedError(f"Resource list must be iterable or json str, not {type(resource_list)}")
