@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from operator import attrgetter
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union
 
@@ -80,11 +79,10 @@ class DataModelApply(DataModelCore):
             return ViewApply._load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "views" in data:
-            data["views"] = [cls._load_view(v) for v in data["views"]] or None
-        return super()._load(data)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        if "views" in resource:
+            resource["views"] = [cls._load_view(v) for v in resource["views"]] or None
+        return super()._load(resource)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -141,12 +139,11 @@ class DataModel(DataModelCore, Generic[T_View]):
             return View._load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "views" in data:
-            data["views"] = [cls._load_view(v) for v in data["views"]] or None
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "views" in resource:
+            resource["views"] = [cls._load_view(v) for v in resource["views"]] or None
 
-        return super()._load(data)
+        return super()._load(resource)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

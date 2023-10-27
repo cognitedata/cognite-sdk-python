@@ -8,10 +8,9 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, basic_instance_dump
 from cognite.client.utils._auxiliary import json_dump_default
-from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    pass
 
 
 class DataModelingResource(CogniteResource, ABC):
@@ -28,11 +27,6 @@ class DataModelingResource(CogniteResource, ABC):
             args.append(f"{version=}")
 
         return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
-
-    @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        return cls(**convert_all_keys_to_snake_case(data))
 
 
 class DataModelingSort:

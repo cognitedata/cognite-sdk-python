@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any
@@ -62,9 +61,8 @@ class DatapointSubscriptionCore(CogniteResource):
 
     @classmethod
     def _load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+        cls: type[T_CogniteResource], resource: dict, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
         if "filter" in resource:
             resource["filter"] = Filter.load(resource["filter"])
 
@@ -206,8 +204,7 @@ class TimeSeriesID(CogniteResource):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
         return cls(id=resource["id"], external_id=resource.get("externalId"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -337,8 +334,7 @@ class _DatapointSubscriptionBatchWithPartitions:
     partitions: list[DatapointSubscriptionPartition]
 
     @classmethod
-    def load(cls, resource: dict | str) -> _DatapointSubscriptionBatchWithPartitions:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def load(cls, resource: dict) -> _DatapointSubscriptionBatchWithPartitions:
         return cls(
             updates=[DatapointsUpdate.load(u) for u in resource["updates"]],
             partitions=[DatapointSubscriptionPartition.load(p) for p in resource["partitions"]],

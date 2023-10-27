@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
@@ -12,7 +11,6 @@ from typing_extensions import Self, TypeAlias
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
-    T_CogniteResource,
 )
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 
@@ -48,12 +46,10 @@ class WorkflowUpsert(CogniteResource):
 
     @classmethod
     def _load(
-        cls: type[T_CogniteResource],
-        resource: dict | str,
+        cls: type[Self],
+        resource: dict,
         cognite_client: CogniteClient | None = None,
-    ) -> T_CogniteResource:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-
+    ) -> Self:
         resource = convert_all_keys_to_snake_case(resource)
         return cls(**resource)
 
@@ -168,8 +164,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         self.is_async_complete = is_async_complete
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FunctionTaskParameters:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FunctionTaskParameters:
         function: dict[str, Any] = resource["function"]
 
         return cls(
@@ -209,8 +204,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
         return cls(
             resource["transformation"]["externalId"],
         )
@@ -263,9 +257,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
         self.request_timeout_in_millis = request_timeout_in_millis
 
     @classmethod
-    def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
         arguments = convert_all_keys_to_snake_case(cdf_request)
@@ -307,9 +299,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         dynamic: dict[str, Any] = resource[cls.task_type]
 
         # can either be a reference string (i.e., in case of WorkflowDefinitions)
@@ -368,8 +358,7 @@ class WorkflowTask(CogniteResource):
         return self.parameters.task_type
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowTask:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTask:
         return cls(
             external_id=resource["externalId"],
             parameters=WorkflowTaskParameters.load_parameters(resource),
@@ -568,8 +557,7 @@ class WorkflowTaskExecution(CogniteResource):
         return self.input.task_type
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowTaskExecution:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTaskExecution:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -621,8 +609,7 @@ class WorkflowDefinitionUpsert(CogniteResource):
         self.description = description
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowDefinitionUpsert:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinitionUpsert:
         return cls(
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
             description=resource.get("description"),
@@ -657,8 +644,7 @@ class WorkflowDefinition(WorkflowDefinitionUpsert):
         self.hash_ = hash_
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowDefinition:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinition:
         return cls(
             hash_=resource["hash"],
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
@@ -693,8 +679,7 @@ class WorkflowVersionUpsert(CogniteResource):
         self.workflow_definition = workflow_definition
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
             workflow_external_id=resource["workflowExternalId"],
@@ -735,8 +720,7 @@ class WorkflowVersion(WorkflowVersionUpsert):
         super().__init__(workflow_external_id, version, workflow_definition)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
             workflow_external_id=resource["workflowExternalId"],
@@ -802,8 +786,7 @@ class WorkflowExecution(CogniteResource):
         )
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowExecution:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecution:
         return cls(
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
@@ -874,8 +857,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         self.metadata = metadata
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowExecutionDetailed:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecutionDetailed:
         return cls(
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
@@ -888,8 +870,8 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             reason_for_incompletion=resource.get("reasonForIncompletion"),
-            workflow_definition=WorkflowDefinition._load(resource["workflowDefinition"]),
-            executed_tasks=[WorkflowTaskExecution._load(task) for task in resource["executedTasks"]],
+            workflow_definition=WorkflowDefinition.load(resource["workflowDefinition"]),
+            executed_tasks=[WorkflowTaskExecution.load(task) for task in resource["executedTasks"]],
             input=resource.get("input"),
             metadata=resource.get("metadata"),
         )
@@ -939,8 +921,7 @@ class WorkflowVersionId:
         return self.workflow_external_id, self.version
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowVersionId:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersionId:
         if "workflowExternalId" in resource:
             workflow_external_id = resource["workflowExternalId"]
         elif "externalId" in resource:

@@ -136,19 +136,32 @@ class CogniteResource(_WithClientMixin):
         cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
         """Load a resource from a YAML/JSON string or dict."""
+        if not isinstance(resource, (dict, str)):
+            raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+
         if isinstance(resource, str):
             resource = load_yaml_or_json(resource)
+
         return cls._load(resource, cognite_client=cognite_client)
 
     @classmethod
     def _load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+        cls: type[T_CogniteResource], resource: dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
-        if isinstance(resource, dict):
-            return fast_dict_load(cls, resource, cognite_client=cognite_client)
-        elif isinstance(resource, str):
-            return cls._load(resource, cognite_client=cognite_client)
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+        """
+        This is the internal load method that is called by the public load method.
+        It has a default implementation that can be overridden by subclasses.
+
+        The typical use case for overriding this method is to handle nested resources.
+
+        Args:
+            resource(dict[str, Any]): The resource to load.
+            cognite_client(CogniteClient | None): Cognite client to associate with the resource.
+
+        Returns:
+            T_CogniteResource: The loaded resource.
+        """
+        return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
     def to_pandas(
         self,

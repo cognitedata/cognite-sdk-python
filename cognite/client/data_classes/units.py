@@ -106,8 +106,7 @@ class Unit(CogniteResource):
         return UnitID(unit_external_id=self.external_id, name=self.name)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -150,9 +149,7 @@ class UnitSystem(CogniteResource):
         self.quantities = quantities
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             quantities=[UnitID._load(quantity) for quantity in resource["quantities"]],

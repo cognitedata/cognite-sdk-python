@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -43,8 +42,7 @@ class ObjectDetection(VisionResource):
             self.attributes = {k: Attribute(**v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ObjectDetection:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ObjectDetection:
         return cls(
             label=resource["label"],
             confidence=resource.get("confidence"),
@@ -76,8 +74,7 @@ class TextRegion(VisionResource):
             self.text_region = BoundingBox(**self.text_region)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TextRegion:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TextRegion:
         return cls(
             text=resource["text"],
             text_region=BoundingBox._load(resource["textRegion"]),
@@ -99,12 +96,11 @@ class AssetLink(VisionResource):
             self.asset_ref = CdfResourceRef(**self.asset_ref)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> AssetLink:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> AssetLink:
         return cls(
             text=resource["text"],
-            text_region=BoundingBox._load(resource["textRegion"]),
-            asset_ref=CdfResourceRef._load(resource["assetRef"]),
+            text_region=BoundingBox.load(resource["textRegion"]),
+            asset_ref=CdfResourceRef.load(resource["assetRef"]),
             confidence=resource.get("confidence"),
         )
 
@@ -123,8 +119,7 @@ class KeypointCollection(VisionResource):
             self.keypoints = {k: Keypoint(**v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
             keypoints={k: Keypoint._load(v) for k, v in resource["keypoints"].items()},
@@ -153,8 +148,7 @@ class KeypointCollectionWithObjectDetection(VisionResource):
             self.keypoint_collection = KeypointCollection(**self.keypoint_collection)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             object_detection=ObjectDetection._load(resource["objectDetection"], cognite_client),
             keypoint_collection=KeypointCollection._load(resource["keypointCollection"], cognite_client),

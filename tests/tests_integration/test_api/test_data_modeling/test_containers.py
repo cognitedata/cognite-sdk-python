@@ -199,7 +199,7 @@ class TestContainersAPI:
         # Act
         container_dump = container.dump(camel_case=True)
         container_json = json.dumps(container_dump)
-        container_loaded = Container._load(container_json)
+        container_loaded = Container.load(container_json)
 
         # Assert
         assert container == container_loaded

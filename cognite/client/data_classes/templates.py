@@ -264,7 +264,7 @@ class TemplateInstance(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TemplateInstance:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TemplateInstance:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
@@ -398,7 +398,7 @@ class View(CogniteResource):
             return value
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> View:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
@@ -461,8 +461,7 @@ class GraphQlResponse(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> GraphQlResponse:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> GraphQlResponse:
         return cls(
             data=resource.get("data"),
             errors=[GraphQlError._load(error) for error in resource.get("errors", [])],

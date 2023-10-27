@@ -441,10 +441,7 @@ class GeospatialComputedResponse(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(
-        cls, resource: str | dict[str, Any], cognite_client: CogniteClient | None = None
-    ) -> GeospatialComputedResponse:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeospatialComputedResponse:
         item_list = GeospatialComputedItemList.load(
             cast("List[Any]", resource.get("items")), cognite_client=cognite_client
         )

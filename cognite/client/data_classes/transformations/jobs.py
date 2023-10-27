@@ -43,11 +43,6 @@ class TransformationJobMetric(CogniteResource):
         self.count = count
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJobMetric:
-        instance = super()._load(resource, cognite_client)
-        return instance
-
 
 class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric]):
     _RESOURCE = TransformationJobMetric
@@ -259,7 +254,7 @@ class TransformationJob(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJob:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationJob:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
