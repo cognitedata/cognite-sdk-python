@@ -151,7 +151,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> c = CogniteClient()
                 >>> members = c.time_series.subscriptions.list_member_time_series("my_subscription")
-                >>> external_ids = [ts.external_id for ts in members]
+                >>> timeseries_external_ids = members.as_external_ids()
         """
         return self._list(
             method="GET",
