@@ -191,10 +191,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> template_group_list = c.templates.groups.list(limit=5)
         """
-        warnings.warn(
-            "Templates will be removed in future versions of the SDK. Please migrate to Flexible Data Modeling (FDM).",
-            DeprecationWarning,
-        )
+        TemplatesAPI._deprecation_warning()
         filter = {}
         if owners is not None:
             filter["owners"] = owners
