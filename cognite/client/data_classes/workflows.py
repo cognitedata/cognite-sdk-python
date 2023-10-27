@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
 
 from typing_extensions import Self, TypeAlias
@@ -194,7 +194,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return output
 
 
-class TransformationConcurrencyPolicy(StrEnum):
+class TransformationConcurrencyPolicy(Enum):
     """
     Determines the behavior of the task if the Transformation is already running.
 
