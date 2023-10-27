@@ -147,8 +147,7 @@ class _NodeOrEdgeApplyResultAdapter:
 
 class _NodeOrEdgeApplyAdapter:
     @staticmethod
-    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
-        data = json.loads(data) if isinstance(data, str) else data
+    def _load(data: dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
         if data["instanceType"] == "node":
             return NodeApply._load(data)
         return EdgeApply._load(data)
