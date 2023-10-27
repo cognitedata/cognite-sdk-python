@@ -14,7 +14,6 @@ from typing import (
     Iterator,
     List,
     Literal,
-    MutableSequence,
     Sequence,
     Union,
     cast,
@@ -66,6 +65,7 @@ from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
+from cognite.client.utils.useful_types import SequenceNotStr
 
 from ._data_modeling_executor import get_data_modeling_executor
 
@@ -748,7 +748,7 @@ class InstancesAPI(APIClient):
         group_by: None = None,
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: str | MutableSequence[str] | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue:
@@ -762,7 +762,7 @@ class InstancesAPI(APIClient):
         group_by: None = None,
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: str | MutableSequence[str] | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[AggregatedNumberedValue]:
@@ -773,10 +773,10 @@ class InstancesAPI(APIClient):
         self,
         view: ViewId,
         aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
-        group_by: str | MutableSequence[str],
+        group_by: str | SequenceNotStr[str],
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: str | MutableSequence[str] | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList:
@@ -786,10 +786,10 @@ class InstancesAPI(APIClient):
         self,
         view: ViewId,
         aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
-        group_by: str | MutableSequence[str] | None = None,
+        group_by: str | SequenceNotStr[str] | None = None,
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: str | MutableSequence[str] | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
@@ -798,10 +798,10 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to aggregate over.
             aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]): The properties to aggregate over.
-            group_by (str | MutableSequence[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
+            group_by (str | SequenceNotStr[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
-            properties (str | MutableSequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            properties (str | SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 
