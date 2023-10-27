@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.37.1] - 2023-10-27
+## Added
+- Support for `concurrencyPolicy` property in Workflows `TransformationsWorker`.
+
 ## [6.37.0] - 2023-10-27
 ### Added
 - Support for `type` property in `NodeApply` and `Node`.
