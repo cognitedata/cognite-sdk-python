@@ -19,7 +19,6 @@ from cognite.client.data_classes.geospatial import (
     FeatureType,
     FeatureTypeList,
     FeatureTypePatch,
-    FeatureTypeUpdate,
     GeospatialComputedResponse,
     GeospatialComputeFunction,
     OrderSpec,
@@ -173,62 +172,6 @@ class GeospatialAPI(APIClient):
             identifiers=identifiers.as_singleton() if identifiers.is_singleton() else identifiers,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
-
-    def update_feature_types(self, update: FeatureTypeUpdate | Sequence[FeatureTypeUpdate]) -> FeatureTypeList:
-        """`Update feature types (Deprecated)`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatureTypes>
-
-        Args:
-            update (FeatureTypeUpdate | Sequence[FeatureTypeUpdate]): the update to apply
-
-        Returns:
-            FeatureTypeList: The updated feature types.
-
-        Examples:
-
-            Add one property and one index to a feature type:
-
-                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(
-                ...     update=FeatureTypeUpdate(external_id="wells",
-                ...         add=PropertyAndSearchSpec(
-                ...             properties={"altitude": {"type": "DOUBLE"}},
-                ...             search_spec={"altitude_idx": {"properties": ["altitude"]}}
-                ...         )
-                ...     )
-                ... )
-
-            Remove one property and one index from a feature type:
-                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(
-                ...     update=FeatureTypeUpdate(external_id="wells",
-                ...         remove=PropertyAndSearchSpec(
-                ...             properties=["volume"],
-                ...             search_spec=["vol_press_idx"]
-                ...         )
-                ...     )
-                ... )
-        """
-        warnings.warn("update_feature_types is deprecated, use patch_feature_types instead.", DeprecationWarning)
-        if isinstance(update, FeatureTypeUpdate):
-            update = [update]
-
-        def mapper(it: FeatureTypeUpdate) -> dict[str, Any]:
-            add_properties = it.add.properties if hasattr(it, "add") else None
-            remove_properties = it.remove.properties if hasattr(it, "remove") else None
-            add_search_spec = it.add.search_spec if hasattr(it, "add") else None
-            remove_search_spec = it.remove.search_spec if hasattr(it, "remove") else None
-            properties_update = {"add": add_properties, "remove": remove_properties}
-            search_spec_update = {"add": add_search_spec, "remove": remove_search_spec}
-            return {"properties": properties_update, "searchSpec": search_spec_update}
-
-        json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
-        return FeatureTypeList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """`Patch feature types`
