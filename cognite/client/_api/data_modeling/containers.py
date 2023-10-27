@@ -122,11 +122,11 @@ class ContainersAPI(APIClient):
             executor=get_data_modeling_executor(),
         )
 
-    def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
+    def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
         """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
 
         Args:
-            id (ContainerIdentifier | Sequence[ContainerIdentifier]): The container identifier(s).
+            ids (ContainerIdentifier | Sequence[ContainerIdentifier]): The container identifier(s).
         Returns:
             list[ContainerId]: The container(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
@@ -140,7 +140,7 @@ class ContainersAPI(APIClient):
         deleted_containers = cast(
             list,
             self._delete_multiple(
-                identifiers=_load_identifier(id, "container"),
+                identifiers=_load_identifier(ids, "container"),
                 wrap_ids=True,
                 returns_items=True,
                 executor=get_data_modeling_executor(),
@@ -148,11 +148,11 @@ class ContainersAPI(APIClient):
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
-    def delete_constraints(self, id: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
+    def delete_constraints(self, ids: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
         """`Delete one or more constraints <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerConstraints>`_
 
         Args:
-            id (Sequence[ConstraintIdentifier]): The constraint identifier(s).
+            ids (Sequence[ConstraintIdentifier]): The constraint identifier(s).
         Returns:
             list[ConstraintIdentifier]: The constraints(s) which have been deleted.
         Examples:
@@ -165,13 +165,13 @@ class ContainersAPI(APIClient):
                 ...     [(ContainerId("mySpace", "myContainer"), "myConstraint")]
                 ... )
         """
-        return self._delete_constraints_or_indexes(id, "constraints")
+        return self._delete_constraints_or_indexes(ids, "constraints")
 
-    def delete_indexes(self, id: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
+    def delete_indexes(self, ids: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
         """`Delete one or more indexes <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerIndexes>`_
 
         Args:
-            id (Sequence[IndexIdentifier]): The index identifier(s).
+            ids (Sequence[IndexIdentifier]): The index identifier(s).
         Returns:
             list[IndexIdentifier]: The indexes(s) which has been deleted.
         Examples:
@@ -184,11 +184,11 @@ class ContainersAPI(APIClient):
                 ...     [(ContainerId("mySpace", "myContainer"), "myIndex")]
                 ... )
         """
-        return self._delete_constraints_or_indexes(id, "indexes")
+        return self._delete_constraints_or_indexes(ids, "indexes")
 
     def _delete_constraints_or_indexes(
         self,
-        id: Sequence[ConstraintIdentifier] | Sequence[IndexIdentifier],
+        ids: Sequence[ConstraintIdentifier] | Sequence[IndexIdentifier],
         constraint_or_index: Literal["constraints", "indexes"],
     ) -> list[tuple[ContainerId, str]]:
         res = self._post(
@@ -200,7 +200,7 @@ class ContainersAPI(APIClient):
                         "containerExternalId": constraint_id[0].external_id,
                         "identifier": constraint_id[1],
                     }
-                    for constraint_id in id
+                    for constraint_id in ids
                 ]
             },
         )
