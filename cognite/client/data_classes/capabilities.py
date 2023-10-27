@@ -150,18 +150,16 @@ class Capability(ABC):
                 ),
             )
 
-        actions = enum.Enum("Action", {action.title(): action for action in data["actions"]}, type=_ActionBase)  # type: ignore [misc]
-        return cast(Self, UnknownAcl(capability_name=name, actions=list(actions), scope=Scope.load(data["scope"])))
+        return cast(Self, UnknownAcl(capability_name=name, actions=data["actions"], scope=Scope.load(data["scope"])))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        if isinstance(self, UnknownAcl):
+            return {self.capability_name: {"actions": self.actions, "scope": self.scope.dump(camel_case=camel_case)}}
         data = {
             "actions": [action.value for action in self.actions],
             "scope": self.scope.dump(camel_case=camel_case),
         }
-        if isinstance(self, UnknownAcl):
-            capability_name = self.capability_name
-        else:
-            capability_name = self._capability_name
+        capability_name = self._capability_name
         return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
 
 
@@ -174,6 +172,7 @@ class UnknownAcl(Capability):
 
     _valid_scopes = frozenset()
     capability_name: str
+    actions: list[str]  # type: ignore[assignment]
     scope: Scope
 
 
