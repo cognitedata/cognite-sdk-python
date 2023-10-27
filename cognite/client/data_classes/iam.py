@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.data_classes.capabilities import Capability
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -16,7 +19,7 @@ class Group(CogniteResource):
     Args:
         name (str | None): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[dict[str, Any]] | None): No description.
+        capabilities (list[Capability | dict[str, Any]] | None): No description.
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
@@ -28,7 +31,7 @@ class Group(CogniteResource):
         self,
         name: str | None = None,
         source_id: str | None = None,
-        capabilities: list[dict[str, Any]] | None = None,
+        capabilities: list[Capability | dict[str, Any]] | None = None,
         id: int | None = None,
         is_deleted: bool | None = None,
         deleted_time: int | None = None,
@@ -44,9 +47,24 @@ class Group(CogniteResource):
         self.metadata = metadata
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def as_write(self) -> Self:
+        """Returns a GroupUpdate object with the current values"""
+        capabilities: list[Capability | dict[str, Any]] | None = None
+        if self.capabilities is not None:
+            capabilities = [c.copy() if isinstance(c, dict) else c for c in self.capabilities]
+        return type(self)(
+            name=self.name,
+            source_id=self.source_id,
+            capabilities=capabilities,
+            metadata=self.metadata and self.metadata.copy(),
+        )
+
 
 class GroupList(CogniteResourceList[Group]):
     _RESOURCE = Group
+
+    def as_write(self) -> GroupList:
+        return GroupList([g.as_write() for g in self.data])
 
 
 class SecurityCategory(CogniteResource):
