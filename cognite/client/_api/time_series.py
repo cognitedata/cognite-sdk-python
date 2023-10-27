@@ -10,13 +10,12 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     TimeSeries,
-    CountAggregate,
     TimeSeriesFilter,
     TimeSeriesList,
     TimeSeriesUpdate,
     filters,
 )
-from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -229,14 +228,14 @@ class TimeSeriesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[TimeSeriesAggregate]:
+    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             filter (TimeSeriesFilter | dict | None): Filter on time series filter with exact match
 
         Returns:
-            list[TimeSeriesAggregate]: List of sequence aggregates
+            list[CountAggregate]: List of sequence aggregates
 
         Examples:
 
@@ -247,7 +246,7 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.aggregate(filter={"unit": "kpa"})
         """
 
-        return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(
         self,

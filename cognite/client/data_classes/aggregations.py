@@ -19,10 +19,17 @@ if TYPE_CHECKING:
 class CountAggregate(CogniteResource):
     """
     [DEPRECATED] This represents the result of a count aggregation.
+
+    Args:
+        count (int): The number of items matching the aggregation.
     """
 
-    def __init__(self, count: int):
+    def __init__(self, count: int) -> None:
         self.count = count
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> CountAggregate:
+        return cls(count=resource["count"])
 
 
 @dataclass

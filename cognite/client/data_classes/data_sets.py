@@ -160,7 +160,7 @@ class DataSetAggregate(CogniteResource):
 
     Args:
         count (int | None): Size of the aggregation group
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(self, count: int | None = None, **_: Any) -> None:

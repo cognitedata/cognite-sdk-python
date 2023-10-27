@@ -181,7 +181,15 @@ class FileMetadataFilter(CogniteFilter):
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         if isinstance(self.geo_location, GeoLocationFilter):
-            result["geoLocation"] = self.geo_location.dump(camel_case)
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        keys = (
+            ["createdTime", "lastUpdatedTime", "uploadedTime"]
+            if camel_case
+            else ["created_time", "last_updated_time", "uploaded_time"]
+        )
+        for key in keys:
+            if key in result:
+                result[key] = TimestampRange.dump(result[key], camel_case)
         return result
 
 
@@ -294,7 +302,7 @@ class FileAggregate(CogniteResource):
 
     Args:
         count (int | None): Number of filtered items included in aggregation
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(self, count: int | None = None, **_: Any) -> None:

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, Geometry
-from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, Geometry, T_CogniteResource
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TimestampRange(CogniteResource):
@@ -14,7 +16,7 @@ class TimestampRange(CogniteResource):
     Args:
         max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(self, max: int | None = None, min: int | None = None, **_: Any) -> None:
@@ -27,7 +29,7 @@ class AggregateResult(CogniteResource):
 
     Args:
         count (int | None): Size of the aggregation group
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(self, count: int | None = None, **_: Any) -> None:
@@ -40,7 +42,7 @@ class AggregateUniqueValuesResult(AggregateResult):
     Args:
         count (int | None): Size of the aggregation group
         value (int | str | None): A unique value from the requested field
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(self, count: int | None = None, value: int | str | None = None, **_: Any) -> None:
@@ -137,18 +139,20 @@ class GeoLocation(CogniteResource):
         self.properties = properties
 
     @classmethod
-    def load(cls, raw_geo_location: dict[str, Any]) -> GeoLocation:
+    def load(
+        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+    ) -> T_CogniteResource:
         return cls(
-            type=raw_geo_location.get("type", "Feature"),
-            geometry=raw_geo_location["geometry"],
-            properties=raw_geo_location.get("properties"),
+            type=resource["type"],
+            geometry=Geometry.load(resource["geometry"]),
+            properties=resource.get("properties"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        result = convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        dumped = super().dump(camel_case)
         if self.geometry:
-            result["geometry"] = dict(self.geometry)
-        return result
+            dumped["geometry"] = self.geometry.dump(camel_case)
+        return dumped
 
 
 class GeoLocationFilter(CogniteResource):
@@ -164,11 +168,13 @@ class GeoLocationFilter(CogniteResource):
         self.shape = shape
 
     @classmethod
-    def load(cls, raw_geo_location_filter: dict[str, Any]) -> GeoLocationFilter:
-        return cls(relation=raw_geo_location_filter["relation"], shape=GeoLocationFilter.load(raw_geo_location_filter["shape"]))
+    def load(
+        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+    ) -> T_CogniteResource:
+        return cls(relation=resource["relation"], shape=GeometryFilter.load(resource["shape"]))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.shape:
-            dumped["shape"] = self.dump(camel_case)
+            dumped["shape"] = self.shape.dump(camel_case)
         return dumped

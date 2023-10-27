@@ -18,7 +18,12 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.data_classes import DataPointSubscriptionCreate, Relationship, SequenceData, filters
+from cognite.client.data_classes import (
+    DataPointSubscriptionCreate,
+    Relationship,
+    SequenceData,
+    filters,
+)
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter

@@ -32,7 +32,7 @@ class EndTimeFilter(CogniteResource):
         max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_null (bool | None): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None, **_: Any) -> None:
@@ -145,6 +145,20 @@ class EventFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case)
+        if self.end_time and isinstance(self.end_time, EndTimeFilter):
+            dumped["endTime" if camel_case else "end_time"] = self.end_time
+        keys = (
+            ["startTime", "activeAtTime", "createdTime", "lastUpdatedTime"]
+            if camel_case
+            else ["start_time", "active_at_time", "created_time", "last_updated_time"]
+        )
+        for key in keys:
+            if key in dumped and isinstance(dumped[key], TimestampRange):
+                dumped[key] = dumped[key].dump(camel_case)
+        return dumped
 
 
 class EventUpdate(CogniteUpdate):

@@ -37,7 +37,7 @@ class ExtractionPipelineContact(CogniteResource):
         self.send_notification = send_notification
 
     @classmethod
-    def load(cls, data: str | dict) -> ExtractionPipelineContact:
+    def load(cls, data: str | dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineContact:
         data = json.loads(data) if isinstance(data, str) else data
         return cls(
             name=data["name"], email=data["email"], role=data["role"], send_notification=data["sendNotification"]

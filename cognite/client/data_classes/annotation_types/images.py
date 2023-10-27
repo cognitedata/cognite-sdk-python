@@ -118,9 +118,9 @@ class KeypointCollection(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.attributes, dict):
-            self.attributes = {k: Attribute(**v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
+            self.attributes = {k: Attribute.load(v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
         if isinstance(self.keypoints, dict):
-            self.keypoints = {k: Keypoint(**v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
+            self.keypoints = {k: Keypoint.load(v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
 
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
@@ -163,7 +163,11 @@ class KeypointCollectionWithObjectDetection(VisionResource):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.object_detection is not None:
-            dumped["objectDetection"] = self.object_detection.dump(camel_case=camel_case)
+            dumped["objectDetection" if camel_case else "object_detection"] = self.object_detection.dump(
+                camel_case=camel_case
+            )
         if self.keypoint_collection is not None:
-            dumped["keypointCollection"] = self.keypoint_collection.dump(camel_case=camel_case)
+            dumped["keypointCollection" if camel_case else "keypoint_collection"] = self.keypoint_collection.dump(
+                camel_case=camel_case
+            )
         return dumped

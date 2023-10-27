@@ -63,7 +63,7 @@ class AssetAggregate(CogniteResource):
 
     Args:
         count (int | None): Size of the aggregation group
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(self, count: int | None = None, **_: Any) -> None:
@@ -77,7 +77,7 @@ class AggregateResultItem(CogniteResource):
         child_count (int | None): Number of direct descendants for the asset
         depth (int | None): Asset path depth (number of levels below root node).
         path (list[dict[str, Any]] | None): IDs of assets on the path to the asset.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -110,7 +110,7 @@ class Asset(CogniteResource):
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int | None): ID of the root asset.
-        aggregates (dict[str, Any] | AggregateResultItem | None): Aggregated metrics of the asset
+        aggregates (AggregateResultItem | dict[str, Any] | None): Aggregated metrics of the asset
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -130,7 +130,7 @@ class Asset(CogniteResource):
         created_time: int | None = None,
         last_updated_time: int | None = None,
         root_id: int | None = None,
-        aggregates: dict[str, Any] | AggregateResultItem | None = None,
+        aggregates: AggregateResultItem | dict[str, Any] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
@@ -156,7 +156,7 @@ class Asset(CogniteResource):
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
         instance = super().load(resource, cognite_client)
         if isinstance(resource, dict) and instance.aggregates is not None:
-            instance.aggregates = AggregateResultItem(**instance.aggregates)
+            instance.aggregates = AggregateResultItem.load(instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation.load(instance.geo_location)
@@ -247,7 +247,7 @@ class Asset(CogniteResource):
         if self.geo_location is not None:
             result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
         if isinstance(self.aggregates, AggregateResultItem):
-            result["aggregates"] = dict(self.aggregates)
+            result["aggregates"] = self.aggregates.dump(camel_case)
         return result
 
     def to_pandas(  # type: ignore [override]

@@ -584,7 +584,15 @@ class Geometry(CogniteResource):
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
-        self.geometries = list(geometries)
+        self.geometries = geometries and list(geometries)
+
+    @classmethod
+    def load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Geometry:
+        return cls(
+            type=data["type"],
+            coordinates=data["coordinates"],
+            geometries=(geometries := data.get("geometries", None)) and [cls.load(g) for g in geometries],
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from cognite.client.data_classes._base import Geometry
+from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -130,7 +131,6 @@ from cognite.client.data_classes.sequences import (
     SequenceList,
     SequenceUpdate,
 )
-from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.shared import (
     AggregateResult,
     AggregateUniqueValuesResult,

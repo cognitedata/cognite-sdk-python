@@ -23,6 +23,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.events import Event, EventList
+from cognite.client.data_classes.templates import ViewResolveItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
@@ -274,6 +275,10 @@ class TestCogniteResource:
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
             for class_ in all_concrete_subclasses(CogniteResource)
+            if class_
+            not in {
+                ViewResolveItem,  # This is a class with only a dict which should not be changed.
+            }
         ],
     )
     def test_dump_correct_case(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
@@ -285,7 +290,10 @@ class TestCogniteResource:
         snake_dumped = instance.dump(camel_case=False)
 
         assert sorted(camel_dumped.keys()) == sorted(convert_all_keys_to_camel_case(camel_dumped).keys())
-        assert sorted(snake_dumped.keys()) == sorted(convert_all_keys_to_snake_case(snake_dumped).keys())
+        try:
+            assert sorted(snake_dumped.keys()) == sorted(convert_all_keys_to_snake_case(snake_dumped).keys())
+        except AssertionError:
+            raise
 
 
 class TestCogniteResourceList:
@@ -465,7 +473,7 @@ class TestCogniteResourceList:
             parent_external_id="parent-test-1",
             description="A test asset",
             data_set_id=123,
-            labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+            labels=[Label(external_id="ROTATING_EQUIPMENT")],
         )
 
         result_df = asset.to_pandas()
@@ -477,7 +485,7 @@ class TestCogniteResourceList:
                 "parent-test-1",
                 "A test asset",
                 123,
-                [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+                [{"external_id": "ROTATING_EQUIPMENT"}],
             ]
         }
 
