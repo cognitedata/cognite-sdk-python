@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json as complexjson
+import json
 import numbers
 import urllib.parse
 from typing import Any, Iterator, Sequence, cast, overload
@@ -216,7 +216,7 @@ class GeospatialAPI(APIClient):
         """
         if isinstance(patch, FeatureTypePatch):
             patch = [patch]
-        json = {
+        payload = {
             "items": [
                 {
                     "externalId": it.external_id,
@@ -225,7 +225,7 @@ class GeospatialAPI(APIClient):
                 for it in patch
             ]
         }
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=payload)
         return FeatureTypeList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     @overload
@@ -688,15 +688,18 @@ class GeospatialAPI(APIClient):
                 ...     # do something with the features
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
-        json = {"filter": filter or {}, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
+        payload = {
+            "filter": filter or {},
+            "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"},
+        }
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
         res = self._do_request(
-            "POST", url_path=resource_path, json=json, timeout=self._config.timeout, stream=True, params=params
+            "POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True, params=params
         )
 
         try:
             for line in res.iter_lines():
-                yield Feature.load(complexjson.loads(line))
+                yield Feature.load(json.loads(line))
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 
@@ -1070,5 +1073,4 @@ class GeospatialAPI(APIClient):
             timeout=self._config.timeout,
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
-        json = res.json()
-        return GeospatialComputedResponse.load(json, cognite_client=self._cognite_client)
+        return GeospatialComputedResponse.load(res.json(), cognite_client=self._cognite_client)
