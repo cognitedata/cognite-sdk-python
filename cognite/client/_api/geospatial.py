@@ -3,7 +3,6 @@ from __future__ import annotations
 import json as complexjson
 import numbers
 import urllib.parse
-import warnings
 from typing import Any, Iterator, Sequence, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
@@ -704,8 +703,6 @@ class GeospatialAPI(APIClient):
     def aggregate_features(
         self,
         feature_type_external_id: str,
-        property: str | None = None,
-        aggregates: Sequence[str] | None = None,
         filter: dict[str, Any] | None = None,
         group_by: Sequence[str] | None = None,
         order_by: Sequence[OrderSpec] | None = None,
@@ -716,8 +713,6 @@ class GeospatialAPI(APIClient):
 
         Args:
             feature_type_external_id (str): the feature type to filter features from
-            property (str | None): the property for which aggregates should be calculated
-            aggregates (Sequence[str] | None): list of aggregates to be calculated
             filter (dict[str, Any] | None): the search filter
             group_by (Sequence[str] | None): list of properties to group by with
             order_by (Sequence[OrderSpec] | None): the order specification
@@ -736,14 +731,6 @@ class GeospatialAPI(APIClient):
                 ...     feature_type_external_id="my_feature_type",
                 ...     feature=Feature(external_id="my_feature", temperature=12.4)
                 ... )
-                >>> res_deprecated = c.geospatial.aggregate_features(
-                ...     feature_type_external_id="my_feature_type",
-                ...     filter={"range": {"property": "temperature", "gt": 12.0}},
-                ...     property="temperature",
-                ...     aggregates=["max", "min"],
-                ...     group_by=["category"],
-                ...     order_by=[OrderSpec("category", "ASC")]
-                ... ) # deprecated
                 >>> res = c.geospatial.aggregate_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     filter={"range": {"property": "temperature", "gt": 12.0}},
@@ -756,8 +743,6 @@ class GeospatialAPI(APIClient):
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
         """
-        if property or aggregates:
-            warnings.warn("property and aggregates are deprecated, use output instead.", DeprecationWarning)
         resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
         cls = FeatureAggregateList
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
@@ -765,8 +750,6 @@ class GeospatialAPI(APIClient):
             url_path=resource_path,
             json={
                 "filter": filter or {},
-                "property": property,
-                "aggregates": aggregates,
                 "groupBy": group_by,
                 "sort": order,
                 "output": output,
