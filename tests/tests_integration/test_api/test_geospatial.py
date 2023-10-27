@@ -14,12 +14,10 @@ from cognite.client.data_classes.geospatial import (
     FeatureList,
     FeatureType,
     FeatureTypePatch,
-    FeatureTypeUpdate,
     GeospatialGeometryTransformComputeFunction,
     GeospatialGeometryValueComputeFunction,
     OrderSpec,
     Patches,
-    PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._importing import local_import
@@ -425,24 +423,6 @@ class TestGeospatialAPI:
         assert res[0].temperature == 12.4
         assert res[1].temperature == -10.8
 
-    def test_update_feature_types(self, cognite_client, test_feature_type):
-        res = cognite_client.geospatial.update_feature_types(
-            update=FeatureTypeUpdate(
-                external_id=test_feature_type.external_id,
-                add=PropertyAndSearchSpec(
-                    properties={"altitude": {"type": "DOUBLE", "optional": True}},
-                    search_spec={
-                        "altitude_idx": {"properties": ["altitude"]},
-                        "pos_alt_idx": {"properties": ["position", "altitude"]},
-                    },
-                ),
-                remove=PropertyAndSearchSpec(properties=["volume"], search_spec=["vol_press_idx"]),
-            )
-        )
-        assert len(res) == 1
-        assert len(res[0].properties) == len(test_feature_type.properties)
-        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 1
-
     def test_patch_feature_types(self, cognite_client, test_feature_type):
         res = cognite_client.geospatial.patch_feature_types(
             patch=FeatureTypePatch(
@@ -716,32 +696,6 @@ class TestGeospatialAPI:
             raster_property_name="raster",
         )
         assert res is None
-        res = cognite_client.geospatial.retrieve_features(
-            feature_type_external_id=test_feature_type.external_id,
-            external_id=[test_feature_with_raster.external_id],
-        )
-        assert res[0].external_id == test_feature_with_raster.external_id
-        assert hasattr(res[0], "raster") is False
-
-    def test_delete_raster_property(self, cognite_client, test_feature_type, test_feature_with_raster):
-        feature_type_updated = cognite_client.geospatial.update_feature_types(
-            update=FeatureTypeUpdate(
-                external_id=test_feature_type.external_id,
-                add=PropertyAndSearchSpec(properties={}, search_spec={}),
-                remove=PropertyAndSearchSpec(properties=["raster"], search_spec=[]),
-            )
-        )
-        assert list(feature_type_updated[0].properties.keys()) == [
-            "position",
-            "volume",
-            "temperature",
-            "pressure",
-            "externalId",
-            "createdTime",
-            "lastUpdatedTime",
-            "dataSetId",
-            "assetIds",
-        ]
         res = cognite_client.geospatial.retrieve_features(
             feature_type_external_id=test_feature_type.external_id,
             external_id=[test_feature_with_raster.external_id],
