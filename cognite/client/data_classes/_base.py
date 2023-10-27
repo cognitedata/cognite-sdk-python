@@ -25,7 +25,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, load_yaml_or_json
@@ -132,9 +132,7 @@ class CogniteResource(_WithClientMixin):
 
     @classmethod
     @final
-    def load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         if not isinstance(resource, (dict, str)):
             raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
@@ -145,9 +143,7 @@ class CogniteResource(_WithClientMixin):
         return cls._load(resource, cognite_client=cognite_client)
 
     @classmethod
-    def _load(
-        cls: type[T_CogniteResource], resource: dict[str, Any], cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    def _load(cls: type[Self], resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         """
         This is the internal load method that is called by the public load method.
         It has a default implementation that can be overridden by subclasses.
@@ -157,11 +153,11 @@ class CogniteResource(_WithClientMixin):
         Note that the base class takes care of loading from YAML/JSON strings and error handling.
 
         Args:
-            resource(dict[str, Any]): The resource to load.
-            cognite_client(CogniteClient | None): Cognite client to associate with the resource.
+            resource (dict[str, Any]): The resource to load.
+            cognite_client (CogniteClient | None): Cognite client to associate with the resource.
 
         Returns:
-            T_CogniteResource: The loaded resource.
+            Self: The loaded resource.
         """
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
