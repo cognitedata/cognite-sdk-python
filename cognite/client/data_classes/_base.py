@@ -154,6 +154,8 @@ class CogniteResource(_WithClientMixin):
 
         The typical use case for overriding this method is to handle nested resources.
 
+        Note that the base class takes care of loading from YAML/JSON strings and error handling.
+
         Args:
             resource(dict[str, Any]): The resource to load.
             cognite_client(CogniteClient | None): Cognite client to associate with the resource.
