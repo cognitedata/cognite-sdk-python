@@ -21,8 +21,7 @@ def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + s
 @lru_cache(maxsize=128)
 def to_camel_case(snake_case_string: str) -> str:
     components = snake_case_string.split("_")
-    output = components[0] + "".join(x.title() for x in components[1:])
-    return output[0].casefold() + output[1:]
+    return components[0] + "".join(x.title() for x in components[1:])
 
 
 @lru_cache(maxsize=128)
