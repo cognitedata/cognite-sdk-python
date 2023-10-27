@@ -17,9 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.0.0] - 2023-10-24
-### Removed
-- Removed `function_external_id` argument for creating a Cognite Function schedule (only worked with API keys.)
+## [7.0.0] - 2023-11-01
 
 ## [6.35.0] - 2023-10-25
 ### Added
