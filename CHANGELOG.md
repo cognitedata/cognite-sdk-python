@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.36.0] - 2023-10-25
+### Added
+- Support for listing members of Data Point Subscription, `client.time_series.subscriptions.list_member_time_series()`. Note this is an experimental feature.
+
 ## [6.35.0] - 2023-10-25
 ### Added
 - Support for `through` on node result set expressions.

@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
     T_CogniteResource,
@@ -359,6 +360,10 @@ class _DatapointSubscriptionBatchWithPartitions:
 
 class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
+
+
+class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
+    _RESOURCE = TimeSeriesID
 
 
 def _metadata(key: str) -> list[str]:

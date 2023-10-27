@@ -11,6 +11,8 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionList,
     DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
+    TimeSeriesID,
+    TimeSeriesIDList,
     _DatapointSubscriptionBatchWithPartitions,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -126,6 +128,37 @@ class DatapointsSubscriptionAPI(APIClient):
             return result[0]
         else:
             return None
+
+    def list_member_time_series(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> TimeSeriesIDList:
+        """`List time series in a subscription <https://api-docs.cognite.com/20230101-beta/tag/Data-point-subscriptions/operation/listSubscriptionMembers>`_
+
+        Retrieve a list of time series (IDs) that the subscription is currently retrieving updates from
+
+        Args:
+            external_id (str): External ID of the subscription to retrieve members of.
+            limit (int | None): Maximum number of time series to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            TimeSeriesIDList: List of time series in the subscription.
+
+        Examples:
+
+            List time series in a subscription:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
+                >>> c = CogniteClient()
+                >>> members = c.time_series.subscriptions.list_member_time_series("my_subscription")
+                >>> timeseries_external_ids = members.as_external_ids()
+        """
+        return self._list(
+            method="GET",
+            limit=limit,
+            list_cls=TimeSeriesIDList,
+            resource_cls=TimeSeriesID,
+            resource_path="/timeseries/subscriptions/members",
+            other_params={"externalId": external_id},
+        )
 
     def update(self, update: DataPointSubscriptionUpdate) -> DatapointSubscription:
         """`Update a subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/updateSubscriptions>`_
