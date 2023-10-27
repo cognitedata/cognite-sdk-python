@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Iterator, Protocol, Sequence, SupportsIndex, TypeVar, overload
 
 _T_co = TypeVar("_T_co", covariant=True)
