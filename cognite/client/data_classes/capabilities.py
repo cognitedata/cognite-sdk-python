@@ -93,7 +93,7 @@ class AssetRootIDScope(IDScope):
 
 @dataclass(frozen=True)
 class ExperimentsScope(Scope):
-    _scope_name = "experimentsScope"
+    _scope_name = "experimentscope"
     experiments: list[str]
 
 
@@ -136,9 +136,13 @@ class Capability(ABC):
         resource = resource if isinstance(resource, dict) else json.loads(resource)
         ((name, data),) = resource.items()
         capability_cls = _CAPABILITY_CLASS_BY_NAME.get(name, UnknownAcl)
-        args: dict[str, Any] = dict(
-            actions=[capability_cls.Action(action) for action in data["actions"]], scope=Scope.load(data["scope"])
-        )
+        try:
+            args: dict[str, Any] = dict(
+                actions=[capability_cls.Action(action) for action in data["actions"]], scope=Scope.load(data["scope"])
+            )
+        except ValueError:
+            raise
+
         if capability_cls is UnknownAcl:
             args["capability_name"] = name
         return cast(Self, capability_cls(**args))
@@ -213,7 +217,7 @@ class DataSetsAcl(Capability):
         Owner = "OWNER"
 
     _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "dataSetsAcl"
+    _capability_name = "datasetsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
@@ -237,7 +241,7 @@ class EntityMatchingAcl(Capability):
         Write = "WRITE"
 
     _valid_scopes = frozenset({AllScope})
-    _capability_name = "entityMatchingAcl"
+    _capability_name = "entitymatchingAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
@@ -255,25 +259,25 @@ class EventsAcl(Capability):
 
 
 @dataclass
-class ExtractionPipelineAcl(Capability):
+class ExtractionPipelinesAcl(Capability):
     class Action(_ActionBase):
         Read = "READ"
         Write = "WRITE"
 
     _valid_scopes = frozenset({AllScope, IDScope, DataSetScope})
-    _capability_name = "extractionPipelineAcl"
+    _capability_name = "extractionPipelinesAcl"
     actions: Sequence[Action]
     scope: AllScope | IDScope | DataSetScope
 
 
 @dataclass
-class ExtractionRunAcl(Capability):
+class ExtractionsRunAcl(Capability):
     class Action(_ActionBase):
         Read = "READ"
         Write = "WRITE"
 
     _valid_scopes = frozenset({AllScope, DataSetScope, ExtractionPipelineScope})
-    _capability_name = "extractionRunAcl"
+    _capability_name = "extractionRunsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | ExtractionPipelineScope
 
@@ -329,8 +333,9 @@ class GeospatialCrsAcl(Capability):
 @dataclass
 class GroupsAcl(Capability):
     class Action(_ActionBase):
+        Create = "CREATE"
+        Delete = "DELETE"
         Read = "READ"
-        Write = "WRITE"
         List = "LIST"
         Update = "UPDATE"
 
@@ -423,6 +428,7 @@ class SecurityCategoriesAcl(Capability):
         MemberOf = "MEMBEROF"
         List = "LIST"
         Create = "CREATE"
+        Update = "UPDATE"
         Delete = "DELETE"
 
     _valid_scopes = frozenset({AllScope, IDScope})
@@ -460,6 +466,7 @@ class SessionsAcl(Capability):
     class Action(_ActionBase):
         List = "LIST"
         Create = "CREATE"
+        Delete = "DELETE"
 
     _valid_scopes = frozenset({AllScope})
     _capability_name = "sessionsAcl"
@@ -471,12 +478,12 @@ class SessionsAcl(Capability):
 class ThreeDAcl(Capability):
     class Action(_ActionBase):
         Read = "READ"
-        Write = "WRITE"
+        Create = "CREATE"
         Update = "UPDATE"
         Delete = "DELETE"
 
     _valid_scopes = frozenset({AllScope, DataSetScope})
-    _capability_name = "threeDAcl"
+    _capability_name = "threedAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
@@ -494,13 +501,13 @@ class TimeSeriesAcl(Capability):
 
 
 @dataclass
-class TimeSeriesSubscriptionAcl(Capability):
+class TimeSeriesSubscriptionsAcl(Capability):
     class Action(_ActionBase):
         Read = "READ"
         Write = "WRITE"
 
     _valid_scopes = frozenset({AllScope})
-    _capability_name = "timeSeriesSubscriptionAcl"
+    _capability_name = "timeSeriesSubscriptionsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
@@ -547,8 +554,68 @@ class ExperimentsAcl(Capability):
         Use = "USE"
 
     _valid_scopes = frozenset({})
-    _capability_name = "experimentsAcl"
+    _capability_name = "experimentAcl"
     actions: Sequence[Action]
+
+
+@dataclass
+class TemplateGroupsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "templateGroupsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class TemplateInstancesAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "templateInstancesAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class DataModelInstancesAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "dataModelInstancesAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class DataModelsAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "dataModelsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+
+@dataclass
+class WorkflowOrchestrationAcl(Capability):
+    class Action(_ActionBase):
+        Read = "READ"
+        Write = "WRITE"
+
+    _valid_scopes = frozenset({AllScope})
+    _capability_name = "workflowOrchestrationAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
 
 _CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 import pytest
@@ -13,14 +15,20 @@ class TestGroupsAPI:
 
     def test_create(self, cognite_client):
         metadata = {"haha": "blabla"}
-        group = cognite_client.iam.groups.create(
-            Group(
-                name="bla", capabilities=[{"eventsAcl": {"actions": ["READ"], "scope": {"all": {}}}}], metadata=metadata
+        group: Group | None = None
+        try:
+            group = cognite_client.iam.groups.create(
+                Group(
+                    name="bla",
+                    capabilities=[{"eventsAcl": {"actions": ["READ"], "scope": {"all": {}}}}],
+                    metadata=metadata,
+                )
             )
-        )
-        assert "bla" == group.name
-        assert metadata == group.metadata
-        cognite_client.iam.groups.delete(group.id)
+            assert "bla" == group.name
+            assert metadata == group.metadata
+        finally:
+            if group:
+                cognite_client.iam.groups.delete(group.id)
 
 
 class TestSecurityCategoriesAPI:
