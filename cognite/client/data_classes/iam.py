@@ -61,6 +61,12 @@ class Group(CogniteResource):
             cognite_client=cognite_client,
         )
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.capabilities:
+            dumped["capabilities"] = [c.dump(camel_case=camel_case) for c in self.capabilities]
+        return dumped
+
 
 class GroupList(CogniteResourceList[Group]):
     _RESOURCE = Group
