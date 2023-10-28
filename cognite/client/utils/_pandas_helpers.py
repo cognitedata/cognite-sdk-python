@@ -65,16 +65,8 @@ def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
-    pd = local_import("pandas")
     to_convert = df.columns.intersection(TIME_ATTRIBUTES)
-    df[to_convert] = df[to_convert].apply(
-        pd.to_datetime,
-        axis="index",  # means 'apply function to each column', yeah, idk
-        # Kwargs to pd.to_datetime:
-        unit="ms",
-        origin="unix",
-        errors="raise",
-    )
+    df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
     return df
 
 
