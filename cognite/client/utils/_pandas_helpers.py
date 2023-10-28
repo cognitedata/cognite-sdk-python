@@ -5,7 +5,7 @@ import warnings
 from inspect import signature
 from itertools import chain
 from numbers import Integral
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
@@ -65,7 +65,7 @@ def convert_nullable_int_cols(df: pd.DataFrame, camel_case: bool) -> pd.DataFram
 
 
 def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.DataFrame:
-    pd = cast(Any, local_import("pandas"))
+    pd = local_import("pandas")
     int_cols = [
         i for i, dtype in enumerate(chain.from_iterable(df.dtypes for df in dfs)) if issubclass(dtype.type, Integral)
     ]

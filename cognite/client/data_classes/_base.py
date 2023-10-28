@@ -159,7 +159,7 @@ class CogniteResource(_WithClientMixin):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore or []:
@@ -299,7 +299,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         Returns:
             pandas.DataFrame: The Cognite resource as a dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
         df = convert_nullable_int_cols(df, camel_case)
 
