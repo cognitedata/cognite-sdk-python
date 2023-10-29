@@ -1002,8 +1002,8 @@ class SequencesDataAPI(APIClient):
     @overload
     def retrieve(
         self,
+        *,
         external_id: str,
-        id: int | SequenceType[int] | None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceType[str] | None = None,
@@ -1014,8 +1014,32 @@ class SequencesDataAPI(APIClient):
     @overload
     def retrieve(
         self,
-        external_id: MutableSequence[str] | None = None,
-        id: int | SequenceType[int] | None = None,
+        *,
+        external_id: MutableSequence[str],
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceType[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRowsList:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: int,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceType[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRows:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: MutableSequence[int],
         start: int = 0,
         end: int | None = None,
         columns: SequenceType[str] | None = None,
