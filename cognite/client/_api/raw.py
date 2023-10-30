@@ -539,7 +539,7 @@ class RawRowsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
         idx = [r.key for r in rows]
         cols = [r.columns for r in rows]
