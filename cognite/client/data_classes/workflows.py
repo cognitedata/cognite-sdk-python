@@ -341,12 +341,9 @@ class WorkflowTask(CogniteResource):
         description (str | None): The description of the task. Defaults to None.
         retries (int): The number of retries for the task. Defaults to 3.
         timeout (int): The timeout of the task in seconds. Defaults to 3600.
-        on_failure (Literal["abortWorkflow", "skipTask"]): The policy to handle failures and timeouts. Defaults to "abortWorkflow".
-        Options include:
-        - "skipTask":
-            For both failures and timeouts, the task will retry until the retries are exhausted. After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed.
-        - "abortWorkflow":
-            In case of failures, retries will be performed until exhausted. After which the task is marked as FAILED and the Workflow is marked the same. In the event of a timeout, no retries are undertaken; the task is marked as TIMED_OUT and the Workflow is marked as FAILED.
+        on_failure (Literal["abortWorkflow", "skipTask"]): The policy to handle failures and timeouts. Defaults to *abortWorkflow*.\n
+            * *skipTask*: For both failures and timeouts, the task will retry until the retries are exhausted. After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed.\n
+            * *abortWorkflow*: In case of failures, retries will be performed until exhausted. After which the task is marked as FAILED and the Workflow is marked the same. In the event of a timeout, no retries are undertaken; the task is marked as TIMED_OUT and the Workflow is marked as FAILED.
         depends_on (list[str] | None): The external ids of the tasks that this task depends on. Defaults to None.
     """
 
