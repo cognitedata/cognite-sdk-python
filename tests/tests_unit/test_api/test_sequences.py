@@ -499,7 +499,6 @@ class TestSequences:
         r1 = cognite_client.sequences.data.retrieve(id=0, start=0, end=None)
         r2 = cognite_client.sequences.data.retrieve(id=0, start=0, end=None)
         assert r1 == r2
-        assert r1.__eq__(r2)
         assert str(r1) == str(r2)
         assert r1.dump() == r2.dump()
         list_request = next(call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url)
