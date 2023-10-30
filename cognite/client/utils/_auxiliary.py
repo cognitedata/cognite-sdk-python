@@ -19,7 +19,6 @@ from typing import (
 )
 from urllib.parse import quote
 
-from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -31,7 +30,6 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.data_classes._base import T_CogniteResource
-    from cognite.client.exceptions import CogniteImportError
 
 
 T = TypeVar("T")
@@ -70,9 +68,10 @@ def fast_dict_load(
 
 def load_yaml_or_json(resource: str) -> Any:
     try:
-        yaml = local_import("yaml")
+        import yaml
+
         return yaml.safe_load(resource)
-    except CogniteImportError:
+    except ImportError:
         return json.loads(resource)
 
 
