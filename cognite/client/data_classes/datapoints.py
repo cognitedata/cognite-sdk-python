@@ -214,12 +214,11 @@ class DatapointsArray(CogniteResource):
 
     @classmethod
     @typing.no_type_check
-    def load(
+    def _load(
         cls,
         dps_dct: dict[str, int | str | bool | npt.NDArray],
         cognite_client: CogniteClient | None = None,
     ) -> DatapointsArray:
-        dps_dct = json.loads(dps_dct) if isinstance(dps_dct, str) else dps_dct
         if "timestamp" in dps_dct:
             assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
             # Since pandas always uses nanoseconds for datetime, we stick with the same
@@ -602,7 +601,7 @@ class Datapoints(CogniteResource):
         return df
 
     @classmethod
-    def load(  # type: ignore [override]
+    def _load(  # type: ignore [override]
         cls,
         dps_object: dict[str, Any],
         expected_fields: list[str] | None = None,
