@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "6.39.1"
+version = "7.0.0"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
@@ -69,7 +69,9 @@ types-protobuf = "^4.22.0.2"
 packaging = ">=23"
 # Used in docstring examples
 IPython = ">=7.0.0"
-
+PyYAML = "^6.0"
+# Used for better diffs in pytest
+pytest-icdiff = "^0.8"
 
 [build-system]
 requires = ["poetry>=1.0"]

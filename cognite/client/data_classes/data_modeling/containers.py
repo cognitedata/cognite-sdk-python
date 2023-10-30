@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
@@ -19,6 +19,9 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ContainerCore(DataModelingResource):
@@ -58,7 +61,7 @@ class ContainerCore(DataModelingResource):
         self.indexes = indexes
 
     @classmethod
-    def load(cls, resource: dict | str) -> Self:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "constraints" in data:
             data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
@@ -66,7 +69,7 @@ class ContainerCore(DataModelingResource):
             data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
         if "properties" in data:
             data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
-        return super().load(data)
+        return super().load(data, cognite_client)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

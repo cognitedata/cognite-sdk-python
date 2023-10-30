@@ -204,14 +204,14 @@ class TestFilesAPI:
         file_metadata = FileMetadata(name="bla")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
 
     def test_create_with_label(self, cognite_client, mock_file_create_response):
         file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
         assert response_body["labels"][0]["externalId"] == "WELL LOG"
 
@@ -220,14 +220,14 @@ class TestFilesAPI:
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert all(body["labels"][0]["externalId"] == "WELL LOG" for body in [request_body, response_body])
 
     def test_create_with_geoLocation(self, cognite_client, mock_file_create_response, mock_geo_location):
         file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["geoLocation"] == mock_geo_location
 
     def test_create_geoLocation_with_invalid_geometry_type(self):
@@ -244,7 +244,7 @@ class TestFilesAPI:
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert all(body["geoLocation"] == mock_geo_location for body in [request_body, response_body])
 
     def test_retrieve_single(self, cognite_client, mock_files_response):
@@ -418,7 +418,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload(path, name="bla", directory=dir)
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadata._load(response_body) == res
+        assert FileMetadata.load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla", "directory": dir} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
@@ -449,7 +449,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload(path=path, asset_ids=[1, 2])
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadataList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
+        assert FileMetadataList([FileMetadata.load(response_body), FileMetadata.load(response_body)]) == res
         assert 4 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
@@ -473,7 +473,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload(path=path, recursive=True, asset_ids=[1, 2])
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadataList([FileMetadata._load(response_body) for _ in range(3)]) == res
+        assert FileMetadataList([FileMetadata.load(response_body) for _ in range(3)]) == res
         assert 6 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
@@ -492,7 +492,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload_bytes(content=b"content", name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadata._load(response_body) == res
+        assert FileMetadata.load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert b"content" == mock_file_upload_response.calls[1].request.body
@@ -503,7 +503,7 @@ class TestFilesAPI:
             res = cognite_client.files.upload_bytes(fh, name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadata._load(response_body) == res
+        assert FileMetadata.load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
