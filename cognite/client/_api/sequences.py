@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import typing
+import warnings
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
@@ -1137,6 +1138,49 @@ class SequencesDataAPI(APIClient):
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
         ).json()
         return SequenceRows.load(res)
+
+    def retrieve_dataframe(
+        self,
+        start: int,
+        end: int | None,
+        column_external_ids: list[str] | None = None,
+        external_id: str | None = None,
+        column_names: str | None = None,
+        id: int | None = None,
+        limit: int | None = None,
+    ) -> pandas.DataFrame:
+        """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
+        Args:
+            start (int): (inclusive) row number to start from.
+            end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
+            column_external_ids (list[str] | None): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
+            external_id (str | None): External id of sequence.
+            column_names (str | None):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
+            id (int | None): Id of sequence
+            limit (int | None): Maximum number of rows to return per sequence.
+        Returns:
+            pandas.DataFrame: pandas.DataFrame
+        Examples:
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
+        """
+        warnings.warn("This method is deprecated. Use retrieve(...).to_pandas(..) instead.", DeprecationWarning)
+        if isinstance(external_id, list) or isinstance(id, list) or (id is not None and external_id is not None):
+            column_names_default = "externalId|columnExternalId"
+        else:
+            column_names_default = "columnExternalId"
+
+        if external_id is not None and id is None:
+            return self.retrieve(external_id=external_id, start=start, end=end, limit=limit).to_pandas(
+                column_names=column_external_ids or column_names_default,
+            )
+        elif id is not None and external_id is None:
+            return self.retrieve(id=id, start=start, end=end, limit=limit).to_pandas(
+                column_names=column_external_ids or column_names_default,
+            )
+        else:
+            raise ValueError("Either external_id or id must be specified")
 
     def _fetch_data(self, task: dict[str, Any]) -> Iterator[dict[str, Any]]:
         remaining_limit = task.get("limit")
