@@ -3,6 +3,7 @@ import re
 import pytest
 
 from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
+from cognite.client.data_classes.capabilities import AllScope, GroupsAcl
 from cognite.client.data_classes.iam import ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
 
@@ -35,13 +36,14 @@ class TestGroups:
         assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_groups):
-        my_capabilities = [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
-        my_group = Group(name="My Group", capabilities=my_capabilities)
+        my_group = Group(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
-        assert {"items": [{"name": "My Group", "capabilities": my_capabilities}]} == jsgz_load(
-            mock_groups.calls[0].request.body
-        )
+        assert {
+            "items": [
+                {"name": "My Group", "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]}
+            ]
+        } == jsgz_load(mock_groups.calls[0].request.body)
         assert mock_groups.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_groups):

@@ -47,6 +47,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
   a single or multiple items (i.e. id -> ids).
 - `client.data_modeling.instances.aggregate` returns `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending
   on the `aggregates` and `group_by` parameters. Previously, it always returned `InstanceAggregationResultList`.
+- The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
 
 
 ### Added
@@ -56,6 +57,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Literal annotation for `source_type` and `target_type` in `Relationship`
 - In transformations, `NonceCredentials` was missing `load` method.
 - In transformations, `TransformationBlockedInfo` was missing `.dump` method
+- `capabilities` in `cognite.client.data_classes` with data classes for all CDF capabilities.
 
 ### Removed
 - Deprecated methods `aggregate_metadata_keys` and `aggregate_metadata_values` on AssetsAPI.
