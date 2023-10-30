@@ -136,7 +136,7 @@ class CogniteResource(_WithClientMixin):
 
     @classmethod
     @final
-    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         if isinstance(resource, str):
             resource = load_yaml_or_json(resource)
@@ -147,7 +147,7 @@ class CogniteResource(_WithClientMixin):
         raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
 
     @classmethod
-    def _load(cls: type[Self], resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         """
         This is the internal load method that is called by the public load method.
         It has a default implementation that can be overridden by subclasses.
