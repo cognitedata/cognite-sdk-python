@@ -185,9 +185,9 @@ class FeatureList(CogniteResourceList[Feature]):
                 >>> gdf.head()
         """
         df = self.to_pandas(camel_case)
-        wkt = cast(Any, local_import("shapely.wkt"))
+        wkt = local_import("shapely.wkt")
         df[geometry] = df[geometry].apply(lambda g: wkt.loads(g["wkt"]))
-        geopandas = cast(Any, local_import("geopandas"))
+        geopandas = local_import("geopandas")
         return geopandas.GeoDataFrame(df, geometry=geometry)
 
     @staticmethod

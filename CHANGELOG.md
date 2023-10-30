@@ -24,8 +24,9 @@ in sequence produces an equal object to the original, for example,
 methods are `json` and `yaml` serializable.
 
 ### Added
-- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
-  the new parameter `convert_timestamps`.
+- `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
+  default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
+  dtype will always be `datetime64[ns]`, although in v2 this could have been `datetime64[ms]`.
 
 ### Deprecated
 - The Templates API (migrate to Data Modeling).
@@ -34,6 +35,9 @@ methods are `json` and `yaml` serializable.
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
 `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
 with no easy way to add a prefix. Also, it no longer expands metadata by default.
+- Additionally, `Asset.to_pandas`, now accepts the parameters `expand_aggregates` and `aggregates_prefix`. Since
+  the possible `aggregates` keys are known, `camel_case` will also apply to these (if expanded) as opposed to
+  the metadata keys.
 - The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
 - The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
 - All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.

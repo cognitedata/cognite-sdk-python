@@ -29,11 +29,20 @@ from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, a
 
 
 class MyResource(CogniteResource):
-    def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
+    def __init__(
+        self,
+        var_a=None,
+        var_b=None,
+        id=None,
+        external_id=None,
+        last_updated_time=None,
+        cognite_client=None,
+    ):
         self.var_a = var_a
         self.var_b = var_b
         self.id = id
         self.external_id = external_id
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
     def use(self):
@@ -278,8 +287,14 @@ class TestCogniteResourceList:
     def test_to_pandas(self):
         import pandas as pd
 
-        resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
-        expected_df = pd.DataFrame({"varA": [1, 2], "varB": [None, 3]})
+        resource_list = MyResourceList([MyResource(1, last_updated_time=60), MyResource(2, 3)])
+        expected_df = pd.DataFrame(
+            {
+                "varA": [1, 2],
+                "lastUpdatedTime": [pd.Timestamp(60, unit="ms"), pd.NaT],
+                "varB": [None, 3],
+            },
+        )
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=True), expected_df)
 
     @pytest.mark.dsl

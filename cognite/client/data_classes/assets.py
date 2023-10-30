@@ -293,7 +293,7 @@ class Asset(CogniteResource):
         if not (expand_aggregates and "aggregates" in df.index):
             return df
 
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         col = df.squeeze()
         aggregates = convert_dict_to_case(col.pop("aggregates"), camel_case)
         return pd.concat((col, pd.Series(aggregates).add_prefix(aggregates_prefix))).to_frame()

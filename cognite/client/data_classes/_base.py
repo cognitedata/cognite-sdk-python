@@ -30,7 +30,11 @@ from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
+from cognite.client.utils._pandas_helpers import (
+    convert_nullable_int_cols,
+    convert_timestamp_columns_to_datetime,
+    notebook_display_with_fallback,
+)
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
@@ -159,7 +163,7 @@ class CogniteResource(_WithClientMixin):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore or []:
@@ -287,6 +291,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         camel_case: bool = False,
         expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame. Note that if the metadata column is expanded and there are
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
@@ -295,13 +300,17 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
             expand_metadata (bool): Expand the metadata column into separate columns.
             metadata_prefix (str): Prefix to use for metadata columns.
+            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The Cognite resource as a dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        df = convert_nullable_int_cols(df, camel_case)
+        df = convert_nullable_int_cols(df)
+
+        if convert_timestamps:
+            df = convert_timestamp_columns_to_datetime(df)
 
         if expand_metadata and "metadata" in df.columns:
             # Equivalent to pd.json_normalize(df["metadata"]) but is a faster implementation.

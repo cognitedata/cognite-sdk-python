@@ -16,7 +16,6 @@ from typing import (
     Iterator,
     Literal,
     Sequence,
-    cast,
     overload,
 )
 
@@ -148,7 +147,7 @@ class Datapoint(CogniteResource):
         Returns:
             pandas.DataFrame: pandas.DataFrame
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
 
         dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
@@ -376,7 +375,7 @@ class DatapointsArray(CogniteResource):
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         if column_names == "id":
             if self.id is None:
                 raise ValueError("Unable to use `id` as column name(s), not set on object")
@@ -560,7 +559,7 @@ class Datapoints(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
             identifier = self.external_id if self.external_id is not None else self.id
         elif column_names == "id":
@@ -780,7 +779,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
@@ -862,7 +861,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))

@@ -1427,7 +1427,7 @@ class DatapointsAPI(APIClient):
                 >>> df = pd.DataFrame({ts_xid: noise}, index=idx)
                 >>> client.time_series.data.insert_dataframe(df)
         """
-        np, pd = cast(Any, local_import("numpy", "pandas"))
+        np, pd = local_import("numpy", "pandas")
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError(f"DataFrame index must be `pd.DatetimeIndex`, got: {type(df.index)}")
         if df.columns.has_duplicates:
