@@ -10,12 +10,13 @@ from cognite.client.data_classes.workflows import (
     DynamicTaskParameters,
     FunctionTaskOutput,
     FunctionTaskParameters,
+    TaskFailurePolicy,
     TransformationTaskOutput,
     WorkflowExecutionDetailed,
     WorkflowIds,
     WorkflowTask,
     WorkflowTaskOutput,
-    WorkflowVersionId, TaskFailurePolicy,
+    WorkflowVersionId,
 )
 
 
