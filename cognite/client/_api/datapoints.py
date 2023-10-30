@@ -56,7 +56,7 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import execute_tasks, get_executor
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
     _unit_in_days,
@@ -1548,7 +1548,7 @@ class DatapointsPoster:
         summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.dps_client._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda x: x[0],
-            task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
 
     def _insert_datapoints(self, post_dps_objects: list[dict[str, Any]]) -> None:
@@ -1642,6 +1642,8 @@ class RetrieveLatestDpsFetcher:
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
-        tasks_summary.raise_compound_exception_if_failed_tasks()
-
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
+        )
         return tasks_summary.joined_results(lambda res: res.json()["items"])
