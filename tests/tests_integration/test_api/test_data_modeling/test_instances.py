@@ -438,14 +438,36 @@ class TestInstancesAPI:
         max_agg = aggregations.Max("runTimeMinutes")
 
         # Act
-        counts = cognite_client.data_modeling.instances.aggregate(
+        result = cognite_client.data_modeling.instances.aggregate(
             view_id,
             aggregates=[avg_agg, max_agg],
-            group_by=["releaseYear"],
+            group_by="releaseYear",
         )
 
         # Assert
-        assert len(counts)
+        assert len(result)
+
+    def test_aggregate_multiple(self, cognite_client: CogniteClient, movie_view: View) -> None:
+        # Arrange
+        view_id = movie_view.as_id()
+        avg_agg = aggregations.Avg("runTimeMinutes")
+        max_agg = aggregations.Max("runTimeMinutes")
+
+        # Act
+        result = cognite_client.data_modeling.instances.aggregate(
+            view_id,
+            aggregates=[avg_agg, max_agg],
+        )
+
+        # Assert
+        assert len(result) == 2
+        assert result[0].property == "runTimeMinutes"
+        assert result[1].property == "runTimeMinutes"
+        max_value = next((item for item in result if isinstance(item, aggregations.MaxValue)), None)
+        avg_value = next((item for item in result if isinstance(item, aggregations.AvgValue)), None)
+        assert max_value is not None
+        assert avg_value is not None
+        assert max_value.value > avg_value.value
 
     def test_aggregate_count_persons(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
@@ -453,7 +475,7 @@ class TestInstancesAPI:
         count_agg = aggregations.Count("name")
 
         # Act
-        counts = cognite_client.data_modeling.instances.aggregate(
+        count = cognite_client.data_modeling.instances.aggregate(
             view_id,
             aggregates=count_agg,
             instance_type="node",
@@ -461,8 +483,8 @@ class TestInstancesAPI:
         )
 
         # Assert
-        assert len(counts) == 1
-        assert counts[0].aggregates[0].value > 0, "Add at least one person to the view to run this test"
+        assert count.property == "name"
+        assert count.value > 0, "Add at least one person to the view to run this test"
 
     def test_aggregate_invalid_view_id(self, cognite_client: CogniteClient) -> None:
         # Arrange

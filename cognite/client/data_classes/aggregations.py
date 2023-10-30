@@ -2,8 +2,22 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from collections import UserList
+from collections.abc import Collection
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Sequence, TypeVar, Union, cast, final
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Iterator,
+    Sequence,
+    SupportsIndex,
+    TypeVar,
+    Union,
+    cast,
+    final,
+    overload,
+)
 
 from typing_extensions import TypeAlias
 
@@ -187,20 +201,58 @@ class Bucket:
         return {"start": self.start, "count": self.count}
 
 
+class Buckets(UserList):
+    def __init__(self, items: Collection[Any]) -> None:
+        super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
+
+    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
+        return [bucket.dump(camel_case) for bucket in self.data]
+
+    @property
+    def starts(self) -> list[float]:
+        return [bucket.start for bucket in self.data]
+
+    @property
+    def counts(self) -> list[int]:
+        return [bucket.count for bucket in self.data]
+
+    # The following methods are needed for proper type hinting
+    def pop(self, i: int = -1) -> Bucket:
+        return super().pop(i)
+
+    def __iter__(self) -> Iterator[Bucket]:
+        return super().__iter__()
+
+    @overload
+    def __getitem__(self, item: SupportsIndex) -> Bucket:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Buckets:
+        ...
+
+    def __getitem__(self, item: SupportsIndex | slice) -> Bucket | Buckets:
+        value = self.data[item]
+        if isinstance(item, slice):
+            return type(self)(value)
+        return cast(Bucket, value)
+
+
 @final
 @dataclass
 class HistogramValue(AggregatedValue):
     _aggregate: ClassVar[str] = "histogram"
     interval: float
-    buckets: list[Bucket]
+    buckets: Buckets
 
     def __post_init__(self) -> None:
-        self.buckets = [Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in self.buckets]
+        if isinstance(self.buckets, Collection):
+            self.buckets = Buckets(self.buckets)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["interval"] = self.interval
-        output["buckets"] = [bucket.dump(camel_case) for bucket in self.buckets]
+        output["buckets"] = self.buckets.dump(camel_case)
         return output
 
 
