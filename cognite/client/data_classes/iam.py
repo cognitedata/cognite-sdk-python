@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.data_classes.capabilities import Capability
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -13,9 +16,9 @@ class Group(CogniteResource):
     """No description.
 
     Args:
-        name (str | None): Name of the group
+        name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[dict[str, Any]] | None): No description.
+        capabilities (list[Capability] | None): No description.
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
@@ -25,9 +28,9 @@ class Group(CogniteResource):
 
     def __init__(
         self,
-        name: str | None = None,
+        name: str,
         source_id: str | None = None,
-        capabilities: list[dict[str, Any]] | None = None,
+        capabilities: list[Capability] | None = None,
         id: int | None = None,
         is_deleted: bool | None = None,
         deleted_time: int | None = None,
@@ -42,6 +45,25 @@ class Group(CogniteResource):
         self.deleted_time = deleted_time
         self.metadata = metadata
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            source_id=resource.get("sourceId"),
+            capabilities=[Capability.load(c) for c in resource.get("capabilities", [])],
+            id=resource.get("id"),
+            is_deleted=resource.get("isDeleted"),
+            deleted_time=resource.get("deletedTime"),
+            metadata=resource.get("metadata"),
+            cognite_client=cognite_client,
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.capabilities:
+            dumped["capabilities"] = [c.dump(camel_case=camel_case) for c in self.capabilities]
+        return dumped
 
 
 class GroupList(CogniteResourceList[Group]):

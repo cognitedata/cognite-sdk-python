@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import Any, Literal, Mapping, cast
+from typing import Any, Literal, Mapping
 
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
@@ -110,7 +110,7 @@ class Query:
 
     @classmethod
     def load_yaml(cls, data: str) -> Query:
-        yaml = cast(Any, local_import("yaml"))
+        yaml = local_import("yaml")
         return cls.load(yaml.safe_load(data))
 
     @classmethod
@@ -296,9 +296,9 @@ class QueryResult(UserDict):
             if not values:
                 instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
             elif values[0]["instanceType"] == "node":
-                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor)
+                instance[key] = NodeListWithCursor([Node.load(node) for node in values], cursor)
             elif values[0]["instanceType"] == "edge":
-                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor)
+                instance[key] = EdgeListWithCursor([Edge.load(edge) for edge in values], cursor)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
 

@@ -29,11 +29,20 @@ from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, a
 
 
 class MyResource(CogniteResource):
-    def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
+    def __init__(
+        self,
+        var_a=None,
+        var_b=None,
+        id=None,
+        external_id=None,
+        last_updated_time=None,
+        cognite_client=None,
+    ):
         self.var_a = var_a
         self.var_b = var_b
         self.id = id
         self.external_id = external_id
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
     def use(self):
@@ -276,8 +285,14 @@ class TestCogniteResourceList:
     def test_to_pandas(self):
         import pandas as pd
 
-        resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
-        expected_df = pd.DataFrame({"varA": [1, 2], "varB": [None, 3]})
+        resource_list = MyResourceList([MyResource(1, last_updated_time=60), MyResource(2, 3)])
+        expected_df = pd.DataFrame(
+            {
+                "varA": [1, 2],
+                "lastUpdatedTime": [pd.Timestamp(60, unit="ms"), pd.NaT],
+                "varB": [None, 3],
+            },
+        )
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=True), expected_df)
 
     @pytest.mark.dsl
@@ -437,33 +452,28 @@ class TestCogniteResourceList:
 
         from cognite.client.data_classes import Asset, Label
 
-        asset = Asset(
+        result_df = Asset(
             external_id="test-1",
             name="test 1",
             parent_external_id="parent-test-1",
             description="A test asset",
             data_set_id=123,
             labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+        ).to_pandas()
+
+        expected_df = pd.DataFrame(
+            {
+                "value": [
+                    "test-1",
+                    "test 1",
+                    "parent-test-1",
+                    "A test asset",
+                    123,
+                    [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+                ]
+            },
+            index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
         )
-
-        result_df = asset.to_pandas()
-
-        data = {
-            "value": [
-                "test-1",
-                "test 1",
-                "parent-test-1",
-                "A test asset",
-                123,
-                [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
-            ]
-        }
-
-        index_labels = ["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"]
-
-        expected_df = pd.DataFrame(data, index=index_labels)
-
-        # Assert that the resultant DataFrame is equal to the expected DataFrame
         pd.testing.assert_frame_equal(result_df, expected_df)
 
 

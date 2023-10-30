@@ -379,7 +379,7 @@ class APIClient:
                 # Not all APIs (such as the Data Modeling API) return an error when unknown ids are provided,
                 # so we need to handle the unknown singleton identifier case here as well.
                 return None
-        return list_cls.load(retrieved_items, cognite_client=self._cognite_client)
+        return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
     def _list_generator(
         self,
@@ -472,12 +472,12 @@ class APIClient:
                     if len(current_items) >= chunk_size:
                         items_to_yield = current_items[:chunk_size]
                         current_items = current_items[chunk_size:]
-                        yield list_cls.load(items_to_yield, cognite_client=self._cognite_client)
+                        yield list_cls._load(items_to_yield, cognite_client=self._cognite_client)
 
                 next_cursor = res.json().get("nextCursor")
                 if total_items_retrieved == limit or next_cursor is None:
                     if chunk_size and current_items:
-                        yield list_cls.load(current_items, cognite_client=self._cognite_client)
+                        yield list_cls._load(current_items, cognite_client=self._cognite_client)
                     break
 
     def _list_generator_partitioned(
@@ -625,7 +625,7 @@ class APIClient:
         tasks_summary = execute_tasks(get_partition, tasks, max_workers=partitions)
         tasks_summary.raise_first_encountered_exception()
 
-        return list_cls.load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
+        return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     def _aggregate(
         self,
@@ -774,7 +774,7 @@ class APIClient:
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
         elif aggregate in {"uniqueValues", "uniqueProperties"}:
-            return UniqueResultList.load(json_items, cognite_client=self._cognite_client)
+            return UniqueResultList._load(json_items, cognite_client=self._cognite_client)
         else:
             raise ValueError(f"Unknown aggregate: {aggregate}")
 
@@ -869,7 +869,7 @@ class APIClient:
 
         if single_item:
             return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
-        return list_cls.load(created_resources, cognite_client=self._cognite_client)
+        return list_cls._load(created_resources, cognite_client=self._cognite_client)
 
     def _delete_multiple(
         self,
@@ -985,7 +985,7 @@ class APIClient:
 
         if single_item:
             return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
-        return list_cls.load(updated_items, cognite_client=self._cognite_client)
+        return list_cls._load(updated_items, cognite_client=self._cognite_client)
 
     def _upsert_multiple(
         self,
@@ -1115,7 +1115,7 @@ class APIClient:
             headers=headers,
             api_subversion=api_subversion,
         )
-        return list_cls.load(res.json()["items"], cognite_client=self._cognite_client)
+        return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
     @staticmethod
     def _prepare_item_chunks(

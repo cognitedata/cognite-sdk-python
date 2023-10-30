@@ -68,7 +68,7 @@ def fast_dict_load(
     return instance
 
 
-def load_yaml_or_json(resource: str) -> dict[str, Any]:
+def load_yaml_or_json(resource: str) -> Any:
     try:
         yaml = local_import("yaml")
         return yaml.safe_load(resource)

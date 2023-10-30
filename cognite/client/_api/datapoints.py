@@ -1234,7 +1234,7 @@ class DatapointsAPI(APIClient):
             return DatapointsList.load(res, cognite_client=self._cognite_client)
         elif not res and ignore_unknown_ids:
             return None
-        return Datapoints._load(res[0], cognite_client=self._cognite_client)
+        return Datapoints.load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,
@@ -1427,7 +1427,7 @@ class DatapointsAPI(APIClient):
                 >>> df = pd.DataFrame({ts_xid: noise}, index=idx)
                 >>> client.time_series.data.insert_dataframe(df)
         """
-        np, pd = cast(Any, local_import("numpy", "pandas"))
+        np, pd = local_import("numpy", "pandas")
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError(f"DataFrame index must be `pd.DatetimeIndex`, got: {type(df.index)}")
         if df.columns.has_duplicates:

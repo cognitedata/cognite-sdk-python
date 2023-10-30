@@ -84,7 +84,7 @@ class TemplatesAPI(APIClient):
         path = "/templategroups/{}/versions/{}/graphql"
         path = interpolate_and_url_encode(path, external_id, version)
         response = self._post(path, {"query": query})
-        return GraphQlResponse._load(response.json())
+        return GraphQlResponse.load(response.json())
 
 
 class TemplateGroupsAPI(APIClient):
@@ -273,7 +273,7 @@ class TemplateGroupVersionsAPI(APIClient):
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
         version_res = self._post(resource_path, version.dump(camel_case=True)).json()
-        return TemplateGroupVersion._load(version_res)
+        return TemplateGroupVersion.load(version_res)
 
     def list(
         self,

@@ -173,11 +173,11 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
         if "properties" in resource and isinstance(resource["properties"], dict):
             resource["properties"] = {k: ViewProperty.load(v) for k, v in resource["properties"].items()} or None
 
-        return super()._load(resource)
+        return super()._load(resource, cognite_client)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

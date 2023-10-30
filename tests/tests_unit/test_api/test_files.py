@@ -449,7 +449,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload(path=path, asset_ids=[1, 2])
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadataList([FileMetadata.load(response_body), FileMetadata._load(response_body)]) == res
+        assert FileMetadataList([FileMetadata.load(response_body), FileMetadata.load(response_body)]) == res
         assert 4 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
