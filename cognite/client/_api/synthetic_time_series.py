@@ -136,7 +136,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     @staticmethod
     def _sympy_to_sts(expression: str | sympy.Expr) -> str:
-        sympy_module = cast(Any, local_import("sympy"))
+        sympy_module = local_import("sympy")
 
         infix_ops = {sympy_module.Add: "+", sympy_module.Mul: "*"}
         functions = {
