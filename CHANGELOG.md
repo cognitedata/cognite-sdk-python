@@ -17,81 +17,114 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.0.0] - 2023-08-24 
-This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
-in sequence produces an equal object to the original, for example, 
-`my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump` 
-methods is `json` and `yaml` serializable. 
+## [7.0.0] - 2023-11-01
+This release ensures that all CogniteResource's have `.dump` and `.load` methods, and that calling these two methods
+in sequence produces an equal object to the original, for example,
+`my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
+methods are `json` and `yaml` serializable.
+
+### Added
+- `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
+  default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
+  dtype will always be `datetime64[ns]`, although in v2 this could have been `datetime64[ms]`.
+
+### Deprecated
+- The Templates API (migrate to Data Modeling).
 
 ### Changed
-* The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
-* The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
-* The `client.sequences.data.retrieve` method has changed signature: 
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+`expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+with no easy way to add a prefix. Also, it no longer expands metadata by default.
+- Additionally, `Asset.to_pandas`, now accepts the parameters `expand_aggregates` and `aggregates_prefix`. Since
+  the possible `aggregates` keys are known, `camel_case` will also apply to these (if expanded) as opposed to
+  the metadata keys.
+- The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
+- The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
+- All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
+- All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
+- `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
+- Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
+  a single or multiple items (i.e. id -> ids).
+- `client.data_modeling.instances.aggregate` returns `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending
+  on the `aggregates` and `group_by` parameters. Previously, it always returned `InstanceAggregationResultList`.
+- The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
+- The `client.sequences.data.retrieve` method has changed signature: 
   The parameter `columns_external_id` is renamed `columns`, the parameters `id` and `external_id` have 
   been moved to the beginning of the signature. This is to better match the API and have a consistent overload 
   implementation.
-* The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
+- The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
   backwards compatibility, but will be removed in the next major version. However, all API methods now return
   `SequenceRows` instead of `SequenceData`.
-* The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
-* The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
+- The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
+- The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
 
-### Removed
-* The method `client.sequences.data.retrieve_dataframe` is removed. The same is achieved with 
-  `client.sequences.data.retrieve(...).to_pandas(...)`
-* The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
-  explicitly by the user.
 
 ### Added
-
-* Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`, 
+- Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
-* Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
-* Missing `dump` and `load` methods for `ClientCredentials`.
-* Literal annotation for `source_type` and `target_type` in `Relationship`
-* Type annotation for `SequenceData` attribute `rows`.
-* Type annotation for `Geometry` attribute `coordinates`
-* In transformations, `NonceCredentials` was missing `load` method. 
-* In transformations, `TransformationBlockedInfo` was missing `.dump` method
+- Missing `dump` and `load` methods for `ClientCredentials`.
+- Literal annotation for `source_type` and `target_type` in `Relationship`
+- In transformations, `NonceCredentials` was missing `load` method.
+- In transformations, `TransformationBlockedInfo` was missing `.dump` method
+- `capabilities` in `cognite.client.data_classes` with data classes for all CDF capabilities.
+
+### Removed
+- Deprecated methods `aggregate_metadata_keys` and `aggregate_metadata_values` on AssetsAPI.
+- Deprecated method `update_feature_types` on GeospatialAPI.
+- Parameters `property` and `aggregates` for method `aggregate_unique_values` on GeospatialAPI.
+- Parameter `fields` for method `aggregate_unique_values` on EventsAPI.
+- Parameter `function_external_id` for method `create` on FunctionSchedulesAPI (function_id has been required
+  since the deprecation of API keys).
+- The method `client.sequences.data.retrieve_dataframe` is removed. The same is achieved with 
+  `client.sequences.data.retrieve(...).to_pandas(...)`
+- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
+  explicitly by the user.
 
 ### Fixed
-
-* `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
-* In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
-* In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
-* In `DatapointsArray`, `load` method was not compatible with `.dump` method.
-* In extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
-* `ExtractionPipeline.dump` attribute `contacts` was not `json` serializable.
-* `FileMetadata.dump` attributes `labels` and `geo_location` was not `json` serializable.
-* In filtering, filter `ContainsAll` was missing in `Filter.load` method.
-* Annotation for `cpu` and `memory` in `Function`.
-* `GeospatialComputedResponse.dump` attribute `items` was not `yaml` serializable
-* `Relationship.dump` was not `json` serializable. 
-* `Geometry.dump` was not `json` serializable.
-* In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load `errors`
-  `GraphQlError`.
-* `ThreeDModelRevision` attribute `camera` was not dumped as `yaml` serializable and 
+- `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
+- In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
+- In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
+- In `DatapointsArray`, `load` method was not compatible with `.dump` method.
+- In extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
+- `ExtractionPipeline.dump` attribute `contacts` was not `json` serializable.
+- `FileMetadata.dump` attributes `labels` and `geo_location` was not `json` serializable.
+- In filtering, filter `ContainsAll` was missing in `Filter.load` method.
+- Annotation for `cpu` and `memory` in `Function`.
+- `GeospatialComputedResponse.dump` attribute `items` was not `yaml` serializable
+- `Relationship.dump` was not `json` serializable.
+- `Geometry.dump` was not `json` serializable.
+- In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load
+  `errors` `GraphQlError`.
+- `ThreeDModelRevision` attribute `camera` was not dumped as `yaml` serializable and
   not loaded as `RevisionCameraProperties`.
-* `ThreeDNode` attribute `bounding_box` was not dumped as `yaml` serializable and 
+- `ThreeDNode` attribute `bounding_box` was not dumped as `yaml` serializable and
   not loaded as `BoundingBox3D`.
-* `Transformation` attributes `source_nonce`, `source_oidc_credential`, `destination_nonce`, 
-  and `destination_oidc_credentials` were not dumped as `json` serializable and `loaded` with 
+- `Transformation` attributes `source_nonce`, `source_oidc_credential`, `destination_nonce`,
+  and `destination_oidc_credentials` were not dumped as `json` serializable and `loaded` with
   the appropriate data structure. In addition, `TransformationBlockedInfo` and `TransformationJob`
   were not dumped as `json` serializable.
-* `TransformationPreviewResult` was not dumping attribute `schema` as `yaml` serializable, and the 
+- `TransformationPreviewResult` was not dumping attribute `schema` as `yaml` serializable, and the
   `load` and `dump` methods were not compatible.
-* In transformations, `TransformationJob.dump` was not `json` serializable, and attributes
-  `destination` and `status` were not loaded into appropriate data structures. 
-* In transformations, `TransformationSchemaMapType.dump` was not `json` serializable.
-* In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
-* Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
-* Bug in `WorkflowExecution.dump`
-* Bug in `PropertyType.load`
+- In transformations, `TransformationJob.dump` was not `json` serializable, and attributes
+  `destination` and `status` were not loaded into appropriate data structures.
+- In transformations, `TransformationSchemaMapType.dump` was not `json` serializable.
+- In `annotation_types_images`, implemented `.load` for `KeypointCollection` and `KeypointCollectionWithObjectDetection`.
+- Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
+- Bug in `WorkflowExecution.dump`
+- Bug in `PropertyType.load`
 
+## [6.37.0] - 2023-10-27
+### Added
+- Support for `type` property in `NodeApply` and `Node`.
+
+## [6.36.0] - 2023-10-25
+### Added
+- Support for listing members of Data Point Subscription, `client.time_series.subscriptions.list_member_time_series()`. Note this is an experimental feature.
 
 ## [6.35.0] - 2023-10-25
 ### Added
 - Support for `through` on node result set expressions.
+
 ### Fixed
 - `unit` on properties in data modelling. This was typed as a string, but it is in fact a direct relation.
 

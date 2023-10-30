@@ -29,11 +29,20 @@ from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, a
 
 
 class MyResource(CogniteResource):
-    def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
+    def __init__(
+        self,
+        var_a=None,
+        var_b=None,
+        id=None,
+        external_id=None,
+        last_updated_time=None,
+        cognite_client=None,
+    ):
         self.var_a = var_a
         self.var_b = var_b
         self.id = id
         self.external_id = external_id
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
     def use(self):
@@ -167,24 +176,23 @@ class TestCogniteResource:
         import pandas as pd
 
         class SomeResource(CogniteResource):
-            def __init__(self, a_list, ob, ob_expand, ob_ignore, prim, prim_ignore):
+            def __init__(self, a_list, ob, metadata, ob_ignore, prim, prim_ignore):
                 self.a_list = a_list
                 self.ob = ob
-                self.ob_expand = ob_expand
+                self.metadata = metadata
                 self.ob_ignore = ob_ignore
                 self.prim = prim
                 self.prim_ignore = prim_ignore
 
-        expected_df = pd.DataFrame(columns=["value"])
-        expected_df.loc["prim"] = ["abc"]
-        expected_df.loc["aList"] = [[1, 2, 3]]
-        expected_df.loc["ob"] = [{"x": "y"}]
-        expected_df.loc["md_key"] = ["md_value"]
-
+        expected_df = pd.DataFrame(
+            {"value": ["abc", [1, 2, 3], {"x": "y"}, "md_value"]},
+            index=["prim", "aList", "ob", "md_key"],
+        )
         res = SomeResource([1, 2, 3], {"x": "y"}, {"md_key": "md_value"}, {"bla": "bla"}, "abc", 1)
-        actual_df = res.to_pandas(expand=["obExpand"], ignore=["primIgnore", "obIgnore"], camel_case=True)
+        actual_df = res.to_pandas(
+            expand_metadata=True, metadata_prefix="", ignore=["primIgnore", "obIgnore"], camel_case=True
+        )
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
-        res.to_pandas()
 
     @pytest.mark.dsl
     def test_to_pandas_no_camels(self):
@@ -279,8 +287,14 @@ class TestCogniteResourceList:
     def test_to_pandas(self):
         import pandas as pd
 
-        resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
-        expected_df = pd.DataFrame({"varA": [1, 2], "varB": [None, 3]})
+        resource_list = MyResourceList([MyResource(1, last_updated_time=60), MyResource(2, 3)])
+        expected_df = pd.DataFrame(
+            {
+                "varA": [1, 2],
+                "lastUpdatedTime": [pd.Timestamp(60, unit="ms"), pd.NaT],
+                "varB": [None, 3],
+            },
+        )
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=True), expected_df)
 
     @pytest.mark.dsl
@@ -440,33 +454,28 @@ class TestCogniteResourceList:
 
         from cognite.client.data_classes import Asset, Label
 
-        asset = Asset(
+        result_df = Asset(
             external_id="test-1",
             name="test 1",
             parent_external_id="parent-test-1",
             description="A test asset",
             data_set_id=123,
             labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+        ).to_pandas()
+
+        expected_df = pd.DataFrame(
+            {
+                "value": [
+                    "test-1",
+                    "test 1",
+                    "parent-test-1",
+                    "A test asset",
+                    123,
+                    [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+                ]
+            },
+            index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
         )
-
-        result_df = asset.to_pandas()
-
-        data = {
-            "value": [
-                "test-1",
-                "test 1",
-                "parent-test-1",
-                "A test asset",
-                123,
-                [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
-            ]
-        }
-
-        index_labels = ["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"]
-
-        expected_df = pd.DataFrame(data, index=index_labels)
-
-        # Assert that the resultant DataFrame is equal to the expected DataFrame
         pd.testing.assert_frame_equal(result_df, expected_df)
 
 
@@ -534,23 +543,23 @@ class TestCogniteUpdate:
 
     def test_add_or_remove_after_set_raises_error(self):
         update = MyUpdate(1).object.set({"key": "value"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.add({"key2": "value2"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.remove(["key2"])
 
     def test_set_after_add_or_removeraises_error(self):
         update = MyUpdate(1).object.add({"key": "value"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.set({"key2": "value2"})
 
     def test_add_object_and_remove(self):
         update = MyUpdate(1).object.add({"key": "value"})
         update.object.remove(["key2"])
         assert {"id": 1, "update": {"object": {"add": {"key": "value"}, "remove": ["key2"]}}} == update.dump()
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.add({"key": "overwrite"})
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             update.object.remove(["key2", "key4"])
 
     def test_remove_object(self):

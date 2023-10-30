@@ -30,9 +30,13 @@ from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
+from cognite.client.utils._pandas_helpers import (
+    convert_nullable_int_cols,
+    convert_timestamp_columns_to_datetime,
+    notebook_display_with_fallback,
+)
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
-from cognite.client.utils._time import convert_time_attributes_to_datetime
+from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
 if TYPE_CHECKING:
     import pandas
@@ -50,7 +54,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 
 class CogniteResponse:
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -115,7 +119,7 @@ class CogniteResource(_WithClientMixin):
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -140,30 +144,37 @@ class CogniteResource(_WithClientMixin):
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata",), ignore: list[str] | None = None, camel_case: bool = False
+        self,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand (Sequence[str]): List of row keys to expand, only works if the value is a Dict. Will expand metadata by default.
-            ignore (list[str] | None): List of row keys to not include when converting to a data frame.
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            expand_metadata (bool): Expand the metadata into separate rows (default: False).
+            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        ignore = [] if ignore is None else ignore
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dumped = self.dump(camel_case=camel_case)
 
-        for element in ignore:
-            del dumped[element]
-        for key in expand:
-            if key in dumped:
-                if isinstance(dumped[key], dict):
-                    dumped.update(dumped.pop(key))
-                else:
-                    raise AssertionError(f"Could not expand attribute '{key}'")
+        for element in ignore or []:
+            dumped.pop(element, None)
+
+        if convert_timestamps:
+            for k in TIME_ATTRIBUTES.intersection(dumped):
+                dumped[k] = pd.Timestamp(dumped[k], unit="ms")
+
+        if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
+            dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
 
         return pd.Series(dumped).to_frame(name="value")
 
@@ -236,7 +247,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
@@ -280,6 +291,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         camel_case: bool = False,
         expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame. Note that if the metadata column is expanded and there are
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
@@ -288,13 +300,17 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
             expand_metadata (bool): Expand the metadata column into separate columns.
             metadata_prefix (str): Prefix to use for metadata columns.
+            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The Cognite resource as a dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        df = convert_nullable_int_cols(df, camel_case)
+        df = convert_nullable_int_cols(df)
+
+        if convert_timestamps:
+            df = convert_timestamp_columns_to_datetime(df)
 
         if expand_metadata and "metadata" in df.columns:
             # Equivalent to pd.json_normalize(df["metadata"]) but is a faster implementation.
@@ -350,9 +366,8 @@ class CogniteUpdate:
 
     def _set(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert (
-            "remove" not in update_obj and "add" not in update_obj
-        ), "Can not call set after adding or removing fields from an update object."
+        if "remove" in update_obj or "add" in update_obj:
+            raise RuntimeError("Can not call set after adding or removing fields from an update object.")
         self._update_object[name] = {"set": value}
 
     def _set_null(self, name: str) -> None:
@@ -360,40 +375,48 @@ class CogniteUpdate:
 
     def _add(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "add" not in update_obj
-        ), "Can not call add twice on the same object, please combine your objects and pass them to add in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "add" in update_obj:
+            raise RuntimeError(
+                "Can not call add twice on the same object, please combine your objects "
+                "and pass them to add in one call."
+            )
         update_obj["add"] = value
         self._update_object[name] = update_obj
 
     def _remove(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "remove" not in update_obj
-        ), "Can not call remove twice on the same object, please combine your items and pass them to remove in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "remove" in update_obj:
+            raise RuntimeError(
+                "Can not call remove twice on the same object, please combine your items "
+                "and pass them to remove in one call."
+            )
         update_obj["remove"] = value
         self._update_object[name] = update_obj
 
     def _modify(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "modify" not in update_obj
-        ), "Can not call modify twice on the same object, please combine your items and pass them to modify in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "modify" in update_obj:
+            raise RuntimeError(
+                "Can not call modify twice on the same object, please combine your items "
+                "and pass them to modify in one call."
+            )
         update_obj["modify"] = value
         self._update_object[name] = update_obj
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): No description.
+            camel_case (Literal[True]): No description.
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        assert camel_case is True, "snake_case is currently unsupported"  # TODO maybe (when unifying classes)
         dumped: dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id
@@ -492,7 +515,7 @@ class CogniteFilter:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:

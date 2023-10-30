@@ -96,8 +96,6 @@ from cognite.client.data_classes.geospatial import (
     FeatureType,
     FeatureTypeList,
     FeatureTypePatch,
-    FeatureTypeUpdate,
-    FeatureTypeUpdateList,
 )
 from cognite.client.data_classes.iam import (
     ClientCredentials,
@@ -405,9 +403,7 @@ __all__ = [
     "FeatureTypeList",
     "FeatureTypePatch",
     "FeatureAggregate",
-    "FeatureTypeUpdate",
     "FeatureAggregateList",
-    "FeatureTypeUpdateList",
     "CoordinateReferenceSystemList",
     "CoordinateReferenceSystem",
     "UserProfile",
