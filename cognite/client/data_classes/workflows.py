@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
 
 from typing_extensions import Self, TypeAlias
@@ -329,24 +328,6 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         }
 
 
-class TaskFailurePolicy(Enum):
-    """
-    Defines the policy to handle failures and timeouts.
-
-    - `SKIP_TASK`:
-        For both failures and timeouts, it will retry until the retries are exhausted.
-        After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed.
-    - `ABORT_WORKFLOW`:
-        In case of failures, retries will be performed until exhausted,
-        after which the task is marked as FAILED and the Workflow is marked the same.
-        In the event of a timeout, no retries are undertaken; the task is marked as TIMED_OUT
-        and the Workflow is marked as FAILED.
-    """
-
-    ABORT_WORKFLOW = "abortWorkflow"
-    SKIP_TASK = "skipTask"
-
-
 class WorkflowTask(CogniteResource):
     """
     This class represents a workflow task.
@@ -360,7 +341,15 @@ class WorkflowTask(CogniteResource):
         description (str | None): The description of the task. Defaults to None.
         retries (int): The number of retries for the task. Defaults to 3.
         timeout (int): The timeout of the task in seconds. Defaults to 3600.
-        on_failure (TaskFailurePolicy): The policy to handle failures and timeouts. Defaults to ABORT_WORKFLOW.
+        on_failure (Literal["abortWorkflow", "skipTask"]):
+            The policy to handle failures and timeouts. Defaults to "abortWorkflow".
+            Options include:
+            - "skipTask": For both failures and timeouts, the task will retry until the retries are exhausted.
+                          After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed.
+            - "abortWorkflow": In case of failures, retries will be performed until exhausted,
+                               after which the task is marked as FAILED and the Workflow is marked the same.
+                               In the event of a timeout, no retries are undertaken;
+                               the task is marked as TIMED_OUT and the Workflow is marked as FAILED.
         depends_on (list[str] | None): The external ids of the tasks that this task depends on. Defaults to None.
     """
 
@@ -372,7 +361,7 @@ class WorkflowTask(CogniteResource):
         description: str | None = None,
         retries: int = 3,
         timeout: int = 3600,
-        on_failure: TaskFailurePolicy = TaskFailurePolicy.ABORT_WORKFLOW,
+        on_failure: Literal["abortWorkflow", "skipTask"] = "abortWorkflow",
         depends_on: list[str] | None = None,
     ) -> None:
         self.external_id = external_id
@@ -399,7 +388,7 @@ class WorkflowTask(CogniteResource):
             # Allow default to come from the API.
             retries=resource.get("retries"),  # type: ignore[arg-type]
             timeout=resource.get("timeout"),  # type: ignore[arg-type]
-            on_failure=TaskFailurePolicy(resource.get("onFailure")),
+            on_failure=resource["onFailure"],
             depends_on=[dep["externalId"] for dep in resource.get("dependsOn", [])] or None,
         )
 
@@ -410,7 +399,7 @@ class WorkflowTask(CogniteResource):
             "parameters": self.parameters.dump(camel_case),
             "retries": self.retries,
             "timeout": self.timeout,
-            "onFailure" if camel_case else "on_failure": self.on_failure.value,
+            "onFailure" if camel_case else "on_failure": self.on_failure,
         }
         if self.name:
             output["name"] = self.name
