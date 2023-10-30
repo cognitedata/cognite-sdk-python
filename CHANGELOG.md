@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.38.0] - 2023-10-27
+## [6.39.0] - 2023-10-30
 ## Added
 - Support for `concurrencyPolicy` property in Workflows `TransformationsWorker`.
+
+## [6.38.0] - 2023-10-30
+### Added
+- Support `onFailure` property in Workflows, allowing marking Tasks as optional in a Workflow.
 
 ## [6.37.0] - 2023-10-27
 ### Added
