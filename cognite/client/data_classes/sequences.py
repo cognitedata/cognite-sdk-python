@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import typing
 import warnings
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast, get_args, overload
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, NoReturn, Union, cast, get_args, overload
 
 from typing_extensions import Self, TypeAlias
 
@@ -156,7 +156,7 @@ class Sequence(CogniteResource):
             )
             self.columns = SequenceColumnList.load(columns)
         else:
-            raise ValueError("columns must be a SequenceColumnList")
+            raise ValueError("columns must be a sequence of SequenceColumn objects")
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
@@ -185,7 +185,7 @@ class Sequence(CogniteResource):
         Returns:
             SequenceRows: List of sequence data.
         """
-        if self.external_id:
+        if self.external_id is not None:
             return self._cognite_client.sequences.rows.retrieve(external_id=self.external_id, start=start, end=end)
         elif self.id is not None:
             return self._cognite_client.sequences.rows.retrieve(id=self.id, start=start, end=end)
@@ -478,7 +478,7 @@ class SequenceRows(CogniteResource):
         external_id: str | None = None,
     ) -> None:
         if not at_least_one_is_not_none(id, external_id):
-            raise ValueError("One of id or external_id must be specified")
+            raise ValueError("At least one of id and external_id must be specified.")
 
         col_length = len(columns)
         if wrong_length := [r for r in rows if len(r.values) != col_length]:
@@ -501,10 +501,10 @@ class SequenceRows(CogniteResource):
         ...
 
     @overload
-    def __getitem__(self, item: slice) -> list[list[RowValues]]:
+    def __getitem__(self, item: slice) -> NoReturn:
         ...
 
-    def __getitem__(self, item: int | slice) -> list[RowValues] | list[list[RowValues]]:
+    def __getitem__(self, item: int | slice) -> list[RowValues]:
         if isinstance(item, slice):
             raise TypeError("Slicing is not supported for SequenceRows")
             # Todo: Solution below needs more work
@@ -536,7 +536,7 @@ class SequenceRows(CogniteResource):
 
     @property
     def values(self) -> list[list[RowValues]]:
-        """Returns an iterator over values."""
+        """Returns a list of lists of values"""
         return [list(row.values) for row in self.rows]
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -548,16 +548,15 @@ class SequenceRows(CogniteResource):
         Returns:
             dict[str, Any]: A dictionary representing the instance.
         """
+        key = "rowNumber" if camel_case else "row_number"
         dumped: dict[str, Any] = {
             "columns": self.columns.dump(camel_case),
-            "rows": [
-                {("rowNumber" if camel_case else "row_number"): r.row_number, "values": r.values} for r in self.rows
-            ],
+            "rows": [{key: r.row_number, "values": r.values} for r in self.rows],
         }
         if self.id is not None:
             dumped["id"] = self.id
         if self.external_id is not None:
-            dumped[("externalId" if camel_case else "external_id")] = self.external_id
+            dumped["externalId" if camel_case else "external_id"] = self.external_id
         return dumped
 
     @classmethod
@@ -595,17 +594,13 @@ class SequenceRows(CogniteResource):
             column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
             for eid in self.column_external_ids
         ]
-        index = []
-        values = []
-        for i, row in self.items():
-            index.append(i)
-            values.append(row)
-
-        return pd.DataFrame(
-            values,
-            index=index,
-            columns=df_columns,
-        ).replace({None: pd.NA})
+        index, values = list(zip(*self.items()))
+        return pd.DataFrame(values, index=index, columns=df_columns).convert_dtypes(
+            convert_string=True,
+            convert_integer=True,
+            # Keep nan as missing in float columns:
+            convert_floating=False,
+        )
 
     @property
     def column_external_ids(self) -> list[str]:
@@ -719,8 +714,12 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
             return pd.concat([seq.to_pandas(column_names) for seq in self], axis=1)
 
         if key == "external_id":
+            if not all(seq.external_id is not None for seq in self):
+                raise ValueError("All sequences must have external_id set")
             return {seq.external_id: seq.to_pandas(column_names) for seq in self}
         elif key == "id":
+            if not all(seq.id is not None for seq in self):
+                raise ValueError("All sequences must have id set")
             return {seq.id: seq.to_pandas(column_names) for seq in self}
 
         raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")

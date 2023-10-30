@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 import typing
-from typing import TYPE_CHECKING, Any, Iterator, Literal, MutableSequence, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -34,6 +34,7 @@ from cognite.client.utils._validation import (
     process_asset_subtree_ids,
     process_data_set_ids,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas
@@ -927,7 +928,7 @@ class SequencesDataAPI(APIClient):
         summary.raise_compound_exception_if_failed_tasks()
 
     def insert_dataframe(
-        self, dataframe: pandas.DataFrame, id: int | None = None, external_id: str | None = None
+        self, dataframe: pandas.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
     ) -> None:
         """`Insert a Pandas dataframe. <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
@@ -938,6 +939,7 @@ class SequencesDataAPI(APIClient):
             dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
+            dropna (bool): Whether to drop all NaN rows before inserting.
 
         Examples:
             Multiply data in the sequence by 2::
@@ -948,6 +950,8 @@ class SequencesDataAPI(APIClient):
                 >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
                 >>> c.sequences.data.insert_dataframe(df, id=1)
         """
+        if dropna:
+            dataframe = dataframe.dropna()
         dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
         column_external_ids = [str(s) for s in dataframe.columns]
@@ -1015,7 +1019,7 @@ class SequencesDataAPI(APIClient):
     def retrieve(
         self,
         *,
-        external_id: MutableSequence[str],
+        external_id: SequenceNotStr[str],
         start: int = 0,
         end: int | None = None,
         columns: typing.Sequence[str] | None = None,
@@ -1039,7 +1043,7 @@ class SequencesDataAPI(APIClient):
     def retrieve(
         self,
         *,
-        id: MutableSequence[int],
+        id: typing.Sequence[int],
         start: int = 0,
         end: int | None = None,
         columns: typing.Sequence[str] | None = None,
@@ -1049,7 +1053,7 @@ class SequencesDataAPI(APIClient):
 
     def retrieve(
         self,
-        external_id: str | MutableSequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         id: int | typing.Sequence[int] | None = None,
         start: int = 0,
         end: int | None = None,
@@ -1059,7 +1063,7 @@ class SequencesDataAPI(APIClient):
         """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
-            external_id (str | MutableSequence[str] | None): The external id of the sequence to retrieve from.
+            external_id (str | SequenceNotStr[str] | None): The external id of the sequence to retrieve from.
             id (int | typing.Sequence[int] | None): The internal if the sequence to retrieve from.
             start (int): Row number to start from (inclusive).
             end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
@@ -1106,7 +1110,7 @@ class SequencesDataAPI(APIClient):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        column_external_ids: typing.Sequence[str] | None = None,
+        column_external_ids: SequenceNotStr[str] | None = None,
         before: int | None = None,
     ) -> SequenceRows:
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
@@ -1114,7 +1118,7 @@ class SequencesDataAPI(APIClient):
         Args:
             id (int | None): Id or list of ids.
             external_id (str | None): External id or list of external ids.
-            column_external_ids (typing.Sequence[str] | None): (optional, typing.Sequence[str]): external ids of columns to include. Omitting will return all columns.
+            column_external_ids (SequenceNotStr[str] | None): (optional, typing.Sequence[str]): external ids of columns to include. Omitting will return all columns.
             before (int | None): (optional, int): Get latest datapoint before this row number.
 
         Returns:
