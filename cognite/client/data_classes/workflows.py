@@ -232,12 +232,10 @@ class TransformationTaskParameters(WorkflowTaskParameters):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        transformation = {("externalId" if camel_case else "external_id"): self.external_id}
+        transformation = {"externalId" if camel_case else "external_id": self.external_id}
 
         if self.concurrency_policy is not None:
-            transformation[
-                ("concurrencyPolicy" if camel_case else "concurrency_policy")
-            ] = self.concurrency_policy.value
+            transformation["concurrencyPolicy" if camel_case else "concurrency_policy"] = self.concurrency_policy.value
 
         return {"transformation": transformation}
 
