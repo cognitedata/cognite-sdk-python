@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
@@ -50,7 +50,7 @@ class VisionResource(CogniteResource, ABC):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         return pd.Series(self.dump(camel_case), name="value").to_frame()
 
 

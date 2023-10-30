@@ -10,8 +10,9 @@ Changes are grouped as follows:
 
 ## From v6 to v7
 ### Functionality
-- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
-  the new parameter `convert_timestamps`.
+- `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
+  default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
+  dtype will always be `datetime64[ns]`, although in v2 this could have been `datetime64[ms]`.
 
 ### Deprecated
 - The Templates API is deprecated, and will be removed in a future version. Please migrate to Data Modeling.
@@ -29,6 +30,8 @@ Changes are grouped as follows:
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
   `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
   with no easy way to add a prefix. Also, it no longer expands metadata by default.
+- Additionally, `Asset.to_pandas`, have `expand_aggregates` and `aggregates_prefix`. Since the possible `aggregates`
+  keys are known, `camel_case` will also apply to these if expanded as opposed to metadata keys.
 - Removed parameters `property` and `aggregates` for method `aggregate_unique_values` on GeospatialAPI, use the
   `output` parameter instead.
 - Removed parameter `fields` for method `aggregate_unique_values` on EventsAPI, use the other aggregate-prefixed
