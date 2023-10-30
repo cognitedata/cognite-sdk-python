@@ -5,11 +5,12 @@ import warnings
 from inspect import signature
 from itertools import chain
 from numbers import Integral
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._time import TIME_ATTRIBUTES
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -33,7 +34,7 @@ NULLABLE_INT_COLS = {
     "last_seen_time",
     "last_updated_time",
 }
-NULLABLE_INT_COLS_CAMEL_CASE = set(map(to_camel_case, NULLABLE_INT_COLS))
+NULLABLE_INT_COLS |= set(map(to_camel_case, NULLABLE_INT_COLS))
 
 
 def pandas_major_version() -> int:
@@ -57,15 +58,20 @@ def notebook_display_with_fallback(inst: T_CogniteResource | T_CogniteResourceLi
         return str(inst)
 
 
-def convert_nullable_int_cols(df: pd.DataFrame, camel_case: bool) -> pd.DataFrame:
-    cols = {True: NULLABLE_INT_COLS_CAMEL_CASE, False: NULLABLE_INT_COLS}[camel_case]
-    to_convert = df.columns.intersection(cols)
+def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
+    to_convert = df.columns.intersection(NULLABLE_INT_COLS)
     df[to_convert] = df[to_convert].astype("Int64")
     return df
 
 
+def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
+    to_convert = df.columns.intersection(TIME_ATTRIBUTES)
+    df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
+    return df
+
+
 def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.DataFrame:
-    pd = cast(Any, local_import("pandas"))
+    pd = local_import("pandas")
     int_cols = [
         i for i, dtype in enumerate(chain.from_iterable(df.dtypes for df in dfs)) if issubclass(dtype.type, Integral)
     ]

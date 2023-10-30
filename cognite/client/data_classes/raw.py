@@ -40,7 +40,7 @@ class Row(CogniteResource):
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         return pd.DataFrame([self.columns], [self.key])
 
 
@@ -53,7 +53,7 @@ class RowList(CogniteResourceList[Row]):
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
 
 
