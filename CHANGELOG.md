@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.38.0] - 2023-10-30
+### Added
+- Support `onFailure` property in Workflows, allowing marking Tasks as optional in a Workflow.
+
 ## [6.37.0] - 2023-10-27
 ### Added
 - Support for `type` property in `NodeApply` and `Node`.
