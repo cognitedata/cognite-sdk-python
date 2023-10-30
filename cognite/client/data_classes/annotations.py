@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
@@ -57,12 +56,8 @@ class Annotation(CogniteResource):
         self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
 
     @classmethod
-    def load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> Annotation:
-        if isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, dict):
-            return cls.from_dict(resource, cognite_client=cognite_client)
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:
+        return cls.from_dict(resource, cognite_client=cognite_client)
 
     @classmethod
     def from_dict(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:

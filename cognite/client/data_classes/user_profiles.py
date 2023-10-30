@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -46,9 +45,7 @@ class UserProfile(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> UserProfile:
-        if isinstance(resource, str):
-            resource = cast(dict[str, Any], json.loads(resource))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UserProfile:
         to_load = {
             "user_identifier": resource["userIdentifier"],
             "last_updated_time": resource["lastUpdatedTime"],

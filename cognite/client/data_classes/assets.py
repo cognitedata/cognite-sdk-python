@@ -162,8 +162,8 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Asset:
+        instance = super()._load(resource, cognite_client)
         if isinstance(resource, dict) and instance.aggregates is not None:
             instance.aggregates = AggregateResultItem(**instance.aggregates)
         instance.labels = Label._load_list(instance.labels)

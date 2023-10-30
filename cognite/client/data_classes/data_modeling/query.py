@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
@@ -31,8 +30,7 @@ class SourceSelector:
         }
 
     @classmethod
-    def load(cls, data: dict | str) -> SourceSelector:
-        data = json.loads(data) if isinstance(data, str) else data
+    def load(cls, data: dict[str, Any]) -> SourceSelector:
         return cls(
             source=ViewId.load(data["source"]),
             properties=data["properties"],
@@ -58,8 +56,7 @@ class Select:
         return output
 
     @classmethod
-    def load(cls, data: dict | str) -> Select:
-        data = json.loads(data) if isinstance(data, str) else data
+    def load(cls, data: dict[str, Any]) -> Select:
         return cls(
             sources=[SourceSelector.load(source) for source in data.get("sources", [])],
             sort=[InstanceSort.load(s) for s in data.get("sort", [])],
@@ -117,20 +114,18 @@ class Query:
         return cls.load(yaml.safe_load(data))
 
     @classmethod
-    def load(cls, data: str | dict[str, Any]) -> Query:
-        data = json.loads(data) if isinstance(data, str) else data
-
-        if not (with_ := data.get("with")):
+    def load(cls, resource: dict[str, Any]) -> Query:
+        if not (with_ := resource.get("with")):
             raise ValueError("The query must contain a with key")
 
         loaded: dict[str, Any] = {"with_": {k: ResultSetExpression.load(v) for k, v in with_.items()}}
-        if not (select := data.get("select")):
+        if not (select := resource.get("select")):
             raise ValueError("The query must contain a select key")
         loaded["select"] = {k: Select.load(v) for k, v in select.items()}
 
-        if parameters := data.get("parameters"):
+        if parameters := resource.get("parameters"):
             loaded["parameters"] = dict(parameters.items())
-        if cursors := data.get("cursors"):
+        if cursors := resource.get("cursors"):
             loaded["cursors"] = dict(cursors.items())
         return cls(**loaded)
 
@@ -291,13 +286,12 @@ class QueryResult(UserDict):
     @classmethod
     def load(
         cls,
-        data: dict[str, Any] | str,
+        resource: dict[str, Any],
         instance_list_type_by_result_expression_name: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
         cursors: dict[str, Any],
     ) -> QueryResult:
-        data = json.loads(data) if isinstance(data, str) else data
         instance = cls()
-        for key, values in data.items():
+        for key, values in resource.items():
             cursor = cursors.get(key)
             if not values:
                 instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)

@@ -21,13 +21,14 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    final,
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
+from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -134,14 +135,37 @@ class CogniteResource(_WithClientMixin):
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    @final
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        """Load a resource from a YAML/JSON string or dict."""
+        if isinstance(resource, str):
+            resource = load_yaml_or_json(resource)
+
         if isinstance(resource, dict):
-            return fast_dict_load(cls, resource, cognite_client=cognite_client)
-        elif isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+            return cls._load(resource, cognite_client=cognite_client)
+
+        raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        """
+        This is the internal load method that is called by the public load method.
+        It has a default implementation that can be overridden by subclasses.
+
+        The typical use case for overriding this method is to handle nested resources,
+        or to handle resources that have required fields as the default implementation assumes
+        all fields are optional.
+
+        Note that the base class takes care of loading from YAML/JSON strings and error handling.
+
+        Args:
+            resource (dict[str, Any]): The resource to load.
+            cognite_client (CogniteClient | None): Cognite client to associate with the resource.
+
+        Returns:
+            Self: The loaded resource.
+        """
+        return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
     def to_pandas(
         self,
@@ -323,18 +347,25 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return notebook_display_with_fallback(self)
 
     @classmethod
-    def load(
-        cls: type[T_CogniteResourceList],
-        resource_list: str | Iterable[dict[str, Any]],
+    @final
+    def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
+        """Load a resource from a YAML/JSON string or iterable of dict."""
+        if isinstance(resource, str):
+            resource = load_yaml_or_json(resource)
+
+        if isinstance(resource, Iterable):
+            return cls._load(cast(Iterable, resource), cognite_client=cognite_client)
+
+        raise TypeError(f"Resource must be json or yaml str, or iterable of dicts, not {type(resource)}")
+
+    @classmethod
+    def _load(
+        cls,
+        resource_list: Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
-    ) -> T_CogniteResourceList:
-        if isinstance(resource_list, str):
-            return cls.load(json.loads(resource_list), cognite_client=cognite_client)
-        elif isinstance(resource_list, Iterable):
-            resources = [cls._RESOURCE.load(resource, cognite_client=cognite_client) for resource in resource_list]
-            return cls(resources, cognite_client=cognite_client)
-        else:
-            raise NotImplementedError(f"Resource list must be iterable or json str, not {type(resource_list)}")
+    ) -> Self:
+        resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
+        return cls(resources, cognite_client=cognite_client)
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)

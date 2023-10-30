@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal
@@ -61,15 +60,14 @@ class ContainerCore(DataModelingResource):
         self.indexes = indexes
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "constraints" in data:
-            data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
-        if "indexes" in data:
-            data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
-        if "properties" in data:
-            data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
-        return super().load(data, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        if "constraints" in resource:
+            resource["constraints"] = {k: Constraint.load(v) for k, v in resource["constraints"].items()} or None
+        if "indexes" in resource:
+            resource["indexes"] = {k: Index.load(v) for k, v in resource["indexes"].items()} or None
+        if "properties" in resource:
+            resource["properties"] = {k: ContainerProperty.load(v) for k, v in resource["properties"].items()} or None
+        return super()._load(resource, cognite_client)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

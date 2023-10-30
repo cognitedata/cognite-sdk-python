@@ -229,7 +229,7 @@ class FunctionsAPI(APIClient):
             function["indexUrl"] = index_url
 
         res = self._post(url, json={"items": [function]})
-        return Function.load(res.json()["items"][0], cognite_client=self._cognite_client)
+        return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
@@ -403,7 +403,7 @@ class FunctionsAPI(APIClient):
         url = f"/functions/{id}/call"
         res = self._post(url, json={"data": data, "nonce": nonce})
 
-        function_call = FunctionCall.load(res.json(), cognite_client=self._cognite_client)
+        function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
         if wait:
             function_call.wait()
         return function_call
@@ -1052,7 +1052,7 @@ class FunctionSchedulesAPI(APIClient):
             item["data"] = data
 
         res = self._post(self._RESOURCE_PATH, json={"items": [item]})
-        return FunctionSchedule.load(res.json()["items"][0], cognite_client=self._cognite_client)
+        return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:
         """`Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_

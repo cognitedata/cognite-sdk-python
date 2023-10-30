@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import json
 import math
 import numbers
 import platform
@@ -63,6 +64,15 @@ def fast_dict_load(
         except KeyError:
             pass
     return instance
+
+
+def load_yaml_or_json(resource: str) -> Any:
+    try:
+        import yaml
+
+        return yaml.safe_load(resource)
+    except ImportError:
+        return json.loads(resource)
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
@@ -223,5 +233,5 @@ def rename_and_exclude_keys(
 
 def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
     if (res := dct.get(key)) is not None:
-        return cls.load(res)
+        return cls._load(res)
     return None
