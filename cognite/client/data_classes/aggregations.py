@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
@@ -376,8 +375,7 @@ class UniqueResult(CogniteResource):
         return self.values[0]
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> UniqueResult:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> UniqueResult:
         return cls(
             count=resource["count"],
             values=resource["values"],

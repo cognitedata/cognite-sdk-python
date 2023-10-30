@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
@@ -50,14 +49,13 @@ class ViewCore(DataModelingResource):
         self.version = version
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "implements" in data:
-            data["implements"] = [ViewId.load(v) for v in data["implements"]] or None
-        if "filter" in data:
-            data["filter"] = Filter.load(data["filter"])
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        if "implements" in resource:
+            resource["implements"] = [ViewId.load(v) for v in resource["implements"]] or None
+        if "filter" in resource:
+            resource["filter"] = Filter.load(resource["filter"])
 
-        return super().load(data)
+        return super()._load(resource)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -107,12 +105,11 @@ class ViewApply(ViewCore):
         self.properties = properties
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "properties" in data and isinstance(data["properties"], dict):
-            data["properties"] = {k: ViewPropertyApply.load(v) for k, v in data["properties"].items()} or None
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "properties" in resource and isinstance(resource["properties"], dict):
+            resource["properties"] = {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()} or None
 
-        return super().load(data)
+        return super()._load(resource)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -176,12 +173,11 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "properties" in data and isinstance(data["properties"], dict):
-            data["properties"] = {k: ViewProperty.load(v) for k, v in data["properties"].items()} or None
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
+        if "properties" in resource and isinstance(resource["properties"], dict):
+            resource["properties"] = {k: ViewProperty.load(v) for k, v in resource["properties"].items()} or None
 
-        return super().load(data)
+        return super()._load(resource, cognite_client)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

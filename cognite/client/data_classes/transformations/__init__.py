@@ -288,16 +288,16 @@ class Transformation(CogniteResource):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Transformation:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Transformation:
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 
         if isinstance(instance.running_job, dict):
-            instance.running_job = TransformationJob.load(instance.running_job, cognite_client=cognite_client)
+            instance.running_job = TransformationJob._load(instance.running_job, cognite_client=cognite_client)
 
         if isinstance(instance.last_finished_job, dict):
-            instance.last_finished_job = TransformationJob.load(
+            instance.last_finished_job = TransformationJob._load(
                 instance.last_finished_job, cognite_client=cognite_client
             )
 
@@ -305,7 +305,7 @@ class Transformation(CogniteResource):
             instance.blocked = TransformationBlockedInfo.load(instance.blocked)
 
         if isinstance(instance.schedule, dict):
-            instance.schedule = TransformationSchedule.load(instance.schedule, cognite_client=cognite_client)
+            instance.schedule = TransformationSchedule._load(instance.schedule, cognite_client=cognite_client)
 
         if isinstance(instance.source_session, dict):
             instance.source_session = SessionDetails.load(instance.source_session)
@@ -550,8 +550,8 @@ class TransformationPreviewResult(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.schema, dict):
             items = instance.schema.get("items")
             if items is not None:
