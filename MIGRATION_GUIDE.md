@@ -69,6 +69,11 @@ Changes are grouped as follows:
 - Loading `TransformationPreviewResult` the attribute `.schema` now returns `TransformationSchemaColumnList` instead of `list[dict]`.
 - Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
 
+### Function Signature
+- `client.data_modeling.instances.aggregate` the parameters `instance_type` and `group_by` has swapped order.
+- The return type of `client.data_modeling.instances.aggregate` has changed from `InstanceAggregationResultList` to
+  a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
+
 ## From v5 to v6
 ### Removed
 - Removed support for legacy auth (API keys, service accounts, client.login.status()). Use OIDC to authenticate instead and use `client.iam.token.inspect()` instead of `login.status()`.
