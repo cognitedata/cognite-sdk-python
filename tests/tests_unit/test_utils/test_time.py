@@ -16,7 +16,7 @@ from cognite.client.utils._time import (
     MIN_TIMESTAMP_MS,
     align_large_granularity,
     align_start_and_end_for_granularity,
-    convert_time_attributes_to_datetime,
+    convert_and_isoformat_time_attrs,
     datetime_to_ms,
     granularity_to_ms,
     granularity_unit_to_ms,
@@ -234,29 +234,8 @@ class TestObjectTimeConversion:
             ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
         ],
     )
-    def test_convert_time_attributes_to_isoformat(self, item, expected_output):
-        assert expected_output == convert_time_attributes_to_datetime(item, to_isoformat=True)
-
-    @pytest.mark.parametrize(
-        "item, expected_output",
-        [
-            (
-                {"expirationTime": -41103211},
-                {"expirationTime": datetime(1969, 12, 31, 12, 34, 56, 789000, tzinfo=timezone.utc)},
-            ),
-            ([{"lastSuccess": -1}], [{"lastSuccess": datetime(1969, 12, 31, 23, 59, 59, 999000, tzinfo=timezone.utc)}]),
-            (
-                {"scheduled_execution_time": 1},
-                {"scheduled_execution_time": datetime(1970, 1, 1, 0, 0, 0, 1000, tzinfo=timezone.utc)},
-            ),
-            (
-                [{"uploaded_time": 123456789}],
-                [{"uploaded_time": datetime(1970, 1, 2, 10, 17, 36, 789000, tzinfo=timezone.utc)}],
-            ),
-        ],
-    )
-    def test_convert_time_attributes_to_datetime(self, item, expected_output):
-        assert expected_output == convert_time_attributes_to_datetime(item)
+    def test_convert_and_isoformat_time_attrs(self, item, expected_output):
+        assert expected_output == convert_and_isoformat_time_attrs(item)
 
 
 class TestSplitTimeDomain:

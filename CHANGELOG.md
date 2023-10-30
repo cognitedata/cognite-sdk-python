@@ -18,19 +18,26 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.0.0] - 2023-11-01
-This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
+This release ensures that all CogniteResource's have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example,
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
-methods is `json` and `yaml` serializable.
+methods are `json` and `yaml` serializable.
 
-### Fixed
-- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
-  `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
-  with no easy way to add a prefix. Also, it no longer expands metadata by default.
-- `CogniteResource.to_pandas` now converts known timestamps to `datetime` by default. Can be turned off with
-  the new parameter `convert_timestamps`.
+### Added
+- `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
+  default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
+  dtype will always be `datetime64[ns]`, although in v2 this could have been `datetime64[ms]`.
+
+### Deprecated
+- The Templates API (migrate to Data Modeling).
 
 ### Changed
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+`expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+with no easy way to add a prefix. Also, it no longer expands metadata by default.
+- Additionally, `Asset.to_pandas`, now accepts the parameters `expand_aggregates` and `aggregates_prefix`. Since
+  the possible `aggregates` keys are known, `camel_case` will also apply to these (if expanded) as opposed to
+  the metadata keys.
 - The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
 - The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
 - All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.
@@ -38,21 +45,27 @@ methods is `json` and `yaml` serializable.
 - `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
 - Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
   a single or multiple items (i.e. id -> ids).
+- `client.data_modeling.instances.aggregate` returns `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending
+  on the `aggregates` and `group_by` parameters. Previously, it always returned `InstanceAggregationResultList`.
 - The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
 
 
 ### Added
-- Deprecation warning for all Templates API methods.
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
-- Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization`.
 - Missing `dump` and `load` methods for `ClientCredentials`.
 - Literal annotation for `source_type` and `target_type` in `Relationship`
-- Type annotation for `SequenceData` attribute `rows`.
-- Type annotation for `Geometry` attribute `coordinates`
 - In transformations, `NonceCredentials` was missing `load` method.
 - In transformations, `TransformationBlockedInfo` was missing `.dump` method
 - `capabilities` in `cognite.client.data_classes` with data classes for all CDF capabilities.
+
+### Removed
+- Deprecated methods `aggregate_metadata_keys` and `aggregate_metadata_values` on AssetsAPI.
+- Deprecated method `update_feature_types` on GeospatialAPI.
+- Parameters `property` and `aggregates` for method `aggregate_unique_values` on GeospatialAPI.
+- Parameter `fields` for method `aggregate_unique_values` on EventsAPI.
+- Parameter `function_external_id` for method `create` on FunctionSchedulesAPI (function_id has been required
+  since the deprecation of API keys).
 
 ### Fixed
 - `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
@@ -67,8 +80,8 @@ methods is `json` and `yaml` serializable.
 - `GeospatialComputedResponse.dump` attribute `items` was not `yaml` serializable
 - `Relationship.dump` was not `json` serializable.
 - `Geometry.dump` was not `json` serializable.
-- In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load `errors`
-  `GraphQlError`.
+- In templates, `GraphQlResponse.dump` was not `json` serializable, and `GraphQlResponse.dump` failed to load
+  `errors` `GraphQlError`.
 - `ThreeDModelRevision` attribute `camera` was not dumped as `yaml` serializable and
   not loaded as `RevisionCameraProperties`.
 - `ThreeDNode` attribute `bounding_box` was not dumped as `yaml` serializable and
@@ -87,9 +100,18 @@ methods is `json` and `yaml` serializable.
 - Bug in `WorkflowExecution.dump`
 - Bug in `PropertyType.load`
 
+## [6.37.0] - 2023-10-27
+### Added
+- Support for `type` property in `NodeApply` and `Node`.
+
+## [6.36.0] - 2023-10-25
+### Added
+- Support for listing members of Data Point Subscription, `client.time_series.subscriptions.list_member_time_series()`. Note this is an experimental feature.
+
 ## [6.35.0] - 2023-10-25
 ### Added
 - Support for `through` on node result set expressions.
+
 ### Fixed
 - `unit` on properties in data modelling. This was typed as a string, but it is in fact a direct relation.
 

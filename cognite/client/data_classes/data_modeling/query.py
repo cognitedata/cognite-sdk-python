@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import Any, Literal, Mapping, cast
+from typing import Any, Literal, Mapping
 
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
@@ -113,7 +113,7 @@ class Query:
 
     @classmethod
     def load_yaml(cls, data: str) -> Query:
-        yaml = cast(Any, local_import("yaml"))
+        yaml = local_import("yaml")
         return cls.load(yaml.safe_load(data))
 
     @classmethod

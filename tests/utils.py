@@ -268,10 +268,10 @@ class FakeCogniteResourceGenerator:
         except TypeError:
             # Python 3.10 Type hints cannot be evaluated with get_type_hints,
             # ref https://stackoverflow.com/questions/66006087/how-to-use-typing-get-type-hints-with-pep585-in-python3-8
-            resource_vars = vars(importlib.import_module(resource_cls.__module__))
-            resource_vars.update(self._type_checking())
-            resource_vars.update(resource_cls.__dict__)
-            type_hint_by_name = self._get_type_hints_3_10(resource_vars, signature)
+            resource_module_vars = vars(importlib.import_module(resource_cls.__module__))
+            resource_module_vars.update(self._type_checking())
+            resource_module_vars.update(resource_cls.__dict__)
+            type_hint_by_name = self._get_type_hints_3_10(resource_module_vars, signature)
 
         keyword_arguments: dict[str, Any] = {}
         positional_arguments: list[Any] = []

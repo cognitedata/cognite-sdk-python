@@ -28,9 +28,7 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import (
-    CogniteResourceList,
-)
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -126,7 +124,7 @@ class InstanceCore(DataModelingResource):
         instance_type (Literal["node", "edge"]): No description.
     """
 
-    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node") -> None:
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
         self.instance_type = instance_type
         self.space = space
         self.external_id = external_id
@@ -254,16 +252,13 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         self.data[view_id] = properties
 
 
-T_Instance = TypeVar("T_Instance", bound="Instance")
-
-
 class Instance(InstanceCore):
     """A node or edge. This is the read version of the instance.
 
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        version (str): DMS version.
+        version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         instance_type (Literal["node", "edge"]): The type of instance.
@@ -276,7 +271,7 @@ class Instance(InstanceCore):
         self,
         space: str,
         external_id: str,
-        version: str,
+        version: int,
         last_updated_time: int,
         created_time: int,
         instance_type: Literal["node", "edge"] = "node",
@@ -317,7 +312,7 @@ class InstanceApplyResult(InstanceCore):
         instance_type (Literal["node", "edge"]): The type of instance.
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        version (str): DMS version of the instance.
+        version (int): DMS version of the instance.
         was_modified (bool): Whether the instance was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -329,7 +324,7 @@ class InstanceApplyResult(InstanceCore):
         instance_type: Literal["node", "edge"],
         space: str,
         external_id: str,
-        version: str,
+        version: int,
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
@@ -403,6 +398,7 @@ class NodeApply(InstanceApply):
         external_id (str): Combined with the space is the unique identifier of the node.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the node and/or container the container(s) making up this node.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -411,8 +407,26 @@ class NodeApply(InstanceApply):
         external_id: str,
         existing_version: int | None = None,
         sources: list[NodeOrEdgeData] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
+        if isinstance(type, tuple):
+            self.type: DirectRelationReference | None = DirectRelationReference.load(type)
+        else:
+            self.type = type
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> NodeApply:
+        data = json.loads(resource) if isinstance(resource, str) else resource
+        instance = super().load(data)
+        instance.type = DirectRelationReference.load(data["type"]) if "type" in data else None
+        return instance
 
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
@@ -424,11 +438,12 @@ class Node(Instance):
     Args:
         space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
-        version (str): DMS version.
+        version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the node.
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
         **_ (Any): No description.
     """
 
@@ -436,14 +451,16 @@ class Node(Instance):
         self,
         space: str,
         external_id: str,
-        version: str,
+        version: int,
         last_updated_time: int,
         created_time: int,
-        deleted_time: int | None = None,
-        properties: Properties | None = None,
+        deleted_time: int | None,
+        properties: Properties | None,
+        type: DirectRelationReference | None,
         **_: Any,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
+        self.type = type
 
     def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> NodeApply:
         """
@@ -474,6 +491,26 @@ class Node(Instance):
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
+    @classmethod
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Node:
+        data = json.loads(resource) if isinstance(resource, str) else resource
+        return Node(
+            space=data["space"],
+            external_id=data["externalId"],
+            version=data["version"],
+            last_updated_time=data["lastUpdatedTime"],
+            created_time=data["createdTime"],
+            deleted_time=data.get("deletedTime"),
+            properties=Properties.load(data["properties"]) if "properties" in data else None,
+            type=DirectRelationReference.load(data["type"]) if "type" in data else None,
+        )
+
 
 class NodeApplyResult(InstanceApplyResult):
     """A node. This represents the update on the node.
@@ -481,7 +518,7 @@ class NodeApplyResult(InstanceApplyResult):
     Args:
         space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
-        version (str): DMS version of the node.
+        version (int): DMS version of the node.
         was_modified (bool): Whether the node was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -492,7 +529,7 @@ class NodeApplyResult(InstanceApplyResult):
         self,
         space: str,
         external_id: str,
-        version: str,
+        version: int,
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
@@ -574,7 +611,7 @@ class Edge(Instance):
     Args:
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
-        version (str): DMS version.
+        version (int): DMS version.
         type (DirectRelationReference): The type of edge.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -589,7 +626,7 @@ class Edge(Instance):
         self,
         space: str,
         external_id: str,
-        version: str,
+        version: int,
         type: DirectRelationReference,
         last_updated_time: int,
         created_time: int,
@@ -661,7 +698,7 @@ class EdgeApplyResult(InstanceApplyResult):
     Args:
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
-        version (str): DMS version.
+        version (int): DMS version.
         was_modified (bool): Whether the edge was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -672,7 +709,7 @@ class EdgeApplyResult(InstanceApplyResult):
         self,
         space: str,
         external_id: str,
-        version: str,
+        version: int,
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
