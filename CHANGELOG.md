@@ -75,8 +75,6 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Parameter `fields` for method `aggregate_unique_values` on EventsAPI.
 - Parameter `function_external_id` for method `create` on FunctionSchedulesAPI (function_id has been required
   since the deprecation of API keys).
-- The method `client.sequences.data.retrieve_dataframe` is removed. The same is achieved with 
-  `client.sequences.data.retrieve(...).to_pandas(...)`
 - The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
   explicitly by the user.
 

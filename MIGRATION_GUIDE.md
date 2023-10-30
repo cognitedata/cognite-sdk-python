@@ -25,8 +25,6 @@ Changes are grouped as follows:
   `aggregate_metadata_values(keys=["country"], filter=my_filter)` to
   `aggregate_unique_values(["metadata", "country"], filter=my_filter)`.
 - Deprecated method `update_feature_types` on GeospatialAPI, use `patch_feature_types` instead.
-- The method `client.sequences.data.retrieve_dataframe` is removed. The same is achieved with 
-  `client.sequences.data.retrieve(...).to_pandas(...)`
 - The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
   explicitly by the user.
 
