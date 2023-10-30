@@ -45,6 +45,8 @@ Changes are grouped as follows:
 - `client.data_modeling.instances.aggregate` the parameters `instance_type` and `group_by` has swapped order.
 - The return type of `client.data_modeling.instances.aggregate` has changed from `InstanceAggregationResultList` to
   a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
+- The `client.sequences.data.retrieve` method has changed signature: 
+  The parameter `columns_external_id` is renamed `columns`. This is to better match the API and have a consistent overload implementation.
 
 ### Changed
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
@@ -76,9 +78,6 @@ Changes are grouped as follows:
 - Loading `TransformationPreviewResult` the attribute `.schema` now returns `TransformationSchemaColumnList` instead of `list[dict]`.
 - Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
 - The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
-- The `client.sequences.data.retrieve` method has changed signature: 
-  The parameter `columns_external_id` is renamed `columns`, the parameters `id` and `external_id` have 
-  been replaced by `id_or_external_id`. This is to better match the API and have a consistent overload implementation.
 - The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
   backwards compatibility, but will be removed in the next major version. However, all API methods now return
   `SequenceRows` instead of `SequenceData`.

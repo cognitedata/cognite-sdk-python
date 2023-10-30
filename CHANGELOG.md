@@ -55,9 +55,8 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
   backwards compatibility, but will be removed in the next major version. However, all API methods now return
   `SequenceRows` instead of `SequenceData`.
-- The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
+- The attribute `columns` in `Sequence` has been changed from `typing.Sequence[dict]` to `SequnceColumnList`.
 - The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
-
 
 ### Added
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
@@ -112,6 +111,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Bug when dumping `documents.SourceFile.dump(camel_case=True)`.
 - Bug in `WorkflowExecution.dump`
 - Bug in `PropertyType.load`
+
 
 ## [6.37.0] - 2023-10-27
 ### Added
