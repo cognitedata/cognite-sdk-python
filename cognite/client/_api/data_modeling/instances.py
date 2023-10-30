@@ -25,6 +25,7 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import (
+    AggregatedNumberedValue,
     Aggregation,
     Histogram,
     HistogramValue,
@@ -64,6 +65,7 @@ from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
+from cognite.client.utils.useful_types import SequenceNotStr
 
 from ._data_modeling_executor import get_data_modeling_executor
 
@@ -738,31 +740,73 @@ class InstancesAPI(APIClient):
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
         return list_cls.load(res.json()["items"], cognite_client=None)
 
+    @overload
+    def aggregate(
+        self,
+        view: ViewId,
+        aggregates: MetricAggregation | dict,
+        group_by: None = None,
+        instance_type: Literal["node", "edge"] = "node",
+        query: str | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
+        filter: Filter | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+    ) -> AggregatedNumberedValue:
+        ...
+
+    @overload
+    def aggregate(
+        self,
+        view: ViewId,
+        aggregates: Sequence[MetricAggregation | dict],
+        group_by: None = None,
+        instance_type: Literal["node", "edge"] = "node",
+        query: str | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
+        filter: Filter | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+    ) -> list[AggregatedNumberedValue]:
+        ...
+
+    @overload
     def aggregate(
         self,
         view: ViewId,
         aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
+        group_by: str | SequenceNotStr[str],
         instance_type: Literal["node", "edge"] = "node",
-        group_by: Sequence[str] | None = None,
         query: str | None = None,
-        properties: Sequence[str] | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList:
+        ...
+
+    def aggregate(
+        self,
+        view: ViewId,
+        aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
+        group_by: str | SequenceNotStr[str] | None = None,
+        instance_type: Literal["node", "edge"] = "node",
+        query: str | None = None,
+        properties: str | SequenceNotStr[str] | None = None,
+        filter: Filter | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+    ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
         Args:
-            view (ViewId): View to to aggregate over.
-            aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]):  The properties to aggregate over.
+            view (ViewId): View to aggregate over.
+            aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]): The properties to aggregate over.
+            group_by (str | SequenceNotStr[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            group_by (Sequence[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
             query (str | None): Query string that will be parsed and used for search.
-            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            properties (str | SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
-            InstanceAggregationResultList: Node or edge aggregation results.
+            AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList: Node or edge aggregation results.
 
         Examples:
 
@@ -773,7 +817,7 @@ class InstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> avg_run_time = aggs.Avg("runTimeMinutes")
                 >>> view_id = ViewId("mySpace", "PersonView", "v1")
-                >>> res = c.data_modeling.instances.aggregate(view_id, [avg_run_time], group_by=["releaseYear"])
+                >>> res = c.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
 
         """
         if instance_type not in ("node", "edge"):
@@ -781,21 +825,31 @@ class InstancesAPI(APIClient):
 
         self._validate_filter(filter)
         body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
-        aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
+        is_single = isinstance(aggregates, (dict, MetricAggregation))
+        aggregate_seq: Sequence[MetricAggregation | dict] = (
+            [aggregates] if isinstance(aggregates, (dict, MetricAggregation)) else aggregates
+        )
         body["aggregates"] = [
             agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregate_seq
         ]
         if group_by:
-            body["groupBy"] = group_by
+            body["groupBy"] = [group_by] if isinstance(group_by, str) else group_by
         if filter:
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
         if query:
             body["query"] = query
         if properties:
-            body["properties"] = properties
+            body["properties"] = [properties] if isinstance(properties, str) else properties
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
-        return InstanceAggregationResultList.load(res.json()["items"], cognite_client=None)
+        result_list = InstanceAggregationResultList.load(res.json()["items"], cognite_client=None)
+        if group_by is not None:
+            return result_list
+
+        if is_single:
+            return result_list[0].aggregates[0]
+        else:
+            return result_list[0].aggregates
 
     @overload
     def histogram(
