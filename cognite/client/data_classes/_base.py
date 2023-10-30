@@ -348,9 +348,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     @classmethod
     @final
-    def load(
-        cls: type[Self], resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
-    ) -> Self:
+    def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or iterable of dict."""
         if isinstance(resource, str):
             resource = load_yaml_or_json(resource)
@@ -362,7 +360,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     @classmethod
     def _load(
-        cls: type[Self],
+        cls,
         resource_list: Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
     ) -> Self:

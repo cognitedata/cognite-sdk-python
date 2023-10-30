@@ -46,7 +46,7 @@ class WorkflowUpsert(CogniteResource):
 
     @classmethod
     def _load(
-        cls: type[Self],
+        cls,
         resource: dict,
         cognite_client: CogniteClient | None = None,
     ) -> Self:
@@ -257,7 +257,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
         self.request_timeout_in_millis = request_timeout_in_millis
 
     @classmethod
-    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
         arguments = convert_all_keys_to_snake_case(cdf_request)
@@ -299,7 +299,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         dynamic: dict[str, Any] = resource[cls.task_type]
 
         # can either be a reference string (i.e., in case of WorkflowDefinitions)
@@ -394,7 +394,7 @@ class WorkflowTaskOutput(ABC):
 
     @classmethod
     @abstractmethod
-    def load(cls: type[Self], data: dict) -> Self:
+    def load(cls, data: dict) -> Self:
         raise NotImplementedError
 
     @classmethod
