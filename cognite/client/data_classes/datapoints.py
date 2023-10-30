@@ -212,8 +212,8 @@ class DatapointsArray(CogniteResource):
             "granularity": self.granularity,
         }
 
-    @typing.no_type_check
     @classmethod
+    @typing.no_type_check
     def load(
         cls,
         dps_dct: dict[str, int | str | bool | npt.NDArray],

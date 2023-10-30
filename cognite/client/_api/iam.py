@@ -72,8 +72,9 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Group
+                >>> from cognite.client.data_classes.capabilities import GroupsAcl
                 >>> c = CogniteClient()
-                >>> my_capabilities = [{"groupsAcl": {"actions": ["LIST"],"scope": {"all": { }}}}]
+                >>> my_capabilities = [GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All())]
                 >>> my_group = Group(name="My Group", capabilities=my_capabilities)
                 >>> res = c.iam.groups.create(my_group)
         """
