@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
+import typing
 import warnings
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast, get_args, overload
-from typing import Sequence as SequenceType
 
 from typing_extensions import Self, TypeAlias
 
@@ -117,7 +117,7 @@ class Sequence(CogniteResource):
         asset_id (int | None): Optional asset this sequence is associated with
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        columns (SequenceType[SequenceColumn] | None): List of column definitions
+        columns (typing.Sequence[SequenceColumn] | None): List of column definitions
         created_time (int | None): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int | None): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
         data_set_id (int | None): Data set that this sequence belongs to
@@ -132,7 +132,7 @@ class Sequence(CogniteResource):
         asset_id: int | None = None,
         external_id: str | None = None,
         metadata: dict[str, Any] | None = None,
-        columns: SequenceType[SequenceColumn] | None = None,
+        columns: typing.Sequence[SequenceColumn] | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         data_set_id: int | None = None,
@@ -147,7 +147,7 @@ class Sequence(CogniteResource):
         self.columns: SequenceColumnList | None
         if columns is None or isinstance(columns, SequenceColumnList):
             self.columns = columns
-        elif isinstance(columns, SequenceType) and all(isinstance(col, SequenceColumn) for col in columns):
+        elif isinstance(columns, typing.Sequence) and all(isinstance(col, SequenceColumn) for col in columns):
             self.columns = SequenceColumnList(columns)
         elif isinstance(columns, list):
             warnings.warn(
@@ -230,11 +230,11 @@ class SequenceFilter(CogniteFilter):
         name (str | None): Return only sequences with this *exact* name.
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         metadata (dict[str, Any] | None): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-        asset_ids (SequenceType[int] | None): Return only sequences linked to one of the specified assets.
-        asset_subtree_ids (SequenceType[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_ids (typing.Sequence[int] | None): Return only sequences linked to one of the specified assets.
+        asset_subtree_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        data_set_ids (SequenceType[dict[str, Any]] | None): Only include sequences that belong to these datasets.
+        data_set_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that belong to these datasets.
     """
 
     def __init__(
@@ -242,11 +242,11 @@ class SequenceFilter(CogniteFilter):
         name: str | None = None,
         external_id_prefix: str | None = None,
         metadata: dict[str, Any] | None = None,
-        asset_ids: SequenceType[int] | None = None,
-        asset_subtree_ids: SequenceType[dict[str, Any]] | None = None,
+        asset_ids: typing.Sequence[int] | None = None,
+        asset_subtree_ids: typing.Sequence[dict[str, Any]] | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: SequenceType[dict[str, Any]] | None = None,
+        data_set_ids: typing.Sequence[dict[str, Any]] | None = None,
     ) -> None:
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -432,11 +432,11 @@ class SequenceRow(CogniteResource):
 
     Args:
         row_number (int): The row number for this row.
-        values (SequenceType[RowValues]): List of values in the order defined in the columns field. Number of items must match. Null is accepted for missing values. String values must be no longer than 256 characters.
+        values (typing.Sequence[RowValues]): List of values in the order defined in the columns field. Number of items must match. Null is accepted for missing values. String values must be no longer than 256 characters.
 
     """
 
-    def __init__(self, row_number: int, values: SequenceType[RowValues]) -> None:
+    def __init__(self, row_number: int, values: typing.Sequence[RowValues]) -> None:
         self.row_number = row_number
         self.values = values
 
@@ -464,7 +464,7 @@ class SequenceRows(CogniteResource):
     """An object representing a list of rows from a sequence.
 
     Args:
-        rows (SequenceType[SequenceRow]): The sequence rows.
+        rows (typing.Sequence[SequenceRow]): The sequence rows.
         columns (SequenceColumnList): The column information.
         id (int | None): Identifier of the sequence the data belong to
         external_id (str | None): External id of the sequence the data belong to
@@ -472,7 +472,7 @@ class SequenceRows(CogniteResource):
 
     def __init__(
         self,
-        rows: SequenceType[SequenceRow],
+        rows: typing.Sequence[SequenceRow],
         columns: SequenceColumnList,
         id: int | None = None,
         external_id: str | None = None,
@@ -633,10 +633,10 @@ class SequenceData(SequenceRows):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        rows: SequenceType[dict] | None = None,
-        row_numbers: SequenceType[int] | None = None,
-        values: SequenceType[SequenceType[int | str | float]] | None = None,
-        columns: SequenceType[dict[str, Any]] | None = None,
+        rows: typing.Sequence[dict] | None = None,
+        row_numbers: typing.Sequence[int] | None = None,
+        values: typing.Sequence[typing.Sequence[int | str | float]] | None = None,
+        columns: typing.Sequence[dict[str, Any]] | None = None,
     ):
         warnings.warn("SequenceData is deprecated, use SequenceRows instead", DeprecationWarning)
         # Conversion for backwards compatibility
@@ -656,7 +656,7 @@ class SequenceData(SequenceRows):
 
         if columns is None:
             raise ValueError("columns must be specified")
-        is_column_loaded = isinstance(columns, SequenceType) and columns and isinstance(columns[0], SequenceColumn)
+        is_column_loaded = isinstance(columns, typing.Sequence) and columns and isinstance(columns[0], SequenceColumn)
         super().__init__(
             id=id,
             external_id=external_id,
