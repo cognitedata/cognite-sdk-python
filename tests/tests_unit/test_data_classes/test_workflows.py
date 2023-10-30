@@ -15,7 +15,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowIds,
     WorkflowTask,
     WorkflowTaskOutput,
-    WorkflowVersionId,
+    WorkflowVersionId, TaskFailurePolicy,
 )
 
 
@@ -133,6 +133,7 @@ class TestWorkflowExecutionDetailed:
                 ),
                 retries=2,
                 timeout=300,
+                on_failure=TaskFailurePolicy.ABORT_WORKFLOW,
             ),
             WorkflowTask(
                 external_id="applicationExecution",
@@ -140,6 +141,7 @@ class TestWorkflowExecutionDetailed:
                 parameters=DynamicTaskParameters(tasks="${testTaskDispatcher.output.response.testTasks}"),
                 retries=0,
                 timeout=3600,
+                on_failure=TaskFailurePolicy.SKIP_TASK,
                 depends_on=["testTaskDispatcher"],
             ),
         ]
