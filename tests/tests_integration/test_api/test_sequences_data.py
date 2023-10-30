@@ -88,7 +88,7 @@ class TestSequencesDataAPI:
         assert len(dps) > 0
 
     def test_retrieve_latest(self, cognite_client, small_sequence):
-        dps = cognite_client.sequences.data.retrieve_latest(id=small_sequence.id)
+        dps = cognite_client.sequences.data.retrieve_last_row(id=small_sequence.id)
         assert len(dps) == 1
 
     def test_retrieve_multi(self, cognite_client, small_sequence, pretend_timeseries):

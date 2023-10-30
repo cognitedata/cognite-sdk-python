@@ -1079,6 +1079,7 @@ class SequencesDataAPI(APIClient):
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
+        is_single = (isinstance(external_id, str) and id is None) or (isinstance(id, int) and external_id is None)
         identifiers = IdentifierSequence.load(id, external_id).as_dicts()
 
         def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
@@ -1093,17 +1094,15 @@ class SequencesDataAPI(APIClient):
 
             return SequenceRows.load(sequence_rows)
 
-        tasks_summary = execute_tasks(
-            _fetch_sequence, [(x,) for x in identifiers], max_workers=self._config.max_workers
-        )
+        tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
         tasks_summary.raise_first_encountered_exception()
         results = tasks_summary.joined_results()
-        if len(identifiers) == 1:
+        if is_single:
             return results[0]
         else:
             return SequenceRowsList(results)
 
-    def retrieve_latest(
+    def retrieve_last_row(
         self,
         id: int | None = None,
         external_id: str | None = None,
@@ -1127,7 +1126,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.sequences.data.retrieve_latest(id=1, before=1000)
+                >>> res = c.sequences.data.retrieve_last_row(id=1, before=1000)
         """
         identifier = Identifier.of_either(id, external_id).as_dict()
         res = self._do_request(

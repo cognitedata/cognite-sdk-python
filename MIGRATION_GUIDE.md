@@ -47,6 +47,7 @@ Changes are grouped as follows:
   a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
 - The `client.sequences.data.retrieve` method has changed signature: 
   The parameter `columns_external_id` is renamed `columns`. This is to better match the API and have a consistent overload implementation.
+- The `client.sequences.data.retrieve_latest` is renamed `client.sequences.data.retrieve_last_row`.
 
 ### Changed
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
