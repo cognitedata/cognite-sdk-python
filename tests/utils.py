@@ -270,7 +270,7 @@ class FakeCogniteResourceGenerator:
             # ref https://stackoverflow.com/questions/66006087/how-to-use-typing-get-type-hints-with-pep585-in-python3-8
             resource_module_vars = vars(importlib.import_module(resource_cls.__module__))
             resource_module_vars.update(self._type_checking())
-            type_hint_by_name = self._get_type_hints_3_10(resource_module_vars, signature)
+            type_hint_by_name = self._get_type_hints_3_10(resource_module_vars, signature, vars(resource_cls))
 
         keyword_arguments: dict[str, Any] = {}
         positional_arguments: list[Any] = []
@@ -439,48 +439,56 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _get_type_hints_3_10(
-        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature
+        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature, local_vars: dict[str, Any]
     ) -> dict[str, Any]:
         return {
-            name: cls._create_type_hint_3_10(parameter.annotation, resource_module_vars)
+            name: cls._create_type_hint_3_10(parameter.annotation, resource_module_vars, local_vars)
             for name, parameter in signature310.parameters.items()
             if name != "self"
         }
 
     @classmethod
-    def _create_type_hint_3_10(cls, annotation: str, resource_module_vars: dict[str, Any]) -> Any:
+    def _create_type_hint_3_10(
+        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: dict[str, Any]
+    ) -> Any:
         if annotation.endswith(" | None"):
             annotation = annotation[:-7]
         try:
-            return eval(annotation, resource_module_vars)
+            return eval(annotation, resource_module_vars, local_vars)
         except TypeError:
             # Python 3.10 Type Hint
-            return cls._type_hint_3_10_to_8(annotation, resource_module_vars)
+            return cls._type_hint_3_10_to_8(annotation, resource_module_vars, local_vars)
 
     @classmethod
-    def _type_hint_3_10_to_8(cls, annotation: str, resource_module_vars: dict[str, Any]) -> Any:
+    def _type_hint_3_10_to_8(
+        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: dict[str, Any]
+    ) -> Any:
         if cls._is_vertical_union(annotation):
-            alternatives = [cls._create_type_hint_3_10(a.strip(), resource_module_vars) for a in annotation.split("|")]
+            alternatives = [
+                cls._create_type_hint_3_10(a.strip(), resource_module_vars, local_vars) for a in annotation.split("|")
+            ]
             return typing.Union[tuple(alternatives)]
         elif annotation.startswith("dict[") and annotation.endswith("]"):
             if Counter(annotation)[","] > 1:
                 key, rest = annotation[5:-1].split(",", 1)
-                return typing.Dict[key.strip(), cls._create_type_hint_3_10(rest.strip(), resource_module_vars)]
+                return typing.Dict[
+                    key.strip(), cls._create_type_hint_3_10(rest.strip(), resource_module_vars, local_vars)
+                ]
             key, value = annotation[5:-1].split(",")
             return typing.Dict[
-                cls._create_type_hint_3_10(key.strip(), resource_module_vars),
-                cls._create_type_hint_3_10(value.strip(), resource_module_vars),
+                cls._create_type_hint_3_10(key.strip(), resource_module_vars, local_vars),
+                cls._create_type_hint_3_10(value.strip(), resource_module_vars, local_vars),
             ]
         elif annotation.startswith("Optional[") and annotation.endswith("]"):
-            return typing.Optional[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars)]
+            return typing.Optional[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("list[") and annotation.endswith("]"):
-            return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars)]
+            return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("tuple[") and annotation.endswith("]"):
-            return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars)]
+            return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("SequenceType[") and annotation.endswith("]"):
             # SequenceType is a custom type hint used in the SDK to indicate that the type is typing.Sequence
             # to avoid confusion with the CDF Resource Sequence type
-            return typing.Sequence[cls._create_type_hint_3_10(annotation[13:-1], resource_module_vars)]
+            return typing.Sequence[cls._create_type_hint_3_10(annotation[13:-1], resource_module_vars, local_vars)]
         raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod
