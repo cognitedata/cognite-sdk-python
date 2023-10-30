@@ -1642,6 +1642,6 @@ class RetrieveLatestDpsFetcher:
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
-        tasks_summary.raise_first_encountered_exception()
+        tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return tasks_summary.joined_results(lambda res: res.json()["items"])

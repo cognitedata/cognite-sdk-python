@@ -512,7 +512,7 @@ class APIClient:
             tasks_summary = execute_tasks(
                 get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
             )
-            tasks_summary.raise_first_encountered_exception()
+            tasks_summary.raise_compound_exception_if_failed_tasks()
 
             for item in tasks_summary.joined_results():
                 yield resource_cls._load(item, cognite_client=self._cognite_client)
@@ -625,7 +625,7 @@ class APIClient:
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
         tasks_summary = execute_tasks(get_partition, tasks, max_workers=partitions)
-        tasks_summary.raise_first_encountered_exception()
+        tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
