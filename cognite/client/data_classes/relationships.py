@@ -92,8 +92,8 @@ class Relationship(CogniteResource):
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Relationship:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Relationship:
+        instance = super()._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
         if instance.target is not None:
@@ -117,15 +117,15 @@ class Relationship(CogniteResource):
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
         resource_type = resource_type.lower() if resource_type else resource_type
         if resource_type == "timeseries":
-            return TimeSeries.load(resource, cognite_client=cognite_client)
+            return TimeSeries._load(resource, cognite_client=cognite_client)
         if resource_type == "asset":
             return Asset.load(resource, cognite_client=cognite_client)
         if resource_type == "sequence":
-            return Sequence.load(resource, cognite_client=cognite_client)
+            return Sequence._load(resource, cognite_client=cognite_client)
         if resource_type == "file":
-            return FileMetadata.load(resource, cognite_client=cognite_client)
+            return FileMetadata._load(resource, cognite_client=cognite_client)
         if resource_type == "event":
-            return Event.load(resource, cognite_client=cognite_client)
+            return Event._load(resource, cognite_client=cognite_client)
         return resource
 
 
