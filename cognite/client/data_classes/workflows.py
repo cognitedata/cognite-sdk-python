@@ -332,9 +332,12 @@ class DynamicTaskParameters(WorkflowTaskParameters):
 class TaskFailurePolicy(Enum):
     """
     Defines the policy to handle failures and timeouts.
-    - `SKIP_TASK`: For both failures and timeouts, it will retry until the retries are exhausted.
+
+    - `SKIP_TASK`:
+        For both failures and timeouts, it will retry until the retries are exhausted.
         After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed.
-    - `ABORT_WORKFLOW`: In case of failures, retries will be performed until exhausted,
+    - `ABORT_WORKFLOW`:
+        In case of failures, retries will be performed until exhausted,
         after which the task is marked as FAILED and the Workflow is marked the same.
         In the event of a timeout, no retries are undertaken; the task is marked as TIMED_OUT
         and the Workflow is marked as FAILED.
