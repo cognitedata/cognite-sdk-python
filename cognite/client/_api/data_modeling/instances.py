@@ -112,7 +112,7 @@ class _NodeOrEdgeList(CogniteResourceList):
 
 class _NodeOrEdgeResourceAdapter:
     @staticmethod
-    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return Node._load(data)
