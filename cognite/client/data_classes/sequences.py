@@ -155,7 +155,7 @@ class Sequence(CogniteResource):
             )
             self.columns = SequenceColumnList._load(columns)
         else:
-            raise ValueError("columns must be a sequence of SequenceColumn objects")
+            raise ValueError(f"columns must be a sequence of SequenceColumn objects not {type(columns)}")
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id

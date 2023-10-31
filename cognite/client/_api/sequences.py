@@ -494,7 +494,7 @@ class SequencesAPI(APIClient):
 
             Create a new sequence with the same column specifications as an existing sequence::
 
-                >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=seq.columns))
+                >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=column_def))
 
         """
         assert_type(sequence, "sequences", [typing.Sequence, Sequence])
