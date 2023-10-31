@@ -174,7 +174,7 @@ class CogniteObject:
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
 
-T_Serialization = TypeVar("T_Serialization", bound=CogniteObject)
+T_CogniteObject = TypeVar("T_CogniteObject", bound=CogniteObject)
 
 
 class CogniteResource(CogniteObject, _WithClientMixin, ABC):

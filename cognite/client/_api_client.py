@@ -1080,7 +1080,7 @@ class APIClient:
             # Reorder to match the order of the input items
             result.data = [
                 result.get(
-                    **Identifier._load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
+                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
                         camel_case=False
                     )
                 )
