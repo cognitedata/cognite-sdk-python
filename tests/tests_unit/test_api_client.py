@@ -374,16 +374,22 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
         )
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/byids",
+            status=400,
+            json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
+        )
         with set_request_limit(api_client_with_token, 1):
-            with pytest.raises(CogniteNotFoundError) as err:
+            with pytest.raises(CogniteNotFoundError) as e:
                 api_client_with_token._retrieve_multiple(
                     list_cls=SomeResourceList,
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     identifiers=IdentifierSequence.of(1, 2),
                 )
-        assert [{"id": 1}] == err.value.not_found
-        assert [{"id": 2}] == err.value.skipped
+        assert {"id": 1} in e.value.not_found
+        assert {"id": 2} in e.value.not_found
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, mock_by_ids):
         res = api_client_with_token._retrieve_multiple(
@@ -750,12 +756,13 @@ class TestStandardCreate:
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     items=[
-                        SomeResource(1, external_id="400"),
+                        # The external id here is also used as the fake api response status code:
+                        SomeResource(1, external_id="400"),  # i.e, this will raise CogniteAPIError(..., code=400)
                         SomeResource(external_id="500"),
                         SomeResource(1, 1, external_id="200"),
                     ],
                 )
-        assert 500 == e.value.code
+        assert e.value.code in (400, 500)  # race condition, don't know which failing is -last-
         assert [SomeResource(1, external_id="400")] == e.value.failed
         assert [SomeResource(1, 1, external_id="200")] == e.value.successful
         assert [SomeResource(external_id="500")] == e.value.unknown
