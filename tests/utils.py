@@ -495,10 +495,9 @@ class FakeCogniteResourceGenerator:
             return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("tuple[") and annotation.endswith("]"):
             return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("SequenceType[") and annotation.endswith("]"):
-            # SequenceType is a custom type hint used in the SDK to indicate that the type is typing.Sequence
-            # to avoid confusion with the CDF Resource Sequence type
-            return typing.Sequence[cls._create_type_hint_3_10(annotation[13:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("typing.Sequence[") and annotation.endswith("]"):
+            # This is used in the Sequence data class file to avoid name collision
+            return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
         raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod

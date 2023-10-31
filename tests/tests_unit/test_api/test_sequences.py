@@ -559,11 +559,9 @@ class TestSequencesPandasIntegration:
     ):
         import pandas as pd
 
-        data = cognite_client.sequences.data.retrieve(external_id="foo", start=0, end=100)
-        assert isinstance(data, SequenceRows)
-        df = data.to_pandas()
+        data = cognite_client.sequences.data.retrieve_dataframe(external_id="foo", start=0, end=100)
         expected_df = pd.DataFrame(index=[12], data=[["string-12", 0]], columns=["str", "lon"])
-        pd.testing.assert_frame_equal(expected_df, df)
+        pd.testing.assert_frame_equal(expected_df, data)
 
     def test_retrieve_dataframe_columns_many_extid(self, cognite_client, mock_get_sequence_data_many_columns):
         data = cognite_client.sequences.data.retrieve(external_id="foo", start=1000000, end=1100000)

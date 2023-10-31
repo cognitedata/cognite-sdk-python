@@ -72,7 +72,7 @@ class SequenceColumn(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         # Snake case is supported for backwards compatibility
         resource = convert_all_keys_to_camel_case(resource)
-        return super().load(resource, cognite_client)
+        return super()._load(resource, cognite_client)
 
     def as_write(self) -> Self:
         """
@@ -153,7 +153,7 @@ class Sequence(CogniteResource):
                 "Columns is no longer a dict, you should first load the list of dictionaries using SequenceColumnList.load([{...}, {...}])",
                 DeprecationWarning,
             )
-            self.columns = SequenceColumnList.load(columns)
+            self.columns = SequenceColumnList._load(columns)
         else:
             raise ValueError("columns must be a sequence of SequenceColumn objects")
         self.created_time = created_time
@@ -165,7 +165,7 @@ class Sequence(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         loaded = super()._load(resource, cognite_client)
         if loaded.columns is not None:
-            loaded.columns = SequenceColumnList.load(loaded.columns)
+            loaded.columns = SequenceColumnList._load(loaded.columns)
         return loaded
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -560,8 +560,8 @@ class SequenceRows(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            rows=[SequenceRow.load(r) for r in resource["rows"]],
-            columns=SequenceColumnList.load(resource["columns"]),
+            rows=[SequenceRow._load(r) for r in resource["rows"]],
+            columns=SequenceColumnList._load(resource["columns"]),
             id=resource.get("id"),
             external_id=resource.get("externalId"),
         )
@@ -634,7 +634,7 @@ class SequenceData(SequenceRows):
         # Conversion for backwards compatibility
         rows_parsed: list[SequenceRow]
         if rows and isinstance(rows, list) and rows and isinstance(rows[0], dict):
-            rows_parsed = [SequenceRow.load(r) for r in rows]
+            rows_parsed = [SequenceRow._load(r) for r in rows]
         elif rows and isinstance(rows, list) and rows and isinstance(rows[0], SequenceRow):
             rows_parsed = rows
         elif (row_numbers and values) and not rows:
@@ -652,7 +652,7 @@ class SequenceData(SequenceRows):
         super().__init__(
             id=id,
             external_id=external_id,
-            columns=SequenceColumnList.load(columns) if not is_column_loaded else SequenceColumnList(columns),
+            columns=SequenceColumnList._load(columns) if not is_column_loaded else SequenceColumnList(columns),
             rows=rows_parsed,
         )
 
