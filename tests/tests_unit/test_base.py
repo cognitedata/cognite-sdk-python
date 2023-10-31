@@ -277,6 +277,61 @@ class TestCogniteResource:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=42, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        json_serialised = json.dumps(dumped)
+        loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=66, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        yaml_serialised = yaml.safe_dump(dumped)
+        loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteResource)
+        ],
+    )
+    def test_dump_default_came_case_false(
+        self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder
+    ):
+        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client_placeholder).create_instance(
+            cognite_resource_subclass
+        )
+
+        assert instance.dump() == instance.dump(camel_case=False)
+
 
 class TestCogniteResourceList:
     def test_dump(self):

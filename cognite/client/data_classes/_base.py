@@ -122,6 +122,13 @@ class _SerializationMixin:
     def __init__(self, cognite_client: CogniteClient | None = None) -> None:
         raise NotImplementedError
 
+    def __eq__(self, other: Any) -> bool:
+        return type(self) is type(other) and self.dump() == other.dump()
+
+    def __str__(self) -> str:
+        item = convert_and_isoformat_time_attrs(self.dump())
+        return json.dumps(item, default=json_dump_default, indent=4)
+
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 

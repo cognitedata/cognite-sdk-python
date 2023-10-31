@@ -133,6 +133,7 @@ class TestWorkflowExecutionDetailed:
                 ),
                 retries=2,
                 timeout=300,
+                on_failure="abortWorkflow",
             ),
             WorkflowTask(
                 external_id="applicationExecution",
@@ -140,6 +141,7 @@ class TestWorkflowExecutionDetailed:
                 parameters=DynamicTaskParameters(tasks="${testTaskDispatcher.output.response.testTasks}"),
                 retries=0,
                 timeout=3600,
+                on_failure="skipTask",
                 depends_on=["testTaskDispatcher"],
             ),
         ]

@@ -42,10 +42,11 @@ class AggregateUniqueValuesResult(AggregateResult):
     Args:
         count (int | None): Size of the aggregation group
         value (int | str | None): A unique value from the requested field
-        **_ (Any): No description.
+        **kwargs (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, value: int | str | None = None, **_: Any) -> None:
+    def __init__(self, count: int | None = None, value: int | str | None = None, **kwargs: Any) -> None:
+        super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
 
@@ -117,6 +118,10 @@ class GeometryFilter(CogniteFilter):
 
     @classmethod
     def _load(cls, raw_geometry: dict[str, Any]) -> Self:
+        return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
+
+    @classmethod
+    def load(cls, raw_geometry: dict[str, Any]) -> Self:
         return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
 

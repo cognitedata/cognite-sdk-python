@@ -48,10 +48,10 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - `client.data_modeling.instances.aggregate` returns `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending
   on the `aggregates` and `group_by` parameters. Previously, it always returned `InstanceAggregationResultList`.
 - The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
-- Support for `YAML` in all `CogniteResource.load()` and `CogniteResourceList.load()` methods. 
-- The `client.sequences.data.retrieve` method has changed signature: 
-  The parameter `columns_external_id` is renamed `columns`, the parameters `id` and `external_id` have 
-  been moved to the beginning of the signature. This is to better match the API and have a consistent overload 
+- Support for `YAML` in all `CogniteResource.load()` and `CogniteResourceList.load()` methods.
+- The `client.sequences.data.retrieve` method has changed signature:
+  The parameter `columns_external_id` is renamed `columns`, the parameters `id` and `external_id` have
+  been moved to the beginning of the signature. This is to better match the API and have a consistent overload
   implementation.
 - The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
   backwards compatibility, but will be removed in the next major version. However, all API methods now return
@@ -76,7 +76,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Parameter `fields` for method `aggregate_unique_values` on EventsAPI.
 - Parameter `function_external_id` for method `create` on FunctionSchedulesAPI (function_id has been required
   since the deprecation of API keys).
-- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
+- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set
   explicitly by the user.
 
 ### Fixed
@@ -112,6 +112,9 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Bug in `WorkflowExecution.dump`
 - Bug in `PropertyType.load`
 
+## [6.38.0] - 2023-10-30
+### Added
+- Support `onFailure` property in Workflows, allowing marking Tasks as optional in a Workflow.
 
 ## [6.37.0] - 2023-10-27
 ### Added
