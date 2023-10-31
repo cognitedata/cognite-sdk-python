@@ -1360,3 +1360,11 @@ def test_worker_in_backoff_loop_gets_new_token(rsps):
     assert call_count > 0
     assert rsps.calls[0].request.headers["Authorization"] == "Bearer outdated-token"
     assert rsps.calls[1].request.headers["Authorization"] == "Bearer valid-token"
+
+
+@pytest.mark.parametrize("limit, expected_error", ((-2, ValueError), (0, ValueError), ("10", TypeError)))
+def test_list_and_search__bad_limit_value_raises(limit, expected_error, cognite_client):
+    with pytest.raises(expected_error):
+        cognite_client.assets.list(limit=limit)
+    with pytest.raises(expected_error):
+        cognite_client.assets.search(limit=limit)

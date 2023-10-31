@@ -59,7 +59,7 @@ from cognite.client.utils._identifier import (
     SingletonIdentifierSequence,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
-from cognite.client.utils._validation import assert_type
+from cognite.client.utils._validation import assert_type, verify_limit
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -398,6 +398,7 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
+        verify_limit(limit)
         if is_unlimited(limit):
             limit = None
         resource_path = resource_path or self._RESOURCE_PATH
@@ -535,6 +536,7 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
+        verify_limit(limit)
         if partitions:
             if not is_unlimited(limit):
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
@@ -709,6 +711,7 @@ class APIClient:
         limit: int | None = None,
         api_subversion: str | None = None,
     ) -> int | UniqueResultList:
+        verify_limit(limit)
         if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
             raise ValueError(
                 f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
@@ -1101,6 +1104,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
+        verify_limit(limit)
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
