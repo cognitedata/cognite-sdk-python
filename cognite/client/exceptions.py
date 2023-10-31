@@ -106,7 +106,7 @@ class CogniteMultiException(CogniteException):
         ]
         # Only show 'skipped' when tasks were skipped to avoid confusion:
         if skipped := self._unwrap_list(self.skipped):
-            summary.append(f"\nSkipped: {skipped}")
+            summary.append(f"Skipped: {skipped}")
         return "\n".join(summary)
 
 

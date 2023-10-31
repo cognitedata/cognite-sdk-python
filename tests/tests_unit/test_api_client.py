@@ -374,22 +374,16 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
         )
-        rsps.add(
-            rsps.POST,
-            BASE_URL + URL_PATH + "/byids",
-            status=400,
-            json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
-        )
         with set_request_limit(api_client_with_token, 1):
-            with pytest.raises(CogniteNotFoundError) as e:
+            with pytest.raises(CogniteNotFoundError) as err:
                 api_client_with_token._retrieve_multiple(
                     list_cls=SomeResourceList,
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     identifiers=IdentifierSequence.of(1, 2),
                 )
-        assert {"id": 1} in e.value.not_found
-        assert {"id": 2} in e.value.not_found
+        assert [{"id": 1}] == err.value.not_found
+        assert [{"id": 2}] == err.value.skipped
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, mock_by_ids):
         res = api_client_with_token._retrieve_multiple(
@@ -491,7 +485,7 @@ class TestStandardList:
         def request_callback(request):
             payload = jsgz_load(request.body)
             np, total = payload["partition"].split("/")
-            if int(np) == 2:
+            if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
@@ -505,11 +499,15 @@ class TestStandardList:
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 method="POST",
-                partitions=4,
+                partitions=10,
                 limit=None,
             )
         assert 503 == exc.value.code
-        assert 4 == len(rsps.calls)
+        assert exc.value.unknown == [("3/10",)]
+        assert exc.value.skipped
+        assert exc.value.successful
+        assert 9 == len(exc.value.successful) + len(exc.value.skipped)
+        assert 1 < len(rsps.calls)
 
     @pytest.fixture
     def mock_get_for_autopaging(self, rsps):
