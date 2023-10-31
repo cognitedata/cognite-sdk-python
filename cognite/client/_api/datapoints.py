@@ -53,6 +53,7 @@ from cognite.client.utils._auxiliary import (
     find_duplicates,
     split_into_chunks,
     split_into_n_parts,
+    unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import execute_tasks, get_executor
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -1643,7 +1644,7 @@ class RetrieveLatestDpsFetcher:
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
         return tasks_summary.joined_results(lambda res: res.json()["items"])
