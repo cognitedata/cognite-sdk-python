@@ -15,6 +15,7 @@ from typing import (
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils.useful_types import SequenceNotStr
 
 T_ID = TypeVar("T_ID", int, str)
 
@@ -216,7 +217,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     def load(
         cls,
         ids: int | Sequence[int] | None = None,
-        external_ids: str | Sequence[str] | None = None,
+        external_ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
         *,
         id_name: str = "",
     ) -> IdentifierSequence:
