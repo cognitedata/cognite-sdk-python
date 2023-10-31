@@ -591,7 +591,12 @@ class SequenceRows(CogniteResource):
             column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
             for eid in self.column_external_ids
         ]
-        index, values = list(zip(*self.items()))
+        index: Any
+        values: Any
+        if self.rows:
+            index, values = list(zip(*self.items()))
+        else:
+            index, values = [], []
         return pd.DataFrame(values, index=index, columns=df_columns).convert_dtypes(
             convert_string=True,
             convert_integer=True,
