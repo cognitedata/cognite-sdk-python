@@ -25,6 +25,8 @@ Changes are grouped as follows:
   `aggregate_metadata_values(keys=["country"], filter=my_filter)` to
   `aggregate_unique_values(["metadata", "country"], filter=my_filter)`.
 - Deprecated method `update_feature_types` on GeospatialAPI, use `patch_feature_types` instead.
+- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
+  explicitly by the user.
 
 ### Function Signature
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
@@ -41,6 +43,9 @@ Changes are grouped as follows:
 - `client.data_modeling.instances.aggregate` the parameters `instance_type` and `group_by` has swapped order.
 - The return type of `client.data_modeling.instances.aggregate` has changed from `InstanceAggregationResultList` to
   a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
+- The `client.sequences.data.retrieve` method has changed signature: 
+  The parameter `columns_external_id` is renamed `columns`. This is to better match the API and have a consistent overload implementation.
+- The `client.sequences.data.retrieve_latest` is renamed `client.sequences.data.retrieve_last_row`.
 
 ### Changed
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
@@ -72,6 +77,11 @@ Changes are grouped as follows:
 - Loading `TransformationPreviewResult` the attribute `.schema` now returns `TransformationSchemaColumnList` instead of `list[dict]`.
 - Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
 - The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
+- The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
+  backwards compatibility, but will be removed in the next major version. However, all API methods now return
+  `SequenceRows` instead of `SequenceData`.
+- The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
+-The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
 
 ## From v5 to v6
 ### Removed

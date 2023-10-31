@@ -72,6 +72,7 @@ class TestDocstringExamples:
     def test_iam(self):
         run_docstring_tests(iam)
 
+    @pytest.mark.dsl
     def test_sequences(self):
         run_docstring_tests(sequences)
 
