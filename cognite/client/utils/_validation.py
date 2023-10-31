@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping, Sequence, Tup
 from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import T_CogniteSort
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 if TYPE_CHECKING:
@@ -74,3 +75,17 @@ def prepare_filter_sort(
             sort = [sort]
         return [sort_type.load(item).dump(camel_case=True) for item in sort]
     return None
+
+
+def verify_limit(limit: Any) -> None:
+    if is_unlimited(limit):
+        return
+
+    if isinstance(limit, int):
+        if limit <= 0:
+            raise ValueError("limit must be strictly positive")
+    else:
+        raise TypeError(
+            "A finite 'limit' must be given as a strictly positive integer. "
+            "To indicate 'no limit' use one of: [None, -1, math.inf]."
+        )
