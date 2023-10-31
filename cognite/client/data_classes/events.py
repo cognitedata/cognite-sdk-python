@@ -18,6 +18,7 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
+    _SerializationMixin,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class EndTimeFilter(CogniteResource):
+class EndTimeFilter(_SerializationMixin):
     """Either range between two timestamps or isNull filter condition.
 
     Args:

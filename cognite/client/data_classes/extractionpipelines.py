@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     IdTransformerMixin,
     PropertySpec,
+    _SerializationMixin,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ExtractionPipelineContact(CogniteResource):
+class ExtractionPipelineContact(_SerializationMixin):
     """A contact for an extraction pipeline
 
     Args:

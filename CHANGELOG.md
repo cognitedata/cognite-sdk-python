@@ -63,6 +63,9 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - The attribute `columns` in `Sequence` has been changed from `typing.Sequence[dict]` to `SequnceColumnList`.
 - The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
 - The `client.sequences.data.retrieve_latest` is renamed `client.sequences.data.retrieve_last_row`.
+- Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
+  `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer 
+  `dict` but classes with attributes matching the API.
 
 ### Added
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,

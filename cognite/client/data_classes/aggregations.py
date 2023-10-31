@@ -20,7 +20,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, _SerializationMixin
+from cognite.client.data_classes._base import CogniteResourceList, _SerializationMixin
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class CountAggregate(CogniteResource):
+class CountAggregate(_SerializationMixin):
     """
     [DEPRECATED] This represents the result of a count aggregation.
 

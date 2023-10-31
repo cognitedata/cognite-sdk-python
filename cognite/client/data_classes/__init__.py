@@ -28,7 +28,6 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.data_sets import (
     DataSet,
-    DataSetAggregate,
     DataSetFilter,
     DataSetList,
     DataSetUpdate,
@@ -365,7 +364,6 @@ __all__ = [
     "TransformationSchemaColumn",
     "TransformationSchemaColumnList",
     "DataSet",
-    "DataSetAggregate",
     "DataSetFilter",
     "DataSetList",
     "DataSetUpdate",

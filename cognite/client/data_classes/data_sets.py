@@ -163,17 +163,5 @@ class DataSetUpdate(CogniteUpdate):
         ]
 
 
-class DataSetAggregate(CogniteResource):
-    """Aggregation group of data sets
-
-    Args:
-        count (int | None): Size of the aggregation group
-        **_ (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **_: Any) -> None:
-        self.count = count
-
-
 class DataSetList(CogniteResourceList[DataSet], IdTransformerMixin):
     _RESOURCE = DataSet

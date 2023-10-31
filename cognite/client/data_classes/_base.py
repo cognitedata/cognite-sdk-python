@@ -583,7 +583,7 @@ class EnumProperty(Enum):
         return [self.value]
 
 
-class Geometry(CogniteResource):
+class Geometry(_SerializationMixin):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
