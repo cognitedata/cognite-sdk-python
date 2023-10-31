@@ -524,10 +524,6 @@ Retrieve data
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
 
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
-
 Insert rows into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert

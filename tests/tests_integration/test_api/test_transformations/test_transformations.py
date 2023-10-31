@@ -20,7 +20,7 @@ from cognite.client.data_classes.transformations.common import (
     Nodes,
     NonceCredentials,
     OidcCredentials,
-    SequenceRows,
+    SequenceRowsDestination,
     ViewInfo,
 )
 from cognite.client.exceptions import CogniteAPIError
@@ -513,11 +513,13 @@ class TestTransformationsAPI:
         )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
-        new_transformation.destination = SequenceRows("myTest")
+        new_transformation.destination = SequenceRowsDestination("myTest")
         updated_transformation = cognite_client.transformations.update(new_transformation)
         assert updated_transformation.destination == TransformationDestination.sequence_rows("myTest")
 
-        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(SequenceRows("myTest2"))
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            SequenceRowsDestination("myTest2")
+        )
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.sequence_rows("myTest2")
 

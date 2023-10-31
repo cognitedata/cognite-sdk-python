@@ -735,6 +735,12 @@ class CogniteSort:
 T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
+class HasExternalId(Protocol):
+    @property
+    def external_id(self) -> str | None:
+        ...
+
+
 class HasExternalAndInternalId(Protocol):
     @property
     def external_id(self) -> str | None:
@@ -743,6 +749,25 @@ class HasExternalAndInternalId(Protocol):
     @property
     def id(self) -> int | None:
         ...
+
+
+class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
+    def as_external_ids(self) -> list[str]:
+        """
+        Returns the external ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an external id.
+
+        Returns:
+            list[str]: The external ids of all resources in the list.
+        """
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError(f"All {type(x).__name__} must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
 
 
 class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
