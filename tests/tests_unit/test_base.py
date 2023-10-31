@@ -234,8 +234,7 @@ class TestCogniteResource:
 
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
-        json_deserialised = json.loads(json_serialised)
-        loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client_placeholder)
+        loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 
@@ -254,8 +253,7 @@ class TestCogniteResource:
 
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
-        yaml_deserialised = yaml.safe_load(yaml_serialised)
-        loaded = instance.load(yaml_deserialised, cognite_client=cognite_mock_client_placeholder)
+        loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 

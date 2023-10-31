@@ -48,6 +48,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - `client.data_modeling.instances.aggregate` returns `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending
   on the `aggregates` and `group_by` parameters. Previously, it always returned `InstanceAggregationResultList`.
 - The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
+- Support for `YAML` in all `CogniteResource.load()` and `CogniteResourceList.load()` methods. 
 - The `client.sequences.data.retrieve` method has changed signature: 
   The parameter `columns_external_id` is renamed `columns`, the parameters `id` and `external_id` have 
   been moved to the beginning of the signature. This is to better match the API and have a consistent overload 

@@ -69,8 +69,7 @@ class SequenceColumn(CogniteResource):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         # Snake case is supported for backwards compatibility
         resource = convert_all_keys_to_camel_case(resource)
         return super().load(resource, cognite_client)
@@ -163,8 +162,8 @@ class Sequence(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        loaded = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        loaded = super()._load(resource, cognite_client)
         if loaded.columns is not None:
             loaded.columns = SequenceColumnList.load(loaded.columns)
         return loaded
@@ -441,8 +440,7 @@ class SequenceRow(CogniteResource):
         self.values = values
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             row_number=resource["rowNumber"],
             values=resource["values"],
@@ -560,8 +558,7 @@ class SequenceRows(CogniteResource):
         return dumped
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             rows=[SequenceRow.load(r) for r in resource["rows"]],
             columns=SequenceColumnList.load(resource["columns"]),

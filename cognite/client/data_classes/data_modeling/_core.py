@@ -30,9 +30,8 @@ class DataModelingResource(CogniteResource, ABC):
         return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        return cls(**convert_all_keys_to_snake_case(data))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(**convert_all_keys_to_snake_case(resource))
 
 
 class DataModelingSort:
