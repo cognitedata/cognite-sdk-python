@@ -29,8 +29,7 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-    from cognite.client.data_classes._base import T_CogniteResource
-
+    from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
 T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
@@ -50,8 +49,8 @@ def get_accepted_params(cls: type[T_CogniteResource]) -> dict[str, str]:
 
 
 def fast_dict_load(
-    cls: type[T_CogniteResource], item: dict[str, Any], cognite_client: CogniteClient | None
-) -> T_CogniteResource:
+    cls: type[T_CogniteObject], item: dict[str, Any], cognite_client: CogniteClient | None
+) -> T_CogniteObject:
     try:
         instance = cls(cognite_client=cognite_client)
     except TypeError:

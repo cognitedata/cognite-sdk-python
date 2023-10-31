@@ -7,9 +7,9 @@ from typing_extensions import Self
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -20,40 +20,32 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class RevisionCameraProperties(dict):
+class RevisionCameraProperties(CogniteObject):
     """Initial camera position and target.
 
     Args:
         target (list[float] | None): Initial camera target.
         position (list[float] | None): Initial camera position.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
-    def __init__(self, target: list[float] | None = None, position: list[float] | None = None, **kwargs: Any) -> None:
+    def __init__(self, target: list[float] | None = None, position: list[float] | None = None, **_: Any) -> None:
         self.target = target
         self.position = position
-        self.update(kwargs)
-
-    target = CognitePropertyClassUtil.declare_property("target")
-    position = CognitePropertyClassUtil.declare_property("position")
 
 
-class BoundingBox3D(dict):
+class BoundingBox3D(CogniteObject):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:
         max (list[float] | None): No description.
         min (list[float] | None): No description.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
-    def __init__(self, max: list[float] | None = None, min: list[float] | None = None, **kwargs: Any) -> None:
+    def __init__(self, max: list[float] | None = None, min: list[float] | None = None, **_: Any) -> None:
         self.max = max
         self.min = min
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
 
 
 class ThreeDModel(CogniteResource):
@@ -158,7 +150,7 @@ class ThreeDModelRevision(CogniteResource):
         rotation (list[float] | None): No description.
         scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
         translation (list[float] | None): 3D offset of the model.
-        camera (dict[str, Any] | RevisionCameraProperties | None): Initial camera position and target.
+        camera (RevisionCameraProperties | dict[str, Any] | None): Initial camera position and target.
         status (str | None): The status of the revision.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         thumbnail_threed_file_id (int | None): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
@@ -176,7 +168,7 @@ class ThreeDModelRevision(CogniteResource):
         rotation: list[float] | None = None,
         scale: list[float] | None = None,
         translation: list[float] | None = None,
-        camera: dict[str, Any] | RevisionCameraProperties | None = None,
+        camera: RevisionCameraProperties | dict[str, Any] | None = None,
         status: str | None = None,
         metadata: dict[str, str] | None = None,
         thumbnail_threed_file_id: int | None = None,
@@ -203,14 +195,14 @@ class ThreeDModelRevision(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client)
-        if isinstance(resource, dict) and instance.camera is not None:
-            instance.camera = RevisionCameraProperties(**instance.camera)
+        if isinstance(instance.camera, dict):
+            instance.camera = RevisionCameraProperties._load(instance.camera)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.camera, RevisionCameraProperties):
-            result["camera"] = dict(self.camera)
+            result["camera"] = self.camera.dump(camel_case=camel_case)
         return result
 
 
@@ -303,7 +295,7 @@ class ThreeDNode(CogniteResource):
         name (str | None): The name of the node.
         subtree_size (int | None): The number of descendants of the node, plus one (counting itself).
         properties (dict[str, dict[str, str]] | None): Properties extracted from 3D model, with property categories containing key/value string pairs.
-        bounding_box (dict[str, Any] | BoundingBox3D | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        bounding_box (BoundingBox3D | dict[str, Any] | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -316,7 +308,7 @@ class ThreeDNode(CogniteResource):
         name: str | None = None,
         subtree_size: int | None = None,
         properties: dict[str, dict[str, str]] | None = None,
-        bounding_box: dict[str, Any] | BoundingBox3D | None = None,
+        bounding_box: BoundingBox3D | dict[str, Any] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
@@ -332,14 +324,14 @@ class ThreeDNode(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDNode:
         instance = super()._load(resource, cognite_client)
-        if isinstance(resource, dict) and instance.bounding_box is not None:
-            instance.bounding_box = BoundingBox3D(**instance.bounding_box)
+        if isinstance(instance.bounding_box, dict):
+            instance.bounding_box = BoundingBox3D._load(instance.bounding_box)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.bounding_box, BoundingBox3D):
-            result[("boundingBox" if camel_case else "bounding_box")] = dict(self.bounding_box)
+            result["boundingBox" if camel_case else "bounding_box"] = self.bounding_box.dump(camel_case=camel_case)
         return result
 
 
