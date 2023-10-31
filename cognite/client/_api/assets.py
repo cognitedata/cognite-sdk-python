@@ -6,6 +6,7 @@ import itertools
 import math
 import operator as op
 import threading
+import warnings
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
@@ -105,8 +106,8 @@ class AssetsAPI(APIClient):
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        created_time: TimestampRange | dict[str, Any] | None = None,
+        last_updated_time: TimestampRange | dict[str, Any] | None = None,
         root: bool | None = None,
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[str] | None = None,
@@ -130,8 +131,8 @@ class AssetsAPI(APIClient):
             labels (LabelFilter | None): Return only the assets matching the specified label.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this asset
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             root (bool | None): filtered assets are root assets or not
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
@@ -263,6 +264,9 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
+        warnings.warn(
+            f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, cls=AssetAggregate)
 
     def aggregate_count(
