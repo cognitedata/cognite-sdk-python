@@ -87,6 +87,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
   explicitly by the user.
 
 ### Fixed
+- Passing `limit=0` no longer returns `DEFAULT_LIMIT_READ` (25) resources, but raises a `ValueError`.
 - `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
 - In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
 - In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
