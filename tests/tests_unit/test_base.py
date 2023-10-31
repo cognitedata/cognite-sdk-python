@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -21,7 +22,6 @@ from cognite.client.data_classes._base import (
     CogniteResponse,
     CogniteUpdate,
     PropertySpec,
-    _SerializationMixin,
 )
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
@@ -148,7 +148,7 @@ class TestSerializationMixin:
         "cognite_resource_subclass",
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(_SerializationMixin)
+            for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
     def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
@@ -167,7 +167,7 @@ class TestSerializationMixin:
         "cognite_resource_subclass",
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(_SerializationMixin)
+            for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
     def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
@@ -186,7 +186,7 @@ class TestSerializationMixin:
         "cognite_resource_subclass",
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(_SerializationMixin)
+            for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
     def test_dump_default_came_case_false(

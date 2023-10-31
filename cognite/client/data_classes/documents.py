@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
 from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
     EnumProperty,
     IdTransformerMixin,
     NoCaseConversionPropertyList,
-    _SerializationMixin,
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class SourceFile(_SerializationMixin):
+class SourceFile(CogniteObject):
     """
     The source file that a document is derived from.
 
@@ -190,7 +190,7 @@ class DocumentList(CogniteResourceList[Document], IdTransformerMixin):
 
 
 @dataclass
-class Highlight(_SerializationMixin):
+class Highlight(CogniteObject):
     """
     Highlighted snippets from name and content fields which show where the query matches are.
 

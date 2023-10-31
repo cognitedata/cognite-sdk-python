@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
-    _SerializationMixin,
 )
 
 if TYPE_CHECKING:
@@ -69,7 +69,7 @@ class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
     _RESOURCE = LabelDefinition
 
 
-class Label(_SerializationMixin):
+class Label(CogniteObject):
     """A label assigned to a resource.
 
     Args:

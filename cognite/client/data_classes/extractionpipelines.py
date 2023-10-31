@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -12,7 +13,6 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     IdTransformerMixin,
     PropertySpec,
-    _SerializationMixin,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ExtractionPipelineContact(_SerializationMixin):
+class ExtractionPipelineContact(CogniteObject):
     """A contact for an extraction pipeline
 
     Args:

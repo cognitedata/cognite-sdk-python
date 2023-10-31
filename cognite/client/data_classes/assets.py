@@ -30,6 +30,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -40,7 +41,6 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
-    _SerializationMixin,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
-class AssetAggregate(_SerializationMixin):
+class AssetAggregate(CogniteObject):
     """Aggregation group of assets
 
     Args:
@@ -71,7 +71,7 @@ class AssetAggregate(_SerializationMixin):
         self.count = count
 
 
-class AggregateResultItem(_SerializationMixin):
+class AggregateResultItem(CogniteObject):
     """Aggregated metrics of the asset
 
     Args:

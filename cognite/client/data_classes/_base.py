@@ -113,8 +113,8 @@ class _WithClientMixin:
         return self.__cognite_client
 
 
-class _SerializationMixin:
-    """This Mixin is used to add serialization and deserialization to the data classes.
+class CogniteObject:
+    """The Cognite Object is used to add serialization and deserialization to the data classes.
 
     It is used both by the CogniteResources and the nested classes used by the CogniteResources.
     """
@@ -174,10 +174,10 @@ class _SerializationMixin:
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
 
-T_Serialization = TypeVar("T_Serialization", bound=_SerializationMixin)
+T_Serialization = TypeVar("T_Serialization", bound=CogniteObject)
 
 
-class CogniteResource(_SerializationMixin, _WithClientMixin, ABC):
+class CogniteResource(CogniteObject, _WithClientMixin, ABC):
     """
     A CogniteResource represent a resource in the Cognite API, meaning that there should be a set of
     endpoints that can be used to interact with the resource.
@@ -583,7 +583,7 @@ class EnumProperty(Enum):
         return [self.value]
 
 
-class Geometry(_SerializationMixin):
+class Geometry(CogniteObject):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:

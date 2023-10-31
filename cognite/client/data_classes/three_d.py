@@ -7,20 +7,20 @@ from typing_extensions import Self
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
-    _SerializationMixin,
 )
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class RevisionCameraProperties(_SerializationMixin):
+class RevisionCameraProperties(CogniteObject):
     """Initial camera position and target.
 
     Args:
@@ -34,7 +34,7 @@ class RevisionCameraProperties(_SerializationMixin):
         self.position = position
 
 
-class BoundingBox3D(_SerializationMixin):
+class BoundingBox3D(CogniteObject):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:

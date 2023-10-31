@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteFilter, Geometry, _SerializationMixin
+from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class TimestampRange(_SerializationMixin):
+class TimestampRange(CogniteObject):
     """Range between two timestamps.
 
     Args:
@@ -24,7 +24,7 @@ class TimestampRange(_SerializationMixin):
         self.min = min
 
 
-class AggregateResult(_SerializationMixin):
+class AggregateResult(CogniteObject):
     """Aggregation group
 
     Args:
@@ -125,7 +125,7 @@ class GeometryFilter(CogniteFilter):
         return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
 
-class GeoLocation(_SerializationMixin):
+class GeoLocation(CogniteObject):
     """A GeoLocation object conforming to the GeoJSON spec.
 
     Args:
@@ -158,7 +158,7 @@ class GeoLocation(_SerializationMixin):
         return result
 
 
-class GeoLocationFilter(_SerializationMixin):
+class GeoLocationFilter(CogniteObject):
     """Return only the resource matching the specified geographic relation.
 
     Args:
