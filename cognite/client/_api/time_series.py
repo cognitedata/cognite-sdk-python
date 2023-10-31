@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
@@ -245,7 +246,9 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.aggregate(filter={"unit": "kpa"})
         """
-
+        warnings.warn(
+            "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(

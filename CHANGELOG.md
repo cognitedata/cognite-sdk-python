@@ -30,6 +30,10 @@ methods are `json` and `yaml` serializable.
 
 ### Deprecated
 - The Templates API (migrate to Data Modeling).
+- The `client.assets.aggregate` use `client.assets.aggregate_count` instead.
+- The `client.events.aggregate` use `client.events.aggregate_count` instead.
+- The `client.sequence.aggregate` use `client.sequence.aggregate_count` instead.
+- The `client.time_series.aggregate` use `client.time_series.aggregate_count` instead.
 
 ### Changed
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters

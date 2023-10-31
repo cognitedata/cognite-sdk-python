@@ -222,7 +222,9 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.sequences.aggregate(filter={"external_id_prefix": "prefix"})
         """
-
+        warnings.warn(
+            "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(
