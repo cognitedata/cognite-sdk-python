@@ -94,8 +94,8 @@ class TasksSummary:
                 self.unknown_error = exc
         return missing, duplicated
 
-    def _raise_basic_api_error(self, unwrap_fn: Callable, **kwargs: list) -> NoReturn:
-        if isinstance(self.unknown_error, CogniteAPIError) and (kwargs["failed"] or kwargs["unknown"]):
+    def _raise_basic_api_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
+        if isinstance(self.unknown_error, CogniteAPIError) and (task_lists["failed"] or task_lists["unknown"]):
             raise CogniteAPIError(
                 message=self.unknown_error.message,
                 code=self.unknown_error.code,
@@ -104,15 +104,15 @@ class TasksSummary:
                 duplicated=self.duplicated,
                 extra=self.unknown_error.extra,
                 unwrap_fn=unwrap_fn,
-                **kwargs,
+                **task_lists,
             )
         raise self.unknown_error  # type: ignore [misc]
 
-    def _raise_not_found_error(self, unwrap_fn: Callable, **kwargs: list) -> NoReturn:
-        raise CogniteNotFoundError(self.missing, unwrap_fn=unwrap_fn, **kwargs) from self.not_found_error
+    def _raise_not_found_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
+        raise CogniteNotFoundError(self.missing, unwrap_fn=unwrap_fn, **task_lists) from self.not_found_error
 
-    def _raise_duplicated_error(self, unwrap_fn: Callable, **kwargs: list) -> NoReturn:
-        raise CogniteDuplicatedError(self.duplicated, unwrap_fn=unwrap_fn, **kwargs) from self.duplicated_error
+    def _raise_duplicated_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
+        raise CogniteDuplicatedError(self.duplicated, unwrap_fn=unwrap_fn, **task_lists) from self.duplicated_error
 
 
 T_Result = TypeVar("T_Result", covariant=True)
@@ -264,8 +264,7 @@ def execute_tasks(
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
     be changed using ConcurrencySettings.executor_type.
     """
-    if ConcurrencySettings.use_mainthread() or not isinstance(executor, ThreadPoolExecutor):
-        # We ignore 'executor' even if one is passed
+    if ConcurrencySettings.use_mainthread() or isinstance(executor, MainThreadExecutor):
         return execute_tasks_serially(func, tasks, fail_fast)
 
     executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
