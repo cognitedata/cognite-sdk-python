@@ -104,16 +104,16 @@ class TransformationDestination:
         return RawTable(database=database, table=table)
 
     @staticmethod
-    def sequence_rows(external_id: str = "") -> SequenceRows:
+    def sequence_rows(external_id: str = "") -> SequenceRowsDestination:
         """To be used when the transformation is meant to produce sequence rows.
 
         Args:
             external_id (str): Sequence external id.
 
         Returns:
-            SequenceRows: TransformationDestination pointing to the target sequence rows
+            SequenceRowsDestination: TransformationDestination pointing to the target sequence rows
         """
-        return SequenceRows(external_id=external_id)
+        return SequenceRowsDestination(external_id=external_id)
 
     @staticmethod
     def nodes(view: ViewInfo | None = None, instance_space: str | None = None) -> Nodes:
@@ -166,7 +166,7 @@ class RawTable(TransformationDestination):
         return hash((self.type, self.database, self.table))
 
 
-class SequenceRows(TransformationDestination):
+class SequenceRowsDestination(TransformationDestination):
     def __init__(self, external_id: str | None = None) -> None:
         super().__init__(type="sequence_rows")
         self.external_id = external_id
@@ -418,13 +418,15 @@ class TransformationBlockedInfo:
         return basic_obj_dump(self, camel_case)
 
 
-def _load_destination_dct(dct: dict[str, Any]) -> RawTable | Nodes | Edges | SequenceRows | TransformationDestination:
+def _load_destination_dct(
+    dct: dict[str, Any]
+) -> RawTable | Nodes | Edges | SequenceRowsDestination | TransformationDestination:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
     simple = {
         "raw": RawTable,
-        "sequence_rows": SequenceRows,
+        "sequence_rows": SequenceRowsDestination,
     }
     if destination_type in simple:
         return simple[destination_type](**snake_dict)

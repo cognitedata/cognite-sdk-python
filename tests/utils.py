@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.data_classes import DataPointSubscriptionCreate, Relationship, SequenceData, filters
+from cognite.client.data_classes import DataPointSubscriptionCreate, Relationship, SequenceData, SequenceRows, filters
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -311,9 +311,19 @@ class FakeCogniteResourceGenerator:
                     keyword_arguments.pop(key)
         elif resource_cls is DatapointsArray:
             keyword_arguments["is_string"] = False
+        elif resource_cls is SequenceRows:
+            # All row values must match the number of columns
+            # Reducing to one column, and one value for each row
+            keyword_arguments["columns"] = keyword_arguments["columns"][:1]
+            for row in keyword_arguments["rows"]:
+                row.values = row.values[:1]
         elif resource_cls is SequenceData:
-            # Rows are given in two ways, removing one.
+            # All row values must match the number of columns
             keyword_arguments.pop("rows", None)
+            keyword_arguments["columns"] = keyword_arguments["columns"][:1]
+            keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
+            keyword_arguments["values"] = keyword_arguments["values"][:1]
+            keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
@@ -485,10 +495,9 @@ class FakeCogniteResourceGenerator:
             return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("tuple[") and annotation.endswith("]"):
             return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("SequenceType[") and annotation.endswith("]"):
-            # SequenceType is a custom type hint used in the SDK to indicate that the type is typing.Sequence
-            # to avoid confusion with the CDF Resource Sequence type
-            return typing.Sequence[cls._create_type_hint_3_10(annotation[13:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("typing.Sequence[") and annotation.endswith("]"):
+            # This is used in the Sequence data class file to avoid name collision
+            return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
         raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod
