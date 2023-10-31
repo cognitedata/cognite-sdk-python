@@ -113,18 +113,14 @@ class _WithClientMixin:
         return self.__cognite_client
 
 
-class CogniteResource(_WithClientMixin):
-    __cognite_client: CogniteClient | None
+class _SerializationMixin:
+    """This Mixin is used to add serialization and deserialization to the data classes.
+
+    It is used both by the CogniteResources and the nested classes used by the CogniteResources.
+    """
 
     def __init__(self, cognite_client: CogniteClient | None = None) -> None:
         raise NotImplementedError
-
-    def __eq__(self, other: Any) -> bool:
-        return type(self) is type(other) and self.dump() == other.dump()
-
-    def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
-        return json.dumps(item, default=json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -169,6 +165,25 @@ class CogniteResource(_WithClientMixin):
             Self: The loaded resource.
         """
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
+
+
+T_Serialization = TypeVar("T_Serialization", bound=_SerializationMixin)
+
+
+class CogniteResource(_SerializationMixin, _WithClientMixin, ABC):
+    """
+    A CogniteResource represent a resource in the Cognite API, meaning that there should be a set of
+    endpoints that can be used to interact with the resource.
+    """
+
+    __cognite_client: CogniteClient | None
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) is type(other) and self.dump() == other.dump()
+
+    def __str__(self) -> str:
+        item = convert_and_isoformat_time_attrs(self.dump())
+        return json.dumps(item, default=json_dump_default, indent=4)
 
     def to_pandas(
         self,
