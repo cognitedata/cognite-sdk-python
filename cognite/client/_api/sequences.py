@@ -11,7 +11,6 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Sequence,
-    SequenceAggregate,
     SequenceFilter,
     SequenceList,
     SequenceRows,
@@ -19,7 +18,7 @@ from cognite.client.data_classes import (
     SequenceUpdate,
     filters,
 )
-from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.sequences import (
     SequenceProperty,
@@ -206,14 +205,14 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: SequenceFilter | dict | None = None) -> list[SequenceAggregate]:
+    def aggregate(self, filter: SequenceFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             filter (SequenceFilter | dict | None): Filter on sequence filter with exact match
 
         Returns:
-            list[SequenceAggregate]: List of sequence aggregates
+            list[CountAggregate]: List of sequence aggregates
 
         Examples:
 
@@ -223,8 +222,10 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.sequences.aggregate(filter={"external_id_prefix": "prefix"})
         """
-
-        return self._aggregate(filter=filter, cls=SequenceAggregate)
+        warnings.warn(
+            "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
+        )
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(
         self,

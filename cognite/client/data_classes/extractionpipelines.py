@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -15,13 +15,12 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ExtractionPipelineContact(dict):
+class ExtractionPipelineContact(CogniteObject):
     """A contact for an extraction pipeline
 
     Args:
@@ -37,18 +36,13 @@ class ExtractionPipelineContact(dict):
         self.role = role
         self.send_notification = send_notification
 
-    name = CognitePropertyClassUtil.declare_property("name")
-    email = CognitePropertyClassUtil.declare_property("email")
-    role = CognitePropertyClassUtil.declare_property("role")
-    send_notification = CognitePropertyClassUtil.declare_property("sendNotification")
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
-
     @classmethod
-    def load(cls, data: dict[str, Any]) -> ExtractionPipelineContact:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineContact:
         return cls(
-            name=data["name"], email=data["email"], role=data["role"], send_notification=data["sendNotification"]
+            name=resource["name"],
+            email=resource["email"],
+            role=resource["role"],
+            send_notification=resource["sendNotification"],
         )
 
 
@@ -123,7 +117,10 @@ class ExtractionPipeline(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
         instance = super()._load(resource, cognite_client)
         if instance.contacts:
-            instance.contacts = [ExtractionPipelineContact.load(contact) for contact in instance.contacts]
+            instance.contacts = [
+                ExtractionPipelineContact._load(contact) if isinstance(contact, dict) else contact
+                for contact in instance.contacts
+            ]
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

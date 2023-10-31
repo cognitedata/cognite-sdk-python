@@ -114,15 +114,15 @@ class KeypointCollection(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.attributes, dict):
-            self.attributes = {k: Attribute(**v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
+            self.attributes = {k: Attribute._load(v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
         if isinstance(self.keypoints, dict):
-            self.keypoints = {k: Keypoint(**v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
+            self.keypoints = {k: Keypoint._load(v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
-            keypoints={k: Keypoint._load(v) for k, v in resource["keypoints"].items()},
+            keypoints={k: Keypoint.load(v) for k, v in resource["keypoints"].items()},
             attributes=resource.get("attributes"),
             confidence=resource.get("confidence"),
         )
