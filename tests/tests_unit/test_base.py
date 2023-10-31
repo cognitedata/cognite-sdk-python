@@ -142,7 +142,7 @@ def cognite_mock_client() -> CogniteClientMock:
     return CogniteClientMock()
 
 
-class TestSerializationMixin:
+class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
