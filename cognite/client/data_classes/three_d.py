@@ -13,13 +13,14 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    _SerializationMixin,
 )
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class RevisionCameraProperties(CogniteResource):
+class RevisionCameraProperties(_SerializationMixin):
     """Initial camera position and target.
 
     Args:
@@ -33,7 +34,7 @@ class RevisionCameraProperties(CogniteResource):
         self.position = position
 
 
-class BoundingBox3D(CogniteResource):
+class BoundingBox3D(_SerializationMixin):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:
