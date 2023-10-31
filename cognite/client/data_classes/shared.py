@@ -139,10 +139,10 @@ class GeoLocation(CogniteResource):
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_resource: CogniteClient | None = None) -> GeoLocation:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocation:
         return cls(
             type=resource["type"],
-            geometry=Geometry._load(resource["geometry"]),
+            geometry=Geometry._load(resource["geometry"], cognite_client),
             properties=resource.get("properties"),
         )
 
@@ -171,6 +171,6 @@ class GeoLocationFilter(CogniteResource):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)
-        if self.shape:
+        if isinstance(self.shape, GeometryFilter):
             dumped["shape"] = self.shape.dump(camel_case)
         return dumped

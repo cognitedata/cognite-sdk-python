@@ -458,7 +458,7 @@ class TestCogniteResourceList:
             parent_external_id="parent-test-1",
             description="A test asset",
             data_set_id=123,
-            labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+            labels=[Label(external_id="ROTATING_EQUIPMENT")],
         ).to_pandas()
 
         expected_df = pd.DataFrame(
@@ -469,7 +469,7 @@ class TestCogniteResourceList:
                     "parent-test-1",
                     "A test asset",
                     123,
-                    [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+                    [{"external_id": "ROTATING_EQUIPMENT"}],
                 ]
             },
             index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
