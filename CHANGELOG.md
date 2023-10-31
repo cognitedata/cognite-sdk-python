@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.38.1] - 2023-10-31
+### Fixed
+- `onFailure` property in Workflows was expected as mandatory and was raising KeyError if it was not returnd by the API. The sdk now assumes the field to be optional loads it as None instead of raising an error.
+
 ## [6.38.0] - 2023-10-30
 ### Added
 - Support `onFailure` property in Workflows, allowing marking Tasks as optional in a Workflow.
@@ -37,9 +41,9 @@ Changes are grouped as follows
 
 ## [6.34.2] - 2023-10-23
 ### Fixed
-- Loading a `ContainerApply` from source failed with `KeyError` if `nullable`, `autoIncrement`, or `cursorable` were not set 
-  in the `ContainerProperty` and `BTreeIndex` classes even though they are optional. This is now fixed. 
- 
+- Loading a `ContainerApply` from source failed with `KeyError` if `nullable`, `autoIncrement`, or `cursorable` were not set
+  in the `ContainerProperty` and `BTreeIndex` classes even though they are optional. This is now fixed.
+
 ## [6.34.1] - 2023-10-23
 ### Added
 - Support for setting `data_set_id` and `metadata` in `ThreeDModelsAPI.create`.
