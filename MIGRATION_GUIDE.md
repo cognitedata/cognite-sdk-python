@@ -17,6 +17,10 @@ Changes are grouped as follows:
 ### Deprecated
 - The Templates API is deprecated, and will be removed in a future version. Please migrate to Data Modeling.
   Read more at: https://docs.cognite.com/cdf/data_modeling/
+- The `client.assets.aggregate` use `client.assets.aggregate_count` instead.
+- The `client.events.aggregate` use `client.events.aggregate_count` instead.
+- The `client.sequence.aggregate` use `client.sequence.aggregate_count` instead.
+- The `client.time_series.aggregate` use `client.time_series.aggregate_count` instead.
 
 ### Removed
 - Deprecated method `aggregate_metadata_keys` on AssetsAPI. Update your query from
@@ -82,6 +86,9 @@ Changes are grouped as follows:
   `SequenceRows` instead of `SequenceData`.
 - The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
 -The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
+- Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
+  `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer 
+  `dict` but classes with attributes matchhng the API.
 
 ## From v5 to v6
 ### Removed

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
 from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class SourceFile(CogniteResource):
+class SourceFile(CogniteObject):
     """
     The source file that a document is derived from.
 
@@ -189,7 +190,7 @@ class DocumentList(CogniteResourceList[Document], IdTransformerMixin):
 
 
 @dataclass
-class Highlight(CogniteResource):
+class Highlight(CogniteObject):
     """
     Highlighted snippets from name and content fields which show where the query matches are.
 

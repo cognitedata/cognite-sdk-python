@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
 from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
 )
@@ -89,7 +90,7 @@ class WorkflowList(CogniteResourceList[Workflow]):
         return [workflow.external_id for workflow in self.data]
 
 
-class WorkflowTaskParameters(CogniteResource, ABC):
+class WorkflowTaskParameters(CogniteObject, ABC):
     task_type: ClassVar[Literal["function", "transformation", "cdf", "dynamic"]]
 
     @classmethod
@@ -533,7 +534,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
         return {}
 
 
-class WorkflowTaskExecution(CogniteResource):
+class WorkflowTaskExecution(CogniteObject):
     """
     This class represents a task execution.
 

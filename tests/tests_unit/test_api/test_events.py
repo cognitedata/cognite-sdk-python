@@ -124,7 +124,7 @@ class TestEvents:
 
     def test_list_ongoing_wrong_signature(self, cognite_client):
         with pytest.raises(ValueError):
-            cognite_client.events.list(end_time=EndTimeFilter(is_null=True, max=100))
+            EndTimeFilter(is_null=True, max=100)
 
     def test_create_single(self, cognite_client, mock_events_response):
         res = cognite_client.events.create(Event(external_id="1"))

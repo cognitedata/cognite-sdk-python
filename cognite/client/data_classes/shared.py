@@ -1,41 +1,38 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence, cast
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CognitePropertyClassUtil, Geometry
-from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
-class TimestampRange(dict):
+class TimestampRange(CogniteObject):
     """Range between two timestamps.
 
     Args:
         max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
-    def __init__(self, max: int | None = None, min: int | None = None, **kwargs: Any) -> None:
+    def __init__(self, max: int | None = None, min: int | None = None, **_: Any) -> None:
         self.max = max
         self.min = min
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
 
 
-class AggregateResult(dict):
+class AggregateResult(CogniteObject):
     """Aggregation group
 
     Args:
         count (int | None): Size of the aggregation group
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        super().__init__(count=count, **kwargs)
+    def __init__(self, count: int | None = None, **_: Any) -> None:
         self.count = count
 
 
@@ -53,7 +50,7 @@ class AggregateUniqueValuesResult(AggregateResult):
         self.value = value
 
 
-class GeometryFilter(dict):
+class GeometryFilter(CogniteFilter):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
@@ -117,20 +114,18 @@ class GeometryFilter(dict):
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
-        self.coordinates = cast(list, coordinates)
+        self.coordinates = list(coordinates)
 
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
+    @classmethod
+    def _load(cls, raw_geometry: dict[str, Any]) -> Self:
+        return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
     @classmethod
     def load(cls, raw_geometry: dict[str, Any]) -> Self:
         return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
-
-class GeoLocation(dict):
+class GeoLocation(CogniteObject):
     """A GeoLocation object conforming to the GeoJSON spec.
 
     Args:
@@ -148,26 +143,22 @@ class GeoLocation(dict):
         self.geometry = geometry
         self.properties = properties
 
-    type = CognitePropertyClassUtil.declare_property("type")
-    geometry = CognitePropertyClassUtil.declare_property("geometry")
-    properties = CognitePropertyClassUtil.declare_property("properties")
-
     @classmethod
-    def load(cls, raw_geo_location: dict[str, Any]) -> GeoLocation:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocation:
         return cls(
-            type=raw_geo_location.get("type", "Feature"),
-            geometry=raw_geo_location["geometry"],
-            properties=raw_geo_location.get("properties"),
+            type=resource["type"],
+            geometry=Geometry._load(resource["geometry"], cognite_client),
+            properties=resource.get("properties"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        result = convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        result = super().dump(camel_case)
         if self.geometry:
-            result["geometry"] = dict(self.geometry)
+            result["geometry"] = self.geometry.dump(camel_case)
         return result
 
 
-class GeoLocationFilter(dict):
+class GeoLocationFilter(CogniteObject):
     """Return only the resource matching the specified geographic relation.
 
     Args:
@@ -179,12 +170,12 @@ class GeoLocationFilter(dict):
         self.relation = relation
         self.shape = shape
 
-    relation = CognitePropertyClassUtil.declare_property("relation")
-    shape = CognitePropertyClassUtil.declare_property("shape")
-
     @classmethod
-    def load(cls, raw_geo_location_filter: dict[str, Any]) -> GeoLocationFilter:
-        return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocationFilter:
+        return cls(relation=resource["relation"], shape=resource["shape"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        dumped = super().dump(camel_case)
+        if isinstance(self.shape, GeometryFilter):
+            dumped["shape"] = self.shape.dump(camel_case)
+        return dumped

@@ -44,8 +44,11 @@ def new_seq(cognite_client) -> Sequence:
 
 
 @pytest.fixture(scope="session")
-def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence):
-    seq = cognite_client.sequences.create(Sequence(columns=small_sequence.columns.as_write()))
+def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence) -> Sequence:
+    for col in small_sequence.columns:
+        col.last_updated_time = None
+        col.created_time = None
+    seq = cognite_client.sequences.create(Sequence(columns=small_sequence.columns))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(id=seq.id) is None

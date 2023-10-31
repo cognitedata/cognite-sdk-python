@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CognitePropertyClassUtil,
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -70,19 +69,16 @@ class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
     _RESOURCE = LabelDefinition
 
 
-class Label(dict):
+class Label(CogniteObject):
     """A label assigned to a resource.
 
     Args:
         external_id (str | None): The external id to the attached label.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
-    def __init__(self, external_id: str | None = None, **kwargs: Any) -> None:
+    def __init__(self, external_id: str | None = None, **_: Any) -> None:
         self.external_id = external_id
-        self.update(kwargs)
-
-    external_id = CognitePropertyClassUtil.declare_property("externalId")
 
     @classmethod
     def _load_list(cls, labels: Sequence[str | dict | LabelDefinition | Label] | None) -> list[Label] | None:
@@ -102,15 +98,8 @@ class Label(dict):
             return None
         return [convert_label(label) for label in labels]
 
-    @classmethod
-    def load(cls, raw_label: dict[str, Any]) -> Label:
-        return cls(external_id=raw_label["externalId"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
-
-
-class LabelFilter(dict, CogniteFilter):
+class LabelFilter(CogniteFilter):
     """Return only the resource matching the specified label constraints.
 
     Args:
@@ -141,15 +130,21 @@ class LabelFilter(dict, CogniteFilter):
         self.contains_all = contains_all
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    @staticmethod
-    def _wrap_labels(values: list[str] | None) -> list[dict[str, str]] | None:
-        if values is None:
-            return None
-        return [{"externalId": v} for v in values]
+    @classmethod
+    def _load(cls, label_filter: dict[str, Any]) -> LabelFilter:
+        return cls(
+            contains_any=(any_ := label_filter.get("containsAny")) and [item["externalId"] for item in any_],
+            contains_all=(all_ := label_filter.get("containsAll")) and [item["externalId"] for item in all_],
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        keys = map(to_camel_case, self.keys()) if camel_case else self.keys()
-        return dict(zip(keys, map(self._wrap_labels, self.values())))
-
-    contains_any = CognitePropertyClassUtil.declare_property("containsAny")
-    contains_all = CognitePropertyClassUtil.declare_property("containsAll")
+        dumped: dict[str, Any] = {}
+        if self.contains_any:
+            dumped["containsAny"] = [
+                {"externalId" if camel_case else "external_id": item} for item in self.contains_any
+            ]
+        if self.contains_all:
+            dumped["containsAll"] = [
+                {"externalId" if camel_case else "external_id": item} for item in self.contains_all
+            ]
+        return dumped

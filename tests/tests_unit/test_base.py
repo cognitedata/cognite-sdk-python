@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -139,6 +140,63 @@ class MyResponse(CogniteResponse):
 @pytest.fixture()
 def cognite_mock_client() -> CogniteClientMock:
     return CogniteClientMock()
+
+
+class TestCogniteObject:
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteObject)
+        ],
+    )
+    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=42, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        json_serialised = json.dumps(dumped)
+        loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteObject)
+        ],
+    )
+    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+        instance = FakeCogniteResourceGenerator(
+            seed=66, cognite_client=cognite_mock_client_placeholder
+        ).create_instance(cognite_resource_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        yaml_serialised = yaml.safe_dump(dumped)
+        loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_resource_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteObject)
+        ],
+    )
+    def test_dump_default_came_case_false(
+        self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder
+    ):
+        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client_placeholder).create_instance(
+            cognite_resource_subclass
+        )
+
+        assert instance.dump() == instance.dump(camel_case=False)
 
 
 class TestCogniteResource:
@@ -458,7 +516,7 @@ class TestCogniteResourceList:
             parent_external_id="parent-test-1",
             description="A test asset",
             data_set_id=123,
-            labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+            labels=[Label(external_id="ROTATING_EQUIPMENT")],
         ).to_pandas()
 
         expected_df = pd.DataFrame(
@@ -469,7 +527,7 @@ class TestCogniteResourceList:
                     "parent-test-1",
                     "A test asset",
                     123,
-                    [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+                    [{"external_id": "ROTATING_EQUIPMENT"}],
                 ]
             },
             index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],

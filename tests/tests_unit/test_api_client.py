@@ -236,7 +236,7 @@ class SomeFilter(CogniteFilter):
         self.var_y = var_y
 
 
-class SomeAggregation(dict):
+class SomeAggregation(CogniteResource):
     def __init__(self, count):
         self.count = count
 

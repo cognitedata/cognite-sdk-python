@@ -20,13 +20,29 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteObject, CogniteResourceList
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+class CountAggregate(CogniteObject):
+    """
+    [DEPRECATED] This represents the result of a count aggregation.
+
+    Args:
+        count (int): The number of items matching the aggregation.
+    """
+
+    def __init__(self, count: int) -> None:
+        self.count = count
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CountAggregate:
+        return cls(count=resource["count"])
 
 
 @dataclass
@@ -280,8 +296,10 @@ class CompoundFilter(AggregationFilter):
 
 
 def _dump_value(value: FilterValue) -> dict[str, str] | str | bool | int | float:
-    if isinstance(value, Label):
+    if isinstance(value, Label) and value.external_id is not None:
         return {"externalId": value.external_id}
+    elif isinstance(value, Label):
+        raise ValueError("Label must have external_id set")
     return value
 
 
@@ -366,7 +384,7 @@ class Range(AggregationFilter):
 
 
 @dataclass
-class UniqueResult(CogniteResource):
+class UniqueResult(CogniteObject):
     count: int
     values: list[str | int | float | Label]
 

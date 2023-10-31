@@ -145,8 +145,8 @@ class TestAssetsAPI:
     def test_list_with_aggregated_properties_param(self, cognite_client, post_spy):
         res = cognite_client.assets.list(limit=10, aggregated_properties=["child_count"])
         for asset in res:
-            assert {"childCount"} == asset.aggregates.keys()
-            assert isinstance(asset.aggregates["childCount"], int)
+            assert {"childCount"} == asset.aggregates.dump(camel_case=True).keys()
+            assert isinstance(asset.aggregates.child_count, int)
 
     def test_aggregate(self, cognite_client, new_asset):
         res = cognite_client.assets.aggregate(filter=AssetFilter(name="test__asset_0"))

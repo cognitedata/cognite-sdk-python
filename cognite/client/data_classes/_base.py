@@ -47,7 +47,10 @@ if TYPE_CHECKING:
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     # TODO: Consider using inheritance?
-    dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
+    try:
+        dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
+    except TypeError:
+        dumped = {k: v for k, v in obj.__dict__.items() if v is not None and not k.startswith("_")}
     if camel_case:
         return convert_all_keys_to_camel_case(dumped)
     return dumped
@@ -110,8 +113,11 @@ class _WithClientMixin:
         return self.__cognite_client
 
 
-class CogniteResource(_WithClientMixin):
-    __cognite_client: CogniteClient | None
+class CogniteObject:
+    """The Cognite Object is used to add serialization and deserialization to the data classes.
+
+    It is used both by the CogniteResources and the nested classes used by the CogniteResources.
+    """
 
     def __init__(self, cognite_client: CogniteClient | None = None) -> None:
         raise NotImplementedError
@@ -167,6 +173,18 @@ class CogniteResource(_WithClientMixin):
         """
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
+
+T_CogniteObject = TypeVar("T_CogniteObject", bound=CogniteObject)
+
+
+class CogniteResource(CogniteObject, _WithClientMixin, ABC):
+    """
+    A CogniteResource represent a resource in the Cognite API, meaning that there should be a set of
+    endpoints that can be used to interact with the resource.
+    """
+
+    __cognite_client: CogniteClient | None
+
     def to_pandas(
         self,
         expand_metadata: bool = False,
@@ -207,23 +225,6 @@ class CogniteResource(_WithClientMixin):
 
 
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
-
-
-class CognitePropertyClassUtil:
-    @staticmethod
-    def declare_property(schema_name: str) -> property:
-        return (
-            property(lambda s: s[schema_name] if schema_name in s else None)
-            .setter(lambda s, v: CognitePropertyClassUtil._property_setter(s, schema_name, v))
-            .deleter(lambda s: s.pop(schema_name, None))
-        )
-
-    @staticmethod
-    def _property_setter(self: Any, schema_name: str, value: Any) -> None:
-        if value is None:
-            self.pop(schema_name, None)
-        else:
-            self[schema_name] = value
 
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
@@ -582,7 +583,7 @@ class EnumProperty(Enum):
         return [self.value]
 
 
-class Geometry(dict):
+class Geometry(CogniteObject):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
@@ -642,13 +643,10 @@ class Geometry(dict):
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
-        self.geometries = geometries
-
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
+        self.geometries = geometries and list(geometries)
 
     @classmethod
-    def load(cls, raw_geometry: dict[str, Any]) -> Geometry:
+    def _load(cls, raw_geometry: dict[str, Any], cognite_client: CogniteClient | None = None) -> Geometry:
         return cls(
             type=raw_geometry["type"],
             coordinates=raw_geometry["coordinates"],
@@ -656,12 +654,10 @@ class Geometry(dict):
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
+        dumped = super().dump(camel_case)
         if self.geometries:
-            output["geometries"] = [g.dump(camel_case) for g in self.geometries]
-        else:
-            output.pop("geometries", None)
-        return output
+            dumped["geometries"] = [g.dump(camel_case) for g in self.geometries]
+        return dumped
 
 
 SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]

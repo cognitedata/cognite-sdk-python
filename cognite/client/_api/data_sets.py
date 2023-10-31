@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
+    CountAggregate,
     DataSet,
-    DataSetAggregate,
     DataSetFilter,
     DataSetList,
     DataSetUpdate,
@@ -164,14 +164,14 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: DataSetFilter | dict | None = None) -> list[DataSetAggregate]:
+    def aggregate(self, filter: DataSetFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
             filter (DataSetFilter | dict | None): Filter on data set filter with exact match
 
         Returns:
-            list[DataSetAggregate]: List of data set aggregates
+            list[CountAggregate]: List of data set aggregates
 
         Examples:
 
@@ -182,7 +182,7 @@ class DataSetsAPI(APIClient):
                 >>> aggregate_protected = c.data_sets.aggregate(filter={"write_protected": True})
         """
 
-        return self._aggregate(filter=filter, cls=DataSetAggregate)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def update(self, item: DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]) -> DataSet | DataSetList:
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_

@@ -25,13 +25,13 @@ from tests.utils import jsgz_load, set_request_limit
 
 
 @pytest.fixture
-def mock_geo_location():
+def mock_geo_location() -> GeoLocation:
     geometry = Geometry(type="Point", coordinates=[35, 10])
     yield GeoLocation(type="Feature", geometry=geometry)
 
 
 @pytest.fixture
-def mock_files_response(rsps, cognite_client, mock_geo_location):
+def mock_files_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "items": [
             {
@@ -42,7 +42,7 @@ def mock_files_response(rsps, cognite_client, mock_geo_location):
                 "metadata": {"metadata-key": "metadata-value"},
                 "assetIds": [1],
                 "labels": [{"externalId": "WELL LOG"}],
-                "geoLocation": mock_geo_location,
+                "geoLocation": mock_geo_location.dump(camel_case=True),
                 "id": 1,
                 "uploaded": True,
                 "uploadedTime": 0,
@@ -61,7 +61,7 @@ def mock_files_response(rsps, cognite_client, mock_geo_location):
 
 
 @pytest.fixture
-def mock_file_upload_response(rsps, cognite_client, mock_geo_location):
+def mock_file_upload_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -70,7 +70,7 @@ def mock_file_upload_response(rsps, cognite_client, mock_geo_location):
         "metadata": {},
         "assetIds": [1],
         "labels": [{"externalId": "WELL LOG"}],
-        "geoLocation": mock_geo_location,
+        "geoLocation": mock_geo_location.dump(camel_case=True),
         "id": 1,
         "uploaded": True,
         "uploadedTime": 0,
@@ -84,7 +84,7 @@ def mock_file_upload_response(rsps, cognite_client, mock_geo_location):
 
 
 @pytest.fixture
-def mock_file_create_response(rsps, cognite_client, mock_geo_location):
+def mock_file_create_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -93,7 +93,7 @@ def mock_file_create_response(rsps, cognite_client, mock_geo_location):
         "metadata": {},
         "assetIds": [1],
         "labels": [{"externalId": "WELL LOG"}],
-        "geoLocation": mock_geo_location,
+        "geoLocation": mock_geo_location.dump(camel_case=True),
         "id": 1,
         "uploaded": False,
         "uploadedTime": 0,
@@ -228,7 +228,7 @@ class TestFilesAPI:
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         assert FileMetadata.load(response_body) == returned_file_metadata
-        assert response_body["geoLocation"] == mock_geo_location
+        assert response_body["geoLocation"] == mock_geo_location.dump(camel_case=True)
 
     def test_create_geoLocation_with_invalid_geometry_type(self):
         with pytest.raises(ValueError):
@@ -245,7 +245,9 @@ class TestFilesAPI:
         response_body = mock_file_create_response.calls[0].response.json()
         request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
         assert FileMetadata.load(response_body) == returned_file_metadata
-        assert all(body["geoLocation"] == mock_geo_location for body in [request_body, response_body])
+        assert all(
+            body["geoLocation"] == mock_geo_location.dump(camel_case=True) for body in [request_body, response_body]
+        )
 
     def test_retrieve_single(self, cognite_client, mock_files_response):
         res = cognite_client.files.retrieve(id=1)

@@ -18,7 +18,14 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.data_classes import DataPointSubscriptionCreate, Relationship, SequenceData, SequenceRows, filters
+from cognite.client.data_classes import (
+    DataPointSubscriptionCreate,
+    EndTimeFilter,
+    Relationship,
+    SequenceData,
+    SequenceRows,
+    filters,
+)
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -324,6 +331,9 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
             keyword_arguments["values"] = keyword_arguments["values"][:1]
             keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
+        elif resource_cls is EndTimeFilter:
+            # EndTimeFilter requires either is null or (max and/or min)
+            keyword_arguments.pop("is_null", None)
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
