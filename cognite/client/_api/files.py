@@ -19,7 +19,7 @@ from typing import (
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
-    FileAggregate,
+    CountAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -233,14 +233,14 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict | None): Filter on file metadata filter with exact match
 
         Returns:
-            list[FileAggregate]: List of file aggregates
+            list[CountAggregate]: List of count aggregates
 
         Examples:
 
@@ -251,7 +251,7 @@ class FilesAPI(APIClient):
                 >>> aggregate_uploaded = c.files.aggregate(filter={"uploaded": True})
         """
 
-        return self._aggregate(filter=filter, cls=FileAggregate)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_

@@ -68,7 +68,6 @@ from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipelineUpdate,
 )
 from cognite.client.data_classes.files import (
-    FileAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -276,7 +275,6 @@ __all__ = [
     "EventFilter",
     "EventList",
     "EventUpdate",
-    "FileAggregate",
     "FileMetadata",
     "FileMetadataFilter",
     "FileMetadataList",

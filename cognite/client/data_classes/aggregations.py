@@ -20,7 +20,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, _SerializationMixin
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
@@ -384,7 +384,7 @@ class Range(AggregationFilter):
 
 
 @dataclass
-class UniqueResult(CogniteResource):
+class UniqueResult(_SerializationMixin):
     count: int
     values: list[str | int | float | Label]
 

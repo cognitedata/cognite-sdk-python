@@ -6,6 +6,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteResourceList,
+    _SerializationMixin,
 )
 
 if TYPE_CHECKING:
@@ -68,7 +69,7 @@ class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
     _RESOURCE = LabelDefinition
 
 
-class Label(CogniteResource):
+class Label(_SerializationMixin):
     """A label assigned to a resource.
 
     Args:

@@ -185,13 +185,6 @@ class CogniteResource(_SerializationMixin, _WithClientMixin, ABC):
 
     __cognite_client: CogniteClient | None
 
-    def __eq__(self, other: Any) -> bool:
-        return type(self) is type(other) and self.dump() == other.dump()
-
-    def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
-        return json.dumps(item, default=json_dump_default, indent=4)
-
     def to_pandas(
         self,
         expand_metadata: bool = False,

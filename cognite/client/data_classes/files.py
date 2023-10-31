@@ -297,17 +297,5 @@ class FileMetadataUpdate(CogniteUpdate):
         ]
 
 
-class FileAggregate(CogniteResource):
-    """Aggregation results for files
-
-    Args:
-        count (int | None): Number of filtered items included in aggregation
-        **_ (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **_: Any) -> None:
-        self.count = count
-
-
 class FileMetadataList(CogniteResourceList[FileMetadata], IdTransformerMixin):
     _RESOURCE = FileMetadata

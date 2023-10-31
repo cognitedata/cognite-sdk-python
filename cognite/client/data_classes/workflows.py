@@ -11,6 +11,7 @@ from typing_extensions import Self, TypeAlias
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    _SerializationMixin,
 )
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 
@@ -89,7 +90,7 @@ class WorkflowList(CogniteResourceList[Workflow]):
         return [workflow.external_id for workflow in self.data]
 
 
-class WorkflowTaskParameters(CogniteResource, ABC):
+class WorkflowTaskParameters(_SerializationMixin, ABC):
     task_type: ClassVar[Literal["function", "transformation", "cdf", "dynamic"]]
 
     @classmethod
@@ -521,7 +522,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
         return {}
 
 
-class WorkflowTaskExecution(CogniteResource):
+class WorkflowTaskExecution(_SerializationMixin):
     """
     This class represents a task execution.
 

@@ -101,9 +101,6 @@ class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransfor
         """
         return [c.value_type for c in self]
 
-    def as_write(self) -> SequenceColumnList:
-        return type(self)([col.as_write() for col in self])
-
 
 class Sequence(CogniteResource):
     """Information about the sequence stored in the database
@@ -208,17 +205,6 @@ class Sequence(CogniteResource):
         """
         assert self.columns is not None
         return self.columns.value_types
-
-    def as_write(self) -> Sequence:
-        return type(self)(
-            columns=self.columns.as_write() if self.columns is not None else None,
-            name=self.name,
-            description=self.description,
-            asset_id=self.asset_id,
-            external_id=self.external_id,
-            metadata=self.metadata.copy() if self.metadata is not None else None,
-            data_set_id=self.data_set_id,
-        )
 
 
 class SequenceFilter(CogniteFilter):
