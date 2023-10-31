@@ -181,8 +181,12 @@ class ConcurrencySettings:
         if cls.use_threadpool():
             return cls.get_thread_pool_executor(max_workers)
         elif cls.use_mainthread():
-            return _MAIN_THREAD_EXECUTOR_SINGLETON
+            return cls.get_mainthread_executor()
         raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
+
+    @classmethod
+    def get_mainthread_executor(cls) -> TaskExecutor:
+        return _MAIN_THREAD_EXECUTOR_SINGLETON
 
     @classmethod
     def get_thread_pool_executor(cls, max_workers: int) -> ThreadPoolExecutor:
@@ -260,7 +264,7 @@ def execute_tasks(
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
     be changed using ConcurrencySettings.executor_type.
     """
-    if ConcurrencySettings.use_mainthread():
+    if ConcurrencySettings.use_mainthread() or not isinstance(executor, ThreadPoolExecutor):
         # We ignore 'executor' even if one is passed
         return execute_tasks_serially(func, tasks, fail_fast)
 
