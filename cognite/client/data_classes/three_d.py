@@ -192,16 +192,16 @@ class ThreeDModelRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.camera, dict):
-            instance.camera = RevisionCameraProperties.load(instance.camera)
+            instance.camera = RevisionCameraProperties._load(instance.camera)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.camera, RevisionCameraProperties):
-            result["camera"] = self.camera.dump(camel_case)
+            result["camera"] = self.camera.dump(camel_case=camel_case)
         return result
 
 
@@ -321,16 +321,16 @@ class ThreeDNode(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDNode:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDNode:
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.bounding_box, dict):
-            instance.bounding_box = BoundingBox3D.load(instance.bounding_box)
+            instance.bounding_box = BoundingBox3D._load(instance.bounding_box)
         return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.bounding_box, BoundingBox3D):
-            result[("boundingBox" if camel_case else "bounding_box")] = self.bounding_box.dump(camel_case)
+            result["boundingBox" if camel_case else "bounding_box"] = self.bounding_box.dump(camel_case=camel_case)
         return result
 
 

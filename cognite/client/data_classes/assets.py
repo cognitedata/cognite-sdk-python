@@ -24,7 +24,7 @@ from typing import (
 )
 
 from graphlib import TopologicalSorter
-from typing_extensions import Self, TypeAlias
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -153,13 +153,13 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Asset:
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.aggregates, dict):
-            instance.aggregates = AggregateResultItem.load(instance.aggregates)
+            instance.aggregates = AggregateResultItem._load(instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
         if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation.load(instance.geo_location)
+            instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
 
     def __hash__(self) -> int:
@@ -284,7 +284,7 @@ class Asset(CogniteResource):
         if not (expand_aggregates and "aggregates" in df.index):
             return df
 
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         col = df.squeeze()
         aggregates = convert_dict_to_case(col.pop("aggregates"), camel_case)
         return pd.concat((col, pd.Series(aggregates).add_prefix(aggregates_prefix))).to_frame()

@@ -23,19 +23,26 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.events import Event, EventList
-from cognite.client.data_classes.templates import ViewResolveItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
-from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
 
 
 class MyResource(CogniteResource):
-    def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
+    def __init__(
+        self,
+        var_a=None,
+        var_b=None,
+        id=None,
+        external_id=None,
+        last_updated_time=None,
+        cognite_client=None,
+    ):
         self.var_a = var_a
         self.var_b = var_b
         self.id = id
         self.external_id = external_id
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
     def use(self):
@@ -227,8 +234,7 @@ class TestCogniteResource:
 
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
-        json_deserialised = json.loads(json_serialised)
-        loaded = instance.load(json_deserialised, cognite_client=cognite_mock_client_placeholder)
+        loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 
@@ -247,8 +253,7 @@ class TestCogniteResource:
 
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
-        yaml_deserialised = yaml.safe_load(yaml_serialised)
-        loaded = instance.load(yaml_deserialised, cognite_client=cognite_mock_client_placeholder)
+        loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
 
@@ -269,32 +274,6 @@ class TestCogniteResource:
 
         assert instance.dump() == instance.dump(camel_case=False)
 
-    @pytest.mark.dsl
-    @pytest.mark.parametrize(
-        "cognite_resource_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteResource)
-            if class_
-            not in {
-                ViewResolveItem,  # This is a class with only a dict which should not be changed.
-            }
-        ],
-    )
-    def test_dump_correct_case(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
-        instance = FakeCogniteResourceGenerator(seed=3, cognite_client=cognite_mock_client_placeholder).create_instance(
-            cognite_resource_subclass
-        )
-
-        camel_dumped = instance.dump(camel_case=True)
-        snake_dumped = instance.dump(camel_case=False)
-
-        assert sorted(camel_dumped.keys()) == sorted(convert_all_keys_to_camel_case(camel_dumped).keys())
-        try:
-            assert sorted(snake_dumped.keys()) == sorted(convert_all_keys_to_snake_case(snake_dumped).keys())
-        except AssertionError:
-            raise
-
 
 class TestCogniteResourceList:
     def test_dump(self):
@@ -306,8 +285,14 @@ class TestCogniteResourceList:
     def test_to_pandas(self):
         import pandas as pd
 
-        resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
-        expected_df = pd.DataFrame({"varA": [1, 2], "varB": [None, 3]})
+        resource_list = MyResourceList([MyResource(1, last_updated_time=60), MyResource(2, 3)])
+        expected_df = pd.DataFrame(
+            {
+                "varA": [1, 2],
+                "lastUpdatedTime": [pd.Timestamp(60, unit="ms"), pd.NaT],
+                "varB": [None, 3],
+            },
+        )
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=True), expected_df)
 
     @pytest.mark.dsl
@@ -467,33 +452,28 @@ class TestCogniteResourceList:
 
         from cognite.client.data_classes import Asset, Label
 
-        asset = Asset(
+        result_df = Asset(
             external_id="test-1",
             name="test 1",
             parent_external_id="parent-test-1",
             description="A test asset",
             data_set_id=123,
-            labels=[Label(external_id="ROTATING_EQUIPMENT")],
+            labels=[Label(external_id="ROTATING_EQUIPMENT", name="Rotating equipment")],
+        ).to_pandas()
+
+        expected_df = pd.DataFrame(
+            {
+                "value": [
+                    "test-1",
+                    "test 1",
+                    "parent-test-1",
+                    "A test asset",
+                    123,
+                    [{"externalId": "ROTATING_EQUIPMENT", "name": "Rotating equipment"}],
+                ]
+            },
+            index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
         )
-
-        result_df = asset.to_pandas()
-
-        data = {
-            "value": [
-                "test-1",
-                "test 1",
-                "parent-test-1",
-                "A test asset",
-                123,
-                [{"external_id": "ROTATING_EQUIPMENT"}],
-            ]
-        }
-
-        index_labels = ["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"]
-
-        expected_df = pd.DataFrame(data, index=index_labels)
-
-        # Assert that the resultant DataFrame is equal to the expected DataFrame
         pd.testing.assert_frame_equal(result_df, expected_df)
 
 

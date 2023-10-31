@@ -400,6 +400,9 @@ class AssetsAPI(APIClient):
     ) -> UniqueResultList:
         """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
+
         Args:
             property (AssetPropertyLike): The property to group by.
             advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
@@ -461,6 +464,9 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].

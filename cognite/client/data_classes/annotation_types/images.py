@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -43,13 +42,12 @@ class ObjectDetection(VisionResource):
             self.attributes = {k: Attribute(**v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ObjectDetection:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ObjectDetection:
         return cls(
             label=resource["label"],
             confidence=resource.get("confidence"),
             attributes={
-                key: Attribute.load(attribute, cognite_client)
+                key: Attribute._load(attribute, cognite_client)
                 for key, attribute in resource.get("attributes", {}).items()
             }
             or None,
@@ -76,11 +74,10 @@ class TextRegion(VisionResource):
             self.text_region = BoundingBox(**self.text_region)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TextRegion:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TextRegion:
         return cls(
             text=resource["text"],
-            text_region=BoundingBox.load(resource["textRegion"]),
+            text_region=BoundingBox._load(resource["textRegion"]),
             confidence=resource.get("confidence"),
         )
 
@@ -99,8 +96,7 @@ class AssetLink(VisionResource):
             self.asset_ref = CdfResourceRef(**self.asset_ref)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> AssetLink:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> AssetLink:
         return cls(
             text=resource["text"],
             text_region=BoundingBox.load(resource["textRegion"]),
@@ -118,13 +114,12 @@ class KeypointCollection(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.attributes, dict):
-            self.attributes = {k: Attribute.load(v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
+            self.attributes = {k: Attribute._load(v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
         if isinstance(self.keypoints, dict):
-            self.keypoints = {k: Keypoint.load(v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
+            self.keypoints = {k: Keypoint._load(v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
             keypoints={k: Keypoint.load(v) for k, v in resource["keypoints"].items()},
@@ -153,21 +148,16 @@ class KeypointCollectionWithObjectDetection(VisionResource):
             self.keypoint_collection = KeypointCollection(**self.keypoint_collection)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            object_detection=ObjectDetection.load(resource["objectDetection"], cognite_client),
-            keypoint_collection=KeypointCollection.load(resource["keypointCollection"], cognite_client),
+            object_detection=ObjectDetection._load(resource["objectDetection"], cognite_client),
+            keypoint_collection=KeypointCollection._load(resource["keypointCollection"], cognite_client),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.object_detection is not None:
-            dumped["objectDetection" if camel_case else "object_detection"] = self.object_detection.dump(
-                camel_case=camel_case
-            )
+            dumped["objectDetection"] = self.object_detection.dump(camel_case=camel_case)
         if self.keypoint_collection is not None:
-            dumped["keypointCollection" if camel_case else "keypoint_collection"] = self.keypoint_collection.dump(
-                camel_case=camel_case
-            )
+            dumped["keypointCollection"] = self.keypoint_collection.dump(camel_case=camel_case)
         return dumped

@@ -124,11 +124,15 @@ from cognite.client.data_classes.relationships import (
 )
 from cognite.client.data_classes.sequences import (
     Sequence,
+    SequenceColumn,
+    SequenceColumnList,
     SequenceColumnUpdate,
     SequenceData,
-    SequenceDataList,
     SequenceFilter,
     SequenceList,
+    SequenceRow,
+    SequenceRows,
+    SequenceRowsList,
     SequenceUpdate,
 )
 from cognite.client.data_classes.shared import (
@@ -302,10 +306,14 @@ __all__ = [
     "Sequence",
     "SequenceColumnUpdate",
     "SequenceData",
-    "SequenceDataList",
+    "SequenceRows",
+    "SequenceRowsList",
     "SequenceFilter",
     "SequenceList",
     "SequenceUpdate",
+    "SequenceColumn",
+    "SequenceColumnList",
+    "SequenceRow",
     "ConstantResolver",
     "Source",
     "TemplateGroup",

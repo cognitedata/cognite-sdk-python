@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
-from typing_extensions import Self
-
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -93,8 +91,8 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        instance = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FileMetadata:
+        instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if isinstance(instance.geo_location, dict):
             instance.geo_location = GeoLocation.load(instance.geo_location)

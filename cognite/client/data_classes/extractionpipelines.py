@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, Sequence, cast
-
-from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -39,10 +36,12 @@ class ExtractionPipelineContact(CogniteResource):
         self.send_notification = send_notification
 
     @classmethod
-    def load(cls, data: str | dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineContact:
-        data = json.loads(data) if isinstance(data, str) else data
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineContact:
         return cls(
-            name=data["name"], email=data["email"], role=data["role"], send_notification=data["sendNotification"]
+            name=resource["name"],
+            email=resource["email"],
+            role=resource["role"],
+            send_notification=resource["sendNotification"],
         )
 
 
@@ -114,11 +113,11 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        instance = super().load(resource, cognite_client)
-        if isinstance(instance.contacts, list):
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
+        instance = super()._load(resource, cognite_client)
+        if instance.contacts:
             instance.contacts = [
-                ExtractionPipelineContact.load(contact) if isinstance(contact, dict) else contact
+                ExtractionPipelineContact._load(contact) if isinstance(contact, dict) else contact
                 for contact in instance.contacts
             ]
         return instance
@@ -256,8 +255,8 @@ class ExtractionPipelineRun(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRun:
-        obj = super().load(resource, cognite_client)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRun:
+        obj = super()._load(resource, cognite_client)
         # Note: The API ONLY returns IDs, but if they chose to change this, we're ready:
         if isinstance(resource, dict):
             obj.extpipe_external_id = resource.get("externalId")

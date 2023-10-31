@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from typing_extensions import Self
@@ -117,7 +116,7 @@ class GeometryFilter(CogniteFilter):
         self.coordinates = list(coordinates)
 
     @classmethod
-    def load(cls, raw_geometry: dict[str, Any]) -> Self:
+    def _load(cls, raw_geometry: dict[str, Any]) -> Self:
         return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
 
@@ -140,19 +139,18 @@ class GeoLocation(CogniteResource):
         self.properties = properties
 
     @classmethod
-    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict[str, Any], cognite_resource: CogniteClient | None = None) -> GeoLocation:
         return cls(
             type=resource["type"],
-            geometry=Geometry.load(resource["geometry"]),
+            geometry=Geometry._load(resource["geometry"]),
             properties=resource.get("properties"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        dumped = super().dump(camel_case)
+        result = super().dump(camel_case)
         if self.geometry:
-            dumped["geometry"] = self.geometry.dump(camel_case)
-        return dumped
+            result["geometry"] = self.geometry.dump(camel_case)
+        return result
 
 
 class GeoLocationFilter(CogniteResource):
@@ -168,9 +166,8 @@ class GeoLocationFilter(CogniteResource):
         self.shape = shape
 
     @classmethod
-    def load(cls: type[Self], resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-        return cls(relation=resource["relation"], shape=GeometryFilter.load(resource["shape"]))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocationFilter:
+        return cls(relation=resource["relation"], shape=resource["shape"])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)

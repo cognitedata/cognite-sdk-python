@@ -21,18 +21,23 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    final,
     overload,
 )
 
 from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
+from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
+from cognite.client.utils._pandas_helpers import (
+    convert_nullable_int_cols,
+    convert_timestamp_columns_to_datetime,
+    notebook_display_with_fallback,
+)
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
-from cognite.client.utils._time import convert_time_attributes_to_datetime
+from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
 if TYPE_CHECKING:
     import pandas
@@ -53,7 +58,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 
 class CogniteResponse:
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -118,7 +123,7 @@ class CogniteResource(_WithClientMixin):
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -133,14 +138,37 @@ class CogniteResource(_WithClientMixin):
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    @final
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        """Load a resource from a YAML/JSON string or dict."""
+        if isinstance(resource, str):
+            resource = load_yaml_or_json(resource)
+
         if isinstance(resource, dict):
-            return fast_dict_load(cls, resource, cognite_client=cognite_client)
-        elif isinstance(resource, str):
-            return cls.load(json.loads(resource), cognite_client=cognite_client)
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+            return cls._load(resource, cognite_client=cognite_client)
+
+        raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        """
+        This is the internal load method that is called by the public load method.
+        It has a default implementation that can be overridden by subclasses.
+
+        The typical use case for overriding this method is to handle nested resources,
+        or to handle resources that have required fields as the default implementation assumes
+        all fields are optional.
+
+        Note that the base class takes care of loading from YAML/JSON strings and error handling.
+
+        Args:
+            resource (dict[str, Any]): The resource to load.
+            cognite_client (CogniteClient | None): Cognite client to associate with the resource.
+
+        Returns:
+            Self: The loaded resource.
+        """
+        return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
     def to_pandas(
         self,
@@ -162,14 +190,15 @@ class CogniteResource(_WithClientMixin):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore or []:
             dumped.pop(element, None)
 
         if convert_timestamps:
-            dumped = convert_time_attributes_to_datetime(dumped)
+            for k in TIME_ATTRIBUTES.intersection(dumped):
+                dumped[k] = pd.Timestamp(dumped[k], unit="ms")
 
         if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
             dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
@@ -228,7 +257,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
@@ -272,6 +301,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         camel_case: bool = False,
         expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame. Note that if the metadata column is expanded and there are
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
@@ -280,13 +310,17 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
             expand_metadata (bool): Expand the metadata column into separate columns.
             metadata_prefix (str): Prefix to use for metadata columns.
+            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The Cognite resource as a dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        df = convert_nullable_int_cols(df, camel_case)
+        df = convert_nullable_int_cols(df)
+
+        if convert_timestamps:
+            df = convert_timestamp_columns_to_datetime(df)
 
         if expand_metadata and "metadata" in df.columns:
             # Equivalent to pd.json_normalize(df["metadata"]) but is a faster implementation.
@@ -299,18 +333,25 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return notebook_display_with_fallback(self)
 
     @classmethod
-    def load(
-        cls: type[T_CogniteResourceList],
-        resource_list: str | Iterable[dict[str, Any]],
+    @final
+    def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
+        """Load a resource from a YAML/JSON string or iterable of dict."""
+        if isinstance(resource, str):
+            resource = load_yaml_or_json(resource)
+
+        if isinstance(resource, Iterable):
+            return cls._load(cast(Iterable, resource), cognite_client=cognite_client)
+
+        raise TypeError(f"Resource must be json or yaml str, or iterable of dicts, not {type(resource)}")
+
+    @classmethod
+    def _load(
+        cls,
+        resource_list: Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
-    ) -> T_CogniteResourceList:
-        if isinstance(resource_list, str):
-            return cls.load(json.loads(resource_list), cognite_client=cognite_client)
-        elif isinstance(resource_list, Iterable):
-            resources = [cls._RESOURCE.load(resource, cognite_client=cognite_client) for resource in resource_list]
-            return cls(resources, cognite_client=cognite_client)
-        else:
-            raise NotImplementedError(f"Resource list must be iterable or json str, not {type(resource_list)}")
+    ) -> Self:
+        resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
+        return cls(resources, cognite_client=cognite_client)
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
@@ -491,7 +532,7 @@ class CogniteFilter:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump(), to_isoformat=True)
+        item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -590,12 +631,11 @@ class Geometry(CogniteResource):
         self.geometries = geometries and list(geometries)
 
     @classmethod
-    def load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, raw_geometry: dict[str, Any], cognite_client: CogniteClient | None = None) -> Geometry:
         return cls(
-            type=resource["type"],
-            coordinates=resource["coordinates"],
-            geometries=(geometries := resource.get("geometries", None)) and [cls.load(g) for g in geometries],
+            type=raw_geometry["type"],
+            coordinates=raw_geometry["coordinates"],
+            geometries=raw_geometry.get("geometries"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -676,6 +716,12 @@ class CogniteSort:
 T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
+class HasExternalId(Protocol):
+    @property
+    def external_id(self) -> str | None:
+        ...
+
+
 class HasExternalAndInternalId(Protocol):
     @property
     def external_id(self) -> str | None:
@@ -684,6 +730,25 @@ class HasExternalAndInternalId(Protocol):
     @property
     def id(self) -> int | None:
         ...
+
+
+class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
+    def as_external_ids(self) -> list[str]:
+        """
+        Returns the external ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an external id.
+
+        Returns:
+            list[str]: The external ids of all resources in the list.
+        """
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError(f"All {type(x).__name__} must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
 
 
 class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):

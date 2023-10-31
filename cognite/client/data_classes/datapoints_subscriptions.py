@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any
@@ -15,6 +14,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
     T_CogniteResource,
@@ -61,10 +61,9 @@ class DatapointSubscriptionCore(CogniteResource):
         self.description = description
 
     @classmethod
-    def load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+    def _load(
+        cls: type[T_CogniteResource], resource: dict, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
         if "filter" in resource:
             resource["filter"] = Filter.load(resource["filter"])
 
@@ -206,8 +205,7 @@ class TimeSeriesID(CogniteResource):
         self.external_id = external_id
 
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
         return cls(id=resource["id"], external_id=resource.get("externalId"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -243,7 +241,7 @@ class DatapointsUpdate:
     def load(cls, data: dict[str, Any]) -> DatapointsUpdate:
         datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
         if (values := data["upserts"]) and ("value" in values[0]):
-            datapoints["upserts"] = Datapoints.load(
+            datapoints["upserts"] = Datapoints._load(
                 {
                     "id": data["timeSeries"]["id"],
                     "externalId": data["timeSeries"].get("externalId"),
@@ -254,7 +252,7 @@ class DatapointsUpdate:
         if values := data["deletes"]:
             datapoints["deletes"] = [DataDeletion.load(value) for value in values]
         return cls(
-            time_series=TimeSeriesID.load(data["timeSeries"], None),
+            time_series=TimeSeriesID._load(data["timeSeries"], None),
             **datapoints,
         )
 
@@ -275,8 +273,8 @@ class SubscriptionTimeSeriesUpdate:
     @classmethod
     def load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
         return cls(
-            added=[TimeSeriesID.load(added) for added in data.get("added", [])],
-            removed=[TimeSeriesID.load(added) for added in data.get("removed", [])],
+            added=[TimeSeriesID._load(added) for added in data.get("added", [])],
+            removed=[TimeSeriesID._load(added) for added in data.get("removed", [])],
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -337,8 +335,7 @@ class _DatapointSubscriptionBatchWithPartitions:
     partitions: list[DatapointSubscriptionPartition]
 
     @classmethod
-    def load(cls, resource: dict | str) -> _DatapointSubscriptionBatchWithPartitions:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def load(cls, resource: dict) -> _DatapointSubscriptionBatchWithPartitions:
         return cls(
             updates=[DatapointsUpdate.load(u) for u in resource["updates"]],
             partitions=[DatapointSubscriptionPartition.load(p) for p in resource["partitions"]],
@@ -361,6 +358,10 @@ class _DatapointSubscriptionBatchWithPartitions:
 
 class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
+
+
+class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
+    _RESOURCE = TimeSeriesID
 
 
 def _metadata(key: str) -> list[str]:
