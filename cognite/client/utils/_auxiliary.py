@@ -57,6 +57,7 @@ def fast_dict_load(
     except TypeError:
         instance = cls()
     # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
+    # Accepted: {camel_case(attribute_name): attribute_name}
     accepted = get_accepted_params(cls)  # type: ignore [arg-type]
     for camel_attr, value in item.items():
         try:
@@ -221,6 +222,10 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
 
 def exactly_one_is_not_none(*args: Any) -> bool:
     return sum(a is not None for a in args) == 1
+
+
+def at_least_one_is_not_none(*args: Any) -> bool:
+    return sum(a is not None for a in args) >= 1
 
 
 def rename_and_exclude_keys(
