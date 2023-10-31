@@ -29,7 +29,7 @@ Changes are grouped as follows:
   `aggregate_metadata_values(keys=["country"], filter=my_filter)` to
   `aggregate_unique_values(["metadata", "country"], filter=my_filter)`.
 - Deprecated method `update_feature_types` on GeospatialAPI, use `patch_feature_types` instead.
-- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set 
+- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set
   explicitly by the user.
 
 ### Function Signature
@@ -47,7 +47,7 @@ Changes are grouped as follows:
 - `client.data_modeling.instances.aggregate` the parameters `instance_type` and `group_by` has swapped order.
 - The return type of `client.data_modeling.instances.aggregate` has changed from `InstanceAggregationResultList` to
   a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
-- The `client.sequences.data.retrieve` method has changed signature: 
+- The `client.sequences.data.retrieve` method has changed signature:
   The parameter `columns_external_id` is renamed `columns`. This is to better match the API and have a consistent overload implementation.
 - The `client.sequences.data.retrieve_latest` is renamed `client.sequences.data.retrieve_last_row`.
 
@@ -56,6 +56,7 @@ Changes are grouped as follows:
 - `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
 - Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
   a single or multiple items (i.e. id -> ids).
+- Passing `limit=0` no longer returns `DEFAULT_LIMIT_READ` (25) resources, but raises a `ValueError`.
 - Loading `ObjectDetection` attributes `.attributes`, `.bounding_box`, `.polygon` and
   `.polyline` now returns types `dict[str, Attribute]`, `BoundingBox`, `Polygon` and `Polyline` instead of `dicts`.
 - Loading `TextRegion` attribute `.text_region` now return `BoundingBox` instead of `dict`.
