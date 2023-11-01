@@ -382,7 +382,7 @@ class WorkflowTask(CogniteResource):
             # Allow default to come from the API.
             retries=resource.get("retries"),  # type: ignore[arg-type]
             timeout=resource.get("timeout"),  # type: ignore[arg-type]
-            on_failure=resource["onFailure"],
+            on_failure=resource.get("onFailure"),  # type: ignore[arg-type]
             depends_on=[dep["externalId"] for dep in resource.get("dependsOn", [])] or None,
         )
 
