@@ -3,7 +3,6 @@ from __future__ import annotations
 import enum
 import json
 from abc import ABC
-from contextlib import suppress
 from dataclasses import asdict, dataclass, field
 from typing import Any, ClassVar, Sequence, cast
 
@@ -27,8 +26,7 @@ class ScopeBase(ABC):
         ((name, data),) = resource.items()
         data = convert_all_keys_to_snake_case(data)
         if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
-            with suppress(TypeError):
-                return cast(Self, scope_cls(**data))
+            return cast(Self, scope_cls(**data))
         return cast(Self, UnknownScope(name=name, data=data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -135,14 +133,13 @@ class Capability(ABC):
         resource = resource if isinstance(resource, dict) else json.loads(resource)
         ((name, data),) = resource.items()
         if capability_cls := _CAPABILITY_CLASS_BY_NAME.get(name):
-            with suppress(TypeError):
-                return cast(
-                    Self,
-                    capability_cls(
-                        actions=[capability_cls.Action(action) for action in data["actions"]],
-                        scope=ScopeBase.load(data["scope"]),
-                    ),
-                )
+            return cast(
+                Self,
+                capability_cls(
+                    actions=[capability_cls.Action(action) for action in data["actions"]],
+                    scope=ScopeBase.load(data["scope"]),
+                ),
+            )
 
         return cast(
             Self, UnknownAcl(capability_name=name, actions=data["actions"], scope=ScopeBase.load(data["scope"]))
