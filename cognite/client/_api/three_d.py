@@ -16,7 +16,7 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 from cognite.client.utils._validation import assert_type
@@ -648,7 +648,7 @@ class ThreeDAssetMappingAPI(APIClient):
         tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
         summary = execute_tasks(self._post, tasks, self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping.load(el),
             str_format_element_fn=lambda el: (el.asset_id, el.node_id),
         )

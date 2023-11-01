@@ -3,6 +3,7 @@ from __future__ import annotations
 import numbers
 from abc import ABC
 from typing import (
+    Any,
     Generic,
     Literal,
     NoReturn,
@@ -191,6 +192,11 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
             return identifier["space"]
         raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
 
+    @staticmethod
+    def extract_identifiers(dct: dict[str, Any]) -> dict[str, str | int]:
+        """An API payload might look like {"id": 1, "before": "2w-ago", ...}. This function extracts the identifiers"""
+        return {k: dct[k] for k in ("id", "externalId") if k in dct}
+
 
 T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierSequenceCore)
 
@@ -304,4 +310,4 @@ class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionId
             return identifier
         if "workflowExternalId" in identifier and "version" in identifier:
             return identifier["workflowExternalId"], identifier["version"]
-        raise ValueError(f"{identifier} does not contain both 'workflowExternalId' and 'version''")
+        raise ValueError(f"{identifier} does not contain both 'workflowExternalId' and 'version'")

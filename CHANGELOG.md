@@ -27,6 +27,7 @@ methods are `json` and `yaml` serializable.
 - `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
   default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
   dtype will always be `datetime64[ns]`, although in v2 this could have been `datetime64[ms]`.
+- `CogniteImportError` can now be caught as `ImportError`.
 
 ### Deprecated
 - The Templates API (migrate to Data Modeling).
@@ -42,6 +43,10 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Additionally, `Asset.to_pandas`, now accepts the parameters `expand_aggregates` and `aggregates_prefix`. Since
   the possible `aggregates` keys are known, `camel_case` will also apply to these (if expanded) as opposed to
   the metadata keys.
+- More narrow exception types like `CogniteNotFoundError` and `CogniteDuplicatedError` are now raised instead of
+  `CogniteAPIError` for the following methods: `DatapointsAPI.retrieve_latest`, `RawRowsAPI.list`,
+  `RelationshipsAPI.list`, `SequencesDataAPI.retrieve`, `SyntheticDatapointsAPI.query`. Additionally, all calls
+  using `partitions` to API methods like `list` (or the generator version) now do the same.
 - The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
 - The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
 - All `.delete` and `.retrieve_multiple` methods now accepts an empty sequence, and will return an empty `CogniteResourceList`.

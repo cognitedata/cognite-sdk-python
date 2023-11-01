@@ -236,7 +236,7 @@ class CogniteDuplicatedError(CogniteMultiException):
         return msg
 
 
-class CogniteImportError(CogniteException):
+class CogniteImportError(CogniteException, ImportError):
     """Cognite Import Error
 
     Raised if the user attempts to use functionality which requires an uninstalled package.

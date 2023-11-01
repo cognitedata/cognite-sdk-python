@@ -9,6 +9,7 @@ from cognite.client.utils._auxiliary import (
     interpolate_and_url_encode,
     is_unlimited,
     split_into_chunks,
+    unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier
@@ -117,7 +118,7 @@ class RawDatabasesAPI(APIClient):
         ]
         summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
+            task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
@@ -250,7 +251,7 @@ class RawTablesAPI(APIClient):
         ]
         summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
+            task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
     def _set_db_name_on_tables(self, tb: Table | TableList, db_name: str) -> Table | TableList:
@@ -391,7 +392,7 @@ class RawRowsAPI(APIClient):
         ]
         summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row.get("key")
+            task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
     def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any, ensure_parent: bool = False) -> None:
@@ -469,7 +470,7 @@ class RawRowsAPI(APIClient):
         ]
         summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
+            task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["key"]
         )
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
@@ -617,6 +618,6 @@ class RawRowsAPI(APIClient):
             for cursor in cursors
         ]
         summary = execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
-        summary.raise_first_encountered_exception()
+        summary.raise_compound_exception_if_failed_tasks()
 
         return RowList(summary.joined_results())
