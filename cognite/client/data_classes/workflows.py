@@ -199,23 +199,35 @@ class TransformationTaskParameters(WorkflowTaskParameters):
 
     Args:
         external_id (str): The external ID of the transformation to be called.
-
+        concurrency_policy (Literal["fail", "restartAfterCurrent", "waitForCurrent"]): Determines the behavior of the task if the Transformation is already running.\n
+            * *fail*: The task fails if another instance of the Transformation is currently running.\n
+            * *waitForCurrent*: The task will pause and wait for the already running Transformation to complete. Once completed, the task is completed. This mode is useful for preventing redundant Transformation runs.\n
+            * *restartAfterCurrent*: The task waits for the ongoing Transformation to finish. After completion, the task restarts the Transformation. This mode ensures that the most recent data can be used by following tasks.
     """
 
     task_type = "transformation"
 
-    def __init__(self, external_id: str) -> None:
+    def __init__(
+        self, external_id: str, concurrency_policy: Literal["fail", "restartAfterCurrent", "waitForCurrent"] = "fail"
+    ) -> None:
         self.external_id = external_id
+        self.concurrency_policy = concurrency_policy
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             resource["transformation"]["externalId"],
+            resource["transformation"]["concurrencyPolicy"],
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {"transformation": {("externalId" if camel_case else "external_id"): self.external_id}}
+        transformation = {
+            "externalId" if camel_case else "external_id": self.external_id,
+            "concurrencyPolicy" if camel_case else "concurrency_policy": self.concurrency_policy,
+        }
+
+        return {"transformation": transformation}
 
 
 class CDFTaskParameters(WorkflowTaskParameters):

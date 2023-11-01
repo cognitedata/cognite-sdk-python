@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.39.0] - 2023-11-1
+## Added
+- Support for `concurrencyPolicy` property in Workflows `TransformationsWorker`.
+
 ## [6.38.1] - 2023-10-31
 ### Fixed
 - `onFailure` property in Workflows was expected as mandatory and was raising KeyError if it was not returnd by the API. The sdk now assumes the field to be optional loads it as None instead of raising an error.
