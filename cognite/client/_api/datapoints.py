@@ -53,10 +53,11 @@ from cognite.client.utils._auxiliary import (
     find_duplicates,
     split_into_chunks,
     split_into_n_parts,
+    unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import execute_tasks, get_executor
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
     _unit_in_days,
@@ -1528,9 +1529,10 @@ class DatapointsPoster:
     def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
         for dps_object in dps_object_list:
             for i in range(0, len(dps_object["datapoints"]), self.limit):
-                dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
+                dps_object_chunk: dict[str, Any] = IdentifierSequenceCore.extract_identifiers(dps_object)
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.limit]
-                for bin in self.bins:
+                # Try to fit into any existing bin for dense packing:
+                for bin in self.bins:  # Note: O(N^2), first bins will be tried again and again...
                     if bin.will_fit(len(dps_object_chunk["datapoints"])):
                         bin.add(dps_object_chunk)
                         break
@@ -1548,7 +1550,7 @@ class DatapointsPoster:
         summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.dps_client._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda x: x[0],
-            task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
 
     def _insert_datapoints(self, post_dps_objects: list[dict[str, Any]]) -> None:
@@ -1642,6 +1644,8 @@ class RetrieveLatestDpsFetcher:
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
-        tasks_summary.raise_first_encountered_exception()
-
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=unpack_items_in_payload,
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
+        )
         return tasks_summary.joined_results(lambda res: res.json()["items"])
