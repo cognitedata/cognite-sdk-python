@@ -50,20 +50,21 @@ class CurrentUserScope(ScopeBase):
 
 
 @dataclass(frozen=True)
-class DataSetScope(ScopeBase):
-    _scope_name = "datasetScope"
-    data_set_ids: list[int]
-
-
-@dataclass(frozen=True)
 class IDScope(ScopeBase):
     _scope_name = "idScope"
     ids: list[int]
 
 
 @dataclass(frozen=True)
-class ExtractionPipelineScope(IDScope):
+class ExtractionPipelineScope(ScopeBase):
     _scope_name = "extractionPipelineScope"
+    ids: list[int]
+
+
+@dataclass(frozen=True)
+class DataSetScope(ScopeBase):
+    _scope_name = "datasetScope"
+    ids: list[int]
 
 
 @dataclass
