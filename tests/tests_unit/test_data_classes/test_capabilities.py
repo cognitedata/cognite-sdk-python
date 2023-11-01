@@ -14,11 +14,17 @@ class TestCapabilities:
             {
                 "assetsAcl": {
                     "actions": ["READ"],
-                    "scope": {"datasetScope": {"dataSetIds": [1, 2, 3]}},
+                    "scope": {"datasetScope": {"ids": [1, 2, 3]}},
                 }
             },
             {
                 "securityCategoriesAcl": {"actions": ["MEMBEROF", "LIST"], "scope": {"idScope": {"ids": [1, 2, 3]}}},
+            },
+            {
+                "rawAcl": {
+                    "actions": ["READ", "WRITE", "LIST"],
+                    "scope": {"tableScope": {"dbsToTables": {"databaseName": ["my_db1", "my_db2"]}}},
+                },
             },
         ],
     )
@@ -31,4 +37,6 @@ class TestCapabilities:
     )
     def test_load_dump_unknown(self, raw: dict[str, Any]) -> None:
         capability = capabilities.Capability.load(raw)
+        assert isinstance(capability, capabilities.UnknownAcl)
+        assert capability.raw_data == raw
         assert capability.dump(camel_case=True) == raw
