@@ -306,18 +306,22 @@ class OidcCredentials:
         self.token_uri = token_uri
         self.audience = audience
         self.cdf_project_name = cdf_project_name
+        self.scopes = self._verify_scopes(scopes)
 
-        # For backwards compatibility, we accept scopes as a comma-separated string.
+    @staticmethod
+    def _verify_scopes(scopes: str | list[str]) -> str:
         if isinstance(scopes, str):
-            scopes = scopes.split(",")
-        self.scopes = scopes
+            return scopes
+        elif isinstance(scopes, list):
+            return ",".join(scopes)
+        raise TypeError(f"scopes must be provided as a comma-separated string or list, not {type(scopes)}")
 
     def as_credential_provider(self) -> OAuthClientCredentials:
         return OAuthClientCredentials(
             token_url=self.token_uri,
             client_id=self.client_id,
             client_secret=self.client_secret,
-            scopes=self.scopes,
+            scopes=self.scopes.split(","),
             audience=self.audience,
         )
 
