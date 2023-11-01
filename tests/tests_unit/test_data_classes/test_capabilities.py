@@ -37,4 +37,6 @@ class TestCapabilities:
     )
     def test_load_dump_unknown(self, raw: dict[str, Any]) -> None:
         capability = capabilities.Capability.load(raw)
+        assert isinstance(capability, capabilities.UnknownAcl)
+        assert capability.raw_data == raw
         assert capability.dump(camel_case=True) == raw
