@@ -65,11 +65,6 @@ class TasksSummary:
             self.exceptions, successful=successful, failed=failed, unknown=unknown, unwrap_fn=str_format_element_fn
         )
 
-    def raise_first_encountered_exception(self) -> None:
-        # TODO: Change to 'raise_compound_exception_if_failed_tasks' in next major version?
-        if self.exceptions:
-            raise self.exceptions[0]
-
 
 def collect_exc_info_and_raise(
     exceptions: list[Exception],
