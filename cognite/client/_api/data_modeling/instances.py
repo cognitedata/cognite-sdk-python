@@ -62,12 +62,11 @@ from cognite.client.data_classes.data_modeling.query import (
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
 from cognite.client.utils.useful_types import SequenceNotStr
-
-from ._data_modeling_executor import get_data_modeling_executor
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -331,7 +330,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
             identifiers=identifiers,
             other_params=other_params,
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
         return InstancesResult(
@@ -408,7 +407,10 @@ class InstancesAPI(APIClient):
         deleted_instances = cast(
             List,
             self._delete_multiple(
-                identifiers, wrap_ids=True, returns_items=True, executor=get_data_modeling_executor()
+                identifiers,
+                wrap_ids=True,
+                returns_items=True,
+                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
@@ -648,7 +650,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
