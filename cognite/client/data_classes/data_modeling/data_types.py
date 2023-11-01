@@ -70,9 +70,9 @@ class PropertyType(ABC):
                 not_supported = set(data).difference(inspect.signature(type_cls).parameters) - {"type"}
                 logger.warning(
                     f"For '{type_cls.__name__}', the following properties are not yet supported in the SDK (ignored): "
-                    f"{not_supported}. Try updating to the latest SDK version!"
+                    f"{not_supported}. Try updating to the latest SDK version, or create an issue on Github!"
                 )
-                return cast(Self, type_cls(**{k: v for k, v in data.items() if k not in not_supported}))
+                return cast(Self, type_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
 
         raise ValueError(f"Invalid type {type_}.")
 
