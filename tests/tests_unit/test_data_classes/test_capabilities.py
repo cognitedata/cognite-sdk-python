@@ -14,11 +14,17 @@ class TestCapabilities:
             {
                 "assetsAcl": {
                     "actions": ["READ"],
-                    "scope": {"datasetScope": {"dataSetIds": [1, 2, 3]}},
+                    "scope": {"datasetScope": {"ids": [1, 2, 3]}},
                 }
             },
             {
                 "securityCategoriesAcl": {"actions": ["MEMBEROF", "LIST"], "scope": {"idScope": {"ids": [1, 2, 3]}}},
+            },
+            {
+                "rawAcl": {
+                    "actions": ["READ", "WRITE", "LIST"],
+                    "scope": {"tableScope": {"dbsToTables": {"databaseName": ["my_db1", "my_db2"]}}},
+                },
             },
         ],
     )
