@@ -31,6 +31,9 @@ Changes are grouped as follows:
 - Deprecated method `update_feature_types` on GeospatialAPI, use `patch_feature_types` instead.
 - The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set
   explicitly by the user.
+- DataClass `ViewDirectRelation`, `ContainerDirectRelation` replaced by `DirectRelation`.
+- DataClasses `MappedPropertyDefinition`, `MappedApplyPropertyDefinition` replaced by `MappedProperty`, `MappedPropertyApply`.
+- DataClasses `RequiresConstraintDefinition` and `UniquenessConstraintDefinition` replaced by `RequiresConstraint` and `UniquenessConstraint`.
 
 ### Function Signature
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
