@@ -55,7 +55,7 @@ from cognite.client.utils._auxiliary import (
     split_into_n_parts,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import execute_tasks, get_executor
+from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
@@ -164,14 +164,14 @@ class DpsFetchStrategy(ABC):
                 )
 
     def fetch_all_datapoints(self) -> DatapointsList:
-        pool = get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         return DatapointsList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=False)],  # type: ignore [arg-type]
             cognite_client=self.dps_client._cognite_client,
         )
 
     def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
-        pool = get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         return DatapointsArrayList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=True)],  # type: ignore [arg-type]
             cognite_client=self.dps_client._cognite_client,
