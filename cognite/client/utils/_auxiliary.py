@@ -239,3 +239,7 @@ def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -
     if (res := dct.get(key)) is not None:
         return cls._load(res)
     return None
+
+
+def unpack_items_in_payload(payload: dict[str, dict[str, Any]]) -> list:
+    return payload["json"]["items"]

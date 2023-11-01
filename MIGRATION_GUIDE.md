@@ -57,6 +57,10 @@ Changes are grouped as follows:
 ### Changed
 - All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
 - `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
+- More narrow exception types like `CogniteNotFoundError` and `CogniteDuplicatedError` are now raised instead of
+  `CogniteAPIError` for the following methods: `DatapointsAPI.retrieve_latest`, `RawRowsAPI.list`,
+  `RelationshipsAPI.list`, `SequencesDataAPI.retrieve`, `SyntheticDatapointsAPI.query`. Additionally, all calls
+  using `partitions` to API methods like `list` (or the generator version) now do the same.
 - Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
   a single or multiple items (i.e. id -> ids).
 - Passing `limit=0` no longer returns `DEFAULT_LIMIT_READ` (25) resources, but raises a `ValueError`.
@@ -93,6 +97,9 @@ Changes are grouped as follows:
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
   `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer 
   `dict` but classes with attributes matchhng the API.
+
+### Optional
+- `CogniteImportError` can now be caught as `ImportError`.
 
 ## From v5 to v6
 ### Removed
