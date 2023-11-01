@@ -46,7 +46,7 @@ class Capability(ABC):
                         f"For '{scope_cls.__name__}', the following unknown fields were ignored: {not_supported}. "
                         "Try updating to the latest SDK version, or create an issue on Github!"
                     )
-                    return scope_cls(**rename_and_exclude_keys(data, exclude=not_supported))
+                    return cast(Self, scope_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
             return cast(Self, UnknownScope(name=name, data=data))
 
         def dump(self, camel_case: bool = False) -> dict[str, Any]:
