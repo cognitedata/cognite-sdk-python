@@ -258,7 +258,6 @@ class Transformation(CogniteResource):
             config.credentials = oidc_credentials.as_credential_provider()
             other_client = CogniteClient(config)
             try:
-                raise CogniteAPIError("skipping to test if backup flow is working...", 400)
                 session = other_client.iam.sessions.create(credentials)
                 ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
             except CogniteAPIError as err:
