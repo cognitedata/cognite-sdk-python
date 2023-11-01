@@ -85,6 +85,9 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
   since the deprecation of API keys).
 - The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set
   explicitly by the user.
+- DataClass `ViewDirectRelation`, `ContainerDirectRelation` replaced by `DirectRelation`.
+- DataClasses `MappedPropertyDefinition`, `MappedApplyPropertyDefinition` replaced by `MappedProperty`, `MappedPropertyApply`.
+- DataClasses `RequiresConstraintDefinition` and `UniquenessConstraintDefinition` replaced by `RequiresConstraint` and `UniquenessConstraint`.
 
 ### Fixed
 - Passing `limit=0` no longer returns `DEFAULT_LIMIT_READ` (25) resources, but raises a `ValueError`.
