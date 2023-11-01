@@ -492,7 +492,7 @@ class TestStandardList:
         def request_callback(request):
             payload = jsgz_load(request.body)
             np, total = payload["partition"].split("/")
-            if int(np) == 2:
+            if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
@@ -506,11 +506,15 @@ class TestStandardList:
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 method="POST",
-                partitions=4,
+                partitions=10,
                 limit=None,
             )
         assert 503 == exc.value.code
-        assert 4 == len(rsps.calls)
+        assert exc.value.unknown == [("3/10",)]
+        assert exc.value.skipped
+        assert exc.value.successful
+        assert 9 == len(exc.value.successful) + len(exc.value.skipped)
+        assert 1 < len(rsps.calls)
 
     @pytest.fixture
     def mock_get_for_autopaging(self, rsps):
@@ -753,12 +757,13 @@ class TestStandardCreate:
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     items=[
-                        SomeResource(1, external_id="400"),
+                        # The external id here is also used as the fake api response status code:
+                        SomeResource(1, external_id="400"),  # i.e, this will raise CogniteAPIError(..., code=400)
                         SomeResource(external_id="500"),
                         SomeResource(1, 1, external_id="200"),
                     ],
                 )
-        assert 500 == e.value.code
+        assert e.value.code in (400, 500)  # race condition, don't know which failing is -last-
         assert [SomeResource(1, external_id="400")] == e.value.failed
         assert [SomeResource(1, 1, external_id="200")] == e.value.successful
         assert [SomeResource(external_id="500")] == e.value.unknown

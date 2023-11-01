@@ -22,15 +22,15 @@ def delete_with_check(cognite_client: CogniteClient, delete_ids: list[int], chec
         raise ValueError(f"retrieve_multiple after delete successful for ids {check_ids}")
     except CogniteAPIError as e:
         assert e.code == 404
-        missing = [i["id"] for i in e.missing]
+        missing = [i["id"] for i in e.failed]
         assert sorted(check_ids) == sorted(missing)
 
 
-def remove_None_from_nested_dict(d: dict[str, Any]) -> dict[str, Any]:
+def remove_none_from_nested_dict(d: dict[str, Any]) -> dict[str, Any]:
     new_dict = {}
     for key, val in d.items():
         if isinstance(val, dict):
-            val = remove_None_from_nested_dict(val)
+            val = remove_none_from_nested_dict(val)
         if val is not None:
             new_dict[key] = val
     return new_dict
@@ -160,8 +160,8 @@ def check_created_vs_base(base_annotation: Annotation, created_annotation: Annot
             assert v == base_dump[k]
     assert found_special_keys == len(special_keys)
     # assert data is equal, except None fields
-    created_dump_data = remove_None_from_nested_dict(created_dump["data"])
-    base_dump_data = remove_None_from_nested_dict(base_dump["data"])
+    created_dump_data = remove_none_from_nested_dict(created_dump["data"])
+    base_dump_data = remove_none_from_nested_dict(base_dump["data"])
     assert created_dump_data == base_dump_data
 
 

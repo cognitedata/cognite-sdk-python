@@ -23,6 +23,10 @@ in sequence produces an equal object to the original, for example,
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
 methods are `json` and `yaml` serializable.
 
+### Improved
+- Read operations, like `retrieve_multiple` will now fast-fail. Previously, all requests would be executed
+  before the error was raised, potentially fetching thousands of unneccesary resources.
+
 ### Added
 - `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
   default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
@@ -69,7 +73,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
 - The `client.sequences.data.retrieve_latest` is renamed `client.sequences.data.retrieve_last_row`.
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
-  `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer 
+  `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
   `dict` but classes with attributes matching the API.
 
 ### Added

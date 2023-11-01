@@ -13,6 +13,8 @@ Changes are grouped as follows:
 - `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
   default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
   dtype will always be `datetime64[ns]`, although in v2 this could have been `datetime64[ms]`.
+- Read operations, like `retrieve_multiple` will now fast-fail. Previously, all requests would be executed
+  before the error was raised, potentially fetching thousands of unneccesary resources.
 
 ### Deprecated
 - The Templates API is deprecated, and will be removed in a future version. Please migrate to Data Modeling.
@@ -95,7 +97,7 @@ Changes are grouped as follows:
 - The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
 -The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
-  `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer 
+  `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
   `dict` but classes with attributes matchhng the API.
 
 ### Optional

@@ -17,8 +17,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     IndexIdentifier,
     _load_identifier,
 )
-
-from ._data_modeling_executor import get_data_modeling_executor
+from cognite.client.utils._concurrency import ConcurrencySettings
 
 
 class ContainersAPI(APIClient):
@@ -119,7 +118,7 @@ class ContainersAPI(APIClient):
             list_cls=ContainerList,
             resource_cls=Container,
             identifiers=identifier,
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
     def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
@@ -143,7 +142,7 @@ class ContainersAPI(APIClient):
                 identifiers=_load_identifier(ids, "container"),
                 wrap_ids=True,
                 returns_items=True,
-                executor=get_data_modeling_executor(),
+                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
@@ -290,5 +289,5 @@ class ContainersAPI(APIClient):
             resource_cls=Container,
             items=container,
             input_resource_cls=ContainerApply,
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
