@@ -48,7 +48,7 @@ from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, Sor
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import classify_error, execute_tasks, get_executor
+from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import import_as_completed
 from cognite.client.utils._text import to_camel_case
@@ -1115,7 +1115,7 @@ class _AssetHierarchyCreator:
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        pool = get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
 
         if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
