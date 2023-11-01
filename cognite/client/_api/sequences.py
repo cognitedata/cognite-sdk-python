@@ -1085,8 +1085,8 @@ class SequencesDataAPI(APIClient):
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
-        is_single = (isinstance(external_id, str) and id is None) or (isinstance(id, int) and external_id is None)
-        identifiers = IdentifierSequence.load(id, external_id).as_dicts()
+        ident_sequence = IdentifierSequence.load(id, external_id)
+        identifiers = ident_sequence.as_dicts()
 
         def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
             post_obj.update(self._wrap_columns(column_external_ids=columns))
@@ -1101,9 +1101,11 @@ class SequencesDataAPI(APIClient):
             return SequenceRows.load(sequence_rows)
 
         tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
-        tasks_summary.raise_first_encountered_exception()
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_list_element_unwrap_fn=ident_sequence.extract_identifiers
+        )
         results = tasks_summary.joined_results()
-        if is_single:
+        if ident_sequence.is_singleton():
             return results[0]
         else:
             return SequenceRowsList(results)
