@@ -27,7 +27,7 @@ from cognite.client.data_classes.sequences import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._concurrency import execute_tasks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
+from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import (
     assert_type,
     prepare_filter_sort,
@@ -1102,7 +1102,7 @@ class SequencesDataAPI(APIClient):
 
         tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers
+            task_list_element_unwrap_fn=ident_sequence.extract_identifiers
         )
         results = tasks_summary.joined_results()
         if ident_sequence.is_singleton():

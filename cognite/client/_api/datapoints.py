@@ -1529,9 +1529,10 @@ class DatapointsPoster:
     def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
         for dps_object in dps_object_list:
             for i in range(0, len(dps_object["datapoints"]), self.limit):
-                dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
+                dps_object_chunk: dict[str, Any] = IdentifierSequenceCore.extract_identifiers(dps_object)
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.limit]
-                for bin in self.bins:
+                # Try to fit into any existing bin for dense packing:
+                for bin in self.bins:  # Note: O(N^2), first bins will be tried again and again...
                     if bin.will_fit(len(dps_object_chunk["datapoints"])):
                         bin.add(dps_object_chunk)
                         break
