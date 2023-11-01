@@ -367,7 +367,7 @@ class APIClient:
         )
         try:
             tasks_summary.raise_compound_exception_if_failed_tasks(
-                task_unwrap_fn=lambda task: task["json"]["items"],
+                task_unwrap_fn=unpack_items_in_payload,
                 task_list_element_unwrap_fn=identifiers.extract_identifiers,
             )
         except CogniteNotFoundError:

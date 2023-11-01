@@ -205,8 +205,8 @@ class ConcurrencySettings:
     @classmethod
     def get_data_modeling_executor(cls) -> ThreadPoolExecutor:
         """
-        The data modeling backend has different concurrency limits in the backend compared to the rest of CDF.
-        Thus, we use a dedicated executor for these endpoints to match the backend.
+        The data modeling backend has different concurrency limits compared with the rest of CDF.
+        Thus, we use a dedicated executor for these endpoints to match the backend requirements.
 
         Returns:
             ThreadPoolExecutor: The data modeling executor.
