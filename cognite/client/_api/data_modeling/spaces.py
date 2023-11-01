@@ -6,8 +6,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
-
-from ._data_modeling_executor import get_data_modeling_executor
+from cognite.client.utils._concurrency import ConcurrencySettings
 
 
 class SpacesAPI(APIClient):
@@ -95,7 +94,10 @@ class SpacesAPI(APIClient):
         """
         identifier = _load_space_identifier(spaces)
         return self._retrieve_multiple(
-            list_cls=SpaceList, resource_cls=Space, identifiers=identifier, executor=get_data_modeling_executor()
+            list_cls=SpaceList,
+            resource_cls=Space,
+            identifiers=identifier,
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
     def delete(self, spaces: str | Sequence[str]) -> list[str]:
@@ -119,7 +121,7 @@ class SpacesAPI(APIClient):
                 identifiers=_load_space_identifier(spaces),
                 wrap_ids=True,
                 returns_items=True,
-                executor=get_data_modeling_executor(),
+                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         return [item["space"] for item in deleted_spaces]
@@ -201,5 +203,5 @@ class SpacesAPI(APIClient):
             resource_cls=Space,
             items=spaces,
             input_resource_cls=SpaceApply,
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
