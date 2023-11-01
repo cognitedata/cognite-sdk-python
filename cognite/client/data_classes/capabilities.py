@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import enum
+import inspect
 import json
+import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
 from typing import Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
+from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -15,55 +18,109 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 
+logger = logging.getLogger(__name__)
 
-@dataclass(frozen=True)
-class ScopeBase(ABC):
-    _scope_name: ClassVar[str]
+
+@dataclass
+class Capability(ABC):
+    _capability_name: ClassVar[str]
+
+    class Action(enum.Enum):
+        ...
+
+    @dataclass(frozen=True)
+    class Scope(ABC):
+        _scope_name: ClassVar[str]
+
+        @classmethod
+        def load(cls, resource: dict | str) -> Self:
+            resource = resource if isinstance(resource, dict) else json.loads(resource)
+            ((name, data),) = resource.items()
+            data = convert_all_keys_to_snake_case(data)
+            if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
+                try:
+                    return cast(Self, scope_cls(**data))
+                except TypeError:
+                    not_supported = set(data).difference(inspect.signature(scope_cls).parameters)
+                    logger.warning(
+                        f"For '{scope_cls.__name__}', the following unknown fields were ignored: {not_supported}. "
+                        "Try updating to the latest SDK version, or create an issue on Github!"
+                    )
+                    return cast(Self, scope_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
+            return cast(Self, UnknownScope(name=name, data=data))
+
+        def dump(self, camel_case: bool = False) -> dict[str, Any]:
+            if isinstance(self, UnknownScope):
+                return {self.name: self.data}
+
+            data = asdict(self)
+            if camel_case:
+                data = convert_all_keys_to_camel_case(data)
+            return {self._scope_name: data}
+
+    actions: Sequence[Action]
+    scope: Scope
 
     @classmethod
     def load(cls, resource: dict | str) -> Self:
         resource = resource if isinstance(resource, dict) else json.loads(resource)
         ((name, data),) = resource.items()
-        data = convert_all_keys_to_snake_case(data)
-        if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
-            return cast(Self, scope_cls(**data))
-        return cast(Self, UnknownScope(name=name, data=data))
+        if capability_cls := _CAPABILITY_CLASS_BY_NAME.get(name):
+            return cast(
+                Self,
+                capability_cls(
+                    actions=[capability_cls.Action(action) for action in data["actions"]],
+                    scope=Capability.Scope.load(data["scope"]),
+                ),
+            )
+
+        return cast(
+            Self,
+            UnknownAcl(
+                capability_name=name,
+                actions=[UnknownAcl.Action.UNKNOWN for _ in data["actions"]],
+                scope=Capability.Scope.load(data["scope"]),
+                raw_data=resource,
+            ),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        if isinstance(self, UnknownScope):
-            return {self.name: self.data}
-
-        data = asdict(self)
-        if camel_case:
-            data = convert_all_keys_to_camel_case(data)
-        return {self._scope_name: data}
+        if isinstance(self, UnknownAcl):
+            return self.raw_data
+        data = {
+            "actions": [action.value for action in self.actions],
+            "scope": self.scope.dump(camel_case=camel_case),
+        }
+        capability_name = self._capability_name
+        return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
 
 
 @dataclass(frozen=True)
-class AllScope(ScopeBase):
+class AllScope(Capability.Scope):
     _scope_name = "all"
 
 
 @dataclass(frozen=True)
-class CurrentUserScope(ScopeBase):
+class CurrentUserScope(Capability.Scope):
     _scope_name = "currentuserScope"
 
 
 @dataclass(frozen=True)
-class DataSetScope(ScopeBase):
-    _scope_name = "datasetScope"
-    data_set_ids: list[int]
-
-
-@dataclass(frozen=True)
-class IDScope(ScopeBase):
+class IDScope(Capability.Scope):
     _scope_name = "idScope"
     ids: list[int]
 
 
 @dataclass(frozen=True)
-class ExtractionPipelineScope(IDScope):
+class ExtractionPipelineScope(Capability.Scope):
     _scope_name = "extractionPipelineScope"
+    ids: list[int]
+
+
+@dataclass(frozen=True)
+class DataSetScope(Capability.Scope):
+    _scope_name = "datasetScope"
+    ids: list[int]
 
 
 @dataclass
@@ -73,7 +130,7 @@ class DatabaseTableScope:
 
 
 @dataclass(frozen=True)
-class TableScope(ScopeBase):
+class TableScope(Capability.Scope):
     _scope_name = "tableScope"
     dbs_to_tables: dict[str, DatabaseTableScope]
 
@@ -85,19 +142,19 @@ class AssetRootIDScope(IDScope):
 
 
 @dataclass(frozen=True)
-class ExperimentsScope(ScopeBase):
+class ExperimentsScope(Capability.Scope):
     _scope_name = "experimentscope"
     experiments: list[str]
 
 
 @dataclass(frozen=True)
-class SpaceIDScope(ScopeBase):
+class SpaceIDScope(Capability.Scope):
     _scope_name = "spaceIdScope"
     ids: list[str]
 
 
 @dataclass(frozen=True)
-class UnknownScope(ScopeBase):
+class UnknownScope(Capability.Scope):
     """
     This class is used for scopes that are not implemented in this version of the SDK.
     Typically, experimental scopes or new scopes that have recently been added to the API.
@@ -110,50 +167,9 @@ class UnknownScope(ScopeBase):
         return self.data[item]
 
 
-_SCOPE_CLASS_BY_NAME: dict[str, type[ScopeBase]] = {
-    c._scope_name: c for c in ScopeBase.__subclasses__() if not issubclass(c, UnknownScope)
+_SCOPE_CLASS_BY_NAME: dict[str, type[Capability.Scope]] = {
+    c._scope_name: c for c in Capability.Scope.__subclasses__() if not issubclass(c, UnknownScope)
 }
-
-
-@dataclass
-class Capability(ABC):
-    _capability_name: ClassVar[str]
-
-    class Action(enum.Enum):
-        ...
-
-    class Scope:
-        ...
-
-    actions: Sequence
-    scope: ScopeBase
-
-    @classmethod
-    def load(cls, resource: dict | str) -> Self:
-        resource = resource if isinstance(resource, dict) else json.loads(resource)
-        ((name, data),) = resource.items()
-        if capability_cls := _CAPABILITY_CLASS_BY_NAME.get(name):
-            return cast(
-                Self,
-                capability_cls(
-                    actions=[capability_cls.Action(action) for action in data["actions"]],
-                    scope=ScopeBase.load(data["scope"]),
-                ),
-            )
-
-        return cast(
-            Self, UnknownAcl(capability_name=name, actions=data["actions"], scope=ScopeBase.load(data["scope"]))
-        )
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        if isinstance(self, UnknownAcl):
-            return {self.capability_name: {"actions": self.actions, "scope": self.scope.dump(camel_case=camel_case)}}
-        data = {
-            "actions": [action.value for action in self.actions],
-            "scope": self.scope.dump(camel_case=camel_case),
-        }
-        capability_name = self._capability_name
-        return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
 
 
 @dataclass
@@ -163,16 +179,18 @@ class UnknownAcl(Capability):
     Typically, experimental capabilities or new capabilities that have recently been added to the API.
     """
 
+    class Action(Capability.Action):
+        UNKNOWN = "UNKNOWN"
+
     capability_name: str
-    actions: list[str]
-    scope: ScopeBase
+    raw_data: dict[str, Any]
 
 
 @dataclass
 class AnalyticsAcl(Capability):
     _capability_name = "analyticsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Execute = "EXECUTE"
         List = "LIST"
@@ -188,7 +206,7 @@ class AnalyticsAcl(Capability):
 class AnnotationsAcl(Capability):
     _capability_name = "annotationsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         Suggest = "SUGGEST"
@@ -205,7 +223,7 @@ class AnnotationsAcl(Capability):
 class AssetsAcl(Capability):
     _capability_name = "assetsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -221,7 +239,7 @@ class AssetsAcl(Capability):
 class DataSetsAcl(Capability):
     _capability_name = "datasetsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         Owner = "OWNER"
@@ -238,7 +256,7 @@ class DataSetsAcl(Capability):
 class DigitalTwinAcl(Capability):
     _capability_name = "digitalTwinAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -250,7 +268,7 @@ class DigitalTwinAcl(Capability):
 class EntityMatchingAcl(Capability):
     _capability_name = "entitymatchingAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -265,7 +283,7 @@ class EntityMatchingAcl(Capability):
 class EventsAcl(Capability):
     _capability_name = "eventsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -281,7 +299,7 @@ class EventsAcl(Capability):
 class ExtractionPipelinesAcl(Capability):
     _capability_name = "extractionPipelinesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -298,7 +316,7 @@ class ExtractionPipelinesAcl(Capability):
 class ExtractionsRunAcl(Capability):
     _capability_name = "extractionRunsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -315,7 +333,7 @@ class ExtractionsRunAcl(Capability):
 class FilesAcl(Capability):
     _capability_name = "filesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -331,7 +349,7 @@ class FilesAcl(Capability):
 class FunctionsAcl(Capability):
     _capability_name = "functionsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -346,7 +364,7 @@ class FunctionsAcl(Capability):
 class GeospatialAcl(Capability):
     _capability_name = "geospatialAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -361,7 +379,7 @@ class GeospatialAcl(Capability):
 class GeospatialCrsAcl(Capability):
     _capability_name = "geospatialCrsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -376,7 +394,7 @@ class GeospatialCrsAcl(Capability):
 class GroupsAcl(Capability):
     _capability_name = "groupsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Create = "CREATE"
         Delete = "DELETE"
         Read = "READ"
@@ -395,7 +413,7 @@ class GroupsAcl(Capability):
 class LabelsAcl(Capability):
     _capability_name = "labelsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -411,7 +429,7 @@ class LabelsAcl(Capability):
 class ProjectsAcl(Capability):
     _capability_name = "projectsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         List = "LIST"
@@ -428,7 +446,7 @@ class ProjectsAcl(Capability):
 class RawAcl(Capability):
     _capability_name = "rawAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         List = "LIST"
@@ -445,7 +463,7 @@ class RawAcl(Capability):
 class RelationshipsAcl(Capability):
     _capability_name = "relationshipsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -461,7 +479,7 @@ class RelationshipsAcl(Capability):
 class RoboticsAcl(Capability):
     _capability_name = "roboticsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         Create = "CREATE"
@@ -479,7 +497,7 @@ class RoboticsAcl(Capability):
 class SecurityCategoriesAcl(Capability):
     _capability_name = "securityCategoriesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         MemberOf = "MEMBEROF"
         List = "LIST"
         Create = "CREATE"
@@ -498,7 +516,7 @@ class SecurityCategoriesAcl(Capability):
 class SeismicAcl(Capability):
     _capability_name = "seismicAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -513,7 +531,7 @@ class SeismicAcl(Capability):
 class SequencesAcl(Capability):
     _capability_name = "sequencesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -529,7 +547,7 @@ class SequencesAcl(Capability):
 class SessionsAcl(Capability):
     _capability_name = "sessionsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         List = "LIST"
         Create = "CREATE"
         Delete = "DELETE"
@@ -545,7 +563,7 @@ class SessionsAcl(Capability):
 class ThreeDAcl(Capability):
     _capability_name = "threedAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Create = "CREATE"
         Update = "UPDATE"
@@ -563,7 +581,7 @@ class ThreeDAcl(Capability):
 class TimeSeriesAcl(Capability):
     _capability_name = "timeSeriesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -581,7 +599,7 @@ class TimeSeriesAcl(Capability):
 class TimeSeriesSubscriptionsAcl(Capability):
     _capability_name = "timeSeriesSubscriptionsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -596,7 +614,7 @@ class TimeSeriesSubscriptionsAcl(Capability):
 class TransformationsAcl(Capability):
     _capability_name = "transformationsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -612,7 +630,7 @@ class TransformationsAcl(Capability):
 class TypesAcl(Capability):
     _capability_name = "typesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -627,7 +645,7 @@ class TypesAcl(Capability):
 class WellsAcl(Capability):
     _capability_name = "wellsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -642,7 +660,7 @@ class WellsAcl(Capability):
 class ExperimentsAcl(Capability):
     _capability_name = "experimentAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Use = "USE"
 
     class Scope:
@@ -655,7 +673,7 @@ class ExperimentsAcl(Capability):
 class TemplateGroupsAcl(Capability):
     _capability_name = "templateGroupsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -670,7 +688,7 @@ class TemplateGroupsAcl(Capability):
 class TemplateInstancesAcl(Capability):
     _capability_name = "templateInstancesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -685,7 +703,7 @@ class TemplateInstancesAcl(Capability):
 class DataModelInstancesAcl(Capability):
     _capability_name = "dataModelInstancesAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -701,7 +719,7 @@ class DataModelInstancesAcl(Capability):
 class DataModelsAcl(Capability):
     _capability_name = "dataModelsAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -717,7 +735,7 @@ class DataModelsAcl(Capability):
 class WorkflowOrchestrationAcl(Capability):
     _capability_name = "workflowOrchestrationAcl"
 
-    class Action(enum.Enum):
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
