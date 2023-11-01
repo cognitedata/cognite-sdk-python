@@ -1,19 +1,24 @@
 from __future__ import annotations
 
 import enum
+import inspect
 import json
+import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
 from typing import Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
+from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
     to_camel_case,
     to_snake_case,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -33,7 +38,15 @@ class Capability(ABC):
             ((name, data),) = resource.items()
             data = convert_all_keys_to_snake_case(data)
             if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
-                return cast(Self, scope_cls(**data))
+                try:
+                    return cast(Self, scope_cls(**data))
+                except TypeError:
+                    not_supported = set(data).difference(inspect.signature(scope_cls).parameters)
+                    logger.warning(
+                        f"For '{scope_cls.__name__}', the following unknown fields were ignored: {not_supported}. "
+                        "Try updating to the latest SDK version, or create an issue on Github!"
+                    )
+                    return scope_cls(**rename_and_exclude_keys(data, exclude=not_supported))
             return cast(Self, UnknownScope(name=name, data=data))
 
         def dump(self, camel_case: bool = False) -> dict[str, Any]:
