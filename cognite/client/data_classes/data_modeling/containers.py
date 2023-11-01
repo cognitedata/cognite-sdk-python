@@ -249,11 +249,11 @@ class ContainerProperty:
 @dataclass(frozen=True)
 class Constraint(ABC):
     @classmethod
-    def load(cls, data: dict) -> RequiresConstraint | UniquenessConstraintDefinition:
+    def load(cls, data: dict) -> RequiresConstraint | UniquenessConstraint:
         if data["constraintType"] == "requires":
             return RequiresConstraint.load(data)
         elif data["constraintType"] == "uniqueness":
-            return UniquenessConstraintDefinition.load(data)
+            return UniquenessConstraint.load(data)
         raise ValueError(f"Invalid constraint type {data['constraintType']}")
 
     @abstractmethod
@@ -293,12 +293,6 @@ class UniquenessConstraint(Constraint):
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "uniqueness"
         return output
-
-
-# Type aliases for backwards compatibility after renaming
-# TODO: Remove in some future major version
-RequiresConstraintDefinition = RequiresConstraint
-UniquenessConstraintDefinition = UniquenessConstraint
 
 
 @dataclass(frozen=True)
