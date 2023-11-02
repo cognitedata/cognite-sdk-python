@@ -17,7 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.39.0] - 2023-11-1
+## [6.39.1] - 2023-11-01
+## Fixed
+- When creating transformations using backup auth. flow (aka a session could not be created for any reason),
+  the scopes for the credentials would not be passed correctly (bug introduced in 6.25.1).
+
+## [6.39.0] - 2023-11-01
 ## Added
 - Support for `concurrencyPolicy` property in Workflows `TransformationsWorker`.
 
