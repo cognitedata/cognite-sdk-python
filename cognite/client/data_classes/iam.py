@@ -6,9 +6,12 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.data_classes.capabilities import Capability
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import CogniteClient
 
 
@@ -51,7 +54,7 @@ class Group(CogniteResource):
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
-            capabilities=[Capability.load(c) for c in resource.get("capabilities", [])],
+            capabilities=[Capability.load(c) for c in resource.get("capabilities", [])] or None,
             id=resource.get("id"),
             is_deleted=resource.get("isDeleted"),
             deleted_time=resource.get("deletedTime"),
@@ -61,13 +64,47 @@ class Group(CogniteResource):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
-        if self.capabilities:
+        if self.capabilities is not None:
             dumped["capabilities"] = [c.dump(camel_case=camel_case) for c in self.capabilities]
         return dumped
+
+    def to_pandas(
+        self,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+    ) -> pd.DataFrame:
+        df = super().to_pandas(expand_metadata, metadata_prefix, ignore, camel_case, convert_timestamps)
+
+        # The API uses -1 to represent "no deleted time". It looks weird if deleted = False,
+        # but deleted_time = 1969-12-31 23:59:59.999:
+        key = "deletedTime" if camel_case else "deleted_time"
+        if self.deleted_time == -1 and convert_timestamps and key in df.index:
+            df.at[key, "value"] = local_import("pandas").NaT
+        return df
 
 
 class GroupList(CogniteResourceList[Group]):
     _RESOURCE = Group
+
+    def to_pandas(
+        self,
+        camel_case: bool = False,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        convert_timestamps: bool = True,
+    ) -> pd.DataFrame:
+        df = super().to_pandas(camel_case, expand_metadata, metadata_prefix, convert_timestamps)
+
+        # The API uses -1 to represent "no deleted time". It looks weird if deleted = False,
+        # but deleted_time = 1969-12-31 23:59:59.999:
+        key = "deletedTime" if camel_case else "deleted_time"
+        if convert_timestamps and key in df:
+            pd = local_import("pandas")
+            df.loc[df[key] == pd.Timestamp(-1, unit="ms"), key] = pd.NaT
+        return df
 
 
 class SecurityCategory(CogniteResource):
