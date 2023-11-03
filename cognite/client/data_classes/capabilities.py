@@ -4,8 +4,9 @@ import enum
 import inspect
 import logging
 from abc import ABC
+from collections import UserList
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Sequence, cast
+from typing import Any, ClassVar, Collection, Iterator, Sequence, SupportsIndex, cast, overload
 
 from typing_extensions import Self
 
@@ -161,6 +162,47 @@ class GroupCapability:
         dumped = self.capability.dump(camel_case=camel_case)
         dumped[ProjectScope.name] = self.project_scope.dump(camel_case=camel_case)
         return dumped
+
+
+class GroupCapabilities(UserList):
+    def __init__(self, items: Collection[Any]) -> None:
+        super().__init__(
+            [GroupCapability(**capability) if isinstance(capability, dict) else capability for capability in items]
+        )
+
+    @classmethod
+    def load(cls, resources: list | str) -> Self:
+        resources = resources if isinstance(resources, list) else load_yaml_or_json(resources)
+        return cls(
+            [
+                GroupCapability.load(capability) if isinstance(capability, dict) else capability
+                for capability in resources
+            ]
+        )
+
+    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
+        return [capability.dump(camel_case) for capability in self.data]
+
+    # The following methods are needed for proper type hinting
+    def pop(self, i: int = -1) -> GroupCapability:
+        return super().pop(i)
+
+    def __iter__(self) -> Iterator[GroupCapability]:
+        return super().__iter__()
+
+    @overload
+    def __getitem__(self, item: SupportsIndex) -> GroupCapability:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> GroupCapabilities:
+        ...
+
+    def __getitem__(self, item: SupportsIndex | slice) -> GroupCapability | GroupCapabilities:
+        value = self.data[item]
+        if isinstance(item, slice):
+            return type(self)(value)
+        return cast(GroupCapability, value)
 
 
 @dataclass(frozen=True)
