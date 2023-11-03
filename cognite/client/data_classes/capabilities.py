@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import enum
 import inspect
-import json
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
@@ -10,7 +9,7 @@ from typing import Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
+from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -24,6 +23,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Capability(ABC):
     _capability_name: ClassVar[str]
+    actions: Sequence[Action]
+    scope: Scope
 
     class Action(enum.Enum):
         ...
@@ -34,7 +35,7 @@ class Capability(ABC):
 
         @classmethod
         def load(cls, resource: dict | str) -> Self:
-            resource = resource if isinstance(resource, dict) else json.loads(resource)
+            resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
             ((name, data),) = resource.items()
             data = convert_all_keys_to_snake_case(data)
             if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
@@ -58,30 +59,37 @@ class Capability(ABC):
                 data = convert_all_keys_to_camel_case(data)
             return {self._scope_name: data}
 
-    actions: Sequence[Action]
-    scope: Scope
-
     @classmethod
     def load(cls, resource: dict | str) -> Self:
-        resource = resource if isinstance(resource, dict) else json.loads(resource)
-        ((name, data),) = resource.items()
-        if capability_cls := _CAPABILITY_CLASS_BY_NAME.get(name):
+        resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
+        known_acls = set(resource).intersection(_CAPABILITY_CLASS_BY_NAME)
+        if len(known_acls) == 1:
+            (name,) = known_acls
+            capability_cls = _CAPABILITY_CLASS_BY_NAME[name]
+            # TODO: We ignore extra keys that might be present like 'projectUrlNames' - are these needed?
             return cast(
                 Self,
                 capability_cls(
-                    actions=[capability_cls.Action(action) for action in data["actions"]],
-                    scope=Capability.Scope.load(data["scope"]),
+                    actions=[capability_cls.Action(action) for action in resource[name]["actions"]],
+                    scope=Capability.Scope.load(resource[name]["scope"]),
                 ),
             )
-
-        return cast(
-            Self,
-            UnknownAcl(
-                capability_name=name,
-                actions=[UnknownAcl.Action.UNKNOWN for _ in data["actions"]],
-                scope=Capability.Scope.load(data["scope"]),
-                raw_data=resource,
-            ),
+        elif not known_acls and len(resource) == 1:
+            # We infer this as an unknown acl not yet added to the SDK:
+            ((name, data),) = resource.items()
+            return cast(
+                Self,
+                UnknownAcl(
+                    capability_name=name,
+                    actions=[UnknownAcl.Action.Unknown for _ in data["actions"]],
+                    scope=Capability.Scope.load(data["scope"]),
+                    raw_data=resource,
+                ),
+            )
+        # We got more than one acl (highly unlikely) or we got an unknown acl + extra keys in the response:
+        raise ValueError(
+            "Unable to parse capability from API-response, please create an issue on Github: "
+            "https://github.com/cognitedata/cognite-sdk-python"
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -180,7 +188,7 @@ class UnknownAcl(Capability):
     """
 
     class Action(Capability.Action):
-        UNKNOWN = "UNKNOWN"
+        Unknown = "UNKNOWN"
 
     capability_name: str
     raw_data: dict[str, Any]

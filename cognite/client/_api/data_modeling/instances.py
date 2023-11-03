@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import random
 import time
@@ -62,6 +61,7 @@ from cognite.client.data_classes.data_modeling.query import (
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.utils._auxiliary import load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
@@ -112,7 +112,7 @@ class _NodeOrEdgeList(CogniteResourceList):
 class _NodeOrEdgeResourceAdapter:
     @staticmethod
     def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
-        data = json.loads(data) if isinstance(data, str) else data
+        data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return Node._load(data)
         return Edge._load(data)
@@ -125,7 +125,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
     def _load(
         cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
     ) -> _NodeOrEdgeApplyResultList:
-        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        resource_list = load_yaml_or_json(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
             NodeApplyResult._load(data) if data["instanceType"] == "node" else EdgeApplyResult._load(data)
             for data in resource_list
@@ -139,7 +139,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 class _NodeOrEdgeApplyResultAdapter:
     @staticmethod
     def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
-        data = json.loads(data) if isinstance(data, str) else data
+        data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult._load(data)
         return EdgeApplyResult._load(data)
