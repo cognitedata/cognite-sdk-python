@@ -59,18 +59,6 @@ if TYPE_CHECKING:
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
-class AssetAggregate(CogniteObject):
-    """Aggregation group of assets
-
-    Args:
-        count (int | None): Size of the aggregation group
-        **_ (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **_: Any) -> None:
-        self.count = count
-
-
 class AggregateResultItem(CogniteObject):
     """Aggregated metrics of the asset
 
