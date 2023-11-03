@@ -13,10 +13,10 @@ repos:
           - --fixable=E,W,F,I,T,RUF,TID,UP
           - --target-version=py38
           - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
-    rev: v0.0.286
+    rev: v0.1.3
 
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.10.1
     hooks:
       - id: black
         exclude: ^cognite/client/_proto.*$
@@ -29,7 +29,7 @@ repos:
           - --include=\.py$
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: debug-statements
       - id: check-docstring-first

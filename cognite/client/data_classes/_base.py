@@ -144,11 +144,11 @@ class CogniteObject:
     @final
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
-        if isinstance(resource, str):
-            resource = load_yaml_or_json(resource)
-
         if isinstance(resource, dict):
             return cls._load(resource, cognite_client=cognite_client)
+
+        if isinstance(resource, str):
+            resource = load_yaml_or_json(resource)
 
         raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
 
