@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import enum
 import inspect
-import json
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
@@ -10,7 +9,7 @@ from typing import Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
+from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -34,7 +33,7 @@ class Capability(ABC):
 
         @classmethod
         def load(cls, resource: dict | str) -> Self:
-            resource = resource if isinstance(resource, dict) else json.loads(resource)
+            resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
             ((name, data),) = resource.items()
             data = convert_all_keys_to_snake_case(data)
             if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
@@ -63,7 +62,7 @@ class Capability(ABC):
 
     @classmethod
     def load(cls, resource: dict | str) -> Self:
-        resource = resource if isinstance(resource, dict) else json.loads(resource)
+        resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
         ((name, data),) = resource.items()
         if capability_cls := _CAPABILITY_CLASS_BY_NAME.get(name):
             return cast(
