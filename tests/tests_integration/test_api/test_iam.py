@@ -6,7 +6,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Group, GroupList, SecurityCategory
-from cognite.client.data_classes.capabilities import Capability, EventsAcl
+from cognite.client.data_classes.capabilities import EventsAcl, GroupCapability
 from cognite.client.utils._text import random_string
 
 
@@ -44,7 +44,7 @@ class TestTokensAPI:
     def test_inspect(self, cognite_client: CogniteClient) -> None:
         result = cognite_client.iam.token.inspect()
         assert isinstance(result.capabilities, list)
-        assert result.capabilities and isinstance(result.capabilities[0], Capability)
+        assert result.capabilities and isinstance(result.capabilities[0], GroupCapability)
 
 
 class TestSecurityCategoriesAPI:

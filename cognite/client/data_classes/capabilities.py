@@ -103,6 +103,66 @@ class Capability(ABC):
         return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
 
 
+class ProjectScope(ABC):
+    name: ClassVar[str] = "projectScope"
+
+    @classmethod
+    def load(cls, resource: dict | str) -> ProjectsScope | AllProjectsScope:
+        resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
+        ((name, data),) = resource.items()
+        if name != cls.name:
+            raise ValueError(f"Expected '{cls.name}', got '{name}'")
+
+        if "projects" in data:
+            return ProjectsScope(projects=data["projects"])
+        elif "allProjects" in data:
+            return AllProjectsScope()
+        raise ValueError(f"Unknown project scope: {data}")
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        if isinstance(self, AllProjectsScope):
+            return {self.name: {"allProjects": {}}}
+        elif isinstance(self, ProjectsScope):
+            return {self.name: {"projects": self.projects}}
+        raise ValueError(f"Unknown project scope: {self}")
+
+
+@dataclass(frozen=True)
+class AllProjectsScope(ProjectScope):
+    ...
+
+
+@dataclass(frozen=True)
+class ProjectsScope(ProjectScope):
+    projects: list[str]
+
+
+@dataclass
+class GroupCapability:
+    capability: Capability
+
+    class Scope:
+        All = AllProjectsScope
+        Projects = ProjectScope
+
+    project_scope: ProjectScope
+
+    @classmethod
+    def load(cls, resource: dict | str) -> Self:
+        resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
+        capability = next(key for key in resource if key != "projectScope")
+
+        return cls(
+            capability=Capability.load({capability: resource[capability]}),
+            project_scope=ProjectScope.load({ProjectScope.name: resource[ProjectScope.name]}),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = self.capability.dump(camel_case=camel_case)
+        dumped[ProjectScope.name] = self.project_scope.dump(camel_case=camel_case)
+        return dumped
+
+
 @dataclass(frozen=True)
 class AllScope(Capability.Scope):
     _scope_name = "all"
