@@ -33,11 +33,11 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
-    AssetAggregate,
     AssetFilter,
     AssetHierarchy,
     AssetList,
     AssetUpdate,
+    CountAggregate,
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
@@ -247,14 +247,14 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[AssetAggregate]:
+    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             filter (AssetFilter | dict | None): Filter on assets with strict matching.
 
         Returns:
-            list[AssetAggregate]: List of asset aggregates
+            list[CountAggregate]: List of asset aggregates
 
         Examples:
 
@@ -267,7 +267,7 @@ class AssetsAPI(APIClient):
         warnings.warn(
             f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
         )
-        return self._aggregate(filter=filter, cls=AssetAggregate)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(
         self,
