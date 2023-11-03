@@ -7,7 +7,12 @@ import pytest
 from cognite.client.data_classes.capabilities import (
     AllScope,
     Capability,
+    DatabaseTableScope,
+    EventsAcl,
+    GroupCapabilities,
+    GroupCapability,
     ProjectsAcl,
+    RawAcl,
     UnknownAcl,
     UnknownScope,
 )
@@ -208,3 +213,122 @@ class TestCapabilities:
     def test_load__action_does_not_exist(self, acl_cls_name: str, bad_action: str, dumped: dict[str, Any]) -> None:
         with pytest.raises(ValueError, match=rf"^'{bad_action}' is not a valid {acl_cls_name} Action$"):
             Capability.load(dumped)
+
+
+class TestGroupCapabilities:
+    @pytest.mark.parametrize(
+        "capabilities, capability, expected",
+        [
+            (
+                GroupCapabilities(
+                    [
+                        GroupCapability(
+                            capability=EventsAcl(
+                                [EventsAcl.Action.Read, EventsAcl.Action.Write], scope=EventsAcl.Scope.All()
+                            ),
+                            project_scope=GroupCapability.Scope.All(),
+                        )
+                    ]
+                ),
+                EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1])),
+                True,
+            ),
+            (
+                GroupCapabilities(
+                    [
+                        GroupCapability(
+                            capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
+                            project_scope=GroupCapability.Scope.All(),
+                        )
+                    ]
+                ),
+                EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.All()),
+                False,
+            ),
+            (
+                GroupCapabilities(
+                    [
+                        GroupCapability(
+                            capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
+                            project_scope=GroupCapability.Scope.All(),
+                        )
+                    ]
+                ),
+                EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1])),
+                True,
+            ),
+            (
+                GroupCapabilities(
+                    [
+                        GroupCapability(
+                            capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
+                            project_scope=GroupCapability.Scope.All(),
+                        )
+                    ]
+                ),
+                EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([3])),
+                False,
+            ),
+            (
+                GroupCapabilities(
+                    [
+                        GroupCapability(
+                            capability=RawAcl(
+                                [RawAcl.Action.Read],
+                                scope=RawAcl.Scope.Table(
+                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
+                                ),
+                            ),
+                            project_scope=GroupCapability.Scope.All(),
+                        )
+                    ]
+                ),
+                RawAcl(
+                    [RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": DatabaseTableScope("my_db", ["my_table"])})
+                ),
+                True,
+            ),
+            (
+                GroupCapabilities(
+                    [
+                        GroupCapability(
+                            capability=RawAcl(
+                                [RawAcl.Action.Read],
+                                scope=RawAcl.Scope.Table(
+                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
+                                ),
+                            ),
+                            project_scope=GroupCapability.Scope.All(),
+                        )
+                    ]
+                ),
+                RawAcl(
+                    [RawAcl.Action.Read],
+                    scope=RawAcl.Scope.Table({"my_db": DatabaseTableScope("my_db", ["unknown_table"])}),
+                ),
+                False,
+            ),
+            (
+                GroupCapabilities(
+                    [
+                        GroupCapability(
+                            capability=RawAcl(
+                                [RawAcl.Action.Read],
+                                scope=RawAcl.Scope.Table(
+                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
+                                ),
+                            ),
+                            project_scope=GroupCapability.Scope.All(),
+                        )
+                    ]
+                ),
+                RawAcl(
+                    [RawAcl.Action.Read],
+                    scope=RawAcl.Scope.Table({"unknown_db": DatabaseTableScope("unknown_db", ["my_table"])}),
+                ),
+                False,
+            ),
+        ],
+    )
+    def test_has_capability(self, capabilities: GroupCapabilities, capability: Capability, expected: bool) -> None:
+        assert capabilities.includes_capability(capability) is expected
