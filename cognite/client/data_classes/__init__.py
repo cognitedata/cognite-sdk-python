@@ -11,7 +11,6 @@ from cognite.client.data_classes.annotations import (
 from cognite.client.data_classes.assets import (
     AggregateResultItem,
     Asset,
-    AssetAggregate,
     AssetFilter,
     AssetHierarchy,
     AssetList,
@@ -241,7 +240,6 @@ __all__ = [
     "AggregateResultItem",
     "Asset",
     "CountAggregate",
-    "AssetAggregate",
     "AssetFilter",
     "AssetHierarchy",
     "AssetList",
