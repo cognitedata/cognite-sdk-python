@@ -417,7 +417,7 @@ class TransformationUpdate(CogniteUpdate):
     def tags(self) -> _ListTransformationUpdate:
         return TransformationUpdate._ListTransformationUpdate(self, "tags")
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         obj = super().dump()
 
         for update in obj.get("update", {}).values():
@@ -472,7 +472,7 @@ class ContainsAny(TagsFilter):
     def __init__(self, tags: list[str] | None = None) -> None:
         self.tags = tags
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         contains_any_key = "containsAny" if camel_case else "contains_any"
         return {contains_any_key: self.tags}
 
@@ -520,7 +520,7 @@ class TransformationFilter(CogniteFilter):
         self.data_set_ids = data_set_ids
         self.tags = tags
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         if (value := obj.pop("includePublic" if camel_case else "include_public", None)) is not None:
             obj["isPublic" if camel_case else "is_public"] = value
