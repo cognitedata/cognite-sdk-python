@@ -5,7 +5,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Any, Callable, Literal, MutableMapping
+from typing import Any, Callable, ClassVar, Literal, MutableMapping
 
 import requests
 import requests.adapters
@@ -96,6 +96,18 @@ class _RetryTracker:
 
 
 class HTTPClient:
+    _TIMEOUT_EXCEPTIONS: ClassVar[tuple[type[Exception], ...]] = (
+        socket.timeout,
+        urllib3.exceptions.ReadTimeoutError,
+        requests.exceptions.ReadTimeout,
+    )
+    _CONNECTION_EXCEPTIONS: ClassVar[tuple[type[Exception], ...]] = (
+        ConnectionError,
+        urllib3.exceptions.ConnectionError,
+        urllib3.exceptions.ConnectTimeoutError,
+        requests.exceptions.ConnectionError,
+    )
+
     def __init__(
         self,
         config: HTTPClientConfig,
@@ -114,7 +126,7 @@ class HTTPClient:
         last_status = None
         while True:
             try:
-                res = self._do_request(method=method, url=url, **kwargs)
+                res = self._make_request(method=method, url=url, **kwargs)
                 if global_config.usage_tracking_callback:
                     # We use the RequestDetails as an indirection to avoid the user mutating the request:
                     global_config.usage_tracking_callback(RequestDetails.from_response(res))
@@ -125,14 +137,16 @@ class HTTPClient:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
                     return res
-            except CogniteReadTimeout as e:
+
+            except CogniteReadTimeout:
                 retry_tracker.read += 1
                 if not retry_tracker.should_retry(status_code=last_status):
-                    raise e
-            except CogniteConnectionError as e:
+                    raise
+
+            except CogniteConnectionError:
                 retry_tracker.connect += 1
                 if not retry_tracker.should_retry(status_code=last_status):
-                    raise e
+                    raise
 
             # During a backoff loop, our credentials might expire, so we check and maybe refresh:
             time.sleep(retry_tracker.get_backoff_time())
@@ -140,7 +154,7 @@ class HTTPClient:
                 # TODO: Refactoring needed to make this "prettier"
                 self.refresh_auth_header(headers)
 
-    def _do_request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+    def _make_request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         """requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
 
         Sometimes the appropriate built-in networking exception is not in the context, sometimes the requests
@@ -148,30 +162,20 @@ class HTTPClient:
         urllib3 exceptions, and requests exceptions.
         """
         try:
-            res = self.session.request(method=method, url=url, **kwargs)
-            return res
+            return self.session.request(method=method, url=url, **kwargs)
         except Exception as e:
-            if self._any_exception_in_context_isinstance(
-                e, (socket.timeout, urllib3.exceptions.ReadTimeoutError, requests.exceptions.ReadTimeout)
-            ):
+            if self._any_exception_in_context_isinstance(e, self._TIMEOUT_EXCEPTIONS):
                 raise CogniteReadTimeout from e
-            if self._any_exception_in_context_isinstance(
-                e,
-                (
-                    ConnectionError,
-                    urllib3.exceptions.ConnectionError,
-                    urllib3.exceptions.ConnectTimeoutError,
-                    requests.exceptions.ConnectionError,
-                ),
-            ):
+
+            if self._any_exception_in_context_isinstance(e, self._CONNECTION_EXCEPTIONS):
                 if self._any_exception_in_context_isinstance(e, ConnectionRefusedError):
                     raise CogniteConnectionRefused from e
                 raise CogniteConnectionError from e
-            raise e
+            raise
 
     @classmethod
     def _any_exception_in_context_isinstance(
-        cls, exc: BaseException, exc_types: tuple[type[BaseException], ...] | type[BaseException]
+        cls, exc: BaseException, exc_types: tuple[type[Exception], ...] | type[Exception]
     ) -> bool:
         """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
         the __context__ attribute.
