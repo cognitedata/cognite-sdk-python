@@ -13,6 +13,7 @@ import urllib3
 
 from cognite.client.config import global_config
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
+from cognite.client.utils._api_usage import RequestDetails
 
 
 class BlockAll(cookiejar.CookiePolicy):
@@ -114,6 +115,10 @@ class HTTPClient:
         while True:
             try:
                 res = self._do_request(method=method, url=url, **kwargs)
+                if global_config.usage_tracking_callback:
+                    # We use the RequestDetails as an indirection to avoid the user mutating the request:
+                    global_config.usage_tracking_callback(RequestDetails.from_response(res))
+
                 last_status = res.status_code
                 retry_tracker.status += 1
                 if not retry_tracker.should_retry(status_code=last_status):
