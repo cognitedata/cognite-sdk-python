@@ -189,16 +189,18 @@ class UnknownAcl(Capability):
     Typically, experimental capabilities or new capabilities that have recently been added to the API.
     """
 
-    class Action(Capability.Action):
-        Unknown = "UNKNOWN"
-
     capability_name: str
     raw_data: dict[str, Any]
+
+    class Action(Capability.Action):
+        Unknown = "UNKNOWN"
 
 
 @dataclass
 class AnalyticsAcl(Capability):
     _capability_name = "analyticsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -208,13 +210,12 @@ class AnalyticsAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class AnnotationsAcl(Capability):
     _capability_name = "annotationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -225,13 +226,12 @@ class AnnotationsAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class AssetsAcl(Capability):
     _capability_name = "assetsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -241,13 +241,12 @@ class AssetsAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class DataSetsAcl(Capability):
     _capability_name = "datasetsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -258,25 +257,23 @@ class DataSetsAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class DigitalTwinAcl(Capability):
     _capability_name = "digitalTwinAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class EntityMatchingAcl(Capability):
     _capability_name = "entitymatchingAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -285,13 +282,12 @@ class EntityMatchingAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class EventsAcl(Capability):
     _capability_name = "eventsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -301,13 +297,12 @@ class EventsAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class ExtractionPipelinesAcl(Capability):
     _capability_name = "extractionPipelinesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | IDScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -318,13 +313,12 @@ class ExtractionPipelinesAcl(Capability):
         ID = IDScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | IDScope | DataSetScope
-
 
 @dataclass
 class ExtractionsRunAcl(Capability):
     _capability_name = "extractionRunsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope | ExtractionPipelineScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -334,14 +328,13 @@ class ExtractionsRunAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
         ExtractionPipeline = ExtractionPipelineScope
-
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope | ExtractionPipelineScope
 
 
 @dataclass
 class ExtractionConfigsAcl(Capability):
     _capability_name = "extractionConfigsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope | ExtractionPipelineScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -352,13 +345,12 @@ class ExtractionConfigsAcl(Capability):
         DataSet = DataSetScope
         ExtractionPipeline = ExtractionPipelineScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope | ExtractionPipelineScope
-
 
 @dataclass
 class FilesAcl(Capability):
     _capability_name = "filesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -368,13 +360,12 @@ class FilesAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class FunctionsAcl(Capability):
     _capability_name = "functionsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -382,14 +373,13 @@ class FunctionsAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class GeospatialAcl(Capability):
     _capability_name = "geospatialAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -397,14 +387,13 @@ class GeospatialAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class GeospatialCrsAcl(Capability):
     _capability_name = "geospatialCrsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -413,13 +402,12 @@ class GeospatialCrsAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class GroupsAcl(Capability):
     _capability_name = "groupsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | CurrentUserScope
 
     class Action(Capability.Action):
         Create = "CREATE"
@@ -432,13 +420,12 @@ class GroupsAcl(Capability):
         All = AllScope
         CurrentUser = CurrentUserScope
 
-    actions: Sequence[Action]
-    scope: AllScope | CurrentUserScope
-
 
 @dataclass
 class LabelsAcl(Capability):
     _capability_name = "labelsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -448,13 +435,12 @@ class LabelsAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class ProjectsAcl(Capability):
     _capability_name = "projectsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -465,13 +451,12 @@ class ProjectsAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class RawAcl(Capability):
     _capability_name = "rawAcl"
+    actions: Sequence[Action]
+    scope: AllScope | TableScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -482,13 +467,12 @@ class RawAcl(Capability):
         All = AllScope
         Table = TableScope
 
-    actions: Sequence[Action]
-    scope: AllScope | TableScope
-
 
 @dataclass
 class RelationshipsAcl(Capability):
     _capability_name = "relationshipsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -498,13 +482,12 @@ class RelationshipsAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class RoboticsAcl(Capability):
     _capability_name = "roboticsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -516,13 +499,12 @@ class RoboticsAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class SecurityCategoriesAcl(Capability):
     _capability_name = "securityCategoriesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | IDScope
 
     class Action(Capability.Action):
         MemberOf = "MEMBEROF"
@@ -535,13 +517,12 @@ class SecurityCategoriesAcl(Capability):
         All = AllScope
         ID = IDScope
 
-    actions: Sequence[Action]
-    scope: AllScope | IDScope
-
 
 @dataclass
 class SeismicAcl(Capability):
     _capability_name = "seismicAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -550,13 +531,12 @@ class SeismicAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class SequencesAcl(Capability):
     _capability_name = "sequencesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -566,13 +546,12 @@ class SequencesAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class SessionsAcl(Capability):
     _capability_name = "sessionsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         List = "LIST"
@@ -582,13 +561,12 @@ class SessionsAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class ThreeDAcl(Capability):
     _capability_name = "threedAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -600,13 +578,12 @@ class ThreeDAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class TimeSeriesAcl(Capability):
     _capability_name = "timeSeriesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope | IDScope | AssetRootIDScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -618,13 +595,12 @@ class TimeSeriesAcl(Capability):
         ID = IDScope
         AssetRootID = AssetRootIDScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope | IDScope | AssetRootIDScope
-
 
 @dataclass
 class TimeSeriesSubscriptionsAcl(Capability):
     _capability_name = "timeSeriesSubscriptionsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -633,13 +609,12 @@ class TimeSeriesSubscriptionsAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class TransformationsAcl(Capability):
     _capability_name = "transformationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -649,13 +624,12 @@ class TransformationsAcl(Capability):
         All = AllScope
         DataSet = DataSetScope
 
-    actions: Sequence[Action]
-    scope: AllScope | DataSetScope
-
 
 @dataclass
 class TypesAcl(Capability):
     _capability_name = "typesAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -663,14 +637,13 @@ class TypesAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class WellsAcl(Capability):
     _capability_name = "wellsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -679,13 +652,11 @@ class WellsAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
-
 
 @dataclass
 class ExperimentsAcl(Capability):
     _capability_name = "experimentAcl"
+    actions: Sequence[Action]
 
     class Action(Capability.Action):
         Use = "USE"
@@ -693,12 +664,12 @@ class ExperimentsAcl(Capability):
     class Scope:
         ...
 
-    actions: Sequence[Action]
-
 
 @dataclass
 class TemplateGroupsAcl(Capability):
     _capability_name = "templateGroupsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -706,14 +677,13 @@ class TemplateGroupsAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class TemplateInstancesAcl(Capability):
     _capability_name = "templateInstancesAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -721,14 +691,13 @@ class TemplateInstancesAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
 
 
 @dataclass
 class DataModelInstancesAcl(Capability):
     _capability_name = "dataModelInstancesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | SpaceIDScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -737,14 +706,13 @@ class DataModelInstancesAcl(Capability):
     class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
-
-    actions: Sequence[Action]
-    scope: AllScope | SpaceIDScope
 
 
 @dataclass
 class DataModelsAcl(Capability):
     _capability_name = "dataModelsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | SpaceIDScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -754,13 +722,12 @@ class DataModelsAcl(Capability):
         All = AllScope
         SpaceID = SpaceIDScope
 
-    actions: Sequence[Action]
-    scope: AllScope | SpaceIDScope
-
 
 @dataclass
 class PipelinesAcl(Capability):
     _capability_name = "pipelinesAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -768,14 +735,13 @@ class PipelinesAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope
 
 
 @dataclass
 class DocumentPipelinesAcl(Capability):
     _capability_name = "documentPipelinesAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -783,14 +749,13 @@ class DocumentPipelinesAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope
 
 
 @dataclass
 class FilePipelinesAcl(Capability):
     _capability_name = "filePipelinesAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -798,14 +763,13 @@ class FilePipelinesAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope
 
 
 @dataclass
 class NotificationsAcl(Capability):
     _capability_name = "notificationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -813,14 +777,13 @@ class NotificationsAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope
 
 
 @dataclass
 class ScheduledCalculationsAcl(Capability):
     _capability_name = "scheduledCalculationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -828,14 +791,13 @@ class ScheduledCalculationsAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope
 
 
 @dataclass
 class MonitoringTasksAcl(Capability):
     _capability_name = "monitoringTasksAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -843,14 +805,13 @@ class MonitoringTasksAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope
 
 
 @dataclass
 class HostedExtractorsAcl(Capability):
     _capability_name = "hostedExtractorsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -858,14 +819,13 @@ class HostedExtractorsAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope
 
 
 @dataclass
 class VisionModelAcl(Capability):
     _capability_name = "visionModelAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -874,13 +834,12 @@ class VisionModelAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope
-
 
 @dataclass
 class DocumentFeedbackAcl(Capability):
     _capability_name = "documentFeedbackAcl"
+    actions: Sequence[Action]
+    scope: AllScope
 
     class Action(Capability.Action):
         Create = "CREATE"
@@ -890,13 +849,12 @@ class DocumentFeedbackAcl(Capability):
     class Scope:
         All = AllScope
 
-    actions: Sequence[Action]
-    scope: AllScope
-
 
 @dataclass
 class WorkflowOrchestrationAcl(Capability):
     _capability_name = "workflowOrchestrationAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
@@ -904,9 +862,6 @@ class WorkflowOrchestrationAcl(Capability):
 
     class Scope:
         All = AllScope
-
-    actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
 
 
 _CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {
