@@ -88,7 +88,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> batch = c.time_series.subscriptions.delete("my_subscription")
+                >>> c.time_series.subscriptions.delete("my_subscription")
         """
         self._warning.warn()
 
