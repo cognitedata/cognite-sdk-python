@@ -51,7 +51,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client.data_classes import DataPointSubscriptionCreate
                 >>> c = CogniteClient()
                 >>> sub = DataPointSubscriptionCreate("mySubscription", partition_count=1, time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"], name="My subscription")
-                >>> created = c.time_series.subscriptions.create()
+                >>> created = c.time_series.subscriptions.create(sub)
 
             Create a filter defined subscription for all numeric time series:
 
@@ -114,7 +114,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> batch = c.time_series.subscriptions.retrieve("my_subscription")
+                >>> res = c.time_series.subscriptions.retrieve("my_subscription")
         """
         self._warning.warn()
 
@@ -151,6 +151,8 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> members = c.time_series.subscriptions.list_member_time_series("my_subscription")
                 >>> timeseries_external_ids = members.as_external_ids()
         """
+        self._warning.warn()
+
         return self._list(
             method="GET",
             limit=limit,
@@ -188,7 +190,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> c = CogniteClient()
-                >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add("MyNewTimeSeriesExternalId")
+                >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add(["MyNewTimeSeriesExternalId"])
                 >>> updated = c.time_series.subscriptions.update(update)
         """
         self._warning.warn()
@@ -236,14 +238,19 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> for batch in c.time_series.subscriptions.iterate_data("my_subscription"):
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
-                ...     print(f"Changed data in {len(batch.updates)} timeseries")
+                ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     if not batch.has_next:
+                ...         break
 
-            Iterate over all changes in the subscripted timeseries the last 3 days:
+            Iterate continuously over all changes to the subscription newer than 3 days:
 
-                >>> for batch in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
+                >>> import time
+                ... for batch in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
-                ...     print(f"Changed data in {len(batch.updates)} timeseries")
+                ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     if not batch.has_next:
+                ...         time.sleep(1)
         """
         self._warning.warn()
 
