@@ -13,6 +13,85 @@ from cognite.client.data_classes.capabilities import (
 )
 
 
+def all_acls():
+    yield from [
+        {"annotationsAcl": {"actions": ["WRITE", "READ", "SUGGEST", "REVIEW"], "scope": {"all": {}}}},
+        {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["372"]}}}},
+        {"dataModelInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"dataModelsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}},
+        {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idScope": {"ids": ["2918026428"]}}}},
+        {"digitalTwinAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"documentFeedbackAcl": {"actions": ["CREATE", "READ", "DELETE"], "scope": {"all": {}}}},
+        {"documentPipelinesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"entitymatchingAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"eventsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"eventsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["372"]}}}},
+        {"eventsAcl": {"actions": ["READ"], "scope": {"datasetScope": {"ids": ["233257", "372989"]}}}},
+        {"extractionConfigsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"extractionPipelinesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"extractionRunsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"filePipelinesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
+        {"functionsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"groupsAcl": {"actions": ["LIST", "READ", "DELETE", "UPDATE", "CREATE"], "scope": {"all": {}}}},
+        {"groupsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"currentuserscope": {}}}},
+        {"hostedExtractorsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"labelsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"monitoringTasksAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"notificationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"pipelinesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"projectsAcl": {"actions": ["UPDATE", "LIST", "READ"], "scope": {"all": {}}}},
+        {"rawAcl": {"actions": ["READ", "WRITE", "LIST"], "scope": {"all": {}}}},
+        {
+            "rawAcl": {
+                "actions": ["READ", "WRITE", "LIST"],
+                "scope": {"tableScope": {"dbsToTables": {"no table in this": {}}}},
+            }
+        },
+        {
+            "rawAcl": {
+                "actions": ["READ", "WRITE", "LIST"],
+                "scope": {"tableScope": {"dbsToTables": {"test db 1": {"tables": ["empty tbl", "test tbl 1"]}}}},
+            }
+        },
+        {"relationshipsAcl": {"actions": ["READ"], "scope": {"all": {}}}},
+        {"relationshipsAcl": {"actions": ["READ"], "scope": {"datasetScope": {"ids": ["372", "2332579"]}}}},
+        {"roboticsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"all": {}}}},
+        {"roboticsAcl": {"actions": ["READ"], "scope": {"datasetScope": {"ids": ["583194012260066"]}}}},
+        {"scheduledCalculationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {
+            "securityCategoriesAcl": {
+                "actions": ["DELETE", "MEMBEROF", "LIST", "CREATE", "UPDATE"],
+                "scope": {"all": {}},
+            }
+        },
+        {
+            "securityCategoriesAcl": {
+                "actions": ["MEMBEROF", "LIST", "CREATE", "UPDATE", "DELETE"],
+                "scope": {"idscope": {"ids": ["7398", "3018"]}},
+            }
+        },
+        {"seismicAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"sequencesAcl": {"actions": ["READ"], "scope": {"all": {}}}},
+        {"sequencesAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
+        {"sessionsAcl": {"actions": ["LIST", "CREATE", "DELETE"], "scope": {"all": {}}}},
+        {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"templateInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"threedAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"all": {}}}},
+        {"timeSeriesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"timeSeriesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["233579", "372"]}}}},
+        {"timeSeriesAcl": {"actions": ["READ"], "scope": {"idscope": {"ids": ["2495"]}}}},
+        {"timeSeriesAcl": {"actions": ["WRITE", "READ"], "scope": {"assetRootIdScope": {"rootIds": ["58"]}}}},
+        {"transformationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"transformationsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["94"]}}}},
+        {"visionModelAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"wellsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+    ]
+
+
 @pytest.fixture
 def cap_with_extra_key():
     return {
@@ -30,6 +109,15 @@ def unknown_cap_with_extra_key():
 
 
 class TestCapabilities:
+    @pytest.mark.parametrize("access_control", list(all_acls()))
+    def test_loads_to_known(self, access_control):
+        cap = Capability.load(access_control)
+
+        assert not isinstance(cap, UnknownAcl)
+        assert not isinstance(cap.scope, UnknownScope)
+        for action in cap.actions:
+            assert action is not UnknownAcl.Action.Unknown
+
     @pytest.mark.parametrize(
         "raw",
         [
@@ -46,6 +134,23 @@ class TestCapabilities:
                 "rawAcl": {
                     "actions": ["READ", "WRITE", "LIST"],
                     "scope": {"tableScope": {"dbsToTables": {"databaseName": ["my_db1", "my_db2"]}}},
+                },
+            },
+            {
+                "dataModelsAcl": {
+                    "actions": ["READ"],
+                    "scope": {
+                        "spaceIdScope": {
+                            "spaceIds": [
+                                "APM_Config",
+                                "cdf_apm",
+                                "cdf_infield",
+                                "cdf_core",
+                                "cdf_apps_shared",
+                                "APM_SourceData",
+                            ]
+                        }
+                    },
                 },
             },
         ],
