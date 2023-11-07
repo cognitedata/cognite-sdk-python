@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import json
+import pathlib
 from typing import Any
 
 import pytest
 
 from cognite.client.data_classes import Group, GroupList
+
+DATA_DIR = pathlib.Path(__file__).parent / "data"
 
 
 def raw_groups():
@@ -69,3 +73,10 @@ class TestGroupsList:
         df_ts = groups.to_pandas(convert_timestamps=convert_timestamps)
         expected = pd.Series(**expected)
         pd.testing.assert_series_equal(df_ts["deleted_time"], expected)
+
+    def test_load_dump(self) -> None:
+        raw = json.loads((DATA_DIR / "group_list.json").read_text())["items"]
+
+        loaded = GroupList.load(raw)
+
+        assert loaded.dump(camel_case=True) == raw

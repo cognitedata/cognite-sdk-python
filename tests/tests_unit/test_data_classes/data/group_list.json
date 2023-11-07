@@ -1,0 +1,1493 @@
+{
+	"items": [
+		{
+			"id": 1635958058168304,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "684237e9-c1fd-4d3c-8c50-de9ea30ac16f",
+			"name": "infield_default_template_admins",
+			"capabilities": [
+				{
+					"threedAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"relationshipsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cdf_infield",
+									"cdf_core",
+									"cdf_apps_shared",
+									"APM_SourceData"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cognite_app_data",
+									"infield_default_location_source_data_space",
+									"infield_default_location_app_data_space"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"cognite_app_data",
+									"infield_default_location_app_data_space"
+								]
+							}
+						}
+					}
+				}
+			],
+			"metadata": {
+				"origin": "cdf-project-templates",
+				"module_version": "1"
+			}
+		},
+		{
+			"id": 1765794225423726,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "7df143fd-0082-4251-95c3-aebd80992d81",
+			"name": "cicd:all:read-write",
+			"capabilities": [
+				{
+					"projectsAcl": {
+						"actions": [
+							"LIST",
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"groupsAcl": {
+						"actions": [
+							"LIST",
+							"READ",
+							"CREATE",
+							"UPDATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"threedAcl": {
+						"actions": [
+							"READ",
+							"CREATE",
+							"UPDATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"eventsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"rawAcl": {
+						"actions": [
+							"READ",
+							"WRITE",
+							"LIST"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"relationshipsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"dataModelsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"datasetsAcl": {
+						"actions": [
+							"READ",
+							"WRITE",
+							"OWNER"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"extractionPipelinesAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"extractionRunsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"extractionConfigsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"functionsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"sessionsAcl": {
+						"actions": [
+							"LIST",
+							"CREATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"transformationsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"entitymatchingAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"documentPipelinesAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"filePipelinesAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"annotationsAcl": {
+						"actions": [
+							"WRITE",
+							"READ",
+							"SUGGEST",
+							"REVIEW"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"documentFeedbackAcl": {
+						"actions": [
+							"CREATE",
+							"READ",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"securityCategoriesAcl": {
+						"actions": [
+							"MEMBEROF",
+							"LIST",
+							"CREATE",
+							"UPDATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"hostedExtractorsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"visionModelAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"roboticsAcl": {
+						"actions": [
+							"READ",
+							"CREATE",
+							"UPDATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"geospatialAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				}
+			],
+			"metadata": {
+				"origin": "cdf-project-templates",
+				"cdf_template_version": "0.0.1"
+			}
+		},
+		{
+			"id": 2423489664155454,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "7df143fd-0082-4251-95c3-aebd80992d81",
+			"name": "Everything",
+			"capabilities": [
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"groupsAcl": {
+						"actions": [
+							"LIST"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"projectsAcl": {
+						"actions": [
+							"LIST"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"groupsAcl": {
+						"actions": [
+							"LIST",
+							"READ",
+							"CREATE",
+							"UPDATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				}
+			],
+			"metadata": {}
+		},
+		{
+			"id": 2711504533587121,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "7bdcb20c-3e6a-400c-b9ef-cf835f64f05e",
+			"name": "infield_default_viewers",
+			"capabilities": [
+				{
+					"threedAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"relationshipsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cdf_infield",
+									"cdf_core",
+									"cdf_apps_shared",
+									"APM_SourceData"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cognite_app_data",
+									"infield_default_location_source_data_space",
+									"infield_default_location_app_data_space"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"cognite_app_data"
+								]
+							}
+						}
+					}
+				}
+			],
+			"metadata": {
+				"origin": "cdf-project-templates",
+				"module_version": "1"
+			}
+		},
+		{
+			"id": 4886706068469935,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "",
+			"name": "infield_default_checklist_admins",
+			"capabilities": [
+				{
+					"threedAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"relationshipsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cdf_infield",
+									"cdf_core",
+									"cdf_apps_shared",
+									"APM_SourceData"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cognite_app_data",
+									"infield_default_location_source_data_space",
+									"infield_default_location_app_data_space"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"cognite_app_data",
+									"infield_default_location_app_data_space"
+								]
+							}
+						}
+					}
+				}
+			],
+			"metadata": {
+				"module_version": "1",
+				"origin": "cdf-project-templates"
+			}
+		},
+		{
+			"id": 5348426785970356,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "7df143fd-0082-4251-95c3-aebd80992d81",
+			"name": "applications-configuration",
+			"capabilities": [
+				{
+					"groupsAcl": {
+						"actions": [
+							"READ",
+							"LIST"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"threedAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				}
+			],
+			"metadata": {
+				"origin": "cdf-project-templates",
+				"cdf_template_version": "0.0.1"
+			}
+		},
+		{
+			"id": 6416265364055071,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "7bdcb20c-3e6a-400c-b9ef-cf835f64f05e",
+			"name": "infield_default_normal_users",
+			"capabilities": [
+				{
+					"threedAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"relationshipsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647"
+								]
+							}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"2923318136391647",
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"datasetScope": {
+								"ids": [
+									"613366930593178"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cdf_infield",
+									"cdf_core",
+									"cdf_apps_shared",
+									"APM_SourceData"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"APM_Config",
+									"cdf_apm",
+									"cognite_app_data",
+									"infield_default_location_source_data_space",
+									"infield_default_location_app_data_space"
+								]
+							}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"WRITE"
+						],
+						"scope": {
+							"spaceIdScope": {
+								"spaceIds": [
+									"cognite_app_data",
+									"infield_default_location_app_data_space"
+								]
+							}
+						}
+					}
+				}
+			],
+			"metadata": {
+				"origin": "cdf-project-templates",
+				"module_version": "1"
+			}
+		},
+		{
+			"id": 7605375589476864,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "62172af4-6d6b-4e29-9ffb-61411dc9c50b",
+			"name": "AllAccess",
+			"capabilities": [
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"dataModelsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"eventsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"eventsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"groupsAcl": {
+						"actions": [
+							"LIST",
+							"READ",
+							"CREATE",
+							"UPDATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				}
+			],
+			"metadata": {}
+		},
+		{
+			"id": 7988909768499271,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "7df143fd-0082-4251-95c3-aebd80992d81",
+			"name": "cicd:all:read-only",
+			"capabilities": [
+				{
+					"projectsAcl": {
+						"actions": [
+							"LIST",
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"groupsAcl": {
+						"actions": [
+							"LIST",
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"threedAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"assetsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"eventsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"filesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"rawAcl": {
+						"actions": [
+							"READ",
+							"LIST"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"relationshipsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"timeSeriesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"dataModelsAcl": {
+						"actions": [
+							"READ",
+							"WRITE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"dataModelInstancesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"datasetsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"extractionPipelinesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"extractionRunsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"extractionConfigsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"functionsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"sessionsAcl": {
+						"actions": [
+							"LIST"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"transformationsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"entitymatchingAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"documentPipelinesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"filePipelinesAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"annotationsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"documentFeedbackAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"securityCategoriesAcl": {
+						"actions": [
+							"LIST"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"hostedExtractorsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"visionModelAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"roboticsAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"geospatialAcl": {
+						"actions": [
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				}
+			],
+			"metadata": {
+				"origin": "cdf-project-templates",
+				"cdf_template_version": "0.0.1"
+			}
+		},
+		{
+			"id": 8709152929415739,
+			"isDeleted": false,
+			"deletedTime": -1,
+			"sourceId": "7ca879ec-1f67-4899-b343-67f7ba6d765c",
+			"name": "oidc-admin-group",
+			"capabilities": [
+				{
+					"projectUrlNames": {
+						"urlNames": [
+							"myProject"
+						]
+					},
+					"projectsAcl": {
+						"actions": [
+							"UPDATE",
+							"LIST",
+							"READ"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				},
+				{
+					"projectUrlNames": {
+						"urlNames": [
+							"myProject"
+						]
+					},
+					"groupsAcl": {
+						"actions": [
+							"CREATE",
+							"READ",
+							"LIST",
+							"UPDATE",
+							"DELETE"
+						],
+						"scope": {
+							"all": {}
+						}
+					}
+				}
+			],
+			"metadata": {}
+		}
+	]
+}
