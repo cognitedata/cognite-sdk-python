@@ -298,8 +298,6 @@ class UnknownScope(Capability.Scope):
         return self.data[item]
 
     def is_within(self, other: Self) -> bool:
-        if isinstance(other, AllScope):
-            return True
         raise NotImplementedError("Unknown scopes cannot be compared")
 
 
