@@ -508,9 +508,9 @@ class RoboticsAcl(Capability):
 
     class Action(Capability.Action):
         Read = "READ"
-        Write = "WRITE"
         Create = "CREATE"
         Update = "UPDATE"
+        Delete = "DELETE"
 
     class Scope:
         All = AllScope
