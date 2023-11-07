@@ -245,7 +245,7 @@ class DatapointsSubscriptionAPI(APIClient):
             Iterate continuously over all changes to the subscription newer than 3 days:
 
                 >>> import time
-                ... for batch in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
+                >>> for batch in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
