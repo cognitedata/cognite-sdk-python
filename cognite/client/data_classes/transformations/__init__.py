@@ -174,6 +174,22 @@ class Transformation(CogniteResource):
         self.tags = tags
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+        if self.schedule:
+            self.schedule.id = self.schedule.id or self.id
+            self.schedule.external_id = self.schedule.external_id or self.external_id
+        if self.running_job:
+            self.running_job.id = self.running_job.id or self.id
+        if self.last_finished_job:
+            self.last_finished_job.id = self.last_finished_job.id or self.id
+        if self.schedule and self.external_id != self.schedule.external_id:
+            raise ValueError("Transformation external_id must be the same as the schedule.external_id.")
+        if (
+            (self.schedule and self.id != self.schedule.id)
+            or (self.running_job and self.id != self.running_job.id)
+            or (self.last_finished_job and self.id != self.last_finished_job.id)
+        ):
+            raise ValueError("Transformation id must be the same as the schedule, running_job, last_running_job id.")
+
     @property
     def has_source_oidc_credentials(self) -> bool:
         return self.source_oidc_credentials is not None
