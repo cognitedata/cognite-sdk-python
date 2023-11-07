@@ -39,6 +39,7 @@ methods are `json` and `yaml` serializable.
 - The `client.events.aggregate` use `client.events.aggregate_count` instead.
 - The `client.sequence.aggregate` use `client.sequence.aggregate_count` instead.
 - The `client.time_series.aggregate` use `client.time_series.aggregate_count` instead.
+- In `Transformations` attributes `has_source_oidc_credentials` and `has_destination_oidc_credentials`.
 
 ### Changed
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters

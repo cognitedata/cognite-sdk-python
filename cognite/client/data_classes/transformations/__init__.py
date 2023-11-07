@@ -107,6 +107,7 @@ class Transformation(CogniteResource):
         source_session (SessionDetails | None): Details for the session used to read from the source project.
         destination_session (SessionDetails | None): Details for the session used to write to the destination project.
         tags (list[str] | None): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -138,6 +139,7 @@ class Transformation(CogniteResource):
         source_session: SessionDetails | None = None,
         destination_session: SessionDetails | None = None,
         tags: list[str] | None = None,
+        **_: Any,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -148,11 +150,14 @@ class Transformation(CogniteResource):
         self.is_public = is_public
         self.ignore_null_fields = ignore_null_fields
         self.source_oidc_credentials = source_oidc_credentials
-        self.has_source_oidc_credentials = has_source_oidc_credentials or source_oidc_credentials is not None
+        if has_source_oidc_credentials or has_destination_oidc_credentials:
+            warnings.warn(
+                "The arguments 'has_source_oidc_credentials' and 'has_destination_oidc_credentials' are "
+                "deprecated and will be removed in a future version."
+                "These are now properties returning whether the transformation has source or destination oidc credentials set.",
+                DeprecationWarning,
+            )
         self.destination_oidc_credentials = destination_oidc_credentials
-        self.has_destination_oidc_credentials = (
-            has_destination_oidc_credentials or destination_oidc_credentials is not None
-        )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner = owner
@@ -168,6 +173,14 @@ class Transformation(CogniteResource):
         self.destination_session = destination_session
         self.tags = tags
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @property
+    def has_source_oidc_credentials(self) -> bool:
+        return self.source_oidc_credentials is not None
+
+    @property
+    def has_destination_oidc_credentials(self) -> bool:
+        return self.destination_oidc_credentials is not None
 
     def copy(self) -> Transformation:
         return Transformation(
