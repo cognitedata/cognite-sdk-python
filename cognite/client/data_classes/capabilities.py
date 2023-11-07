@@ -158,7 +158,7 @@ class ExperimentsScope(Capability.Scope):
 @dataclass(frozen=True)
 class SpaceIDScope(Capability.Scope):
     _scope_name = "spaceIdScope"
-    ids: list[str]
+    space_ids: list[str]
 
 
 @dataclass(frozen=True)
