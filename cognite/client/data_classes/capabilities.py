@@ -759,6 +759,142 @@ class DataModelsAcl(Capability):
 
 
 @dataclass
+class PipelinesAcl(Capability):
+    _capability_name = "pipelinesAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class DocumentPipelinesAcl(Capability):
+    _capability_name = "documentPipelinesAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class FilePipelinesAcl(Capability):
+    _capability_name = "filePipelinesAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class NotificationsAcl(Capability):
+    _capability_name = "notificationsAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class ScheduledCalculationsAcl(Capability):
+    _capability_name = "scheduledCalculationsAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class MonitoringTasksAcl(Capability):
+    _capability_name = "monitoringTasksAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class HostedExtractorsAcl(Capability):
+    _capability_name = "hostedExtractorsAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class VisionModelAcl(Capability):
+    _capability_name = "visionModelAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
+class DocumentFeedbackAcl(Capability):
+    _capability_name = "documentFeedbackAcl"
+
+    class Action(Capability.Action):
+        Create = "CREATE"
+        Read = "READ"
+        Delete = "DELETE"
+
+    class Scope:
+        All = AllScope
+
+    actions: Sequence[Action]
+    scope: AllScope
+
+
+@dataclass
 class WorkflowOrchestrationAcl(Capability):
     _capability_name = "workflowOrchestrationAcl"
 
