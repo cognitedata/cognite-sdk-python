@@ -48,6 +48,23 @@ class TestCapabilities:
                     "scope": {"tableScope": {"dbsToTables": {"databaseName": ["my_db1", "my_db2"]}}},
                 },
             },
+            {
+                "dataModelsAcl": {
+                    "actions": ["READ"],
+                    "scope": {
+                        "spaceIdScope": {
+                            "spaceIds": [
+                                "APM_Config",
+                                "cdf_apm",
+                                "cdf_infield",
+                                "cdf_core",
+                                "cdf_apps_shared",
+                                "APM_SourceData",
+                            ]
+                        }
+                    },
+                },
+            },
         ],
     )
     def test_load_dump(self, raw: dict[str, Any]) -> None:
@@ -69,7 +86,7 @@ class TestCapabilities:
             Capability.load(unknown_cap_with_extra_key)
 
     @pytest.mark.parametrize(
-        "raw", [{"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}]
+        "raw", [{"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}, {}]
     )
     def test_load_dump_unknown(self, raw: dict[str, Any]) -> None:
         capability = Capability.load(raw)
