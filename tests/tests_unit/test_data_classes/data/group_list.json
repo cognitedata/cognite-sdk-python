@@ -1450,42 +1450,42 @@
 			"sourceId": "7ca879ec-1f67-4899-b343-67f7ba6d765c",
 			"name": "oidc-admin-group",
 			"capabilities": [
-				{
-					"projectUrlNames": {
-						"urlNames": [
-							"myProject"
-						]
-					},
-					"projectsAcl": {
-						"actions": [
-							"UPDATE",
-							"LIST",
-							"READ"
-						],
-						"scope": {
-							"all": {}
-						}
-					}
-				},
-				{
-					"projectUrlNames": {
-						"urlNames": [
-							"myProject"
-						]
-					},
-					"groupsAcl": {
-						"actions": [
-							"CREATE",
-							"READ",
-							"LIST",
-							"UPDATE",
-							"DELETE"
-						],
-						"scope": {
-							"all": {}
-						}
-					}
-				}
+//				{
+//					"projectUrlNames": {
+//						"urlNames": [
+//							"myProject"
+//						]
+//					},
+//					"projectsAcl": {
+//						"actions": [
+//							"UPDATE",
+//							"LIST",
+//							"READ"
+//						],
+//						"scope": {
+//							"all": {}
+//						}
+//					}
+//				},
+//				{
+//					"projectUrlNames": {
+//						"urlNames": [
+//							"myProject"
+//						]
+//					},
+//					"groupsAcl": {
+//						"actions": [
+//							"CREATE",
+//							"READ",
+//							"LIST",
+//							"UPDATE",
+//							"DELETE"
+//						],
+//						"scope": {
+//							"all": {}
+//						}
+//					}
+//				}
 			],
 			"metadata": {}
 		}
