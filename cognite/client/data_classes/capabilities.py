@@ -4,12 +4,12 @@ import enum
 import inspect
 import logging
 from abc import ABC
-from collections import UserList
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Collection, Iterator, Sequence, SupportsIndex, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -17,6 +17,9 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +154,7 @@ class ProjectsScope(ProjectScope):
 
 
 @dataclass
-class GroupCapability:
+class GroupCapability(CogniteResource):
     capability: Capability
 
     class Scope:
@@ -161,8 +164,7 @@ class GroupCapability:
     project_scope: ProjectScope
 
     @classmethod
-    def load(cls, resource: dict | str) -> Self:
-        resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         capability = next(key for key in resource if key != "projectScope")
 
         return cls(
@@ -176,51 +178,11 @@ class GroupCapability:
         return dumped
 
 
-class GroupCapabilities(UserList):
-    def __init__(self, items: Collection[GroupCapability]) -> None:
-        super().__init__(
-            [GroupCapability(**capability) if isinstance(capability, dict) else capability for capability in items]
-        )
-
-    @classmethod
-    def load(cls, resources: list | str) -> Self:
-        resources = resources if isinstance(resources, list) else load_yaml_or_json(resources)
-        return cls(
-            [
-                GroupCapability.load(capability) if isinstance(capability, dict) else capability
-                for capability in resources
-            ]
-        )
-
-    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
-        return [capability.dump(camel_case) for capability in self.data]
+class GroupCapabilities(CogniteResourceList[GroupCapability]):
+    _RESOURCE = GroupCapability
 
     def includes_capability(self, capability: Capability) -> bool:
-        for group in self:
-            if group.capability.has_capability(capability):
-                return True
-        return False
-
-    # The following methods are needed for proper type hinting
-    def pop(self, i: int = -1) -> GroupCapability:
-        return super().pop(i)
-
-    def __iter__(self) -> Iterator[GroupCapability]:
-        return super().__iter__()
-
-    @overload
-    def __getitem__(self, item: SupportsIndex) -> GroupCapability:
-        ...
-
-    @overload
-    def __getitem__(self, item: slice) -> GroupCapabilities:
-        ...
-
-    def __getitem__(self, item: SupportsIndex | slice) -> GroupCapability | GroupCapabilities:
-        value = self.data[item]
-        if isinstance(item, slice):
-            return type(self)(value)
-        return cast(GroupCapability, value)
+        return any(group.capability.has_capability(capability) for group in self)
 
 
 @dataclass(frozen=True)
