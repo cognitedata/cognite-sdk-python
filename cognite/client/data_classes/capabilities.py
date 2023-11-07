@@ -110,7 +110,7 @@ class AllScope(Capability.Scope):
 
 @dataclass(frozen=True)
 class CurrentUserScope(Capability.Scope):
-    _scope_name = "currentuserScope"
+    _scope_name = "currentuserscope"
 
 
 @dataclass(frozen=True)
@@ -144,7 +144,7 @@ class TableScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
-class AssetRootIDScope(IDScope):
+class AssetRootIDScope(Capability.Scope):
     _scope_name = "assetRootIdScope"
     root_ids: list[int]
 
@@ -178,6 +178,8 @@ class UnknownScope(Capability.Scope):
 _SCOPE_CLASS_BY_NAME: dict[str, type[Capability.Scope]] = {
     c._scope_name: c for c in Capability.Scope.__subclasses__() if not issubclass(c, UnknownScope)
 }
+# Manual additions because of lack of API standardisation:
+_SCOPE_CLASS_BY_NAME["idscope"] = IDScope
 
 
 @dataclass
@@ -323,6 +325,23 @@ class ExtractionPipelinesAcl(Capability):
 @dataclass
 class ExtractionsRunAcl(Capability):
     _capability_name = "extractionRunsAcl"
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        DataSet = DataSetScope
+        ExtractionPipeline = ExtractionPipelineScope
+
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope | ExtractionPipelineScope
+
+
+@dataclass
+class ExtractionConfigsAcl(Capability):
+    _capability_name = "extractionConfigsAcl"
 
     class Action(Capability.Action):
         Read = "READ"
