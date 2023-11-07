@@ -489,7 +489,7 @@ class RoboticsAcl(Capability):
 
     class Action(Capability.Action):
         Read = "READ"
-        DELETE = "DELETE"
+        Delete = "DELETE"
         Create = "CREATE"
         Update = "UPDATE"
 
