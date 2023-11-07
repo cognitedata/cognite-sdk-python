@@ -48,6 +48,23 @@ class TestCapabilities:
                     "scope": {"tableScope": {"dbsToTables": {"databaseName": ["my_db1", "my_db2"]}}},
                 },
             },
+            {
+                "dataModelsAcl": {
+                    "actions": ["READ"],
+                    "scope": {
+                        "spaceIdScope": {
+                            "spaceIds": [
+                                "APM_Config",
+                                "cdf_apm",
+                                "cdf_infield",
+                                "cdf_core",
+                                "cdf_apps_shared",
+                                "APM_SourceData",
+                            ]
+                        }
+                    },
+                },
+            },
         ],
     )
     def test_load_dump(self, raw: dict[str, Any]) -> None:
