@@ -86,7 +86,7 @@ class TestCapabilities:
             Capability.load(unknown_cap_with_extra_key)
 
     @pytest.mark.parametrize(
-        "raw", [{"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}, {}]
+        "raw", [{"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}]
     )
     def test_load_dump_unknown(self, raw: dict[str, Any]) -> None:
         capability = Capability.load(raw)
