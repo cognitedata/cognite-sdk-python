@@ -54,6 +54,7 @@ class TestViewPropertyDefinition:
 
     def test_load_dump_connection_property(self) -> None:
         input = {
+            "connectionType": "multiEdgeConnection",
             "type": {"space": "mySpace", "externalId": "myExternalId"},
             "source": {"type": "view", "space": "mySpace", "externalId": "myExternalId", "version": "myVersion"},
             "direction": "outwards",
@@ -63,7 +64,7 @@ class TestViewPropertyDefinition:
         actual = ViewProperty.load(input)
 
         assert actual.dump() == {
-            "connection_type": None,
+            "connection_type": "multi_edge_connection",
             "description": None,
             "direction": "outwards",
             "edge_source": None,

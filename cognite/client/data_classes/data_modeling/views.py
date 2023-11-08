@@ -398,8 +398,8 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             name=data.get("name"),
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
-            direction=data.get("direction"),  # type: ignore[arg-type]
-            connection_type=(connection_type := data.get("connectionType")) and to_snake_case(connection_type),  # type: ignore[arg-type]
+            direction=data["direction"],  # type: ignore[arg-type]
+            connection_type=to_snake_case(data["connectionType"]),  # type: ignore[arg-type]
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
