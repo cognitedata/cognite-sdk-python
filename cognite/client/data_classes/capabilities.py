@@ -153,15 +153,14 @@ class ProjectsScope(ProjectScope):
 
 @dataclass
 class ProjectCapability(CogniteResource):
-    """This represents an capability scoped for a project(s)."""
+    """This represents an capability with additional info about which project(s) it is for."""
 
     capability: Capability
+    project_scope: AllProjectsScope | ProjectScope
 
     class Scope:
         All = AllProjectsScope
         Projects = ProjectScope
-
-    project_scope: AllProjectsScope | ProjectScope
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -225,16 +224,21 @@ class DataSetScope(Capability.Scope):
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
 
-@dataclass
-class DatabaseTableScope:
-    database_name: str
-    table_names: list[str]
-
-
 @dataclass(frozen=True)
 class TableScope(Capability.Scope):
     _scope_name = "tableScope"
-    dbs_to_tables: dict[str, DatabaseTableScope]
+    dbs_to_tables: dict[str, list[str]]
+
+    def __post_init__(self) -> None:
+        if not self.dbs_to_tables:
+            return
+
+        loaded = self.dbs_to_tables.copy()
+        for db, obj in self.dbs_to_tables.items():
+            if isinstance(obj, dict):
+                loaded[db] = obj.get("tables", [])
+        # TableScope is frozen, so a bit awkward to set attribute:
+        object.__setattr__(self, "dbs_to_tables", loaded)
 
     def is_within(self, other: Self) -> bool:
         if isinstance(other, AllScope):
@@ -242,10 +246,10 @@ class TableScope(Capability.Scope):
         if not isinstance(other, TableScope):
             return False
 
-        for db in self.dbs_to_tables.values():
-            if db.database_name not in other.dbs_to_tables:
+        for db_name, tables in self.dbs_to_tables.items():
+            if (other_tables := other.dbs_to_tables.get(db_name)) is None:
                 return False
-            if not set(db.table_names).issubset(other.dbs_to_tables[db.database_name].table_names):
+            if not set(tables).issubset(other_tables):
                 return False
         return True
 
@@ -297,7 +301,7 @@ class UnknownScope(Capability.Scope):
         return self.data[item]
 
     def is_within(self, other: Self) -> bool:
-        raise NotImplementedError("Unknown scopes cannot be compared")
+        raise NotImplementedError("Unknown scope cannot be compared")
 
 
 _SCOPE_CLASS_BY_NAME: dict[str, type[Capability.Scope]] = {
@@ -1003,7 +1007,7 @@ class UserProfilesAcl(Capability):
 
 
 _CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {
-    c._capability_name: c for c in Capability.__subclasses__() if not issubclass(c, UnknownAcl)
+    c._capability_name: c for c in Capability.__subclasses__() if c is not UnknownAcl
 }
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
