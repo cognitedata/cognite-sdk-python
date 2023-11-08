@@ -159,11 +159,11 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def load(cls, api_response: dict[str, Any]) -> TokenInspection:
+    def load(cls, api_response: dict[str, Any], cognite_client: CogniteClient | None = None) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec.load(p) for p in api_response["projects"]],
-            capabilities=ProjectCapabilitiesList.load(api_response["capabilities"]),
+            capabilities=ProjectCapabilitiesList.load(api_response["capabilities"], cognite_client),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
