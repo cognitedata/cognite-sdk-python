@@ -9,8 +9,8 @@ from cognite.client.data_classes.capabilities import (
     Capability,
     DatabaseTableScope,
     EventsAcl,
-    GroupCapabilities,
-    GroupCapability,
+    ProjectCapabilities,
+    ProjectCapability,
     ProjectsAcl,
     RawAcl,
     UnknownAcl,
@@ -220,13 +220,13 @@ class TestGroupCapabilities:
         "capabilities, capability, expected",
         [
             (
-                GroupCapabilities(
+                ProjectCapabilities(
                     [
-                        GroupCapability(
+                        ProjectCapability(
                             capability=EventsAcl(
                                 [EventsAcl.Action.Read, EventsAcl.Action.Write], scope=EventsAcl.Scope.All()
                             ),
-                            project_scope=GroupCapability.Scope.All(),
+                            project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
@@ -234,11 +234,11 @@ class TestGroupCapabilities:
                 True,
             ),
             (
-                GroupCapabilities(
+                ProjectCapabilities(
                     [
-                        GroupCapability(
+                        ProjectCapability(
                             capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
-                            project_scope=GroupCapability.Scope.All(),
+                            project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
@@ -246,11 +246,11 @@ class TestGroupCapabilities:
                 False,
             ),
             (
-                GroupCapabilities(
+                ProjectCapabilities(
                     [
-                        GroupCapability(
+                        ProjectCapability(
                             capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
-                            project_scope=GroupCapability.Scope.All(),
+                            project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
@@ -258,11 +258,11 @@ class TestGroupCapabilities:
                 True,
             ),
             (
-                GroupCapabilities(
+                ProjectCapabilities(
                     [
-                        GroupCapability(
+                        ProjectCapability(
                             capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
-                            project_scope=GroupCapability.Scope.All(),
+                            project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
@@ -270,16 +270,16 @@ class TestGroupCapabilities:
                 False,
             ),
             (
-                GroupCapabilities(
+                ProjectCapabilities(
                     [
-                        GroupCapability(
+                        ProjectCapability(
                             capability=RawAcl(
                                 [RawAcl.Action.Read],
                                 scope=RawAcl.Scope.Table(
                                     {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
                                 ),
                             ),
-                            project_scope=GroupCapability.Scope.All(),
+                            project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
@@ -289,16 +289,16 @@ class TestGroupCapabilities:
                 True,
             ),
             (
-                GroupCapabilities(
+                ProjectCapabilities(
                     [
-                        GroupCapability(
+                        ProjectCapability(
                             capability=RawAcl(
                                 [RawAcl.Action.Read],
                                 scope=RawAcl.Scope.Table(
                                     {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
                                 ),
                             ),
-                            project_scope=GroupCapability.Scope.All(),
+                            project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
@@ -309,16 +309,16 @@ class TestGroupCapabilities:
                 False,
             ),
             (
-                GroupCapabilities(
+                ProjectCapabilities(
                     [
-                        GroupCapability(
+                        ProjectCapability(
                             capability=RawAcl(
                                 [RawAcl.Action.Read],
                                 scope=RawAcl.Scope.Table(
                                     {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
                                 ),
                             ),
-                            project_scope=GroupCapability.Scope.All(),
+                            project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
@@ -330,5 +330,5 @@ class TestGroupCapabilities:
             ),
         ],
     )
-    def test_has_capability(self, capabilities: GroupCapabilities, capability: Capability, expected: bool) -> None:
+    def test_has_capability(self, capabilities: ProjectCapabilities, capability: Capability, expected: bool) -> None:
         assert capabilities.includes_capability(capability) is expected

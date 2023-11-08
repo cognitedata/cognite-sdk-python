@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
-from cognite.client.data_classes.capabilities import Capability, GroupCapabilities
+from cognite.client.data_classes.capabilities import Capability, ProjectCapabilities
 from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
@@ -150,10 +150,10 @@ class TokenInspection(CogniteResponse):
     Args:
         subject (str): Subject (sub claim) of JWT.
         projects (list[ProjectSpec]): Projects this token is valid for.
-        capabilities (GroupCapabilities): Capabilities associated with this token.
+        capabilities (ProjectCapabilities): Capabilities associated with this token.
     """
 
-    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: GroupCapabilities) -> None:
+    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: ProjectCapabilities) -> None:
         self.subject = subject
         self.projects = projects
         self.capabilities = capabilities
@@ -163,7 +163,7 @@ class TokenInspection(CogniteResponse):
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec.load(p) for p in api_response["projects"]],
-            capabilities=GroupCapabilities.load(api_response["capabilities"]),
+            capabilities=ProjectCapabilities.load(api_response["capabilities"]),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

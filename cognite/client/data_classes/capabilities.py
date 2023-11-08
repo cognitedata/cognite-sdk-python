@@ -154,7 +154,7 @@ class ProjectsScope(ProjectScope):
 
 
 @dataclass
-class GroupCapability(CogniteResource):
+class ProjectCapability(CogniteResource):
     capability: Capability
 
     class Scope:
@@ -178,8 +178,8 @@ class GroupCapability(CogniteResource):
         return dumped
 
 
-class GroupCapabilities(CogniteResourceList[GroupCapability]):
-    _RESOURCE = GroupCapability
+class ProjectCapabilities(CogniteResourceList[ProjectCapability]):
+    _RESOURCE = ProjectCapability
 
     def includes_capability(self, capability: Capability) -> bool:
         return any(group.capability.has_capability(capability) for group in self)
