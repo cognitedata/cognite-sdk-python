@@ -21,7 +21,6 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
-    to_camel_case,
 )
 
 
@@ -414,7 +413,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             output["edge_source"] = self.edge_source.dump(camel_case)
 
         if self.connection_type is not None:
-            output["connection_type"] = to_camel_case(self.connection_type) if camel_case else self.connection_type
+            output["connection_type"] = self.connection_type
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
@@ -474,8 +473,6 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
                 camel_case, include_type=True
             )
         if self.connection_type is not None:
-            output[("connectionType" if camel_case else "connection_type")] = (
-                to_camel_case(self.connection_type) if camel_case else self.connection_type
-            )
+            output[("connectionType" if camel_case else "connection_type")] = self.connection_type
 
         return output
