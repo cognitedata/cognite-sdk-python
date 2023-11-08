@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
-from cognite.client.data_classes.capabilities import Capability
+from cognite.client.data_classes.capabilities import Capability, ProjectCapabilitiesList
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -151,10 +150,10 @@ class TokenInspection(CogniteResponse):
     Args:
         subject (str): Subject (sub claim) of JWT.
         projects (list[ProjectSpec]): Projects this token is valid for.
-        capabilities (list[dict]): Capabilities associated with this token.
+        capabilities (ProjectCapabilitiesList): Capabilities associated with this token.
     """
 
-    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: list[dict]) -> None:
+    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: ProjectCapabilitiesList) -> None:
         self.subject = subject
         self.projects = projects
         self.capabilities = capabilities
@@ -164,18 +163,15 @@ class TokenInspection(CogniteResponse):
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec.load(p) for p in api_response["projects"]],
-            capabilities=api_response["capabilities"],
+            capabilities=ProjectCapabilitiesList.load(api_response["capabilities"]),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        dumped = {
+        return {
             "subject": self.subject,
             "projects": [p.dump(camel_case=camel_case) for p in self.projects],
-            "capabilities": self.capabilities,
+            "capabilities": self.capabilities.dump(camel_case=camel_case),
         }
-        if camel_case:
-            dumped = convert_all_keys_to_camel_case(dumped)
-        return dumped
 
 
 class CreatedSession(CogniteResponse):

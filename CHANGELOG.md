@@ -75,6 +75,8 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
   `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
   `dict` but classes with attributes matching the API.
+- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `cababilities` of type `ProjectCapabilitiesList`
+  instead of `list[dict]`
 
 ### Added
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
@@ -168,7 +170,8 @@ endpoints are not idempotent.
 
 ## [6.38.1] - 2023-10-31
 ### Fixed
-- `onFailure` property in Workflows was expected as mandatory and was raising KeyError if it was not returnd by the API. The sdk now assumes the field to be optional loads it as None instead of raising an error.
+- `onFailure` property in Workflows was expected as mandatory and was raising KeyError if it was not returned by the API.
+  The SDK now assumes the field to be optional and loads it as None instead of raising an error.
 
 ## [6.38.0] - 2023-10-30
 ### Added
