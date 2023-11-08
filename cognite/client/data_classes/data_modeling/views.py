@@ -390,15 +390,18 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
-        return cls(
+        instance = cls(
             type=DirectRelationReference.load(data["type"]),
             source=ViewId.load(data["source"]),
             name=data.get("name"),
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
-            direction=data["direction"],
-            connection_type=data["connectionType"],
         )
+        if "direction" in data:
+            instance.direction = data["direction"]
+        if "connectionType" in data:
+            instance.connection_type = data["connectionType"]
+        return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
@@ -448,15 +451,18 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinitionApply:
-        return cls(
+        instance = cls(
             type=DirectRelationReference.load(data["type"]),
             source=ViewId.load(data["source"]),
             name=data.get("name"),
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
-            direction=data["direction"],
-            connection_type=data["connectionType"],
         )
+        if "direction" in data:
+            instance.direction = data["direction"]
+        if "connectionType" in data:
+            instance.connection_type = data["connectionType"]
+        return instance
 
     def dump(self, camel_case: bool = False) -> dict:
         output: dict[str, Any] = {
