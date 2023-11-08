@@ -75,7 +75,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
   `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
   `dict` but classes with attributes matching the API.
-- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `cababilities` of type `GroupCapabilities`
+- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `cababilities` of type `ProjectCapabilities`
   instead of `list[dict]`
 
 ### Added

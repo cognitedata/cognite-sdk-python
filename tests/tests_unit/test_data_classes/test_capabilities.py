@@ -215,7 +215,7 @@ class TestCapabilities:
             Capability.load(dumped)
 
 
-class TestGroupCapabilities:
+class TestProjectCapabilities:
     @pytest.mark.parametrize(
         "capabilities, capability, expected",
         [
