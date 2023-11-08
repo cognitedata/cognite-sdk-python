@@ -180,7 +180,7 @@ class ProjectCapability(CogniteResource):
         return dumped
 
 
-class ProjectCapabilities(CogniteResourceList[ProjectCapability]):
+class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
     _RESOURCE = ProjectCapability
 
     def includes_capability(self, capability: Capability) -> bool:

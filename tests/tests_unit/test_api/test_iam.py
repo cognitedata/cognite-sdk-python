@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
-from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapabilities, ProjectCapability
+from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapabilitiesList, ProjectCapability
 from cognite.client.data_classes.iam import ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
 
@@ -125,8 +125,8 @@ class TestTokenAPI:
         assert isinstance(res, TokenInspection)
         assert res.subject == "someSubject"
         assert res.projects == [ProjectSpec(url_name="veryGoodUrlName", groups=[1, 2, 3])]
-        assert res.capabilities == ProjectCapabilities(
-            ProjectCapabilities(
+        assert res.capabilities == ProjectCapabilitiesList(
+            ProjectCapabilitiesList(
                 [
                     ProjectCapability(
                         capability=GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All()),
@@ -137,7 +137,7 @@ class TestTokenAPI:
         )
 
     def test_token_inspection_dump(self):
-        capabilities = ProjectCapabilities(
+        capabilities = ProjectCapabilitiesList(
             [
                 ProjectCapability(
                     GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All()), ProjectCapability.Scope.All()

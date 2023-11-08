@@ -9,7 +9,7 @@ from cognite.client.data_classes.capabilities import (
     Capability,
     DatabaseTableScope,
     EventsAcl,
-    ProjectCapabilities,
+    ProjectCapabilitiesList,
     ProjectCapability,
     ProjectsAcl,
     RawAcl,
@@ -215,12 +215,12 @@ class TestCapabilities:
             Capability.load(dumped)
 
 
-class TestProjectCapabilities:
+class TestProjectCapabilitiesList:
     @pytest.mark.parametrize(
         "capabilities, capability, expected",
         [
             (
-                ProjectCapabilities(
+                ProjectCapabilitiesList(
                     [
                         ProjectCapability(
                             capability=EventsAcl(
@@ -234,7 +234,7 @@ class TestProjectCapabilities:
                 True,
             ),
             (
-                ProjectCapabilities(
+                ProjectCapabilitiesList(
                     [
                         ProjectCapability(
                             capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
@@ -246,7 +246,7 @@ class TestProjectCapabilities:
                 False,
             ),
             (
-                ProjectCapabilities(
+                ProjectCapabilitiesList(
                     [
                         ProjectCapability(
                             capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
@@ -258,7 +258,7 @@ class TestProjectCapabilities:
                 True,
             ),
             (
-                ProjectCapabilities(
+                ProjectCapabilitiesList(
                     [
                         ProjectCapability(
                             capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
@@ -270,7 +270,7 @@ class TestProjectCapabilities:
                 False,
             ),
             (
-                ProjectCapabilities(
+                ProjectCapabilitiesList(
                     [
                         ProjectCapability(
                             capability=RawAcl(
@@ -289,7 +289,7 @@ class TestProjectCapabilities:
                 True,
             ),
             (
-                ProjectCapabilities(
+                ProjectCapabilitiesList(
                     [
                         ProjectCapability(
                             capability=RawAcl(
@@ -309,7 +309,7 @@ class TestProjectCapabilities:
                 False,
             ),
             (
-                ProjectCapabilities(
+                ProjectCapabilitiesList(
                     [
                         ProjectCapability(
                             capability=RawAcl(
@@ -330,5 +330,7 @@ class TestProjectCapabilities:
             ),
         ],
     )
-    def test_has_capability(self, capabilities: ProjectCapabilities, capability: Capability, expected: bool) -> None:
+    def test_has_capability(
+        self, capabilities: ProjectCapabilitiesList, capability: Capability, expected: bool
+    ) -> None:
         assert capabilities.includes_capability(capability) is expected
