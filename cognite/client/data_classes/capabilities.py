@@ -164,11 +164,10 @@ class ProjectCapability(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        capability = next(key for key in resource if key != "projectScope")
-
+        project_scope_dct = {ProjectScope.name: resource.pop(ProjectScope.name)}
         return cls(
-            capability=Capability.load({capability: resource[capability]}),
-            project_scope=ProjectScope.load({ProjectScope.name: resource[ProjectScope.name]}),
+            capability=Capability.load(resource),
+            project_scope=ProjectScope.load(project_scope_dct),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
