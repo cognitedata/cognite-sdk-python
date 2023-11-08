@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass
 from typing import Any, Literal, TypeVar, cast
 
 from cognite.client.data_classes._base import (
@@ -21,6 +21,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
+    to_snake_case,
 )
 
 
@@ -390,20 +391,15 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
-        data = convert_all_keys_to_snake_case(data)
-        try:
-            output = cls(**data)
-        except TypeError:
-            available_fields = {f.name for f in fields(cls)}
-            output = cls(**{k: v for k, v in data.items() if k in available_fields})
-
-        if (type_ := data.get("type")) is not None:
-            output.type = DirectRelationReference.load(type_)
-        if (source := data.get("source")) is not None:
-            output.source = ViewId.load(source)
-        if (edge_source := data.get("edgeSource")) is not None:
-            output.edge_source = ViewId.load(edge_source)
-        return output
+        return cls(
+            type=DirectRelationReference.load(data["type"]),
+            source=ViewId.load(data["source"]),
+            name=data.get("name"),
+            description=data.get("description"),
+            edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
+            direction=data.get("direction"),  # type: ignore[arg-type]
+            connection_type=to_snake_case(data.get("connectionType")),  # type: ignore[arg-type]
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
@@ -449,15 +445,16 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
     connection_type: Literal["multi_edge_connection"] = "multi_edge_connection"
 
     @classmethod
-    def load(cls, data: dict) -> SingleHopConnectionDefinitionApply:
-        output = cls(**convert_all_keys_to_snake_case(data))
-        if (type_ := data.get("type")) is not None:
-            output.type = DirectRelationReference.load(type_)
-        if (source := data.get("source")) is not None:
-            output.source = ViewId.load(source)
-        if (edge_source := data.get("edgeSource")) is not None:
-            output.edge_source = ViewId.load(edge_source)
-        return output
+    def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinitionApply:
+        return cls(
+            type=DirectRelationReference.load(data["type"]),
+            source=ViewId.load(data["source"]),
+            name=data.get("name"),
+            description=data.get("description"),
+            edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
+            direction=data.get("direction"),  # type: ignore[arg-type]
+            connection_type=to_snake_case(data.get("connectionType")),  # type: ignore[arg-type]
+        )
 
     def dump(self, camel_case: bool = False) -> dict:
         output: dict[str, Any] = {
