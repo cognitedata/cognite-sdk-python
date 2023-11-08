@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.39.3] - 2023-11-08
+## Fixed
+- The newely introduced parameter `connectionType` was assumed to be required from the API. This is not the case. 
+
 ## [6.39.2] - 2023-11-08
 ## Fixed
 - When listing `client.data_modeling.views` the SDK raises a `TypeError`. This is now fixed.
