@@ -183,3 +183,28 @@ class TestCapabilities:
         assert all(action is UnknownAcl.Action.Unknown for action in capability.actions)
         assert capability.raw_data == raw
         assert capability.dump(camel_case=True) == raw
+
+    @pytest.mark.parametrize(
+        "acl_cls_name, bad_action, dumped",
+        [
+            ("AssetsAcl", "SONG-WRITER", {"assetsAcl": {"actions": ["READ", "SONG-WRITER"], "scope": {"all": {}}}}),
+            (
+                "DocumentFeedbackAcl",
+                "CTRL-ALT-DELETE",
+                {"documentFeedbackAcl": {"actions": ["CREATE", "CTRL-ALT-DELETE"], "scope": {"all": {}}}},
+            ),
+            (
+                "FilesAcl",
+                "COMPRESS",
+                {"filesAcl": {"actions": ["COMPRESS"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
+            ),
+            (
+                "NotificationsAcl",
+                "SEND-PIGEON",
+                {"notificationsAcl": {"actions": ["READ", "SEND-PIGEON"], "scope": {"all": {}}}},
+            ),
+        ],
+    )
+    def test_load__action_does_not_exist(self, acl_cls_name: str, bad_action: str, dumped: dict[str, Any]) -> None:
+        with pytest.raises(ValueError, match=rf"^'{bad_action}' is not a valid {acl_cls_name} Action$"):
+            Capability.load(dumped)
