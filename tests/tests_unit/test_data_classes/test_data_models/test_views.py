@@ -64,7 +64,7 @@ class TestViewPropertyDefinition:
         actual = ViewProperty.load(input)
 
         assert actual.dump() == {
-            "connection_type": "multi_edge_connection",
+            "connection_type": "multiEdgeConnection",
             "description": None,
             "direction": "outwards",
             "edge_source": None,

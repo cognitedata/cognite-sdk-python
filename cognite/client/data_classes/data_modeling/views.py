@@ -22,7 +22,6 @@ from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
     to_camel_case,
-    to_snake_case,
 )
 
 
@@ -388,7 +387,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
     description: str | None = None
     edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
-    connection_type: Literal["multi_edge_connection"] = "multi_edge_connection"
+    connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
@@ -399,7 +398,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
             direction=data["direction"],  # type: ignore[arg-type]
-            connection_type=to_snake_case(data["connectionType"]),  # type: ignore[arg-type]
+            connection_type=data["connectionType"],  # type: ignore[arg-type]
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -446,7 +445,7 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
     description: str | None = None
     edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
-    connection_type: Literal["multi_edge_connection"] = "multi_edge_connection"
+    connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinitionApply:
@@ -457,7 +456,7 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
             direction=data.get("direction"),  # type: ignore[arg-type]
-            connection_type=(connection_type := data.get("connectionType")) and to_snake_case(connection_type),  # type: ignore[arg-type]
+            connection_type=data.get("connectionType"),  # type: ignore[arg-type]
         )
 
     def dump(self, camel_case: bool = False) -> dict:
