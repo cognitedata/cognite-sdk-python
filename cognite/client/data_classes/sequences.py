@@ -74,21 +74,6 @@ class SequenceColumn(CogniteResource):
         resource = convert_all_keys_to_camel_case(resource)
         return super()._load(resource, cognite_client)
 
-    def as_write(self) -> Self:
-        """
-        Returns the write version of the Sequence Column
-
-        Returns:
-            Self: Write version of the Sequence Column
-        """
-        return type(self)(
-            external_id=self.external_id,
-            name=self.name,
-            description=self.description,
-            value_type=self.value_type,
-            metadata=self.metadata.copy() if self.metadata is not None else None,
-        )
-
 
 class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransformerMixin):
     _RESOURCE = SequenceColumn
