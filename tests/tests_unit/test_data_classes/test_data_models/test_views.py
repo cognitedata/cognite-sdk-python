@@ -80,6 +80,7 @@ class TestViewPropertyDefinition:
             "direction": "outwards",
             "name": "fullName",
             "edgeSource": None,
+            "connectionType": "multiEdgeConnection",
         }
         actual = ViewPropertyApply.load(input)
 
@@ -88,4 +89,5 @@ class TestViewPropertyDefinition:
             "name": "fullName",
             "source": {"external_id": "myExternalId", "space": "mySpace", "type": "view", "version": "myVersion"},
             "type": {"external_id": "myExternalId", "space": "mySpace"},
+            "connection_type": "multiEdgeConnection",
         }
