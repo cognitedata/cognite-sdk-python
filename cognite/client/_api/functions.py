@@ -111,7 +111,7 @@ class FunctionsAPI(APIClient):
         The function named `handle` is the entrypoint of the created function. Valid arguments to `handle` are `data`, `client`, `secrets` and `function_call_info`:
         - If the user calls the function with input data, this is passed through the `data` argument.
         - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument.
-        - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id` and, if the call is scheduled, `schedule_id` and `scheduled_time`.
+        - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id`, `call_id`, and, if the call is scheduled, `schedule_id` and `scheduled_time`.
 
         By default, the function is deployed with the latest version of cognite-sdk. If a specific version is desired, it can be specified either in a requirements.txt file when deploying via the `folder` argument or between `[requirements]` tags when deploying via the `function_handle` argument (see example below).
 
