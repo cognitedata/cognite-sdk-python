@@ -386,6 +386,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
     description: str | None = None
     edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
+    connection_type: Literal["multi_edge_connection"] = "multi_edge_connection"
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
