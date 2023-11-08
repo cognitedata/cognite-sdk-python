@@ -11,7 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteSort,
     EnumProperty,
-    IdTransformerMixin,
+    IdAndExtIdTransformerMixin,
     NoCaseConversionPropertyList,
 )
 from cognite.client.data_classes.aggregations import UniqueResult
@@ -188,7 +188,7 @@ class Document(CogniteResource):
         return output
 
 
-class DocumentList(CogniteResourceList[Document], IdTransformerMixin):
+class DocumentList(CogniteResourceList[Document], IdAndExtIdTransformerMixin):
     _RESOURCE = Document
 
 

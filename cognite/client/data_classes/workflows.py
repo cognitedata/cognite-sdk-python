@@ -12,6 +12,7 @@ from typing_extensions import Self, TypeAlias
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    ExtIdTransformerMixin,
     T_CogniteResource,
 )
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
@@ -79,7 +80,7 @@ class Workflow(WorkflowUpsert):
         self.created_time = created_time
 
 
-class WorkflowList(CogniteResourceList[Workflow]):
+class WorkflowList(CogniteResourceList[Workflow], ExtIdTransformerMixin):
     """This class represents a list of workflows."""
 
     _RESOURCE = Workflow

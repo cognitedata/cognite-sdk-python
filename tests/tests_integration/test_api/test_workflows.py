@@ -35,7 +35,7 @@ def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
     )
     workflows = [workflow1, workflow2]
     listed = cognite_client.workflows.list()
-    existing = listed._external_id_to_item
+    existing = {name for name, value in listed._identifier_to_items}
     call_list = False
     for workflow in workflows:
         if workflow.external_id not in existing:

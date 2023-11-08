@@ -3,7 +3,12 @@ from __future__ import annotations
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, cast, overload
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    KeyTransformerMixin,
+    NameTransformerMixin,
+)
 from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
@@ -44,7 +49,7 @@ class Row(CogniteResource):
         return pd.DataFrame([self.columns], [self.key])
 
 
-class RowList(CogniteResourceList[Row]):
+class RowList(CogniteResourceList[Row], KeyTransformerMixin):
     _RESOURCE = Row
 
     def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
@@ -106,7 +111,7 @@ class Table(CogniteResource):
         return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
 
-class TableList(CogniteResourceList[Table]):
+class TableList(CogniteResourceList[Table], NameTransformerMixin):
     _RESOURCE = Table
 
 
@@ -143,5 +148,5 @@ class Database(CogniteResource):
         return self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
 
 
-class DatabaseList(CogniteResourceList[Database]):
+class DatabaseList(CogniteResourceList[Database], NameTransformerMixin):
     _RESOURCE = Database

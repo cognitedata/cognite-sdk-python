@@ -16,7 +16,7 @@ from cognite.client.data_classes._base import (
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
-    IdTransformerMixin,
+    IdAndExtIdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
 )
@@ -251,7 +251,7 @@ class EventUpdate(CogniteUpdate):
         ]
 
 
-class EventList(CogniteResourceList[Event], IdTransformerMixin):
+class EventList(CogniteResourceList[Event], IdAndExtIdTransformerMixin):
     _RESOURCE = Event
 
 

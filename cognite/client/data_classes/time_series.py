@@ -17,7 +17,7 @@ from cognite.client.data_classes._base import (
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
-    IdTransformerMixin,
+    IdAndExtIdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
 )
@@ -316,7 +316,7 @@ class TimeSeriesAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class TimeSeriesList(CogniteResourceList[TimeSeries], IdTransformerMixin):
+class TimeSeriesList(CogniteResourceList[TimeSeries], IdAndExtIdTransformerMixin):
     _RESOURCE = TimeSeries
 
 

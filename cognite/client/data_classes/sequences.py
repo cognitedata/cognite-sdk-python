@@ -19,7 +19,7 @@ from cognite.client.data_classes._base import (
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
-    IdTransformerMixin,
+    IdAndExtIdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
 )
@@ -312,7 +312,7 @@ class SequenceAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class SequenceList(CogniteResourceList[Sequence], IdTransformerMixin):
+class SequenceList(CogniteResourceList[Sequence], IdAndExtIdTransformerMixin):
     _RESOURCE = Sequence
 
 

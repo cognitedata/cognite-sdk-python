@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._text import to_camel_case
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, UserIdentTransformerMixin
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -49,30 +48,17 @@ class UserProfile(CogniteResource):
     def _load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> UserProfile:
         if isinstance(resource, str):
             resource = cast(dict[str, Any], json.loads(resource))
-        to_load = {
-            "user_identifier": resource["userIdentifier"],
-            "last_updated_time": resource["lastUpdatedTime"],
-        }
-        for param in ["given_name", "surname", "email", "display_name", "job_title"]:
-            if (value := resource.get(to_camel_case(param))) is not None:
-                to_load[param] = value
-        return cls(**to_load, cognite_client=cognite_client)
+        return cls(
+            user_identifier=resource["userIdentifier"],
+            last_updated_time=resource["lastUpdatedTime"],
+            given_name=resource.get("givenName"),
+            surname=resource.get("surname"),
+            email=resource.get("email"),
+            display_name=resource.get("displayName"),
+            job_title=resource.get("jobTitle"),
+            cognite_client=cognite_client,
+        )
 
 
-class UserProfileList(CogniteResourceList[UserProfile]):
+class UserProfileList(CogniteResourceList[UserProfile], UserIdentTransformerMixin):
     _RESOURCE = UserProfile
-
-    def __init__(self, resources: Sequence[UserProfile], cognite_client: CogniteClient | None = None) -> None:
-        super().__init__(resources, cognite_client)
-
-        del self._id_to_item, self._external_id_to_item
-        self._user_identifier_to_item = {item.user_identifier: item for item in self.data or []}
-
-    def get(self, user_identifier: str) -> UserProfile | None:  # type: ignore [override]
-        """Get an item from this list by user_identifier.
-        Args:
-            user_identifier (str): The user_identifier of the item to get.
-        Returns:
-            UserProfile | None: The requested item or None if not found.
-        """
-        return self._user_identifier_to_item.get(user_identifier)
