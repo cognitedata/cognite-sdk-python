@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from typing import Any, Literal, TypeVar, cast
 
 from cognite.client.data_classes._base import (
@@ -389,7 +389,13 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
-        output = cls(**convert_all_keys_to_snake_case(data))
+        data = convert_all_keys_to_snake_case(data)
+        try:
+            output = cls(**data)
+        except TypeError:
+            available_fields = {f.name for f in fields(cls)}
+            output = cls(**{k: v for k, v in data.items() if k in available_fields})
+
         if (type_ := data.get("type")) is not None:
             output.type = DirectRelationReference.load(type_)
         if (source := data.get("source")) is not None:
