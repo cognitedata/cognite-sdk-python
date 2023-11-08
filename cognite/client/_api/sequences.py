@@ -1102,7 +1102,9 @@ class SequencesDataAPI(APIClient):
         """
         if column_external_ids is not None:
             warnings.warn(
-                "The column_external_ids argument is deprecated. Use the columns argument instead.", stacklevel=2
+                "The column_external_ids argument is deprecated. Use the columns argument instead.",
+                DeprecationWarning,
+                stacklevel=2,
             )
 
         columns = columns or column_external_ids
@@ -1162,12 +1164,14 @@ class SequencesDataAPI(APIClient):
         """
         if column_external_ids is not None:
             warnings.warn(
-                "The column_external_ids argument is deprecated. Use the columns argument instead.", stacklevel=2
+                "The column_external_ids argument is deprecated. Use the columns argument instead.",
+                DeprecationWarning,
+                stacklevel=2,
             )
         columns = columns or column_external_ids
         identifier = Identifier.of_either(id, external_id).as_dict()
         res = self._do_request(
-            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
+            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
         ).json()
         return SequenceRows.load(res)
 
