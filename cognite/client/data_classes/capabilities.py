@@ -163,7 +163,7 @@ class ProjectCapability(CogniteResource):
         All = AllProjectsScope
         Projects = ProjectScope
 
-    project_scope: ProjectScope
+    project_scope: AllProjectsScope | ProjectScope
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -176,7 +176,7 @@ class ProjectCapability(CogniteResource):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = self.capability.dump(camel_case=camel_case)
-        dumped[ProjectScope.name] = self.project_scope.dump(camel_case=camel_case)
+        dumped.update(self.project_scope.dump(camel_case=camel_case))
         return dumped
 
 
