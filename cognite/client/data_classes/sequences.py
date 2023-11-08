@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import typing
 import warnings
+from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, NoReturn, Union, cast, get_args, overload
 
 from typing_extensions import Self, TypeAlias
@@ -695,6 +696,12 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
             return {seq.id: seq.to_pandas(column_names) for seq in self}
 
         raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")
+
+
+class SequencesDataList(SequenceRowsList):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+        super().__init__(resources, cognite_client)
+        warnings.warn("SequencesDataList is deprecated, use SequenceRowsList instead", DeprecationWarning)
 
 
 class SequenceProperty(EnumProperty):
