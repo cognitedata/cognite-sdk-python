@@ -155,6 +155,8 @@ class ProjectsScope(ProjectScope):
 
 @dataclass
 class ProjectCapability(CogniteResource):
+    """This represents an capability scoped for a project(s)."""
+
     capability: Capability
 
     class Scope:
