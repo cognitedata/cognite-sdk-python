@@ -989,6 +989,19 @@ class WorkflowOrchestrationAcl(Capability):
         All = AllScope
 
 
+@dataclass
+class UserProfilesAcl(Capability):
+    _capability_name = "userProfilesAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
 _CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {
     c._capability_name: c for c in Capability.__subclasses__() if not issubclass(c, UnknownAcl)
 }
