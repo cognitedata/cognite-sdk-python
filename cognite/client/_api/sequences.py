@@ -26,6 +26,7 @@ from cognite.client.data_classes.sequences import (
     SortableSequenceProperty,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import handle_renamed_argument
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import (
@@ -903,13 +904,10 @@ class SequencesDataAPI(APIClient):
                 >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
                 >>> c.sequences.data.insert(rows=data, id=1,column_external_ids=None)
         """
-        if column_external_ids is not None:
-            warnings.warn(
-                "The column_external_ids argument is deprecated. Use the columns argument instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        columns = columns or column_external_ids
+
+        columns = handle_renamed_argument(
+            columns, "columns", "column_external_ids", "insert", {"column_external_ids": column_external_ids}, False
+        )
         if isinstance(rows, SequenceRows):
             columns = rows.column_external_ids
             rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
@@ -1100,14 +1098,9 @@ class SequencesDataAPI(APIClient):
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
-        if column_external_ids is not None:
-            warnings.warn(
-                "The column_external_ids argument is deprecated. Use the columns argument instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        columns = columns or column_external_ids
+        columns = handle_renamed_argument(
+            columns, "columns", "column_external_ids", "insert", {"column_external_ids": column_external_ids}, False
+        )
 
         ident_sequence = IdentifierSequence.load(id, external_id)
         identifiers = ident_sequence.as_dicts()
@@ -1162,13 +1155,9 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.sequences.data.retrieve_last_row(id=1, before=1000)
         """
-        if column_external_ids is not None:
-            warnings.warn(
-                "The column_external_ids argument is deprecated. Use the columns argument instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        columns = columns or column_external_ids
+        columns = handle_renamed_argument(
+            columns, "columns", "column_external_ids", "insert", {"column_external_ids": column_external_ids}, False
+        )
         identifier = Identifier.of_either(id, external_id).as_dict()
         res = self._do_request(
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
