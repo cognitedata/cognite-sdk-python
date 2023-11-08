@@ -396,8 +396,8 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             name=data.get("name"),
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
-            direction=data["direction"],  # type: ignore[arg-type]
-            connection_type=data["connectionType"],  # type: ignore[arg-type]
+            direction=data["direction"],
+            connection_type=data["connectionType"],
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -454,8 +454,8 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
             name=data.get("name"),
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
-            direction=data["direction"],  # type: ignore[arg-type]
-            connection_type=data["connectionType"],  # type: ignore[arg-type]
+            direction=data["direction"],
+            connection_type=data["connectionType"],
         )
 
     def dump(self, camel_case: bool = False) -> dict:
