@@ -867,3 +867,8 @@ class WorkflowOrchestrationAcl(Capability):
 _CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {
     c._capability_name: c for c in Capability.__subclasses__() if not issubclass(c, UnknownAcl)
 }
+# Give all Actions a better error message (instead of implementing __missing__ for all):
+for acl in _CAPABILITY_CLASS_BY_NAME.values():
+    if acl.Action.__members__:
+        _cls = type(next(iter(acl.Action.__members__.values())))
+        _cls.__name__ = f"{acl.__name__} {_cls.__name__}"
