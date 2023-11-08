@@ -21,6 +21,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
+    to_camel_case,
     to_snake_case,
 )
 
@@ -398,7 +399,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
             direction=data.get("direction"),  # type: ignore[arg-type]
-            connection_type=to_snake_case(data.get("connectionType")),  # type: ignore[arg-type]
+            connection_type=(connection_type := data.get("connectionType")) and to_snake_case(connection_type),  # type: ignore[arg-type]
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -412,6 +413,9 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
         if self.edge_source:
             output["edge_source"] = self.edge_source.dump(camel_case)
+
+        if self.connection_type is not None:
+            output["connection_type"] = to_camel_case(self.connection_type) if camel_case else self.connection_type
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
@@ -453,7 +457,7 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
             description=data.get("description"),
             edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
             direction=data.get("direction"),  # type: ignore[arg-type]
-            connection_type=to_snake_case(data.get("connectionType")),  # type: ignore[arg-type]
+            connection_type=(connection_type := data.get("connectionType")) and to_snake_case(connection_type),  # type: ignore[arg-type]
         )
 
     def dump(self, camel_case: bool = False) -> dict:
@@ -469,6 +473,10 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
         if self.edge_source is not None:
             output[("edgeSource" if camel_case else "edge_source")] = self.edge_source.dump(
                 camel_case, include_type=True
+            )
+        if self.connection_type is not None:
+            output[("connectionType" if camel_case else "connection_type")] = (
+                to_camel_case(self.connection_type) if camel_case else self.connection_type
             )
 
         return output
