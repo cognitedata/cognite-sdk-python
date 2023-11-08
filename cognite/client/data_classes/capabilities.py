@@ -112,11 +112,9 @@ class Capability(ABC):
     def has_capability(self, other: Capability) -> bool:
         if not isinstance(self, type(other)):
             return False
-
         if not other.scope.is_within(self.scope):
             return False
-        missing_actions = set(other.actions) - set(self.actions)
-        return not missing_actions
+        return not set(other.actions) - set(self.actions)
 
 
 class ProjectScope(ABC):
@@ -183,9 +181,6 @@ class ProjectCapability(CogniteResource):
 class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
     _RESOURCE = ProjectCapability
 
-    def includes_capability(self, capability: Capability) -> bool:
-        return any(group.capability.has_capability(capability) for group in self)
-
 
 @dataclass(frozen=True)
 class AllScope(Capability.Scope):
@@ -209,7 +204,7 @@ class IDScope(Capability.Scope):
     ids: list[int]
 
     def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or (type(self) is type(other) and set(self.ids).issubset(other.ids))
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
 
 @dataclass(frozen=True)
@@ -218,7 +213,7 @@ class ExtractionPipelineScope(Capability.Scope):
     ids: list[int]
 
     def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or (type(self) is type(other) and set(self.ids).issubset(other.ids))
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
 
 @dataclass(frozen=True)
@@ -227,7 +222,7 @@ class DataSetScope(Capability.Scope):
     ids: list[int]
 
     def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or (type(self) is type(other) and set(self.ids).issubset(other.ids))
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
 
 @dataclass
@@ -261,9 +256,7 @@ class AssetRootIDScope(Capability.Scope):
     root_ids: list[int]
 
     def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or (
-            type(self) is type(other) and set(self.root_ids).issubset(other.root_ids)
-        )
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.root_ids).issubset(other.root_ids)
 
 
 @dataclass(frozen=True)
@@ -272,8 +265,10 @@ class ExperimentsScope(Capability.Scope):
     experiments: list[str]
 
     def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or (
-            type(self) is type(other) and set(self.experiments).issubset(other.experiments)
+        return (
+            isinstance(other, AllScope)
+            or type(self) is type(other)
+            and set(self.experiments).issubset(other.experiments)
         )
 
 
@@ -283,7 +278,9 @@ class SpaceIDScope(Capability.Scope):
     space_ids: list[str]
 
     def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or (type(self) is type(other) and set(self.ids).issubset(other.ids))
+        return (
+            isinstance(other, AllScope) or type(self) is type(other) and set(self.space_ids).issubset(other.space_ids)
+        )
 
 
 @dataclass(frozen=True)
