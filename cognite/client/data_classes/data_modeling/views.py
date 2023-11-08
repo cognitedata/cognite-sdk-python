@@ -386,17 +386,19 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
     description: str | None = None
     edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
+    connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
-        output = cls(**convert_all_keys_to_snake_case(data))
-        if (type_ := data.get("type")) is not None:
-            output.type = DirectRelationReference.load(type_)
-        if (source := data.get("source")) is not None:
-            output.source = ViewId.load(source)
-        if (edge_source := data.get("edgeSource")) is not None:
-            output.edge_source = ViewId.load(edge_source)
-        return output
+        return cls(
+            type=DirectRelationReference.load(data["type"]),
+            source=ViewId.load(data["source"]),
+            name=data.get("name"),
+            description=data.get("description"),
+            edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
+            direction=data["direction"],
+            connection_type=data["connectionType"],
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
@@ -409,6 +411,9 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
         if self.edge_source:
             output["edge_source"] = self.edge_source.dump(camel_case)
+
+        if self.connection_type is not None:
+            output["connection_type"] = self.connection_type
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
@@ -439,17 +444,19 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
     description: str | None = None
     edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
+    connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
-    def load(cls, data: dict) -> SingleHopConnectionDefinitionApply:
-        output = cls(**convert_all_keys_to_snake_case(data))
-        if (type_ := data.get("type")) is not None:
-            output.type = DirectRelationReference.load(type_)
-        if (source := data.get("source")) is not None:
-            output.source = ViewId.load(source)
-        if (edge_source := data.get("edgeSource")) is not None:
-            output.edge_source = ViewId.load(edge_source)
-        return output
+    def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinitionApply:
+        return cls(
+            type=DirectRelationReference.load(data["type"]),
+            source=ViewId.load(data["source"]),
+            name=data.get("name"),
+            description=data.get("description"),
+            edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
+            direction=data["direction"],
+            connection_type=data["connectionType"],
+        )
 
     def dump(self, camel_case: bool = False) -> dict:
         output: dict[str, Any] = {
@@ -465,5 +472,7 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
             output[("edgeSource" if camel_case else "edge_source")] = self.edge_source.dump(
                 camel_case, include_type=True
             )
+        if self.connection_type is not None:
+            output[("connectionType" if camel_case else "connection_type")] = self.connection_type
 
         return output
