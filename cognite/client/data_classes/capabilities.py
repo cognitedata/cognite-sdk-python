@@ -5,10 +5,11 @@ import inspect
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -16,6 +17,9 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +62,9 @@ class Capability(ABC):
             if camel_case:
                 data = convert_all_keys_to_camel_case(data)
             return {self._scope_name: data}
+
+        def is_within(self, other: Self) -> bool:
+            raise NotImplementedError
 
     @classmethod
     def load(cls, resource: dict | str) -> Self:
@@ -102,15 +109,93 @@ class Capability(ABC):
         capability_name = self._capability_name
         return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
 
+    def has_capability(self, other: Capability) -> bool:
+        if not isinstance(self, type(other)):
+            return False
+        if not other.scope.is_within(self.scope):
+            return False
+        return not set(other.actions) - set(self.actions)
+
+
+class ProjectScope(ABC):
+    name: ClassVar[str] = "projectScope"
+
+    @classmethod
+    def load(cls, resource: dict | str) -> ProjectsScope | AllProjectsScope:
+        resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
+        ((name, data),) = resource.items()
+        if name != cls.name:
+            raise ValueError(f"Expected '{cls.name}', got '{name}'")
+
+        if "projects" in data:
+            return ProjectsScope(projects=data["projects"])
+        elif "allProjects" in data:
+            return AllProjectsScope()
+        raise ValueError(f"Unknown project scope: {data}")
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        if isinstance(self, AllProjectsScope):
+            return {self.name: {"allProjects": {}}}
+        elif isinstance(self, ProjectsScope):
+            return {self.name: {"projects": self.projects}}
+        raise ValueError(f"Unknown project scope: {self}")
+
+
+@dataclass(frozen=True)
+class AllProjectsScope(ProjectScope):
+    ...
+
+
+@dataclass(frozen=True)
+class ProjectsScope(ProjectScope):
+    projects: list[str]
+
+
+@dataclass
+class ProjectCapability(CogniteResource):
+    """This represents an capability scoped for a project(s)."""
+
+    capability: Capability
+
+    class Scope:
+        All = AllProjectsScope
+        Projects = ProjectScope
+
+    project_scope: AllProjectsScope | ProjectScope
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        capability = next(key for key in resource if key != "projectScope")
+
+        return cls(
+            capability=Capability.load({capability: resource[capability]}),
+            project_scope=ProjectScope.load({ProjectScope.name: resource[ProjectScope.name]}),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = self.capability.dump(camel_case=camel_case)
+        dumped.update(self.project_scope.dump(camel_case=camel_case))
+        return dumped
+
+
+class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
+    _RESOURCE = ProjectCapability
+
 
 @dataclass(frozen=True)
 class AllScope(Capability.Scope):
     _scope_name = "all"
 
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, AllScope)
+
 
 @dataclass(frozen=True)
 class CurrentUserScope(Capability.Scope):
     _scope_name = "currentuserscope"
+
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, (AllScope, CurrentUserScope))
 
 
 @dataclass(frozen=True)
@@ -118,17 +203,26 @@ class IDScope(Capability.Scope):
     _scope_name = "idScope"
     ids: list[int]
 
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
+
 
 @dataclass(frozen=True)
 class ExtractionPipelineScope(Capability.Scope):
     _scope_name = "extractionPipelineScope"
     ids: list[int]
 
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
+
 
 @dataclass(frozen=True)
 class DataSetScope(Capability.Scope):
     _scope_name = "datasetScope"
     ids: list[int]
+
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
 
 @dataclass
@@ -142,11 +236,27 @@ class TableScope(Capability.Scope):
     _scope_name = "tableScope"
     dbs_to_tables: dict[str, DatabaseTableScope]
 
+    def is_within(self, other: Self) -> bool:
+        if isinstance(other, AllScope):
+            return True
+        if not isinstance(other, TableScope):
+            return False
+
+        for db in self.dbs_to_tables.values():
+            if db.database_name not in other.dbs_to_tables:
+                return False
+            if not set(db.table_names).issubset(other.dbs_to_tables[db.database_name].table_names):
+                return False
+        return True
+
 
 @dataclass(frozen=True)
 class AssetRootIDScope(Capability.Scope):
     _scope_name = "assetRootIdScope"
     root_ids: list[int]
+
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.root_ids).issubset(other.root_ids)
 
 
 @dataclass(frozen=True)
@@ -154,11 +264,23 @@ class ExperimentsScope(Capability.Scope):
     _scope_name = "experimentscope"
     experiments: list[str]
 
+    def is_within(self, other: Self) -> bool:
+        return (
+            isinstance(other, AllScope)
+            or type(self) is type(other)
+            and set(self.experiments).issubset(other.experiments)
+        )
+
 
 @dataclass(frozen=True)
 class SpaceIDScope(Capability.Scope):
     _scope_name = "spaceIdScope"
     space_ids: list[str]
+
+    def is_within(self, other: Self) -> bool:
+        return (
+            isinstance(other, AllScope) or type(self) is type(other) and set(self.space_ids).issubset(other.space_ids)
+        )
 
 
 @dataclass(frozen=True)
@@ -173,6 +295,9 @@ class UnknownScope(Capability.Scope):
 
     def __getitem__(self, item: str) -> Any:
         return self.data[item]
+
+    def is_within(self, other: Self) -> bool:
+        raise NotImplementedError("Unknown scopes cannot be compared")
 
 
 _SCOPE_CLASS_BY_NAME: dict[str, type[Capability.Scope]] = {
