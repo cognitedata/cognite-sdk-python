@@ -858,8 +858,8 @@ class SequencesDataAPI(APIClient):
         | dict[int, typing.Sequence[int | float | str]]
         | typing.Sequence[tuple[int, typing.Sequence[int | float | str]]]
         | typing.Sequence[dict[str, Any]],
-        columns: SequenceNotStr[str] | None,
-        column_external_ids: SequenceNotStr[str] | None,
+        columns: SequenceNotStr[str] | None = None,
+        column_external_ids: SequenceNotStr[str] | None = None,
         id: int | None = None,
         external_id: str | None = None,
     ) -> None:
