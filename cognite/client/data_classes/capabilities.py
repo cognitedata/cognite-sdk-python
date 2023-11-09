@@ -7,6 +7,7 @@ from abc import ABC
 from dataclasses import asdict, dataclass, field
 from itertools import groupby, product
 from operator import itemgetter
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
@@ -31,6 +32,22 @@ class Capability(ABC):
     _capability_name: ClassVar[str]
     actions: Sequence[Action]
     scope: Scope
+
+    def __post_init__(self) -> None:
+        if (capability_cls := type(self)) is UnknownAcl:
+            return
+        acl = capability_cls.__name__
+        if bad_actions := [a for a in self.actions if a not in capability_cls.Action]:
+            raise ValueError(
+                f"{acl} got an unknown action: {bad_actions}, expected one of: {list(capability_cls.Action)}. "
+                f"Example usage: AssetsAcl(actions=[AssetsAcl.Action.Read], scope=AssetsAcl.Scope.All())"
+            )
+        allowed_scopes = _VALID_SCOPES_BY_CAPABILITY[capability_cls]
+        if allowed_scopes and type(self.scope) not in allowed_scopes:
+            raise ValueError(
+                f"{acl} got an unknown scope: {self.scope}, expected one of: {[s.__name__ for s in allowed_scopes]}. "
+                f"Example usage: AssetsAcl(actions=[AssetsAcl.Action.Read], scope=AssetsAcl.Scope.All())"
+            )
 
     class Action(enum.Enum):
         ...
@@ -1150,3 +1167,8 @@ for acl in _CAPABILITY_CLASS_BY_NAME.values():
     if acl.Action.__members__:
         _cls = type(next(iter(acl.Action.__members__.values())))
         _cls.__name__ = f"{acl.__name__} {_cls.__name__}"
+
+# Add lookup that knows which acls support which scopes:
+_VALID_SCOPES_BY_CAPABILITY: MappingProxyType[type[Capability], frozenset[type[Capability.Scope]]] = MappingProxyType(
+    {acl: frozenset(filter(inspect.isclass, vars(acl.Scope).values())) for acl in _CAPABILITY_CLASS_BY_NAME.values()}
+)
