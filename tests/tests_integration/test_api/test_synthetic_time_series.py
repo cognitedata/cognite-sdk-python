@@ -86,7 +86,7 @@ class TestSyntheticDatapointsAPI:
         )
         assert 100 == len(dps1)
         assert 100 == len(dps2[0])
-        assert dps1 == dps2[0]
+        assert dps1 == dps2.get(external_id="a")
         assert isinstance(dps1, Datapoints)
         assert isinstance(dps2, DatapointsList)
 
