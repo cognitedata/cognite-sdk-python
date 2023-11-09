@@ -5,9 +5,9 @@ from typing import Any
 import pytest
 
 from cognite.client.data_classes.capabilities import (
+    AllProjectsScope,
     AllScope,
     Capability,
-    DatabaseTableScope,
     EventsAcl,
     ProjectCapabilitiesList,
     ProjectCapability,
@@ -215,7 +215,22 @@ class TestCapabilities:
             Capability.load(dumped)
 
 
+@pytest.fixture
+def proj_cap_allprojects():
+    return {
+        "labelsAcl": {"actions": ["READ"], "scope": {"all": {}}},
+        "projectScope": {"allProjects": {}},
+    }
+
+
 class TestProjectCapabilitiesList:
+    def test_project_scope_is_all_projects(self, proj_cap_allprojects):
+        loaded = ProjectCapability.load(proj_cap_allprojects.copy())
+        assert type(loaded.project_scope) is AllProjectsScope
+
+        loaded = ProjectCapabilitiesList.load([proj_cap_allprojects])
+        assert type(loaded[0].project_scope) is AllProjectsScope
+
     @pytest.mark.parametrize(
         "capabilities, capability, expected",
         [
@@ -275,17 +290,13 @@ class TestProjectCapabilitiesList:
                         ProjectCapability(
                             capability=RawAcl(
                                 [RawAcl.Action.Read],
-                                scope=RawAcl.Scope.Table(
-                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
-                                ),
+                                scope=RawAcl.Scope.Table({"my_db": ["my_table", "my_other_table"]}),
                             ),
                             project_scope=ProjectCapability.Scope.All(),
                         )
                     ]
                 ),
-                RawAcl(
-                    [RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": DatabaseTableScope("my_db", ["my_table"])})
-                ),
+                RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["my_table"]})),
                 True,
             ),
             (
@@ -294,9 +305,7 @@ class TestProjectCapabilitiesList:
                         ProjectCapability(
                             capability=RawAcl(
                                 [RawAcl.Action.Read],
-                                scope=RawAcl.Scope.Table(
-                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
-                                ),
+                                scope=RawAcl.Scope.Table({"my_db": ["my_table", "my_other_table"]}),
                             ),
                             project_scope=ProjectCapability.Scope.All(),
                         )
@@ -304,7 +313,7 @@ class TestProjectCapabilitiesList:
                 ),
                 RawAcl(
                     [RawAcl.Action.Read],
-                    scope=RawAcl.Scope.Table({"my_db": DatabaseTableScope("my_db", ["unknown_table"])}),
+                    scope=RawAcl.Scope.Table({"my_db": ["unknown_table"]}),
                 ),
                 False,
             ),
@@ -314,9 +323,7 @@ class TestProjectCapabilitiesList:
                         ProjectCapability(
                             capability=RawAcl(
                                 [RawAcl.Action.Read],
-                                scope=RawAcl.Scope.Table(
-                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
-                                ),
+                                scope=RawAcl.Scope.Table({"my_db": ["my_table", "my_other_table"]}),
                             ),
                             project_scope=ProjectCapability.Scope.All(),
                         )
@@ -324,7 +331,7 @@ class TestProjectCapabilitiesList:
                 ),
                 RawAcl(
                     [RawAcl.Action.Read],
-                    scope=RawAcl.Scope.Table({"unknown_db": DatabaseTableScope("unknown_db", ["my_table"])}),
+                    scope=RawAcl.Scope.Table({"unknown_db": ["my_table"]}),
                 ),
                 False,
             ),
