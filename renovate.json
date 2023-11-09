@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "local>cognitedata/renovate-config-public",
+    ":automergeMinor"
   ],
   "packageRules": [
     {
@@ -12,5 +13,9 @@
   ],
   "vulnerabilityAlerts": {
     "enabled": true
-  }
+  },
+  "labels": [
+    "dependencies",
+    "auto-merge"
+  ]
 }
