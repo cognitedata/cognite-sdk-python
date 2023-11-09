@@ -69,7 +69,7 @@ class ContainerCore(DataModelingResource):
             resource["properties"] = {k: ContainerProperty.load(v) for k, v in resource["properties"].items()} or None
         return super()._load(resource, cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.constraints:
             output["constraints"] = {k: v.dump(camel_case) for k, v in self.constraints.items()}
@@ -236,7 +236,7 @@ class ContainerProperty:
             description=data.get("description"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         output: dict[str, str | dict] = {}
         if self.type:
             output["type"] = self.type.dump(camel_case)
@@ -257,7 +257,7 @@ class Constraint(ABC):
         raise ValueError(f"Invalid constraint type {data['constraintType']}")
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         raise NotImplementedError
 
 
@@ -269,7 +269,7 @@ class RequiresConstraint(Constraint):
     def load(cls, data: dict) -> RequiresConstraint:
         return cls(require=ContainerId.load(data["require"]))
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         as_dict = asdict(self)
         output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         if "require" in output and isinstance(output["require"], dict):
@@ -287,7 +287,7 @@ class UniquenessConstraint(Constraint):
     def load(cls, data: dict) -> UniquenessConstraint:
         return cls(properties=data["properties"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         as_dict = asdict(self)
         output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         key = "constraintType" if camel_case else "constraint_type"
@@ -306,7 +306,7 @@ class Index(ABC):
         raise ValueError(f"Invalid index type {data['indexType']}")
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         raise NotImplementedError
 
 
@@ -319,7 +319,7 @@ class BTreeIndex(Index):
     def load(cls, data: dict[str, Any]) -> BTreeIndex:
         return cls(properties=data["properties"], cursorable=data.get("cursorable"))  # type: ignore[arg-type]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         if self.cursorable is not None:
             dumped["cursorable"] = self.cursorable
@@ -335,7 +335,7 @@ class InvertedIndex(Index):
     def load(cls, data: dict[str, Any]) -> InvertedIndex:
         return cls(properties=data["properties"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         dumped["indexType" if camel_case else "index_type"] = "inverted"
         return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped

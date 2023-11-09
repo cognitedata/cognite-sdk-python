@@ -123,7 +123,7 @@ class ExtractionPipeline(CogniteResource):
             ]
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.contacts:
             result["contacts"] = [contact.dump(camel_case) for contact in self.contacts]
@@ -263,7 +263,7 @@ class ExtractionPipelineRun(CogniteResource):
             obj.extpipe_external_id = resource.get("externalId")
         return obj
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dct = super().dump(camel_case=camel_case)
         # Note: No way to make this id/xid API mixup completely correct. Either:
         # 1. We use id / external_id for respectively "self id" / "ext.pipe external id"

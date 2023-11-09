@@ -151,7 +151,7 @@ class GeoLocation(CogniteObject):
             properties=resource.get("properties"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.geometry:
             result["geometry"] = self.geometry.dump(camel_case)
@@ -174,7 +174,7 @@ class GeoLocationFilter(CogniteObject):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocationFilter:
         return cls(relation=resource["relation"], shape=resource["shape"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if isinstance(self.shape, GeometryFilter):
             dumped["shape"] = self.shape.dump(camel_case)

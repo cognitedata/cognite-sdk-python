@@ -137,7 +137,7 @@ class LabelFilter(CogniteFilter):
             contains_all=(all_ := label_filter.get("containsAll")) and [item["externalId"] for item in all_],
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {}
         if self.contains_any:
             dumped["containsAny"] = [

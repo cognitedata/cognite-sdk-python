@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from decimal import Decimal
+from inspect import signature
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -145,16 +146,16 @@ def cognite_mock_client() -> CogniteClientMock:
 class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
-        "cognite_resource_subclass",
+        "cognite_object_subclass",
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
             for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
-    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+    def test_json_serialize(self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=42, cognite_client=cognite_mock_client_placeholder
-        ).create_instance(cognite_resource_subclass)
+        ).create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
@@ -164,16 +165,16 @@ class TestCogniteObject:
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
-        "cognite_resource_subclass",
+        "cognite_object_subclass",
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
             for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
-    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+    def test_yaml_serialize(self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=66, cognite_client=cognite_mock_client_placeholder
-        ).create_instance(cognite_resource_subclass)
+        ).create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
@@ -183,25 +184,23 @@ class TestCogniteObject:
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
-        "cognite_resource_subclass",
+        "cognite_object_subclass",
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
             for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
-    def test_dump_default_came_case_false(
-        self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder
+    def test_dump_default_camel_case_false(
+        self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder
     ):
-        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client_placeholder).create_instance(
-            cognite_resource_subclass
-        )
-
-        assert instance.dump() == instance.dump(camel_case=False)
+        # This test ensures all camel_case args default to False
+        parameters = signature(cognite_object_subclass.dump).parameters
+        assert parameters["camel_case"].default is True
 
 
 class TestCogniteResource:
     def test_dump(self):
-        assert {"var_a": 1} == MyResource(1).dump()
+        assert {"varA": 1} == MyResource(1).dump()
         assert {"var_a": 1} == MyResource(1).dump(camel_case=False)
 
     def test_dump_camel_case(self):
@@ -210,13 +209,17 @@ class TestCogniteResource:
     def test_load(self):
         assert MyResource(1).dump() == MyResource.load({"varA": 1}).dump()
         assert MyResource().dump() == MyResource.load({"var_a": 1, "var_b": 2}).dump()
-        assert {"var_a": 1} == MyResource.load({"varA": 1, "varC": 1}).dump()
+        assert {"varA": 1} == MyResource.load({"varA": 1, "varC": 1}).dump()
 
     def test_load_unknown_attribute(self):
-        assert {"var_a": 1, "var_b": 2} == MyResource.load({"varA": 1, "varB": 2, "varC": 3}).dump()
+        assert {"varA": 1, "varB": 2} == MyResource.load({"varA": 1, "varB": 2, "varC": 3}).dump()
+        assert {"var_a": 1, "var_b": 2} == MyResource.load({"varA": 1, "varB": 2, "varC": 3}).dump(camel_case=False)
 
     def test_load_object_attr(self):
-        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource.load({"varA": 1, "varB": {"camelCase": 1}}).dump()
+        assert {"varA": 1, "varB": {"camelCase": 1}} == MyResource.load({"varA": 1, "varB": {"camelCase": 1}}).dump()
+        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource.load({"varA": 1, "varB": {"camelCase": 1}}).dump(
+            camel_case=False
+        )
 
     def test_eq(self):
         assert MyResource(1, "s") == MyResource(1, "s")
@@ -323,21 +326,17 @@ class TestCogniteResource:
             for class_ in all_concrete_subclasses(CogniteResource)
         ],
     )
-    def test_dump_default_came_case_false(
-        self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder
-    ):
-        instance = FakeCogniteResourceGenerator(seed=7, cognite_client=cognite_mock_client_placeholder).create_instance(
-            cognite_resource_subclass
-        )
-
-        assert instance.dump() == instance.dump(camel_case=False)
+    def test_dump_default_camel_case_false(self, cognite_resource_subclass: type[CogniteResource]):
+        # This test ensures all camel_case args default to False
+        parameters = signature(cognite_resource_subclass.dump).parameters
+        assert parameters["camel_case"].default is True
 
 
 class TestCogniteResourceList:
     def test_dump(self):
-        assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}] == MyResourceList(
-            [MyResource(1, 2), MyResource(2, 3)]
-        ).dump()
+        res_lst = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
+        assert [{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}] == res_lst.dump()
+        assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}] == res_lst.dump(camel_case=False)
 
     @pytest.mark.dsl
     def test_to_pandas(self):
@@ -400,11 +399,18 @@ class TestCogniteResourceList:
     def test_load(self):
         resource_list = MyResourceList.load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
 
-        assert {"var_a": 1, "var_b": 2} == resource_list[0].dump()
-        assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
+        assert {"varA": 1, "varB": 2} == resource_list[0].dump()
+        assert {"var_a": 1, "var_b": 2} == resource_list[0].dump(camel_case=False)
+        assert [{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}] == resource_list.dump()
+        assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump(
+            camel_case=False
+        )
 
     def test_load_unknown_attribute(self):
-        assert [{"var_a": 1, "var_b": 2}] == MyResourceList.load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
+        assert [{"varA": 1, "varB": 2}] == MyResourceList.load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
+        assert [{"var_a": 1, "var_b": 2}] == MyResourceList.load([{"varA": 1, "varB": 2, "varC": 3}]).dump(
+            camel_case=False
+        )
 
     def test_indexing(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
@@ -537,8 +543,9 @@ class TestCogniteResourceList:
 
 class TestCogniteFilter:
     def test_dump(self):
-        assert MyFilter(1, 2).dump() == {"var_a": 1, "var_b": 2}
+        assert MyFilter(1, 2).dump() == {"varA": 1, "varB": 2}
         assert MyFilter(1, 2).dump(camel_case=True) == {"varA": 1, "varB": 2}
+        assert MyFilter(1, 2).dump(camel_case=False) == {"var_a": 1, "var_b": 2}
 
     def test_eq(self):
         assert MyFilter(1, 2) == MyFilter(1, 2)
@@ -659,16 +666,19 @@ class TestCogniteResponse:
             MyResponse.load({"varA": 1})
 
     def test_dump(self):
-        assert {"var_a": 1} == MyResponse(1).dump()
+        assert {"varA": 1} == MyResponse(1).dump()
         assert {"varA": 1} == MyResponse(1).dump(camel_case=True)
+        assert {"var_a": 1} == MyResponse(1).dump(camel_case=False)
         assert {} == MyResponse().dump()
 
     def test_str(self):
-        assert json.dumps(MyResponse(1).dump(), indent=4, sort_keys=True) == str(MyResponse(1))
-        assert json.dumps(MyResponse(1.0).dump(), indent=4, sort_keys=True) == str(MyResponse(Decimal(1)))
+        assert json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == str(MyResponse(1))
+        assert json.dumps(MyResponse(1.0).dump(camel_case=False), indent=4, sort_keys=True) == str(
+            MyResponse(Decimal(1))
+        )
 
     def test_repr(self):
-        assert json.dumps(MyResponse(1).dump(), indent=4, sort_keys=True) == repr(MyResponse(1))
+        assert json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == repr(MyResponse(1))
 
     def test_eq(self):
         assert MyResponse(1) == MyResponse(1)

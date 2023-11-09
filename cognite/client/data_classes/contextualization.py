@@ -873,7 +873,7 @@ class VisionExtractItem(CogniteResource):
             extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)
         return extracted_item
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item_dump = super().dump(camel_case=camel_case)
         # Replace the loaded VisionExtractPredictions with its corresponding dict representation
         if "predictions" in item_dump and isinstance(self._predictions_dict, dict):
