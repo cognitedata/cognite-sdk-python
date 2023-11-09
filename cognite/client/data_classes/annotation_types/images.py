@@ -56,7 +56,7 @@ class ObjectDetection(VisionResource):
             polyline=load_resource(resource, Polyline, "polyline"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.attributes is not None:
             dumped["attributes"] = {k: v.dump(camel_case=camel_case) for k, v in self.attributes.items()}
@@ -127,7 +127,7 @@ class KeypointCollection(VisionResource):
             confidence=resource.get("confidence"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.attributes is not None:
             dumped["attributes"] = {k: v.dump(camel_case=camel_case) for k, v in self.attributes.items()}
@@ -154,7 +154,7 @@ class KeypointCollectionWithObjectDetection(VisionResource):
             keypoint_collection=KeypointCollection._load(resource["keypointCollection"], cognite_client),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.object_detection is not None:
             dumped["objectDetection"] = self.object_detection.dump(camel_case=camel_case)

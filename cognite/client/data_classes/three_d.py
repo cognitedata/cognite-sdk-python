@@ -199,7 +199,7 @@ class ThreeDModelRevision(CogniteResource):
             instance.camera = RevisionCameraProperties._load(instance.camera)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.camera, RevisionCameraProperties):
             result["camera"] = self.camera.dump(camel_case=camel_case)
@@ -328,7 +328,7 @@ class ThreeDNode(CogniteResource):
             instance.bounding_box = BoundingBox3D._load(instance.bounding_box)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.bounding_box, BoundingBox3D):
             result["boundingBox" if camel_case else "bounding_box"] = self.bounding_box.dump(camel_case=camel_case)

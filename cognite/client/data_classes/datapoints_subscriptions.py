@@ -70,7 +70,7 @@ class DatapointSubscriptionCore(CogniteResource):
         resource = convert_all_keys_to_snake_case(resource)
         return cls(**resource)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case)
         if "filter" in data:
             data["filter"] = data["filter"].dump()
@@ -208,7 +208,7 @@ class TimeSeriesID(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
         return cls(id=resource["id"], external_id=resource.get("externalId"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {"id": self.id}
         if self.external_id is not None:
             resource["externalId" if camel_case else "external_id"] = self.external_id
@@ -224,7 +224,7 @@ class DataDeletion:
     def load(cls, data: dict[str, Any]) -> DataDeletion:
         return cls(inclusive_begin=data["inclusiveBegin"], exclusive_end=data.get("exclusiveEnd"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {("inclusiveBegin" if camel_case else "inclusive_begin"): self.inclusive_begin}
         if self.exclusive_end is not None:
             resource["exclusiveEnd" if camel_case else "exclusive_end"] = self.exclusive_end
@@ -256,7 +256,7 @@ class DatapointsUpdate:
             **datapoints,
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {("timeSeries" if camel_case else "time_series"): self.time_series.dump(camel_case)}
         if self.upserts is not None:
             resource["upserts"] = self.upserts.dump(camel_case)
@@ -277,7 +277,7 @@ class SubscriptionTimeSeriesUpdate:
             removed=[TimeSeriesID._load(added) for added in data.get("removed", [])],
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {}
         resource["added"] = [id_.dump() for id_ in self.added]
         resource["removed"] = [id_.dump() for id_ in self.removed]
@@ -303,7 +303,7 @@ class DatapointSubscriptionPartition:
     def load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
         return cls(index=data["index"], cursor=data.get("cursor") or data.get("nextCursor"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"index": self.index}
         if self.cursor is not None:
             output["cursor"] = self.cursor
@@ -343,7 +343,7 @@ class _DatapointSubscriptionBatchWithPartitions:
             subscription_changes=SubscriptionTimeSeriesUpdate.load(resource.get("subscriptionChanges", [])),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {
             "updates": [u.dump(camel_case) for u in self.updates],
             "partitions": [p.dump(camel_case) for p in self.partitions],

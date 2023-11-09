@@ -58,7 +58,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 
 class CogniteResponse:
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -67,7 +67,7 @@ class CogniteResponse:
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and other.dump() == self.dump()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -126,10 +126,10 @@ class CogniteObject:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -273,7 +273,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
@@ -286,7 +286,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
-    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -548,13 +548,13 @@ class CogniteFilter:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -654,7 +654,7 @@ class Geometry(CogniteObject):
             geometries=raw_geometry.get("geometries"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.geometries:
             dumped["geometries"] = [g.dump(camel_case) for g in self.geometries]
@@ -676,7 +676,7 @@ class CogniteSort:
         self.nulls = nulls
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=json_dump_default, indent=4)
+        return json.dumps(self.dump(camel_case=False), default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -712,7 +712,7 @@ class CogniteSort:
         else:
             raise ValueError(f"Unable to load {cls.__name__} from {data}")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         prop = self.property
         if isinstance(prop, EnumProperty):
             prop = prop.as_reference()

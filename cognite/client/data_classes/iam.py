@@ -61,7 +61,7 @@ class Group(CogniteResource):
             cognite_client=cognite_client,
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.capabilities is not None:
             dumped["capabilities"] = [c.dump(camel_case=camel_case) for c in self.capabilities]
@@ -166,7 +166,7 @@ class TokenInspection(CogniteResponse):
             capabilities=ProjectCapabilitiesList.load(api_response["capabilities"]),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "subject": self.subject,
             "projects": [p.dump(camel_case=camel_case) for p in self.projects],
@@ -257,7 +257,7 @@ class ClientCredentials(CogniteResource):
         self.client_id = client_id
         self.client_secret = client_secret
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "clientId" if camel_case else "client_id": self.client_id,
             "clientSecret" if camel_case else "client_secret": self.client_secret,

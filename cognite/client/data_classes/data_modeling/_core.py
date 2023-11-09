@@ -67,5 +67,5 @@ class DataModelingSort:
 
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_instance_dump(self, camel_case=camel_case)

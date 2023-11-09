@@ -26,7 +26,7 @@ class DataModelingId(AbstractDataclass):
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
 
-    def dump(self, camel_case: bool = False, include_type: bool = True) -> dict[str, str]:
+    def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_type:
             output["type"] = self._type
@@ -56,7 +56,7 @@ class VersionedDataModelingId(AbstractDataclass):
     def as_tuple(self) -> tuple[str, str, str | None]:
         return self.space, self.external_id, self.version
 
-    def dump(self, camel_case: bool = False, include_type: bool = True) -> dict[str, str]:
+    def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_type:
             output["type"] = self._type
@@ -85,7 +85,7 @@ class InstanceId:
     space: str
     external_id: str
 
-    def dump(self, camel_case: bool = False, include_instance_type: bool = True) -> dict[str, str]:
+    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_instance_type:
             output["instanceType" if camel_case else "instance_type"] = self._instance_type

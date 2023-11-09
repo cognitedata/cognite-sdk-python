@@ -69,7 +69,7 @@ class Aggregation(ABC):
             return Histogram(**body)
         raise ValueError(f"Unknown aggregation: {aggregation_name}")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {self._aggregation_name: {"property": self.property}}
         if camel_case:
             output = convert_all_keys_recursive(output)
@@ -118,7 +118,7 @@ class Histogram(Aggregation):
 
     interval: float
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output[self._aggregation_name]["interval"] = self.interval
         return output
@@ -157,7 +157,7 @@ class AggregatedValue(ABC):
             raise ValueError(f"Unknown aggregation: {aggregate}")
         return cast(T_AggregatedValue, deserialized)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {"aggregate": self._aggregate, "property": self.property}
         if camel_case:
             output = convert_all_keys_recursive(output)
@@ -170,7 +170,7 @@ class AggregatedNumberedValue(AggregatedValue, ABC):
 
     value: float
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["value"] = self.value
         return output
@@ -212,7 +212,7 @@ class Bucket:
     start: float
     count: int
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"start": self.start, "count": self.count}
 
 
@@ -220,7 +220,7 @@ class Buckets(UserList):
     def __init__(self, items: Collection[Any]) -> None:
         super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
 
-    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
         return [bucket.dump(camel_case) for bucket in self.data]
 
     @property
@@ -264,7 +264,7 @@ class HistogramValue(AggregatedValue):
         if isinstance(self.buckets, Collection):
             self.buckets = Buckets(self.buckets)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["interval"] = self.interval
         output["buckets"] = self.buckets.dump(camel_case)

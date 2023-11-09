@@ -80,7 +80,7 @@ class Annotation(CogniteResource):
         annotation._cognite_client = cast("CogniteClient", cognite_client)
         return annotation
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         # Special handling of created_user, which has a valid None value
         key = "creatingUser" if camel_case else "creating_user"
@@ -119,7 +119,7 @@ class AnnotationReverseLookupFilter(CogniteFilter):
         self.annotation_type = annotation_type
         self.data = data
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         # Special handling for creating_user, which has a valid None value
         key = "creatingUser" if camel_case else "creating_user"
