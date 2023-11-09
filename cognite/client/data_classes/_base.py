@@ -58,7 +58,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 
 class CogniteResponse:
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -126,7 +126,7 @@ class CogniteObject:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -273,7 +273,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
@@ -548,7 +548,7 @@ class CogniteFilter:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_and_isoformat_time_attrs(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -676,7 +676,7 @@ class CogniteSort:
         self.nulls = nulls
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=json_dump_default, indent=4)
+        return json.dumps(self.dump(camel_case=False), default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
