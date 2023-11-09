@@ -302,6 +302,9 @@ class IDScope(Capability.Scope):
     _scope_name = "idScope"
     ids: list[int]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
+
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.ids}
 
@@ -314,6 +317,9 @@ class ExtractionPipelineScope(Capability.Scope):
     _scope_name = "extractionPipelineScope"
     ids: list[int]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
+
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.ids}
 
@@ -325,6 +331,9 @@ class ExtractionPipelineScope(Capability.Scope):
 class DataSetScope(Capability.Scope):
     _scope_name = "datasetScope"
     ids: list[int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.ids}
@@ -370,6 +379,9 @@ class TableScope(Capability.Scope):
 class AssetRootIDScope(Capability.Scope):
     _scope_name = "assetRootIdScope"
     root_ids: list[int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "root_ids", [int(i) for i in self.root_ids])
 
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.root_ids}

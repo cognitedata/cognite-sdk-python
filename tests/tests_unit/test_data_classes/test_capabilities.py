@@ -237,7 +237,7 @@ def proj_capabs_list(project_name):
                 project_scope=ProjectCapability.Scope.All(),
             ),
             ProjectCapability(
-                capability=EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([1, 2])),
+                capability=EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet(["1", 2])),
                 project_scope=ProjectCapability.Scope.Projects([project_name]),
             ),
             ProjectCapability(
@@ -262,7 +262,7 @@ class TestProjectCapabilitiesList:
         "capability",
         [
             EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
-            EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([1, 2])),
+            EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([1, "2"])),
             RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["my_table"]})),
         ],
     )
@@ -275,6 +275,7 @@ class TestProjectCapabilitiesList:
         "capability",
         [
             EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.All()),
+            EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet(["3"])),
             EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([3])),
             RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["unknown_table"]})),
             RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"unknown_db": ["my_table"]})),
