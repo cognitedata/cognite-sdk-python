@@ -83,7 +83,7 @@ class DataSetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.created_time and isinstance(self.created_time, TimestampRange):
             dumped["createdTime"] = self.created_time.dump(camel_case=camel_case)

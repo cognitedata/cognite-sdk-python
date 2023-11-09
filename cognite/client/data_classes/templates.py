@@ -235,7 +235,7 @@ class TemplateInstance(CogniteResource):
         "view": ViewResolver,
     }
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -367,7 +367,7 @@ class View(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -408,7 +408,7 @@ class ViewResolveItem(UserDict, CogniteResource):
         super().__init__(data)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return self.data
 
     @classmethod
@@ -441,7 +441,7 @@ class GraphQlResponse(CogniteResource):
         self.errors = errors
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.errors:
             output["errors"] = [error.dump(camel_case) for error in self.errors]

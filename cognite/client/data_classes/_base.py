@@ -67,7 +67,7 @@ class CogniteResponse:
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and other.dump() == self.dump()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -129,7 +129,7 @@ class CogniteObject:
         item = convert_and_isoformat_time_attrs(self.dump())
         return json.dumps(item, default=json_dump_default, indent=4)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -286,7 +286,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
-    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -554,7 +554,7 @@ class CogniteFilter:
     def __repr__(self) -> str:
         return str(self)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -654,7 +654,7 @@ class Geometry(CogniteObject):
             geometries=raw_geometry.get("geometries"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.geometries:
             dumped["geometries"] = [g.dump(camel_case) for g in self.geometries]
@@ -712,7 +712,7 @@ class CogniteSort:
         else:
             raise ValueError(f"Unable to load {cls.__name__} from {data}")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         prop = self.property
         if isinstance(prop, EnumProperty):
             prop = prop.as_reference()
