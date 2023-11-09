@@ -267,6 +267,7 @@ class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
             and write events scoped to a specific dataset with id=123:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
                 >>> capabilities = client.iam.token.inspect().capabilities
                 >>> capabilities.compare([
