@@ -243,3 +243,7 @@ def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -
 
 def unpack_items_in_payload(payload: dict[str, dict[str, Any]]) -> list:
     return payload["json"]["items"]
+
+
+def combine_sets(*sets: set[T] | frozenset[T]) -> set[T]:
+    return set().union(*sets)

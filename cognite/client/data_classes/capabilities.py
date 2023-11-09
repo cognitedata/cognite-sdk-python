@@ -5,12 +5,14 @@ import inspect
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
+from itertools import groupby, product
+from operator import itemgetter
 from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
+from cognite.client.utils._auxiliary import combine_sets, load_yaml_or_json, rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -62,6 +64,10 @@ class Capability(ABC):
             if camel_case:
                 data = convert_all_keys_to_camel_case(data)
             return {self._scope_name: data}
+
+        def as_tuples(self) -> set[tuple]:
+            # Basic implementation for all simple Scopes (e.g. all or currentuser)
+            return {(self._scope_name,)}
 
         def is_within(self, other: Self) -> bool:
             raise NotImplementedError
@@ -115,6 +121,14 @@ class Capability(ABC):
         if not other.scope.is_within(self.scope):
             return False
         return not set(other.actions) - set(self.actions)
+
+    def as_tuples(self) -> set[tuple]:
+        return set(
+            (acl, action, *scope_tpl)
+            for acl, action, scope_tpl in product(
+                [self._capability_name], [action.value for action in self.actions], self.scope.as_tuples()
+            )
+        )
 
 
 class ProjectScope(ABC):
@@ -179,6 +193,30 @@ class ProjectCapability(CogniteResource):
 class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
     _RESOURCE = ProjectCapability
 
+    def compare(
+        self, capabilities: list[Capability], project: str | None = None, treat_allscope_as_specific: bool = False
+    ) -> set[Capability]:
+        if project is None:
+            project = self._cognite_client.config.project
+
+        existing_caps = combine_sets(*(c.capability.as_tuples() for c in self if project in c.project_scope.projects))
+        to_check = combine_sets(*(c.as_tuples() for c in capabilities))
+        missing = to_check - existing_caps
+
+        if not treat_allscope_as_specific:
+            return missing
+
+        existing_caps_grp = {k: set(grp) for k, grp in groupby(sorted(existing_caps), key=itemgetter(slice(2)))}
+        to_check_grp = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
+
+        missing.clear()
+        for key, check_grp in to_check_grp.items():
+            existing_grp = existing_caps_grp.get(key, set())
+            # If allScope exists for capability, we skip the missing:
+            if not any(g[2] == "all" for g in existing_grp):
+                missing.update(check_grp)
+        return missing
+
 
 @dataclass(frozen=True)
 class AllScope(Capability.Scope):
@@ -201,6 +239,9 @@ class IDScope(Capability.Scope):
     _scope_name = "idScope"
     ids: list[int]
 
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
+
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
@@ -210,6 +251,9 @@ class ExtractionPipelineScope(Capability.Scope):
     _scope_name = "extractionPipelineScope"
     ids: list[int]
 
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
+
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
@@ -218,6 +262,9 @@ class ExtractionPipelineScope(Capability.Scope):
 class DataSetScope(Capability.Scope):
     _scope_name = "datasetScope"
     ids: list[int]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
 
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
@@ -239,6 +286,9 @@ class TableScope(Capability.Scope):
         # TableScope is frozen, so a bit awkward to set attribute:
         object.__setattr__(self, "dbs_to_tables", loaded)
 
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables}
+
     def is_within(self, other: Self) -> bool:
         if isinstance(other, AllScope):
             return True
@@ -258,6 +308,9 @@ class AssetRootIDScope(Capability.Scope):
     _scope_name = "assetRootIdScope"
     root_ids: list[int]
 
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.root_ids}
+
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.root_ids).issubset(other.root_ids)
 
@@ -266,6 +319,9 @@ class AssetRootIDScope(Capability.Scope):
 class ExperimentsScope(Capability.Scope):
     _scope_name = "experimentscope"
     experiments: list[str]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, s) for s in self.experiments}
 
     def is_within(self, other: Self) -> bool:
         return (
@@ -279,6 +335,9 @@ class ExperimentsScope(Capability.Scope):
 class SpaceIDScope(Capability.Scope):
     _scope_name = "spaceIdScope"
     space_ids: list[str]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, s) for s in self.space_ids}
 
     def is_within(self, other: Self) -> bool:
         return (
@@ -298,6 +357,9 @@ class UnknownScope(Capability.Scope):
 
     def __getitem__(self, item: str) -> Any:
         return self.data[item]
+
+    def as_tuples(self) -> set[tuple]:
+        raise NotImplementedError("Unknown scope cannot be converted to tuples (needed for comparisons)")
 
     def is_within(self, other: Self) -> bool:
         raise NotImplementedError("Unknown scope cannot be compared")
