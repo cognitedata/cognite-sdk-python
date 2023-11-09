@@ -82,7 +82,7 @@ class Capability(ABC):
             scope = scope_cls()
         elif len(scope_params) == 1:
             scope = scope_cls(scope_params)  # type: ignore [call-arg]
-        elif len(scope_params) == 2 and scope_name == TableScope._scope_name:
+        elif len(scope_params) == 2 and scope_cls is TableScope:
             db, tbl = scope_params
             scope = scope_cls({db: [tbl]})  # type: ignore [call-arg]
         else:
