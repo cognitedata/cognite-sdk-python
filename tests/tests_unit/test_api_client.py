@@ -865,7 +865,7 @@ class TestStandardDelete:
                 )
 
         unittest.TestCase().assertCountEqual([{"id": 1}, {"id": 3}], e.value.not_found)
-        assert [1, 2, 3] == e.value.failed
+        assert [1, 2, 3] == sorted(e.value.failed)
 
     def test_over_limit_concurrent(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
