@@ -54,7 +54,7 @@ class Capability(ABC):
                     return cast(Self, scope_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
             return cast(Self, UnknownScope(name=name, data=data))
 
-        def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        def dump(self, camel_case: bool = True) -> dict[str, Any]:
             if isinstance(self, UnknownScope):
                 return {self.name: self.data}
 
@@ -99,7 +99,7 @@ class Capability(ABC):
             "https://github.com/cognitedata/cognite-sdk-python"
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if isinstance(self, UnknownAcl):
             return self.raw_data
         data = {
@@ -133,7 +133,7 @@ class ProjectScope(ABC):
             return AllProjectsScope()
         raise ValueError(f"Unknown project scope: {data}")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if isinstance(self, AllProjectsScope):
             return {self.name: {"allProjects": {}}}
         elif isinstance(self, ProjectsScope):
@@ -172,7 +172,7 @@ class ProjectCapability(CogniteResource):
             project_scope=ProjectScope.load({ProjectScope.name: resource[ProjectScope.name]}),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = self.capability.dump(camel_case=camel_case)
         dumped.update(self.project_scope.dump(camel_case=camel_case))
         return dumped

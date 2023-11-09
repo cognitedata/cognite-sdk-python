@@ -97,7 +97,7 @@ class Feature(CogniteResource):
             setattr(instance, normalized_key, value)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         def handle_case(key: str) -> str:
             # Keep properties defined in Feature Type as is
             if camel_case and key in self.PRE_DEFINED_SNAKE_CASE_NAMES:
@@ -413,5 +413,5 @@ class GeospatialComputedResponse(CogniteResource):
         )
         return cls(item_list, cognite_client=cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"items": self.items.dump(camel_case=camel_case)}

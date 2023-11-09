@@ -229,7 +229,7 @@ class Asset(CogniteResource):
         assert self.id is not None
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
@@ -495,7 +495,7 @@ class AssetFilter(CogniteFilter):
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)

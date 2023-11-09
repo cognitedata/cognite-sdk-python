@@ -60,7 +60,7 @@ class TransformationSchemaColumn(CogniteResource):
         self.nullable = nullable
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
             output["type"] = self.type.type

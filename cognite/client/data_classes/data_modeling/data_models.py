@@ -84,7 +84,7 @@ class DataModelApply(DataModelCore):
             resource["views"] = [cls._load_view(v) for v in resource["views"]] or None
         return super()._load(resource)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
 
         if self.views:
@@ -145,7 +145,7 @@ class DataModel(DataModelCore, Generic[T_View]):
 
         return super()._load(resource)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
 
         if self.views:

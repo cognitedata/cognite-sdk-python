@@ -23,7 +23,7 @@ class SourceSelector:
     source: ViewId
     properties: list[str]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case),
             "properties": self.properties,
@@ -43,7 +43,7 @@ class Select:
     sort: list[InstanceSort] = field(default_factory=list)
     limit: int | None = None
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.sources:
             output["sources"] = [
@@ -97,7 +97,7 @@ class Query:
             for k, v in self.with_.items()
         }
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "with": {k: v.dump(camel_case) for k, v in self.with_.items()},
             "select": {k: v.dump(camel_case) for k, v in self.select.items()},
@@ -141,7 +141,7 @@ class ResultSetExpression(ABC):
         self.sort = sort
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         ...
 
     @classmethod
@@ -197,7 +197,7 @@ class NodeResultSetExpression(ResultSetExpression):
         super().__init__(from_=from_, filter=filter, limit=limit, sort=sort)
         self.through = through
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"nodes": {}}
         nodes = output["nodes"]
         if self.from_:
@@ -247,7 +247,7 @@ class EdgeResultSetExpression(ResultSetExpression):
         self.limit_each = limit_each
         self.post_sort = post_sort
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"edges": {}}
         edges = output["edges"]
         if self.from_:

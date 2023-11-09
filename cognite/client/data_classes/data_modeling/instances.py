@@ -93,7 +93,7 @@ class NodeOrEdgeData:
             properties=data["properties"],
         )
 
-    def dump(self, camel_case: bool = False) -> dict:
+    def dump(self, camel_case: bool = True) -> dict:
         properties: dict[str, PropertyValue] = {}
         for key, value in self.properties.items():
             if isinstance(value, NodeId):
@@ -152,7 +152,7 @@ class InstanceApply(InstanceCore):
         self.existing_version = existing_version
         self.sources = sources
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.sources:
             output["sources"] = [source.dump(camel_case) for source in self.sources]
@@ -289,7 +289,7 @@ class Instance(InstanceCore):
             resource["properties"] = Properties.load(resource["properties"])
         return super()._load(resource)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if "properties" in dumped:
             dumped["properties"] = self.properties.dump()
@@ -363,7 +363,7 @@ class InstanceAggregationResult(DataModelingResource):
             group=cast(Dict[str, Union[str, int, float, bool]], resource.get("group")),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """
         Dumps the aggregation results to a dictionary.
 
@@ -409,7 +409,7 @@ class NodeApply(InstanceApply):
         else:
             self.type = type
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
             output["type"] = self.type.dump(camel_case)
@@ -484,7 +484,7 @@ class Node(Instance):
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
             output["type"] = self.type.dump(camel_case)
@@ -576,7 +576,7 @@ class EdgeApply(InstanceApply):
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
             output["type"] = self.type.dump(camel_case)
@@ -662,7 +662,7 @@ class Edge(Instance):
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
             output["type"] = self.type.dump(camel_case)

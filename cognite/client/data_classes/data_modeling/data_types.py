@@ -23,7 +23,7 @@ class DirectRelationReference:
     space: str
     external_id: str
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         output = asdict(self)
 
         return convert_all_keys_recursive(output, camel_case)
@@ -45,7 +45,7 @@ class DirectRelationReference:
 class PropertyType(ABC):
     _type: ClassVar[str]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self._type
         for key in list(output.keys()):
@@ -184,7 +184,7 @@ class DirectRelation(PropertyType, LoadablePropertyType):
     _type = "direct"
     container: ContainerId | None = None
 
-    def dump(self, camel_case: bool = False) -> dict:
+    def dump(self, camel_case: bool = True) -> dict:
         output = super().dump(camel_case)
         if "container" in output:
             if isinstance(output["container"], dict):

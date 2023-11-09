@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class VisionResource(CogniteResource, ABC):
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:

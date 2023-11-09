@@ -98,7 +98,7 @@ class FileMetadata(CogniteResource):
             instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
@@ -176,7 +176,7 @@ class FileMetadataFilter(CogniteFilter):
         if geo_location is not None and not isinstance(geo_location, GeoLocationFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)

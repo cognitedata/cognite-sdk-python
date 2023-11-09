@@ -150,7 +150,7 @@ class EventFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.end_time and isinstance(self.end_time, EndTimeFilter):
             dumped["endTime" if camel_case else "end_time"] = self.end_time.dump(camel_case)

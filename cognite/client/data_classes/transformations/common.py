@@ -26,7 +26,7 @@ class TransformationDestination:
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, type(self)) and hash(other) == hash(self)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         ret = basic_obj_dump(self, camel_case)
 
         needs_dump = set(iterable_to_case(("view", "edge_type", "data_model"), camel_case))
@@ -184,7 +184,7 @@ class ViewInfo:
     def __hash__(self) -> int:
         return hash((self.space, self.external_id, self.version))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
@@ -196,7 +196,7 @@ class EdgeType:
     def __hash__(self) -> int:
         return hash((self.space, self.external_id))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
@@ -215,7 +215,7 @@ class DataModelInfo:
         self.destination_type = destination_type
         self.destination_relationship_from_type = destination_relationship_from_type
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
@@ -330,7 +330,7 @@ class OidcCredentials:
     def as_client_credentials(self) -> ClientCredentials:
         return ClientCredentials(client_id=self.client_id, client_secret=self.client_secret)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -371,7 +371,7 @@ class NonceCredentials:
         self.nonce = nonce
         self.cdf_project_name = cdf_project_name
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -414,7 +414,7 @@ class TransformationBlockedInfo:
     def load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
         return cls(reason=resource["reason"], created_time=resource["createdTime"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 

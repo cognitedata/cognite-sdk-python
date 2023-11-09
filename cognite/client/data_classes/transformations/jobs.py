@@ -245,7 +245,7 @@ class TransformationJob(CogniteResource):
 
         return self
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.destination:
             output["destination"] = self.destination.type

@@ -164,7 +164,7 @@ class Sequence(CogniteResource):
             loaded.columns = SequenceColumnList._load(loaded.columns)
         return loaded
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.columns is not None:
             dumped["columns"] = self.columns.dump(camel_case)
@@ -507,7 +507,7 @@ class SequenceRows(CogniteResource):
         """Returns a list of lists of values"""
         return [list(row.values) for row in self.rows]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the sequence data into a json serializable Python data type.
 
         Args:

@@ -332,7 +332,7 @@ class DatapointsArray(CogniteResource):
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> dict[str, Any]:
         """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
@@ -518,7 +518,7 @@ class Datapoints(CogniteResource):
     def __iter__(self) -> Iterator[Datapoint]:
         yield from self.__get_datapoint_objects()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the datapoints into a json serializable Python data type.
 
         Args:
@@ -785,7 +785,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 
         return concat_dataframes_with_nullable_int_cols(dfs)
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> list[dict[str, Any]]:
+    def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
         Args:

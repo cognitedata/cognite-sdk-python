@@ -82,7 +82,7 @@ class SourceFile(CogniteObject):
             instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.labels:
             output["labels"] = [label.dump(camel_case) for label in self.labels]
@@ -174,7 +174,7 @@ class Document(CogniteResource):
             instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.source_file:
             output[("sourceFile" if camel_case else "source_file")] = self.source_file.dump(camel_case)
@@ -204,7 +204,7 @@ class Highlight(CogniteObject):
     name: list[str]
     content: list[str]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "name": self.name,
             "content": self.content,
@@ -239,7 +239,7 @@ class DocumentHighlight(CogniteResource):
             instance.document = Document._load(instance.document)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.highlight:
             output["highlight"] = self.highlight.dump(camel_case)

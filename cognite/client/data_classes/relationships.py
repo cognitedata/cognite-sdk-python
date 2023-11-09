@@ -101,7 +101,7 @@ class Relationship(CogniteResource):
         instance.labels = Label._load_list(instance.labels)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
@@ -175,7 +175,7 @@ class RelationshipFilter(CogniteFilter):
         self.active_at_time = active_at_time
         self.labels = labels
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)

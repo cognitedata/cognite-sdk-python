@@ -57,7 +57,7 @@ class ViewCore(DataModelingResource):
 
         return super()._load(resource)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
 
         if self.implements:
@@ -111,7 +111,7 @@ class ViewApply(ViewCore):
 
         return super()._load(resource)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
             output["properties"] = {k: v.dump(camel_case) for k, v in output["properties"].items()}
@@ -179,7 +179,7 @@ class View(ViewCore):
 
         return super()._load(resource, cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
             output["properties"] = {k: v.dump(camel_case) for k, v in output["properties"].items()}
@@ -278,7 +278,7 @@ class ViewProperty(ABC):
             return MappedProperty.load(data)
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -291,7 +291,7 @@ class ViewPropertyApply(ABC):
             return MappedPropertyApply.load(data)
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -312,7 +312,7 @@ class MappedPropertyApply(ViewPropertyApply):
             output.source = ViewId.load(data["source"])
         return output
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "container": self.container.dump(camel_case, include_type=True),
             (
@@ -358,7 +358,7 @@ class MappedProperty(ViewProperty):
             description=data.get("description"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self.type.dump(camel_case)
         if self.source and isinstance(self.type, DirectRelation):
@@ -407,7 +407,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             instance.connection_type = data["connectionType"]
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
 
         if self.type:
@@ -468,7 +468,7 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
             instance.connection_type = data["connectionType"]
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict:
+    def dump(self, camel_case: bool = True) -> dict:
         output: dict[str, Any] = {
             "type": self.type.dump(camel_case),
             "source": self.source.dump(camel_case, include_type=True),

@@ -175,7 +175,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             is_async_complete=resource.get("isAsyncComplete", resource.get("asyncComplete")),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         function: dict[str, Any] = {
             ("externalId" if camel_case else "external_id"): self.external_id,
         }
@@ -217,7 +217,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
             resource["transformation"]["concurrencyPolicy"],
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         transformation = {
             "externalId" if camel_case else "external_id": self.external_id,
             "concurrencyPolicy" if camel_case else "concurrency_policy": self.concurrency_policy,
@@ -276,7 +276,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
         arguments = convert_all_keys_to_snake_case(cdf_request)
         return cls(**arguments)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         return {
             ("cdfRequest" if camel_case else "cdf_request"): output,
@@ -324,7 +324,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
             [WorkflowTask._load(task) for task in dynamic["tasks"]],
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             self.task_type: {
                 "tasks": self.tasks if isinstance(self.tasks, str) else [task.dump(camel_case) for task in self.tasks]
@@ -389,7 +389,7 @@ class WorkflowTask(CogniteResource):
             depends_on=[dep["externalId"] for dep in resource.get("dependsOn", [])] or None,
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "externalId" if camel_case else "external_id": self.external_id,
             "type": self.type,
@@ -432,7 +432,7 @@ class WorkflowTaskOutput(ABC):
             raise ValueError(f"Unknown task type: {task_type}")
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -459,7 +459,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
         output = data["output"]
         return cls(output.get("callId"), output.get("functionId"), output.get("response"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             ("callId" if camel_case else "call_id"): self.call_id,
             ("functionId" if camel_case else "function_id"): self.function_id,
@@ -485,7 +485,7 @@ class TransformationTaskOutput(WorkflowTaskOutput):
         output = data["output"]
         return cls(output["jobId"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {("jobId" if camel_case else "job_id"): self.job_id}
 
 
@@ -509,7 +509,7 @@ class CDFTaskOutput(WorkflowTaskOutput):
         output = data["output"]
         return cls(output.get("response"), output.get("statusCode"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "response": self.response,
             ("statusCode" if camel_case else "status_code"): self.status_code,
@@ -530,7 +530,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
     def load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
         return cls()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {}
 
 
@@ -590,7 +590,7 @@ class WorkflowTaskExecution(CogniteObject):
             reason_for_incompletion=resource.get("reasonForIncompletion"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         output["input"] = self.input.dump(camel_case)
         output["status"] = self.status.upper()
@@ -635,7 +635,7 @@ class WorkflowDefinitionUpsert(CogniteResource):
             description=resource.get("description"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"tasks": [task.dump(camel_case) for task in self.tasks]}
         if self.description:
             output["description"] = self.description
@@ -671,7 +671,7 @@ class WorkflowDefinition(WorkflowDefinitionUpsert):
             description=resource.get("description"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["hash"] = self.hash_
         return output
@@ -707,7 +707,7 @@ class WorkflowVersionUpsert(CogniteResource):
             workflow_definition=WorkflowDefinitionUpsert._load(workflow_definition),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
             "version": self.version,
@@ -896,7 +896,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             metadata=resource.get("metadata"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output[("workflowDefinition" if camel_case else "workflow_definition")] = self.workflow_definition.dump(
             camel_case
@@ -954,7 +954,7 @@ class WorkflowVersionId:
             version=resource.get("version"),
         )
 
-    def dump(self, camel_case: bool = False, as_external_id_key: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, as_external_id_key: bool = False) -> dict[str, Any]:
         if as_external_id_key:
             output: dict[str, Any] = {("externalId" if camel_case else "external_id"): self.workflow_external_id}
         else:
@@ -999,5 +999,5 @@ class WorkflowIds(UserList):
             raise ValueError("Invalid input to WorkflowIds")
         return cls(workflow_ids)
 
-    def dump(self, camel_case: bool = False, as_external_id: bool = False) -> list[dict[str, Any]]:
+    def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
