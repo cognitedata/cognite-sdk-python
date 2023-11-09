@@ -646,6 +646,8 @@ class BaseDpsFetchSubtask:
         self.parent = parent
         self.is_raw_query = is_raw_query
         self.max_query_limit = max_query_limit
+        self.target_unit = target_unit
+        self.target_unit_system = target_unit_system
         self.is_done = False
 
         self.static_kwargs = identifier.as_dict()
@@ -763,6 +765,8 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             granularity=self.granularity,
             max_query_limit=self.max_query_limit,
             is_raw_query=self.is_raw_query,
+            target_unit=self.target_unit,
+            target_unit_system=self.target_unit_system,
         )
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
