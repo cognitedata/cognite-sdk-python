@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.39.4] - 2023-11-09
+## Fixed
+- Fetching datapoints from dense time series using a `targetUnit` or a target `targetUnitSystem` could result
+  in some batches not being converted to the new unit.
+
 ## [6.39.3] - 2023-11-08
 ## Fixed
-- The newely introduced parameter `connectionType` was assumed to be required from the API. This is not the case. 
+- The newely introduced parameter `connectionType` was assumed to be required from the API. This is not the case.
 
 ## [6.39.2] - 2023-11-08
 ## Fixed
