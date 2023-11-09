@@ -73,6 +73,24 @@ class Capability(ABC):
             raise NotImplementedError
 
     @classmethod
+    def from_tuple(cls, tpl: tuple) -> Self:
+        acl, action, scope_name, *scope_params = tpl
+        capability_cls = _CAPABILITY_CLASS_BY_NAME[acl]
+        scope_cls = _SCOPE_CLASS_BY_NAME[scope_name]
+
+        if not scope_params:
+            scope = scope_cls()
+        elif len(scope_params) == 1:
+            scope = scope_cls(scope_params)  # type: ignore [call-arg]
+        elif len(scope_params) == 2 and scope_name == TableScope._scope_name:
+            db, tbl = scope_params
+            scope = scope_cls({db: [tbl]})  # type: ignore [call-arg]
+        else:
+            raise ValueError(f"tuple not understood ({tpl})")
+
+        return cast(Self, capability_cls(actions=[capability_cls.Action(action)], scope=scope))
+
+    @classmethod
     def load(cls, resource: dict | str) -> Self:
         resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
         known_acls = set(resource).intersection(_CAPABILITY_CLASS_BY_NAME)
@@ -170,11 +188,11 @@ class ProjectCapability(CogniteResource):
     """This represents an capability with additional info about which project(s) it is for."""
 
     capability: Capability
-    project_scope: AllProjectsScope | ProjectScope
+    project_scope: AllProjectsScope | ProjectsScope
 
     class Scope:
         All = AllProjectsScope
-        Projects = ProjectScope
+        Projects = ProjectsScope
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -193,29 +211,44 @@ class ProjectCapability(CogniteResource):
 class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
     _RESOURCE = ProjectCapability
 
+    def _infer_project(self, project: str | None = None) -> str:
+        if project is None:
+            return self._cognite_client.config.project
+        return project
+
+    def as_tuples(self, project: str | None = None) -> set[tuple]:
+        project = self._infer_project(project)
+        return combine_sets(
+            *(
+                proj_cap.capability.as_tuples()
+                for proj_cap in self
+                if isinstance(proj_cap.project_scope, AllProjectsScope)
+                or isinstance(proj_cap.project_scope, ProjectsScope)
+                and project in proj_cap.project_scope.projects
+            )
+        )
+
     def compare(
         self, capabilities: list[Capability], project: str | None = None, treat_allscope_as_specific: bool = False
-    ) -> set[Capability]:
-        if project is None:
-            project = self._cognite_client.config.project
-
-        existing_caps = combine_sets(*(c.capability.as_tuples() for c in self if project in c.project_scope.projects))
+    ) -> list[Capability]:
+        project = self._infer_project(project)
+        has_capabilities = self.as_tuples(project)
         to_check = combine_sets(*(c.as_tuples() for c in capabilities))
-        missing = to_check - existing_caps
+        missing = to_check - has_capabilities
 
         if not treat_allscope_as_specific:
-            return missing
+            return [Capability.from_tuple(tpl) for tpl in missing]
 
-        existing_caps_grp = {k: set(grp) for k, grp in groupby(sorted(existing_caps), key=itemgetter(slice(2)))}
-        to_check_grp = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
+        has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilities), key=itemgetter(slice(2)))}
+        to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
 
         missing.clear()
-        for key, check_grp in to_check_grp.items():
-            existing_grp = existing_caps_grp.get(key, set())
+        for key, check_grp in to_check_lookup.items():
+            group = has_capabilties_lookup.get(key, set())
             # If allScope exists for capability, we skip the missing:
-            if not any(g[2] == "all" for g in existing_grp):
+            if not any(grp[2] == "all" for grp in group):
                 missing.update(check_grp)
-        return missing
+        return [Capability.from_tuple(tpl) for tpl in missing]
 
 
 @dataclass(frozen=True)
