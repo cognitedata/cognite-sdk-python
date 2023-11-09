@@ -511,7 +511,7 @@ class AssetsAcl(Capability):
 class DataSetsAcl(Capability):
     _capability_name = "datasetsAcl"
     actions: Sequence[Action]
-    scope: AllScope | DataSetScope
+    scope: AllScope | IDScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -520,7 +520,7 @@ class DataSetsAcl(Capability):
 
     class Scope:
         All = AllScope
-        DataSet = DataSetScope
+        ID = IDScope
 
 
 @dataclass
