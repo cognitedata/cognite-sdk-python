@@ -238,7 +238,7 @@ class ProjectCapability(CogniteResource):
         return dumped
 
 
-class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
+class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
     _RESOURCE = ProjectCapability
 
     def _infer_project(self, project: str | None = None) -> str:
