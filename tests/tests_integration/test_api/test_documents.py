@@ -88,7 +88,9 @@ class TestDocumentsAPI:
         exclude = set(_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE)
         retrieved_text = documents.get(id=text_file.id)
         assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
-        assert dict_without(retrieved_text.source_file.dump(), exclude) == dict_without(text_file.dump(), exclude)
+        assert dict_without(retrieved_text.source_file.dump(camel_case=False), exclude) == dict_without(
+            text_file.dump(camel_case=False), exclude
+        )
 
     def test_list_lorem_ipsum(
         self,
@@ -106,7 +108,9 @@ class TestDocumentsAPI:
         retrieved_pdf = documents.get(id=pdf_file.id)
         assert retrieved_pdf is not None, "Expected to retrieve the pdf file to be the list"
         exclude = set(_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE)
-        assert dict_without(retrieved_pdf.source_file.dump(), exclude) == dict_without(pdf_file.dump(), exclude)
+        assert dict_without(retrieved_pdf.source_file.dump(camel_case=False), exclude) == dict_without(
+            pdf_file.dump(camel_case=False), exclude
+        )
 
     def test_retrieve_content(self, cognite_client: CogniteClient, text_file_content_pair):
         doc, content = text_file_content_pair

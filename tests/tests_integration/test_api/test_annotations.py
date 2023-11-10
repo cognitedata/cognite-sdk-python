@@ -148,8 +148,8 @@ def assert_payload_dict(local: dict[str, Any], remote: dict[str, Any]) -> None:
 
 
 def check_created_vs_base(base_annotation: Annotation, created_annotation: Annotation) -> None:
-    base_dump = base_annotation.dump()
-    created_dump = created_annotation.dump()
+    base_dump = base_annotation.dump(camel_case=False)
+    created_dump = created_annotation.dump(camel_case=False)
     special_keys = ["id", "created_time", "last_updated_time", "data"]
     found_special_keys = 0
     for k, v in created_dump.items():
@@ -234,12 +234,12 @@ class TestAnnotationsIntegration:
     def test_update_annotation_by_annotation(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
         # Create annotation, make some local changes and cache a dump
         annotation = cognite_client.annotations.create(base_annotation)
-        local_dump = annotation.dump()
+        local_dump = annotation.dump(camel_case=False)
         # Update the annotation on remote and make a dump
         annotation = cognite_client.annotations.update(annotation)
         assert isinstance(annotation, Annotation)
         # Check that the local dump matches the remove dump
-        remote_dump = annotation.dump()
+        remote_dump = annotation.dump(camel_case=False)
         for k, v in remote_dump.items():
             if k == "last_updated_time":
                 assert v > local_dump[k]
