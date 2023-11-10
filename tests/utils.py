@@ -24,6 +24,7 @@ from cognite.client.data_classes import (
     Relationship,
     SequenceData,
     SequenceRows,
+    Transformation,
     filters,
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
@@ -334,6 +335,12 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is EndTimeFilter:
             # EndTimeFilter requires either is null or (max and/or min)
             keyword_arguments.pop("is_null", None)
+        elif resource_cls is Transformation:
+            # schedule and jobs must match external id and id
+            keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
+            keyword_arguments["schedule"].id = keyword_arguments["id"]
+            keyword_arguments["running_job"].id = keyword_arguments["id"]
+            keyword_arguments["last_finished_job"].id = keyword_arguments["id"]
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
