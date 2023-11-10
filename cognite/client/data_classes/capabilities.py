@@ -8,9 +8,9 @@ from dataclasses import asdict, dataclass, field
 from itertools import groupby, product
 from operator import itemgetter
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, NoReturn, Sequence, Union, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
@@ -23,6 +23,7 @@ from cognite.client.utils._text import (
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.data_classes import Group, GroupList
 
 logger = logging.getLogger(__name__)
 
@@ -293,23 +294,103 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
                 ... )])
         """
         project = self._infer_project(project)
-        has_capabilities = self.as_tuples(project)
-        to_check = set().union(*(c.as_tuples() for c in capabilities))
-        missing = to_check - has_capabilities
+        return compare_capabilities(self, capabilities, project, ignore_allscope_meaning=ignore_allscope_meaning)
 
-        if ignore_allscope_meaning:
-            return [Capability.from_tuple(tpl) for tpl in missing]
 
-        has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilities), key=itemgetter(slice(2)))}
-        to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
+ComparableCapability: TypeAlias = Union[
+    Capability,
+    Sequence[Capability],
+    Dict[str, Any],
+    Sequence[Dict[str, Any]],
+    "Group",
+    "GroupList",
+    ProjectCapability,
+    ProjectCapabilityList,
+]
 
-        missing.clear()
-        for key, check_grp in to_check_lookup.items():
-            group = has_capabilties_lookup.get(key, set())
-            # If allScope exists for capability, we skip the missing:
-            if not any(grp[2] == "all" for grp in group):
-                missing.update(check_grp)
+
+def _convert_capability_to_tuples(capabilities: ComparableCapability, project: str | None = None) -> set[tuple]:
+    from cognite.client.data_classes import Group, GroupList
+
+    if isinstance(capabilities, ProjectCapability):
+        return ProjectCapabilityList([capabilities]).as_tuples(project)
+    if isinstance(capabilities, ProjectCapabilityList):
+        return capabilities.as_tuples(project)
+
+    if isinstance(capabilities, (dict, Capability)):
+        capabilities = [capabilities]  # type: ignore [assignment]
+    elif isinstance(capabilities, Group):
+        capabilities = capabilities.capabilities or []
+    elif isinstance(capabilities, GroupList):
+        capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
+
+    if isinstance(capabilities, Sequence):
+        tpls: set[tuple] = set()
+        for cap in capabilities:
+            if isinstance(cap, dict):
+                cap = Capability.load(cap)
+            tpls.update(cap.as_tuples())  # type: ignore [union-attr]
+        if tpls:
+            return tpls
+        raise ValueError("No capabilities given")
+    raise TypeError(f"input capabilities not understood, expected a 'ComparableCapability' not {type(capabilities)}")
+
+
+def compare_capabilities(
+    existing_capabilities: ComparableCapability,
+    capabilities_to_check: ComparableCapability,
+    project: str | None = None,
+    ignore_allscope_meaning: bool = False,
+) -> list[Capability]:
+    """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
+
+    Args:
+        existing_capabilities (ComparableCapability): List of existing capabilities.
+        capabilities_to_check (ComparableCapability): List of wanted capabilities to check against existing.
+        project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
+            to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
+            is used, it will be inferred from the CogniteClient used to call retrieve it via token/inspect.
+        ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
+            e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
+
+    Returns:
+        list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+
+    Examples:
+
+        Ensure that the user's credentials have access to read- and write assets in all scope,
+        and write events scoped to a specific dataset with id=123:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
+            >>> client = CogniteClient()
+            >>> capabilities = client.iam.token.inspect().capabilities
+            >>> capabilities.compare([
+            ...     AssetsAcl(
+            ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
+            ...         scope=AssetsAcl.Scope.All()),
+            ...     EventsAcl(
+            ...         actions=[EventsAcl.Action.Write],
+            ...         scope=EventsAcl.Scope.DataSet([123]),
+            ... )])
+    """
+    has_capabilties = _convert_capability_to_tuples(existing_capabilities, project)
+    to_check = _convert_capability_to_tuples(capabilities_to_check, project)
+    missing = to_check - has_capabilties
+
+    if ignore_allscope_meaning:
         return [Capability.from_tuple(tpl) for tpl in missing]
+
+    has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilties), key=itemgetter(slice(2)))}
+    to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
+
+    missing.clear()
+    for key, check_grp in to_check_lookup.items():
+        group = has_capabilties_lookup.get(key, set())
+        # If allScope exists for capability, we skip the missing:
+        if not any(grp[2] == "all" for grp in group):
+            missing.update(check_grp)
+    return [Capability.from_tuple(tpl) for tpl in missing]
 
 
 @dataclass(frozen=True)
