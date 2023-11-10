@@ -178,7 +178,7 @@ class TokenAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.token.inspect()
         """
-        return TokenInspection.load(self._get("/api/v1/token/inspect").json())
+        return TokenInspection.load(self._get("/api/v1/token/inspect").json(), self._cognite_client)
 
 
 class SessionsAPI(APIClient):
