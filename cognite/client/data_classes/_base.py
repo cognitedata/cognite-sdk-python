@@ -140,6 +140,15 @@ class CogniteObject:
         """
         return basic_instance_dump(self, camel_case=camel_case)
 
+    def dump_yaml(self) -> str:
+        """Dump the instance into a YAML formatted string.
+
+        Returns:
+            str: A YAML formatted string representing the instance.
+        """
+        yaml = local_import("yaml")
+        return yaml.dump(self.dump(camel_case=True), sort_keys=False)
+
     @classmethod
     @final
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
@@ -296,6 +305,15 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             list[dict[str, Any]]: A list of dicts representing the instance.
         """
         return [resource.dump(camel_case) for resource in self.data]
+
+    def dump_yaml(self) -> str:
+        """Dump the instances into a YAML formatted string.
+
+        Returns:
+            str: A YAML formatted string representing the instances.
+        """
+        yaml = local_import("yaml")
+        return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
     def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
         """Get an item from this list by id or external_id.

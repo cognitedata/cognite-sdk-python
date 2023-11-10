@@ -90,6 +90,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - In transformations, `NonceCredentials` was missing `load` method.
 - In transformations, `TransformationBlockedInfo` was missing `.dump` method
 - `capabilities` in `cognite.client.data_classes` with data classes for all CDF capabilities.
+- All `CogniteResource` and `CogniteResourcelist` objects have `.dump_yaml` methods, for example, `my_asset_list.dump_yaml()`.  
 
 ### Removed
 - Deprecated methods `aggregate_metadata_keys` and `aggregate_metadata_values` on AssetsAPI.
