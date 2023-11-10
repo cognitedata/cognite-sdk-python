@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import combine_sets, load_yaml_or_json, rename_and_exclude_keys
+from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -235,7 +235,7 @@ class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
 
     def as_tuples(self, project: str | None = None) -> set[tuple]:
         project = self._infer_project(project)
-        return combine_sets(
+        return set().union(
             *(
                 proj_cap.capability.as_tuples()
                 for proj_cap in self
@@ -281,7 +281,7 @@ class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
         """
         project = self._infer_project(project)
         has_capabilities = self.as_tuples(project)
-        to_check = combine_sets(*(c.as_tuples() for c in capabilities))
+        to_check = set().union(*(c.as_tuples() for c in capabilities))
         missing = to_check - has_capabilities
 
         if ignore_allscope_meaning:
