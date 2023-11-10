@@ -30,7 +30,7 @@ def raw_groups():
         "capabilities": [
             {
                 "relationshipsAcl": {
-                    "scope": {"datasetScope": {"ids": ["2332579319524236"]}},
+                    "scope": {"datasetScope": {"ids": [2332579319524236]}},
                     "actions": ["READ", "WRITE"],
                 }
             },
