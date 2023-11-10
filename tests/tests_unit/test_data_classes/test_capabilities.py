@@ -331,6 +331,14 @@ class TestProjectCapabilityList:
         missing_acls = proj_capabs_list.compare([capability], project="do-es-nt-ex-is-ts")
         assert missing_acls == [capability]
 
+    def test_partly_missing_capabilities(self, proj_capabs_list: ProjectCapabilityList, project_name: str) -> None:
+        has = RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["my_table"]}))
+        has_also = EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([1, "2"]))
+        has_not = RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["unknown_table"]}))
+
+        missing_acls = proj_capabs_list.compare([has, has_not, has_also], project=project_name)
+        assert missing_acls == [has_not]
+
 
 @pytest.mark.parametrize(
     "dct",
