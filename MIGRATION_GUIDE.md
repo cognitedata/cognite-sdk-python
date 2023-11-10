@@ -36,6 +36,7 @@ Changes are grouped as follows:
 - DataClass `ViewDirectRelation`, `ContainerDirectRelation` replaced by `DirectRelation`.
 - DataClasses `MappedPropertyDefinition`, `MappedApplyPropertyDefinition` replaced by `MappedProperty`, `MappedPropertyApply`.
 - DataClasses `RequiresConstraintDefinition` and `UniquenessConstraintDefinition` replaced by `RequiresConstraint` and `UniquenessConstraint`.
+- In data class `Transformation` attributes `has_source_oidc_credentials` and `has_destination_oidc_credentials` are replaced by properties.
 
 ### Function Signature
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
@@ -101,6 +102,8 @@ Changes are grouped as follows:
   `dict` but classes with attributes matchhng the API.
 - Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `cababilities` of type `ProjectCapabilitiesList`
   instead of `list[dict]`
+- In data class `Transformation` the attribute `schedule`, `running_job`, and `last_running_job`, `external_id` and `id`
+  are set to the `Transformation` `id` and `external_id` if not set. If they are set to a different value, a `ValueError` is raised
 
 ### Optional
 - `CogniteImportError` can now be caught as `ImportError`.
