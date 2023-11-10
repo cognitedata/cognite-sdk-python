@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import typing
 import warnings
-from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, NoReturn, Union, cast, get_args, overload
 
 from typing_extensions import Self, TypeAlias
@@ -586,12 +585,11 @@ class SequenceData(SequenceRows):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        rows: typing.Sequence[dict] | None = None,
+        rows: typing.Sequence[dict] | typing.Sequence[SequenceRow] | None = None,
         row_numbers: typing.Sequence[int] | None = None,
         values: typing.Sequence[typing.Sequence[int | str | float]] | None = None,
-        columns: typing.Sequence[dict[str, Any]] | None = None,
+        columns: typing.Sequence[dict[str, Any]] | SequenceColumnList | None = None,
     ):
-        warnings.warn("SequenceData is deprecated, use SequenceRows instead", DeprecationWarning)
         # Conversion for backwards compatibility
         rows_parsed: list[SequenceRow]
         if rows and isinstance(rows, list) and rows and isinstance(rows[0], dict):
@@ -603,6 +601,7 @@ class SequenceData(SequenceRows):
                 raise ValueError(
                     f"row_numbers and values must have same length, got {len(row_numbers)} and {len(values)}"
                 )
+            warnings.warn("row_numbers and values are deprecated, use rows instead", DeprecationWarning, stacklevel=2)
             rows_parsed = [SequenceRow(row_number, value) for row_number, value in zip(row_numbers, values)]
         else:
             raise ValueError("Either rows or both row_numbers and values must be specified")
@@ -683,10 +682,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")
 
 
-class SequencesDataList(SequenceRowsList):
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
-        super().__init__(resources, cognite_client)
-        warnings.warn("SequencesDataList is deprecated, use SequenceRowsList instead", DeprecationWarning)
+SequenceDataList = SequenceRowsList
 
 
 class SequenceProperty(EnumProperty):

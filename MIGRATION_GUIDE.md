@@ -52,7 +52,7 @@ Changes are grouped as follows:
 - `client.data_modeling.instances.aggregate` the parameters `instance_type` and `group_by` has swapped order.
 - The return type of `client.data_modeling.instances.aggregate` has changed from `InstanceAggregationResultList` to
   a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
-- The `client.sequences.data` methods `.retrieve`, `.retrieve_last_row`, `.insert`  method has changed signature:
+- The `client.sequences.data` methods `.retrieve` and `.insert`  method has changed signature:
   The parameter `column_external_ids` is renamed `columns`. The old parameter `column_external_ids` is still there, but is
   deprecated. In addition, int the `.retrieve` method, the parameters `id` and `external_id` have
   been moved to the beginning of the signature. This is to better match the API and have a consistent overload

@@ -881,28 +881,28 @@ class SequencesDataAPI(APIClient):
                 >>> seq = c.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
                 ...     SequenceColumn(value_type="Double", external_id ="col_b")]))
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
-                >>> c.sequences.data.insert(column_external_ids=["col_a","col_b"], rows=data, id=1)
+                >>> c.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
             They can also be provided as a list of API-style objects with a rowNumber and values field::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNumber": 456, "values": ["bar",42]} ]
-                >>> c.sequences.data.insert(data, id=1, column_external_ids=["col_a","col_b"]) # implicit columns are retrieved from metadata
+                >>> c.sequences.data.insert(data, id=1, columns=["col_a","col_b"]) # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
-                >>> c.sequences.data.insert(column_external_ids=['stringColumn','intColumn'], rows=data, id=1)
+                >>> c.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
 
-            Finally, they can be a SequenceData object retrieved from another request. In this case column_external_ids from this object are used as well.
+            Finally, they can be a SequenceData object retrieved from another request. In this case columns from this object are used as well.
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
-                >>> c.sequences.data.insert(rows=data, id=1,column_external_ids=None)
+                >>> c.sequences.data.insert(rows=data, id=1,columns=None)
         """
 
         columns = handle_renamed_argument(
