@@ -312,8 +312,7 @@ class TestCogniteResource:
             seed=66, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
 
-        dumped = instance.dump(camel_case=True)
-        yaml_serialised = yaml.safe_dump(dumped)
+        yaml_serialised = instance.dump_yaml()
         loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
