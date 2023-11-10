@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -139,6 +140,15 @@ class CogniteObject:
             dict[str, Any]: A dictionary representation of the instance.
         """
         return basic_instance_dump(self, camel_case=camel_case)
+
+    def dump_yaml(self, filepath: str | Path) -> None:
+        """Dump the instance into a YAML file.
+
+        Args:
+            filepath (str | Path): Path to the YAML file.
+        """
+        yaml = local_import("yaml")
+        Path(filepath).write_text(yaml.dump(self.dump(camel_case=True), sort_keys=False))
 
     @classmethod
     @final
@@ -296,6 +306,15 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             list[dict[str, Any]]: A list of dicts representing the instance.
         """
         return [resource.dump(camel_case) for resource in self.data]
+
+    def dump_yaml(self, filepath: str | Path) -> None:
+        """Dump the instance into a YAML file.
+
+        Args:
+            filepath (str | Path): Path to the YAML file.
+        """
+        yaml = local_import("yaml")
+        Path(filepath).write_text(yaml.dump(self.dump(camel_case=True), sort_keys=False))
 
     def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
         """Get an item from this list by id or external_id.
