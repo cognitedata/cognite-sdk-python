@@ -99,7 +99,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
 @pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
 def test_load_and_dump_equals(raw_data: dict) -> None:
     parsed = Filter.load(raw_data)
-    dumped = parsed.dump()
+    dumped = parsed.dump(camel_case=False)
     assert dumped == raw_data
 
 
@@ -155,7 +155,7 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
 def test_dump_filter(user_filter: Filter, expected: dict) -> None:
-    actual = user_filter.dump()
+    actual = user_filter.dump(camel_case=False)
 
     assert actual == expected
 

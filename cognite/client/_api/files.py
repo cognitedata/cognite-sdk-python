@@ -491,7 +491,7 @@ class FilesAPI(APIClient):
             if _RUNNING_IN_BROWSER:
                 # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
                 fh = fh.read()
-            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump())
+            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
         return file_metadata
 
     def upload_bytes(

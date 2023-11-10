@@ -946,7 +946,7 @@ class VisionExtractJob(VisionJob):
 
         for item in self.items or []:
             if item.predictions is not None:
-                for prediction_type, prediction_data_list in item.predictions.dump().items():
+                for prediction_type, prediction_data_list in item.predictions.dump(camel_case=False).items():
                     for data in prediction_data_list:
                         # check if multiple annotations represent the same prediction (e.g. in case of dial gauges, level gauges and valves)
                         annotation_type = VISION_ANNOTATION_TYPE_MAP[prediction_type]
