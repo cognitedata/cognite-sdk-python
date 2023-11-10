@@ -5,6 +5,9 @@ import inspect
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
+from itertools import groupby, product
+from operator import itemgetter
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 from typing_extensions import Self
@@ -29,6 +32,22 @@ class Capability(ABC):
     _capability_name: ClassVar[str]
     actions: Sequence[Action]
     scope: Scope
+
+    def __post_init__(self) -> None:
+        if (capability_cls := type(self)) is UnknownAcl:
+            return
+        acl = capability_cls.__name__
+        if bad_actions := [a for a in self.actions if a not in capability_cls.Action]:
+            raise ValueError(
+                f"{acl} got an unknown action: {bad_actions}, expected one of: {list(capability_cls.Action)}. "
+                f"Example usage: AssetsAcl(actions=[AssetsAcl.Action.Read], scope=AssetsAcl.Scope.All())"
+            )
+        allowed_scopes = _VALID_SCOPES_BY_CAPABILITY[capability_cls]
+        if allowed_scopes and type(self.scope) not in allowed_scopes:
+            raise ValueError(
+                f"{acl} got an unknown scope: {self.scope}, expected one of: {[s.__name__ for s in allowed_scopes]}. "
+                f"Example usage: AssetsAcl(actions=[AssetsAcl.Action.Read], scope=AssetsAcl.Scope.All())"
+            )
 
     class Action(enum.Enum):
         ...
@@ -63,8 +82,30 @@ class Capability(ABC):
                 data = convert_all_keys_to_camel_case(data)
             return {self._scope_name: data}
 
+        def as_tuples(self) -> set[tuple]:
+            # Basic implementation for all simple Scopes (e.g. all or currentuser)
+            return {(self._scope_name,)}
+
         def is_within(self, other: Self) -> bool:
             raise NotImplementedError
+
+    @classmethod
+    def from_tuple(cls, tpl: tuple) -> Self:
+        acl_name, action, scope_name, *scope_params = tpl
+        capability_cls = _CAPABILITY_CLASS_BY_NAME[acl_name]
+        scope_cls = _SCOPE_CLASS_BY_NAME[scope_name]
+
+        if not scope_params:
+            scope = scope_cls()
+        elif len(scope_params) == 1:
+            scope = scope_cls(scope_params)  # type: ignore [call-arg]
+        elif len(scope_params) == 2 and scope_cls is TableScope:
+            db, tbl = scope_params
+            scope = scope_cls({db: [tbl]})  # type: ignore [call-arg]
+        else:
+            raise ValueError(f"tuple not understood ({tpl})")
+
+        return cast(Self, capability_cls(actions=[capability_cls.Action(action)], scope=scope))
 
     @classmethod
     def load(cls, resource: dict | str) -> Self:
@@ -116,6 +157,14 @@ class Capability(ABC):
             return False
         return not set(other.actions) - set(self.actions)
 
+    def as_tuples(self) -> set[tuple]:
+        return set(
+            (acl, action, *scope_tpl)
+            for acl, action, scope_tpl in product(
+                [self._capability_name], [action.value for action in self.actions], self.scope.as_tuples()
+            )
+        )
+
 
 class ProjectScope(ABC):
     name: ClassVar[str] = "projectScope"
@@ -153,23 +202,21 @@ class ProjectsScope(ProjectScope):
 
 @dataclass
 class ProjectCapability(CogniteResource):
-    """This represents an capability scoped for a project(s)."""
+    """This represents an capability with additional info about which project(s) it is for."""
 
     capability: Capability
+    project_scope: AllProjectsScope | ProjectsScope
 
     class Scope:
         All = AllProjectsScope
-        Projects = ProjectScope
-
-    project_scope: AllProjectsScope | ProjectScope
+        Projects = ProjectsScope
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        capability = next(key for key in resource if key != "projectScope")
-
+        project_scope_dct = {ProjectScope.name: resource.pop(ProjectScope.name)}
         return cls(
-            capability=Capability.load({capability: resource[capability]}),
-            project_scope=ProjectScope.load({ProjectScope.name: resource[ProjectScope.name]}),
+            capability=Capability.load(resource),
+            project_scope=ProjectScope.load(project_scope_dct),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -180,6 +227,76 @@ class ProjectCapability(CogniteResource):
 
 class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
     _RESOURCE = ProjectCapability
+
+    def _infer_project(self, project: str | None = None) -> str:
+        if project is None:
+            return self._cognite_client.config.project
+        return project
+
+    def as_tuples(self, project: str | None = None) -> set[tuple]:
+        project = self._infer_project(project)
+        return set().union(
+            *(
+                proj_cap.capability.as_tuples()
+                for proj_cap in self
+                if isinstance(proj_cap.project_scope, AllProjectsScope)
+                or isinstance(proj_cap.project_scope, ProjectsScope)
+                and project in proj_cap.project_scope.projects
+            )
+        )
+
+    def compare(
+        self, capabilities: list[Capability], project: str | None = None, ignore_allscope_meaning: bool = False
+    ) -> list[Capability]:
+        """Compare a group of wanted capabilities against existing, i.e. what acls the user currently
+        have access to and return any missing.
+
+        Args:
+            capabilities (list[Capability]): List of capabilities to test against existing.
+            project (str | None): The CDF project the capabilities belong to (existing might be from several).
+                If not passed, inferred from CogniteClient used to call token/inspect.
+            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
+                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
+
+        Returns:
+            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+
+        Examples:
+
+            Ensure that the user's credentials have access to read- and write assets in all scope,
+            and write events scoped to a specific dataset with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
+                >>> client = CogniteClient()
+                >>> capabilities = client.iam.token.inspect().capabilities
+                >>> capabilities.compare([
+                ...     AssetsAcl(
+                ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
+                ...         scope=AssetsAcl.Scope.All()),
+                ...     EventsAcl(
+                ...         actions=[EventsAcl.Action.Write],
+                ...         scope=EventsAcl.Scope.DataSet([123]),
+                ... )])
+        """
+        project = self._infer_project(project)
+        has_capabilities = self.as_tuples(project)
+        to_check = set().union(*(c.as_tuples() for c in capabilities))
+        missing = to_check - has_capabilities
+
+        if ignore_allscope_meaning:
+            return [Capability.from_tuple(tpl) for tpl in missing]
+
+        has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilities), key=itemgetter(slice(2)))}
+        to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
+
+        missing.clear()
+        for key, check_grp in to_check_lookup.items():
+            group = has_capabilties_lookup.get(key, set())
+            # If allScope exists for capability, we skip the missing:
+            if not any(grp[2] == "all" for grp in group):
+                missing.update(check_grp)
+        return [Capability.from_tuple(tpl) for tpl in missing]
 
 
 @dataclass(frozen=True)
@@ -203,6 +320,29 @@ class IDScope(Capability.Scope):
     _scope_name = "idScope"
     ids: list[int]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
+
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
+
+
+@dataclass(frozen=True)
+class IDScopeLowerCase(Capability.Scope):
+    """Necessary due to lack of API standardisation on scope name: 'idScope' VS 'idscope'"""
+
+    _scope_name = "idscope"
+    ids: list[int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
+
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
@@ -211,6 +351,12 @@ class IDScope(Capability.Scope):
 class ExtractionPipelineScope(Capability.Scope):
     _scope_name = "extractionPipelineScope"
     ids: list[int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
 
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
@@ -221,20 +367,38 @@ class DataSetScope(Capability.Scope):
     _scope_name = "datasetScope"
     ids: list[int]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
+
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
-
-
-@dataclass
-class DatabaseTableScope:
-    database_name: str
-    table_names: list[str]
 
 
 @dataclass(frozen=True)
 class TableScope(Capability.Scope):
     _scope_name = "tableScope"
-    dbs_to_tables: dict[str, DatabaseTableScope]
+    dbs_to_tables: dict[str, list[str]]
+
+    def __post_init__(self) -> None:
+        if not self.dbs_to_tables:
+            return
+
+        loaded = self.dbs_to_tables.copy()
+        for db, obj in self.dbs_to_tables.items():
+            if isinstance(obj, dict):
+                loaded[db] = obj.get("tables", [])
+        # TableScope is frozen, so a bit awkward to set attribute:
+        object.__setattr__(self, "dbs_to_tables", loaded)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "dbsToTables" if camel_case else "dbs_to_tables"
+        return {self._scope_name: {key: {k: {"tables": v} for k, v in self.dbs_to_tables.items()}}}
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables}
 
     def is_within(self, other: Self) -> bool:
         if isinstance(other, AllScope):
@@ -242,10 +406,10 @@ class TableScope(Capability.Scope):
         if not isinstance(other, TableScope):
             return False
 
-        for db in self.dbs_to_tables.values():
-            if db.database_name not in other.dbs_to_tables:
+        for db_name, tables in self.dbs_to_tables.items():
+            if (other_tables := other.dbs_to_tables.get(db_name)) is None:
                 return False
-            if not set(db.table_names).issubset(other.dbs_to_tables[db.database_name].table_names):
+            if not set(tables).issubset(other_tables):
                 return False
         return True
 
@@ -255,6 +419,12 @@ class AssetRootIDScope(Capability.Scope):
     _scope_name = "assetRootIdScope"
     root_ids: list[int]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "root_ids", [int(i) for i in self.root_ids])
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.root_ids}
+
     def is_within(self, other: Self) -> bool:
         return isinstance(other, AllScope) or type(self) is type(other) and set(self.root_ids).issubset(other.root_ids)
 
@@ -263,6 +433,9 @@ class AssetRootIDScope(Capability.Scope):
 class ExperimentsScope(Capability.Scope):
     _scope_name = "experimentscope"
     experiments: list[str]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, s) for s in self.experiments}
 
     def is_within(self, other: Self) -> bool:
         return (
@@ -276,6 +449,9 @@ class ExperimentsScope(Capability.Scope):
 class SpaceIDScope(Capability.Scope):
     _scope_name = "spaceIdScope"
     space_ids: list[str]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, s) for s in self.space_ids}
 
     def is_within(self, other: Self) -> bool:
         return (
@@ -296,15 +472,16 @@ class UnknownScope(Capability.Scope):
     def __getitem__(self, item: str) -> Any:
         return self.data[item]
 
+    def as_tuples(self) -> set[tuple]:
+        raise NotImplementedError("Unknown scope cannot be converted to tuples (needed for comparisons)")
+
     def is_within(self, other: Self) -> bool:
-        raise NotImplementedError("Unknown scopes cannot be compared")
+        raise NotImplementedError("Unknown scope cannot be compared")
 
 
-_SCOPE_CLASS_BY_NAME: dict[str, type[Capability.Scope]] = {
-    c._scope_name: c for c in Capability.Scope.__subclasses__() if not issubclass(c, UnknownScope)
-}
-# Manual additions because of lack of API standardisation:
-_SCOPE_CLASS_BY_NAME["idscope"] = IDScope
+_SCOPE_CLASS_BY_NAME: MappingProxyType[str, type[Capability.Scope]] = MappingProxyType(
+    {c._scope_name: c for c in Capability.Scope.__subclasses__() if not issubclass(c, UnknownScope)}
+)
 
 
 @dataclass
@@ -371,7 +548,7 @@ class AssetsAcl(Capability):
 class DataSetsAcl(Capability):
     _capability_name = "datasetsAcl"
     actions: Sequence[Action]
-    scope: AllScope | DataSetScope
+    scope: AllScope | IDScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -380,7 +557,7 @@ class DataSetsAcl(Capability):
 
     class Scope:
         All = AllScope
-        DataSet = DataSetScope
+        ID = IDScope
 
 
 @dataclass
@@ -392,6 +569,9 @@ class DigitalTwinAcl(Capability):
     class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
+
+    class Scope:
+        All = AllScope
 
 
 @dataclass
@@ -629,7 +809,7 @@ class RoboticsAcl(Capability):
 class SecurityCategoriesAcl(Capability):
     _capability_name = "securityCategoriesAcl"
     actions: Sequence[Action]
-    scope: AllScope | IDScope
+    scope: AllScope | IDScopeLowerCase
 
     class Action(Capability.Action):
         MemberOf = "MEMBEROF"
@@ -640,7 +820,7 @@ class SecurityCategoriesAcl(Capability):
 
     class Scope:
         All = AllScope
-        ID = IDScope
+        ID = IDScopeLowerCase
 
 
 @dataclass
@@ -708,7 +888,7 @@ class ThreeDAcl(Capability):
 class TimeSeriesAcl(Capability):
     _capability_name = "timeSeriesAcl"
     actions: Sequence[Action]
-    scope: AllScope | DataSetScope | IDScope | AssetRootIDScope
+    scope: AllScope | DataSetScope | IDScopeLowerCase | AssetRootIDScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -717,7 +897,7 @@ class TimeSeriesAcl(Capability):
     class Scope:
         All = AllScope
         DataSet = DataSetScope
-        ID = IDScope
+        ID = IDScopeLowerCase
         AssetRootID = AssetRootIDScope
 
 
@@ -782,12 +962,13 @@ class WellsAcl(Capability):
 class ExperimentsAcl(Capability):
     _capability_name = "experimentAcl"
     actions: Sequence[Action]
+    scope: ExperimentsScope
 
     class Action(Capability.Action):
         Use = "USE"
 
     class Scope:
-        ...
+        Experiments = ExperimentsScope
 
 
 @dataclass
@@ -989,11 +1170,29 @@ class WorkflowOrchestrationAcl(Capability):
         All = AllScope
 
 
-_CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {
-    c._capability_name: c for c in Capability.__subclasses__() if not issubclass(c, UnknownAcl)
-}
+@dataclass
+class UserProfilesAcl(Capability):
+    _capability_name = "userProfilesAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
+_CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProxyType(
+    {c._capability_name: c for c in Capability.__subclasses__() if c is not UnknownAcl}
+)
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
     if acl.Action.__members__:
         _cls = type(next(iter(acl.Action.__members__.values())))
         _cls.__name__ = f"{acl.__name__} {_cls.__name__}"
+
+# Add lookup that knows which acls support which scopes:
+_VALID_SCOPES_BY_CAPABILITY: MappingProxyType[type[Capability], frozenset[type[Capability.Scope]]] = MappingProxyType(
+    {acl: frozenset(filter(inspect.isclass, vars(acl.Scope).values())) for acl in _CAPABILITY_CLASS_BY_NAME.values()}
+)

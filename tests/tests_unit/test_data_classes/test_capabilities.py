@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import pytest
 
 from cognite.client.data_classes.capabilities import (
+    AllProjectsScope,
     AllScope,
     Capability,
-    DatabaseTableScope,
     EventsAcl,
     ProjectCapabilitiesList,
     ProjectCapability,
@@ -133,13 +134,19 @@ class TestCapabilities:
                 }
             },
             {
-                "securityCategoriesAcl": {"actions": ["MEMBEROF", "LIST"], "scope": {"idScope": {"ids": [1, 2, 3]}}},
+                "securityCategoriesAcl": {"actions": ["MEMBEROF", "LIST"], "scope": {"idscope": {"ids": [1, 2, 3]}}},
             },
             {
                 "rawAcl": {
                     "actions": ["READ", "WRITE", "LIST"],
-                    "scope": {"tableScope": {"dbsToTables": {"databaseName": ["my_db1", "my_db2"]}}},
+                    "scope": {"tableScope": {"dbsToTables": {"databaseName": {"tables": ["my_db1", "my_db2"]}}}},
                 },
+            },
+            {
+                "experimentAcl": {
+                    "actions": ["USE"],
+                    "scope": {"experimentscope": {"experiments": ["workflowOrchestrator"]}},
+                }
             },
             {
                 "dataModelsAcl": {
@@ -215,122 +222,104 @@ class TestCapabilities:
             Capability.load(dumped)
 
 
-class TestProjectCapabilitiesList:
-    @pytest.mark.parametrize(
-        "capabilities, capability, expected",
+@pytest.fixture
+def proj_cap_allprojects_dct():
+    return {
+        "labelsAcl": {"actions": ["READ"], "scope": {"all": {}}},
+        "projectScope": {"allProjects": {}},
+    }
+
+
+@pytest.fixture
+def project_name():
+    return "my-project"
+
+
+@pytest.fixture
+def proj_capabs_list(project_name):
+    return ProjectCapabilitiesList(
         [
-            (
-                ProjectCapabilitiesList(
-                    [
-                        ProjectCapability(
-                            capability=EventsAcl(
-                                [EventsAcl.Action.Read, EventsAcl.Action.Write], scope=EventsAcl.Scope.All()
-                            ),
-                            project_scope=ProjectCapability.Scope.All(),
-                        )
-                    ]
-                ),
-                EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1])),
-                True,
+            ProjectCapability(
+                capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
+                project_scope=ProjectCapability.Scope.All(),
             ),
-            (
-                ProjectCapabilitiesList(
-                    [
-                        ProjectCapability(
-                            capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
-                            project_scope=ProjectCapability.Scope.All(),
-                        )
-                    ]
-                ),
-                EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.All()),
-                False,
+            ProjectCapability(
+                capability=EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet(["1", 2])),
+                project_scope=ProjectCapability.Scope.Projects([project_name]),
             ),
-            (
-                ProjectCapabilitiesList(
-                    [
-                        ProjectCapability(
-                            capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
-                            project_scope=ProjectCapability.Scope.All(),
-                        )
-                    ]
+            ProjectCapability(
+                capability=RawAcl(
+                    [RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["my_table", "my_other_table"]})
                 ),
-                EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1])),
-                True,
+                project_scope=ProjectCapability.Scope.Projects([project_name]),
             ),
-            (
-                ProjectCapabilitiesList(
-                    [
-                        ProjectCapability(
-                            capability=EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([1, 2])),
-                            project_scope=ProjectCapability.Scope.All(),
-                        )
-                    ]
-                ),
-                EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.DataSet([3])),
-                False,
-            ),
-            (
-                ProjectCapabilitiesList(
-                    [
-                        ProjectCapability(
-                            capability=RawAcl(
-                                [RawAcl.Action.Read],
-                                scope=RawAcl.Scope.Table(
-                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
-                                ),
-                            ),
-                            project_scope=ProjectCapability.Scope.All(),
-                        )
-                    ]
-                ),
-                RawAcl(
-                    [RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": DatabaseTableScope("my_db", ["my_table"])})
-                ),
-                True,
-            ),
-            (
-                ProjectCapabilitiesList(
-                    [
-                        ProjectCapability(
-                            capability=RawAcl(
-                                [RawAcl.Action.Read],
-                                scope=RawAcl.Scope.Table(
-                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
-                                ),
-                            ),
-                            project_scope=ProjectCapability.Scope.All(),
-                        )
-                    ]
-                ),
-                RawAcl(
-                    [RawAcl.Action.Read],
-                    scope=RawAcl.Scope.Table({"my_db": DatabaseTableScope("my_db", ["unknown_table"])}),
-                ),
-                False,
-            ),
-            (
-                ProjectCapabilitiesList(
-                    [
-                        ProjectCapability(
-                            capability=RawAcl(
-                                [RawAcl.Action.Read],
-                                scope=RawAcl.Scope.Table(
-                                    {"my_db": DatabaseTableScope("my_db", ["my_table", "my_other_table"])}
-                                ),
-                            ),
-                            project_scope=ProjectCapability.Scope.All(),
-                        )
-                    ]
-                ),
-                RawAcl(
-                    [RawAcl.Action.Read],
-                    scope=RawAcl.Scope.Table({"unknown_db": DatabaseTableScope("unknown_db", ["my_table"])}),
-                ),
-                False,
-            ),
+        ]
+    )
+
+
+class TestProjectCapabilitiesList:
+    def test_project_scope_is_all_projects(self, proj_cap_allprojects_dct):
+        loaded = ProjectCapability.load(proj_cap_allprojects_dct.copy())
+        assert type(loaded.project_scope) is AllProjectsScope
+
+        loaded = ProjectCapabilitiesList.load([proj_cap_allprojects_dct])
+        assert type(loaded[0].project_scope) is AllProjectsScope
+
+    @pytest.mark.parametrize(
+        "capability",
+        [
+            EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
+            EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([1, "2"])),
+            RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["my_table"]})),
         ],
     )
     def test_has_capability(
-        self, capabilities: ProjectCapabilitiesList, capability: Capability, expected: bool
+        self, proj_capabs_list: ProjectCapabilitiesList, project_name: str, capability: Capability
     ) -> None:
-        assert capabilities.includes_capability(capability) is expected
+        assert not proj_capabs_list.compare([capability], project=project_name)
+
+    @pytest.mark.parametrize(
+        "capability",
+        [
+            EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.All()),
+            EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet(["3"])),
+            EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([3])),
+            RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["unknown_table"]})),
+            RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"unknown_db": ["my_table"]})),
+        ],
+    )
+    def test_is_missing_capability(
+        self, proj_capabs_list: ProjectCapabilitiesList, project_name: str, capability: Capability
+    ) -> None:
+        missing_acls = proj_capabs_list.compare([capability], project=project_name)
+        assert missing_acls == [capability]
+
+        missing_acls = proj_capabs_list.compare([capability], project="do-es-nt-ex-is-ts")
+        assert missing_acls == [capability]
+
+
+@pytest.mark.parametrize(
+    "dct",
+    [
+        {
+            "securityCategoriesAcl": {
+                "actions": ["MEMBEROF", "LIST", "CREATE", "UPDATE", "DELETE"],
+                "scope": {"idScope": {"ids": ["2495"]}},
+            }
+        },
+        {"timeSeriesAcl": {"actions": ["READ"], "scope": {"idScope": {"ids": ["2495"]}}}},
+    ],
+)
+def test_idscopes_lower_case(dct):
+    # These Acls expect "idscope", not "idScope":
+    with pytest.raises(ValueError, match=re.escape("got an unknown scope: IDScope(ids=[2495]), expected one of")):
+        Capability.load(dct)
+
+
+def test_idscopes_camel_case():
+    # This Acl expect "idScope", not "idscope":
+    dct = {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idscope": {"ids": ["2495"]}}}}
+    with pytest.raises(
+        ValueError, match=re.escape("got an unknown scope: IDScopeLowerCase(ids=[2495]), expected one of")
+    ):
+        Capability.load(dct)
