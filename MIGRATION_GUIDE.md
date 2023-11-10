@@ -53,8 +53,11 @@ Changes are grouped as follows:
 - `client.data_modeling.instances.aggregate` the parameters `instance_type` and `group_by` has swapped order.
 - The return type of `client.data_modeling.instances.aggregate` has changed from `InstanceAggregationResultList` to
   a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
-- The `client.sequences.data.retrieve` method has changed signature:
-  The parameter `columns_external_id` is renamed `columns`. This is to better match the API and have a consistent overload implementation.
+- The `client.sequences.data` methods `.retrieve` and `.insert`  method has changed signature:
+  The parameter `column_external_ids` is renamed `columns`. The old parameter `column_external_ids` is still there, but is
+  deprecated. In addition, int the `.retrieve` method, the parameters `id` and `external_id` have
+  been moved to the beginning of the signature. This is to better match the API and have a consistent overload
+  implementation.
 - The `client.sequences.data.retrieve_latest` is renamed `client.sequences.data.retrieve_last_row`.
 
 ### Changed
@@ -96,7 +99,7 @@ Changes are grouped as follows:
   backwards compatibility, but will be removed in the next major version. However, all API methods now return
   `SequenceRows` instead of `SequenceData`.
 - The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
--The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
+- The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
   `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
   `dict` but classes with attributes matchhng the API.
