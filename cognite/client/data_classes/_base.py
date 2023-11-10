@@ -307,7 +307,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return [resource.dump(camel_case) for resource in self.data]
 
     def dump_yaml(self) -> str:
-        """Dump the instance into a YAML formatted string.
+        """Dump the instances into a YAML formatted string.
 
         Returns:
             str: A YAML formatted string representing the instances.
