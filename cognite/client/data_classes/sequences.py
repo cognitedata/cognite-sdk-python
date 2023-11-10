@@ -73,21 +73,6 @@ class SequenceColumn(CogniteResource):
         resource = convert_all_keys_to_camel_case(resource)
         return super()._load(resource, cognite_client)
 
-    def as_write(self) -> Self:
-        """
-        Returns the write version of the Sequence Column
-
-        Returns:
-            Self: Write version of the Sequence Column
-        """
-        return type(self)(
-            external_id=self.external_id,
-            name=self.name,
-            description=self.description,
-            value_type=self.value_type,
-            metadata=self.metadata.copy() if self.metadata is not None else None,
-        )
-
 
 class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransformerMixin):
     _RESOURCE = SequenceColumn
@@ -600,12 +585,11 @@ class SequenceData(SequenceRows):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        rows: typing.Sequence[dict] | None = None,
+        rows: typing.Sequence[dict] | typing.Sequence[SequenceRow] | None = None,
         row_numbers: typing.Sequence[int] | None = None,
         values: typing.Sequence[typing.Sequence[int | str | float]] | None = None,
-        columns: typing.Sequence[dict[str, Any]] | None = None,
+        columns: typing.Sequence[dict[str, Any]] | SequenceColumnList | None = None,
     ):
-        warnings.warn("SequenceData is deprecated, use SequenceRows instead", DeprecationWarning)
         # Conversion for backwards compatibility
         rows_parsed: list[SequenceRow]
         if rows and isinstance(rows, list) and rows and isinstance(rows[0], dict):
@@ -617,6 +601,7 @@ class SequenceData(SequenceRows):
                 raise ValueError(
                     f"row_numbers and values must have same length, got {len(row_numbers)} and {len(values)}"
                 )
+            warnings.warn("row_numbers and values are deprecated, use rows instead", DeprecationWarning, stacklevel=2)
             rows_parsed = [SequenceRow(row_number, value) for row_number, value in zip(row_numbers, values)]
         else:
             raise ValueError("Either rows or both row_numbers and values must be specified")
@@ -695,6 +680,9 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
             return {seq.id: seq.to_pandas(column_names) for seq in self}
 
         raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")
+
+
+SequenceDataList = SequenceRowsList
 
 
 class SequenceProperty(EnumProperty):

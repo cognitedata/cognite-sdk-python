@@ -26,6 +26,7 @@ from cognite.client.data_classes.sequences import (
     SortableSequenceProperty,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import handle_renamed_argument
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import (
@@ -857,17 +858,19 @@ class SequencesDataAPI(APIClient):
         | dict[int, typing.Sequence[int | float | str]]
         | typing.Sequence[tuple[int, typing.Sequence[int | float | str]]]
         | typing.Sequence[dict[str, Any]],
-        column_external_ids: typing.Sequence[str] | None,
+        columns: SequenceNotStr[str] | None = None,
         id: int | None = None,
         external_id: str | None = None,
+        **kwargs: Any,
     ) -> None:
         """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
         Args:
             rows (SequenceRows | dict[int, typing.Sequence[int | float | str]] | typing.Sequence[tuple[int, typing.Sequence[int | float | str]]] | typing.Sequence[dict[str, Any]]):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
-            column_external_ids (typing.Sequence[str] | None): List of external id for the columns of the sequence.
+            columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
+            **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Examples:
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
@@ -878,31 +881,32 @@ class SequencesDataAPI(APIClient):
                 >>> seq = c.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
                 ...     SequenceColumn(value_type="Double", external_id ="col_b")]))
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
-                >>> c.sequences.data.insert(column_external_ids=["col_a","col_b"], rows=data, id=1)
+                >>> c.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
             They can also be provided as a list of API-style objects with a rowNumber and values field::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNumber": 456, "values": ["bar",42]} ]
-                >>> c.sequences.data.insert(data, id=1, column_external_ids=["col_a","col_b"]) # implicit columns are retrieved from metadata
+                >>> c.sequences.data.insert(data, id=1, columns=["col_a","col_b"]) # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
-                >>> c.sequences.data.insert(column_external_ids=['stringColumn','intColumn'], rows=data, id=1)
+                >>> c.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
 
-            Finally, they can be a SequenceData object retrieved from another request. In this case column_external_ids from this object are used as well.
+            Finally, they can be a SequenceData object retrieved from another request. In this case columns from this object are used as well.
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
-                >>> c.sequences.data.insert(rows=data, id=1,column_external_ids=None)
+                >>> c.sequences.data.insert(rows=data, id=1,columns=None)
         """
+        columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
         if isinstance(rows, SequenceRows):
-            column_external_ids = rows.column_external_ids
+            columns = rows.column_external_ids
             rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
         if isinstance(rows, dict):
@@ -915,7 +919,7 @@ class SequencesDataAPI(APIClient):
             raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = Identifier.of_either(id, external_id).as_dict()
-        base_obj.update(self._wrap_columns(column_external_ids))
+        base_obj.update(self._wrap_columns(columns))
 
         if len(all_rows) > 0:
             rows_per_request = min(
@@ -956,8 +960,8 @@ class SequencesDataAPI(APIClient):
             dataframe = dataframe.dropna()
         dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
-        column_external_ids = [str(s) for s in dataframe.columns]
-        self.insert(rows=data, column_external_ids=column_external_ids, id=id, external_id=external_id)
+        columns = [str(s) for s in dataframe.columns]
+        self.insert(rows=data, columns=columns, id=id, external_id=external_id)
 
     def _insert_data(self, task: dict[str, Any]) -> None:
         self._post(url_path=self._DATA_PATH, json={"items": [task]})
@@ -1012,7 +1016,7 @@ class SequencesDataAPI(APIClient):
         external_id: str,
         start: int = 0,
         end: int | None = None,
-        columns: typing.Sequence[str] | None = None,
+        columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
     ) -> SequenceRows:
         ...
@@ -1024,7 +1028,7 @@ class SequencesDataAPI(APIClient):
         external_id: SequenceNotStr[str],
         start: int = 0,
         end: int | None = None,
-        columns: typing.Sequence[str] | None = None,
+        columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
     ) -> SequenceRowsList:
         ...
@@ -1036,7 +1040,7 @@ class SequencesDataAPI(APIClient):
         id: int,
         start: int = 0,
         end: int | None = None,
-        columns: typing.Sequence[str] | None = None,
+        columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
     ) -> SequenceRows:
         ...
@@ -1048,7 +1052,7 @@ class SequencesDataAPI(APIClient):
         id: typing.Sequence[int],
         start: int = 0,
         end: int | None = None,
-        columns: typing.Sequence[str] | None = None,
+        columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
     ) -> SequenceRowsList:
         ...
@@ -1059,8 +1063,9 @@ class SequencesDataAPI(APIClient):
         id: int | typing.Sequence[int] | None = None,
         start: int = 0,
         end: int | None = None,
-        columns: typing.Sequence[str] | None = None,
+        columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
+        **kwargs: Any,
     ) -> SequenceRows | SequenceRowsList:
         """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
@@ -1069,8 +1074,9 @@ class SequencesDataAPI(APIClient):
             id (int | typing.Sequence[int] | None): The internal if the sequence to retrieve from.
             start (int): Row number to start from (inclusive).
             end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
-            columns (typing.Sequence[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
+            columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
+            **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Returns:
             SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceDataList
@@ -1085,6 +1091,8 @@ class SequencesDataAPI(APIClient):
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
+        columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
+
         ident_sequence = IdentifierSequence.load(id, external_id)
         identifiers = ident_sequence.as_dicts()
 
@@ -1114,16 +1122,18 @@ class SequencesDataAPI(APIClient):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        column_external_ids: SequenceNotStr[str] | None = None,
+        columns: SequenceNotStr[str] | None = None,
         before: int | None = None,
+        **kwargs: Any,
     ) -> SequenceRows:
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
 
         Args:
             id (int | None): Id or list of ids.
             external_id (str | None): External id or list of external ids.
-            column_external_ids (SequenceNotStr[str] | None): (optional, typing.Sequence[str]): external ids of columns to include. Omitting will return all columns.
+            columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             before (int | None): (optional, int): Get latest datapoint before this row number.
+            **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Returns:
             SequenceRows: A Datapoints object containing the requested data, or a list of such objects.
@@ -1136,9 +1146,10 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.sequences.data.retrieve_last_row(id=1, before=1000)
         """
+        columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
         identifier = Identifier.of_either(id, external_id).as_dict()
         res = self._do_request(
-            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
+            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
         ).json()
         return SequenceRows.load(res)
 
@@ -1201,7 +1212,7 @@ class SequencesDataAPI(APIClient):
             if not cursor or (remaining_limit is not None and remaining_limit <= 0):
                 break
 
-    def _wrap_columns(self, column_external_ids: typing.Sequence[str] | None) -> dict[str, typing.Sequence[str]]:
+    def _wrap_columns(self, column_external_ids: SequenceNotStr[str] | None) -> dict[str, SequenceNotStr[str]]:
         if column_external_ids is None:
             return {}  # for defaults
         return {"columns": column_external_ids}
