@@ -62,7 +62,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
   on the `aggregates` and `group_by` parameters. Previously, it always returned `InstanceAggregationResultList`.
 - The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
 - Support for `YAML` in all `CogniteResource.load()` and `CogniteResourceList.load()` methods.
-- The `client.sequences.data` methods `.retrieve`, `.retrieve_last_row`, `.insert`  method has changed signature:
+- The `client.sequences.data` methods `.retrieve`, `.retrieve_last_row` (previously `retrieve_latest`), `.insert`  method has changed signature:
   The parameter `column_external_ids` is renamed `columns`. The old parameter `column_external_ids` is still there, but is
   deprecated. In addition, int the `.retrieve` method, the parameters `id` and `external_id` have
   been moved to the beginning of the signature. This is to better match the API and have a consistent overload
