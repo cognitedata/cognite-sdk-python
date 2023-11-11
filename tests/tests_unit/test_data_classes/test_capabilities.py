@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import pytest
@@ -289,3 +290,30 @@ class TestProjectCapabilitiesList:
 
         missing_acls = proj_capabs_list.compare([capability], project="do-es-nt-ex-is-ts")
         assert missing_acls == [capability]
+
+
+@pytest.mark.parametrize(
+    "dct",
+    [
+        {
+            "securityCategoriesAcl": {
+                "actions": ["MEMBEROF", "LIST", "CREATE", "UPDATE", "DELETE"],
+                "scope": {"idScope": {"ids": ["2495"]}},
+            }
+        },
+        {"timeSeriesAcl": {"actions": ["READ"], "scope": {"idScope": {"ids": ["2495"]}}}},
+    ],
+)
+def test_idscopes_lower_case(dct):
+    # These Acls expect "idscope", not "idScope":
+    with pytest.raises(ValueError, match=re.escape("got an unknown scope: IDScope(ids=[2495]), expected one of")):
+        Capability.load(dct)
+
+
+def test_idscopes_camel_case():
+    # This Acl expect "idScope", not "idscope":
+    dct = {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idscope": {"ids": ["2495"]}}}}
+    with pytest.raises(
+        ValueError, match=re.escape("got an unknown scope: IDScopeLowerCase(ids=[2495]), expected one of")
+    ):
+        Capability.load(dct)
