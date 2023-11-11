@@ -331,6 +331,23 @@ class IDScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class IDScopeLowerCase(Capability.Scope):
+    """Necessary due to lack of API standardisation on scope name: 'idScope' VS 'idscope'"""
+
+    _scope_name = "idscope"
+    ids: list[int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ids", [int(i) for i in self.ids])
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.ids}
+
+    def is_within(self, other: Self) -> bool:
+        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
+
+
+@dataclass(frozen=True)
 class ExtractionPipelineScope(Capability.Scope):
     _scope_name = "extractionPipelineScope"
     ids: list[int]
@@ -458,11 +475,9 @@ class UnknownScope(Capability.Scope):
         raise NotImplementedError("Unknown scope cannot be compared")
 
 
-_SCOPE_CLASS_BY_NAME: dict[str, type[Capability.Scope]] = {
-    c._scope_name: c for c in Capability.Scope.__subclasses__() if not issubclass(c, UnknownScope)
-}
-# Manual additions because of lack of API standardisation:
-_SCOPE_CLASS_BY_NAME["idscope"] = IDScope
+_SCOPE_CLASS_BY_NAME: MappingProxyType[str, type[Capability.Scope]] = MappingProxyType(
+    {c._scope_name: c for c in Capability.Scope.__subclasses__() if not issubclass(c, UnknownScope)}
+)
 
 
 @dataclass
@@ -787,7 +802,7 @@ class RoboticsAcl(Capability):
 class SecurityCategoriesAcl(Capability):
     _capability_name = "securityCategoriesAcl"
     actions: Sequence[Action]
-    scope: AllScope | IDScope
+    scope: AllScope | IDScopeLowerCase
 
     class Action(Capability.Action):
         MemberOf = "MEMBEROF"
@@ -798,7 +813,7 @@ class SecurityCategoriesAcl(Capability):
 
     class Scope:
         All = AllScope
-        ID = IDScope
+        ID = IDScopeLowerCase
 
 
 @dataclass
@@ -866,7 +881,7 @@ class ThreeDAcl(Capability):
 class TimeSeriesAcl(Capability):
     _capability_name = "timeSeriesAcl"
     actions: Sequence[Action]
-    scope: AllScope | DataSetScope | IDScope | AssetRootIDScope
+    scope: AllScope | DataSetScope | IDScopeLowerCase | AssetRootIDScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -875,7 +890,7 @@ class TimeSeriesAcl(Capability):
     class Scope:
         All = AllScope
         DataSet = DataSetScope
-        ID = IDScope
+        ID = IDScopeLowerCase
         AssetRootID = AssetRootIDScope
 
 
@@ -1160,9 +1175,9 @@ class UserProfilesAcl(Capability):
         All = AllScope
 
 
-_CAPABILITY_CLASS_BY_NAME: dict[str, type[Capability]] = {
-    c._capability_name: c for c in Capability.__subclasses__() if c is not UnknownAcl
-}
+_CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProxyType(
+    {c._capability_name: c for c in Capability.__subclasses__() if c is not UnknownAcl}
+)
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
     if acl.Action.__members__:
