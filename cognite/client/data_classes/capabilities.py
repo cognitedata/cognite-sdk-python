@@ -393,6 +393,10 @@ class TableScope(Capability.Scope):
         # TableScope is frozen, so a bit awkward to set attribute:
         object.__setattr__(self, "dbs_to_tables", loaded)
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "dbsToTables" if camel_case else "dbs_to_tables"
+        return {self._scope_name: {key: {k: {"tables": v} for k, v in self.dbs_to_tables.items()}}}
+
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables}
 
