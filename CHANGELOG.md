@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.39.6] - 2023-11-13
+## Fixed
+- HTTP status code retry strategy for RAW and labels. `/rows/insert` and `/rows/delete` will now 
+be retried for all status codes in `config.status_forcelist` (default 429, 502, 503, 504), while 
+`/dbs/{db}` and `/tables/{table}` will now only be retried for 429s and connection errors as those 
+endpoints are not idempotent. Also `labels/list` will now also be retried.
+
 ## [6.39.5] - 2023-11-12
 ## Fixed
 - The `.apply()` methods of `MappedProperty` was missing property `source`.
