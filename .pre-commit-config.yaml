@@ -16,7 +16,7 @@ repos:
     rev: v0.1.5
 
   - repo: https://github.com/psf/black
-    rev: 23.10.1
+    rev: 23.11.0
     hooks:
       - id: black
         exclude: ^cognite/client/_proto.*$
