@@ -13,7 +13,7 @@ repos:
           - --fixable=E,W,F,I,T,RUF,TID,UP
           - --target-version=py38
           - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
-    rev: v0.1.4
+    rev: v0.1.5
 
   - repo: https://github.com/psf/black
     rev: 23.10.1
