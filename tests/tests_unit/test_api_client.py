@@ -8,6 +8,7 @@ from collections import namedtuple
 from typing import Any, ClassVar, Literal, cast
 
 import pytest
+from more_itertools import flatten
 from requests import Response
 from responses import matchers
 
@@ -1182,46 +1183,93 @@ def convert_resource_to_patch_object_test_cases():
     )
 
 
-class TestHelpers:
+class TestRetryableEndpoints:
     @pytest.mark.parametrize(
         "method, path, expected",
-        [
-            ("GET", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", True),
-            ("POST", "https://localhost:8000/api/v1/projects/blabla/files/list", True),
-            ("PUT", "https://api.cognitedata.com/bla", True),
-            (
-                "POST",
-                "https://api.cognitedata.com/api/v1/projects/sebnickelgreenfield/files/downloadlink?extendedExpiration=true",
-                True,
-            ),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/blabla/timeseries/list", True),
-            ("POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", False),
-            ("POST", "https://greenfield.cognitedata.com/api/playground/projects/blabla/relationships/list", True),
-            ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
-            ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/events/byids", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/files/search", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/list", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/byids", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/datasets/aggregate", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/relationships/list", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/spaces", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/instances", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/containers", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/views", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/datamodels", True),
-            (
-                "POST",
-                "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/somedb/tables/sometable/rows/insert",
-                True,
-            ),
-            (
-                "POST",
-                "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/somedb/tables/sometable/rows/delete",
-                True,
-            ),
-        ],
+        flatten(
+            [
+                # Should retry POST on all _read_ endpoints
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/list", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/byids", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/search", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/list", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/byids", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/aggregate", True),
+                # Should not retry POST /create and /update as they are not idempotent
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}", False),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/update", False),
+            ]
+            for resource in [
+                "assets",
+                "events",
+                "files",
+                "timeseries",
+                "sequences",
+                "datasets",
+                "relationships",
+                "labels",
+            ]
+        ),
+    )
+    def test_is_retryable_resource_api_endpoints(self, api_client_with_token, method, path, expected):
+        assert expected == api_client_with_token._is_retryable(method, path)
+
+    @pytest.mark.parametrize(
+        "method, path, expected",
+        sorted(
+            [
+                ### Versions
+                *(
+                    # Should work on all api version
+                    ("POST", f"https://api.cognitedata.com/api/{version}/projects/bla/assets/list", True)
+                    for version in ["v1", "playground"]
+                ),
+                ### Hosts
+                *(
+                    # Should work on all hosts
+                    ("POST", f"https://{host}/api/v1/projects/bla/assets/list", True)
+                    for host in ["api.cognitedata.com", "greenfield.cognitedata.com", "localhost:8000"]
+                ),
+                ### Methods
+                *(
+                    # Should by default retry GET, PUT, and PATCH
+                    (method, "https://api.cognitedata.com/api/v1/projects/bla", True)
+                    for method in {"GET", "PUT", "PATCH"}
+                ),
+                #### Files
+                ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
+                #### Timeseries
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data/delete", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data/latest", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/synthetic/query", True),
+                #### Sequences
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/data", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/data/delete", True),
+                #### Data modeling
+                *flatten(
+                    # should retry _all_ data modeling schema endpoints as they are idempotent.
+                    [
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}", True),
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/list", True),
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/byids", True),
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/delete", True),
+                    ]
+                    for resource in ("spaces", "containers", "views", "datamodels")
+                ),
+                # Retry all data modeling instances endpoints as they are idempotent
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/instances", True),
+                *(
+                    ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/instances/{endpoint}", True)
+                    for endpoint in ("list", "byids", "delete", "aggregate", "search")
+                ),
+                # Retry for RAW on rows but not on dbs or tables as only the rows endpoints are idempotent
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/insert", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/delete", True),
+            ]
+        ),
     )
     def test_is_retryable(self, api_client_with_token, method, path, expected):
         assert expected == api_client_with_token._is_retryable(method, path)
@@ -1229,7 +1277,7 @@ class TestHelpers:
     @pytest.mark.parametrize(
         "method, path", [("POST", "htt://bla/bla"), ("BLOP", "http://localhost:8000/token/inspect")]
     )
-    def test_is_retryable_fail(self, api_client_with_token, method, path):
+    def test_is_retryable_should_fail(self, api_client_with_token, method, path):
         with pytest.raises(ValueError, match="is not valid"):
             api_client_with_token._is_retryable(method, path)
 
@@ -1240,6 +1288,8 @@ class TestHelpers:
         test_url = "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
         assert api_client_with_token._is_retryable("POST", test_url) is True
 
+
+class TestHelpers:
     @pytest.mark.parametrize(
         "before, after",
         [
