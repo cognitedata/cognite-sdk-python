@@ -370,6 +370,7 @@ class MappedProperty(ViewProperty):
             container_property_identifier=self.container_property_identifier,
             name=self.name,
             description=self.description,
+            source=self.source,
         )
 
 
@@ -428,6 +429,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             description=self.description,
             edge_source=self.edge_source,
             direction=self.direction,
+            connection_type=self.connection_type,
         )
 
 
