@@ -1,6 +1,8 @@
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Row
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
 
@@ -35,6 +37,16 @@ class TestRawTablesAPI:
         assert table in cognite_client.raw.tables.list(db.name)
         cognite_client.raw.tables.delete(db.name, table.name)
         assert table not in cognite_client.raw.tables.list(db.name)
+
+    def test_create_existing(self, cognite_client, new_database_with_table):
+        db, table = new_database_with_table
+        with pytest.raises(CogniteAPIError, match="already created"):
+            cognite_client.raw.tables.create(db.name, table.name)
+
+    def test_delete_missing(self, cognite_client: CogniteClient, new_database_with_table):
+        db, _ = new_database_with_table
+        with pytest.raises(CogniteAPIError, match="not found"):
+            cognite_client.raw.tables.delete(db.name, "i-dont-exist")
 
 
 class TestRawRowsAPI:
@@ -84,6 +96,18 @@ class TestRawRowsAPI:
         assert 2 == len(table.rows())
         cognite_client.raw.rows.delete(db.name, table.name, ["r1", "r2"])
         assert 0 == len(table.rows())
+
+    def test_delete_missing_key(self, cognite_client, new_database_with_table):
+        db, table = new_database_with_table
+        # endpoint is idempotent so this should not raise
+        cognite_client.raw.rows.delete(db.name, table.name, ["i-dont-exist"])
+
+    def test_insert_existing_key(self, cognite_client, new_database_with_table):
+        db, table = new_database_with_table
+        rows = {"r1": {"c1": "v1", "c2": "v1"}, "r2": {"c1": "v2", "c2": "v2"}}
+        cognite_client.raw.rows.insert(db.name, table.name, rows)
+        # endpoint is idempotent so this should not raise
+        cognite_client.raw.rows.insert(db.name, table.name, rows)
 
     @pytest.mark.dsl
     def test_insert_and_retrieve_dataframe(self, cognite_client, new_database_with_table):

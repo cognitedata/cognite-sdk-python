@@ -1199,7 +1199,6 @@ class TestHelpers:
             ("POST", "https://greenfield.cognitedata.com/api/playground/projects/blabla/relationships/list", True),
             ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
             ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/mydb/tables/mytable", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/events/byids", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/files/search", True),
@@ -1212,6 +1211,16 @@ class TestHelpers:
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/containers", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/views", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/datamodels", True),
+            (
+                "POST",
+                "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/somedb/tables/sometable/rows/insert",
+                True,
+            ),
+            (
+                "POST",
+                "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/somedb/tables/sometable/rows/delete",
+                True,
+            ),
         ],
     )
     def test_is_retryable(self, api_client_with_token, method, path, expected):

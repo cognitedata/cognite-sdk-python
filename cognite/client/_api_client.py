@@ -81,7 +81,7 @@ class APIClient:
             "/timeseries/data/(list|latest|delete)",
             "/sequences/data",
             "/sequences/data/(list|delete)",
-            "/raw/dbs/[^/]+/tables/[^/]+",
+            "/raw/dbs/[^/]+/tables/[^/]+/rows/.*",
             "/context/entitymatching/(byids|list|jobs)",
             "/sessions/revoke",
             "/models/.*",
