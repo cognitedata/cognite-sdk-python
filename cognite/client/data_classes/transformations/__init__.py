@@ -214,8 +214,8 @@ class Transformation(CogniteResource):
             self.last_updated_time,
             self.owner,
             self.owner_is_current_user,
-            self.has_source_oidc_credentials,
-            self.has_destination_oidc_credentials,
+            None,  # has source oidc credentials is a property
+            None,  # has destination oidc credentials is a property
             self.running_job,
             self.last_finished_job,
             self.blocked,
