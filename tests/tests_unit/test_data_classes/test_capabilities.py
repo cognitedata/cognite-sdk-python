@@ -143,6 +143,12 @@ class TestCapabilities:
                 },
             },
             {
+                "experimentAcl": {
+                    "actions": ["USE"],
+                    "scope": {"experimentscope": {"experiments": ["workflowOrchestrator"]}},
+                }
+            },
+            {
                 "dataModelsAcl": {
                     "actions": ["READ"],
                     "scope": {

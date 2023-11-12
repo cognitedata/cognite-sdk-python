@@ -570,6 +570,9 @@ class DigitalTwinAcl(Capability):
         Read = "READ"
         Write = "WRITE"
 
+    class Scope:
+        All = AllScope
+
 
 @dataclass
 class EntityMatchingAcl(Capability):
@@ -959,12 +962,13 @@ class WellsAcl(Capability):
 class ExperimentsAcl(Capability):
     _capability_name = "experimentAcl"
     actions: Sequence[Action]
+    scope: ExperimentsScope
 
     class Action(Capability.Action):
         Use = "USE"
 
     class Scope:
-        ...
+        Experiments = ExperimentsScope
 
 
 @dataclass
