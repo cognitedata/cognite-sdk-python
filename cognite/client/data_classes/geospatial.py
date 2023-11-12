@@ -428,6 +428,7 @@ class GeospatialComputedItem(CogniteResource):
 
 class GeospatialComputedItemList(CogniteResourceList[GeospatialComputedItem]):
     "A list of items computed from geospatial."
+
     _RESOURCE = GeospatialComputedItem
 
 
