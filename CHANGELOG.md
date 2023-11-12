@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.39.5] - 2023-11-12
+## Fixed
+- The `.apply()` methods on `SingleHopConnectionDefinition` and `MappedProperty` were missing properties `connection_type` and `source`.
+  This is now fixed.
+
 ## [6.39.4] - 2023-11-09
 ## Fixed
 - Fetching datapoints from dense time series using a `targetUnit` or a target `targetUnitSystem` could result
