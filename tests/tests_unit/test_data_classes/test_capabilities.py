@@ -5,11 +5,16 @@ from typing import Any
 
 import pytest
 
+import cognite.client.data_classes.capabilities as capabilities_module  # noqa F401
 from cognite.client.data_classes.capabilities import (
     AllProjectsScope,
     AllScope,
     Capability,
+    CurrentUserScope,
+    DataSetsAcl,
     EventsAcl,
+    ExperimentsAcl,
+    GroupsAcl,
     ProjectCapabilitiesList,
     ProjectCapability,
     ProjectsAcl,
@@ -221,6 +226,25 @@ class TestCapabilities:
         with pytest.raises(ValueError, match=rf"^'{bad_action}' is not a valid {acl_cls_name} Action$"):
             Capability.load(dumped)
 
+    def test_create_capability_forget_initializing_scope(self):
+        # Ensure these do not raise. All other scopes require arguments and so will
+        # raise appropriate errors if not initialized.
+        DataSetsAcl([DataSetsAcl.Action.Read], scope=DataSetsAcl.Scope.All)
+        DataSetsAcl([DataSetsAcl.Action.Read], scope=DataSetsAcl.Scope.All())
+        DataSetsAcl([DataSetsAcl.Action.Read], scope=AllScope)
+        DataSetsAcl([DataSetsAcl.Action.Read], scope=AllScope())
+        GroupsAcl([GroupsAcl.Action.Delete], scope=GroupsAcl.Scope.CurrentUser)
+        GroupsAcl([GroupsAcl.Action.Delete], scope=GroupsAcl.Scope.CurrentUser())
+        GroupsAcl([GroupsAcl.Action.Delete], scope=CurrentUserScope)
+        GroupsAcl([GroupsAcl.Action.Delete], scope=CurrentUserScope())
+
+    def test_create_capability_forget_initializing_scope__not_supported(self):
+        with pytest.raises(ValueError, match="^DataSetsAcl got an unknown scope"):
+            DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=GroupsAcl.Scope.CurrentUser)
+
+        with pytest.raises(ValueError, match="^ExperimentsAcl got an unknown scope"):
+            ExperimentsAcl(actions=[ExperimentsAcl.Action.Use], scope=AllScope)
+
 
 @pytest.fixture
 def proj_cap_allprojects_dct():
@@ -312,14 +336,30 @@ class TestProjectCapabilitiesList:
 )
 def test_idscopes_lower_case(dct):
     # These Acls expect "idscope", not "idScope":
-    with pytest.raises(ValueError, match=re.escape("got an unknown scope: IDScope(ids=[2495]), expected one of")):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("got an unknown scope: IDScope(ids=[2495]), expected an instance of one of: "),
+    ):
         Capability.load(dct)
 
 
 def test_idscopes_camel_case():
     # This Acl expect "idScope", not "idscope":
     dct = {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idscope": {"ids": ["2495"]}}}}
-    with pytest.raises(
-        ValueError, match=re.escape("got an unknown scope: IDScopeLowerCase(ids=[2495]), expected one of")
-    ):
+    with pytest.raises(ValueError) as err:
         Capability.load(dct)
+    assert err.value.args[0].startswith(
+        "DataSetsAcl got an unknown scope: IDScopeLowerCase(ids=[2495]), expected an instance of one of: "
+        "[DataSetsAcl.Scope.All, DataSetsAcl.Scope.ID]"
+    )
+
+
+@pytest.mark.parametrize("capability", Capability.__subclasses__())
+def test_show_example_usage(capability):
+    if capability is UnknownAcl:
+        with pytest.raises(NotImplementedError):
+            capability.show_example_usage()
+    else:
+        cmd = capability.show_example_usage()[15:]  # TODO PY39: .removeprefix
+        exec(f"{capability.__name__} = capabilities_module.{capability.__name__}")
+        exec(cmd)
