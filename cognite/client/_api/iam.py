@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from itertools import groupby
+from operator import itemgetter
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Union
+
+from typing_extensions import TypeAlias
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -17,11 +21,58 @@ from cognite.client.data_classes import (
     Session,
     SessionList,
 )
+from cognite.client.data_classes.capabilities import (
+    Capability,
+    ProjectCapability,
+    ProjectCapabilityList,
+)
 from cognite.client.data_classes.iam import TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+ComparableCapability: TypeAlias = Union[
+    Capability,
+    Sequence[Capability],
+    Dict[str, Any],
+    Sequence[Dict[str, Any]],
+    Group,
+    GroupList,
+    ProjectCapability,
+    ProjectCapabilityList,
+]
+
+
+def _convert_capability_to_tuples(capabilities: ComparableCapability, project: str | None = None) -> set[tuple]:
+    from cognite.client.data_classes import Group, GroupList
+
+    if isinstance(capabilities, ProjectCapability):
+        return ProjectCapabilityList([capabilities]).as_tuples(project)
+    if isinstance(capabilities, ProjectCapabilityList):
+        return capabilities.as_tuples(project)
+
+    if isinstance(capabilities, (dict, Capability)):
+        capabilities = [capabilities]  # type: ignore [assignment]
+    elif isinstance(capabilities, Group):
+        capabilities = capabilities.capabilities or []
+    elif isinstance(capabilities, GroupList):
+        capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
+
+    if isinstance(capabilities, Sequence):
+        tpls: set[tuple] = set()
+        for cap in capabilities:
+            if isinstance(cap, dict):
+                cap = Capability.load(cap)
+            tpls.update(cap.as_tuples())  # type: ignore [union-attr]
+        if tpls:
+            return tpls
+        raise ValueError("No capabilities given")
+    raise TypeError(
+        "input capabilities not understood, expected a ComparableCapability: "
+        f"{ComparableCapability} not {type(capabilities)}"
+    )
 
 
 class IAMAPI(APIClient):
@@ -33,6 +84,126 @@ class IAMAPI(APIClient):
         self.user_profiles = UserProfilesAPI(config, api_version, cognite_client)
         # TokenAPI only uses base_url, so we pass `api_version=None`:
         self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
+
+    @staticmethod
+    def compare_capabilities(
+        existing_capabilities: ComparableCapability,
+        desired_capabilities: ComparableCapability,
+        project: str | None = None,
+        ignore_allscope_meaning: bool = False,
+    ) -> list[Capability]:
+        """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
+
+        Args:
+            existing_capabilities (ComparableCapability): List of existing capabilities.
+            desired_capabilities (ComparableCapability): List of wanted capabilities to check against existing.
+            project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
+                to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
+                is used, it will be inferred from the CogniteClient used to call retrieve it via token/inspect.
+            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
+                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
+
+        Returns:
+            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+
+        Examples:
+
+            Ensure that a user's groups grant access to read- and write for assets in all scope,
+            and events write, scoped to a specific dataset with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
+                >>> client = CogniteClient()
+                >>> my_groups = client.iam.groups.list(all=False)
+                >>> to_check = [
+                ...     AssetsAcl(
+                ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
+                ...         scope=AssetsAcl.Scope.All()),
+                ...     EventsAcl(
+                ...         actions=[EventsAcl.Action.Write],
+                ...         scope=EventsAcl.Scope.DataSet([123]),
+                ... )]
+                >>> missing = client.iam.compare_capabilities(
+                ...     existing_capabilities=my_groups,
+                ...     desired_capabilities=to_check)
+                >>> if missing:
+                ...     pass  # do something
+
+            Capabilities can also be passed as dictionaries:
+
+                >>> to_check = [
+                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
+                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ... ]
+                >>> missing = client.iam.compare_capabilities(
+                ...     existing_capabilities=my_groups,
+                ...     desired_capabilities=to_check)
+
+        Tip:
+            If you just want to check against your existing capabilities, you may use the helper method
+            ``client.iam.verify_capabilities`` instead.
+        """
+        has_capabilties = _convert_capability_to_tuples(existing_capabilities, project)
+        to_check = _convert_capability_to_tuples(desired_capabilities, project)
+        missing = to_check - has_capabilties
+
+        if ignore_allscope_meaning:
+            return [Capability.from_tuple(tpl) for tpl in missing]
+
+        has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilties), key=itemgetter(slice(2)))}
+        to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
+
+        missing.clear()
+        for key, check_grp in to_check_lookup.items():
+            group = has_capabilties_lookup.get(key, set())
+            # If allScope exists for capability, we skip the missing:
+            if not any(grp[2] == "all" for grp in group):
+                missing.update(check_grp)
+        return [Capability.from_tuple(tpl) for tpl in missing]
+
+    def verify_capabilities(
+        self,
+        desired_capabilities: ComparableCapability,
+        ignore_allscope_meaning: bool = False,
+    ) -> list[Capability]:
+        """Helper method to compare your current capabilities with a set of desired capabilities and return any missing.
+
+        Args:
+            desired_capabilities (ComparableCapability): List of desired capabilities to check against existing.
+            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
+                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
+
+        Returns:
+            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+
+        Examples:
+
+            Ensure that the user's credentials have access to read- and write assets in all scope,
+            and write events scoped to a specific dataset with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
+                >>> client = CogniteClient()
+                >>> to_check = [
+                ...     AssetsAcl(
+                ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
+                ...         scope=AssetsAcl.Scope.All()),
+                ...     EventsAcl(
+                ...         actions=[EventsAcl.Action.Write],
+                ...         scope=EventsAcl.Scope.DataSet([123]),
+                ... )]
+                >>> if missing := client.iam.verify_capabilities(to_check):
+                ...     pass  # do something
+
+            Capabilities can also be passed as dictionaries:
+
+                >>> missing = client.iam.verify_capabilities([
+                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
+                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ... ])
+        """
+        existing_capabilities = self.token.inspect().capabilities
+        return self.compare_capabilities(existing_capabilities, desired_capabilities)
 
 
 class GroupsAPI(APIClient):

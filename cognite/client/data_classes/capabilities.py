@@ -5,8 +5,7 @@ import inspect
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from itertools import groupby, product
-from operator import itemgetter
+from itertools import product
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, Sequence, cast
 
@@ -238,7 +237,7 @@ class ProjectCapability(CogniteResource):
         return dumped
 
 
-class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
+class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
     _RESOURCE = ProjectCapability
 
     def _infer_project(self, project: str | None = None) -> str:
@@ -257,59 +256,6 @@ class ProjectCapabilitiesList(CogniteResourceList[ProjectCapability]):
                 and project in proj_cap.project_scope.projects
             )
         )
-
-    def compare(
-        self, capabilities: list[Capability], project: str | None = None, ignore_allscope_meaning: bool = False
-    ) -> list[Capability]:
-        """Compare a group of wanted capabilities against existing, i.e. what acls the user currently
-        have access to and return any missing.
-
-        Args:
-            capabilities (list[Capability]): List of capabilities to test against existing.
-            project (str | None): The CDF project the capabilities belong to (existing might be from several).
-                If not passed, inferred from CogniteClient used to call token/inspect.
-            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
-                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
-
-        Returns:
-            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
-
-        Examples:
-
-            Ensure that the user's credentials have access to read- and write assets in all scope,
-            and write events scoped to a specific dataset with id=123:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
-                >>> client = CogniteClient()
-                >>> capabilities = client.iam.token.inspect().capabilities
-                >>> capabilities.compare([
-                ...     AssetsAcl(
-                ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
-                ...         scope=AssetsAcl.Scope.All()),
-                ...     EventsAcl(
-                ...         actions=[EventsAcl.Action.Write],
-                ...         scope=EventsAcl.Scope.DataSet([123]),
-                ... )])
-        """
-        project = self._infer_project(project)
-        has_capabilities = self.as_tuples(project)
-        to_check = set().union(*(c.as_tuples() for c in capabilities))
-        missing = to_check - has_capabilities
-
-        if ignore_allscope_meaning:
-            return [Capability.from_tuple(tpl) for tpl in missing]
-
-        has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilities), key=itemgetter(slice(2)))}
-        to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
-
-        missing.clear()
-        for key, check_grp in to_check_lookup.items():
-            group = has_capabilties_lookup.get(key, set())
-            # If allScope exists for capability, we skip the missing:
-            if not any(grp[2] == "all" for grp in group):
-                missing.update(check_grp)
-        return [Capability.from_tuple(tpl) for tpl in missing]
 
 
 @dataclass(frozen=True)
