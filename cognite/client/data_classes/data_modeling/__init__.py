@@ -131,8 +131,6 @@ __all__ = [
     "ContainerProperty",
     "Primitive",
     "CDFExternalIdReference",
-    "RequiresConstraintDefinition",
-    "UniquenessConstraintDefinition",
     "ContainerId",
     "ViewId",
     "DataModelId",
