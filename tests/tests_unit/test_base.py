@@ -153,9 +153,8 @@ class TestCogniteObject:
         ],
     )
     def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
-        instance = FakeCogniteResourceGenerator(
-            seed=42, cognite_client=cognite_mock_client_placeholder
-        ).create_instance(cognite_object_subclass)
+        instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)

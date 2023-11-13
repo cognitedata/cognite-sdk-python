@@ -153,7 +153,7 @@ class ResultSetExpression(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if "sort" in resource:
-            sort = [InstanceSort(**sort) for sort in resource["sort"]]
+            sort = [InstanceSort.load(sort) for sort in resource["sort"]]
         else:
             sort = []
 
@@ -183,7 +183,10 @@ class ResultSetExpression(CogniteObject, ABC):
                 else None,
                 "limit_each": query_edge.get("limitEach"),
             }
-            return cast(Self, EdgeResultSetExpression(**edge, sort=sort, limit=resource.get("limit")))
+            post_sort = [InstanceSort.load(sort) for sort in resource["postSort"]] if "postSort" in resource else []
+            return cast(
+                Self, EdgeResultSetExpression(**edge, sort=sort, post_sort=post_sort, limit=resource.get("limit"))
+            )
         else:
             raise NotImplementedError(f"Unknown query type: {resource}")
 

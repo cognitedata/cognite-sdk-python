@@ -297,7 +297,7 @@ class UniquenessConstraint(Constraint):
 
 
 @dataclass(frozen=True)
-class Index(Constraint, ABC):
+class Index(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if resource["indexType"] == "btree":
