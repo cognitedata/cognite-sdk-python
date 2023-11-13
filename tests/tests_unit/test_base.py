@@ -152,7 +152,7 @@ class TestCogniteObject:
             for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
-    def test_json_serialize(self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+    def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=42, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
@@ -171,7 +171,7 @@ class TestCogniteObject:
             for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
-    def test_yaml_serialize(self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+    def test_yaml_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=66, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
@@ -191,7 +191,7 @@ class TestCogniteObject:
         ],
     )
     def test_dump_default_camel_case_false(
-        self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
         # This test ensures all camel_case args default to False
         parameters = signature(cognite_object_subclass.dump).parameters
