@@ -229,16 +229,26 @@ class TestCapabilities:
     def test_create_capability_forget_initializing_scope(self):
         # Ensure these do not raise. All other scopes require arguments and so will
         # raise appropriate errors if not initialized.
-        DataSetsAcl([DataSetsAcl.Action.Read], scope=DataSetsAcl.Scope.All)
-        DataSetsAcl([DataSetsAcl.Action.Read], scope=DataSetsAcl.Scope.All())
-        DataSetsAcl([DataSetsAcl.Action.Read], scope=AllScope)
-        DataSetsAcl([DataSetsAcl.Action.Read], scope=AllScope())
-        GroupsAcl([GroupsAcl.Action.Delete], scope=GroupsAcl.Scope.CurrentUser)
-        GroupsAcl([GroupsAcl.Action.Delete], scope=GroupsAcl.Scope.CurrentUser())
-        GroupsAcl([GroupsAcl.Action.Delete], scope=CurrentUserScope)
-        GroupsAcl([GroupsAcl.Action.Delete], scope=CurrentUserScope())
+        ds1 = DataSetsAcl([DataSetsAcl.Action.Read], scope=DataSetsAcl.Scope.All)
+        ds2 = DataSetsAcl([DataSetsAcl.Action.Read], scope=DataSetsAcl.Scope.All())
+        assert ds1.dump() == ds2.dump()
+
+        ds1 = DataSetsAcl([DataSetsAcl.Action.Read], scope=AllScope)
+        ds2 = DataSetsAcl([DataSetsAcl.Action.Read], scope=AllScope())
+        assert ds1.dump() == ds2.dump()
+
+        grp1 = GroupsAcl([GroupsAcl.Action.Delete], scope=GroupsAcl.Scope.CurrentUser)
+        grp2 = GroupsAcl([GroupsAcl.Action.Delete], scope=GroupsAcl.Scope.CurrentUser())
+        assert grp1.dump() == grp2.dump()
+
+        grp1 = GroupsAcl([GroupsAcl.Action.Delete], scope=CurrentUserScope)
+        grp2 = GroupsAcl([GroupsAcl.Action.Delete], scope=CurrentUserScope())
+        assert grp1.dump() == grp2.dump()
 
     def test_create_capability_forget_initializing_scope__not_supported(self):
+        with pytest.raises(ValueError, match="^DataSetsAcl got an unknown scope"):
+            DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=CurrentUserScope)
+
         with pytest.raises(ValueError, match="^DataSetsAcl got an unknown scope"):
             DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=GroupsAcl.Scope.CurrentUser)
 
