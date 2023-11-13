@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.39.5] - 2023-11-12
 ## Fixed
-- The `.apply()` methods on `SingleHopConnectionDefinition` and `MappedProperty` were missing properties `connection_type` and `source`.
+- The `.apply()` methods of `MappedProperty` was missing property `source`.
   This is now fixed.
 
 ## [6.39.4] - 2023-11-09

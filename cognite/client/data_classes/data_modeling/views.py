@@ -429,7 +429,6 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             description=self.description,
             edge_source=self.edge_source,
             direction=self.direction,
-            connection_type=self.connection_type,
         )
 
 
