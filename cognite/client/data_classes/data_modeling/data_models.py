@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResourceList
-from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
