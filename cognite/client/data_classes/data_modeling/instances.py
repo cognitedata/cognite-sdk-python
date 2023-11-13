@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
@@ -28,8 +28,8 @@ from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
-from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -114,7 +114,7 @@ class NodeOrEdgeData:
         return output
 
 
-class InstanceCore(DataModelingResource):
+class InstanceCore(DataModelingResource, ABC):
     """A node or edge
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
@@ -128,7 +128,7 @@ class InstanceCore(DataModelingResource):
         self.external_id = external_id
 
 
-class InstanceApply(InstanceCore):
+class InstanceApply(InstanceCore, ABC):
     """A node or edge. This is the write version of the instance.
 
     Args:
@@ -152,22 +152,14 @@ class InstanceApply(InstanceCore):
         self.existing_version = existing_version
         self.sources = sources
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.sources:
-            output["sources"] = [source.dump(camel_case) for source in self.sources]
-        return output
-
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         resource = convert_all_keys_to_snake_case(resource)
-        if cls is not InstanceApply:
-            # NodeApply and EdgeApply does not support instance type
-            resource.pop("instance_type", None)
-        instance = cls(**convert_all_keys_to_snake_case(resource))
-        if "sources" in resource:
-            instance.sources = [NodeOrEdgeData.load(source) for source in resource["sources"]]
-        return instance
+        if resource["instance_type"] == "node":
+            return cast(Self, NodeApply._load(resource))
+        if resource["instance_type"] == "edge":
+            return cast(Self, EdgeApply._load(resource))
+        raise ValueError(f"instance_type must be node or edge, but was {resource['instance_type']}")
 
 
 _T = TypeVar("_T")
@@ -411,15 +403,21 @@ class NodeApply(InstanceApply):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
+        if self.sources:
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
         if self.type:
             output["type"] = self.type.dump(camel_case)
         return output
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
-        instance = super()._load(resource)
-        instance.type = DirectRelationReference.load(resource["type"]) if "type" in resource else None
-        return instance
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            existing_version=resource.get("existingVersion"),
+            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])],
+            type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+        )
 
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
@@ -578,6 +576,8 @@ class EdgeApply(InstanceApply):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
+        if self.sources:
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
         if self.type:
             output["type"] = self.type.dump(camel_case)
         if self.start_node:
@@ -588,12 +588,15 @@ class EdgeApply(InstanceApply):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource)
-
-        instance.type = DirectRelationReference.load(resource["type"])
-        instance.start_node = DirectRelationReference.load(resource["startNode"])
-        instance.end_node = DirectRelationReference.load(resource["endNode"])
-        return instance
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            existing_version=resource.get("existingVersion"),
+            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])],
+            type=DirectRelationReference.load(resource["type"]),
+            start_node=DirectRelationReference.load(resource["startNode"]),
+            end_node=DirectRelationReference.load(resource["endNode"]),
+        )
 
 
 class Edge(Instance):

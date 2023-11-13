@@ -11,6 +11,7 @@ import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
+from cognite.client.data_classes import Feature, FeatureAggregate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -25,6 +26,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.events import Event, EventList
+from cognite.client.data_classes.geospatial import GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
@@ -152,10 +154,9 @@ class TestCogniteObject:
             for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
-    def test_json_serialize(self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder):
-        instance = FakeCogniteResourceGenerator(
-            seed=42, cognite_client=cognite_mock_client_placeholder
-        ).create_instance(cognite_object_subclass)
+    def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
+        instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
@@ -171,7 +172,30 @@ class TestCogniteObject:
             for class_ in all_concrete_subclasses(CogniteObject)
         ],
     )
-    def test_yaml_serialize(self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder):
+    def test_handle_unknown_arguments_when_loading(
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
+    ):
+        if cognite_object_subclass in {Feature, FeatureAggregate, GeospatialComputedItem}:
+            # ignore these as they are not compatible
+            return
+        instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        dumped["some-new-unknown-key"] = "im-gonna-getcha"
+        loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_object_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteObject)
+        ],
+    )
+    def test_yaml_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=66, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
@@ -191,7 +215,7 @@ class TestCogniteObject:
         ],
     )
     def test_dump_default_camel_case_false(
-        self, cognite_object_subclass: type[CogniteResource], cognite_mock_client_placeholder
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
         # This test ensures all camel_case args default to False
         parameters = signature(cognite_object_subclass.dump).parameters

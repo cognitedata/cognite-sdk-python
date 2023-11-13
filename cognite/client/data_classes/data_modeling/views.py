@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteObject,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import DataModelingResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     DirectRelationReference,
@@ -21,7 +22,6 @@ from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
-    convert_all_keys_to_snake_case,
 )
 
 if TYPE_CHECKING:
@@ -86,7 +86,7 @@ class ViewApply(ViewCore):
         name (str | None): Human readable name for the view.
         filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
-        properties (dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None): No description.
+        properties (dict[str, ViewPropertyApply] | None): No description.
     """
 
     def __init__(
@@ -98,7 +98,7 @@ class ViewApply(ViewCore):
         name: str | None = None,
         filter: Filter | None = None,
         implements: list[ViewId] | None = None,
-        properties: dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None = None,
+        properties: dict[str, ViewPropertyApply] | None = None,
     ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
@@ -106,10 +106,23 @@ class ViewApply(ViewCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "properties" in resource and isinstance(resource["properties"], dict):
-            resource["properties"] = {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()} or None
-
-        return super()._load(resource)
+        properties = (
+            {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()}
+            if "properties" in resource
+            else None
+        )
+        implements = [ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None
+        filter = Filter.load(resource["filter"]) if "filter" in resource else None
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            description=resource.get("description"),
+            name=resource.get("name"),
+            filter=filter,
+            implements=implements,
+            properties=properties,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -192,7 +205,7 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None = None
+        properties: dict[str, ViewPropertyApply] | None = None
         if self.properties:
             for k, v in self.properties.items():
                 if isinstance(v, (MappedProperty, SingleHopConnectionDefinition)):
@@ -269,26 +282,26 @@ class ViewFilter(CogniteFilter):
         self.include_global = include_global
 
 
-class ViewProperty(ABC):
+class ViewProperty(CogniteObject, ABC):
     @classmethod
-    def load(cls, data: dict[str, Any]) -> ViewProperty:
-        if "direction" in data:
-            return SingleHopConnectionDefinition.load(data)
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "direction" in resource:
+            return cast(Self, SingleHopConnectionDefinition.load(resource))
         else:
-            return MappedProperty.load(data)
+            return cast(Self, MappedProperty.load(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
-class ViewPropertyApply(ABC):
+class ViewPropertyApply(CogniteObject, ABC):
     @classmethod
-    def load(cls, data: dict[str, Any]) -> ViewPropertyApply:
-        if "direction" in data:
-            return SingleHopConnectionDefinitionApply.load(data)
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "direction" in resource:
+            return cast(Self, SingleHopConnectionDefinitionApply.load(resource))
         else:
-            return MappedPropertyApply.load(data)
+            return cast(Self, MappedPropertyApply.load(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -304,13 +317,14 @@ class MappedPropertyApply(ViewPropertyApply):
     source: ViewId | None = None
 
     @classmethod
-    def load(cls, data: dict) -> MappedPropertyApply:
-        output = cls(**convert_all_keys_to_snake_case(data))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        if isinstance(data.get("source"), dict):
-            output.source = ViewId.load(data["source"])
-        return output
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            container=ContainerId.load(resource["container"]),
+            container_property_identifier=resource["containerPropertyIdentifier"],
+            name=resource.get("name"),
+            description=resource.get("description"),
+            source=ViewId.load(resource["source"]) if "source" in resource else None,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -342,20 +356,20 @@ class MappedProperty(ViewProperty):
     description: str | None = None
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> MappedProperty:
-        type_ = data["type"]
-        source = type_.pop("source", None) or data.get("source")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        type_ = resource["type"]
+        source = type_.pop("source", None) or resource.get("source")
 
         return cls(
-            container=ContainerId.load(data["container"]),
-            container_property_identifier=data["containerPropertyIdentifier"],
+            container=ContainerId.load(resource["container"]),
+            container_property_identifier=resource["containerPropertyIdentifier"],
             type=PropertyType.load(type_),
-            nullable=data["nullable"],
-            auto_increment=data["autoIncrement"],
+            nullable=resource["nullable"],
+            auto_increment=resource["autoIncrement"],
             source=ViewId.load(source) if source else None,
-            default_value=data.get("defaultValue"),
-            name=data.get("name"),
-            description=data.get("description"),
+            default_value=resource.get("defaultValue"),
+            name=resource.get("name"),
+            description=resource.get("description"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -393,18 +407,18 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
     connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = cls(
-            type=DirectRelationReference.load(data["type"]),
-            source=ViewId.load(data["source"]),
-            name=data.get("name"),
-            description=data.get("description"),
-            edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
+            type=DirectRelationReference.load(resource["type"]),
+            source=ViewId.load(resource["source"]),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            edge_source=(edge_source := resource.get("edgeSource")) and ViewId.load(edge_source),
         )
-        if "direction" in data:
-            instance.direction = data["direction"]
-        if "connectionType" in data:
-            instance.connection_type = data["connectionType"]
+        if "direction" in resource:
+            instance.direction = resource["direction"]
+        if "connectionType" in resource:
+            instance.connection_type = resource["connectionType"]
         return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -454,18 +468,18 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
     connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinitionApply:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = cls(
-            type=DirectRelationReference.load(data["type"]),
-            source=ViewId.load(data["source"]),
-            name=data.get("name"),
-            description=data.get("description"),
-            edge_source=(edge_source := data.get("edgeSource")) and ViewId.load(edge_source),
+            type=DirectRelationReference.load(resource["type"]),
+            source=ViewId.load(resource["source"]),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            edge_source=(edge_source := resource.get("edgeSource")) and ViewId.load(edge_source),
         )
-        if "direction" in data:
-            instance.direction = data["direction"]
-        if "connectionType" in data:
-            instance.connection_type = data["connectionType"]
+        if "direction" in resource:
+            instance.direction = resource["direction"]
+        if "connectionType" in resource:
+            instance.connection_type = resource["connectionType"]
         return instance
 
     def dump(self, camel_case: bool = True) -> dict:

@@ -1167,7 +1167,7 @@ _VALID_SCOPES_BY_CAPABILITY: MappingProxyType[
     type[Capability], tuple[tuple[type[Capability.Scope], ...], tuple[str, ...]]
 ] = MappingProxyType(
     {
-        acl: tuple(zip(*[(v, k) for k, v in vars(acl.Scope).items() if inspect.isclass(v)]))  # type: ignore [misc]
+        acl: tuple(zip(*[(v, k) for k, v in vars(acl.Scope).items() if inspect.isclass(v)]))
         for acl in _CAPABILITY_CLASS_BY_NAME.values()
     }
 )

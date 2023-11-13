@@ -30,7 +30,13 @@ WorkflowStatus: TypeAlias = Literal[
 ]
 
 
-class WorkflowUpsert(CogniteResource):
+class WorkflowCore(CogniteResource, ABC):
+    def __init__(self, external_id: str, description: str | None) -> None:
+        self.external_id = external_id
+        self.description = description
+
+
+class WorkflowUpsert(WorkflowCore):
     """
     This class represents a workflow. This is the write version, used when creating or updating a workflow.
 
@@ -41,21 +47,12 @@ class WorkflowUpsert(CogniteResource):
                             and you want to keep it, you need to provide the description when updating the workflow.
     """
 
-    def __init__(self, external_id: str, description: str | None) -> None:
-        self.external_id = external_id
-        self.description = description
-
     @classmethod
-    def _load(
-        cls,
-        resource: dict,
-        cognite_client: CogniteClient | None = None,
-    ) -> Self:
-        resource = convert_all_keys_to_snake_case(resource)
-        return cls(**resource)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(external_id=resource["externalId"], description=resource.get("description"))
 
 
-class Workflow(WorkflowUpsert):
+class Workflow(WorkflowCore):
     """
     This class represents a workflow. This is the reading version, used when reading or listing a workflows.
 
@@ -74,6 +71,14 @@ class Workflow(WorkflowUpsert):
     ) -> None:
         super().__init__(external_id, description)
         self.created_time = created_time
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            description=resource.get("description"),
+            created_time=resource["createdTime"],
+        )
 
 
 class WorkflowList(CogniteResourceList[Workflow]):

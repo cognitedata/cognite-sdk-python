@@ -28,6 +28,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
+from cognite.client.data_classes.data_modeling.query import Query
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.workflows import (
@@ -306,6 +307,13 @@ class FakeCogniteResourceGenerator:
         if resource_cls is DataPointSubscriptionCreate:
             # DataPointSubscriptionCreate requires either timeseries_ids or filter
             keyword_arguments.pop("filter", None)
+        if resource_cls is Query:
+            # keys in with must match keys in select
+            selects = list(keyword_arguments["select"].values())
+            new_selects = {}
+            for i, key in enumerate(keyword_arguments["with_"]):
+                new_selects[key] = selects[i]
+            keyword_arguments["select"] = new_selects
         elif resource_cls is Relationship:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
@@ -416,7 +424,7 @@ class FakeCogniteResourceGenerator:
             collections.abc.Sequence,
             collections.abc.Collection,
         ]:
-            return [self.create_value(first_not_none) for _ in range(self._random.randint(1, 3))]
+            return [self.create_value(first_not_none) for _ in range(3)]
         elif container_type in [typing.Dict, dict, collections.abc.MutableMapping, collections.abc.Mapping]:
             if first_not_none is None:
                 return self.create_value(dict)
@@ -503,6 +511,17 @@ class FakeCogniteResourceGenerator:
                 ]
             key, value = annotation[5:-1].split(",")
             return typing.Dict[
+                cls._create_type_hint_3_10(key.strip(), resource_module_vars, local_vars),
+                cls._create_type_hint_3_10(value.strip(), resource_module_vars, local_vars),
+            ]
+        elif annotation.startswith("Mapping[") and annotation.endswith("]"):
+            if Counter(annotation)[","] > 1:
+                key, rest = annotation[8:-1].split(",", 1)
+                return typing.Mapping[
+                    key.strip(), cls._create_type_hint_3_10(rest.strip(), resource_module_vars, local_vars)
+                ]
+            key, value = annotation[8:-1].split(",")
+            return typing.Mapping[
                 cls._create_type_hint_3_10(key.strip(), resource_module_vars, local_vars),
                 cls._create_type_hint_3_10(value.strip(), resource_module_vars, local_vars),
             ]

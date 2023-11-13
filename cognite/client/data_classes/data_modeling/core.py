@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteResource, basic_instance_dump
+from cognite.client.data_classes._base import CogniteObject, CogniteResource, basic_instance_dump
 from cognite.client.utils._auxiliary import json_dump_default
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -34,13 +34,14 @@ class DataModelingResource(CogniteResource, ABC):
         return cls(**convert_all_keys_to_snake_case(resource))
 
 
-class DataModelingSort:
+class DataModelingSort(CogniteObject):
     def __init__(
         self,
         property: str | list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
     ) -> None:
+        super().__init__()
         self.property = property
         self.direction = direction
         self.nulls_first = nulls_first
@@ -55,7 +56,7 @@ class DataModelingSort:
         return str(self)
 
     @classmethod
-    def load(cls, resource: dict) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if not isinstance(resource, dict):
             raise TypeError(f"Resource must be mapping, not {type(resource)}")
 

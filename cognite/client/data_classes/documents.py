@@ -232,12 +232,10 @@ class DocumentHighlight(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
-        instance = cls(**convert_all_keys_to_snake_case(resource))
-        if isinstance(instance.highlight, dict):
-            instance.highlight = Highlight(**convert_all_keys_to_snake_case(instance.highlight))
-        if isinstance(instance.document, dict):
-            instance.document = Document._load(instance.document)
-        return instance
+        return cls(
+            highlight=Highlight._load(resource["highlight"]),
+            document=Document._load(resource["document"]),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}

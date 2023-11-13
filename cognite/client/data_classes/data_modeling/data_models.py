@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResourceList
-from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
@@ -79,10 +79,15 @@ class DataModelApply(DataModelCore):
             return ViewApply._load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        if "views" in resource:
-            resource["views"] = [cls._load_view(v) for v in resource["views"]] or None
-        return super()._load(resource)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> DataModelApply:
+        return DataModelApply(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            description=resource.get("description"),
+            name=resource.get("name"),
+            views=[cls._load_view(v) for v in resource["views"]] if "views" in resource else None,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)

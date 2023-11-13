@@ -27,6 +27,7 @@ class TestEdgeApply:
                 "externalId": "Person.role",
             },
             "instanceType": "edge",
+            "sources": [],
             "startNode": {
                 "space": "mySpace",
                 "externalId": "person.external_id",

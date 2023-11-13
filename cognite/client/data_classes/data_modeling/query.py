@@ -3,8 +3,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import Any, Literal, Mapping
+from typing import TYPE_CHECKING, Any, Literal, Mapping, cast
 
+from typing_extensions import Self
+
+from cognite.client.data_classes._base import CogniteObject
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
@@ -17,9 +20,12 @@ from cognite.client.data_classes.data_modeling.instances import (
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._importing import local_import
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+
 
 @dataclass
-class SourceSelector:
+class SourceSelector(CogniteObject):
     source: ViewId
     properties: list[str]
 
@@ -30,15 +36,15 @@ class SourceSelector:
         }
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SourceSelector:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            source=ViewId.load(data["source"]),
-            properties=data["properties"],
+            source=ViewId.load(resource["source"]),
+            properties=resource["properties"],
         )
 
 
 @dataclass
-class Select:
+class Select(CogniteObject):
     sources: list[SourceSelector] = field(default_factory=list)
     sort: list[InstanceSort] = field(default_factory=list)
     limit: int | None = None
@@ -56,19 +62,19 @@ class Select:
         return output
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> Select:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            sources=[SourceSelector.load(source) for source in data.get("sources", [])],
-            sort=[InstanceSort.load(s) for s in data.get("sort", [])],
-            limit=data.get("limit"),
+            sources=[SourceSelector.load(source) for source in resource.get("sources", [])],
+            sort=[InstanceSort.load(s) for s in resource.get("sort", [])],
+            limit=resource.get("limit"),
         )
 
 
-class Query:
-    r"""Query allows you to do advanced queries on the data model.
+class Query(CogniteObject):
+    """Query allows you to do advanced queries on the data model.
 
     Args:
-        with\_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
+        with_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
         select (dict[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
         parameters (dict[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These are for pagination purposes, for example, in the sync endpoint.
@@ -114,7 +120,7 @@ class Query:
         return cls.load(yaml.safe_load(data))
 
     @classmethod
-    def load(cls, resource: dict[str, Any]) -> Query:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if not (with_ := resource.get("with")):
             raise ValueError("The query must contain a with key")
 
@@ -133,7 +139,7 @@ class Query:
         return type(other) is type(self) and self.dump() == other.dump()
 
 
-class ResultSetExpression(ABC):
+class ResultSetExpression(CogniteObject, ABC):
     def __init__(self, from_: str | None, filter: Filter | None, limit: int | None, sort: list[InstanceSort] | None):
         self.from_ = from_
         self.filter = filter
@@ -145,14 +151,14 @@ class ResultSetExpression(ABC):
         ...
 
     @classmethod
-    def load(cls, query: dict[str, Any]) -> ResultSetExpression:
-        if "sort" in query:
-            sort = [InstanceSort(**sort) for sort in query["sort"]]
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "sort" in resource:
+            sort = [InstanceSort.load(sort) for sort in resource["sort"]]
         else:
             sort = []
 
-        if "nodes" in query:
-            query_node = query["nodes"]
+        if "nodes" in resource:
+            query_node = resource["nodes"]
             node = {
                 "from_": query_node.get("from"),
                 "filter": Filter.load(query_node["filter"]) if "filter" in query_node else None,
@@ -163,9 +169,9 @@ class ResultSetExpression(ABC):
                     through["view"]["externalId"] + "/" + through["view"]["version"],
                     through["identifier"],
                 ]
-            return NodeResultSetExpression(sort=sort, limit=query.get("limit"), **node)
-        elif "edges" in query:
-            query_edge = query["edges"]
+            return cast(Self, NodeResultSetExpression(sort=sort, limit=resource.get("limit"), **node))
+        elif "edges" in resource:
+            query_edge = resource["edges"]
             edge = {
                 "from_": query_edge.get("from"),
                 "max_distance": query_edge.get("maxDistance"),
@@ -177,9 +183,12 @@ class ResultSetExpression(ABC):
                 else None,
                 "limit_each": query_edge.get("limitEach"),
             }
-            return EdgeResultSetExpression(**edge, sort=sort, limit=query.get("limit"))
+            post_sort = [InstanceSort.load(sort) for sort in resource["postSort"]] if "postSort" in resource else []
+            return cast(
+                Self, EdgeResultSetExpression(**edge, sort=sort, post_sort=post_sort, limit=resource.get("limit"))
+            )
         else:
-            raise NotImplementedError(f"Unknown query type: {query}")
+            raise NotImplementedError(f"Unknown query type: {resource}")
 
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and self.dump() == other.dump()

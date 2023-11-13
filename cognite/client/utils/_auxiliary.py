@@ -52,7 +52,7 @@ def fast_dict_load(
     cls: type[T_CogniteObject], item: dict[str, Any], cognite_client: CogniteClient | None
 ) -> T_CogniteObject:
     try:
-        instance = cls(cognite_client=cognite_client)
+        instance = cls(cognite_client=cognite_client)  # type: ignore [call-arg]
     except TypeError:
         instance = cls()
     # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
