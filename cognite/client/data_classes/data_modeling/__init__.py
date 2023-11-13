@@ -12,6 +12,8 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerList,
     ContainerProperty,
     Index,
+    RequiresConstraint,
+    UniquenessConstraint,
 )
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
@@ -131,9 +133,9 @@ __all__ = [
     "ContainerProperty",
     "Primitive",
     "CDFExternalIdReference",
-    "RequiresConstraintDefinition",
-    "UniquenessConstraintDefinition",
+    "RequiresConstraint",
     "ContainerId",
+    "UniquenessConstraint",
     "ViewId",
     "DataModelId",
     "Text",
