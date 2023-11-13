@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteObject,
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -210,7 +211,7 @@ class ContainerFilter(CogniteFilter):
 
 
 @dataclass(frozen=True)
-class ContainerProperty:
+class ContainerProperty(CogniteObject):
     type: PropertyType
     nullable: bool = True
     auto_increment: bool = False
@@ -219,21 +220,21 @@ class ContainerProperty:
     description: str | None = None
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> ContainerProperty:
-        if "type" not in data:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "type" not in resource:
             raise ValueError("Type not specified")
-        if data["type"].get("type") == "direct":
-            type_: PropertyType = DirectRelation.load(data["type"])
+        if resource["type"].get("type") == "direct":
+            type_: PropertyType = DirectRelation.load(resource["type"])
         else:
-            type_ = PropertyType.load(data["type"])
+            type_ = PropertyType.load(resource["type"])
         return cls(
             type=type_,
             # If nothing is specified, we will pass through null values
-            nullable=data.get("nullable"),  # type: ignore[arg-type]
-            auto_increment=data.get("autoIncrement"),  # type: ignore[arg-type]
-            name=data.get("name"),
-            default_value=data.get("defaultValue"),
-            description=data.get("description"),
+            nullable=resource.get("nullable"),  # type: ignore[arg-type]
+            auto_increment=resource.get("autoIncrement"),  # type: ignore[arg-type]
+            name=resource.get("name"),
+            default_value=resource.get("defaultValue"),
+            description=resource.get("description"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -247,14 +248,14 @@ class ContainerProperty:
 
 
 @dataclass(frozen=True)
-class Constraint(ABC):
+class Constraint(CogniteObject, ABC):
     @classmethod
-    def load(cls, data: dict) -> RequiresConstraint | UniquenessConstraint:
-        if data["constraintType"] == "requires":
-            return RequiresConstraint.load(data)
-        elif data["constraintType"] == "uniqueness":
-            return UniquenessConstraint.load(data)
-        raise ValueError(f"Invalid constraint type {data['constraintType']}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if resource["constraintType"] == "requires":
+            return cast(Self, RequiresConstraint.load(resource))
+        elif resource["constraintType"] == "uniqueness":
+            return cast(Self, UniquenessConstraint.load(resource))
+        raise ValueError(f"Invalid constraint type {resource['constraintType']}")
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -266,8 +267,8 @@ class RequiresConstraint(Constraint):
     require: ContainerId
 
     @classmethod
-    def load(cls, data: dict) -> RequiresConstraint:
-        return cls(require=ContainerId.load(data["require"]))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(require=ContainerId.load(resource["require"]))
 
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         as_dict = asdict(self)
@@ -284,8 +285,8 @@ class UniquenessConstraint(Constraint):
     properties: list[str]
 
     @classmethod
-    def load(cls, data: dict) -> UniquenessConstraint:
-        return cls(properties=data["properties"])
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(properties=resource["properties"])
 
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         as_dict = asdict(self)
@@ -296,14 +297,14 @@ class UniquenessConstraint(Constraint):
 
 
 @dataclass(frozen=True)
-class Index(ABC):
+class Index(Constraint, ABC):
     @classmethod
-    def load(cls, data: dict) -> Index:
-        if data["indexType"] == "btree":
-            return BTreeIndex.load(data)
-        if data["indexType"] == "inverted":
-            return InvertedIndex.load(data)
-        raise ValueError(f"Invalid index type {data['indexType']}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if resource["indexType"] == "btree":
+            return cast(Self, BTreeIndex.load(resource))
+        if resource["indexType"] == "inverted":
+            return cast(Self, InvertedIndex.load(resource))
+        raise ValueError(f"Invalid index type {resource['indexType']}")
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -316,8 +317,8 @@ class BTreeIndex(Index):
     cursorable: bool = False
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> BTreeIndex:
-        return cls(properties=data["properties"], cursorable=data.get("cursorable"))  # type: ignore[arg-type]
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(properties=resource["properties"], cursorable=resource.get("cursorable"))  # type: ignore[arg-type]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
@@ -332,8 +333,8 @@ class InvertedIndex(Index):
     properties: list[str]
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> InvertedIndex:
-        return cls(properties=data["properties"])
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(properties=resource["properties"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}

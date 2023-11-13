@@ -119,9 +119,6 @@ class CogniteObject:
     It is used both by the CogniteResources and the nested classes used by the CogniteResources.
     """
 
-    def __init__(self, cognite_client: CogniteClient | None = None) -> None:
-        raise NotImplementedError
-
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
 
