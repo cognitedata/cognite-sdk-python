@@ -102,9 +102,9 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
   since the deprecation of API keys).
 - The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set
   explicitly by the user.
-- DataClass `ViewDirectRelation`, `ContainerDirectRelation` replaced by `DirectRelation`.
-- DataClasses `MappedPropertyDefinition`, `MappedApplyPropertyDefinition` replaced by `MappedProperty`, `MappedPropertyApply`.
-- DataClasses `RequiresConstraintDefinition` and `UniquenessConstraintDefinition` replaced by `RequiresConstraint` and `UniquenessConstraint`.
+- Dataclasses `ViewDirectRelation` and `ContainerDirectRelation` are replaced by `DirectRelation`.
+- Dataclasses `MappedPropertyDefinition` and `MappedApplyPropertyDefinition` are replaced by `MappedProperty` and `MappedPropertyApply`.
+- Dataclasses `RequiresConstraintDefinition` and `UniquenessConstraintDefinition` are replaced by `RequiresConstraint` and `UniquenessConstraint`.
 - In data class `Transformation` attributes `has_source_oidc_credentials` and `has_destination_oidc_credentials` are replaced by properties.
 
 ### Fixed
