@@ -370,6 +370,7 @@ class MappedProperty(ViewProperty):
             container_property_identifier=self.container_property_identifier,
             name=self.name,
             description=self.description,
+            source=self.source,
         )
 
 
