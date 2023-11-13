@@ -39,11 +39,15 @@ class FeatureType(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FeatureType:
-        instance = cls(cognite_client=cognite_client)
-        for key, value in resource.items():
-            snake_case_key = to_snake_case(key)
-            setattr(instance, snake_case_key, value)
-        return instance
+        return cls(
+            external_id=resource["externalId"],
+            data_set_id=resource.get("dataSetId"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            properties=resource.get("properties"),
+            search_spec=resource.get("searchSpec"),
+            cognite_client=cognite_client,
+        )
 
 
 class FeatureTypeList(CogniteResourceList[FeatureType]):
@@ -90,12 +94,11 @@ class Feature(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Feature:
-        instance = cls(cognite_client=cognite_client)
-        for key, value in resource.items():
-            # Keep properties defined in Feature Type as is
-            normalized_key = _to_feature_property_name(key)
-            setattr(instance, normalized_key, value)
-        return instance
+        return cls(
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+            **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         def handle_case(key: str) -> str:
@@ -299,11 +302,12 @@ class CoordinateReferenceSystem(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> CoordinateReferenceSystem:
-        instance = cls(cognite_client=cognite_client)
-        for key, value in resource.items():
-            snake_case_key = to_snake_case(key)
-            setattr(instance, snake_case_key, value)
-        return instance
+        return cls(
+            srid=resource.get("srid"),
+            wkt=resource.get("wkt"),
+            proj_string=resource.get("projString"),
+            cognite_client=cognite_client,
+        )
 
 
 class CoordinateReferenceSystemList(CogniteResourceList[CoordinateReferenceSystem]):

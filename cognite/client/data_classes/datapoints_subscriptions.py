@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
@@ -140,6 +140,18 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description)
         self.time_series_ids = time_series_ids
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        filter = Filter.load(resource["filter"]) if "filter" in resource else None
+        return cls(
+            external_id=resource["externalId"],
+            partition_count=resource["partitionCount"],
+            time_series_ids=resource.get("timeSeriesIds"),
+            filter=filter,
+            name=resource.get("name"),
+            description=resource.get("description"),
+        )
 
 
 class DataPointSubscriptionUpdate(CogniteUpdate):

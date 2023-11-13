@@ -79,10 +79,15 @@ class DataModelApply(DataModelCore):
             return ViewApply._load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        if "views" in resource:
-            resource["views"] = [cls._load_view(v) for v in resource["views"]] or None
-        return super()._load(resource)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> DataModelApply:
+        return DataModelApply(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            description=resource.get("description"),
+            name=resource.get("name"),
+            views=[cls._load_view(v) for v in resource["views"]] if "views" in resource else None,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)

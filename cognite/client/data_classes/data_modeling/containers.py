@@ -113,6 +113,23 @@ class ContainerApply(ContainerCore):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ContainerApply:
+        return ContainerApply(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items()},
+            description=resource.get("description"),
+            name=resource.get("name"),
+            used_for=resource.get("usedFor"),
+            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()}
+            if "constraints" in resource
+            else None,
+            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} or None
+            if "indexes" in resource
+            else None,
+        )
+
 
 class Container(ContainerCore):
     """Represent the physical storage of data. This is the read format of the container

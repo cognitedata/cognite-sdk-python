@@ -943,10 +943,12 @@ class GeospatialAPI(APIClient):
             self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name)
             + f"?{query_params}"
         )
+        with open(file, "rb") as fh:
+            data = fh.read()
         res = self._do_request(
             "PUT",
             url_path,
-            data=open(file, "rb").read(),
+            data=data,
             headers={"Content-Type": "application/binary"},
             timeout=self._config.timeout,
         )

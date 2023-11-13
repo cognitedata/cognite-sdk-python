@@ -22,7 +22,6 @@ from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
-    convert_all_keys_to_snake_case,
 )
 
 if TYPE_CHECKING:
@@ -87,7 +86,7 @@ class ViewApply(ViewCore):
         name (str | None): Human readable name for the view.
         filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
-        properties (dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None): No description.
+        properties (dict[str, ViewPropertyApply] | None): No description.
     """
 
     def __init__(
@@ -99,7 +98,7 @@ class ViewApply(ViewCore):
         name: str | None = None,
         filter: Filter | None = None,
         implements: list[ViewId] | None = None,
-        properties: dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None = None,
+        properties: dict[str, ViewPropertyApply] | None = None,
     ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
@@ -107,10 +106,23 @@ class ViewApply(ViewCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "properties" in resource and isinstance(resource["properties"], dict):
-            resource["properties"] = {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()} or None
-
-        return super()._load(resource)
+        properties = (
+            {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()}
+            if "properties" in resource
+            else None
+        )
+        implements = [ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None
+        filter = Filter.load(resource["filter"]) if "filter" in resource else None
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            description=resource.get("description"),
+            name=resource.get("name"),
+            filter=filter,
+            implements=implements,
+            properties=properties,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -193,7 +205,7 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: dict[str, MappedPropertyApply | ConnectionDefinitionApply] | None = None
+        properties: dict[str, ViewPropertyApply] | None = None
         if self.properties:
             for k, v in self.properties.items():
                 if isinstance(v, (MappedProperty, SingleHopConnectionDefinition)):
@@ -306,12 +318,13 @@ class MappedPropertyApply(ViewPropertyApply):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        output = cls(**convert_all_keys_to_snake_case(resource))
-        if isinstance(resource["container"], dict):
-            output.container = ContainerId.load(resource["container"])
-        if isinstance(resource.get("source"), dict):
-            output.source = ViewId.load(resource["source"])
-        return output
+        return cls(
+            container=ContainerId.load(resource["container"]),
+            container_property_identifier=resource["containerPropertyIdentifier"],
+            name=resource.get("name"),
+            description=resource.get("description"),
+            source=ViewId.load(resource["source"]) if "source" in resource else None,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
