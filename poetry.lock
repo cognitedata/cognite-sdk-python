@@ -661,6 +661,17 @@ files = [
 ]
 
 [[package]]
+name = "icdiff"
+version = "2.0.7"
+description = "improved colored diff"
+optional = false
+python-versions = "*"
+files = [
+    {file = "icdiff-2.0.7-py3-none-any.whl", hash = "sha256:f05d1b3623223dd1c70f7848da7d699de3d9a2550b902a8234d9026292fb5762"},
+    {file = "icdiff-2.0.7.tar.gz", hash = "sha256:f79a318891adbf59a45e3a7694f5e1f18c5407065264637072ac8363b759866f"},
+]
+
+[[package]]
 name = "identify"
 version = "2.5.31"
 description = "File identification library for Python"
@@ -1390,6 +1401,17 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "pprintpp"
+version = "0.4.0"
+description = "A drop-in replacement for pprint that's actually pretty"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pprintpp-0.4.0-py2.py3-none-any.whl", hash = "sha256:b6b4dcdd0c0c0d75e4d7b2f21a9e933e5b2ce62b26e1a54537f9651ae5a5c01d"},
+    {file = "pprintpp-0.4.0.tar.gz", hash = "sha256:ea826108e2c7f49dc6d66c752973c3fc9749142a798d6b254e1e301cfdbc6403"},
+]
+
+[[package]]
 name = "pre-commit"
 version = "2.21.0"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
@@ -1648,6 +1670,22 @@ pytest = ">=4.6"
 
 [package.extras]
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
+
+[[package]]
+name = "pytest-icdiff"
+version = "0.8"
+description = "use icdiff for better error messages in pytest assertions"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytest-icdiff-0.8.tar.gz", hash = "sha256:4f493ae5ee63c8e90e9f96d4b0b2968b19634dfed8a6e3c9848fcd0d6cadcf7b"},
+    {file = "pytest_icdiff-0.8-py3-none-any.whl", hash = "sha256:8fac8667d7042270c23019580b4b5dfd81e1c3e5a9bc9d5df6ac4a49788d42f2"},
+]
+
+[package.dependencies]
+icdiff = "*"
+pprintpp = "*"
+pytest = "*"
 
 [[package]]
 name = "pytest-rerunfailures"
@@ -2309,6 +2347,17 @@ files = [
 ]
 
 [[package]]
+name = "types-pyyaml"
+version = "6.0.12.12"
+description = "Typing stubs for PyYAML"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-PyYAML-6.0.12.12.tar.gz", hash = "sha256:334373d392fde0fdf95af5c3f1661885fa10c52167b14593eb856289e1855062"},
+    {file = "types_PyYAML-6.0.12.12-py3-none-any.whl", hash = "sha256:c05bc6c158facb0676674b7f11fe3960db4f389718e19e62bd2b84d6205cfd24"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.31.0.10"
 description = "Typing stubs for requests"
@@ -2430,4 +2479,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "4e5b8a4a1491638df697cc0a233ef8c78af2ebe961b2a900d5eee005f48a3448"
+content-hash = "d08907975c3e1943efa3595f4e515cb2eda35231665c8af15f92c2eec47a1ba7"

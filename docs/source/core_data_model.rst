@@ -22,14 +22,6 @@ Aggregate assets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
 
-Aggregate asset metadata keys
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_keys
-
-Aggregate asset metadata values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_values
-
 Aggregate Asset Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_count
@@ -531,10 +523,6 @@ Upsert sequences
 Retrieve data
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
-
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
 
 Insert rows into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

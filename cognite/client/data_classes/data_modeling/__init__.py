@@ -12,8 +12,8 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerList,
     ContainerProperty,
     Index,
-    RequiresConstraintDefinition,
-    UniquenessConstraintDefinition,
+    RequiresConstraint,
+    UniquenessConstraint,
 )
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
@@ -91,13 +91,6 @@ from cognite.client.data_classes.data_modeling.views import (
 )
 from cognite.client.data_classes.filters import Filter
 
-# TODO: Remove these in next major version, there just here to ensure backwards compatibility after renaming and
-#  removing some data classes.
-ViewDirectRelation = DirectRelation
-ContainerDirectRelation = DirectRelation
-MapppedPropertyDefinition = MappedProperty
-MappedApplyPropertyDefinition = MappedPropertyApply
-
 __all__ = [
     "Aggregation",
     "AggregatedValue",
@@ -106,14 +99,11 @@ __all__ = [
     "ViewApply",
     "ViewApplyList",
     "MappedPropertyApply",
-    "MappedApplyPropertyDefinition",
     "VersionedDataModelingId",
     "DataModelingId",
     "ContainerIdentifier",
     "DataModelIdentifier",
     "DirectRelation",
-    "ViewDirectRelation",
-    "ContainerDirectRelation",
     "Filter",
     "filters",
     "DirectRelationReference",
@@ -126,7 +116,6 @@ __all__ = [
     "ContainerFilter",
     "ViewFilter",
     "MappedProperty",
-    "MapppedPropertyDefinition",
     "ConnectionDefinition",
     "SingleHopConnectionDefinition",
     "Space",
@@ -144,9 +133,9 @@ __all__ = [
     "ContainerProperty",
     "Primitive",
     "CDFExternalIdReference",
-    "RequiresConstraintDefinition",
-    "UniquenessConstraintDefinition",
+    "RequiresConstraint",
     "ContainerId",
+    "UniquenessConstraint",
     "ViewId",
     "DataModelId",
     "Text",

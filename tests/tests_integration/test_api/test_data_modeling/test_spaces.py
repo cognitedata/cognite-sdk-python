@@ -58,7 +58,7 @@ class TestSpacesAPI:
             # Assert
             assert deleted_spaces, "The deleted spaces should be returned."
             assert deleted_spaces[0] == my_space.space
-            assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
+            assert cognite_client.data_modeling.spaces.retrieve(spaces=my_space.space) is None
         finally:
             # Cleanup
             if created_space and not deleted_spaces:

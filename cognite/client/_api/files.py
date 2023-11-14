@@ -19,7 +19,7 @@ from typing import (
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
-    FileAggregate,
+    CountAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -166,7 +166,7 @@ class FilesAPI(APIClient):
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         file_metadata = FileMetadata._load(returned_file_metadata)
-        return (file_metadata, upload_url)
+        return file_metadata, upload_url
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
@@ -233,14 +233,14 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict | None): Filter on file metadata filter with exact match
 
         Returns:
-            list[FileAggregate]: List of file aggregates
+            list[CountAggregate]: List of count aggregates
 
         Examples:
 
@@ -251,7 +251,7 @@ class FilesAPI(APIClient):
                 >>> aggregate_uploaded = c.files.aggregate(filter={"uploaded": True})
         """
 
-        return self._aggregate(filter=filter, cls=FileAggregate)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
@@ -491,7 +491,7 @@ class FilesAPI(APIClient):
             if _RUNNING_IN_BROWSER:
                 # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
                 fh = fh.read()
-            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump())
+            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
         return file_metadata
 
     def upload_bytes(
@@ -822,7 +822,8 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        assert path.parent.is_dir(), f"{path.parent} is not a directory"
+        if not path.parent.is_dir():
+            raise NotADirectoryError(f"{path.parent} is not a directory")
         identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)

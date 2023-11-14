@@ -30,7 +30,7 @@ class UserProfilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.user_profiles.me()
         """
-        return UserProfile._load(self._get(self._RESOURCE_PATH + "/me").json())
+        return UserProfile.load(self._get(self._RESOURCE_PATH + "/me").json())
 
     @overload
     def retrieve(self, user_identifier: str) -> UserProfile | None:

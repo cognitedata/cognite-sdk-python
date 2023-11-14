@@ -9,7 +9,6 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     AggregateResult,
-    AggregateUniqueValuesResult,
     EndTimeFilter,
     Event,
     EventFilter,
@@ -223,49 +222,29 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_type = c.events.aggregate(filter={"type": "failure"})
         """
+        warnings.warn(
+            "This method is deprecated. Use aggregate_count, aggregate_unique_values, aggregate_cardinality_values, aggregate_cardinality_properties, or aggregate_unique_properties instead.",
+            DeprecationWarning,
+        )
         return self._aggregate(filter=filter, cls=AggregateResult)
 
-    @overload
     def aggregate_unique_values(
         self,
-        fields: Sequence[str],
-        filter: EventFilter | dict | None = None,
-        property: EventPropertyLike | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-    ) -> list[AggregateUniqueValuesResult]:
-        ...
-
-    @overload
-    def aggregate_unique_values(
-        self,
-        fields: Literal[None] = None,
         filter: EventFilter | dict | None = None,
         property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> UniqueResultList:
-        ...
-
-    def aggregate_unique_values(
-        self,
-        fields: Sequence[str] | None = None,
-        filter: EventFilter | dict | None = None,
-        property: EventPropertyLike | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-    ) -> list[AggregateUniqueValuesResult] | UniqueResultList:
         """`Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            fields (Sequence[str] | None): The fields to return. Defaults to ["count"].
             filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
             property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to consider.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
 
         Returns:
-            list[AggregateUniqueValuesResult] | UniqueResultList: List of unique values of events matching the specified filters and search.
+            UniqueResultList: List of unique values of events matching the specified filters and search.
 
         Examples:
 
@@ -303,14 +282,6 @@ class EventsAPI(APIClient):
             >>> print(result.unique)
 
         """
-        if fields is not None:
-            warnings.warn(
-                "Using of the parameter 'fields' is deprecated and will be removed in future versions of the SDK.",
-                DeprecationWarning,
-            )
-            return self._aggregate(
-                filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult
-            )
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             aggregate="uniqueValues",
@@ -782,9 +753,6 @@ class EventsAPI(APIClient):
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
-            raise ValueError("isNull cannot be used with min or max values")
 
         filter = EventFilter(
             start_time=start_time,

@@ -101,7 +101,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
             json=body,
         )
-        return WorkflowTaskExecution._load(response.json())
+        return WorkflowTaskExecution.load(response.json())
 
 
 class WorkflowExecutionAPI(BetaWorkflowAPIClient):
@@ -139,7 +139,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             if e.code == 400:
                 return None
             raise
-        return WorkflowExecutionDetailed._load(response.json())
+        return WorkflowExecutionDetailed.load(response.json())
 
     def trigger(
         self,
@@ -197,7 +197,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
             json=body,
         )
-        return WorkflowExecution._load(response.json())
+        return WorkflowExecution.load(response.json())
 
     def list(
         self,
@@ -237,7 +237,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         self._warning.warn()
         filter_: dict[str, Any] = {}
         if workflow_version_ids is not None:
-            filter_["workflowFilters"] = WorkflowIds._load(workflow_version_ids).dump(
+            filter_["workflowFilters"] = WorkflowIds.load(workflow_version_ids).dump(
                 camel_case=True, as_external_id=True
             )
         if created_time_start is not None:
@@ -309,7 +309,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             json={"items": [version.dump(camel_case=True)]},
         )
 
-        return WorkflowVersion._load(response.json()["items"][0])
+        return WorkflowVersion.load(response.json()["items"][0])
 
     def delete(
         self,
@@ -339,7 +339,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         """
         self._warning.warn()
-        identifiers = WorkflowIds._load(workflow_version_id).dump(camel_case=True)
+        identifiers = WorkflowIds.load(workflow_version_id).dump(camel_case=True)
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
@@ -374,7 +374,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 return None
             raise e
 
-        return WorkflowVersion._load(response.json())
+        return WorkflowVersion.load(response.json())
 
     def list(
         self,
@@ -416,7 +416,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         if workflow_version_ids is None:
             workflow_ids_dumped = []
         else:
-            workflow_ids_dumped = WorkflowIds._load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
+            workflow_ids_dumped = WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
         return self._list(
             method="POST",
@@ -471,7 +471,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
         )
-        return Workflow._load(response.json()["items"][0])
+        return Workflow.load(response.json()["items"][0])
 
     def retrieve(self, external_id: str) -> Workflow | None:
         """`Retrieve a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
@@ -497,7 +497,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             if e.code == 404:
                 return None
             raise e
-        return Workflow._load(response.json())
+        return Workflow.load(response.json())
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_

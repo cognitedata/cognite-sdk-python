@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
-from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.data_classes.capabilities import Capability, ProjectCapabilityList
+from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import CogniteClient
 
 
@@ -13,9 +18,9 @@ class Group(CogniteResource):
     """No description.
 
     Args:
-        name (str | None): Name of the group
+        name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[dict[str, Any]] | None): No description.
+        capabilities (list[Capability] | None): No description.
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
@@ -25,9 +30,9 @@ class Group(CogniteResource):
 
     def __init__(
         self,
-        name: str | None = None,
+        name: str,
         source_id: str | None = None,
-        capabilities: list[dict[str, Any]] | None = None,
+        capabilities: list[Capability] | None = None,
         id: int | None = None,
         is_deleted: bool | None = None,
         deleted_time: int | None = None,
@@ -43,9 +48,62 @@ class Group(CogniteResource):
         self.metadata = metadata
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            source_id=resource.get("sourceId"),
+            capabilities=[Capability.load(c) for c in resource.get("capabilities", [])] or None,
+            id=resource.get("id"),
+            is_deleted=resource.get("isDeleted"),
+            deleted_time=resource.get("deletedTime"),
+            metadata=resource.get("metadata"),
+            cognite_client=cognite_client,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.capabilities is not None:
+            dumped["capabilities"] = [c.dump(camel_case=camel_case) for c in self.capabilities]
+        return dumped
+
+    def to_pandas(
+        self,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+    ) -> pd.DataFrame:
+        df = super().to_pandas(expand_metadata, metadata_prefix, ignore, camel_case, convert_timestamps)
+
+        # The API uses -1 to represent "no deleted time". It looks weird if deleted = False,
+        # but deleted_time = 1969-12-31 23:59:59.999:
+        key = "deletedTime" if camel_case else "deleted_time"
+        if self.deleted_time == -1 and convert_timestamps and key in df.index:
+            df.at[key, "value"] = local_import("pandas").NaT
+        return df
+
 
 class GroupList(CogniteResourceList[Group]):
     _RESOURCE = Group
+
+    def to_pandas(
+        self,
+        camel_case: bool = False,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        convert_timestamps: bool = True,
+    ) -> pd.DataFrame:
+        df = super().to_pandas(camel_case, expand_metadata, metadata_prefix, convert_timestamps)
+
+        # The API uses -1 to represent "no deleted time". It looks weird if deleted = False,
+        # but deleted_time = 1969-12-31 23:59:59.999:
+        key = "deletedTime" if camel_case else "deleted_time"
+        if convert_timestamps and key in df:
+            pd = local_import("pandas")
+            df.loc[df[key] == pd.Timestamp(-1, unit="ms"), key] = pd.NaT
+        return df
 
 
 class SecurityCategory(CogniteResource):
@@ -82,7 +140,7 @@ class ProjectSpec(CogniteResponse):
         self.groups = groups
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> ProjectSpec:
+    def load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
@@ -92,31 +150,28 @@ class TokenInspection(CogniteResponse):
     Args:
         subject (str): Subject (sub claim) of JWT.
         projects (list[ProjectSpec]): Projects this token is valid for.
-        capabilities (list[dict]): Capabilities associated with this token.
+        capabilities (ProjectCapabilityList): Capabilities associated with this token.
     """
 
-    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: list[dict]) -> None:
+    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: ProjectCapabilityList) -> None:
         self.subject = subject
         self.projects = projects
         self.capabilities = capabilities
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> TokenInspection:
+    def load(cls, api_response: dict[str, Any], cognite_client: CogniteClient | None = None) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
-            projects=[ProjectSpec._load(p) for p in api_response["projects"]],
-            capabilities=api_response["capabilities"],
+            projects=[ProjectSpec.load(p) for p in api_response["projects"]],
+            capabilities=ProjectCapabilityList.load(api_response["capabilities"], cognite_client),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        dumped = {
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
             "subject": self.subject,
             "projects": [p.dump(camel_case=camel_case) for p in self.projects],
-            "capabilities": self.capabilities,
+            "capabilities": self.capabilities.dump(camel_case=camel_case),
         }
-        if camel_case:
-            dumped = convert_all_keys_to_camel_case(dumped)
-        return dumped
 
 
 class CreatedSession(CogniteResponse):
@@ -145,7 +200,7 @@ class CreatedSession(CogniteResponse):
         self.client_id = client_id
 
     @classmethod
-    def _load(cls, response: dict[str, Any]) -> CreatedSession:
+    def load(cls, response: dict[str, Any]) -> CreatedSession:
         return cls(
             id=response["id"],
             status=response["status"],
@@ -201,3 +256,13 @@ class ClientCredentials(CogniteResource):
     def __init__(self, client_id: str, client_secret: str) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "clientId" if camel_case else "client_id": self.client_id,
+            "clientSecret" if camel_case else "client_secret": self.client_secret,
+        }
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ClientCredentials:
+        return cls(client_id=resource["clientId"], client_secret=resource["clientSecret"])

@@ -1,24 +1,27 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteObject,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import DataModelingResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     PropertyType,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ContainerCore(DataModelingResource):
@@ -58,17 +61,16 @@ class ContainerCore(DataModelingResource):
         self.indexes = indexes
 
     @classmethod
-    def load(cls, resource: dict | str) -> Self:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "constraints" in data:
-            data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
-        if "indexes" in data:
-            data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
-        if "properties" in data:
-            data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
-        return super().load(data)
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        if "constraints" in resource:
+            resource["constraints"] = {k: Constraint.load(v) for k, v in resource["constraints"].items()} or None
+        if "indexes" in resource:
+            resource["indexes"] = {k: Index.load(v) for k, v in resource["indexes"].items()} or None
+        if "properties" in resource:
+            resource["properties"] = {k: ContainerProperty.load(v) for k, v in resource["properties"].items()} or None
+        return super()._load(resource, cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.constraints:
             output["constraints"] = {k: v.dump(camel_case) for k, v in self.constraints.items()}
@@ -110,6 +112,23 @@ class ContainerApply(ContainerCore):
     ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ContainerApply:
+        return ContainerApply(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items()},
+            description=resource.get("description"),
+            name=resource.get("name"),
+            used_for=resource.get("usedFor"),
+            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()}
+            if "constraints" in resource
+            else None,
+            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} or None
+            if "indexes" in resource
+            else None,
+        )
 
 
 class Container(ContainerCore):
@@ -209,7 +228,7 @@ class ContainerFilter(CogniteFilter):
 
 
 @dataclass(frozen=True)
-class ContainerProperty:
+class ContainerProperty(CogniteObject):
     type: PropertyType
     nullable: bool = True
     auto_increment: bool = False
@@ -218,24 +237,24 @@ class ContainerProperty:
     description: str | None = None
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> ContainerProperty:
-        if "type" not in data:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "type" not in resource:
             raise ValueError("Type not specified")
-        if data["type"].get("type") == "direct":
-            type_: PropertyType = DirectRelation.load(data["type"])
+        if resource["type"].get("type") == "direct":
+            type_: PropertyType = DirectRelation.load(resource["type"])
         else:
-            type_ = PropertyType.load(data["type"])
+            type_ = PropertyType.load(resource["type"])
         return cls(
             type=type_,
             # If nothing is specified, we will pass through null values
-            nullable=data.get("nullable"),  # type: ignore[arg-type]
-            auto_increment=data.get("autoIncrement"),  # type: ignore[arg-type]
-            name=data.get("name"),
-            default_value=data.get("defaultValue"),
-            description=data.get("description"),
+            nullable=resource.get("nullable"),  # type: ignore[arg-type]
+            auto_increment=resource.get("autoIncrement"),  # type: ignore[arg-type]
+            name=resource.get("name"),
+            default_value=resource.get("defaultValue"),
+            description=resource.get("description"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         output: dict[str, str | dict] = {}
         if self.type:
             output["type"] = self.type.dump(camel_case)
@@ -246,17 +265,17 @@ class ContainerProperty:
 
 
 @dataclass(frozen=True)
-class Constraint(ABC):
+class Constraint(CogniteObject, ABC):
     @classmethod
-    def load(cls, data: dict) -> RequiresConstraint | UniquenessConstraintDefinition:
-        if data["constraintType"] == "requires":
-            return RequiresConstraint.load(data)
-        elif data["constraintType"] == "uniqueness":
-            return UniquenessConstraintDefinition.load(data)
-        raise ValueError(f"Invalid constraint type {data['constraintType']}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if resource["constraintType"] == "requires":
+            return cast(Self, RequiresConstraint.load(resource))
+        elif resource["constraintType"] == "uniqueness":
+            return cast(Self, UniquenessConstraint.load(resource))
+        raise ValueError(f"Invalid constraint type {resource['constraintType']}")
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         raise NotImplementedError
 
 
@@ -265,10 +284,10 @@ class RequiresConstraint(Constraint):
     require: ContainerId
 
     @classmethod
-    def load(cls, data: dict) -> RequiresConstraint:
-        return cls(require=ContainerId.load(data["require"]))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(require=ContainerId.load(resource["require"]))
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         as_dict = asdict(self)
         output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         if "require" in output and isinstance(output["require"], dict):
@@ -283,10 +302,10 @@ class UniquenessConstraint(Constraint):
     properties: list[str]
 
     @classmethod
-    def load(cls, data: dict) -> UniquenessConstraint:
-        return cls(properties=data["properties"])
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(properties=resource["properties"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         as_dict = asdict(self)
         output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
         key = "constraintType" if camel_case else "constraint_type"
@@ -294,24 +313,18 @@ class UniquenessConstraint(Constraint):
         return output
 
 
-# Type aliases for backwards compatibility after renaming
-# TODO: Remove in some future major version
-RequiresConstraintDefinition = RequiresConstraint
-UniquenessConstraintDefinition = UniquenessConstraint
-
-
 @dataclass(frozen=True)
-class Index(ABC):
+class Index(CogniteObject, ABC):
     @classmethod
-    def load(cls, data: dict) -> Index:
-        if data["indexType"] == "btree":
-            return BTreeIndex.load(data)
-        if data["indexType"] == "inverted":
-            return InvertedIndex.load(data)
-        raise ValueError(f"Invalid index type {data['indexType']}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if resource["indexType"] == "btree":
+            return cast(Self, BTreeIndex.load(resource))
+        if resource["indexType"] == "inverted":
+            return cast(Self, InvertedIndex.load(resource))
+        raise ValueError(f"Invalid index type {resource['indexType']}")
 
     @abstractmethod
-    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
         raise NotImplementedError
 
 
@@ -321,10 +334,10 @@ class BTreeIndex(Index):
     cursorable: bool = False
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> BTreeIndex:
-        return cls(properties=data["properties"], cursorable=data.get("cursorable"))  # type: ignore[arg-type]
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(properties=resource["properties"], cursorable=resource.get("cursorable"))  # type: ignore[arg-type]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         if self.cursorable is not None:
             dumped["cursorable"] = self.cursorable
@@ -337,10 +350,10 @@ class InvertedIndex(Index):
     properties: list[str]
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> InvertedIndex:
-        return cls(properties=data["properties"])
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(properties=resource["properties"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         dumped["indexType" if camel_case else "index_type"] = "inverted"
         return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped

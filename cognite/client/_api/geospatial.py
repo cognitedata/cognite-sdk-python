@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import json as complexjson
+import json
 import numbers
 import urllib.parse
-import warnings
 from typing import Any, Iterator, Sequence, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
@@ -19,7 +18,6 @@ from cognite.client.data_classes.geospatial import (
     FeatureType,
     FeatureTypeList,
     FeatureTypePatch,
-    FeatureTypeUpdate,
     GeospatialComputedResponse,
     GeospatialComputeFunction,
     OrderSpec,
@@ -174,62 +172,6 @@ class GeospatialAPI(APIClient):
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
-    def update_feature_types(self, update: FeatureTypeUpdate | Sequence[FeatureTypeUpdate]) -> FeatureTypeList:
-        """`Update feature types (Deprecated)`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatureTypes>
-
-        Args:
-            update (FeatureTypeUpdate | Sequence[FeatureTypeUpdate]): the update to apply
-
-        Returns:
-            FeatureTypeList: The updated feature types.
-
-        Examples:
-
-            Add one property and one index to a feature type:
-
-                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(
-                ...     update=FeatureTypeUpdate(external_id="wells",
-                ...         add=PropertyAndSearchSpec(
-                ...             properties={"altitude": {"type": "DOUBLE"}},
-                ...             search_spec={"altitude_idx": {"properties": ["altitude"]}}
-                ...         )
-                ...     )
-                ... )
-
-            Remove one property and one index from a feature type:
-                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(
-                ...     update=FeatureTypeUpdate(external_id="wells",
-                ...         remove=PropertyAndSearchSpec(
-                ...             properties=["volume"],
-                ...             search_spec=["vol_press_idx"]
-                ...         )
-                ...     )
-                ... )
-        """
-        warnings.warn("update_feature_types is deprecated, use patch_feature_types instead.", DeprecationWarning)
-        if isinstance(update, FeatureTypeUpdate):
-            update = [update]
-
-        def mapper(it: FeatureTypeUpdate) -> dict[str, Any]:
-            add_properties = it.add.properties if hasattr(it, "add") else None
-            remove_properties = it.remove.properties if hasattr(it, "remove") else None
-            add_search_spec = it.add.search_spec if hasattr(it, "add") else None
-            remove_search_spec = it.remove.search_spec if hasattr(it, "remove") else None
-            properties_update = {"add": add_properties, "remove": remove_properties}
-            search_spec_update = {"add": add_search_spec, "remove": remove_search_spec}
-            return {"properties": properties_update, "searchSpec": search_spec_update}
-
-        json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
-        return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
-
     def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """`Patch feature types`
         <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatureTypes>
@@ -274,7 +216,7 @@ class GeospatialAPI(APIClient):
         """
         if isinstance(patch, FeatureTypePatch):
             patch = [patch]
-        json = {
+        payload = {
             "items": [
                 {
                     "externalId": it.external_id,
@@ -283,8 +225,8 @@ class GeospatialAPI(APIClient):
                 for it in patch
             ]
         }
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
-        return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=payload)
+        return FeatureTypeList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     @overload
     def create_features(
@@ -681,7 +623,6 @@ class GeospatialAPI(APIClient):
                 ... )
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search"
-        cls = FeatureList
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
         res = self._post(
             url_path=resource_path,
@@ -693,7 +634,7 @@ class GeospatialAPI(APIClient):
                 "allowCrsTransformation": (True if allow_crs_transformation else None),
             },
         )
-        return cls._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FeatureList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def stream_features(
         self,
@@ -746,23 +687,24 @@ class GeospatialAPI(APIClient):
                 ...     # do something with the features
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
-        json = {"filter": filter or {}, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
+        payload = {
+            "filter": filter or {},
+            "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"},
+        }
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
         res = self._do_request(
-            "POST", url_path=resource_path, json=json, timeout=self._config.timeout, stream=True, params=params
+            "POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True, params=params
         )
 
         try:
             for line in res.iter_lines():
-                yield Feature._load(complexjson.loads(line))
+                yield Feature._load(json.loads(line))
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 
     def aggregate_features(
         self,
         feature_type_external_id: str,
-        property: str | None = None,
-        aggregates: Sequence[str] | None = None,
         filter: dict[str, Any] | None = None,
         group_by: Sequence[str] | None = None,
         order_by: Sequence[OrderSpec] | None = None,
@@ -773,8 +715,6 @@ class GeospatialAPI(APIClient):
 
         Args:
             feature_type_external_id (str): the feature type to filter features from
-            property (str | None): the property for which aggregates should be calculated
-            aggregates (Sequence[str] | None): list of aggregates to be calculated
             filter (dict[str, Any] | None): the search filter
             group_by (Sequence[str] | None): list of properties to group by with
             order_by (Sequence[OrderSpec] | None): the order specification
@@ -793,14 +733,6 @@ class GeospatialAPI(APIClient):
                 ...     feature_type_external_id="my_feature_type",
                 ...     feature=Feature(external_id="my_feature", temperature=12.4)
                 ... )
-                >>> res_deprecated = c.geospatial.aggregate_features(
-                ...     feature_type_external_id="my_feature_type",
-                ...     filter={"range": {"property": "temperature", "gt": 12.0}},
-                ...     property="temperature",
-                ...     aggregates=["max", "min"],
-                ...     group_by=["category"],
-                ...     order_by=[OrderSpec("category", "ASC")]
-                ... ) # deprecated
                 >>> res = c.geospatial.aggregate_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     filter={"range": {"property": "temperature", "gt": 12.0}},
@@ -813,23 +745,18 @@ class GeospatialAPI(APIClient):
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
         """
-        if property or aggregates:
-            warnings.warn("property and aggregates are deprecated, use output instead.", DeprecationWarning)
         resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
-        cls = FeatureAggregateList
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
         res = self._post(
             url_path=resource_path,
             json={
                 "filter": filter or {},
-                "property": property,
-                "aggregates": aggregates,
                 "groupBy": group_by,
                 "sort": order,
                 "output": output,
             },
         )
-        return cls._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FeatureAggregateList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
@@ -857,7 +784,7 @@ class GeospatialAPI(APIClient):
         res = self._post(
             url_path=f"{self._RESOURCE_PATH}/crs/byids", json={"items": [{"srid": srid} for srid in srids_processed]}
         )
-        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems`
@@ -878,7 +805,7 @@ class GeospatialAPI(APIClient):
                 >>> crs = c.geospatial.list_coordinate_reference_systems(only_custom=True)
         """
         res = self._get(url_path=f"{self._RESOURCE_PATH}/crs", params={"filterCustom": only_custom})
-        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create_coordinate_reference_systems(
         self, crs: CoordinateReferenceSystem | Sequence[CoordinateReferenceSystem]
@@ -939,7 +866,7 @@ class GeospatialAPI(APIClient):
         res = self._post(
             url_path=f"{self._RESOURCE_PATH}/crs", json={"items": [it.dump(camel_case=True) for it in crs]}
         )
-        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
         """`Delete Coordinate Reference System`
@@ -1016,14 +943,16 @@ class GeospatialAPI(APIClient):
             self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name)
             + f"?{query_params}"
         )
+        with open(file, "rb") as fh:
+            data = fh.read()
         res = self._do_request(
             "PUT",
             url_path,
-            data=open(file, "rb").read(),
+            data=data,
             headers={"Content-Type": "application/binary"},
             timeout=self._config.timeout,
         )
-        return RasterMetadata._load(res.json(), cognite_client=self._cognite_client)
+        return RasterMetadata.load(res.json(), cognite_client=self._cognite_client)
 
     def delete_raster(
         self,
@@ -1144,5 +1073,4 @@ class GeospatialAPI(APIClient):
             timeout=self._config.timeout,
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
-        json = res.json()
-        return GeospatialComputedResponse._load(json, cognite_client=self._cognite_client)
+        return GeospatialComputedResponse._load(res.json(), cognite_client=self._cognite_client)

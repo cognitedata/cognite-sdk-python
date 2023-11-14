@@ -236,7 +236,7 @@ class SomeFilter(CogniteFilter):
         self.var_y = var_y
 
 
-class SomeAggregation(dict):
+class SomeAggregation(CogniteResource):
     def __init__(self, count):
         self.count = count
 
@@ -343,13 +343,15 @@ class TestStandardRetrieveMultiple:
         assert 400 == e.value.code
 
     def test_ids_all_None(self, api_client_with_token):
-        with pytest.raises(ValueError, match="No identifiers specified"):
-            api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(),
-            )
+        result = api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(),
+        )
+
+        assert isinstance(result, SomeResourceList)
+        assert len(result) == 0
 
     def test_single_id_not_found(self, api_client_with_token, rsps):
         rsps.add(
@@ -490,7 +492,7 @@ class TestStandardList:
         def request_callback(request):
             payload = jsgz_load(request.body)
             np, total = payload["partition"].split("/")
-            if int(np) == 2:
+            if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
@@ -504,11 +506,15 @@ class TestStandardList:
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 method="POST",
-                partitions=4,
+                partitions=10,
                 limit=None,
             )
         assert 503 == exc.value.code
-        assert 4 == len(rsps.calls)
+        assert exc.value.unknown == [("3/10",)]
+        assert exc.value.skipped
+        assert exc.value.successful
+        assert 9 == len(exc.value.successful) + len(exc.value.skipped)
+        assert 1 < len(rsps.calls)
 
     @pytest.fixture
     def mock_get_for_autopaging(self, rsps):
@@ -577,7 +583,7 @@ class TestStandardList:
             elif len(resource_chunk) == 500:
                 total_resources += 500
             else:
-                raise AssertionError("resource chunk length was not 1000 or 500")
+                raise ValueError("resource chunk length was not 1000 or 500")
         assert 11500 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging_2589")
@@ -751,12 +757,13 @@ class TestStandardCreate:
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     items=[
-                        SomeResource(1, external_id="400"),
+                        # The external id here is also used as the fake api response status code:
+                        SomeResource(1, external_id="400"),  # i.e, this will raise CogniteAPIError(..., code=400)
                         SomeResource(external_id="500"),
                         SomeResource(1, 1, external_id="200"),
                     ],
                 )
-        assert 500 == e.value.code
+        assert e.value.code in (400, 500)  # race condition, don't know which failing is -last-
         assert [SomeResource(1, external_id="400")] == e.value.failed
         assert [SomeResource(1, 1, external_id="200")] == e.value.successful
         assert [SomeResource(external_id="500")] == e.value.unknown
@@ -858,7 +865,7 @@ class TestStandardDelete:
                 )
 
         unittest.TestCase().assertCountEqual([{"id": 1}, {"id": 3}], e.value.not_found)
-        assert [1, 2, 3] == e.value.failed
+        assert [1, 2, 3] == sorted(e.value.failed)
 
     def test_over_limit_concurrent(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
@@ -1358,3 +1365,11 @@ def test_worker_in_backoff_loop_gets_new_token(rsps):
     assert call_count > 0
     assert rsps.calls[0].request.headers["Authorization"] == "Bearer outdated-token"
     assert rsps.calls[1].request.headers["Authorization"] == "Bearer valid-token"
+
+
+@pytest.mark.parametrize("limit, expected_error", ((-2, ValueError), (0, ValueError), ("10", TypeError)))
+def test_list_and_search__bad_limit_value_raises(limit, expected_error, cognite_client):
+    with pytest.raises(expected_error):
+        cognite_client.assets.list(limit=limit)
+    with pytest.raises(expected_error):
+        cognite_client.assets.search(limit=limit)

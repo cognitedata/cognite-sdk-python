@@ -27,6 +27,7 @@ class TestEdgeApply:
                 "externalId": "Person.role",
             },
             "instanceType": "edge",
+            "sources": [],
             "startNode": {
                 "space": "mySpace",
                 "externalId": "person.external_id",
@@ -52,7 +53,7 @@ class TestNodeOrEdgeData:
                 "some_direct_relation": {"external_id": "external_id", "space": "space"},
             },
             "source": {"external_id": "Case", "space": "IntegrationTestsImmutable", "type": "container"},
-        } == data.dump()
+        } == data.dump(camel_case=False)
 
 
 class TestNodeApply:

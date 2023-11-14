@@ -237,7 +237,7 @@ class TestDataModelsAPI:
         # Act
         model_dumped = movie_model.dump(camel_case=True)
         model_json = json.dumps(model_dumped)
-        model_loaded = DataModel.load(model_json)
+        model_loaded: DataModel = DataModel.load(model_json)
 
         # Assert
-        assert model_loaded.dump() == model_loaded.dump()
+        assert model_loaded.dump() == movie_model.dump()

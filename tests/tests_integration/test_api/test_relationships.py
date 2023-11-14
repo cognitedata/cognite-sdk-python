@@ -118,7 +118,9 @@ def create_multiple_relationships(new_label, cognite_client):
     relationships = cognite_client.relationships.create(relationship_list)
     assert isinstance(relationships, RelationshipList)
     yield relationships_ext_id, ext_id, random_ext_id
-    cognite_client.relationships.delete(external_id=[ext_ids["external_id"] for ext_ids in relationships.dump()])
+    cognite_client.relationships.delete(
+        external_id=[ext_ids["external_id"] for ext_ids in relationships.dump(camel_case=False)]
+    )
 
 
 @pytest.fixture
@@ -247,7 +249,7 @@ class TestRelationshipscognite_client:
             source_type="asset",
             target_type="asset",
         )
-        preexisting_update = Relationship._load(preexisting.dump(camel_case=True))
+        preexisting_update = Relationship.load(preexisting.dump(camel_case=True))
         preexisting_update.target_external_id = asset1.external_id
 
         try:

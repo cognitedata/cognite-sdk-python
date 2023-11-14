@@ -67,7 +67,7 @@ def _get_function_identifier(function_id: int | None, function_external_id: str 
     identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
     if identifier.is_singleton():
         return identifier[0]
-    raise AssertionError("Exactly one of function_id and function_external_id must be specified")
+    raise ValueError("Exactly one of function_id and function_external_id must be specified")
 
 
 class FunctionsAPI(APIClient):
@@ -293,7 +293,7 @@ class FunctionsAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
@@ -423,7 +423,7 @@ class FunctionsAPI(APIClient):
                 >>> limits = c.functions.limits()
         """
         res = self._get("/functions/limits")
-        return FunctionsLimits._load(res.json())
+        return FunctionsLimits.load(res.json())
 
     def _zip_and_upload_folder(
         self,
@@ -525,7 +525,7 @@ class FunctionsAPI(APIClient):
                 >>> status = c.functions.activate()
         """
         res = self._post("/functions/status")
-        return FunctionsStatus._load(res.json())
+        return FunctionsStatus.load(res.json())
 
     def status(self) -> FunctionsStatus:
         """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
@@ -542,7 +542,7 @@ class FunctionsAPI(APIClient):
                 >>> status = c.functions.status()
         """
         res = self._get("/functions/status")
-        return FunctionsStatus._load(res.json())
+        return FunctionsStatus.load(res.json())
 
 
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
@@ -688,7 +688,7 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    constructors = cast(Any, local_import("pip._internal.req.constructors"))
+    constructors = local_import("pip._internal.req.constructors")
     install_req_from_line = constructors.install_req_from_line
     parsed_reqs: list[str] = []
     for req in requirements:
@@ -889,7 +889,7 @@ class FunctionCallsAPI(APIClient):
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
-        return FunctionCallLog._load(self._get(resource_path).json()["items"])
+        return FunctionCallLog.load(self._get(resource_path).json()["items"])
 
 
 class FunctionSchedulesAPI(APIClient):
@@ -964,9 +964,9 @@ class FunctionSchedulesAPI(APIClient):
             try:
                 IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
             except ValueError:
-                raise AssertionError(
+                raise ValueError(
                     "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
-                )
+                ) from None
 
         if is_unlimited(limit):
             limit = self._LIST_LIMIT_CEILING
@@ -980,15 +980,13 @@ class FunctionSchedulesAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionSchedulesList.load(res.json()["items"], cognite_client=self._cognite_client)
 
-    # TODO: Major version 7, remove 'function_external_id' which only worked when using API-keys.
     def create(
         self,
         name: str,
         cron_expression: str,
-        function_id: int | None = None,
-        function_external_id: str | None = None,
+        function_id: int,
         client_credentials: dict | ClientCredentials | None = None,
         description: str = "",
         data: dict | None = None,
@@ -998,9 +996,8 @@ class FunctionSchedulesAPI(APIClient):
         Args:
             name (str): Name of the schedule.
             cron_expression (str): Cron expression.
-            function_id (int | None): Id of the function. This is required if the schedule is created with client_credentials.
-            function_external_id (str | None): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
-            client_credentials (dict | ClientCredentials | None): (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials: client_id client_secret
+            function_id (int): Id of the function to attach the schedule to.
+            client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
 
@@ -1041,27 +1038,20 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
-        _get_function_identifier(function_id, function_external_id)
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
         )
-        body: dict[str, list[dict[str, str | int | None | dict]]] = {
-            "items": [
-                {
-                    "name": name,
-                    "description": description,
-                    "functionId": function_id,
-                    "functionExternalId": function_external_id,
-                    "cronExpression": cron_expression,
-                    "nonce": nonce,
-                }
-            ]
+        item = {
+            "name": name,
+            "description": description,
+            "functionId": function_id,
+            "cronExpression": cron_expression,
+            "nonce": nonce,
         }
-
         if data:
-            body["items"][0]["data"] = data
+            item["data"] = data
 
-        res = self._post(self._RESOURCE_PATH, json=body)
+        res = self._post(self._RESOURCE_PATH, json={"items": [item]})
         return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:

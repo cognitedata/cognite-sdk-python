@@ -904,32 +904,12 @@ class TestFunctionSchedulesAPI:
         assert len(res) == 1
 
     def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.list(function_id=123, function_external_id="my-func")
         assert (
             "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
             == excinfo.value.args[0]
         )
-
-    def test_create_schedules_with_function_external_id(
-        self, mock_function_schedules_response_xid_not_valid_with_oidc, cognite_client
-    ):
-        with pytest.raises(CogniteAPIError) as excinfo:
-            cognite_client.functions.schedules.create(
-                name="my-schedule",
-                function_external_id="user/hello-cognite/hello-cognite:latest",
-                cron_expression="*/5 * * * *",
-                description="Hi",
-            )
-        exp_err = "When creating a schedule with OIDC-tokens, you must use 'function_id' and not 'function_external_id'"
-        assert excinfo.value.message == exp_err
-        assert excinfo.value.code == 400
-
-        # Verify that the mocked nonce from the first call is sent in the create-schedule call:
-        _, schedule_create_call = mock_function_schedules_response_xid_not_valid_with_oidc.calls
-        req_body = jsgz_load(schedule_create_call.request.body)["items"][0]
-        assert req_body["nonce"] == "very noncy"
-        assert req_body["functionId"] is None
 
     def test_create_schedules_with_function_id_and_client_credentials(
         self, mock_function_schedules_response_oidc_client_credentials, cognite_client
@@ -946,22 +926,10 @@ class TestFunctionSchedulesAPI:
         expected = mock_function_schedules_response_oidc_client_credentials.calls[1].response.json()["items"][0]
         assert expected == res.dump(camel_case=True)
 
-    def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
-            cognite_client.functions.schedules.create(
-                name="my-schedule",
-                function_id=123,
-                function_external_id="user/hello-cognite/hello-cognite:latest",
-                cron_expression="*/5 * * * *",
-                description="Hi",
-                client_credentials={"client_id": "aabbccdd", "client_secret": "xxyyzz"},
-            )
-        assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
-
     def test_create_schedules_with_data(self, mock_function_schedules_response, cognite_client):
         res = cognite_client.functions.schedules.create(
             name="my-schedule",
-            function_external_id="user/hello-cognite/hello-cognite:latest",
+            function_id=123,
             cron_expression="*/5 * * * *",
             description="Hi",
             data={"value": 2},
@@ -1026,7 +994,7 @@ class TestFunctionCallsAPI:
         assert mock_function_calls_filter_response.calls[1].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_calls_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.list(function_id=123, function_external_id="my-function")
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
@@ -1042,7 +1010,7 @@ class TestFunctionCallsAPI:
         assert mock_function_calls_retrieve_response.calls[1].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_call_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.retrieve(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
@@ -1062,7 +1030,7 @@ class TestFunctionCallsAPI:
     def test_function_call_logs_by_function_id_and_function_external_id_raises(
         self, mock_function_call_logs_response, cognite_client
     ):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_logs(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
@@ -1105,7 +1073,7 @@ class TestFunctionCallsAPI:
         assert mock_function_call_response_response.calls[0].response.json()["response"] == res
 
     def test_function_call_response_by_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_response(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )

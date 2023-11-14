@@ -11,7 +11,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
@@ -299,21 +298,6 @@ class TimeSeriesUpdate(CogniteUpdate):
             PropertySpec("security_categories", is_container=True),
             PropertySpec("data_set_id"),
         ]
-
-
-class TimeSeriesAggregate(dict):
-    """No description.
-
-    Args:
-        count (int | None): No description.
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class TimeSeriesList(CogniteResourceList[TimeSeries], IdTransformerMixin):

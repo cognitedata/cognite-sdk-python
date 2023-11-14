@@ -145,25 +145,11 @@ class TestAssetsAPI:
     def test_list_with_aggregated_properties_param(self, cognite_client, post_spy):
         res = cognite_client.assets.list(limit=10, aggregated_properties=["child_count"])
         for asset in res:
-            assert {"childCount"} == asset.aggregates.keys()
-            assert isinstance(asset.aggregates["childCount"], int)
+            assert {"childCount"} == asset.aggregates.dump(camel_case=True).keys()
+            assert isinstance(asset.aggregates.child_count, int)
 
     def test_aggregate(self, cognite_client, new_asset):
         res = cognite_client.assets.aggregate(filter=AssetFilter(name="test__asset_0"))
-        assert res[0].count > 0
-
-    def test_aggregate_metadata_keys(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate_metadata_keys()
-        assert len(res) > 1
-        assert set(res[0]) == {"count", "value", "values"}
-        assert isinstance(res[0].value, str)
-        assert res[0].count > 1
-
-    def test_aggregate_metadata_values(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate_metadata_values(keys=["a"])
-        assert len(res) > 0
-        assert set(res[0]) == {"count", "value", "values"}
-        assert isinstance(res[0].value, str)
         assert res[0].count > 0
 
     def test_search(self, cognite_client):
@@ -271,7 +257,7 @@ class TestAssetsAPI:
             external_id="test_upsert_2_asset_one_preexisting:preexisting",
             name="my preexisting asset",
         )
-        preexisting_update = Asset._load(preexisting.dump(camel_case=True))
+        preexisting_update = Asset.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting asset updated"
 
         try:

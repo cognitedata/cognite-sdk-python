@@ -21,7 +21,7 @@ class TestViewPropertyDefinition:
         assert isinstance(actual, MappedProperty)
         assert actual.source == ViewId(space="mySpace", external_id="myExternalId", version="myVersion")
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
             "auto_increment": False,
             "container": {"external_id": "myExternalId", "space": "mySpace"},
             "container_property_identifier": "name",
@@ -45,7 +45,7 @@ class TestViewPropertyDefinition:
         }
         actual = ViewPropertyApply.load(input)
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
             "container": {"external_id": "myExternalId", "space": "mySpace", "type": "container"},
             "container_property_identifier": "name",
             "name": "fullName",
@@ -63,7 +63,7 @@ class TestViewPropertyDefinition:
         }
         actual = ViewProperty.load(input)
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
             "connection_type": "multiEdgeConnection",
             "description": None,
             "direction": "outwards",
@@ -84,7 +84,7 @@ class TestViewPropertyDefinition:
         }
         actual = ViewPropertyApply.load(input)
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
             "direction": "outwards",
             "name": "fullName",
             "source": {"external_id": "myExternalId", "space": "mySpace", "type": "view", "version": "myVersion"},

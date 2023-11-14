@@ -49,8 +49,10 @@ def _is_newer_pre_release(
     pr_cycle_a: str | None, pr_v_a: int | None, pr_cycle_b: str | None, pr_v_b: int | None
 ) -> bool:
     cycles = ["a", "b", "rc", None]
-    assert pr_cycle_a in cycles, f"pr_cycle_a must be one of '{pr_cycle_a}', not '{cycles}'."
-    assert pr_cycle_b in cycles, f"pr_cycle_a must be one of '{pr_cycle_b}', not '{cycles}'."
+    if pr_cycle_a not in cycles:
+        raise RuntimeError(f"pr_cycle_a must be one of '{pr_cycle_a}', not '{cycles}'.")
+    if pr_cycle_b not in cycles:
+        raise RuntimeError(f"pr_cycle_a must be one of '{pr_cycle_b}', not '{cycles}'.")
     is_newer = False
     if cycles.index(pr_cycle_a) > cycles.index(pr_cycle_b):
         is_newer = True

@@ -49,8 +49,9 @@ from cognite.client.utils._auxiliary import (
     is_unlimited,
     json_dump_default,
     split_into_chunks,
+    unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import TaskExecutor, collect_exc_info_and_raise, execute_tasks
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierCore,
@@ -59,9 +60,11 @@ from cognite.client.utils._identifier import (
     SingletonIdentifierSequence,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
-from cognite.client.utils._validation import assert_type
+from cognite.client.utils._validation import assert_type, verify_limit
 
 if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
+
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
@@ -304,7 +307,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResource | None:
         ...
@@ -320,7 +323,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
@@ -335,7 +338,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
@@ -358,16 +361,18 @@ class APIClient:
             functools.partial(self._post, api_subversion=api_subversion),
             tasks,
             max_workers=self._config.max_workers,
+            fail_fast=True,
             executor=executor,
         )
-
-        if tasks_summary.exceptions:
-            try:
-                collect_exc_info_and_raise(tasks_summary.exceptions)
-            except CogniteNotFoundError:
-                if identifiers.is_singleton():
-                    return None
-                raise
+        try:
+            tasks_summary.raise_compound_exception_if_failed_tasks(
+                task_unwrap_fn=unpack_items_in_payload,
+                task_list_element_unwrap_fn=identifiers.extract_identifiers,
+            )
+        except CogniteNotFoundError:
+            if identifiers.is_singleton():
+                return None
+            raise
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
@@ -398,6 +403,7 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
+        verify_limit(limit)
         if is_unlimited(limit):
             limit = None
         resource_path = resource_path or self._RESOURCE_PATH
@@ -508,9 +514,9 @@ class APIClient:
 
         while len(next_cursors) > 0:
             tasks_summary = execute_tasks(
-                get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
+                get_partition, [(partition,) for partition in next_cursors], max_workers=partitions, fail_fast=True
             )
-            tasks_summary.raise_first_encountered_exception()
+            tasks_summary.raise_compound_exception_if_failed_tasks()
 
             for item in tasks_summary.joined_results():
                 yield resource_cls._load(item, cognite_client=self._cognite_client)
@@ -535,6 +541,7 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
+        verify_limit(limit)
         if partitions:
             if not is_unlimited(limit):
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
@@ -621,8 +628,8 @@ class APIClient:
             return retrieved_items
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = execute_tasks(get_partition, tasks, max_workers=partitions)
-        tasks_summary.raise_first_encountered_exception()
+        tasks_summary = execute_tasks(get_partition, tasks, max_workers=partitions, fail_fast=True)
+        tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
@@ -709,6 +716,7 @@ class APIClient:
         limit: int | None = None,
         api_subversion: str | None = None,
     ) -> int | UniqueResultList:
+        verify_limit(limit)
         if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
             raise ValueError(
                 f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
@@ -789,7 +797,7 @@ class APIClient:
         extra_body_fields: dict | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
@@ -806,7 +814,7 @@ class APIClient:
         extra_body_fields: dict | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResource:
         ...
@@ -822,7 +830,7 @@ class APIClient:
         extra_body_fields: dict | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
@@ -879,7 +887,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
@@ -896,7 +904,7 @@ class APIClient:
         ]
         summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
         )
         if returns_items:
@@ -977,7 +985,7 @@ class APIClient:
             functools.partial(self._post, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
         )
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
         )
         updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
@@ -1101,6 +1109,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
+        verify_limit(limit)
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)

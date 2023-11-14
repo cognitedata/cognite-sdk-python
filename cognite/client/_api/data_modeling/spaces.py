@@ -6,8 +6,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
-
-from ._data_modeling_executor import get_data_modeling_executor
+from cognite.client.utils._concurrency import ConcurrencySettings
 
 
 class SpacesAPI(APIClient):
@@ -64,18 +63,18 @@ class SpacesAPI(APIClient):
         return self()
 
     @overload
-    def retrieve(self, space: str) -> Space | None:  # type: ignore[overload-overlap]
+    def retrieve(self, spaces: str) -> Space | None:  # type: ignore[overload-overlap]
         ...
 
     @overload
-    def retrieve(self, space: Sequence[str]) -> SpaceList:
+    def retrieve(self, spaces: Sequence[str]) -> SpaceList:
         ...
 
-    def retrieve(self, space: str | Sequence[str]) -> Space | SpaceList | None:
-        """`Retrieve space by id. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
+    def retrieve(self, spaces: str | Sequence[str]) -> Space | SpaceList | None:
+        """`Retrieve one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            space (str | Sequence[str]): Space ID
+            spaces (str | Sequence[str]): Space ID
 
         Returns:
             Space | SpaceList | None: Requested space or None if it does not exist.
@@ -93,16 +92,19 @@ class SpacesAPI(APIClient):
                 >>> res = c.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
-        identifier = _load_space_identifier(space)
+        identifier = _load_space_identifier(spaces)
         return self._retrieve_multiple(
-            list_cls=SpaceList, resource_cls=Space, identifiers=identifier, executor=get_data_modeling_executor()
+            list_cls=SpaceList,
+            resource_cls=Space,
+            identifiers=identifier,
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-    def delete(self, space: str | Sequence[str]) -> list[str]:
+    def delete(self, spaces: str | Sequence[str]) -> list[str]:
         """`Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
-            space (str | Sequence[str]): ID or ID list ids of spaces.
+            spaces (str | Sequence[str]): ID or ID list ids of spaces.
         Returns:
             list[str]: The space(s) which has been deleted.
         Examples:
@@ -116,10 +118,10 @@ class SpacesAPI(APIClient):
         deleted_spaces = cast(
             list,
             self._delete_multiple(
-                identifiers=_load_space_identifier(space),
+                identifiers=_load_space_identifier(spaces),
                 wrap_ids=True,
                 returns_items=True,
-                executor=get_data_modeling_executor(),
+                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         return [item["space"] for item in deleted_spaces]
@@ -169,18 +171,18 @@ class SpacesAPI(APIClient):
         )
 
     @overload
-    def apply(self, space: Sequence[SpaceApply]) -> SpaceList:
+    def apply(self, spaces: Sequence[SpaceApply]) -> SpaceList:
         ...
 
     @overload
-    def apply(self, space: SpaceApply) -> Space:
+    def apply(self, spaces: SpaceApply) -> Space:
         ...
 
-    def apply(self, space: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
+    def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
         """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_
 
         Args:
-            space (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.
+            spaces (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.
 
         Returns:
             Space | SpaceList: Created space(s)
@@ -199,7 +201,7 @@ class SpacesAPI(APIClient):
         return self._create_multiple(
             list_cls=SpaceList,
             resource_cls=Space,
-            items=space,
+            items=spaces,
             input_resource_cls=SpaceApply,
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )

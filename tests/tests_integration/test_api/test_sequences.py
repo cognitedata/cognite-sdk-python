@@ -6,6 +6,8 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
     Sequence,
+    SequenceColumn,
+    SequenceColumnList,
     SequenceColumnUpdate,
     SequenceFilter,
     SequenceList,
@@ -18,16 +20,18 @@ from tests.utils import set_request_limit
 
 
 @pytest.fixture
-def new_seq(cognite_client):
-    column_def = [
-        {"valueType": "STRING", "externalId": "user", "description": "some description"},
-        {"valueType": "DOUBLE", "externalId": "amount"},
-        {"valueType": "LONG", "externalId": "age"},
-    ]
+def new_seq(cognite_client: CogniteClient) -> Sequence:
+    column_def = SequenceColumnList(
+        [
+            SequenceColumn(value_type="String", external_id="user", description="some description"),
+            SequenceColumn(value_type="Double", external_id="amount"),
+            SequenceColumn(value_type="Long", external_id="age"),
+        ]
+    )
     seq = cognite_client.sequences.create(Sequence(name="test_temp", columns=column_def, metadata={"a": "b"}))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(seq.id) is None
+    assert cognite_client.sequences.retrieve(id=seq.id) is None
 
 
 @pytest.fixture
@@ -58,10 +62,12 @@ def root_asset(cognite_client: CogniteClient) -> Asset:
 @pytest.fixture
 def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceList:
     prefix = "integration_test:"
-    columns = [
-        {"valueType": "STRING", "externalId": "text"},
-        {"valueType": "DOUBLE", "externalId": "value"},
-    ]
+    columns = SequenceColumnList(
+        [
+            SequenceColumn(external_id="text", value_type="String"),
+            SequenceColumn(external_id="value", value_type="Double"),
+        ]
+    )
     sequences = SequenceList(
         [
             Sequence(
@@ -88,7 +94,7 @@ def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceL
 class TestSequencesAPI:
     def test_retrieve(self, cognite_client):
         listed_asset = cognite_client.sequences.list(limit=1)[0]
-        retrieved_asset = cognite_client.sequences.retrieve(listed_asset.id)
+        retrieved_asset = cognite_client.sequences.retrieve(id=listed_asset.id)
         assert retrieved_asset == listed_asset
 
     def test_retrieve_multiple(self, cognite_client):
@@ -172,31 +178,31 @@ class TestSequencesAPI:
         assert len(res.columns) == 5
         assert res.column_external_ids[3:5] == ["user_added", "amount_added"]
 
-    def test_update_columns_remove_single(self, cognite_client, new_seq):
+    def test_update_columns_remove_single(self, cognite_client: CogniteClient, new_seq: Sequence):
         assert len(new_seq.columns) == 3
-        update_seq = SequenceUpdate(new_seq.id).columns.remove(new_seq.columns[0]["externalId"])
+        update_seq = SequenceUpdate(new_seq.id).columns.remove(new_seq.columns[0].external_id)
         res = cognite_client.sequences.update(update_seq)
         assert len(res.columns) == 2
         assert res.columns[0:2] == new_seq.columns[1:3]
 
-    def test_update_columns_remove_multiple(self, cognite_client, new_seq):
+    def test_update_columns_remove_multiple(self, cognite_client, new_seq: Sequence):
         assert len(new_seq.columns) == 3
-        update_seq = SequenceUpdate(new_seq.id).columns.remove([col["externalId"] for col in new_seq.columns[0:2]])
+        update_seq = SequenceUpdate(new_seq.id).columns.remove([col.external_id for col in new_seq.columns[0:2]])
         res = cognite_client.sequences.update(update_seq)
         assert len(res.columns) == 1
         assert res.columns[0] == new_seq.columns[2]
 
-    def test_update_columns_modify(self, cognite_client, new_seq):
-        assert new_seq.columns[1].get("description") is None
+    def test_update_columns_modify(self, cognite_client: CogniteClient, new_seq: Sequence):
+        assert new_seq.columns[1].description is None
         column_update = [
-            SequenceColumnUpdate(external_id=new_seq.columns[0]["externalId"]).external_id.set("new_col_external_id"),
-            SequenceColumnUpdate(external_id=new_seq.columns[1]["externalId"]).description.set("my new description"),
+            SequenceColumnUpdate(external_id=new_seq.columns[0].external_id).external_id.set("new_col_external_id"),
+            SequenceColumnUpdate(external_id=new_seq.columns[1].external_id).description.set("my new description"),
         ]
         update_seq = SequenceUpdate(new_seq.id).columns.modify(column_update)
         res = cognite_client.sequences.update(update_seq)
         assert len(res.columns) == 3
-        assert res.columns[0]["externalId"] == "new_col_external_id"
-        assert res.columns[1]["description"] == "my new description"
+        assert res.columns[0].external_id == "new_col_external_id"
+        assert res.columns[1].description == "my new description"
 
     def test_get_new(self, cognite_client, new_seq):
         cognite_client.sequences.retrieve(id=new_seq.id)
@@ -208,14 +214,14 @@ class TestSequencesAPI:
         new_sequence = Sequence(
             external_id="test_upsert_2_sequence_one_preexisting:new",
             name="my new sequence",
-            columns=[{"externalId": "col1", "valueType": "STRING"}],
+            columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
         )
         preexisting = Sequence(
             external_id="test_upsert_2_sequence_one_preexisting:preexisting",
             name="my preexisting sequence",
-            columns=[{"externalId": "col1", "valueType": "STRING"}],
+            columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
         )
-        preexisting_update = Sequence._load(preexisting.dump(camel_case=True))
+        preexisting_update = Sequence.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting sequence updated"
 
         try:

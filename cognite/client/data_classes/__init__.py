@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from cognite.client.data_classes._base import Geometry
+from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -10,7 +11,6 @@ from cognite.client.data_classes.annotations import (
 from cognite.client.data_classes.assets import (
     AggregateResultItem,
     Asset,
-    AssetAggregate,
     AssetFilter,
     AssetHierarchy,
     AssetList,
@@ -27,7 +27,6 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.data_sets import (
     DataSet,
-    DataSetAggregate,
     DataSetFilter,
     DataSetList,
     DataSetUpdate,
@@ -67,7 +66,6 @@ from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipelineUpdate,
 )
 from cognite.client.data_classes.files import (
-    FileAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -96,8 +94,6 @@ from cognite.client.data_classes.geospatial import (
     FeatureType,
     FeatureTypeList,
     FeatureTypePatch,
-    FeatureTypeUpdate,
-    FeatureTypeUpdateList,
 )
 from cognite.client.data_classes.iam import (
     ClientCredentials,
@@ -125,12 +121,15 @@ from cognite.client.data_classes.relationships import (
 )
 from cognite.client.data_classes.sequences import (
     Sequence,
-    SequenceAggregate,
+    SequenceColumn,
+    SequenceColumnList,
     SequenceColumnUpdate,
     SequenceData,
-    SequenceDataList,
     SequenceFilter,
     SequenceList,
+    SequenceRow,
+    SequenceRows,
+    SequenceRowsList,
     SequenceUpdate,
 )
 from cognite.client.data_classes.shared import (
@@ -170,7 +169,6 @@ from cognite.client.data_classes.three_d import (
 )
 from cognite.client.data_classes.time_series import (
     TimeSeries,
-    TimeSeriesAggregate,
     TimeSeriesFilter,
     TimeSeriesList,
     TimeSeriesUpdate,
@@ -241,7 +239,7 @@ __all__ = [
     "AnnotationUpdate",
     "AggregateResultItem",
     "Asset",
-    "AssetAggregate",
+    "CountAggregate",
     "AssetFilter",
     "AssetHierarchy",
     "AssetList",
@@ -274,7 +272,6 @@ __all__ = [
     "EventFilter",
     "EventList",
     "EventUpdate",
-    "FileAggregate",
     "FileMetadata",
     "FileMetadataFilter",
     "FileMetadataList",
@@ -302,13 +299,16 @@ __all__ = [
     "RelationshipList",
     "RelationshipUpdate",
     "Sequence",
-    "SequenceAggregate",
     "SequenceColumnUpdate",
     "SequenceData",
-    "SequenceDataList",
+    "SequenceRows",
+    "SequenceRowsList",
     "SequenceFilter",
     "SequenceList",
     "SequenceUpdate",
+    "SequenceColumn",
+    "SequenceColumnList",
+    "SequenceRow",
     "ConstantResolver",
     "Source",
     "TemplateGroup",
@@ -333,7 +333,6 @@ __all__ = [
     "ThreeDNode",
     "ThreeDNodeList",
     "TimeSeries",
-    "TimeSeriesAggregate",
     "TimeSeriesFilter",
     "TimeSeriesList",
     "TimeSeriesUpdate",
@@ -363,7 +362,6 @@ __all__ = [
     "TransformationSchemaColumn",
     "TransformationSchemaColumnList",
     "DataSet",
-    "DataSetAggregate",
     "DataSetFilter",
     "DataSetList",
     "DataSetUpdate",
@@ -397,9 +395,7 @@ __all__ = [
     "FeatureTypeList",
     "FeatureTypePatch",
     "FeatureAggregate",
-    "FeatureTypeUpdate",
     "FeatureAggregateList",
-    "FeatureTypeUpdateList",
     "CoordinateReferenceSystemList",
     "CoordinateReferenceSystem",
     "UserProfile",

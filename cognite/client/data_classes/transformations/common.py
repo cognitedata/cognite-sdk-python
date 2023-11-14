@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from typing_extensions import Self
+
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.utils._auxiliary import basic_obj_dump
@@ -24,7 +26,7 @@ class TransformationDestination:
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, type(self)) and hash(other) == hash(self)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         ret = basic_obj_dump(self, camel_case)
 
         needs_dump = set(iterable_to_case(("view", "edge_type", "data_model"), camel_case))
@@ -102,16 +104,16 @@ class TransformationDestination:
         return RawTable(database=database, table=table)
 
     @staticmethod
-    def sequence_rows(external_id: str = "") -> SequenceRows:
+    def sequence_rows(external_id: str = "") -> SequenceRowsDestination:
         """To be used when the transformation is meant to produce sequence rows.
 
         Args:
             external_id (str): Sequence external id.
 
         Returns:
-            SequenceRows: TransformationDestination pointing to the target sequence rows
+            SequenceRowsDestination: TransformationDestination pointing to the target sequence rows
         """
-        return SequenceRows(external_id=external_id)
+        return SequenceRowsDestination(external_id=external_id)
 
     @staticmethod
     def nodes(view: ViewInfo | None = None, instance_space: str | None = None) -> Nodes:
@@ -164,7 +166,7 @@ class RawTable(TransformationDestination):
         return hash((self.type, self.database, self.table))
 
 
-class SequenceRows(TransformationDestination):
+class SequenceRowsDestination(TransformationDestination):
     def __init__(self, external_id: str | None = None) -> None:
         super().__init__(type="sequence_rows")
         self.external_id = external_id
@@ -182,7 +184,7 @@ class ViewInfo:
     def __hash__(self) -> int:
         return hash((self.space, self.external_id, self.version))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
@@ -194,7 +196,7 @@ class EdgeType:
     def __hash__(self) -> int:
         return hash((self.space, self.external_id))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
@@ -213,7 +215,7 @@ class DataModelInfo:
         self.destination_type = destination_type
         self.destination_relationship_from_type = destination_relationship_from_type
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
@@ -228,7 +230,7 @@ class Nodes(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Nodes:
+    def load(cls, resource: dict[str, Any]) -> Nodes:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -248,7 +250,7 @@ class Edges(TransformationDestination):
         self.edge_type = edge_type
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Edges:
+    def load(cls, resource: dict[str, Any]) -> Edges:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -268,7 +270,7 @@ class Instances(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Instances:
+    def load(cls, resource: dict[str, Any]) -> Instances:
         inst = cls(**resource)
         if isinstance(inst.data_model, dict):
             inst.data_model = DataModelInfo(**convert_all_keys_to_snake_case(inst.data_model))
@@ -328,7 +330,7 @@ class OidcCredentials:
     def as_client_credentials(self) -> ClientCredentials:
         return ClientCredentials(client_id=self.client_id, client_secret=self.client_secret)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -338,6 +340,24 @@ class OidcCredentials:
             dict[str, Any]: A dictionary representation of the instance.
         """
         return basic_obj_dump(self, camel_case)
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> Self:
+        """Load data into the instance.
+
+        Args:
+            data (dict[str, Any]): A dictionary representation of the instance.
+        Returns:
+            Self: No description.
+        """
+        return cls(
+            client_id=data["clientId"],
+            client_secret=data["clientSecret"],
+            scopes=data["scopes"],
+            token_uri=data["tokenUri"],
+            audience=data.get("audience"),
+            cdf_project_name=data.get("cdfProjectName"),
+        )
 
 
 class NonceCredentials:
@@ -351,7 +371,7 @@ class NonceCredentials:
         self.nonce = nonce
         self.cdf_project_name = cdf_project_name
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -361,6 +381,21 @@ class NonceCredentials:
             dict[str, Any]: A dictionary representation of the instance.
         """
         return basic_obj_dump(self, camel_case)
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> NonceCredentials:
+        """Load data into the instance.
+
+        Args:
+            data (dict[str, Any]): A dictionary representation of the instance.
+        Returns:
+            NonceCredentials: No description.
+        """
+        return cls(
+            session_id=data["sessionId"],
+            nonce=data["nonce"],
+            cdf_project_name=data["cdfProjectName"],
+        )
 
 
 class TransformationBlockedInfo:
@@ -376,17 +411,22 @@ class TransformationBlockedInfo:
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
+    def load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
         return cls(reason=resource["reason"], created_time=resource["createdTime"])
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
 
-def _load_destination_dct(dct: dict[str, Any]) -> RawTable | Nodes | Edges | SequenceRows | TransformationDestination:
+
+def _load_destination_dct(
+    dct: dict[str, Any]
+) -> RawTable | Nodes | Edges | SequenceRowsDestination | TransformationDestination:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
     simple = {
         "raw": RawTable,
-        "sequence_rows": SequenceRows,
+        "sequence_rows": SequenceRowsDestination,
     }
     if destination_type in simple:
         return simple[destination_type](**snake_dict)
@@ -397,6 +437,6 @@ def _load_destination_dct(dct: dict[str, Any]) -> RawTable | Nodes | Edges | Seq
         "instances": Instances,
     }
     if destination_type in nested:
-        return nested[destination_type]._load(snake_dict)
+        return nested[destination_type].load(snake_dict)
 
     return TransformationDestination(destination_type)

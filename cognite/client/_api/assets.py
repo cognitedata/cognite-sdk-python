@@ -33,11 +33,11 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
-    AssetAggregate,
     AssetFilter,
     AssetHierarchy,
     AssetList,
     AssetUpdate,
+    CountAggregate,
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
@@ -46,10 +46,9 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, SortableAssetProperty
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import classify_error, execute_tasks, get_executor
+from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import import_as_completed
 from cognite.client.utils._text import to_camel_case
@@ -107,8 +106,8 @@ class AssetsAPI(APIClient):
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        created_time: TimestampRange | dict[str, Any] | None = None,
+        last_updated_time: TimestampRange | dict[str, Any] | None = None,
         root: bool | None = None,
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[str] | None = None,
@@ -132,8 +131,8 @@ class AssetsAPI(APIClient):
             labels (LabelFilter | None): Return only the assets matching the specified label.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this asset
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             root (bool | None): filtered assets are root assets or not
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
@@ -248,14 +247,14 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[AssetAggregate]:
+    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             filter (AssetFilter | dict | None): Filter on assets with strict matching.
 
         Returns:
-            list[AssetAggregate]: List of asset aggregates
+            list[CountAggregate]: List of asset aggregates
 
         Examples:
 
@@ -265,63 +264,10 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
-        return self._aggregate(filter=filter, cls=AssetAggregate)
-
-    def aggregate_metadata_keys(self, filter: AssetFilter | dict | None = None) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Note:
-            In the case of text fields, the values are aggregated in a case-insensitive manner
-
-        Args:
-            filter (AssetFilter | dict | None): Filter on assets with strict matching.
-
-        Returns:
-            Sequence[AggregateBucketResult]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_by_prefix = c.assets.aggregate_metadata_keys(filter={"external_id_prefix": "prefix"})
-        """
         warnings.warn(
-            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+            f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
         )
-        return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
-
-    def aggregate_metadata_values(
-        self, keys: Sequence[str], filter: AssetFilter | dict | None = None
-    ) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Note:
-            In the case of text fields, the values are aggregated in a case-insensitive manner
-
-        Args:
-            keys (Sequence[str]): Metadata key(s) to apply the aggregation on. Currently supports exactly one key per request.
-            filter (AssetFilter | dict | None): Filter on assets with strict matching.
-
-        Returns:
-            Sequence[AggregateBucketResult]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_by_prefix = c.assets.aggregate_metadata_values(
-                ...     keys=["someKey"],
-                ...     filter={"external_id_prefix": "prefix"}
-                ... )
-        """
-        warnings.warn(
-            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
-        )
-        return self._aggregate(filter=filter, aggregate="metadataValues", keys=keys, cls=AggregateBucketResult)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(
         self,
@@ -454,6 +400,9 @@ class AssetsAPI(APIClient):
     ) -> UniqueResultList:
         """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
+
         Args:
             property (AssetPropertyLike): The property to group by.
             advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
@@ -516,8 +465,11 @@ class AssetsAPI(APIClient):
     ) -> UniqueResultList:
         """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
+
         Args:
-            path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
+            path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -1163,7 +1115,7 @@ class _AssetHierarchyCreator:
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        pool = get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
 
         if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
@@ -1231,7 +1183,7 @@ class _AssetHierarchyCreator:
     ) -> _TaskResult:
         try:
             resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
-            successful = list(map(Asset._load, resp.json()["items"]))
+            successful = list(map(Asset.load, resp.json()["items"]))
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
             self._set_latest_exception(err)
@@ -1279,7 +1231,7 @@ class _AssetHierarchyCreator:
     def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
         try:
             resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
-            updated = [Asset._load(item) for item in resp.json()["items"]]
+            updated = [Asset.load(item) for item in resp.json()["items"]]
             self._set_latest_exception(None)  # Update worked, so we hide exception
             return updated
         except Exception as err:
