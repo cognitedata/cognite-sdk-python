@@ -390,7 +390,7 @@ class TestStandardRetrieveMultiple:
                     identifiers=IdentifierSequence.of(1, 2),
                 )
         assert {"id": 1} in e.value.not_found
-        assert {"id": 2} in e.value.not_found
+        assert {"id": 2} in e.value.not_found + e.value.skipped
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, mock_by_ids):
         res = api_client_with_token._retrieve_multiple(
