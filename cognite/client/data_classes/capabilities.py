@@ -819,6 +819,7 @@ class TimeSeriesSubscriptionsAcl(Capability):
 
     class Scope:
         All = AllScope
+        DataSet = DataSetScope
 
 
 @dataclass
