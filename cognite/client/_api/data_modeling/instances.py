@@ -346,13 +346,13 @@ class InstancesAPI(APIClient):
     ) -> DataModelingIdentifierSequence:
         nodes_seq: Sequence[NodeId | tuple[str, str]]
         if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and isinstance(nodes[0], str)):
-            nodes_seq = [nodes]  # type: ignore[list-item]
+            nodes_seq = [nodes]
         else:
             nodes_seq = nodes  # type: ignore[assignment]
 
         edges_seq: Sequence[EdgeId | tuple[str, str]]
         if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and isinstance(edges[0], str)):
-            edges_seq = [edges]  # type: ignore[list-item]
+            edges_seq = [edges]
         else:
             edges_seq = edges  # type: ignore[assignment]
 

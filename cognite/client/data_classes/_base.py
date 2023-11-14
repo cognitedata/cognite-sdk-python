@@ -649,12 +649,12 @@ class CogniteSort:
             isinstance(data, tuple)
             and len(data) == 3
             and data[1] in ["asc", "desc"]
-            and data[2] in ["auto", "first", "last"]  # type: ignore[misc]
+            and data[2] in ["auto", "first", "last"]
         ):
             return cls(
                 property=data[0],
                 order=data[1],
-                nulls=data[2],  # type: ignore[misc]
+                nulls=data[2],
             )
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)

@@ -307,7 +307,7 @@ class DatapointsArray(CogniteResource):
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
-        return attrs, arrays  # type: ignore [return-value]
+        return attrs, arrays
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> dict[str, Any]:
         """Dump the DatapointsArray into a json serializable Python data type.
