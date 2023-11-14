@@ -193,7 +193,7 @@ def _load_identifier(
                 return id_[0], id_[1], None, id_type  # type: ignore[return-value]
             raise ValueError("Instance given as a tuple must have two elements (space, externalId)")
         if isinstance(id_, tuple):
-            return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None  # type: ignore[misc]
+            return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None
         instance_type = None
         if is_instance:
             instance_type = "node" if isinstance(id_, NodeId) else "edge"

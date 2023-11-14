@@ -18,7 +18,6 @@ from typing import (
     Literal,
     Mapping,
     MutableMapping,
-    Tuple,
     TypeVar,
     Union,
     ValuesView,
@@ -176,7 +175,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
                 view_tuple = tuple(view_id_str.split("/", 1))
                 if len(view_tuple) != 2:
                     raise ValueError("View id must be in the format <external_id>/<version>")
-                view_id = ViewId.load(cast(Tuple[str, str, str], (space, *view_tuple)))
+                view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
         return Properties(props)
 

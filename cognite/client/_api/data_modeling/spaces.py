@@ -64,7 +64,7 @@ class SpacesAPI(APIClient):
         return self()
 
     @overload
-    def retrieve(self, space: str) -> Space | None:  # type: ignore[misc]
+    def retrieve(self, space: str) -> Space | None:  # type: ignore[overload-overlap]
         ...
 
     @overload
