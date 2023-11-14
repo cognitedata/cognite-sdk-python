@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.0.1] - 2023-11-14
+### Fixed
+- Data modeling APIs now work in WASM-like environments missing the threading module.
+
 ## [7.0.0] - 2023-11-14
 This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example,

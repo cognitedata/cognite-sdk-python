@@ -211,7 +211,9 @@ class ConcurrencySettings:
         Returns:
             ThreadPoolExecutor: The data modeling executor.
         """
-        assert cls.use_threadpool(), "use get_executor instead"
+        if cls.use_mainthread():
+            return cls.get_mainthread_executor()  # type: ignore [return-value]
+
         global _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
         try:
             executor = _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
