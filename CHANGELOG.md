@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.0.3] - 2023-11-15
+### Fixed
+- Bug when `cognite.client.data_classes.filter` used with any `data_modeling` endpoint raised a `CogniteAPIError` with 
+  snake_cased properties. This is now fixed. 
+
 ## [7.0.2] - 2023-11-15
 ### Fixed
 - Missing Scope `DataSet` for `TemplateGroupAcl` and `TemplateInstancesAcl`.
