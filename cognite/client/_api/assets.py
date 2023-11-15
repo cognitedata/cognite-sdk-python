@@ -874,7 +874,7 @@ class AssetsAPI(APIClient):
             resource_cls=Asset,
             method="POST",
             limit=limit,
-            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
             sort=prepare_filter_sort(sort, AssetSort),
             other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
         )

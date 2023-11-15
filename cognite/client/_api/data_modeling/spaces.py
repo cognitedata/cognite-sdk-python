@@ -7,6 +7,7 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
 from cognite.client.utils._concurrency import ConcurrencySettings
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class SpacesAPI(APIClient):
@@ -63,18 +64,18 @@ class SpacesAPI(APIClient):
         return self()
 
     @overload
-    def retrieve(self, spaces: str) -> Space | None:  # type: ignore[overload-overlap]
+    def retrieve(self, spaces: str) -> Space | None:
         ...
 
     @overload
-    def retrieve(self, spaces: Sequence[str]) -> SpaceList:
+    def retrieve(self, spaces: SequenceNotStr[str]) -> SpaceList:
         ...
 
-    def retrieve(self, spaces: str | Sequence[str]) -> Space | SpaceList | None:
+    def retrieve(self, spaces: str | SequenceNotStr[str]) -> Space | SpaceList | None:
         """`Retrieve one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            spaces (str | Sequence[str]): Space ID
+            spaces (str | SequenceNotStr[str]): Space ID
 
         Returns:
             Space | SpaceList | None: Requested space or None if it does not exist.
@@ -100,11 +101,11 @@ class SpacesAPI(APIClient):
             executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-    def delete(self, spaces: str | Sequence[str]) -> list[str]:
+    def delete(self, spaces: str | SequenceNotStr[str]) -> list[str]:
         """`Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
-            spaces (str | Sequence[str]): ID or ID list ids of spaces.
+            spaces (str | SequenceNotStr[str]): ID or ID list ids of spaces.
         Returns:
             list[str]: The space(s) which has been deleted.
         Examples:

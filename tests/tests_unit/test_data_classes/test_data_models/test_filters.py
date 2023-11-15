@@ -5,6 +5,7 @@ from _pytest.mark import ParameterSet
 
 import cognite.client.data_classes.filters as f
 from cognite.client.data_classes._base import EnumProperty
+from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.filters import Filter
 from tests.utils import all_subclasses
 
@@ -99,7 +100,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
 @pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
 def test_load_and_dump_equals(raw_data: dict) -> None:
     parsed = Filter.load(raw_data)
-    dumped = parsed.dump(camel_case=False)
+    dumped = parsed.dump(camel_case_property=False)
     assert dumped == raw_data
 
 
@@ -152,10 +153,28 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
     }
     yield pytest.param(complex_filter, expected, id="And nested and Or with has data and overlaps")
 
+    snake_cased_property = f.And(
+        f.Range(
+            property=ViewId("space", "viewExternalId", "v1").as_property_ref("start_time"),
+            lte="2023-09-16T15:50:05.439",
+        )
+    )
+    expected = {
+        "and": [
+            {
+                "range": {
+                    "property": ("space", "viewExternalId/v1", "start_time"),
+                    "lte": "2023-09-16T15:50:05.439",
+                }
+            }
+        ]
+    }
+    yield pytest.param(snake_cased_property, expected, id="And range filter with snake cased property")
+
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
 def test_dump_filter(user_filter: Filter, expected: dict) -> None:
-    actual = user_filter.dump(camel_case=False)
+    actual = user_filter.dump()
 
     assert actual == expected
 
@@ -169,7 +188,7 @@ def test_unknown_filter_type() -> None:
 def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> None:
     # Bug prior to 6.32.4 would dump user given keys in camelCase
     flt = f.Equals(property_cls.metadata_key("key_foo_Bar_baz"), "value_foo Bar_baz")  # type: ignore [attr-defined]
-    dumped = flt.dump(camel_case=True)["equals"]
+    dumped = flt.dump(camel_case_property=True)["equals"]
 
     # property may contain more (static) values, so we just verify the end:
     assert dumped["property"][-2:] == ["metadata", "key_foo_Bar_baz"]
