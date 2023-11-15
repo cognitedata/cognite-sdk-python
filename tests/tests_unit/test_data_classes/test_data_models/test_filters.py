@@ -5,6 +5,7 @@ from _pytest.mark import ParameterSet
 
 import cognite.client.data_classes.filters as f
 from cognite.client.data_classes._base import EnumProperty
+from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.filters import Filter
 from tests.utils import all_subclasses
 
@@ -152,10 +153,28 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
     }
     yield pytest.param(complex_filter, expected, id="And nested and Or with has data and overlaps")
 
+    snake_cased_property = f.And(
+        f.Range(
+            property=ViewId("space", "viewExternalId", "v1").as_property_ref("start_time"),
+            lte="2023-09-16T15:50:05.439",
+        )
+    )
+    expected = {
+        "and": [
+            {
+                "range": {
+                    "property": ("space", "viewExternalId/v1", "start_time"),
+                    "lte": "2023-09-16T15:50:05.439",
+                }
+            }
+        ]
+    }
+    yield pytest.param(snake_cased_property, expected, id="And range filter with snake cased property")
+
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
 def test_dump_filter(user_filter: Filter, expected: dict) -> None:
-    actual = user_filter.dump(camel_case=False)
+    actual = user_filter.dump()
 
     assert actual == expected
 
