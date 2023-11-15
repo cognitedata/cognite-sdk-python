@@ -254,7 +254,7 @@ class InstancesAPI(APIClient):
                 method="POST",
                 chunk_size=chunk_size,
                 limit=limit,
-                filter=filter.dump() if isinstance(filter, Filter) else filter,
+                filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
             ),
         )
@@ -735,7 +735,7 @@ class InstancesAPI(APIClient):
         if properties:
             body["properties"] = properties
         if filter:
-            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+            body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
         return list_cls.load(res.json()["items"], cognite_client=None)
@@ -835,7 +835,7 @@ class InstancesAPI(APIClient):
         if group_by:
             body["groupBy"] = [group_by] if isinstance(group_by, str) else group_by
         if filter:
-            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+            body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
         if query:
             body["query"] = query
         if properties:
@@ -933,7 +933,7 @@ class InstancesAPI(APIClient):
 
         body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
         if filter:
-            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+            body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
         if query:
             body["query"] = query
         if properties:
@@ -1125,7 +1125,7 @@ class InstancesAPI(APIClient):
                 resource_cls=resource_cls,
                 method="POST",
                 limit=limit,
-                filter=filter.dump() if isinstance(filter, Filter) else filter,
+                filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
             ),
         )

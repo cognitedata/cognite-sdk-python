@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.0.3] - 2023-11-15
 ### Fixed
-- Bug when `cognite.client.data_classes.filter` used with any `data_modeling` endpoint raised a `CogniteAPIError` with 
+- Bug when `cognite.client.data_classes.filter` used with any `data_modeling` endpoint raised a `CogniteAPIError` for 
   snake_cased properties. This is now fixed. 
 
 ## [7.0.2] - 2023-11-15
