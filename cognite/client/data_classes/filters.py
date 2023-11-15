@@ -68,8 +68,18 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
 class Filter(ABC):
     _filter_name: str
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {self._filter_name: self._filter_body(camel_case)}
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        """
+        Dump the filter to a dictionary.
+
+        Args:
+            camel_case_property (bool): Whether to camel case the property names. Defaults to False. Typically, when the filter is used in data modeling, the property names should not be changed, while when used with Assets, Event, Sequences, or Files, the property names should be camel cased.
+
+        Returns:
+            dict[str, Any]: The filter as a dictionary.
+
+        """
+        return {self._filter_name: self._filter_body(camel_case_property=camel_case_property)}
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:

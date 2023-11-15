@@ -755,7 +755,7 @@ class TimeSeriesAPI(APIClient):
             resource_cls=TimeSeries,
             method="POST",
             limit=limit,
-            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
             sort=prepare_filter_sort(sort, TimeSeriesSort),
         )
 

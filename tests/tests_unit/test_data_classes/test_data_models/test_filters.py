@@ -100,7 +100,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
 @pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
 def test_load_and_dump_equals(raw_data: dict) -> None:
     parsed = Filter.load(raw_data)
-    dumped = parsed.dump(camel_case=False)
+    dumped = parsed.dump(camel_case_property=False)
     assert dumped == raw_data
 
 
@@ -188,7 +188,7 @@ def test_unknown_filter_type() -> None:
 def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> None:
     # Bug prior to 6.32.4 would dump user given keys in camelCase
     flt = f.Equals(property_cls.metadata_key("key_foo_Bar_baz"), "value_foo Bar_baz")  # type: ignore [attr-defined]
-    dumped = flt.dump(camel_case=True)["equals"]
+    dumped = flt.dump(camel_case_property=True)["equals"]
 
     # property may contain more (static) values, so we just verify the end:
     assert dumped["property"][-2:] == ["metadata", "key_foo_Bar_baz"]
