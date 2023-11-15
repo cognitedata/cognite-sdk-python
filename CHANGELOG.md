@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.0.2] - 2023-11-15
+### Fixed
+- Missing Scope `DataSet` for `TemplateGroupAcl` and `TemplateInstancesAcl`.
+
 ## [7.0.1] - 2023-11-14
 ### Fixed
 - Data modeling APIs now work in WASM-like environments missing the threading module.

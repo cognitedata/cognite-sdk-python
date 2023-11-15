@@ -953,6 +953,7 @@ class TemplateGroupsAcl(Capability):
 
     class Scope:
         All = AllScope
+        DataSet = DataSetScope
 
 
 @dataclass
@@ -967,6 +968,7 @@ class TemplateInstancesAcl(Capability):
 
     class Scope:
         All = AllScope
+        DataSet = DataSetScope
 
 
 @dataclass
