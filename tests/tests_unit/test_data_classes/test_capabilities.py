@@ -90,6 +90,8 @@ def all_acls():
         {"sequencesAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"sessionsAcl": {"actions": ["LIST", "CREATE", "DELETE"], "scope": {"all": {}}}},
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids":["1", "42"]}}}},
+        {"templateInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope":  {"ids": ["4", "365"]}}}},
         {"templateInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"threedAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"all": {}}}},
         {"timeSeriesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
