@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, U
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 @dataclass(frozen=True)
@@ -169,7 +170,7 @@ EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 Id = Union[Tuple[str, str], Tuple[str, str, str], IdLike, VersionedIdLike]
 
 
-def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
+def _load_space_identifier(ids: str | SequenceNotStr[str]) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not isinstance(ids, str)
     spaces = [ids] if isinstance(ids, str) else ids
     return DataModelingIdentifierSequence(
@@ -193,7 +194,7 @@ def _load_identifier(
                 return id_[0], id_[1], None, id_type  # type: ignore[return-value]
             raise ValueError("Instance given as a tuple must have two elements (space, externalId)")
         if isinstance(id_, tuple):
-            return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None
+            return id_[0], id_[1], (id_[2] if len(id_) == 3 else None), None
         instance_type = None
         if is_instance:
             instance_type = "node" if isinstance(id_, NodeId) else "edge"
