@@ -73,7 +73,9 @@ class Filter(ABC):
         Dump the filter to a dictionary.
 
         Args:
-            camel_case_property (bool): Whether to camel case the property names. Defaults to False. Typically, when the filter is used in data modeling, the property names should not be changed, while when used with Assets, Event, Sequences, or Files, the property names should be camel cased.
+            camel_case_property (bool): Whether to camel case the property names. Defaults to False. Typically,
+                when the filter is used in data modeling, the property names should not be changed,
+                while when used with Assets, Event, Sequences, or Files, the property names should be camel cased.
 
         Returns:
             dict[str, Any]: The filter as a dictionary.
