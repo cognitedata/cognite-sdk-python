@@ -1,4 +1,5 @@
 import doctest
+from collections import defaultdict
 from unittest import TextTestRunner
 from unittest.mock import patch
 
@@ -39,6 +40,7 @@ def run_docstring_tests(module):
 
 
 @patch("cognite.client.CogniteClient", CogniteClientMock)
+@patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
 class TestDocstringExamples:
     def test_time_series(self):
         run_docstring_tests(time_series)
