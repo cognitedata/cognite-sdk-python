@@ -22,9 +22,11 @@ from cognite.client.data_classes import (
     SessionList,
 )
 from cognite.client.data_classes.capabilities import (
+    AllScope,
     Capability,
     ProjectCapability,
     ProjectCapabilityList,
+    RawAcl,
 )
 from cognite.client.data_classes.iam import TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
@@ -46,8 +48,6 @@ ComparableCapability: TypeAlias = Union[
 
 
 def _convert_capability_to_tuples(capabilities: ComparableCapability, project: str | None = None) -> set[tuple]:
-    from cognite.client.data_classes import Group, GroupList
-
     if isinstance(capabilities, ProjectCapability):
         return ProjectCapabilityList([capabilities]).as_tuples(project)
     if isinstance(capabilities, ProjectCapabilityList):
@@ -59,7 +59,6 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
         capabilities = capabilities.capabilities or []
     elif isinstance(capabilities, GroupList):
         capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
-
     if isinstance(capabilities, Sequence):
         tpls: set[tuple] = set()
         for cap in capabilities:
@@ -100,8 +99,10 @@ class IAMAPI(APIClient):
             project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
                 to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
                 is used, it will be inferred from the CogniteClient used to call retrieve it via token/inspect.
-            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
-                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
+            ignore_allscope_meaning (bool): Option on how to treat scopes that encompass other scopes, like allScope. When True,
+                this function will return e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. The
+                same logic applies to RawAcl scoped to a specific database->table, even when the user have access to all tables
+                in that database. Defaults to False.
 
         Returns:
             list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
@@ -147,18 +148,30 @@ class IAMAPI(APIClient):
         to_check = _convert_capability_to_tuples(desired_capabilities, project)
         missing = to_check - has_capabilties
 
-        if ignore_allscope_meaning:
-            return [Capability.from_tuple(tpl) for tpl in missing]
-
         has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilties), key=itemgetter(slice(2)))}
         to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
 
         missing.clear()
+        raw_group, raw_check_grp = set(), set()
         for key, check_grp in to_check_lookup.items():
             group = has_capabilties_lookup.get(key, set())
-            # If allScope exists for capability, we skip the missing:
-            if not any(grp[2] == "all" for grp in group):
+            if any(AllScope._scope_name == grp[2] for grp in group):
+                continue  # If allScope exists for capability, we safely skip ahead:
+            elif RawAcl._capability_name == next(iter(check_grp))[0]:
+                raw_group.update(group)
+                raw_check_grp.update(check_grp)
+            else:
                 missing.update(check_grp)
+
+        # Special handling of rawAcl which has a "hidden" database scope between "all" and "tables":
+        raw_to_check = {k: sorted(grp) for k, grp in groupby(sorted(raw_check_grp), key=itemgetter(slice(4)))}
+        raw_has_capabs = {k: sorted(grp) for k, grp in groupby(sorted(raw_group), key=itemgetter(slice(4)))}
+        for key, check_db_grp in raw_to_check.items():
+            if (db_group := raw_has_capabs.get(key)) and not db_group[0][-1]:
+                # [0] because empty string sorts first; [-1] is table; if no table -> db scope -> skip ahead
+                continue
+            missing.update(check_db_grp)
+
         return [Capability.from_tuple(tpl) for tpl in missing]
 
     def verify_capabilities(

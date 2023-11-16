@@ -113,9 +113,9 @@ class Capability(ABC):
             scope = scope_cls(scope_params)  # type: ignore [call-arg]
         elif len(scope_params) == 2 and scope_cls is TableScope:
             db, tbl = scope_params
-            scope = scope_cls({db: [tbl]})  # type: ignore [call-arg]
+            scope = scope_cls({db: [tbl] if tbl else []})  # type: ignore [call-arg]
         else:
-            raise ValueError(f"tuple not understood ({tpl})")
+            raise ValueError(f"tuple not understood as capability ({tpl})")
 
         return cast(Self, capability_cls(actions=[capability_cls.Action(action)], scope=scope))
 
@@ -357,7 +357,9 @@ class TableScope(Capability.Scope):
         return {self._scope_name: {key: {k: {"tables": v} for k, v in self.dbs_to_tables.items()}}}
 
     def as_tuples(self) -> set[tuple]:
-        return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables}
+        # When the scope contains no tables, it means all tables... since database name must be at least 1
+        # character, we represent this internally with the empty string:
+        return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables or [""]}
 
     def is_within(self, other: Self) -> bool:
         if isinstance(other, AllScope):
