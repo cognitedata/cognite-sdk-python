@@ -31,6 +31,7 @@ from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
+    from cognite.client.data_classes import ClientCredentials
 
 
 class BetaWorkflowAPIClient(APIClient, ABC):
@@ -147,6 +148,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         version: str,
         input: dict | None = None,
         metadata: dict | None = None,
+        client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
         """`Trigger a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
@@ -155,6 +157,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             version (str): Version of the workflow.
             input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
             metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
+            client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
@@ -172,31 +175,33 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
         Examples:
 
-            Trigger workflow execution for workflow my workflow version 1:
+            Trigger a workflow execution for the workflow "foo", version 1:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.workflows.executions.trigger("my workflow", "1")
+                >>> res = c.workflows.executions.trigger("foo", "1")
 
-            Trigger workflow execution for workflow my workflow version 1 with input data '{"a": 1, "b": 2}:
+            Trigger a workflow execution with input data:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.trigger("my workflow", "1", input={"a": 1, "b": 2})
+                >>> res = c.workflows.executions.trigger("foo", "1", input={"a": 1, "b": 2})
 
+            Trigger a workflow execution using a specific set of client credentials (i.e. not your current credentials):
+
+                >>> from cognite.client.data_classes import ClientCredentials
+                >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"]),
+                >>> res = c.workflows.executions.trigger("foo", "1", client_credentials=credentials)
         """
         self._warning.warn()
-        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Workflow API")
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
+        )
         body = {"authentication": {"nonce": nonce}}
         if input is not None:
             body["input"] = input
         if metadata is not None:
             body["metadata"] = metadata
 
-        response = self._post(
-            url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
-            json=body,
-        )
+        response = self._post(url_path=f"/workflows/{workflow_external_id}/versions/{version}/run", json=body)
         return WorkflowExecution.load(response.json())
 
     def list(

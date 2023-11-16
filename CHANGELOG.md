@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.2.0] - 2023-11-16
+### Added
+- The `trigger` method of the Workflow Execution API, now accepts a `client_credentials` to allow specifying specific
+  credentials to run with. Previously, the current credentials set on the CogniteClient object doing the call would be used.
+
 ## [7.1.0] - 2023-11-16
 ### Added
 - The list method for asset mappings in the 3D API now supports `intersects_bounding_box`, allowing users to only
