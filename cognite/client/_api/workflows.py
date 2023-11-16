@@ -187,8 +187,9 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
             Trigger a workflow execution using a specific set of client credentials (i.e. not your current credentials):
 
+                >>> import os
                 >>> from cognite.client.data_classes import ClientCredentials
-                >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"]),
+                >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
                 >>> res = c.workflows.executions.trigger("foo", "1", client_credentials=credentials)
         """
         self._warning.warn()
