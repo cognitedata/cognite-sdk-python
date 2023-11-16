@@ -223,10 +223,21 @@ class ViewsAPI(APIClient):
             Create new views::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ViewApply
+                >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
                 >>> c = CogniteClient()
-                >>> views = [ViewApply(space="mySpace",external_id="myView",version="v1"),
-                ... ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
+                >>> views = [
+                ...     ViewApply(
+                ...         space="mySpace",
+                ...         external_id="myView",
+                ...         version="v1",
+                ...         properties={
+                ...             "someAlias": MappedPropertyApply(
+                ...                 container=ContainerId("mySpace", "myContainer"),
+                ...                 container_property_identifier="someProperty",
+                ...             ),
+                ...         }
+                ...    )
+                ... ]
                 >>> res = c.data_modeling.views.apply(views)
         """
         return self._create_multiple(
