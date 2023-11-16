@@ -17,11 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.1.0] - 2023-11-16
+### Added
+- The list method for asset mappings in the 3D API now supports `intersects_bounding_box`, allowing users to only
+  return asset mappings for assets whose bounding box intersects with the given bounding box.
+
 ## [7.0.3] - 2023-11-15
 ### Fixed
-- Bug when `cognite.client.data_classes.filter` used with any `data_modeling` endpoint raised a `CogniteAPIError` for 
-  snake_cased properties. This is now fixed. 
-- When calling `client.relationships.retrieve`, `.retrieve_multiple`, or `.list` with `fetch_resources=True`, the 
+- Bug when `cognite.client.data_classes.filter` used with any `data_modeling` endpoint raised a `CogniteAPIError` for
+  snake_cased properties. This is now fixed.
+- When calling `client.relationships.retrieve`, `.retrieve_multiple`, or `.list` with `fetch_resources=True`, the
   `target` and `source` resources were not instantiated with a `cognite_client`. This is now fixed.
 
 ## [7.0.2] - 2023-11-15

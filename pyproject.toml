@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "7.0.3"
+version = "7.1.0"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
 authors = [
     "Erlend Vollset <erlend.vollset@cognite.com>",
-    "Håkon Treider <håkon.treider@cognite.com>",
+    "Håkon Treider <hakon.treider@cognite.com>",
     "Anders Albert <anders.albert@cognite.com>"
 ]
 license = "Apache-2.0"
