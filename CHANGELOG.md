@@ -21,6 +21,9 @@ Changes are grouped as follows
 ### Fixed
 - The new compare methods for capabilities in major version 7, `IAMAPI.verify_capabilities` and `IAMAPI.compare_capabilities`
   now works correctly for rawAcl with database scope ("all tables").
+### Removed
+- Capability scopes no longer have the `is_within` method, and capabilities no longer have `has_capability`. Use the more
+  general `IAMAPI.compare_capabilities` instead.
 
 ## [7.2.0] - 2023-11-16
 ### Added
