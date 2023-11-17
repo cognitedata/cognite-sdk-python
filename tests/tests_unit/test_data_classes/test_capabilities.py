@@ -357,15 +357,15 @@ class TestIAMCompareCapabilities:
         assert not cognite_client.iam.compare_capabilities(has_all_scope, has_db_scope)
 
     @pytest.mark.parametrize(
-        "extra_existing, no_read_missing",
+        "extra_existing",
         [
-            ([], False),
-            ([RawAcl(actions=[RawAcl.Action.Read], scope=AllScope)], True),
-            ([RawAcl(actions=[RawAcl.Action.Read], scope=TableScope({"db1": []}))], True),
-            ([RawAcl(actions=[RawAcl.Action.Read], scope=TableScope({"db1": {"tables": []}}))], True),
+            [],
+            [RawAcl(actions=[RawAcl.Action.Read], scope=AllScope)],
+            [RawAcl(actions=[RawAcl.Action.Read], scope=TableScope({"db1": []}))],
+            [RawAcl(actions=[RawAcl.Action.Read], scope=TableScope({"db1": {"tables": []}}))],
         ],
     )
-    def test_raw_acl_database_scope(self, cognite_client, extra_existing, no_read_missing):
+    def test_raw_acl_database_scope(self, cognite_client, extra_existing):
         existing = [
             RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t1"]})),
             RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t1", "t2"]})),
@@ -377,12 +377,12 @@ class TestIAMCompareCapabilities:
             RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})),
         ]
         missing = cognite_client.iam.compare_capabilities(existing, desired)
-        if no_read_missing:
-            assert missing == [RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table(dbs_to_tables={"db1": ["t1"]}))]
+        if extra_existing:
+            assert missing == [RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]}))]
         else:
             assert missing == [
-                RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table(dbs_to_tables={"db1": ["t3"]})),
-                RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table(dbs_to_tables={"db1": ["t1"]})),
+                RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t3"]})),
+                RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})),
             ]
 
 
