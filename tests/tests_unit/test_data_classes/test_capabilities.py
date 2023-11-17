@@ -19,6 +19,7 @@ from cognite.client.data_classes.capabilities import (
     ProjectCapabilityList,
     ProjectsAcl,
     RawAcl,
+    TableScope,
     UnknownAcl,
     UnknownScope,
 )
@@ -301,6 +302,8 @@ class TestProjectCapabilityList:
         loaded = ProjectCapabilityList.load([proj_cap_allprojects_dct])
         assert type(loaded[0].project_scope) is AllProjectsScope
 
+
+class TestIAMCompareCapabilities:
     @pytest.mark.parametrize(
         "capability",
         [
@@ -346,6 +349,40 @@ class TestProjectCapabilityList:
             proj_capabs_list, [has, has_not, has_also], project=project_name
         )
         assert missing_acls == [has_not]
+
+    def test_raw_acl_database_scope_only(self, cognite_client):
+        # Would fail with: 'ValueError: No capabilities given' prior to 7.2.1 due to a bug in 'as_tuples'.
+        has_all_scope = RawAcl([RawAcl.Action.Read], AllScope)
+        has_db_scope = RawAcl([RawAcl.Action.Read], TableScope(dbs_to_tables={"db1": []}))
+        assert not cognite_client.iam.compare_capabilities(has_all_scope, has_db_scope)
+
+    @pytest.mark.parametrize(
+        "extra_existing",
+        [
+            [],
+            [RawAcl(actions=[RawAcl.Action.Read], scope=AllScope)],
+            [RawAcl(actions=[RawAcl.Action.Read], scope=TableScope({"db1": []}))],
+            [RawAcl(actions=[RawAcl.Action.Read], scope=TableScope({"db1": {"tables": []}}))],
+        ],
+    )
+    def test_raw_acl_database_scope(self, cognite_client, extra_existing):
+        existing = [
+            RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t1"]})),
+            RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t1", "t2"]})),
+            RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db2": ["t1", "t2"]})),
+            *extra_existing,
+        ]
+        desired = [
+            RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t1", "t2", "t3"]})),
+            RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})),
+        ]
+        missing = cognite_client.iam.compare_capabilities(existing, desired)
+        if extra_existing:
+            assert missing == [RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]}))]
+        else:
+            assert len(missing) == 2
+            assert RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t3"]})) in missing
+            assert RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})) in missing
 
 
 @pytest.mark.parametrize(

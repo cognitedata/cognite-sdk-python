@@ -98,9 +98,6 @@ class Capability(ABC):
             # Basic implementation for all simple Scopes (e.g. all or currentuser)
             return {(self._scope_name,)}
 
-        def is_within(self, other: Self) -> bool:
-            raise NotImplementedError
-
     @classmethod
     def from_tuple(cls, tpl: tuple) -> Self:
         acl_name, action, scope_name, *scope_params = tpl
@@ -113,9 +110,9 @@ class Capability(ABC):
             scope = scope_cls(scope_params)  # type: ignore [call-arg]
         elif len(scope_params) == 2 and scope_cls is TableScope:
             db, tbl = scope_params
-            scope = scope_cls({db: [tbl]})  # type: ignore [call-arg]
+            scope = scope_cls({db: [tbl] if tbl else []})  # type: ignore [call-arg]
         else:
-            raise ValueError(f"tuple not understood ({tpl})")
+            raise ValueError(f"tuple not understood as capability: {tpl}")
 
         return cast(Self, capability_cls(actions=[capability_cls.Action(action)], scope=scope))
 
@@ -161,13 +158,6 @@ class Capability(ABC):
         }
         capability_name = self._capability_name
         return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
-
-    def has_capability(self, other: Capability) -> bool:
-        if not isinstance(self, type(other)):
-            return False
-        if not other.scope.is_within(self.scope):
-            return False
-        return not set(other.actions) - set(self.actions)
 
     def as_tuples(self) -> set[tuple]:
         return set(
@@ -262,16 +252,10 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
 class AllScope(Capability.Scope):
     _scope_name = "all"
 
-    def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope)
-
 
 @dataclass(frozen=True)
 class CurrentUserScope(Capability.Scope):
     _scope_name = "currentuserscope"
-
-    def is_within(self, other: Self) -> bool:
-        return isinstance(other, (AllScope, CurrentUserScope))
 
 
 @dataclass(frozen=True)
@@ -284,9 +268,6 @@ class IDScope(Capability.Scope):
 
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.ids}
-
-    def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
 
 @dataclass(frozen=True)
@@ -302,9 +283,6 @@ class IDScopeLowerCase(Capability.Scope):
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.ids}
 
-    def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
-
 
 @dataclass(frozen=True)
 class ExtractionPipelineScope(Capability.Scope):
@@ -317,9 +295,6 @@ class ExtractionPipelineScope(Capability.Scope):
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.ids}
 
-    def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
-
 
 @dataclass(frozen=True)
 class DataSetScope(Capability.Scope):
@@ -331,9 +306,6 @@ class DataSetScope(Capability.Scope):
 
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.ids}
-
-    def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or type(self) is type(other) and set(self.ids).issubset(other.ids)
 
 
 @dataclass(frozen=True)
@@ -357,20 +329,9 @@ class TableScope(Capability.Scope):
         return {self._scope_name: {key: {k: {"tables": v} for k, v in self.dbs_to_tables.items()}}}
 
     def as_tuples(self) -> set[tuple]:
-        return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables}
-
-    def is_within(self, other: Self) -> bool:
-        if isinstance(other, AllScope):
-            return True
-        if not isinstance(other, TableScope):
-            return False
-
-        for db_name, tables in self.dbs_to_tables.items():
-            if (other_tables := other.dbs_to_tables.get(db_name)) is None:
-                return False
-            if not set(tables).issubset(other_tables):
-                return False
-        return True
+        # When the scope contains no tables, it means all tables... since database name must be at least 1
+        # character, we represent this internally with the empty string:
+        return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables or [""]}
 
 
 @dataclass(frozen=True)
@@ -384,9 +345,6 @@ class AssetRootIDScope(Capability.Scope):
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, i) for i in self.root_ids}
 
-    def is_within(self, other: Self) -> bool:
-        return isinstance(other, AllScope) or type(self) is type(other) and set(self.root_ids).issubset(other.root_ids)
-
 
 @dataclass(frozen=True)
 class ExperimentsScope(Capability.Scope):
@@ -396,13 +354,6 @@ class ExperimentsScope(Capability.Scope):
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, s) for s in self.experiments}
 
-    def is_within(self, other: Self) -> bool:
-        return (
-            isinstance(other, AllScope)
-            or type(self) is type(other)
-            and set(self.experiments).issubset(other.experiments)
-        )
-
 
 @dataclass(frozen=True)
 class SpaceIDScope(Capability.Scope):
@@ -411,11 +362,6 @@ class SpaceIDScope(Capability.Scope):
 
     def as_tuples(self) -> set[tuple]:
         return {(self._scope_name, s) for s in self.space_ids}
-
-    def is_within(self, other: Self) -> bool:
-        return (
-            isinstance(other, AllScope) or type(self) is type(other) and set(self.space_ids).issubset(other.space_ids)
-        )
 
 
 @dataclass(frozen=True)
@@ -433,9 +379,6 @@ class UnknownScope(Capability.Scope):
 
     def as_tuples(self) -> set[tuple]:
         raise NotImplementedError("Unknown scope cannot be converted to tuples (needed for comparisons)")
-
-    def is_within(self, other: Self) -> bool:
-        raise NotImplementedError("Unknown scope cannot be compared")
 
 
 _SCOPE_CLASS_BY_NAME: MappingProxyType[str, type[Capability.Scope]] = MappingProxyType(
