@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.2.1] - 2023-11-17
+### Fixed
+- The new compare methods for capabilities in major version 7, `IAMAPI.verify_capabilities` and `IAMAPI.compare_capabilities`
+  now works correctly for rawAcl with database scope ("all tables").
+
 ## [7.2.0] - 2023-11-16
 ### Added
 - The `trigger` method of the Workflow Execution API, now accepts a `client_credentials` to allow specifying specific
@@ -169,9 +174,9 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 ## [6.39.6] - 2023-11-13
 ## Fixed
 - HTTP status code retry strategy for RAW and labels. `/rows/insert` and `/rows/delete` will now
-be retried for all status codes in `config.status_forcelist` (default 429, 502, 503, 504), while
-`/dbs/{db}` and `/tables/{table}` will now only be retried for 429s and connection errors as those
-endpoints are not idempotent.
+  be retried for all status codes in `config.status_forcelist` (default 429, 502, 503, 504), while
+  `/dbs/{db}` and `/tables/{table}` will now only be retried for 429s and connection errors as those
+  endpoints are not idempotent.
 - Also, `labels/list` will now also be retried.
 
 ## [6.39.5] - 2023-11-12
