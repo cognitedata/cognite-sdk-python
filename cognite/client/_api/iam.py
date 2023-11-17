@@ -156,7 +156,7 @@ class IAMAPI(APIClient):
         for key, check_grp in to_check_lookup.items():
             group = has_capabilties_lookup.get(key, set())
             if any(AllScope._scope_name == grp[2] for grp in group):
-                continue  # If allScope exists for capability, we safely skip ahead:
+                continue  # If allScope exists for capability, we safely skip ahead
             elif RawAcl._capability_name == next(iter(check_grp))[0]:
                 raw_group.update(group)
                 raw_check_grp.update(check_grp)

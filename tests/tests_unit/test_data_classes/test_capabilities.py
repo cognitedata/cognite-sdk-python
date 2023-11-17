@@ -380,10 +380,9 @@ class TestIAMCompareCapabilities:
         if extra_existing:
             assert missing == [RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]}))]
         else:
-            assert missing == [
-                RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t3"]})),
-                RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})),
-            ]
+            assert len(missing) == 2
+            assert RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t3"]})) in missing
+            assert RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})) in missing
 
 
 @pytest.mark.parametrize(
