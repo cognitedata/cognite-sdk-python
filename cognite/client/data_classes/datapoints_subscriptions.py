@@ -210,6 +210,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
             PropertySpec("name"),
             PropertySpec("time_series_ids", is_container=True),
             PropertySpec("filter", is_nullable=False),
+            PropertySpec("data_set_id"),
         ]
 
 
