@@ -157,7 +157,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
             filter=filter,
             name=resource.get("name"),
             description=resource.get("description"),
-            data_set_id=resource.get("data_set_id"),
+            data_set_id=resource.get("dataSetId"),
         )
 
 
