@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.3.1] - 2023-11-21
+### Fixed
+- Replaced action `Write` with `Create` in `ProjectsAcl`, as `Write` is not a valid action and `Create` is the correct one. 
+
 ## [7.3.0] - 2023-11-20
 ### Added
 - Added Scope `DataSet` for `TimeSeriesSubscriptionsAcl`.
