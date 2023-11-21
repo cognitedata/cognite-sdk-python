@@ -100,6 +100,9 @@ class TestDatapointSubscriptions:
             assert created.last_updated_time
             assert created.time_series_count == len(new_subscription.time_series_ids)
             assert retrieved_subscription.external_id == new_subscription.external_id == created.external_id
+            assert retrieved_subscription.name == new_subscription.name == created.name
+            assert retrieved_subscription.description == new_subscription.description == created.description
+            assert retrieved_subscription.data_set_id == new_subscription.data_set_id == created.data_set_id
 
             time_series_in_subscription = cognite_client.time_series.subscriptions.list_member_time_series(
                 new_subscription.external_id, limit=10
