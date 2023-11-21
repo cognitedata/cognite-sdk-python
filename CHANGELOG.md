@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.3.2] - 2023-11-21
+### Fixed
+- `workflows.retrieve` and `workflows.versions.retrieve` returned None if the provided workflow external id contained special characters. This is now fixed.
+
 ## [7.3.1] - 2023-11-21
 ### Fixed
-- Replaced action `Write` with `Create` in `ProjectsAcl`, as `Write` is not a valid action and `Create` is the correct one. 
+- Replaced action `Write` with `Create` in `ProjectsAcl`, as `Write` is not a valid action and `Create` is the correct one.
 
 ## [7.3.0] - 2023-11-20
 ### Added
@@ -127,13 +131,13 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 
 ### Added
 - Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`,
-  `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
+  `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.
 - Missing `dump` and `load` methods for `ClientCredentials`.
 - Literal annotation for `source_type` and `target_type` in `Relationship`
 - In transformations, `NonceCredentials` was missing `load` method.
 - In transformations, `TransformationBlockedInfo` was missing `.dump` method
 - `capabilities` in `cognite.client.data_classes` with data classes for all CDF capabilities.
-- All `CogniteResource` and `CogniteResourcelist` objects have `.dump_yaml` methods, for example, `my_asset_list.dump_yaml()`.  
+- All `CogniteResource` and `CogniteResourcelist` objects have `.dump_yaml` methods, for example, `my_asset_list.dump_yaml()`.
 
 ### Removed
 - Deprecated methods `aggregate_metadata_keys` and `aggregate_metadata_values` on AssetsAPI.
