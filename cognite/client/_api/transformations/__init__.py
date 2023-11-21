@@ -304,6 +304,25 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
+
+            Update the session used when authenticating a list of transformations:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import NonceCredentials
+                >>> c = CogniteClient()
+                >>> session = c.iam.sessions.create()
+                >>> nonce = NonceCredentials(
+                ... session_id=session.id,
+                ... nonce=session.nonce,
+                ... cdf_project_name=client.config.project
+                ... )
+                >>> my_updates = []
+                >>> for t in c.transformations.list():
+                ...     t.source_nonce = nonce
+                ...     t.destination_nonce = nonce
+                ...     updates.append(t)
+                >>> c.transformations.update(my_updates)
+
         """
 
         if isinstance(item, Sequence):
