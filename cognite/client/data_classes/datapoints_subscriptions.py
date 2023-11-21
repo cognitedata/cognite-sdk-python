@@ -52,6 +52,7 @@ class DatapointSubscriptionCore(CogniteResource):
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
+        data_set_id: int | None = None,
         **_: Any,
     ) -> None:
         self.external_id = external_id
@@ -59,6 +60,7 @@ class DatapointSubscriptionCore(CogniteResource):
         self.filter = filter
         self.name = name
         self.description = description
+        self.data_set_id = data_set_id
 
     @classmethod
     def _load(
@@ -90,6 +92,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         filter (Filter | None): If present, the subscription is defined by this filter.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
+        data_set_id (int | None): The id of the dataset this subscription belongs to.
         **_ (Any): No description.
     """
 
@@ -103,9 +106,10 @@ class DatapointSubscription(DatapointSubscriptionCore):
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
+        data_set_id: int | None = None,
         **_: Any,
     ) -> None:
-        super().__init__(external_id, partition_count, filter, name, description)
+        super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_count = time_series_count
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -124,6 +128,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
+        data_set_id (int | None): The id of the dataset this subscription belongs to.
     """
 
     def __init__(
@@ -134,11 +139,12 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
+        data_set_id: int | None = None,
     ) -> None:
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
         _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
-        super().__init__(external_id, partition_count, filter, name, description)
+        super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_ids = time_series_ids
 
     @classmethod
@@ -151,6 +157,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
             filter=filter,
             name=resource.get("name"),
             description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
         )
 
 
@@ -187,6 +194,10 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "name")
 
     @property
+    def data_set_id(self) -> _PrimitiveDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "dataSetId")
+
+    @property
     def time_series_ids(self) -> _ListDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "timeSeriesIds")
 
@@ -200,6 +211,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
             PropertySpec("name"),
             PropertySpec("time_series_ids", is_container=True),
             PropertySpec("filter", is_nullable=False),
+            PropertySpec("data_set_id"),
         ]
 
 
