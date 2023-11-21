@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence, Tuple, Union
+from urllib.parse import quote
 
 from typing_extensions import TypeAlias
 
@@ -373,7 +374,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         self._warning.warn()
         try:
             response = self._get(
-                url_path=f"/workflows/{workflow_external_id}/versions/{version}",
+                url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}",
             )
         except CogniteAPIError as e:
             if e.code == 404:
@@ -498,7 +499,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         """
         self._warning.warn()
         try:
-            response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
+            response = self._get(url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}")
         except CogniteAPIError as e:
             if e.code == 404:
                 return None
