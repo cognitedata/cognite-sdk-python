@@ -655,7 +655,7 @@ class ProjectsAcl(Capability):
 
     class Action(Capability.Action):
         Read = "READ"
-        Write = "WRITE"
+        Create = "CREATE"
         List = "LIST"
         Update = "UPDATE"
 
