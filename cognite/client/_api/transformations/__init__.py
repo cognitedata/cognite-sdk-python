@@ -305,7 +305,7 @@ class TransformationsAPI(APIClient):
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
 
-            Update the session used when authenticating a list of transformations:
+            Update the session used when authenticating for a list of transformations:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import NonceCredentials
