@@ -5,7 +5,6 @@ import pytest
 from cognite.client._api.events import Event, EventList, EventUpdate
 from cognite.client.data_classes import (
     AggregateResult,
-    AggregateUniqueValuesResult,
     EndTimeFilter,
     EventFilter,
     TimestampRange,
@@ -103,12 +102,6 @@ class TestEvents:
         assert isinstance(res[0], AggregateResult)
         assert res[0].count == 10
 
-    def test_aggregate_unique_values(self, cognite_client, mock_aggregate_unique_values_response):
-        res = cognite_client.events.aggregate_unique_values(filter={"type": "WORKORDER"}, fields=["subtype"])
-        assert isinstance(res[0], AggregateUniqueValuesResult)
-        assert res[0].count == 5
-        assert res[0].value == "WORKORDER"
-
     def test_call_root(self, cognite_client, mock_events_response):
         list(cognite_client.events(asset_subtree_external_ids=["a"], limit=10))
         calls = mock_events_response.calls
@@ -131,7 +124,7 @@ class TestEvents:
 
     def test_list_ongoing_wrong_signature(self, cognite_client):
         with pytest.raises(ValueError):
-            cognite_client.events.list(end_time=EndTimeFilter(is_null=True, max=100))
+            EndTimeFilter(is_null=True, max=100)
 
     def test_create_single(self, cognite_client, mock_events_response):
         res = cognite_client.events.create(Event(external_id="1"))
@@ -240,7 +233,7 @@ class TestPandasIntegration:
     def test_event_to_pandas(self, cognite_client, mock_events_response):
         import pandas as pd
 
-        df = cognite_client.events.retrieve(id=1).to_pandas(camel_case=True)
+        df = cognite_client.events.retrieve(id=1).to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]

@@ -53,10 +53,11 @@ from cognite.client.utils._auxiliary import (
     find_duplicates,
     split_into_chunks,
     split_into_n_parts,
+    unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import execute_tasks, get_executor
+from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
     _unit_in_days,
@@ -163,14 +164,14 @@ class DpsFetchStrategy(ABC):
                 )
 
     def fetch_all_datapoints(self) -> DatapointsList:
-        pool = get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         return DatapointsList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=False)],  # type: ignore [arg-type]
             cognite_client=self.dps_client._cognite_client,
         )
 
     def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
-        pool = get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         return DatapointsArrayList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=True)],  # type: ignore [arg-type]
             cognite_client=self.dps_client._cognite_client,
@@ -1231,10 +1232,10 @@ class DatapointsAPI(APIClient):
         fetcher = RetrieveLatestDpsFetcher(id, external_id, before, ignore_unknown_ids, self)
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
-            return DatapointsList._load(res, cognite_client=self._cognite_client)
+            return DatapointsList.load(res, cognite_client=self._cognite_client)
         elif not res and ignore_unknown_ids:
             return None
-        return Datapoints._load(res[0], cognite_client=self._cognite_client)
+        return Datapoints.load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,
@@ -1362,12 +1363,13 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.time_series.data.delete_range(start="1w-ago", end="now", id=1)
         """
-        start = timestamp_to_ms(start)
-        end = timestamp_to_ms(end)
-        assert end > start, "end must be larger than start"
+        start_ms = timestamp_to_ms(start)
+        end_ms = timestamp_to_ms(end)
+        if end_ms <= start_ms:
+            raise ValueError(f"{end=} must be larger than {start=}")
 
         identifier = Identifier.of_either(id, external_id).as_dict()
-        delete_dps_object = {**identifier, "inclusiveBegin": start, "exclusiveEnd": end}
+        delete_dps_object = {**identifier, "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
         self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
@@ -1426,7 +1428,7 @@ class DatapointsAPI(APIClient):
                 >>> df = pd.DataFrame({ts_xid: noise}, index=idx)
                 >>> client.time_series.data.insert_dataframe(df)
         """
-        np, pd = cast(Any, local_import("numpy", "pandas"))
+        np, pd = local_import("numpy", "pandas")
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError(f"DataFrame index must be `pd.DatetimeIndex`, got: {type(df.index)}")
         if df.columns.has_duplicates:
@@ -1512,26 +1514,25 @@ class DatapointsPoster:
         datapoints: list[dict[str, Any]] | list[tuple[int | float | datetime, int | float | str]],
     ) -> list[tuple[int, Any]]:
         assert_type(datapoints, "datapoints", [list])
-        assert len(datapoints) > 0, "No datapoints provided"
+        if not datapoints:
+            raise ValueError("No datapoints provided")
         assert_type(datapoints[0], "datapoints element", [tuple, dict])
 
-        valid_datapoints = []
         if isinstance(datapoints[0], tuple):
-            valid_datapoints = [(timestamp_to_ms(t), v) for t, v in datapoints]
-        elif isinstance(datapoints[0], dict):
-            for dp in datapoints:
-                dp = cast(Dict[str, Any], dp)
-                assert "timestamp" in dp, "A datapoint is missing the 'timestamp' key"
-                assert "value" in dp, "A datapoint is missing the 'value' key"
-                valid_datapoints.append((timestamp_to_ms(dp["timestamp"]), dp["value"]))
-        return valid_datapoints
+            return [(timestamp_to_ms(t), v) for t, v in datapoints]
+        datapoints = cast(List[Dict[str, Any]], datapoints)
+        try:
+            return [(timestamp_to_ms(dp["timestamp"]), dp["value"]) for dp in datapoints]
+        except KeyError:
+            raise KeyError("A datapoint is missing one or both keys ['value', 'timestamp'].")
 
     def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
         for dps_object in dps_object_list:
             for i in range(0, len(dps_object["datapoints"]), self.limit):
-                dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
+                dps_object_chunk: dict[str, Any] = IdentifierSequenceCore.extract_identifiers(dps_object)
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.limit]
-                for bin in self.bins:
+                # Try to fit into any existing bin for dense packing:
+                for bin in self.bins:  # Note: O(N^2), first bins will be tried again and again...
                     if bin.will_fit(len(dps_object_chunk["datapoints"])):
                         bin.add(dps_object_chunk)
                         break
@@ -1549,7 +1550,7 @@ class DatapointsPoster:
         summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.dps_client._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda x: x[0],
-            task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
 
     def _insert_datapoints(self, post_dps_objects: list[dict[str, Any]]) -> None:
@@ -1643,6 +1644,8 @@ class RetrieveLatestDpsFetcher:
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
-        tasks_summary.raise_first_encountered_exception()
-
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=unpack_items_in_payload,
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
+        )
         return tasks_summary.joined_results(lambda res: res.json()["items"])

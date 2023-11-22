@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import json
 import math
 import numbers
 import platform
@@ -28,8 +29,7 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-    from cognite.client.data_classes._base import T_CogniteResource
-
+    from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
 T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
@@ -49,10 +49,14 @@ def get_accepted_params(cls: type[T_CogniteResource]) -> dict[str, str]:
 
 
 def fast_dict_load(
-    cls: type[T_CogniteResource], item: dict[str, Any], cognite_client: CogniteClient | None
-) -> T_CogniteResource:
-    instance = cls(cognite_client=cognite_client)
+    cls: type[T_CogniteObject], item: dict[str, Any], cognite_client: CogniteClient | None
+) -> T_CogniteObject:
+    try:
+        instance = cls(cognite_client=cognite_client)  # type: ignore [call-arg]
+    except TypeError:
+        instance = cls()
     # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
+    # Accepted: {camel_case(attribute_name): attribute_name}
     accepted = get_accepted_params(cls)  # type: ignore [arg-type]
     for camel_attr, value in item.items():
         try:
@@ -60,6 +64,15 @@ def fast_dict_load(
         except KeyError:
             pass
     return instance
+
+
+def load_yaml_or_json(resource: str) -> Any:
+    try:
+        import yaml
+
+        return yaml.safe_load(resource)
+    except ImportError:
+        return json.loads(resource)
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
@@ -210,9 +223,23 @@ def exactly_one_is_not_none(*args: Any) -> bool:
     return sum(a is not None for a in args) == 1
 
 
+def at_least_one_is_not_none(*args: Any) -> bool:
+    return sum(a is not None for a in args) >= 1
+
+
 def rename_and_exclude_keys(
     dct: dict[str, Any], aliases: dict[str, str] | None = None, exclude: set[str] | None = None
 ) -> dict[str, Any]:
     aliases = aliases or {}
     exclude = exclude or set()
     return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}
+
+
+def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
+    if (res := dct.get(key)) is not None:
+        return cls._load(res)
+    return None
+
+
+def unpack_items_in_payload(payload: dict[str, dict[str, Any]]) -> list:
+    return payload["json"]["items"]

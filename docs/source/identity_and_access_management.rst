@@ -1,5 +1,15 @@
 Identity and access management
 ==============================
+Compare access rights (capabilities)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Verify my capabilities
+~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.IAMAPI.verify_capabilities
+
+Compare capabilities
+~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.IAMAPI.compare_capabilities
+
 Tokens
 ^^^^^^
 Inspect the token currently used by the client

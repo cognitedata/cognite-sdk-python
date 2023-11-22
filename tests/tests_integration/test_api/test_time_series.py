@@ -182,7 +182,7 @@ class TestTimeSeriesAPI:
             external_id="test_upsert_2_time_series_one_preexisting:preexisting",
             name="my preexisting time series",
         )
-        preexisting_update = TimeSeries._load(preexisting.dump(camel_case=True))
+        preexisting_update = TimeSeries.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting time series updated"
 
         try:

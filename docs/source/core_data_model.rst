@@ -22,14 +22,6 @@ Aggregate assets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
 
-Aggregate asset metadata keys
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_keys
-
-Aggregate asset metadata values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_values
-
 Aggregate Asset Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_count
@@ -532,10 +524,6 @@ Retrieve data
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
 
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
-
 Insert rows into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert
@@ -584,6 +572,10 @@ Retrieve a data point subscription by id(s)
 List data point subscriptions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list
+
+List member time series of subscription
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list_member_time_series
 
 Iterate over subscriptions data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

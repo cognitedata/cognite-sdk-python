@@ -8,9 +8,10 @@ import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from datetime import tzinfo
@@ -164,44 +165,51 @@ def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
 
 
 TIME_ATTRIBUTES = {
-    "start_time",
-    "end_time",
-    "last_updated_time",
     "created_time",
-    "timestamp",
+    "creation_time",
+    "deleted_time",
+    "end_time",
+    "expiration_time",
+    "last_failure",
+    "last_indexed_time",
+    "last_seen",
+    "last_success",
+    "last_updated_time",
+    "modified_time",
     "scheduled_execution_time",
     "source_created_time",
     "source_modified_time",
+    "start_time",
+    "timestamp",
+    "uploaded_time",
 }
+TIME_ATTRIBUTES |= set(map(to_camel_case, TIME_ATTRIBUTES))
 
 
-def _convert_time_attributes_in_dict(item: dict) -> dict:
-    new_item = {}
-    for k, v in item.items():
-        if k in TIME_ATTRIBUTES:
-            try:
-                v = str(ms_to_datetime(v).replace(tzinfo=None))
-            except ValueError:
-                pass
-        new_item[k] = v
-    return new_item
+def _convert_and_isoformat_time_attrs_in_dict(item: dict) -> dict:
+    for k in TIME_ATTRIBUTES.intersection(item):
+        try:
+            item[k] = ms_to_datetime(item[k]).isoformat(sep=" ", timespec="milliseconds")
+        except ValueError:
+            pass
+    return item
 
 
 @overload
-def convert_time_attributes_to_datetime(item: dict) -> dict:
+def convert_and_isoformat_time_attrs(item: dict) -> dict:
     ...
 
 
 @overload
-def convert_time_attributes_to_datetime(item: list[dict]) -> list[dict]:
+def convert_and_isoformat_time_attrs(item: list[dict]) -> list[dict]:
     ...
 
 
-def convert_time_attributes_to_datetime(item: dict | list[dict]) -> dict | list[dict]:
+def convert_and_isoformat_time_attrs(item: dict | list[dict]) -> dict | list[dict]:
     if isinstance(item, dict):
-        return _convert_time_attributes_in_dict(item)
+        return _convert_and_isoformat_time_attrs_in_dict(item)
     if isinstance(item, list):
-        return list(map(_convert_time_attributes_in_dict, item))
+        return [_convert_and_isoformat_time_attrs_in_dict(it) for it in item]
     raise TypeError("item must be dict or list of dicts")
 
 
@@ -501,7 +509,7 @@ def _to_fixed_utc_intervals_variable_unit_length(
 def _to_fixed_utc_intervals_fixed_unit_length(
     start: datetime, end: datetime, multiplier: int, unit: str
 ) -> list[dict[str, datetime | str]]:
-    pd = cast(Any, local_import("pandas"))
+    pd = local_import("pandas")
     utc = get_utc_zoneinfo()
 
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
@@ -540,7 +548,7 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
 
     Assumes that start and end have the same timezone.
     """
-    pd = cast(Any, local_import("pandas"))
+    pd = local_import("pandas")
     # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
     # datetimes. This is a workaround by passing the time zone as an argument to the function.
     # In addition, pandas struggle with ZoneInfo objects, so we convert them to string so that pandas can use its own
@@ -598,7 +606,7 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
     if isinstance(start_tz, ZoneInfo):
         return start_tz
 
-    pd = cast(Any, local_import("pandas"))
+    pd = local_import("pandas")
     if isinstance(start, pd.Timestamp):
         return ZoneInfo(str(start_tz))
 

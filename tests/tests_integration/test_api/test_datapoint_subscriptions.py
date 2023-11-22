@@ -83,12 +83,14 @@ class TestDatapointSubscriptions:
     def test_create_retrieve_delete_subscription(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
+        data_set = cognite_client.data_sets.list(limit=1)[0]
         # Arrange
         new_subscription = DataPointSubscriptionCreate(
             external_id=f"PYSDKDataPointSubscriptionCreateRetrieveDeleteTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionCreateRetrieveDeleteTest",
             time_series_ids=time_series_external_ids,
             partition_count=1,
+            data_set_id=data_set.id,
         )
         with create_subscription_with_cleanup(cognite_client, new_subscription) as created:
             retrieved_subscription = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
@@ -98,6 +100,15 @@ class TestDatapointSubscriptions:
             assert created.last_updated_time
             assert created.time_series_count == len(new_subscription.time_series_ids)
             assert retrieved_subscription.external_id == new_subscription.external_id == created.external_id
+            assert retrieved_subscription.name == new_subscription.name == created.name
+            assert retrieved_subscription.description == new_subscription.description == created.description
+            assert retrieved_subscription.data_set_id == new_subscription.data_set_id == created.data_set_id
+
+            time_series_in_subscription = cognite_client.time_series.subscriptions.list_member_time_series(
+                new_subscription.external_id, limit=10
+            )
+            retrieved_time_series_external_ids = [ts.external_id for ts in time_series_in_subscription]
+            assert sorted(new_subscription.time_series_ids) == sorted(retrieved_time_series_external_ids)
 
             # Act
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
@@ -116,11 +127,13 @@ class TestDatapointSubscriptions:
             time_series_ids=time_series_external_ids,
             partition_count=1,
         )
+        data_set = cognite_client.data_sets.list(limit=1)[0]
         with create_subscription_with_cleanup(cognite_client, new_subscription):
             update = (
                 DataPointSubscriptionUpdate(new_subscription.external_id)
                 .name.set("New Name")
                 .time_series_ids.remove([time_series_external_ids[0]])
+                .data_set_id.set(data_set.id)
             )
 
             # Act
@@ -129,6 +142,7 @@ class TestDatapointSubscriptions:
             # Assert
             assert updated.name == "New Name"
             assert updated.time_series_count == len(time_series_external_ids) - 1
+            assert updated.data_set_id == data_set.id
 
     def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):
         # Arrange

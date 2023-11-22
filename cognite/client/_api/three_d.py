@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
+    BoundingBox3D,
     ThreeDAssetMapping,
     ThreeDAssetMappingList,
     ThreeDModel,
@@ -16,7 +18,7 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 from cognite.client.utils._validation import assert_type
@@ -559,6 +561,7 @@ class ThreeDAssetMappingAPI(APIClient):
         revision_id: int,
         node_id: int | None = None,
         asset_id: int | None = None,
+        intersects_bounding_box: BoundingBox3D | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDAssetMappingList:
         """`List 3D node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_
@@ -568,6 +571,7 @@ class ThreeDAssetMappingAPI(APIClient):
             revision_id (int): Id of the revision.
             node_id (int | None): List only asset mappings associated with this node.
             asset_id (int | None): List only asset mappings associated with this asset.
+            intersects_bounding_box (BoundingBox3D | None): If given, only return asset mappings for assets whose bounding box intersects with the given bounding box.
             limit (int | None): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -575,19 +579,29 @@ class ThreeDAssetMappingAPI(APIClient):
 
         Example:
 
-            List 3d node asset mappings::
+            List 3d node asset mappings:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.list(model_id=1, revision_id=1)
+
+            List 3d node asset mappings for assets whose bounding box intersects with a given bounding box:
+
+                >>> from cognite.client.data_classes import BoundingBox3D
+                >>> bbox = BoundingBox3D(min=[0.0, 0.0, 0.0], max=[1.0, 1.0, 1.0])
+                >>> res = c.three_d.asset_mappings.list(
+                ...     model_id=1, revision_id=1, intersects_bounding_box=bbox)
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        flt: dict[str, str | int | None] = {"nodeId": node_id, "assetId": asset_id}
+        if intersects_bounding_box:
+            flt["intersectsBoundingBox"] = json.dumps(intersects_bounding_box.dump(camel_case=True))
         return self._list(
             list_cls=ThreeDAssetMappingList,
             resource_cls=ThreeDAssetMapping,
             resource_path=path,
             method="GET",
-            filter={"nodeId": node_id, "assetId": asset_id},
+            filter=flt,
             limit=limit,
         )
 
@@ -648,7 +662,7 @@ class ThreeDAssetMappingAPI(APIClient):
         tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
         summary = execute_tasks(self._post, tasks, self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el),
+            task_unwrap_fn=unpack_items_in_payload,
+            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping.load(el),
             str_format_element_fn=lambda el: (el.asset_id, el.node_id),
         )

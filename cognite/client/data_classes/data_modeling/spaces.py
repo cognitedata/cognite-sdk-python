@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import Any
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import DataModelingResource
 
 
-class SpaceCore(DataModelingResource):
+class SpaceCore(DataModelingResource, ABC):
     """A workspace for data models and instances.
 
     Args:

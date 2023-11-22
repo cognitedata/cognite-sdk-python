@@ -419,14 +419,12 @@ class TestRetrieveRawDatapointsAPI:
 
     @pytest.mark.parametrize(
         "start, end, exp_first_ts, exp_last_ts",
-        # fmt: off
         [
-            (631670400000 + 1, 693964800000,     631670400000,           693964800000),
-            (631670400000,     693964800000,     631670400000 - WEEK_MS, 693964800000),
-            (631670400000,     693964800000 + 1, 631670400000 - WEEK_MS, 693964800000 + WEEK_MS),
-            (631670400000 + 1, 693964800000 + 1, 631670400000,           693964800000 + WEEK_MS),
+            (631670400000 + 1, 693964800000, 631670400000, 693964800000),
+            (631670400000, 693964800000, 631670400000 - WEEK_MS, 693964800000),
+            (631670400000, 693964800000 + 1, 631670400000 - WEEK_MS, 693964800000 + WEEK_MS),
+            (631670400000 + 1, 693964800000 + 1, 631670400000, 693964800000 + WEEK_MS),
         ],
-        # fmt: on
     )
     def test_retrieve_outside_points__query_chunking_mode(
         self, start, end, exp_first_ts, exp_last_ts, cognite_client, retrieve_endpoints, weekly_dps_ts

@@ -23,7 +23,7 @@ You can set global configuration options like this:
     global_config.max_retries = 10
     global_config.max_retry_backoff = 10
     global_config.max_connection_pool_size = 10
-    global_config.status_forcelist = {429, 502, 503}
+    global_config.status_forcelist = {429, 502, 503, 504}
 
 These must be set prior to instantiating a CogniteClient in order for them to take effect.
 

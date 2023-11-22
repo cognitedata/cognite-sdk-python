@@ -1,19 +1,48 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
+from collections import UserList
+from collections.abc import Collection
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Sequence, TypeVar, Union, cast, final
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Iterator,
+    Sequence,
+    SupportsIndex,
+    TypeVar,
+    Union,
+    cast,
+    final,
+    overload,
+)
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteObject, CogniteResourceList
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+class CountAggregate(CogniteObject):
+    """
+    [DEPRECATED] This represents the result of a count aggregation.
+
+    Args:
+        count (int): The number of items matching the aggregation.
+    """
+
+    def __init__(self, count: int) -> None:
+        self.count = count
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CountAggregate:
+        return cls(count=resource["count"])
 
 
 @dataclass
@@ -40,7 +69,7 @@ class Aggregation(ABC):
             return Histogram(**body)
         raise ValueError(f"Unknown aggregation: {aggregation_name}")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {self._aggregation_name: {"property": self.property}}
         if camel_case:
             output = convert_all_keys_recursive(output)
@@ -89,7 +118,7 @@ class Histogram(Aggregation):
 
     interval: float
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output[self._aggregation_name]["interval"] = self.interval
         return output
@@ -128,7 +157,7 @@ class AggregatedValue(ABC):
             raise ValueError(f"Unknown aggregation: {aggregate}")
         return cast(T_AggregatedValue, deserialized)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {"aggregate": self._aggregate, "property": self.property}
         if camel_case:
             output = convert_all_keys_recursive(output)
@@ -136,12 +165,12 @@ class AggregatedValue(ABC):
 
 
 @dataclass
-class AggregatedNumberedValue(AggregatedValue):
+class AggregatedNumberedValue(AggregatedValue, ABC):
     _aggregate: ClassVar[str] = "number"
 
     value: float
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["value"] = self.value
         return output
@@ -183,8 +212,45 @@ class Bucket:
     start: float
     count: int
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"start": self.start, "count": self.count}
+
+
+class Buckets(UserList):
+    def __init__(self, items: Collection[Any]) -> None:
+        super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
+
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
+        return [bucket.dump(camel_case) for bucket in self.data]
+
+    @property
+    def starts(self) -> list[float]:
+        return [bucket.start for bucket in self.data]
+
+    @property
+    def counts(self) -> list[int]:
+        return [bucket.count for bucket in self.data]
+
+    # The following methods are needed for proper type hinting
+    def pop(self, i: int = -1) -> Bucket:
+        return super().pop(i)
+
+    def __iter__(self) -> Iterator[Bucket]:
+        return super().__iter__()
+
+    @overload
+    def __getitem__(self, item: SupportsIndex) -> Bucket:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Buckets:
+        ...
+
+    def __getitem__(self, item: SupportsIndex | slice) -> Bucket | Buckets:
+        value = self.data[item]
+        if isinstance(item, slice):
+            return type(self)(value)
+        return cast(Bucket, value)
 
 
 @final
@@ -192,15 +258,16 @@ class Bucket:
 class HistogramValue(AggregatedValue):
     _aggregate: ClassVar[str] = "histogram"
     interval: float
-    buckets: list[Bucket]
+    buckets: Buckets
 
     def __post_init__(self) -> None:
-        self.buckets = [Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in self.buckets]
+        if isinstance(self.buckets, Collection):
+            self.buckets = Buckets(self.buckets)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["interval"] = self.interval
-        output["buckets"] = [bucket.dump(camel_case) for bucket in self.buckets]
+        output["buckets"] = self.buckets.dump(camel_case)
         return output
 
 
@@ -229,8 +296,10 @@ class CompoundFilter(AggregationFilter):
 
 
 def _dump_value(value: FilterValue) -> dict[str, str] | str | bool | int | float:
-    if isinstance(value, Label):
+    if isinstance(value, Label) and value.external_id is not None:
         return {"externalId": value.external_id}
+    elif isinstance(value, Label):
+        raise ValueError("Label must have external_id set")
     return value
 
 
@@ -315,7 +384,7 @@ class Range(AggregationFilter):
 
 
 @dataclass
-class UniqueResult(CogniteResource):
+class UniqueResult(CogniteObject):
     count: int
     values: list[str | int | float | Label]
 
@@ -324,8 +393,7 @@ class UniqueResult(CogniteResource):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> UniqueResult:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> UniqueResult:
         return cls(
             count=resource["count"],
             values=resource["values"],

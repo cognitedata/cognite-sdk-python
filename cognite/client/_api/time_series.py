@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
@@ -10,13 +11,12 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     TimeSeries,
-    TimeSeriesAggregate,
     TimeSeriesFilter,
     TimeSeriesList,
     TimeSeriesUpdate,
     filters,
 )
-from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -229,14 +229,14 @@ class TimeSeriesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[TimeSeriesAggregate]:
+    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             filter (TimeSeriesFilter | dict | None): Filter on time series filter with exact match
 
         Returns:
-            list[TimeSeriesAggregate]: List of sequence aggregates
+            list[CountAggregate]: List of sequence aggregates
 
         Examples:
 
@@ -246,8 +246,10 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.aggregate(filter={"unit": "kpa"})
         """
-
-        return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
+        warnings.warn(
+            "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
+        )
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(
         self,
@@ -499,7 +501,7 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeries
                 >>> c = CogniteClient()
-                >>> ts = c.time_series.create(TimeSeries(name="my ts"))
+                >>> ts = c.time_series.create(TimeSeries(name="my_ts", data_set_id=123, external_id="foo"))
         """
         api_subversion = self._get_subapiversion_item(time_series)
 
@@ -753,7 +755,7 @@ class TimeSeriesAPI(APIClient):
             resource_cls=TimeSeries,
             method="POST",
             limit=limit,
-            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
             sort=prepare_filter_sort(sort, TimeSeriesSort),
         )
 

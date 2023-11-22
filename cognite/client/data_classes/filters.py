@@ -29,8 +29,8 @@ class ParameterValue:
     parameter: str
 
 
-FilterValue = Union[RawValue, PropertyReferenceValue, ParameterValue]
-FilterValueList = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
+FilterValue: TypeAlias = Union[RawValue, PropertyReferenceValue, ParameterValue]
+FilterValueList: TypeAlias = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
 
 
 def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
@@ -68,8 +68,20 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
 class Filter(ABC):
     _filter_name: str
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {self._filter_name: self._filter_body(camel_case)}
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        """
+        Dump the filter to a dictionary.
+
+        Args:
+            camel_case_property (bool): Whether to camel case the property names. Defaults to False. Typically,
+                when the filter is used in data modeling, the property names should not be changed,
+                while when used with Assets, Events, Sequences, or Files, the property names should be camel cased.
+
+        Returns:
+            dict[str, Any]: The filter as a dictionary.
+
+        """
+        return {self._filter_name: self._filter_body(camel_case_property=camel_case_property)}
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
@@ -139,20 +151,25 @@ class Filter(ABC):
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
+        elif filter_name == ContainsAll._filter_name:
+            return ContainsAll(
+                property=filter_body["property"],
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
+            )
         elif filter_name == GeoJSONIntersects._filter_name:
             return GeoJSONIntersects(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == GeoJSONDisjoint._filter_name:
             return GeoJSONDisjoint(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == GeoJSONWithin._filter_name:
             return GeoJSONWithin(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == InAssetSubtree._filter_name:
             return InAssetSubtree(
@@ -187,7 +204,7 @@ def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[
         raise ValueError(f"The filters {names} are not supported for {api_name}")
 
 
-class CompoundFilter(Filter):
+class CompoundFilter(Filter, ABC):
     _filter_name = "compound"
 
     def __init__(self, *filters: Filter) -> None:
@@ -197,7 +214,7 @@ class CompoundFilter(Filter):
         return [filter_.dump(camel_case_property) for filter_ in self._filters]
 
 
-class FilterWithProperty(Filter):
+class FilterWithProperty(Filter, ABC):
     _filter_name = "propertyFilter"
 
     def __init__(self, property: PropertyReference) -> None:
@@ -210,7 +227,7 @@ class FilterWithProperty(Filter):
         return {"property": self._dump_property(camel_case_property)}
 
 
-class FilterWithPropertyAndValue(FilterWithProperty):
+class FilterWithPropertyAndValue(FilterWithProperty, ABC):
     _filter_name = "propertyAndValueFilter"
 
     def __init__(self, property: PropertyReference, value: FilterValue) -> None:
@@ -221,7 +238,7 @@ class FilterWithPropertyAndValue(FilterWithProperty):
         return {"property": self._dump_property(camel_case_property), "value": _dump_filter_value(self._value)}
 
 
-class FilterWithPropertyAndValueList(FilterWithProperty):
+class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
     _filter_name = "propertyAndValueListFilter"
 
     def __init__(self, property: PropertyReference, values: FilterValueList) -> None:

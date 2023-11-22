@@ -21,18 +21,23 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    final,
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default
+from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
+from cognite.client.utils._pandas_helpers import (
+    convert_nullable_int_cols,
+    convert_timestamp_columns_to_datetime,
+    notebook_display_with_fallback,
+)
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
-from cognite.client.utils._time import convert_time_attributes_to_datetime
+from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
 if TYPE_CHECKING:
     import pandas
@@ -42,7 +47,10 @@ if TYPE_CHECKING:
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     # TODO: Consider using inheritance?
-    dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
+    try:
+        dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
+    except TypeError:
+        dumped = {k: v for k, v in obj.__dict__.items() if v is not None and not k.startswith("_")}
     if camel_case:
         return convert_all_keys_to_camel_case(dumped)
     return dumped
@@ -50,7 +58,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 
 class CogniteResponse:
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -59,7 +67,7 @@ class CogniteResponse:
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and other.dump() == self.dump()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -71,7 +79,7 @@ class CogniteResponse:
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(cls, api_response: dict[str, Any]) -> CogniteResponse:
+    def load(cls, api_response: dict[str, Any]) -> CogniteResponse:
         raise NotImplementedError
 
     def to_pandas(self) -> pandas.DataFrame:
@@ -105,20 +113,20 @@ class _WithClientMixin:
         return self.__cognite_client
 
 
-class CogniteResource(_WithClientMixin):
-    __cognite_client: CogniteClient | None
+class CogniteObject:
+    """The Cognite Object is used to add serialization and deserialization to the data classes.
 
-    def __init__(self, cognite_client: CogniteClient | None = None) -> None:
-        raise NotImplementedError
+    It is used both by the CogniteResources and the nested classes used by the CogniteResources.
+    """
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -129,41 +137,93 @@ class CogniteResource(_WithClientMixin):
         """
         return basic_instance_dump(self, camel_case=camel_case)
 
+    def dump_yaml(self) -> str:
+        """Dump the instance into a YAML formatted string.
+
+        Returns:
+            str: A YAML formatted string representing the instance.
+        """
+        yaml = local_import("yaml")
+        return yaml.dump(self.dump(camel_case=True), sort_keys=False)
+
+    @final
     @classmethod
-    def _load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
+    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+        """Load a resource from a YAML/JSON string or dict."""
         if isinstance(resource, dict):
-            return fast_dict_load(cls, resource, cognite_client=cognite_client)
-        elif isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+            return cls._load(resource, cognite_client=cognite_client)
+
+        if isinstance(resource, str):
+            resource = cast(dict, load_yaml_or_json(resource))
+            return cls._load(resource, cognite_client=cognite_client)
+
+        raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        """
+        This is the internal load method that is called by the public load method.
+        It has a default implementation that can be overridden by subclasses.
+
+        The typical use case for overriding this method is to handle nested resources,
+        or to handle resources that have required fields as the default implementation assumes
+        all fields are optional.
+
+        Note that the base class takes care of loading from YAML/JSON strings and error handling.
+
+        Args:
+            resource (dict[str, Any]): The resource to load.
+            cognite_client (CogniteClient | None): Cognite client to associate with the resource.
+
+        Returns:
+            Self: The loaded resource.
+        """
+        return fast_dict_load(cls, resource, cognite_client=cognite_client)
+
+
+T_CogniteObject = TypeVar("T_CogniteObject", bound=CogniteObject)
+
+
+class CogniteResource(CogniteObject, _WithClientMixin, ABC):
+    """
+    A CogniteResource represent a resource in the Cognite API, meaning that there should be a set of
+    endpoints that can be used to interact with the resource.
+    """
+
+    __cognite_client: CogniteClient | None
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata",), ignore: list[str] | None = None, camel_case: bool = False
+        self,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand (Sequence[str]): List of row keys to expand, only works if the value is a Dict. Will expand metadata by default.
-            ignore (list[str] | None): List of row keys to not include when converting to a data frame.
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            expand_metadata (bool): Expand the metadata into separate rows (default: False).
+            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        ignore = [] if ignore is None else ignore
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dumped = self.dump(camel_case=camel_case)
 
-        for element in ignore:
-            del dumped[element]
-        for key in expand:
-            if key in dumped:
-                if isinstance(dumped[key], dict):
-                    dumped.update(dumped.pop(key))
-                else:
-                    raise AssertionError(f"Could not expand attribute '{key}'")
+        for element in ignore or []:
+            dumped.pop(element, None)
+
+        if convert_timestamps:
+            for k in TIME_ATTRIBUTES.intersection(dumped):
+                dumped[k] = pd.Timestamp(dumped[k], unit="ms")
+
+        if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
+            dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
 
         return pd.Series(dumped).to_frame(name="value")
 
@@ -172,23 +232,6 @@ class CogniteResource(_WithClientMixin):
 
 
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
-
-
-class CognitePropertyClassUtil:
-    @staticmethod
-    def declare_property(schema_name: str) -> property:
-        return (
-            property(lambda s: s[schema_name] if schema_name in s else None)
-            .setter(lambda s, v: CognitePropertyClassUtil._property_setter(s, schema_name, v))
-            .deleter(lambda s: s.pop(schema_name, None))
-        )
-
-    @staticmethod
-    def _property_setter(self: Any, schema_name: str, value: Any) -> None:
-        if value is None:
-            self.pop(schema_name, None)
-        else:
-            self[schema_name] = value
 
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
@@ -236,7 +279,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return cast(T_CogniteResource, value)
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
@@ -249,7 +292,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
-    def dump(self, camel_case: bool = False) -> list[dict[str, Any]]:
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -259,6 +302,15 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             list[dict[str, Any]]: A list of dicts representing the instance.
         """
         return [resource.dump(camel_case) for resource in self.data]
+
+    def dump_yaml(self) -> str:
+        """Dump the instances into a YAML formatted string.
+
+        Returns:
+            str: A YAML formatted string representing the instances.
+        """
+        yaml = local_import("yaml")
+        return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
     def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
         """Get an item from this list by id or external_id.
@@ -280,6 +332,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         camel_case: bool = False,
         expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame. Note that if the metadata column is expanded and there are
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
@@ -288,13 +341,17 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
             expand_metadata (bool): Expand the metadata column into separate columns.
             metadata_prefix (str): Prefix to use for metadata columns.
+            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The Cognite resource as a dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        df = convert_nullable_int_cols(df, camel_case)
+        df = convert_nullable_int_cols(df)
+
+        if convert_timestamps:
+            df = convert_timestamp_columns_to_datetime(df)
 
         if expand_metadata and "metadata" in df.columns:
             # Equivalent to pd.json_normalize(df["metadata"]) but is a faster implementation.
@@ -307,18 +364,25 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return notebook_display_with_fallback(self)
 
     @classmethod
+    @final
+    def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
+        """Load a resource from a YAML/JSON string or iterable of dict."""
+        if isinstance(resource, str):
+            resource = load_yaml_or_json(resource)
+
+        if isinstance(resource, Iterable):
+            return cls._load(cast(Iterable, resource), cognite_client=cognite_client)
+
+        raise TypeError(f"Resource must be json or yaml str, or iterable of dicts, not {type(resource)}")
+
+    @classmethod
     def _load(
-        cls: type[T_CogniteResourceList],
-        resource_list: str | Iterable[dict[str, Any]],
+        cls,
+        resource_list: Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
-    ) -> T_CogniteResourceList:
-        if isinstance(resource_list, str):
-            return cls._load(json.loads(resource_list), cognite_client=cognite_client)
-        elif isinstance(resource_list, Iterable):
-            resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
-            return cls(resources, cognite_client=cognite_client)
-        else:
-            raise NotImplementedError(f"Resource list must be iterable or json str, not {type(resource_list)}")
+    ) -> Self:
+        resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
+        return cls(resources, cognite_client=cognite_client)
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
@@ -350,9 +414,8 @@ class CogniteUpdate:
 
     def _set(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert (
-            "remove" not in update_obj and "add" not in update_obj
-        ), "Can not call set after adding or removing fields from an update object."
+        if "remove" in update_obj or "add" in update_obj:
+            raise RuntimeError("Can not call set after adding or removing fields from an update object.")
         self._update_object[name] = {"set": value}
 
     def _set_null(self, name: str) -> None:
@@ -360,40 +423,48 @@ class CogniteUpdate:
 
     def _add(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "add" not in update_obj
-        ), "Can not call add twice on the same object, please combine your objects and pass them to add in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "add" in update_obj:
+            raise RuntimeError(
+                "Can not call add twice on the same object, please combine your objects "
+                "and pass them to add in one call."
+            )
         update_obj["add"] = value
         self._update_object[name] = update_obj
 
     def _remove(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "remove" not in update_obj
-        ), "Can not call remove twice on the same object, please combine your items and pass them to remove in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "remove" in update_obj:
+            raise RuntimeError(
+                "Can not call remove twice on the same object, please combine your items "
+                "and pass them to remove in one call."
+            )
         update_obj["remove"] = value
         self._update_object[name] = update_obj
 
     def _modify(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
-        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        assert (
-            "modify" not in update_obj
-        ), "Can not call modify twice on the same object, please combine your items and pass them to modify in one call."
+        if "set" in update_obj:
+            raise RuntimeError("Can not call remove or add fields after calling set on an update object.")
+        if "modify" in update_obj:
+            raise RuntimeError(
+                "Can not call modify twice on the same object, please combine your items "
+                "and pass them to modify in one call."
+            )
         update_obj["modify"] = value
         self._update_object[name] = update_obj
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): No description.
+            camel_case (Literal[True]): No description.
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        assert camel_case is True, "snake_case is currently unsupported"  # TODO maybe (when unifying classes)
         dumped: dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id
@@ -492,13 +563,13 @@ class CogniteFilter:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
         return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -528,7 +599,7 @@ class EnumProperty(Enum):
         return [self.value]
 
 
-class Geometry(dict):
+class Geometry(CogniteObject):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
@@ -588,26 +659,21 @@ class Geometry(dict):
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
-        self.geometries = geometries
-
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
+        self.geometries = geometries and list(geometries)
 
     @classmethod
-    def _load(cls, raw_geometry: dict[str, Any]) -> Geometry:
+    def _load(cls, raw_geometry: dict[str, Any], cognite_client: CogniteClient | None = None) -> Geometry:
         return cls(
             type=raw_geometry["type"],
             coordinates=raw_geometry["coordinates"],
             geometries=raw_geometry.get("geometries"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case)
         if self.geometries:
-            output["geometries"] = [g.dump(camel_case) for g in self.geometries]
-        else:
-            output.pop("geometries", None)
-        return output
+            dumped["geometries"] = [g.dump(camel_case) for g in self.geometries]
+        return dumped
 
 
 SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]
@@ -625,7 +691,7 @@ class CogniteSort:
         self.nulls = nulls
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=json_dump_default, indent=4)
+        return json.dumps(self.dump(camel_case=False), default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -649,19 +715,19 @@ class CogniteSort:
             isinstance(data, tuple)
             and len(data) == 3
             and data[1] in ["asc", "desc"]
-            and data[2] in ["auto", "first", "last"]  # type: ignore[misc]
+            and data[2] in ["auto", "first", "last"]
         ):
             return cls(
                 property=data[0],
                 order=data[1],
-                nulls=data[2],  # type: ignore[misc]
+                nulls=data[2],
             )
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)
         else:
             raise ValueError(f"Unable to load {cls.__name__} from {data}")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         prop = self.property
         if isinstance(prop, EnumProperty):
             prop = prop.as_reference()
@@ -681,6 +747,12 @@ class CogniteSort:
 T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
+class HasExternalId(Protocol):
+    @property
+    def external_id(self) -> str | None:
+        ...
+
+
 class HasExternalAndInternalId(Protocol):
     @property
     def external_id(self) -> str | None:
@@ -689,6 +761,25 @@ class HasExternalAndInternalId(Protocol):
     @property
     def id(self) -> int | None:
         ...
+
+
+class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
+    def as_external_ids(self) -> list[str]:
+        """
+        Returns the external ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an external id.
+
+        Returns:
+            list[str]: The external ids of all resources in the list.
+        """
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError(f"All {type(x).__name__} must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
 
 
 class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
