@@ -94,7 +94,6 @@ class UnitSystemAPI(APIClient):
         config: ClientConfig,
         api_version: str | None,
         cognite_client: CogniteClient,
-        warning: FeaturePreviewWarning,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
