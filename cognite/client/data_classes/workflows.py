@@ -320,7 +320,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
             [WorkflowTask._load(task) for task in subworkflow["tasks"]],
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
 
 
