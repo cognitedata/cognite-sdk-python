@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.3.3] - 2023-11-22
+### Fixed
+- Added action `Delete` in `ProjectsAcl`.
+
 ## [7.3.2] - 2023-11-21
 ### Fixed
 - `workflows.retrieve` and `workflows.versions.retrieve` returned None if the provided workflow external id contained special characters. This is now fixed.
