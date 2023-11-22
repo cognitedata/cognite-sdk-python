@@ -26,8 +26,6 @@ class UnitAPI(APIClient):
         cognite_client: CogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "beta"
-        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="beta", feature_name="Unit Catalogue")
         self.systems = UnitSystemAPI(config, api_version, cognite_client, self._warning)
 
     @overload
@@ -41,7 +39,7 @@ class UnitAPI(APIClient):
     def retrieve(
         self, external_id: str | MutableSequence[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
-        """`Retrieve one or more unit <https://pr-50.units-api.preview.cogniteapp.com/#tag/Units/operation/retrieve_units_by_ids_api_v1_projects__project__units_byids_post>`_
+        """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
 
         Args:
             external_id (str | MutableSequence[str]): External ID or list of external IDs
@@ -74,7 +72,7 @@ class UnitAPI(APIClient):
         )
 
     def list(self) -> UnitList:
-        """`List all supported units <https://pr-50.units-api.preview.cogniteapp.com/#tag/Units/operation/List_units_api_v1_projects__project__units_get>`_
+        """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/Units/listUnits>`_
 
         Returns:
             UnitList: List of units
@@ -105,7 +103,7 @@ class UnitSystemAPI(APIClient):
         self._api_subversion = "beta"
 
     def list(self) -> UnitSystemList:
-        """`List all supported unit systems <https://pr-50.units-api.preview.cogniteapp.com/#tag/Units/operation/list_unit_systems_api_v1_projects__project__units_systems_get>`_
+        """`List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
 
         Returns:
             UnitSystemList: List of unit systems
