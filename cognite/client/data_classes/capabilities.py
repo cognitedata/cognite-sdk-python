@@ -658,6 +658,7 @@ class ProjectsAcl(Capability):
         Create = "CREATE"
         List = "LIST"
         Update = "UPDATE"
+        Delete = "DELETE"
 
     class Scope:
         All = AllScope
