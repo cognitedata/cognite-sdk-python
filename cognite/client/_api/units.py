@@ -26,7 +26,7 @@ class UnitAPI(APIClient):
         cognite_client: CogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.systems = UnitSystemAPI(config, api_version, cognite_client, self._warning)
+        self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
     @overload
     def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit:
@@ -62,7 +62,6 @@ class UnitAPI(APIClient):
                 >>> res = c.units.retrieve(['temperature:deg_c', 'pressure:bar'])
 
         """
-        self._warning.warn()
         identifier = IdentifierSequence.load(external_ids=external_id)
         return self._retrieve_multiple(
             identifiers=identifier,
@@ -84,7 +83,6 @@ class UnitAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.units.list()
         """
-        self._warning.warn()
         return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
 
 
@@ -99,7 +97,6 @@ class UnitSystemAPI(APIClient):
         warning: FeaturePreviewWarning,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = warning
         self._api_subversion = "beta"
 
     def list(self) -> UnitSystemList:
@@ -116,5 +113,4 @@ class UnitSystemAPI(APIClient):
                 >>> res = c.units.systems.list()
 
         """
-        self._warning.warn()
         return self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)
