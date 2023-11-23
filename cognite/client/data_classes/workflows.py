@@ -152,7 +152,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             ...             "workflow_data": "${workflow.input}",
             ...             "task1_input": "${task1.input}",
             ...             "task1_output": "${task1.output}"
-            ...             },
+            ...         },
             ...     ),
             ... )
     """

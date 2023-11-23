@@ -585,8 +585,9 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
                 >>> c = CogniteClient()
                 >>>
-                >>> column_def = [SequenceColumn(value_type ="String",external_id="user", description ="some description"),
-                ...              SequenceColumn(value_type="Double", external_id="amount")]
+                >>> column_def = [
+                ...     SequenceColumn(value_type ="String",external_id="user", description ="some description"),
+                ...     SequenceColumn(value_type="Double", external_id="amount")]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = c.sequences.update(my_update)
 
