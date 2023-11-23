@@ -9,7 +9,6 @@ from cognite.client.data_classes.units import (
     UnitSystem,
     UnitSystemList,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
