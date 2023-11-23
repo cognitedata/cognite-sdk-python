@@ -71,7 +71,7 @@ Changes are grouped as follows
 This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example,
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
-methods are `json` and `yaml` serializable.
+methods are `json` and `yaml` serializable. Additionally, the default for `camel_case` has been changed to `True`.
 
 ### Improved
 - Read operations, like `retrieve_multiple` will now fast-fail. Previously, all requests would be executed
@@ -93,6 +93,8 @@ methods are `json` and `yaml` serializable.
   and replaced by properties with the same names.
 
 ### Changed
+- All `.dump` methods now uses `camel_case=True` by default. This is to match the intended use case, preparing the
+  object to be sent in an API request.
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
 `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
 with no easy way to add a prefix. Also, it no longer expands metadata by default.

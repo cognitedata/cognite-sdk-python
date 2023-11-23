@@ -39,6 +39,8 @@ Changes are grouped as follows:
 - In data class `Transformation` attributes `has_source_oidc_credentials` and `has_destination_oidc_credentials` are replaced by properties.
 
 ### Function Signature
+- All `.dump` methods for CogniteResource classes like `Asset` or `Event` now uses `camel_case=True` by default. This is
+  to match the intended use case, preparing the object to be sent in an API request.
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
   `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
   with no easy way to add a prefix. Also, it no longer expands metadata by default.
