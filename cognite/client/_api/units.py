@@ -71,7 +71,7 @@ class UnitAPI(APIClient):
         )
 
     def list(self) -> UnitList:
-        """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/Units/listUnits>`_
+        """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
 
         Returns:
             UnitList: List of units
