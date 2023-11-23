@@ -519,7 +519,7 @@ class TransformationFilter(CogniteFilter):
         has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-        data_set_ids (list[dict[str, Any]] | None): Return only transformations in the specified data sets with these ids.
+        data_set_ids (list[dict[str, Any]] | None): Return only transformations in the specified data sets with these ids, e.g. [{"id": 1}, {"externalId": "foo"}].
         tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
     """
 
