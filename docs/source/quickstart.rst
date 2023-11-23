@@ -2,9 +2,8 @@ Quickstart
 ==========
 Instantiate a new client
 ------------------------
-Use this code to instantiate a client and get your login status. CDF returns an object with
-attributes that describe which project and service account your API key belongs to. The :code:`client_name`
-is a user-defined string intended to give the client a unique identifier. You
+Use this code to instantiate a client in order to execute API calls to Cognite Data Fusion (CDF).
+The :code:`client_name` is a user-defined string intended to give the client a unique identifier. You
 can provide the :code:`client_name` by passing it directly to the :ref:`ClientConfig <class_client_ClientConfig>` constructor.
 
 The Cognite API uses OpenID Connect (OIDC) to authenticate.
