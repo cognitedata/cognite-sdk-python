@@ -296,10 +296,10 @@ class AssetsAPI(APIClient):
         Count the number of assets with the metadata key "timezone" in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.filters import ContainsAny
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> c = CogniteClient()
-            >>> has_timezone = filters.ContainsAny(AssetProperty.metadata, "timezone")
+            >>> has_timezone = ContainsAny(AssetProperty.metadata, "timezone")
             >>> asset_count = c.assets.aggregate_count(advanced_filter=has_timezone)
 
         """
@@ -340,11 +340,13 @@ class AssetsAPI(APIClient):
             Count the number of timezones (metadata key) for assets with the word "critical" in the description in your CDF project:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.filters import Search
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> c = CogniteClient()
-                >>> is_critical = filters.Search(AssetProperty.description, "critical")
-                >>> critical_assets = c.assets.aggregate_cardinality_values(AssetProperty.metadata_key("timezone"), advanced_filter=is_critical)
+                >>> is_critical = Search(AssetProperty.description, "critical")
+                >>> critical_assets = c.assets.aggregate_cardinality_values(
+                ...     AssetProperty.metadata_key("timezone"),
+                ...     advanced_filter=is_critical)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -425,12 +427,12 @@ class AssetsAPI(APIClient):
         Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes import filters as flt
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
             >>> c = CogniteClient()
-            >>> created_after_2020 = filters.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> created_after_2020 = flt.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
@@ -439,10 +441,11 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations as aggs, filters
+            >>> from cognite.client.data_classes import aggregations as aggs
+            >>> from cognite.client.data_classes import filters as flt
             >>> c = CogniteClient()
             >>> not_test = aggs.Not(aggs.Prefix("test"))
-            >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> created_after_2020 = flt.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
@@ -839,12 +842,10 @@ class AssetsAPI(APIClient):
             and sort by external id ascending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> in_timezone = f.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = c.assets.filter(filter=in_timezone,
-                ...                       sort=("external_id", "asc"))
+                >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = c.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -853,13 +854,13 @@ class AssetsAPI(APIClient):
             for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> in_timezone = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-                >>> res = c.assets.filter(filter=in_timezone,
-                ...                       sort=(SortableAssetProperty.external_id, "asc"))
+                >>> in_timezone = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+                >>> res = c.assets.filter(
+                ...     filter=in_timezone,
+                ...     sort=(SortableAssetProperty.external_id, "asc"))
 
         """
         self._validate_filter(filter)

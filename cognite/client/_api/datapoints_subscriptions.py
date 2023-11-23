@@ -57,13 +57,16 @@ class DatapointsSubscriptionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionCreate
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionFilterProperties
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> p = DatapointSubscriptionFilterProperties
-                >>> numeric_timeseries = f.Equals(p.is_string, False)
-                >>> sub = DataPointSubscriptionCreate("mySubscription", partition_count=1, filter=numeric_timeseries, name="My subscription for Numeric time series")
+                >>> prop = DatapointSubscriptionFilterProperties.is_string
+                >>> numeric_timeseries = flt.Equals(prop, False)
+                >>> sub = DataPointSubscriptionCreate(
+                ...     "mySubscription",
+                ...     partition_count=1,
+                ...     filter=numeric_timeseries,
+                ...     name="My subscription for Numeric time series")
                 >>> created = c.time_series.subscriptions.create(sub)
         """
         self._warning.warn()

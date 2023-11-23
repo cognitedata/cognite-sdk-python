@@ -643,13 +643,12 @@ class EventsAPI(APIClient):
             and sort by start time descending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_workorder = f.Prefix("external_id", "workorder")
-                >>> has_failure = f.Search("description", "failure")
-                >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
-                ...                       sort=("start_time", "desc"))
+                >>> is_workorder = flt.Prefix("external_id", "workorder")
+                >>> has_failure = flt.Search("description", "failure")
+                >>> res = c.events.filter(
+                ...     filter=flt.And(is_workorder, has_failure), sort=("start_time", "desc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -658,14 +657,14 @@ class EventsAPI(APIClient):
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_workorder = f.Prefix(EventProperty.external_id, "workorder")
-                >>> has_failure = f.Search(EventProperty.description, "failure")
-                >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
-                ...                       sort=(SortableEventProperty.start_time, "desc"))
+                >>> is_workorder = flt.Prefix(EventProperty.external_id, "workorder")
+                >>> has_failure = flt.Search(EventProperty.description, "failure")
+                >>> res = c.events.filter(
+                ...     filter=flt.And(is_workorder, has_failure),
+                ...     sort=(SortableEventProperty.start_time, "desc"))
         """
         self._validate_filter(filter)
 
