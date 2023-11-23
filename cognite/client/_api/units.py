@@ -48,13 +48,14 @@ class UnitAPI(APIClient):
             Unit | UnitList | None: If a single external ID is specified: the requested unit, or None if it does not exist. If several external IDs are specified: the requested units.
 
         Examples:
-            Retrive unit 'temperature:deg_c'
+
+            Retrive unit 'temperature:deg_c'::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.units.retrieve('temperature:deg_c')
 
-            Retrive units 'temperature:deg_c' and 'pressure:bar'
+            Retrive units 'temperature:deg_c' and 'pressure:bar'::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -76,7 +77,8 @@ class UnitAPI(APIClient):
             UnitList: List of units
 
         Examples:
-            List all supported unit in CDF:
+
+            List all supported unit in CDF::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -95,7 +97,6 @@ class UnitSystemAPI(APIClient):
         cognite_client: CogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "beta"
 
     def list(self) -> UnitSystemList:
         """`List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
@@ -104,7 +105,8 @@ class UnitSystemAPI(APIClient):
             UnitSystemList: List of unit systems
 
         Examples:
-            List all supported unit systems in CDF:
+
+            List all supported unit systems in CDF::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
