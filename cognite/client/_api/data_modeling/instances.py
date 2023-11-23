@@ -292,30 +292,30 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(nodes=("mySpace", "myNodeExternalId"),
-                ...                                          edges=("mySpace", "myEdgeExternalId"),
-                ...                                          sources=("mySpace", "myViewExternalId", "myViewVersion")
-                ...                                         )
+                >>> res = c.data_modeling.instances.retrieve(
+                ...     nodes=("mySpace", "myNodeExternalId"),
+                ...     edges=("mySpace", "myEdgeExternalId"),
+                ...     sources=("mySpace", "myViewExternalId", "myViewVersion"))
 
             Retrieve nodes an edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, ViewId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(NodeId("mySpace", "myNode"),
-                ...                                          EdgeId("mySpace", "myEdge"),
-                ...                                          ViewId("mySpace", "myViewExternalId", "myViewVersion")
-                ...                                         )
+                >>> res = c.data_modeling.instances.retrieve(
+                ...     NodeId("mySpace", "myNode"),
+                ...     EdgeId("mySpace", "myEdge"),
+                ...     ViewId("mySpace", "myViewExternalId", "myViewVersion"))
 
             Retrieve nodes an edges using the the view object as source
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(NodeId("mySpace", "myNode"),
-                ...                                          EdgeId("mySpace", "myEdge"),
-                ...                                          sources=("myspace", "myView")
-                ...                                         )
+                >>> res = c.data_modeling.instances.retrieve(
+                ...     NodeId("mySpace", "myNode"),
+                ...     EdgeId("mySpace", "myEdge"),
+                ...     sources=("myspace", "myView"))
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         other_params = self._create_other_params(
