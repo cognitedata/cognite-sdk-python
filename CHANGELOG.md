@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.4.0] - 2023-11-24
+### Added
+- Unit Catalog API is now considered stable and can be accessed at `client.units`.
+
 ## [7.3.3] - 2023-11-22
 ### Fixed
 - Added action `Delete` in `ProjectsAcl`.
