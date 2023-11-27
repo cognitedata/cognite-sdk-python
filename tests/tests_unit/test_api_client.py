@@ -664,6 +664,24 @@ class TestStandardList:
         assert 2002 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
+    def test_standard_list_generator_vs_partitions(self, api_client_with_token):
+        total_resources = 0
+        for resource_chunk in api_client_with_token._list_generator(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            partitions=1,
+            limit=2000,
+            chunk_size=1001,
+        ):
+            # TODO: chunk_size is ignored when partitions is set, fix in next major version
+            assert isinstance(resource_chunk, SomeResource)
+            total_resources += 1
+
+        assert 2000 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self, api_client_with_token):
         res = api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
