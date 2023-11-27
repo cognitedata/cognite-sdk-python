@@ -90,14 +90,6 @@ class UnitAPI(APIClient):
 class UnitSystemAPI(APIClient):
     _RESOURCE_PATH = "/units/systems"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
-        super().__init__(config, api_version, cognite_client)
-
     def list(self) -> UnitSystemList:
         """`List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
 
