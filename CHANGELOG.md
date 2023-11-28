@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.5.0] - 2023-11-30
+### Added
+- `chain_to` to `NodeResultSetExpression` and `NodeResultSetExpression`, and `direction` to `NodeResultSetExpression`.
+
 ## [7.4.2] - 2023-11-28
 ### Improved
 - Quality of life improvement to `client.extraction_pipelines.runs.list` method. The `statuses` parameter now accepts
