@@ -217,8 +217,10 @@ class NodeResultSetExpression(ResultSetExpression):
         limit (int | None): Limit the result set to this number of instances.
         through (list[str] | tuple[str, str, str] | None): Chain your result-expression through this view.
             The tuple must be on the form (space, view/version, property).
-        direction (Literal["outwards", "inwards"]): The direction to use when traversing direct relations. Only applicable when through is specified.
-        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to. See below for more information.
+        direction (Literal["outwards", "inwards"]): The direction to use when traversing direct relations.
+            Only applicable when through is specified.
+        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
+            See below for more information.
 
     The chain_to option is only applicable if the view referenced in the from field consists of edges.
 
@@ -235,7 +237,7 @@ class NodeResultSetExpression(ResultSetExpression):
         through: list[str] | tuple[str, str, str] | None = None,
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
-    ):
+    ) -> None:
         super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
         self.through = through
 
@@ -275,17 +277,18 @@ class EdgeResultSetExpression(ResultSetExpression):
     Args:
         from_ (str | None): Chain your result expression from this edge.
         max_distance (int | None): The largest - max - number of levels to traverse.
-        direction (Literal["outwards", "inwards"]):The direction to use when traversing.
+        direction (Literal["outwards", "inwards"]): The direction to use when traversing.
         filter (Filter | None): Filter the result set based on this filter.
         node_filter (Filter | None): Filter the result set based on this filter.
         termination_filter (Filter | None): Filter the result set based on this filter.
-        limit_each (int | None): Limit the number of returned edges for each of the source nodes in the result set. The indicated
-            uniform limit applies to the result set from the referenced from.
+        limit_each (int | None): Limit the number of returned edges for each of the source nodes in the result set.
+            The indicated uniform limit applies to the result set from the referenced from.
             limitEach only has meaning when you also specify maxDistance=1 and from.
         sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         post_sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         limit (int | None): Limit the result set to this number of instances.
-        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to. See below for more information.
+        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
+            See below for more information.
 
     The chain_to option is only applicable if the view referenced in the from field consists of edges.
 
@@ -307,7 +310,7 @@ class EdgeResultSetExpression(ResultSetExpression):
         post_sort: list[InstanceSort] | None = None,
         limit: int | None = None,
         chain_to: Literal["destination", "source"] = "destination",
-    ):
+    ) -> None:
         super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
         self.max_distance = max_distance
         self.node_filter = node_filter
