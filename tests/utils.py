@@ -347,8 +347,8 @@ class FakeCogniteResourceGenerator:
             # schedule and jobs must match external id and id
             keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
             keyword_arguments["schedule"].id = keyword_arguments["id"]
-            keyword_arguments["running_job"].id = keyword_arguments["id"]
-            keyword_arguments["last_finished_job"].id = keyword_arguments["id"]
+            keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
+            keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:

@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.4.1] - 2023-11-28
+### Fixed
+- Error in logic when creating a `Transformation`. This is causing when calling `client.transformations.update`. 
+  This is now fixed. 
+
 ## [7.4.0] - 2023-11-27
 ### Changed
 - Unit Catalog API is out of beta and will no longer issue warnings on usage. Access is unchanged: `client.units`.
