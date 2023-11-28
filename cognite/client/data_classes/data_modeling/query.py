@@ -262,6 +262,8 @@ class NodeResultSetExpression(ResultSetExpression):
             }
         if self.chain_to:
             nodes["chainTo" if camel_case else "chain_to"] = self.chain_to
+        if self.direction:
+            nodes["direction"] = self.direction
 
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
