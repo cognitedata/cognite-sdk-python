@@ -18,6 +18,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
                 "identifier": "bla",
             },
             "chainTo": "destination",
+            "direction": "outwards",
         },
         "limit": 1,
     }
@@ -33,6 +34,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
         "nodes": {
             "filter": {"range": {"lt": 2000, "property": ["IntegrationTestsImmutable", "Movie/2", "releaseYear"]}},
             "chainTo": "destination",
+            "direction": "outwards",
         }
     }
     loaded_node = q.NodeResultSetExpression(
@@ -128,6 +130,7 @@ def query_load_yaml_data() -> Iterator[ParameterSet]:
                     property: ["node", "externalId"]
                     value: {"parameter": "airplaneExternalId"}
             chainTo: destination
+            direction: outwards
         limit: 1
     lands_in_airports:
         edges:
@@ -142,6 +145,7 @@ def query_load_yaml_data() -> Iterator[ParameterSet]:
     airports:
         nodes:
             chainTo: destination
+            direction: outwards
             from: lands_in_airports
 parameters:
     airplaneExternalId: myFavouriteAirplane
@@ -178,6 +182,7 @@ select:
           - releaseYear
           value: 1994
       chainTo: destination
+      direction: outwards
 select:
   movies:
     sources:
