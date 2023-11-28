@@ -308,8 +308,12 @@ class FakeCogniteResourceGenerator:
             # DataPointSubscriptionCreate requires either timeseries_ids or filter
             keyword_arguments.pop("filter", None)
         if resource_cls is Query:
+            key_count = min(len(keyword_arguments["select"]), len(keyword_arguments["with_"]))
+            keyword_arguments["with_"] = {
+                k: v for no, (k, v) in enumerate(keyword_arguments["with_"].items()) if no < key_count
+            }
             # keys in with must match keys in select
-            selects = list(keyword_arguments["select"].values())
+            selects = list(keyword_arguments["select"].values())[:key_count]
             new_selects = {}
             for i, key in enumerate(keyword_arguments["with_"]):
                 new_selects[key] = selects[i]

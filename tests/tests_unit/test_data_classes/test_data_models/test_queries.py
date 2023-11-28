@@ -17,6 +17,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
                 "view": {"type": "view", "space": "some", "externalId": "extid", "version": "v1"},
                 "identifier": "bla",
             },
+            "chainTo": "destination",
         },
         "limit": 1,
     }
@@ -30,7 +31,8 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
 
     raw = {
         "nodes": {
-            "filter": {"range": {"lt": 2000, "property": ["IntegrationTestsImmutable", "Movie/2", "releaseYear"]}}
+            "filter": {"range": {"lt": 2000, "property": ["IntegrationTestsImmutable", "Movie/2", "releaseYear"]}},
+            "chainTo": "destination",
         }
     }
     loaded_node = q.NodeResultSetExpression(
@@ -45,6 +47,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
             "filter": {
                 "equals": {"property": ["edge", "type"], "value": {"space": "MovieSpace", "externalId": "Movie.actors"}}
             },
+            "chainTo": "destination",
         }
     }
     loaded_edge = q.EdgeResultSetExpression(
@@ -124,6 +127,7 @@ def query_load_yaml_data() -> Iterator[ParameterSet]:
                 equals:
                     property: ["node", "externalId"]
                     value: {"parameter": "airplaneExternalId"}
+            chainTo: destination
         limit: 1
     lands_in_airports:
         edges:
@@ -134,8 +138,10 @@ def query_load_yaml_data() -> Iterator[ParameterSet]:
                 equals:
                     property: ["edge", "type"]
                     value: ["aviation", "lands-in"]
+            chainTo: destination
     airports:
         nodes:
+            chainTo: destination
             from: lands_in_airports
 parameters:
     airplaneExternalId: myFavouriteAirplane
@@ -171,6 +177,7 @@ select:
           - Movie/2
           - releaseYear
           value: 1994
+      chainTo: destination
 select:
   movies:
     sources:
