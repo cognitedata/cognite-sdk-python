@@ -186,7 +186,7 @@ class Transformation(CogniteResource):
         if (
             (self.schedule and self.id != self.schedule.id)
             or (self.running_job and self.id != self.running_job.id)
-            or (self.last_finished_job and self.id != self.last_finished_job.id)
+            or (self.last_finished_job and self.id != self.last_finished_job.transformation_id)
         ):
             raise ValueError("Transformation id must be the same as the schedule, running_job, last_running_job id.")
 
