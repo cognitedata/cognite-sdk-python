@@ -8,6 +8,7 @@ from cognite.client.data_classes.extractionpipelines import ExtractionPipelineCo
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import random_string
+from cognite.client.utils._time import YearAligner
 
 
 @pytest.fixture
@@ -36,10 +37,10 @@ def new_extpipe(cognite_client: CogniteClient):
     assert cognite_client.extraction_pipelines.retrieve(extpipe.id) is None
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipeline) -> ExtractionPipelineRunList:
-    now = datetime_to_ms(datetime.now(timezone.utc))
-    a_year_ago = datetime_to_ms(datetime.now(timezone.utc).replace(year=datetime.now(timezone.utc).year - 1))
+    now = datetime_to_ms(dt_now := datetime.now(timezone.utc))
+    a_year_ago = datetime_to_ms(YearAligner.add_units(dt_now, -1))
     runs = [
         ExtractionPipelineRun(
             extpipe_external_id=new_extpipe.external_id, status="failure", message="lorem ipsum", created_time=now

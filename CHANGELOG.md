@@ -17,11 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.5.0] - 2023-11-28
+## [7.4.2] - 2023-11-28
 ### Improved
-- Quality of life improvement to `client.extraction_pipelines.runs.list` method. It uses `Literal` in the type hint
-  of the `statuses` parameter, allows a single `statuses` parameter, and accepts `created_time` on the format `12-ago`
-  (same as the `DatapointAPI` methods).
+- Quality of life improvement to `client.extraction_pipelines.runs.list` method. The `statuses` parameter now accepts
+  a single value and the annotation is improved. The parameter `created_time` can now be given on the format `12d-ago`.
 
 ## [7.4.1] - 2023-11-28
 ### Fixed

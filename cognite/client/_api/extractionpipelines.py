@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from typing_extensions import TypeAlias
@@ -19,9 +18,8 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.extractionpipelines import StringFilter
-from cognite.client.utils import datetime_to_ms
+from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._time import time_ago_to_ms
 from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
@@ -236,7 +234,8 @@ class ExtractionPipelineRunsAPI(APIClient):
             external_id (str): Extraction pipeline external Id.
             statuses (RunStatus | Sequence[RunStatus] | Sequence[str] | None): One or more among "success" / "failure" / "seen".
             message_substring (str | None): Failure message part.
-            created_time (dict[str, Any] | TimestampRange | str | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+            created_time (dict[str, Any] | TimestampRange | str | None): Range between two timestamps. Possible keys are `min` and `max`, with values given as timestamps in ms.
+                If a string is passed, it is assumed to be the minimum value.
             limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -269,9 +268,7 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> res = c.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
         """
         if isinstance(created_time, str):
-            timespan = time_ago_to_ms(created_time)
-            now = datetime_to_ms(datetime.now(timezone.utc))
-            created_time = TimestampRange(min=now - timespan)
+            created_time = TimestampRange(min=timestamp_to_ms(created_time))
 
         if statuses is not None or message_substring is not None or created_time is not None:
             filter = ExtractionPipelineRunFilter(
