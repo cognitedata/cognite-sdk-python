@@ -242,9 +242,9 @@ class ExtractionPipelineRunsAPI(APIClient):
             ExtractionPipelineRunList: List of requested extraction pipeline runs
 
         Tip:
-            The created_time paremeter supports in addition to a dictonary with the format
-            `{"min": epoch_min, "max": epoch_max}`, arguments given on the format `<integer>(s|m|h|d|w)-ago`.
-            For example, `12h-ago`, which will be parsed to `{"min"= now - 12h-ago}`.
+            The ``created_time`` parameter can also be passed as a string, to support the most typical usage pattern
+            of fetching the most recent runs, meaning it is implicitly assumed to be the minimum created time. The
+            format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute), e.g. "12d-ago".
 
         Examples:
 
@@ -260,7 +260,7 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> runsList = c.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], statuslimit=5)
 
-            Get all failed pipeline runs the last 24 hours for pipeliene 'extId':
+            Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
