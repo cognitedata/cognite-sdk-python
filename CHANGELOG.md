@@ -17,10 +17,6 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.4.2] - 2023-11-29
-### Fixed
-- Update `Workflow Version` upsert docs to reflect that `upsert` is called on the `version` subresource
-
 ## [7.4.1] - 2023-11-28
 ### Fixed
 - Error in logic when creating a `Transformation`. This is causing when calling `client.transformations.update`. 
