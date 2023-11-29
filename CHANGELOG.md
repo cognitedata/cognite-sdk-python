@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.5.0] - 2023-11-29
+### Added
+- `geospatial.search_features` and `geospatial.stream_features` now accept the `allow_dimensionality_mismatch` parameter.
+
 ## [7.4.1] - 2023-11-28
 ### Fixed
 - Error in logic when creating a `Transformation`. This is causing when calling `client.transformations.update`. 
