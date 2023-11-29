@@ -220,12 +220,11 @@ class NodeResultSetExpression(ResultSetExpression):
         direction (Literal["outwards", "inwards"]): The direction to use when traversing direct relations.
             Only applicable when through is specified.
         chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
-            See below for more information.
-
-    The chain_to option is only applicable if the view referenced in the from field consists of edges.
-
-    source will chain to start if you're following edges outwards i.e direction=outwards. If you're following edges inwards i.e direction=inwards, it will chain to end.
-    destination (default) will chain to end if you're following edges outwards i.e direction=outwards. If you're following edges inwards i.e direction=inwards, it will chain to start.
+            The chain_to option is only applicable if the result rexpression referenced in `from`
+            contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're
+            following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to
+            end if you're following edges outwards i.e `direction=outwards`. If you're following edges
+            inwards i.e, `direction=inwards`, it will chain to start.
     """
 
     def __init__(
@@ -290,12 +289,11 @@ class EdgeResultSetExpression(ResultSetExpression):
         post_sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         limit (int | None): Limit the result set to this number of instances.
         chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
-            See below for more information.
-
-    The chain_to option is only applicable if the view referenced in the from field consists of edges.
-
-    source will chain to start if you're following edges outwards i.e direction=outwards. If you're following edges inwards i.e direction=inwards, it will chain to end.
-    destination (default) will chain to end if you're following edges outwards i.e direction=outwards. If you're following edges inwards i.e direction=inwards, it will chain to start.
+            The chain_to option is only applicable if the result rexpression referenced in `from`
+            contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're
+            following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to
+            end if you're following edges outwards i.e `direction=outwards`. If you're following edges
+            inwards i.e, `direction=inwards`, it will chain to start.
 
     """
 
