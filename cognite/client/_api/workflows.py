@@ -305,7 +305,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 ...        description="This workflow has one step",
                 ...    ),
                 ... )
-                >>> res = c.workflows.upsert(new_version)
+                >>> res = c.workflows.versions.upsert(new_version)
         """
         self._warning.warn()
         if mode != "replace":
