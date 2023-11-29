@@ -1,27 +1,22 @@
+import datetime
 import re
-from unittest.mock import MagicMock, call
+from typing import List, Tuple
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function, FunctionSchedule
+from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry
+from cognite.client.utils._time import datetime_to_ms
 from tests.utils import jsgz_load
 
 
 @pytest.fixture
-def mock_client():
-    # We allow the mock to pass isinstance checks
-    (client := MagicMock()).__class__ = CogniteClient
-    return client
+def empty_function(cognite_mock_client_placeholder: CogniteClient):
+    return Function(id=123, cognite_client=cognite_mock_client_placeholder)
 
 
 @pytest.fixture
-def empty_function(mock_client):
-    return Function(id=123, cognite_client=mock_client)
-
-
-@pytest.fixture
-def function(mock_client):
+def function(cognite_mock_client_placeholder: CogniteClient):
     return Function(
         id=123,
         name="my-function",
@@ -33,29 +28,8 @@ def function(mock_client):
         function_path="handler.py",
         created_time="2020-06-19 08:49:37",
         secrets={},
-        cognite_client=mock_client,
+        cognite_client=cognite_mock_client_placeholder,
     )
-
-
-@pytest.fixture
-def function_schedules(mock_client):
-    schedule_1 = FunctionSchedule(
-        name="my-schedule-1",
-        function_id=123,
-        description="my schedule 1",
-        created_time=12345,
-        cron_expression="* * * * *",
-        cognite_client=mock_client,
-    )
-    schedule_2 = FunctionSchedule(
-        name="my-schedule-2",
-        function_external_id="my-function",
-        description="my schedule 2",
-        created_time=12345,
-        cron_expression="* * * * *",
-        cognite_client=mock_client,
-    )
-    return [schedule_1, schedule_2]
 
 
 @pytest.fixture
@@ -87,24 +61,6 @@ class TestFunction:
         empty_function._cognite_client.functions.retrieve.return_value = None
         empty_function.update()
 
-    @pytest.mark.parametrize("limit", [2, None, -1, float("inf")])
-    def test_list_schedules(self, function, function_schedules, limit):
-        function._cognite_client.functions.schedules._LIST_LIMIT_CEILING = 10
-        function._cognite_client.functions.schedules.list.side_effect = [
-            [function_schedules[0]],
-            [function_schedules[1]],
-        ]
-
-        schedules = function.list_schedules(limit=limit)
-
-        calls = [
-            call(function_external_id=function.external_id, limit=limit),
-            call(function_id=function.id, limit=limit),
-        ]
-
-        assert 2 == len(schedules)
-        function._cognite_client.functions.schedules.list.assert_has_calls(calls)
-
 
 class TestFunctionCall:
     def test_get_function_call_no_filter(self, cognite_client, mock_function_call_resp):
@@ -130,3 +86,43 @@ class TestFunctionCall:
                 "status": "Completed",
             },
         } == jsgz_load(calls[0].request.body)
+
+
+class TestFunctionCallLog:
+    @pytest.fixture(scope="class")
+    def entries(self) -> List[Tuple[datetime.datetime, str]]:
+        start_ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
+        ms_delta = datetime.timedelta(milliseconds=100)
+        return [(start_ts + i * ms_delta, f"line {i}") for i in range(10)]
+
+    def test_to_text_without_timestamps(self, entries):
+        log = FunctionCallLog(resources=[FunctionCallLogEntry(timestamp=ts, message=msg) for (ts, msg) in entries])
+        expected = "\n".join([msg for (_, msg) in entries])
+        assert log.to_text() == expected
+
+    def test_to_text_with_timestamps(self, entries):
+        log = FunctionCallLog(
+            resources=[FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message=msg) for (ts, msg) in entries]
+        )
+        expected = "\n".join(entry._format(with_timestamps=True) for entry in log)
+        assert log.to_text(with_timestamps=True) == expected
+
+
+class TestFunctionCallLogEntry:
+    def test_format_with_timestamp(self):
+        ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
+        entry = FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message="line one")
+
+        assert entry._format(with_timestamps=True) == f"[{ts}] line one"
+
+    def test_format_without_timestamp(self):
+        ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123)
+        entry = FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message="line one")
+
+        assert entry._format(with_timestamps=False) == "line one"
+
+    def test_format_with_none_timestamp(self):
+        entry = FunctionCallLogEntry(timestamp=None, message="line one")
+
+        assert entry._format(with_timestamps=True) == "line one"
+        assert entry._format(with_timestamps=False) == "line one"

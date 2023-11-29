@@ -11,15 +11,48 @@ from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
 
 
 class DataModelingGraphQLAPI(APIClient):
-    def _post_graphql(self, url_path: str, json: dict) -> dict[str, Any]:
+    def _post_graphql(self, url_path: str, query_name: str, json: dict) -> dict[str, Any]:
         res = self._post(url_path=url_path, json=json).json()
         # Errors can be passed both at top level and nested in the response:
-        errors = res.get("errors", []) + (
-            (res.get("data", {}).get("upsertGraphQlDmlVersion") or {}).get("errors") or []
-        )
+        errors = res.get("errors", []) + ((res.get("data", {}).get(query_name) or {}).get("errors") or [])
         if errors:
             raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
         return res["data"]
+
+    def _unsafely_wipe_and_regenerate_dml(self, id: DataModelIdentifier) -> str:
+        """Wipe and regenerate the DML for a given data model.
+
+        Note:
+            This removes all comments from the DML.
+
+        Args:
+            id (DataModelIdentifier): The data model to apply DML to.
+
+        Returns:
+            str: The new DML
+        """
+        graphql_body = """
+            query WipeAndRegenerateDml($space: String!, $externalId: String!, $version: String!) {
+                unsafelyWipeAndRegenerateDmlBasedOnDataModel(space: $space, externalId: $externalId, version: $version) {
+                    items {
+                        graphQlDml
+                    }
+                }
+            }
+        """
+        data_model_id = DataModelId.load(id)
+        payload = {
+            "query": textwrap.dedent(graphql_body),
+            "variables": {
+                "space": data_model_id.space,
+                "externalId": data_model_id.external_id,
+                "version": data_model_id.version,
+            },
+        }
+
+        query_name = "unsafelyWipeAndRegenerateDmlBasedOnDataModel"
+        res = self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
+        return res[query_name]["items"][0]["graphQlDml"]
 
     def apply_dml(
         self,
@@ -96,5 +129,7 @@ class DataModelingGraphQLAPI(APIClient):
                 }
             },
         }
-        res = self._post_graphql(url_path="/dml/graphql", json=payload)
-        return DMLApplyResult.load(res["upsertGraphQlDmlVersion"]["result"])
+
+        query_name = "upsertGraphQlDmlVersion"
+        res = self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
+        return DMLApplyResult.load(res[query_name]["result"])

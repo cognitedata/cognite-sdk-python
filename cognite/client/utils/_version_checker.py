@@ -6,8 +6,6 @@ import re
 
 import requests
 
-from cognite.client.config import global_config
-
 
 def check_if_version_exists(package_name: str, version: str) -> bool:
     versions = get_all_versions(package_name=package_name)
@@ -25,6 +23,8 @@ def get_newest_version_in_major_release(package_name: str, version: str) -> str:
 
 
 def get_all_versions(package_name: str) -> list[str]:
+    from cognite.client.config import global_config
+
     verify_ssl = not global_config.disable_ssl
     res = requests.get(f"https://pypi.python.org/simple/{package_name}/#history", verify=verify_ssl, timeout=5)
     return re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
@@ -49,8 +49,10 @@ def _is_newer_pre_release(
     pr_cycle_a: str | None, pr_v_a: int | None, pr_cycle_b: str | None, pr_v_b: int | None
 ) -> bool:
     cycles = ["a", "b", "rc", None]
-    assert pr_cycle_a in cycles, f"pr_cycle_a must be one of '{pr_cycle_a}', not '{cycles}'."
-    assert pr_cycle_b in cycles, f"pr_cycle_a must be one of '{pr_cycle_b}', not '{cycles}'."
+    if pr_cycle_a not in cycles:
+        raise RuntimeError(f"pr_cycle_a must be one of '{pr_cycle_a}', not '{cycles}'.")
+    if pr_cycle_b not in cycles:
+        raise RuntimeError(f"pr_cycle_a must be one of '{pr_cycle_b}', not '{cycles}'.")
     is_newer = False
     if cycles.index(pr_cycle_a) > cycles.index(pr_cycle_b):
         is_newer = True

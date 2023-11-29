@@ -299,15 +299,28 @@ class TransformationsAPI(APIClient):
 
             Perform a partial update on a transformation, updating the query and making it private::
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationUpdate
-                >>> c = CogniteClient()
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
-        """
 
+            Update the session used for reading (source) and writing (destination) when authenticating for all
+            transformations in a given data set:
+
+                >>> from cognite.client.data_classes import NonceCredentials
+                >>> to_update = c.transformations.list(data_set_external_ids=["foo"])
+                >>> new_session = c.iam.sessions.create()
+                >>> new_nonce = NonceCredentials(
+                ...     session_id=new_session.id,
+                ...     nonce=new_session.nonce,
+                ...     cdf_project_name=c.config.project
+                ... )
+                >>> for tr in to_update:
+                ...     tr.source_nonce = new_nonce
+                ...     tr.destination_nonce = new_nonce
+                >>> res = c.transformations.update(to_update)
+        """
         if isinstance(item, Sequence):
-            item = list(item).copy()
+            item = list(item)
             sessions: dict[str, NonceCredentials] = {}
             for i, t in enumerate(item):
                 if isinstance(t, Transformation):
@@ -321,7 +334,7 @@ class TransformationsAPI(APIClient):
             item._process_credentials(keep_none=True)
         elif not isinstance(item, TransformationUpdate):
             raise TypeError(
-                "item must be Sequence[Transformation], Transformation, Sequence[TransformationUpdate] or TransformationUpdate"
+                "item must be one of: TransformationUpdate, Transformation, Sequence[TransformationUpdate | Transformation]."
             )
 
         return self._update_multiple(
@@ -367,7 +380,7 @@ class TransformationsAPI(APIClient):
         id = {"externalId": transformation_external_id, "id": transformation_id}
 
         response = self._post(json=id, url_path=self._RESOURCE_PATH + "/run")
-        job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
+        job = TransformationJob.load(response.json(), cognite_client=self._cognite_client)
 
         if wait:
             return job.wait(timeout=timeout)
@@ -413,7 +426,7 @@ class TransformationsAPI(APIClient):
         return await job.wait_async(timeout=timeout)
 
     def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
-        """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/cancelTransformation>`_
+        """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_
 
         Args:
             transformation_id (int | None): Transformation internal id
@@ -445,7 +458,7 @@ class TransformationsAPI(APIClient):
         source_limit: int | None = 100,
         infer_schema_limit: int | None = 1000,
     ) -> TransformationPreviewResult:
-        """`Preview the result of a query. <https://developer.cognite.com/api#tag/Transformations/operation/runPreview>`_
+        """`Preview the result of a query. <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_
 
         Args:
             query (str | None): SQL query to run for preview.
@@ -482,6 +495,6 @@ class TransformationsAPI(APIClient):
         }
 
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
-        result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
+        result = TransformationPreviewResult.load(response.json(), cognite_client=self._cognite_client)
 
         return result

@@ -118,7 +118,9 @@ def create_multiple_relationships(new_label, cognite_client):
     relationships = cognite_client.relationships.create(relationship_list)
     assert isinstance(relationships, RelationshipList)
     yield relationships_ext_id, ext_id, random_ext_id
-    cognite_client.relationships.delete(external_id=[ext_ids["external_id"] for ext_ids in relationships.dump()])
+    cognite_client.relationships.delete(
+        external_id=[ext_ids["external_id"] for ext_ids in relationships.dump(camel_case=False)]
+    )
 
 
 @pytest.fixture
@@ -198,6 +200,16 @@ class TestRelationshipscognite_client:
         assert res[0].source == asset
         assert res[0].target == time_series
 
+    def test_retrieve_relationship_with_resource_client_set(
+        self, cognite_client: CogniteClient, relationship_with_resources
+    ) -> None:
+        relationship, ext_id, asset, time_series = relationship_with_resources
+
+        res = cognite_client.relationships.retrieve(ext_id, fetch_resources=True)
+
+        assert res.source._get_cognite_client() is not None
+        assert res.target._get_cognite_client() is not None
+
     def test_retrieve_unknown_raises_error(self, cognite_client: CogniteClient):
         with pytest.raises(CogniteNotFoundError) as e:
             cognite_client.relationships.retrieve_multiple(external_ids=["this does not exist"])
@@ -247,7 +259,7 @@ class TestRelationshipscognite_client:
             source_type="asset",
             target_type="asset",
         )
-        preexisting_update = Relationship._load(preexisting.dump(camel_case=True))
+        preexisting_update = Relationship.load(preexisting.dump(camel_case=True))
         preexisting_update.target_external_id = asset1.external_id
 
         try:

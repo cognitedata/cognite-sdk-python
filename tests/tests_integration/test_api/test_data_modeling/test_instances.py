@@ -438,14 +438,36 @@ class TestInstancesAPI:
         max_agg = aggregations.Max("runTimeMinutes")
 
         # Act
-        counts = cognite_client.data_modeling.instances.aggregate(
+        result = cognite_client.data_modeling.instances.aggregate(
             view_id,
             aggregates=[avg_agg, max_agg],
-            group_by=["releaseYear"],
+            group_by="releaseYear",
         )
 
         # Assert
-        assert len(counts)
+        assert len(result)
+
+    def test_aggregate_multiple(self, cognite_client: CogniteClient, movie_view: View) -> None:
+        # Arrange
+        view_id = movie_view.as_id()
+        avg_agg = aggregations.Avg("runTimeMinutes")
+        max_agg = aggregations.Max("runTimeMinutes")
+
+        # Act
+        result = cognite_client.data_modeling.instances.aggregate(
+            view_id,
+            aggregates=[avg_agg, max_agg],
+        )
+
+        # Assert
+        assert len(result) == 2
+        assert result[0].property == "runTimeMinutes"
+        assert result[1].property == "runTimeMinutes"
+        max_value = next((item for item in result if isinstance(item, aggregations.MaxValue)), None)
+        avg_value = next((item for item in result if isinstance(item, aggregations.AvgValue)), None)
+        assert max_value is not None
+        assert avg_value is not None
+        assert max_value.value > avg_value.value
 
     def test_aggregate_count_persons(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
@@ -453,7 +475,7 @@ class TestInstancesAPI:
         count_agg = aggregations.Count("name")
 
         # Act
-        counts = cognite_client.data_modeling.instances.aggregate(
+        count = cognite_client.data_modeling.instances.aggregate(
             view_id,
             aggregates=count_agg,
             instance_type="node",
@@ -461,8 +483,8 @@ class TestInstancesAPI:
         )
 
         # Assert
-        assert len(counts) == 1
-        assert counts[0].aggregates[0].value > 0, "Add at least one person to the view to run this test"
+        assert count.property == "name"
+        assert count.value > 0, "Add at least one person to the view to run this test"
 
     def test_aggregate_invalid_view_id(self, cognite_client: CogniteClient) -> None:
         # Arrange
@@ -480,7 +502,8 @@ class TestInstancesAPI:
 
         # Assert
         assert error.value.code == 400
-        assert "View not found" in error.value.message
+        assert "One or more views do not exist: " in error.value.message
+        assert view_id.as_source_identifier() in error.value.message
 
     def test_dump_json_serialize_load_node(self, movie_nodes: NodeList) -> None:
         # Arrange
@@ -647,7 +670,7 @@ class TestInstancesSync:
             while State.invocation_count != value and (abs(time.time() - start_time) > max_wait_seconds):
                 time.sleep(0.1)
 
-        cognite_client.data_modeling.instances.subscribe(my_query, callback)
+        context = cognite_client.data_modeling.instances.subscribe(my_query, callback, poll_delay_seconds=2)
 
         try:
             cognite_client.data_modeling.instances.apply(nodes=new_1994_movie)
@@ -657,3 +680,14 @@ class TestInstancesSync:
             wait_for_invocation_count_to_have_value(2)
         finally:
             cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
+
+        assert context.is_alive()
+        context.cancel()
+        # May take some time for the thread to actually die, so we check in a loop for a little while
+        for i in range(10):
+            if context.is_alive():
+                time.sleep(1)
+            else:
+                return
+        else:
+            assert not context.is_alive()

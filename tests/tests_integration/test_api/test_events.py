@@ -158,7 +158,7 @@ class TestEventsAPI:
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.subtype = "mySubType1"
 
         try:
@@ -191,6 +191,16 @@ class TestEventsAPI:
         assert len(result) == 1, "Expected only one event to match the filter"
         assert result[0].external_id == "integration_test:event1_lorem_ipsum"
 
+    def test_filter_search_without_sort(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
+
+        result = cognite_client.events.filter(f.And(is_integration_test, has_lorem_ipsum), sort=None)
+
+        assert len(result) == 1, "Expected only one event to match the filter"
+        assert result[0].external_id == "integration_test:event1_lorem_ipsum"
+
     def test_aggregate_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         f = filters
         is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
@@ -205,7 +215,7 @@ class TestEventsAPI:
 
         count = cognite_client.events.aggregate_count(EventProperty.type, advanced_filter=is_integration_test)
 
-        assert count >= sum(1 for e in event_list if e.type)
+        assert count >= len([e for e in event_list if e.type])
 
     def test_aggregate_type_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         f = filters

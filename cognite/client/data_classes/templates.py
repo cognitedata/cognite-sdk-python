@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteObjectUpdate,
@@ -236,7 +235,7 @@ class TemplateInstance(CogniteResource):
         "view": ViewResolver,
     }
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -259,32 +258,28 @@ class TemplateInstance(CogniteResource):
     @staticmethod
     def _encode_field_resolvers(field_resolvers: dict[str, FieldResolvers], camel_case: bool) -> dict[str, Any]:
         return {
-            key: value.dump(camel_case=camel_case) if not isinstance(value, str) else value
+            key: value if isinstance(value, str) else value.dump(camel_case=camel_case)
             for key, value in field_resolvers.items()
         }
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TemplateInstance:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    if key == "fieldResolvers":
-                        setattr(
-                            instance,
-                            snake_case_key,
-                            {
-                                key: TemplateInstance._field_resolver_load(field_resolver)
-                                for key, field_resolver in value.items()
-                            },
-                        )
-                    else:
-                        setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TemplateInstance:
+        instance = cls(cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            if hasattr(instance, snake_case_key):
+                if key == "fieldResolvers":
+                    setattr(
+                        instance,
+                        snake_case_key,
+                        {
+                            key: TemplateInstance._field_resolver_load(field_resolver)
+                            for key, field_resolver in value.items()
+                        },
+                    )
+                else:
+                    setattr(instance, snake_case_key, value)
+        return instance
 
     @staticmethod
     def _field_resolver_load(resource: dict, cognite_client: CogniteClient | None = None) -> CogniteResource:
@@ -372,7 +367,7 @@ class View(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -398,18 +393,14 @@ class View(CogniteResource):
             return value
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> View:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    value = value if key != "source" else Source._load(value, cognite_client)
-                    setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
+        instance = cls(cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            if hasattr(instance, snake_case_key):
+                value = value if key != "source" else Source._load(value, cognite_client)
+                setattr(instance, snake_case_key, value)
+        return instance
 
 
 class ViewResolveItem(UserDict, CogniteResource):
@@ -417,15 +408,12 @@ class ViewResolveItem(UserDict, CogniteResource):
         super().__init__(data)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return self.data
 
     @classmethod
-    def _load(cls, data: dict | str, cognite_client: CogniteClient | None = None) -> ViewResolveItem:
-        if isinstance(data, str):
-            return cls._load(json.loads(data), cognite_client=cognite_client)
-        elif isinstance(data, Dict):
-            return cls(data, cognite_client=cognite_client)
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ViewResolveItem:
+        return cls(data, cognite_client=cognite_client)
 
 
 class GraphQlError(CogniteResource):
@@ -452,6 +440,20 @@ class GraphQlResponse(CogniteResource):
         self.data = data
         self.errors = errors
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.errors:
+            output["errors"] = [error.dump(camel_case) for error in self.errors]
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> GraphQlResponse:
+        return cls(
+            data=resource.get("data"),
+            errors=[GraphQlError._load(error) for error in resource.get("errors", [])],
+            cognite_client=cognite_client,
+        )
 
 
 class TemplateInstanceList(CogniteResourceList[TemplateInstance]):

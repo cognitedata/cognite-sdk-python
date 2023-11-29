@@ -94,6 +94,8 @@ Tweaking the parameters of a feature extractor:
         features=VisionFeature.TEXT_DETECTION,
         file_ids=[1, 2],
         parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
+        # or
+        # parameters = {"textDetectionParameters": {"threshold": 0.9}}
     )
 
 Extract

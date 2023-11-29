@@ -45,6 +45,7 @@ class TestVisionExtractPredictions:
             AssetLink,
             ObjectDetection,
             TextRegion,
+            KeypointCollectionWithObjectDetection,
         )
 
         local_namespace = locals()

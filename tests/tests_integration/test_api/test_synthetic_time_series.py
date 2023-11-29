@@ -9,7 +9,7 @@ from cognite.client.data_classes import Datapoints, DatapointsList
 
 @pytest.fixture(scope="session")
 def test_time_series(cognite_client):
-    time_series_names = [f"test__constant_{i}_with_noise" for i in range(0, 10)]
+    time_series_names = [f"test__constant_{i}_with_noise" for i in range(10)]
     time_series = {}
     for ts in cognite_client.time_series.retrieve_multiple(external_ids=time_series_names):
         value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
@@ -86,7 +86,7 @@ class TestSyntheticDatapointsAPI:
         )
         assert 100 == len(dps1)
         assert 100 == len(dps2[0])
-        assert dps1 == dps2[0]
+        assert dps1 == dps2.get(external_id="a")
         assert isinstance(dps1, Datapoints)
         assert isinstance(dps2, DatapointsList)
 

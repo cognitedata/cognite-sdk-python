@@ -30,15 +30,16 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CogniteListUpdate,
+    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
+    NoCaseConversionPropertyList,
     PropertySpec,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
@@ -47,7 +48,8 @@ from cognite.client.exceptions import CogniteAssetHierarchyError
 from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._graph import find_all_cycles_with_elements
-from cognite.client.utils._text import DrawTables, shorten
+from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import DrawTables, convert_dict_to_case, shorten
 
 if TYPE_CHECKING:
     import pandas
@@ -57,29 +59,14 @@ if TYPE_CHECKING:
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
-class AssetAggregate(dict):
-    """Aggregation group of assets
-
-    Args:
-        count (int | None): Size of the aggregation group
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
-
-
-class AggregateResultItem(dict):
+class AggregateResultItem(CogniteObject):
     """Aggregated metrics of the asset
 
     Args:
         child_count (int | None): Number of direct descendants for the asset
         depth (int | None): Asset path depth (number of levels below root node).
         path (list[dict[str, Any]] | None): IDs of assets on the path to the asset.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -87,16 +74,11 @@ class AggregateResultItem(dict):
         child_count: int | None = None,
         depth: int | None = None,
         path: list[dict[str, Any]] | None = None,
-        **kwargs: Any,
+        **_: Any,
     ) -> None:
         self.child_count = child_count
         self.depth = depth
         self.path = path
-        self.update(kwargs)
-
-    child_count = CognitePropertyClassUtil.declare_property("childCount")
-    depth = CognitePropertyClassUtil.declare_property("depth")
-    path = CognitePropertyClassUtil.declare_property("path")
 
 
 class Asset(CogniteResource):
@@ -117,7 +99,7 @@ class Asset(CogniteResource):
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int | None): ID of the root asset.
-        aggregates (dict[str, Any] | AggregateResultItem | None): Aggregated metrics of the asset
+        aggregates (AggregateResultItem | dict[str, Any] | None): Aggregated metrics of the asset
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -137,7 +119,7 @@ class Asset(CogniteResource):
         created_time: int | None = None,
         last_updated_time: int | None = None,
         root_id: int | None = None,
-        aggregates: dict[str, Any] | AggregateResultItem | None = None,
+        aggregates: AggregateResultItem | dict[str, Any] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
@@ -160,13 +142,12 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Asset:
         instance = super()._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.aggregates is not None:
-                instance.aggregates = AggregateResultItem(**instance.aggregates)
+        if isinstance(instance.aggregates, dict):
+            instance.aggregates = AggregateResultItem._load(instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
-        if instance.geo_location is not None:
+        if isinstance(instance.geo_location, dict):
             instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
 
@@ -248,29 +229,54 @@ class Asset(CogniteResource):
         assert self.id is not None
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location is not None:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        if isinstance(self.aggregates, AggregateResultItem):
+            result["aggregates"] = self.aggregates.dump(camel_case)
         return result
 
-    def to_pandas(
+    def to_pandas(  # type: ignore [override]
         self,
-        expand: Sequence[str] = ("metadata", "aggregates"),
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+        expand_aggregates: bool = False,
+        aggregates_prefix: str = "aggregates.",
         ignore: list[str] | None = None,
         camel_case: bool = False,
+        convert_timestamps: bool = True,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand (Sequence[str]): List of row keys to expand, only works if the value is a Dict.
-            ignore (list[str] | None): List of row keys to not include when converting to a data frame.
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            expand_metadata (bool): Expand the metadata into separate rows (default: False).
+            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
+            expand_aggregates (bool): Expand the aggregates into separate rows (default: False).
+            aggregates_prefix (str): Prefix to use for the aggregates rows, if expanded.
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        return super().to_pandas(expand=expand, ignore=ignore, camel_case=camel_case)
+        df = super().to_pandas(
+            expand_metadata=expand_metadata,
+            metadata_prefix=metadata_prefix,
+            ignore=ignore,
+            camel_case=camel_case,
+            convert_timestamps=convert_timestamps,
+        )
+        if not (expand_aggregates and "aggregates" in df.index):
+            return df
+
+        pd = local_import("pandas")
+        col = df.squeeze()
+        aggregates = convert_dict_to_case(col.pop("aggregates"), camel_case)
+        return pd.concat((col, pd.Series(aggregates).add_prefix(aggregates_prefix))).to_frame()
 
 
 class AssetUpdate(CogniteUpdate):
@@ -489,10 +495,17 @@ class AssetFilter(CogniteFilter):
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
+        if isinstance(self.geo_location, GeoLocationFilter):
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        if isinstance(self.created_time, TimestampRange):
+            result["createdTime" if camel_case else "created_time"] = self.created_time.dump(camel_case)
+        if isinstance(self.last_updated_time, TimestampRange):
+            result["lastUpdatedTime" if camel_case else "last_updated_time"] = self.last_updated_time.dump(camel_case)
+
         return result
 
 
@@ -890,7 +903,7 @@ class AssetProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 AssetPropertyLike: TypeAlias = Union[AssetProperty, str, List[str]]
@@ -908,7 +921,7 @@ class SortableAssetProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 SortableAssetPropertyLike: TypeAlias = Union[SortableAssetProperty, str, List[str]]

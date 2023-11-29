@@ -9,9 +9,9 @@ from cognite.client.data_classes import Annotation, AnnotationFilter, Annotation
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
-from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._validation import assert_type
 
 
 class AnnotationsAPI(APIClient):

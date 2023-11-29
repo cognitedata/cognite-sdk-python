@@ -9,7 +9,6 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     AggregateResult,
-    AggregateUniqueValuesResult,
     EndTimeFilter,
     Event,
     EventFilter,
@@ -22,7 +21,7 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.events import EventPropertyLike, EventSort, SortableEventProperty
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
 SortSpec: TypeAlias = Union[
     EventSort,
@@ -223,49 +222,29 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_type = c.events.aggregate(filter={"type": "failure"})
         """
+        warnings.warn(
+            "This method is deprecated. Use aggregate_count, aggregate_unique_values, aggregate_cardinality_values, aggregate_cardinality_properties, or aggregate_unique_properties instead.",
+            DeprecationWarning,
+        )
         return self._aggregate(filter=filter, cls=AggregateResult)
 
-    @overload
     def aggregate_unique_values(
         self,
-        fields: Sequence[str],
-        filter: EventFilter | dict | None = None,
-        property: EventPropertyLike | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-    ) -> list[AggregateUniqueValuesResult]:
-        ...
-
-    @overload
-    def aggregate_unique_values(
-        self,
-        fields: Literal[None] = None,
         filter: EventFilter | dict | None = None,
         property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> UniqueResultList:
-        ...
-
-    def aggregate_unique_values(
-        self,
-        fields: Sequence[str] | None = None,
-        filter: EventFilter | dict | None = None,
-        property: EventPropertyLike | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-    ) -> list[AggregateUniqueValuesResult] | UniqueResultList:
         """`Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            fields (Sequence[str] | None): The fields to return. Defaults to ["count"].
             filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
             property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to consider.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
 
         Returns:
-            list[AggregateUniqueValuesResult] | UniqueResultList: List of unique values of events matching the specified filters and search.
+            UniqueResultList: List of unique values of events matching the specified filters and search.
 
         Examples:
 
@@ -303,14 +282,6 @@ class EventsAPI(APIClient):
             >>> print(result.unique)
 
         """
-        if fields is not None:
-            warnings.warn(
-                "Using of the parameter 'fields' is deprecated and will be removed in future versions of the SDK.",
-                DeprecationWarning,
-            )
-            return self._aggregate(
-                filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult
-            )
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             aggregate="uniqueValues",
@@ -672,13 +643,12 @@ class EventsAPI(APIClient):
             and sort by start time descending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_workorder = f.Prefix("external_id", "workorder")
-                >>> has_failure = f.Search("description", "failure")
-                >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
-                ...                       sort=("start_time", "desc"))
+                >>> is_workorder = flt.Prefix("external_id", "workorder")
+                >>> has_failure = flt.Search("description", "failure")
+                >>> res = c.events.filter(
+                ...     filter=flt.And(is_workorder, has_failure), sort=("start_time", "desc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -687,28 +657,24 @@ class EventsAPI(APIClient):
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_workorder = f.Prefix(EventProperty.external_id, "workorder")
-                >>> has_failure = f.Search(EventProperty.description, "failure")
-                >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
-                ...                       sort=(SortableEventProperty.start_time, "desc"))
+                >>> is_workorder = flt.Prefix(EventProperty.external_id, "workorder")
+                >>> has_failure = flt.Search(EventProperty.description, "failure")
+                >>> res = c.events.filter(
+                ...     filter=flt.And(is_workorder, has_failure),
+                ...     sort=(SortableEventProperty.start_time, "desc"))
         """
         self._validate_filter(filter)
-        if sort is None:
-            sort = []
-        elif not isinstance(sort, list):
-            sort = [sort]
 
         return self._list(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
             limit=limit,
-            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
-            sort=[EventSort.load(item).dump(camel_case=True) for item in sort],
+            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
+            sort=prepare_filter_sort(sort, EventSort),
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
@@ -786,9 +752,6 @@ class EventsAPI(APIClient):
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
-            raise ValueError("isNull cannot be used with min or max values")
 
         filter = EventFilter(
             start_time=start_time,

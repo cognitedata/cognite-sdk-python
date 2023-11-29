@@ -8,7 +8,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -29,7 +28,7 @@ class DataSet(CogniteResource):
         name (str | None): The name of the data set.
         description (str | None): The description of the data set.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        write_protected (bool | None): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.  To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
+        write_protected (bool | None): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set. To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
         id (int | None): A server-generated ID for the object.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -83,6 +82,14 @@ class DataSetFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        if self.created_time and isinstance(self.created_time, TimestampRange):
+            dumped["createdTime"] = self.created_time.dump(camel_case=camel_case)
+        if self.last_updated_time and isinstance(self.last_updated_time, TimestampRange):
+            dumped["lastUpdatedTime"] = self.last_updated_time.dump(camel_case=camel_case)
+        return dumped
 
 
 class DataSetUpdate(CogniteUpdate):
@@ -154,21 +161,6 @@ class DataSetUpdate(CogniteUpdate):
             PropertySpec("metadata", is_container=True),
             PropertySpec("write_protected", is_nullable=False),
         ]
-
-
-class DataSetAggregate(dict):
-    """Aggregation group of data sets
-
-    Args:
-        count (int | None): Size of the aggregation group
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class DataSetList(CogniteResourceList[DataSet], IdTransformerMixin):

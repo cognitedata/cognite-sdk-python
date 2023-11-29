@@ -28,7 +28,6 @@ import requests.utils
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
-from cognite.client import utils
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
@@ -43,8 +42,16 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._concurrency import TaskExecutor
+from cognite.client.utils._auxiliary import (
+    get_current_sdk_version,
+    get_user_agent,
+    interpolate_and_url_encode,
+    is_unlimited,
+    json_dump_default,
+    split_into_chunks,
+    unpack_items_in_payload,
+)
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierCore,
@@ -53,12 +60,15 @@ from cognite.client.utils._identifier import (
     SingletonIdentifierSequence,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
+from cognite.client.utils._validation import assert_type, verify_limit
 
 if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
+
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-log = logging.getLogger("cognite-sdk")
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -68,16 +78,16 @@ class APIClient:
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
         rf"^{path}(\?.*)?$"
         for path in (
-            "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
+            "/(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
             "/files/downloadlink",
-            "/timeseries/data",
-            "/timeseries/data/(list|latest|delete)",
-            "/sequences/data",
-            "/sequences/data/(list|delete)",
-            "/raw/dbs/[^/]+/tables/[^/]+",
+            "/timeseries/data(/(list|latest|delete))?",
+            "/timeseries/synthetic/query",
+            "/sequences/data(/(list|delete))?",
+            "/raw/dbs/[^/]+/tables/[^/]+/rows/.*",
             "/context/entitymatching/(byids|list|jobs)",
             "/sessions/revoke",
             "/models/.*",
+            "/units/.*",
         )
     )
 
@@ -175,7 +185,7 @@ class APIClient:
 
         if json_payload:
             try:
-                data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default, allow_nan=False)
+                data = _json.dumps(json_payload, default=json_dump_default, allow_nan=False)
             except ValueError as e:
                 # A lot of work to give a more human friendly error message when nans and infs are present:
                 msg = "Out of range float values are not JSON compliant"
@@ -217,13 +227,13 @@ class APIClient:
         self._refresh_auth_header(headers)
         headers["content-type"] = "application/json"
         headers["accept"] = accept
-        headers["x-cdp-sdk"] = f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}"
+        headers["x-cdp-sdk"] = f"CognitePythonSDK:{get_current_sdk_version()}"
         headers["x-cdp-app"] = self._config.client_name
         headers["cdf-version"] = api_subversion or self._api_subversion
         if "User-Agent" in headers:
-            headers["User-Agent"] += " " + utils._auxiliary.get_user_agent()
+            headers["User-Agent"] += f" {get_user_agent()}"
         else:
-            headers["User-Agent"] = utils._auxiliary.get_user_agent()
+            headers["User-Agent"] = get_user_agent()
         headers.update(additional_headers)
         return headers
 
@@ -251,11 +261,7 @@ class APIClient:
         if method not in valid_methods:
             raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
-        if method in ["GET", "PUT", "PATCH"]:
-            return True
-        if method == "POST" and self._url_is_retryable(path):
-            return True
-        return False
+        return method in ["GET", "PUT", "PATCH"] or method == "POST" and self._url_is_retryable(path)
 
     @classmethod
     @functools.lru_cache(64)
@@ -267,10 +273,7 @@ class APIClient:
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
-        for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
-            if re.match(pattern, path):
-                return True
-        return False
+        return any(re.match(pattern, path) for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS)
 
     def _retrieve(
         self,
@@ -283,9 +286,7 @@ class APIClient:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
             res = self._get(
-                url_path=utils._auxiliary.interpolate_and_url_encode(
-                    resource_path + "/{}", str(identifier.as_primitive())
-                ),
+                url_path=interpolate_and_url_encode(resource_path + "/{}", str(identifier.as_primitive())),
                 params=params,
                 headers=headers,
             )
@@ -306,7 +307,8 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource | None:
         ...
 
@@ -321,7 +323,8 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -335,7 +338,8 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -353,17 +357,22 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = utils._concurrency.execute_tasks(
-            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        tasks_summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            fail_fast=True,
+            executor=executor,
         )
-
-        if tasks_summary.exceptions:
-            try:
-                utils._concurrency.collect_exc_info_and_raise(tasks_summary.exceptions)
-            except CogniteNotFoundError:
-                if identifiers.is_singleton():
-                    return None
-                raise
+        try:
+            tasks_summary.raise_compound_exception_if_failed_tasks(
+                task_unwrap_fn=unpack_items_in_payload,
+                task_list_element_unwrap_fn=identifiers.extract_identifiers,
+            )
+        except CogniteNotFoundError:
+            if identifiers.is_singleton():
+                return None
+            raise
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
@@ -394,6 +403,7 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
+        verify_limit(limit)
         if is_unlimited(limit):
             limit = None
         resource_path = resource_path or self._RESOURCE_PATH
@@ -442,7 +452,7 @@ class APIClient:
                         body["filter"] = filter
                     if advanced_filter:
                         body["advancedFilter"] = (
-                            advanced_filter.dump(camel_case=True)
+                            advanced_filter.dump(camel_case_property=True)
                             if isinstance(advanced_filter, Filter)
                             else advanced_filter
                         )
@@ -503,11 +513,10 @@ class APIClient:
             return res.json()["items"]
 
         while len(next_cursors) > 0:
-            tasks_summary = utils._concurrency.execute_tasks(
-                get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
+            tasks_summary = execute_tasks(
+                get_partition, [(partition,) for partition in next_cursors], max_workers=partitions, fail_fast=True
             )
-            if tasks_summary.exceptions:
-                raise tasks_summary.exceptions[0]
+            tasks_summary.raise_compound_exception_if_failed_tasks()
 
             for item in tasks_summary.joined_results():
                 yield resource_cls._load(item, cognite_client=self._cognite_client)
@@ -532,6 +541,7 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
+        verify_limit(limit)
         if partitions:
             if not is_unlimited(limit):
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
@@ -593,7 +603,7 @@ class APIClient:
                     }
                     if advanced_filter:
                         body["advancedFilter"] = (
-                            advanced_filter.dump(camel_case=True)
+                            advanced_filter.dump(camel_case_property=True)
                             if isinstance(advanced_filter, Filter)
                             else advanced_filter
                         )
@@ -618,9 +628,9 @@ class APIClient:
             return retrieved_items
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = utils._concurrency.execute_tasks(get_partition, tasks, max_workers=partitions)
-        if tasks_summary.exceptions:
-            raise tasks_summary.exceptions[0]
+        tasks_summary = execute_tasks(get_partition, tasks, max_workers=partitions, fail_fast=True)
+        tasks_summary.raise_compound_exception_if_failed_tasks()
+
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     def _aggregate(
@@ -633,11 +643,11 @@ class APIClient:
         keys: Sequence[str] | None = None,
         headers: dict | None = None,
     ) -> list[T]:
-        utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
-        utils._auxiliary.assert_type(fields, "fields", [list], allow_none=True)
+        assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        assert_type(fields, "fields", [list], allow_none=True)
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
-        elif isinstance(filter, Dict):
+        elif isinstance(filter, dict):
             dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
@@ -706,6 +716,7 @@ class APIClient:
         limit: int | None = None,
         api_subversion: str | None = None,
     ) -> int | UniqueResultList:
+        verify_limit(limit)
         if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
             raise ValueError(
                 f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
@@ -746,10 +757,10 @@ class APIClient:
             body["search"] = {"query": query}
 
         if filter is not None:
-            utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
+            assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
             if isinstance(filter, CogniteFilter):
                 dumped_filter = filter.dump(camel_case=True)
-            elif isinstance(filter, Dict):
+            elif isinstance(filter, dict):
                 dumped_filter = convert_all_keys_to_camel_case(filter)
             else:
                 raise ValueError(f"Unknown filter format: {filter}")
@@ -786,7 +797,8 @@ class APIClient:
         extra_body_fields: dict | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -802,7 +814,8 @@ class APIClient:
         extra_body_fields: dict | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -817,7 +830,8 @@ class APIClient:
         extra_body_fields: dict | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -832,8 +846,11 @@ class APIClient:
             (resource_path, task_items, params, headers)
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = utils._concurrency.execute_tasks(
-            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            executor=executor,
         )
 
         def unwrap_element(el: T) -> CogniteResource | T:
@@ -870,7 +887,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
-        executor: TaskExecutor | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
@@ -885,11 +902,9 @@ class APIClient:
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = utils._concurrency.execute_tasks(
-            self._post, tasks, max_workers=self._config.max_workers, executor=executor
-        )
+        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
         )
         if returns_items:
@@ -908,6 +923,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -922,6 +938,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -935,6 +952,7 @@ class APIClient:
         params: dict | None = None,
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -963,9 +981,11 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(
+            functools.partial(self._post, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
+        )
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
         )
         updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
@@ -982,13 +1002,16 @@ class APIClient:
         update_cls: type[CogniteUpdate],
         mode: Literal["patch", "replace"],
         input_resource_cls: type[CogniteResource] | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
         try:
-            result = self._update_multiple(items, list_cls, resource_cls, update_cls, mode=mode)
+            result = self._update_multiple(
+                items, list_cls, resource_cls, update_cls, mode=mode, api_subversion=api_subversion
+            )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
             items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
@@ -1016,7 +1039,11 @@ class APIClient:
             try:
                 if to_create:
                     created = self._create_multiple(
-                        to_create, list_cls=list_cls, resource_cls=resource_cls, input_resource_cls=input_resource_cls
+                        to_create,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        input_resource_cls=input_resource_cls,
+                        api_subversion=api_subversion,
                     )
                 if to_update:
                     updated = self._update_multiple(
@@ -1025,6 +1052,7 @@ class APIClient:
                         resource_cls=resource_cls,
                         update_cls=update_cls,
                         mode=mode,
+                        api_subversion=api_subversion,
                     )
             except CogniteAPIError as api_error:
                 successful = list(api_error.successful)
@@ -1047,7 +1075,7 @@ class APIClient:
             if not_found_error.successful:
                 identifiers = IdentifierSequence.of(*not_found_error.successful)
                 successful_resources = self._retrieve_multiple(
-                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers
+                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers, api_subversion=api_subversion
                 )
                 if isinstance(successful_resources, resource_cls):
                     successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
@@ -1079,8 +1107,10 @@ class APIClient:
         resource_path: str | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
     ) -> T_CogniteResourceList:
-        utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        verify_limit(limit)
+        assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
@@ -1091,6 +1121,7 @@ class APIClient:
             json={"search": search, "filter": filter, "limit": limit},
             params=params,
             headers=headers,
+            api_subversion=api_subversion,
         )
         return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
@@ -1147,7 +1178,7 @@ class APIClient:
         return {
             to_camel_case(prop.name): {"set": []} if prop.is_container else {"setNull": True}
             for prop in update_attributes
-            if prop.is_nullable
+            if prop.is_nullable and not prop.is_beta
         }
 
     @staticmethod
@@ -1165,7 +1196,7 @@ class APIClient:
             error = res.json()["error"]
             if isinstance(error, str):
                 msg = error
-            elif isinstance(error, Dict):
+            elif isinstance(error, dict):
                 msg = error["message"]
                 missing = error.get("missing")
                 duplicated = error.get("duplicated")
@@ -1191,10 +1222,10 @@ class APIClient:
 
         if res.history:
             for res_hist in res.history:
-                log.debug(
+                logger.debug(
                     f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
                 )
-        log.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
+        logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     def _log_request(self, res: Response, **kwargs: Any) -> None:
@@ -1219,7 +1250,7 @@ class APIClient:
             # If this fails, it means we are running in a browser (pyodide) with patched requests package:
             http_protocol = "XMLHTTP"
 
-        log.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
+        logger.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
 
     @staticmethod
     def _get_response_content_safe(res: Response) -> str:

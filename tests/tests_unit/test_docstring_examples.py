@@ -1,4 +1,5 @@
 import doctest
+from collections import defaultdict
 from unittest import TextTestRunner
 from unittest.mock import patch
 
@@ -19,6 +20,7 @@ from cognite.client._api import (
     sequences,
     three_d,
     time_series,
+    units,
     workflows,
 )
 from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
@@ -38,6 +40,7 @@ def run_docstring_tests(module):
 
 
 @patch("cognite.client.CogniteClient", CogniteClientMock)
+@patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
 class TestDocstringExamples:
     def test_time_series(self):
         run_docstring_tests(time_series)
@@ -71,6 +74,7 @@ class TestDocstringExamples:
     def test_iam(self):
         run_docstring_tests(iam)
 
+    @pytest.mark.dsl
     def test_sequences(self):
         run_docstring_tests(sequences)
 
@@ -93,3 +97,6 @@ class TestDocstringExamples:
 
     def test_workflows(self):
         run_docstring_tests(workflows)
+
+    def test_units(self):
+        run_docstring_tests(units)

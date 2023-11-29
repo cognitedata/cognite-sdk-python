@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
+    BoundingBox3D,
     ThreeDAssetMapping,
     ThreeDAssetMappingList,
     ThreeDModel,
@@ -17,7 +18,10 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
+from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
+from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -129,11 +133,16 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(self, name: str | Sequence[str]) -> ThreeDModel | ThreeDModelList:
+    def create(
+        self, name: str | Sequence[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
+    ) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
             name (str | Sequence[str]): The name of the 3d model(s) to create.
+            data_set_id (int | None): The id of the dataset this 3D model belongs to.
+            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
+                Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
 
         Returns:
             ThreeDModel | ThreeDModelList: The created 3d model(s).
@@ -144,14 +153,15 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.three_d.models.create(name="My Model")
+                >>> res = c.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
         """
-        utils._auxiliary.assert_type(name, "name", [str, Sequence])
+        assert_type(name, "name", [str, Sequence])
+        item_processed: dict[str, Any] | list[dict[str, Any]]
         if isinstance(name, str):
-            name_processed: dict[str, Any] | Sequence[dict[str, Any]] = {"name": name}
+            item_processed = {"name": name, "dataSetId": data_set_id, "metadata": metadata}
         else:
-            name_processed = [{"name": n} for n in name]
-        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
+            item_processed = [{"name": n, "dataSetId": data_set_id, "metadata": metadata} for n in name]
+        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
 
     def update(
         self, item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]
@@ -226,7 +236,7 @@ class ThreeDRevisionsAPI(APIClient):
         return self._list_generator(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             chunk_size=chunk_size,
             filter={"published": published},
@@ -253,7 +263,7 @@ class ThreeDRevisionsAPI(APIClient):
         """
         return self._retrieve(
             cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifier=InternalId(id),
         )
 
@@ -282,7 +292,7 @@ class ThreeDRevisionsAPI(APIClient):
         return self._create_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             items=revision,
         )
 
@@ -310,7 +320,7 @@ class ThreeDRevisionsAPI(APIClient):
         return self._list(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             filter={"published": published},
             limit=limit,
@@ -354,7 +364,7 @@ class ThreeDRevisionsAPI(APIClient):
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             update_cls=ThreeDModelRevisionUpdate,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             items=item,
         )
 
@@ -374,7 +384,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = c.three_d.revisions.delete(model_id=1, id=1)
         """
         self._delete_multiple(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
@@ -395,9 +405,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id)
         body = {"fileId": file_id}
         self._post(resource_path, json=body)
 
@@ -436,9 +444,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.list_nodes(model_id=1, revision_id=1, limit=10)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
@@ -478,9 +484,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
@@ -513,9 +517,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
-        )
+        resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
@@ -546,7 +548,7 @@ class ThreeDFilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.files.retrieve(1)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
+        path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
         return self._get(path).content
 
 
@@ -559,6 +561,7 @@ class ThreeDAssetMappingAPI(APIClient):
         revision_id: int,
         node_id: int | None = None,
         asset_id: int | None = None,
+        intersects_bounding_box: BoundingBox3D | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDAssetMappingList:
         """`List 3D node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_
@@ -568,6 +571,7 @@ class ThreeDAssetMappingAPI(APIClient):
             revision_id (int): Id of the revision.
             node_id (int | None): List only asset mappings associated with this node.
             asset_id (int | None): List only asset mappings associated with this asset.
+            intersects_bounding_box (BoundingBox3D | None): If given, only return asset mappings for assets whose bounding box intersects with the given bounding box.
             limit (int | None): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -575,19 +579,29 @@ class ThreeDAssetMappingAPI(APIClient):
 
         Example:
 
-            List 3d node asset mappings::
+            List 3d node asset mappings:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.list(model_id=1, revision_id=1)
+
+            List 3d node asset mappings for assets whose bounding box intersects with a given bounding box:
+
+                >>> from cognite.client.data_classes import BoundingBox3D
+                >>> bbox = BoundingBox3D(min=[0.0, 0.0, 0.0], max=[1.0, 1.0, 1.0])
+                >>> res = c.three_d.asset_mappings.list(
+                ...     model_id=1, revision_id=1, intersects_bounding_box=bbox)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        flt: dict[str, str | int | None] = {"nodeId": node_id, "assetId": asset_id}
+        if intersects_bounding_box:
+            flt["intersectsBoundingBox"] = json.dumps(intersects_bounding_box.dump(camel_case=True))
         return self._list(
             list_cls=ThreeDAssetMappingList,
             resource_cls=ThreeDAssetMapping,
             resource_path=path,
             method="GET",
-            filter={"nodeId": node_id, "assetId": asset_id},
+            filter=flt,
             limit=limit,
         )
 
@@ -614,7 +628,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._create_multiple(
             list_cls=ThreeDAssetMappingList, resource_cls=ThreeDAssetMapping, resource_path=path, items=asset_mapping
         )
@@ -638,17 +652,17 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> mapping_to_delete = c.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
                 >>> res = c.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
         """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
-        utils._auxiliary.assert_type(asset_mapping, "asset_mapping", [Sequence, ThreeDAssetMapping])
+        path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        assert_type(asset_mapping, "asset_mapping", [Sequence, ThreeDAssetMapping])
         if isinstance(asset_mapping, ThreeDAssetMapping):
             asset_mapping = [asset_mapping]
-        chunks = utils._auxiliary.split_into_chunks(
+        chunks = split_into_chunks(
             [ThreeDAssetMapping(a.node_id, a.asset_id).dump(camel_case=True) for a in asset_mapping], self._DELETE_LIMIT
         )
         tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
-        summary = utils._concurrency.execute_tasks(self._post, tasks, self._config.max_workers)
+        summary = execute_tasks(self._post, tasks, self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el),
+            task_unwrap_fn=unpack_items_in_payload,
+            task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping.load(el),
             str_format_element_fn=lambda el: (el.asset_id, el.node_id),
         )

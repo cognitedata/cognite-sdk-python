@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, cast, overload
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
     import pandas
@@ -40,7 +40,7 @@ class Row(CogniteResource):
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = local_import("pandas")
         return pd.DataFrame([self.columns], [self.key])
 
 
@@ -53,7 +53,7 @@ class RowList(CogniteResourceList[Row]):
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = local_import("pandas")
         return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
 
 

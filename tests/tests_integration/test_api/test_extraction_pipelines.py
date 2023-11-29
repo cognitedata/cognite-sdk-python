@@ -138,7 +138,7 @@ class TestExtractionPipelinesAPI:
             assert run.extpipe_external_id == new_extpipe.external_id
 
         # Make sure we can dump it without errors
-        dumped = res.dump()
+        dumped = res.dump(camel_case=False)
         for run in dumped:
             assert run["external_id"] == new_extpipe.external_id
 

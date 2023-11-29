@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Sequence
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformations import TransformationFilter
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -44,7 +44,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> schedules = [TransformationSchedule(id = 1, interval = "0 * * * *"), TransformationSchedule(external_id="transformation2", interval = "5 * * * *"))]
                 >>> res = c.transformations.schedules.create(schedules)
         """
-        utils._auxiliary.assert_type(schedule, "schedule", [TransformationSchedule, list])
+        assert_type(schedule, "schedule", [TransformationSchedule, list])
         return self._create_multiple(
             list_cls=TransformationScheduleList, resource_cls=TransformationSchedule, items=schedule
         )

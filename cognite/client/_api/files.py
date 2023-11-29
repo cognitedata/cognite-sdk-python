@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import os
 import warnings
+from collections import defaultdict
 from io import BufferedReader
 from pathlib import Path
 from typing import (
@@ -15,11 +16,10 @@ from typing import (
     overload,
 )
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
-    FileAggregate,
+    CountAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -30,8 +30,9 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteFileUploadError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -165,7 +166,7 @@ class FilesAPI(APIClient):
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         file_metadata = FileMetadata._load(returned_file_metadata)
-        return (file_metadata, upload_url)
+        return file_metadata, upload_url
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
@@ -232,14 +233,14 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict | None): Filter on file metadata filter with exact match
 
         Returns:
-            list[FileAggregate]: List of file aggregates
+            list[CountAggregate]: List of count aggregates
 
         Examples:
 
@@ -250,7 +251,7 @@ class FilesAPI(APIClient):
                 >>> aggregate_uploaded = c.files.aggregate(filter={"uploaded": True})
         """
 
-        return self._aggregate(filter=filter, cls=FileAggregate)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
@@ -479,9 +480,7 @@ class FilesAPI(APIClient):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
                         tasks.append((file_metadata, file_path, overwrite))
-            tasks_summary = utils._concurrency.execute_tasks(
-                self._upload_file_from_path, tasks, self._config.max_workers
-            )
+            tasks_summary = execute_tasks(self._upload_file_from_path, tasks, self._config.max_workers)
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
         raise ValueError(f"The path '{path}' does not exist")
@@ -492,7 +491,7 @@ class FilesAPI(APIClient):
             if _RUNNING_IN_BROWSER:
                 # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
                 fh = fh.read()
-            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump())
+            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
         return file_metadata
 
     def upload_bytes(
@@ -563,10 +562,17 @@ class FilesAPI(APIClient):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
+        try:
+            res = self._post(
+                url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
+            )
+        except CogniteAPIError as e:
+            if e.code == 403 and "insufficient access rights" in e.message:
+                dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
+                msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+            raise
 
-        res = self._post(
-            url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
-        )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
@@ -606,10 +612,38 @@ class FilesAPI(APIClient):
             dict(url_path="/files/downloadlink", json={"items": id_batch}, params=query_params)
             for id_batch in id_batches
         ]
-        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
         return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
+
+    @staticmethod
+    def _create_unique_file_names(file_names_in: list[str] | list[Path]) -> list[str]:
+        """
+        Create unique file names by appending a number to the base file name.
+        """
+        file_names: list[str] = [str(file_name) for file_name in file_names_in]
+        unique_original = set(file_names)
+        unique_created = []
+        original_count: defaultdict = defaultdict(int)
+
+        for file_name in file_names:
+            if file_name not in unique_created:
+                unique_created.append(file_name)
+                continue
+
+            file_suffixes = Path(file_name).suffixes
+            file_postfix = "".join(file_suffixes)
+            file_base = file_name[: file_name.index(file_postfix) or None]  # Awaiting .removesuffix in 3.9:
+
+            new_name = file_name
+            while (new_name in unique_created) or (new_name in unique_original):
+                original_count[file_name] += 1
+                new_name = f"{file_base}({original_count[file_name]}){file_postfix}"
+
+            unique_created.append(new_name)
+
+        return unique_created
 
     def download(
         self,
@@ -617,6 +651,7 @@ class FilesAPI(APIClient):
         id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
         keep_directory_structure: bool = False,
+        resolve_duplicate_file_names: bool = False,
     ) -> None:
         """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
@@ -624,6 +659,8 @@ class FilesAPI(APIClient):
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
         You can also choose to keep the directory structure from CDF so that the files will be stored in subdirectories
         matching the directory attribute on the files. When missing, the (root) directory is used.
+        By default, duplicate file names to the same local folder will be resolved by only keeping one of the files.
+        You can choose to resolve this by appending a number to the file name using the resolve_duplicate_file_names argument.
 
         Warning:
             If you are downloading several files at once, be aware that file name collisions lead to all-but-one of
@@ -635,6 +672,7 @@ class FilesAPI(APIClient):
             external_id (str | Sequence[str] | None): External ID or list of external ids.
             keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
                 creating subdirectories as needed below the given directory.
+            resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
 
         Examples:
 
@@ -655,20 +693,30 @@ class FilesAPI(APIClient):
         all_identifiers = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_identifiers)
 
+        all_ids, filepaths, directories = self._get_ids_filepaths_directories(
+            directory, id_to_metadata, keep_directory_structure
+        )
+
         if keep_directory_structure:
-            all_ids, filepaths, file_directories = self._prepare_file_hierarchy(directory, id_to_metadata)
-            self._download_files_to_directory(file_directories, all_ids, id_to_metadata, filepaths)
-        else:
-            filepaths = [
-                directory / cast(str, metadata.name)
-                for identifier, metadata in id_to_metadata.items()
-                if isinstance(identifier, int)
-            ]
-            self._download_files_to_directory(directory, all_identifiers, id_to_metadata, filepaths)
+            for file_folder in set(directories):
+                file_folder.mkdir(parents=True, exist_ok=True)
+
+        if resolve_duplicate_file_names:
+            filepaths_str = self._create_unique_file_names(filepaths)
+            filepaths = [Path(file_path) for file_path in filepaths_str]
+
+        self._download_files_to_directory(
+            directory=directory,
+            all_ids=all_ids,
+            id_to_metadata=id_to_metadata,
+            filepaths=filepaths,
+        )
 
     @staticmethod
-    def _prepare_file_hierarchy(
-        directory: Path, id_to_metadata: dict[str | int, FileMetadata]
+    def _get_ids_filepaths_directories(
+        directory: Path,
+        id_to_metadata: dict[str | int, FileMetadata],
+        keep_directory_structure: bool = False,
     ) -> tuple[list[dict[str, str | int]], list[Path], list[Path]]:
         # Note on type hint: Too much of the SDK is wrongly typed with 'dict[str, str | int]',
         # instead of 'dict[str, str] | dict[str, int]', so we pretend dict-value type can also be str:
@@ -678,16 +726,13 @@ class FilesAPI(APIClient):
             if not isinstance(identifier, int):
                 continue
             file_directory = directory
-            if metadata.directory:
+            if metadata.directory and keep_directory_structure:
                 # CDF enforces absolute, unix-style paths (i.e. always stating with '/'). We strip to make it relative:
                 file_directory /= metadata.directory[1:]
 
             ids.append({"id": identifier})
             file_directories.append(file_directory)
             filepaths.append(file_directory / cast(str, metadata.name))
-
-        for file_folder in set(file_directories):
-            file_folder.mkdir(parents=True, exist_ok=True)
 
         return ids, filepaths, file_directories
 
@@ -719,19 +764,14 @@ class FilesAPI(APIClient):
 
     def _download_files_to_directory(
         self,
-        directory: Path | Sequence[Path],
+        directory: Path,
         all_ids: Sequence[dict[str, int | str]],
         id_to_metadata: dict[str | int, FileMetadata],
         filepaths: list[Path],
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)
-        if isinstance(directory, Path):
-            tasks = [(directory, id, id_to_metadata) for id in all_ids]
-        else:
-            tasks = [(dir, id, id_to_metadata) for dir, id in zip(directory, all_ids)]
-        tasks_summary = utils._concurrency.execute_tasks(
-            self._process_file_download, tasks, max_workers=self._config.max_workers
-        )
+        tasks = [(directory, id, id_to_metadata, filepath) for id, filepath in zip(all_ids, filepaths)]
+        tasks_summary = execute_tasks(self._process_file_download, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: id_to_metadata[IdentifierSequence.unwrap_identifier(task[1])],
             str_format_element_fn=lambda metadata: metadata.id,
@@ -747,15 +787,14 @@ class FilesAPI(APIClient):
         directory: Path,
         identifier: dict[str, int | str],
         id_to_metadata: dict[str | int, FileMetadata],
+        file_path: Path,
     ) -> None:
-        id = IdentifierSequence.unwrap_identifier(identifier)
-        file_metadata = id_to_metadata[id]
-        file_path = (directory / cast(str, file_metadata.name)).resolve()
-        file_is_in_download_directory = directory.resolve() in file_path.parents
+        file_path_absolute = file_path.resolve()
+        file_is_in_download_directory = directory.resolve() in file_path_absolute.parents
         if not file_is_in_download_directory:
-            raise RuntimeError(f"Resolved file path '{file_path}' is not inside download directory")
+            raise RuntimeError(f"Resolved file path '{file_path_absolute}' is not inside download directory")
         download_link = self._get_download_link(identifier)
-        self._download_file_to_path(download_link, file_path)
+        self._download_file_to_path(download_link, file_path_absolute)
 
     def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(
@@ -783,7 +822,8 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        assert path.parent.is_dir(), f"{path.parent} is not a directory"
+        if not path.parent.is_dir():
+            raise NotADirectoryError(f"{path.parent} is not a directory")
         identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)

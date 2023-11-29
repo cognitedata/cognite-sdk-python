@@ -7,8 +7,10 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 from __future__ import annotations
 
 import itertools
+import math
 import random
 import re
+import unittest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 from typing import Literal
@@ -313,10 +315,52 @@ def parametrized_values_uniform_index_fails(testrun_uid):
         )
 
 
+@pytest.fixture(scope="module")
+def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeries:
+    timeseries = TimeSeries(
+        external_id="test_retrieve_datapoints_in_target_unit",
+        name="test_retrieve_datapoints_in_target_unit",
+        is_string=False,
+        unit_external_id="temperature:deg_c",
+    )
+    created_timeseries = cognite_client.time_series.upsert(timeseries, mode="patch")
+    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+    return created_timeseries
+
+
 class TestRetrieveRawDatapointsAPI:
     """Note: Since `retrieve` and `retrieve_arrays` endpoints should give identical results,
     except for the data container types, all tests run both endpoints.
     """
+
+    def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
+        # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
+        # non-ignorable ts would be raised in a CogniteNotFoundError.
+        ts_exists1, ts_exists2 = outside_points_ts
+        missing_xid = "nope-doesnt-exist " * 3
+
+        with set_max_workers(cognite_client, 6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+            with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'") as err:
+                cognite_client.time_series.data.retrieve(
+                    id=[
+                        ts_exists1.id,
+                        # Only id=456 should be raised from 'id':
+                        {"id": 456, "ignore_unknown_ids": False},
+                        123,
+                    ],
+                    external_id=[
+                        # Only xid on next line should be raised from 'xid':
+                        {"external_id": f"{missing_xid}1", "ignore_unknown_ids": False},
+                        ts_exists2.external_id,
+                        f"{missing_xid}2",
+                    ],
+                    ignore_unknown_ids=True,
+                )
+            assert len(err.value.not_found) == 2
+            unittest.TestCase().assertCountEqual(  # Asserts equal, but ignores ordering
+                err.value.not_found,
+                [{"id": 456}, {"external_id": f"{missing_xid}1"}],
+            )
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points_only(
@@ -375,14 +419,12 @@ class TestRetrieveRawDatapointsAPI:
 
     @pytest.mark.parametrize(
         "start, end, exp_first_ts, exp_last_ts",
-        # fmt: off
         [
-            (631670400000 + 1, 693964800000,     631670400000,           693964800000),
-            (631670400000,     693964800000,     631670400000 - WEEK_MS, 693964800000),
-            (631670400000,     693964800000 + 1, 631670400000 - WEEK_MS, 693964800000 + WEEK_MS),
-            (631670400000 + 1, 693964800000 + 1, 631670400000,           693964800000 + WEEK_MS),
+            (631670400000 + 1, 693964800000, 631670400000, 693964800000),
+            (631670400000, 693964800000, 631670400000 - WEEK_MS, 693964800000),
+            (631670400000, 693964800000 + 1, 631670400000 - WEEK_MS, 693964800000 + WEEK_MS),
+            (631670400000 + 1, 693964800000 + 1, 631670400000, 693964800000 + WEEK_MS),
         ],
-        # fmt: on
     )
     def test_retrieve_outside_points__query_chunking_mode(
         self, start, end, exp_first_ts, exp_last_ts, cognite_client, retrieve_endpoints, weekly_dps_ts
@@ -470,13 +512,13 @@ class TestRetrieveRawDatapointsAPI:
         "n_ts, ignore_unknown_ids, mock_out_eager_or_chunk, expected_raise",
         [
             (1, True, "ChunkingDpsFetcher", does_not_raise()),
-            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (3, True, "ChunkingDpsFetcher", does_not_raise()),
-            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (10, True, "EagerDpsFetcher", does_not_raise()),
-            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
             (50, True, "EagerDpsFetcher", does_not_raise()),
-            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
         ],
     )
     def test_retrieve_unknown__check_raises_or_returns_existing_only(
@@ -576,6 +618,54 @@ class TestRetrieveRawDatapointsAPI:
                     assert len(r) == 0
                     assert isinstance(r.is_step, bool)
                     assert isinstance(r.is_string, bool)
+
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        res = retrieve_method(external_id=timeseries.external_id, end=3, **kwargs)
+
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(value=res.values)
+
+        assert math.isclose(res.value[0], -40)
+        assert math.isclose(res.value[1], 32)
+        assert math.isclose(res.value[2], 212)
+
+    @pytest.mark.parametrize("retrieve_method_name", ("retrieve", "retrieve_arrays"))
+    def test_unit_external_id__is_overridden_if_converted(
+        self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries, retrieve_method_name: str
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        assert timeseries.unit_external_id == "temperature:deg_c"
+
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+        res = retrieve_method(
+            id=[
+                {"id": timeseries.id},
+                {"id": timeseries.id, "target_unit": "temperature:deg_f"},
+                {"id": timeseries.id, "target_unit": "temperature:k"},
+            ],
+            end=3,
+        )
+        # Ensure unit_external_id is unchanged (Celsius):
+        assert res[0].unit_external_id == timeseries.unit_external_id
+        # ...and ensure it has changed for converted units (Fahrenheit or Kelvin):
+        assert res[1].unit_external_id == "temperature:deg_f"
+        assert res[2].unit_external_id == "temperature:k"
 
 
 class TestRetrieveAggregateDatapointsAPI:
@@ -1031,6 +1121,30 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(id=ts_string.id)) == 2
             assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
+
+    @pytest.mark.parametrize(
+        "retrieve_method_name, kwargs",
+        itertools.product(
+            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
+            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+        ),
+    )
+    def test_retrieve_methods_in_target_unit(
+        self,
+        retrieve_method_name: str,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        res = retrieve_method(external_id=timeseries.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
+
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(max=res.values)
+
+        assert math.isclose(res.max[0], 212)
 
 
 @pytest.fixture(scope="session")

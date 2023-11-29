@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import copy
+import typing
 from typing import TYPE_CHECKING, Any, cast
-from typing import Sequence as SequenceType
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -39,7 +39,7 @@ class Relationship(CogniteResource):
         end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (int | None): The id of the dataset this relationship belongs to.
-        labels (SequenceType[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
+        labels (typing.Sequence[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
         created_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
         last_updated_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
         cognite_client (CogniteClient | None): The client to associate with this object.
@@ -60,7 +60,7 @@ class Relationship(CogniteResource):
         end_time: int | None = None,
         confidence: float | None = None,
         data_set_id: int | None = None,
-        labels: SequenceType[Label | str | LabelDefinition | dict] | None = None,
+        labels: typing.Sequence[Label | str | LabelDefinition | dict] | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         cognite_client: CogniteClient | None = None,
@@ -92,33 +92,40 @@ class Relationship(CogniteResource):
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Relationship:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Relationship:
         instance = super()._load(resource, cognite_client)
         if instance.source is not None:
-            instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
+            instance.source = instance._convert_resource(instance.source, instance.source_type, cognite_client)  # type: ignore
         if instance.target is not None:
-            instance.target = instance._convert_resource(instance.target, instance.target_type)  # type: ignore
+            instance.target = instance._convert_resource(instance.target, instance.target_type, cognite_client)  # type: ignore
         instance.labels = Label._load_list(instance.labels)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.source is not None and not isinstance(self.source, dict):
+            result["source"] = self.source.dump(camel_case)
+        if self.target is not None and not isinstance(self.target, dict):
+            result["target"] = self.target.dump(camel_case)
         return result
 
+    @staticmethod
     def _convert_resource(
-        self, resource: dict[str, Any], resource_type: str | None
-    ) -> dict[str, Any] | CogniteResource:
-        resource_map: dict[str, type[CogniteResource]] = {
-            "timeSeries": TimeSeries,
-            "asset": Asset,
-            "sequence": Sequence,
-            "file": FileMetadata,
-            "event": Event,
-        }
-        if resource_type in resource_map:
-            return resource_map[resource_type]._load(resource, self._cognite_client)
+        resource: dict[str, Any], resource_type: str | None, cognite_client: CogniteClient | None = None
+    ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
+        resource_type = resource_type.lower() if resource_type else resource_type
+        if resource_type == "timeseries":
+            return TimeSeries._load(resource, cognite_client=cognite_client)
+        if resource_type == "asset":
+            return Asset.load(resource, cognite_client=cognite_client)
+        if resource_type == "sequence":
+            return Sequence._load(resource, cognite_client=cognite_client)
+        if resource_type == "file":
+            return FileMetadata._load(resource, cognite_client=cognite_client)
+        if resource_type == "event":
+            return Event._load(resource, cognite_client=cognite_client)
         return resource
 
 
@@ -126,11 +133,11 @@ class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
-        source_external_ids (SequenceType[str] | None): Include relationships that have any of these values in their `sourceExternalId` field
-        source_types (SequenceType[str] | None): Include relationships that have any of these values in their `sourceType` field
-        target_external_ids (SequenceType[str] | None): Include relationships that have any of these values in their `targetExternalId` field
-        target_types (SequenceType[str] | None): Include relationships that have any of these values in their `targetType` field
-        data_set_ids (SequenceType[dict[str, Any]] | None): Either one of `internalId` (int) or `externalId` (str)
+        source_external_ids (typing.Sequence[str] | None): Include relationships that have any of these values in their `sourceExternalId` field
+        source_types (typing.Sequence[str] | None): Include relationships that have any of these values in their `sourceType` field
+        target_external_ids (typing.Sequence[str] | None): Include relationships that have any of these values in their `targetExternalId` field
+        target_types (typing.Sequence[str] | None): Include relationships that have any of these values in their `targetType` field
+        data_set_ids (typing.Sequence[dict[str, Any]] | None): Either one of `internalId` (int) or `externalId` (str)
         start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         confidence (dict[str, int] | None): Range to filter the field for (inclusive).
@@ -142,11 +149,11 @@ class RelationshipFilter(CogniteFilter):
 
     def __init__(
         self,
-        source_external_ids: SequenceType[str] | None = None,
-        source_types: SequenceType[str] | None = None,
-        target_external_ids: SequenceType[str] | None = None,
-        target_types: SequenceType[str] | None = None,
-        data_set_ids: SequenceType[dict[str, Any]] | None = None,
+        source_external_ids: typing.Sequence[str] | None = None,
+        source_types: typing.Sequence[str] | None = None,
+        target_external_ids: typing.Sequence[str] | None = None,
+        target_types: typing.Sequence[str] | None = None,
+        data_set_ids: typing.Sequence[dict[str, Any]] | None = None,
         start_time: dict[str, int] | None = None,
         end_time: dict[str, int] | None = None,
         confidence: dict[str, int] | None = None,
@@ -168,7 +175,7 @@ class RelationshipFilter(CogniteFilter):
         self.active_at_time = active_at_time
         self.labels = labels
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)

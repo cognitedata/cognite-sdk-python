@@ -29,9 +29,8 @@ class DiagramsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        # https://docs.cognite.com/api/playground/#operation/diagramDetect
+        # https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50
-        # https://docs.cognite.com/api/playground/#operation/diagramDetectMultipleResults
         self._DETECT_API_STATUS_JOB_LIMIT = 1000
 
     def _camel_post(

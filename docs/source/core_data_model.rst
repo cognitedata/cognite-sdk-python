@@ -22,14 +22,6 @@ Aggregate assets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
 
-Aggregate asset metadata keys
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_keys
-
-Aggregate asset metadata values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_values
-
 Aggregate Asset Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_count
@@ -154,6 +146,18 @@ Events Data classes
 
 Data points
 -----------
+.. warning::
+    TimeSeries unit support is a new feature:
+      * The API specification is in beta.
+      * The SDK implementation is in alpha.
+
+    Unit conversion is implemented in the Datapoints APIs with the parameters `target_unit` and `target_unit_system` in
+    the retrieve methods below. It is only the use of these arguments that is in alpha. Using the methods below
+    without these arguments is stable.
+
+    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
+
+
 Retrieve datapoints
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
@@ -370,6 +374,19 @@ Calculate the result of a function on time series
 
 Time series
 -----------
+
+.. warning::
+    TimeSeries unit support is a new feature:
+      * The API specification is in beta.
+      * The SDK implementation is in alpha.
+
+    Unit is implemented in the TimeSeries APIs with the parameters `unit_external_id` and `unit_quantity` in
+    the methods below. It is only the use of these arguments that is in alpha. Using the methods below
+    without these arguments is stable.
+
+    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
+
+
 Retrieve a time series by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.retrieve
@@ -507,10 +524,6 @@ Retrieve data
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
 
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
-
 Insert rows into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert
@@ -559,6 +572,10 @@ Retrieve a data point subscription by id(s)
 List data point subscriptions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list
+
+List member time series of subscription
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list_member_time_series
 
 Iterate over subscriptions data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

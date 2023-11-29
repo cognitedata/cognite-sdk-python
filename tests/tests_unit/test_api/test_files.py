@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import json
 import os
 import re
 from io import BufferedReader
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -17,18 +20,18 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.utils import jsgz_load, set_request_limit
 
 
 @pytest.fixture
-def mock_geo_location():
+def mock_geo_location() -> GeoLocation:
     geometry = Geometry(type="Point", coordinates=[35, 10])
     yield GeoLocation(type="Feature", geometry=geometry)
 
 
 @pytest.fixture
-def mock_files_response(rsps, cognite_client, mock_geo_location):
+def mock_files_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "items": [
             {
@@ -39,7 +42,7 @@ def mock_files_response(rsps, cognite_client, mock_geo_location):
                 "metadata": {"metadata-key": "metadata-value"},
                 "assetIds": [1],
                 "labels": [{"externalId": "WELL LOG"}],
-                "geoLocation": mock_geo_location,
+                "geoLocation": mock_geo_location.dump(camel_case=True),
                 "id": 1,
                 "uploaded": True,
                 "uploadedTime": 0,
@@ -58,7 +61,7 @@ def mock_files_response(rsps, cognite_client, mock_geo_location):
 
 
 @pytest.fixture
-def mock_file_upload_response(rsps, cognite_client, mock_geo_location):
+def mock_file_upload_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -67,7 +70,7 @@ def mock_file_upload_response(rsps, cognite_client, mock_geo_location):
         "metadata": {},
         "assetIds": [1],
         "labels": [{"externalId": "WELL LOG"}],
-        "geoLocation": mock_geo_location,
+        "geoLocation": mock_geo_location.dump(camel_case=True),
         "id": 1,
         "uploaded": True,
         "uploadedTime": 0,
@@ -81,7 +84,7 @@ def mock_file_upload_response(rsps, cognite_client, mock_geo_location):
 
 
 @pytest.fixture
-def mock_file_create_response(rsps, cognite_client, mock_geo_location):
+def mock_file_create_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -90,7 +93,7 @@ def mock_file_create_response(rsps, cognite_client, mock_geo_location):
         "metadata": {},
         "assetIds": [1],
         "labels": [{"externalId": "WELL LOG"}],
-        "geoLocation": mock_geo_location,
+        "geoLocation": mock_geo_location.dump(camel_case=True),
         "id": 1,
         "uploaded": False,
         "uploadedTime": 0,
@@ -108,16 +111,16 @@ def mock_file_download_response(rsps, cognite_client):
         rsps.POST,
         cognite_client.files._get_base_url_with_base_path() + "/files/byids",
         status=200,
-        json={"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]},
+        json={"items": [{"id": 1, "name": "file1"}, {"id": 10, "externalId": "2", "name": "file2"}]},
     )
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
         response = {}
-        if "id" in identifier:
+        if identifier.get("id") == 1:
             response = {"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]}
-        elif "externalId" in identifier:
-            response = {"items": [{"externalId": "2", "downloadUrl": "https://download.file2.here"}]}
+        if identifier.get("id") == 10:
+            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.file2.here"}]}
         return 200, {}, json.dumps(response)
 
     rsps.add_callback(
@@ -132,7 +135,7 @@ def mock_file_download_response(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_file_download_response_with_folder_structure(rsps, cognite_client):
+def mock_file_download_response_with_folder_structure_same_name(rsps, cognite_client):
     rsps.add(
         rsps.POST,
         cognite_client.files._get_base_url_with_base_path() + "/files/byids",
@@ -181,9 +184,9 @@ def mock_file_download_response_one_fails(rsps, cognite_client):
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
-        if "id" in identifier:
+        if identifier.get("id") == 1:
             return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
-        elif "externalId" in identifier:
+        elif identifier.get("id") == 2:
             return (400, {}, json.dumps({"error": {"message": "User error", "code": 400}}))
 
     rsps.add_callback(
@@ -201,14 +204,14 @@ class TestFilesAPI:
         file_metadata = FileMetadata(name="bla")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
 
     def test_create_with_label(self, cognite_client, mock_file_create_response):
         file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
         assert response_body["labels"][0]["externalId"] == "WELL LOG"
 
@@ -217,15 +220,15 @@ class TestFilesAPI:
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
-        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert FileMetadata.load(response_body) == returned_file_metadata
         assert all(body["labels"][0]["externalId"] == "WELL LOG" for body in [request_body, response_body])
 
     def test_create_with_geoLocation(self, cognite_client, mock_file_create_response, mock_geo_location):
         file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
-        assert FileMetadata._load(response_body) == returned_file_metadata
-        assert response_body["geoLocation"] == mock_geo_location
+        assert FileMetadata.load(response_body) == returned_file_metadata
+        assert response_body["geoLocation"] == mock_geo_location.dump(camel_case=True)
 
     def test_create_geoLocation_with_invalid_geometry_type(self):
         with pytest.raises(ValueError):
@@ -241,8 +244,10 @@ class TestFilesAPI:
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
-        assert FileMetadata._load(response_body) == returned_file_metadata
-        assert all(body["geoLocation"] == mock_geo_location for body in [request_body, response_body])
+        assert FileMetadata.load(response_body) == returned_file_metadata
+        assert all(
+            body["geoLocation"] == mock_geo_location.dump(camel_case=True) for body in [request_body, response_body]
+        )
 
     def test_retrieve_single(self, cognite_client, mock_files_response):
         res = cognite_client.files.retrieve(id=1)
@@ -415,7 +420,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload(path, name="bla", directory=dir)
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadata._load(response_body) == res
+        assert FileMetadata.load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla", "directory": dir} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
@@ -446,7 +451,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload(path=path, asset_ids=[1, 2])
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadataList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
+        assert FileMetadataList([FileMetadata.load(response_body), FileMetadata.load(response_body)]) == res
         assert 4 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
@@ -470,7 +475,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload(path=path, recursive=True, asset_ids=[1, 2])
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadataList([FileMetadata._load(response_body) for _ in range(3)]) == res
+        assert FileMetadataList([FileMetadata.load(response_body) for _ in range(3)]) == res
         assert 6 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
@@ -489,7 +494,7 @@ class TestFilesAPI:
         res = cognite_client.files.upload_bytes(content=b"content", name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadata._load(response_body) == res
+        assert FileMetadata.load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert b"content" == mock_file_upload_response.calls[1].request.body
@@ -500,7 +505,7 @@ class TestFilesAPI:
             res = cognite_client.files.upload_bytes(fh, name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
-        assert FileMetadata._load(response_body) == res
+        assert FileMetadata.load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
@@ -525,12 +530,59 @@ class TestFilesAPI:
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
 
+    @pytest.mark.parametrize(
+        "input_list,expected_output_list",
+        [
+            (["a.txt", "a.txt"], ["a.txt", "a(1).txt"]),
+            (["a.txt", "a.txt", "a(1).txt"], ["a.txt", "a(2).txt", "a(1).txt"]),
+            (["a.txt", "file", "a(1).txt", "a.txt", "file"], ["a.txt", "file", "a(1).txt", "a(2).txt", "file(1)"]),
+            (
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a.txt")),
+                ],
+                [
+                    str(Path("posixfolder/a.txt")),
+                    str(Path("posixfolder/a(1).txt")),
+                    str(Path(r"winfolder\a.txt")),
+                    str(Path(r"winfolder\a(1).txt")),
+                ],
+            ),
+            (
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch.tar.gz"))],
+                [str(Path("folder/sub.folder/arch.tar.gz")), str(Path("folder/sub.folder/arch(1).tar.gz"))],
+            ),
+        ],
+    )
+    def test_create_unique_file_names(self, cognite_client, input_list, expected_output_list):
+        assert cognite_client.files._create_unique_file_names(input_list) == expected_output_list
+
+    def test_download_with_duplicate_names(
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
+    ):
+        cognite_client.files.download(
+            directory=tmp_path,
+            id=[1],
+            external_id=["2"],
+            keep_directory_structure=False,
+            resolve_duplicate_file_names=True,
+        )
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
+        )
+        fp1 = tmp_path / "file_a"
+        fp2 = tmp_path / "file_a(1)"
+        assert fp1.is_file()
+        assert fp2.is_file()
+
     def test_download_with_folder_structure(
-        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
     ):
         cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"], keep_directory_structure=True)
         assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
-            mock_file_download_response_with_folder_structure.calls[0].request.body
+            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
         )
         fp1 = tmp_path / "rootdir/subdir/file_a"
         fp2 = tmp_path / "file_a"
@@ -609,6 +661,63 @@ class TestFilesAPI:
             FileMetadataUpdate,
         )
 
+    @pytest.mark.parametrize(
+        ["data_set_id", "api_error", "expected_error", "expected_error_message"],
+        [
+            (
+                12345,
+                CogniteAPIError(
+                    message="Resource not found. This may also be due to insufficient access rights.",
+                    code=403,
+                    x_request_id="abc123",
+                ),
+                CogniteAuthorizationError,
+                "Could not create a file due to insufficient access rights.",
+            ),
+            (
+                None,
+                CogniteAPIError(
+                    message="Resource not found. This may also be due to insufficient access rights.",
+                    code=403,
+                    x_request_id="abc123",
+                ),
+                CogniteAuthorizationError,
+                "Could not create a file due to insufficient access rights. Try to provide a data_set_id.",
+            ),
+            (
+                12345,
+                CogniteAPIError(message="Bad request.", code=400, x_request_id="abc123"),
+                CogniteAPIError,
+                "Bad request.",
+            ),
+            (
+                None,
+                CogniteAPIError(message="Bad request.", code=400, x_request_id="abc123"),
+                CogniteAPIError,
+                "Bad request.",
+            ),
+        ],
+    )
+    def test_upload_bytes_post_error(
+        self,
+        cognite_client,
+        data_set_id: int,
+        api_error: CogniteAPIError,
+        expected_error: type[CogniteAPIError],
+        expected_error_message: str,
+    ):
+        def raise_api_error(*args, **kwargs):
+            raise api_error
+
+        cognite_client.files._post = raise_api_error
+
+        with pytest.raises(expected_error) as e:
+            cognite_client.files.upload_bytes(content=b"content", name="bla", data_set_id=data_set_id)
+
+        assert e.value.message == expected_error_message
+        assert e.value.code == api_error.code
+        assert e.value.x_request_id == api_error.x_request_id
+
 
 @pytest.fixture
 def mock_files_empty(rsps, cognite_client):
@@ -637,7 +746,7 @@ class TestPandasIntegration:
     def test_file_to_pandas(self, cognite_client, mock_files_response):
         import pandas as pd
 
-        df = cognite_client.files.retrieve(id=1).to_pandas(camel_case=True)
+        df = cognite_client.files.retrieve(id=1).to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]

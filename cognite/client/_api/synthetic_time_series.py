@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
-import cognite.client.utils._time
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
+from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._importing import local_import
+from cognite.client.utils._time import timestamp_to_ms
 
 if TYPE_CHECKING:
     import sympy
@@ -74,31 +75,21 @@ class SyntheticDatapointsAPI(APIClient):
             expressions if (isinstance(expressions, Sequence) and not isinstance(expressions, str)) else [expressions]
         )
 
-        for i in range(len(expressions_to_iterate)):
-            expression, short_expression = self._build_expression(
-                expressions_to_iterate[i], variables, aggregate, granularity
-            )
-            query = {
-                "expression": expression,
-                "start": cognite.client.utils._time.timestamp_to_ms(start),
-                "end": cognite.client.utils._time.timestamp_to_ms(end),
-            }
+        for exp in expressions_to_iterate:
+            expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)
+            query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
             values: list[float] = []  # mypy
             query_datapoints = Datapoints(value=values, error=[])
             query_datapoints.external_id = short_expression
 
             tasks.append((query, query_datapoints, limit))
 
-        datapoints_summary = utils._concurrency.execute_tasks(
-            self._fetch_datapoints, tasks, max_workers=self._config.max_workers
-        )
-
-        if datapoints_summary.exceptions:
-            raise datapoints_summary.exceptions[0]
+        datapoints_summary = execute_tasks(self._fetch_datapoints, tasks, max_workers=self._config.max_workers)
+        datapoints_summary.raise_compound_exception_if_failed_tasks()
 
         return (
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
-            if isinstance(expressions, List)
+            if isinstance(expressions, list)
             else datapoints_summary.results[0]
         )
 
@@ -145,7 +136,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     @staticmethod
     def _sympy_to_sts(expression: str | sympy.Expr) -> str:
-        sympy_module = cast(Any, utils._auxiliary.local_import("sympy"))
+        sympy_module = local_import("sympy")
 
         infix_ops = {sympy_module.Add: "+", sympy_module.Mul: "*"}
         functions = {

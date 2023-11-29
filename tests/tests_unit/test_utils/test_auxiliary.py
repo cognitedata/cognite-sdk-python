@@ -8,9 +8,7 @@ from itertools import zip_longest
 import pytest
 
 from cognite.client.data_classes._base import CogniteResource
-from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import (
-    assert_type,
     exactly_one_is_not_none,
     fast_dict_load,
     find_duplicates,
@@ -18,10 +16,10 @@ from cognite.client.utils._auxiliary import (
     handle_deprecated_camel_case_argument,
     interpolate_and_url_encode,
     json_dump_default,
-    local_import,
     split_into_chunks,
     split_into_n_parts,
 )
+from cognite.client.utils._importing import local_import
 
 
 @pytest.mark.parametrize(
@@ -70,36 +68,6 @@ def test_handle_deprecated_camel_case_argument__raises(new_arg, old_arg_name, fn
     with pytest.raises(TypeError, match=re.escape(err_msg)), warnings.catch_warnings():
         warnings.simplefilter("ignore")
         handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
-
-
-class TestLocalImport:
-    @pytest.mark.dsl
-    def test_local_import_single_ok(self):
-        import pandas
-
-        assert pandas == local_import("pandas")
-
-    @pytest.mark.dsl
-    def test_local_import_multiple_ok(self):
-        import numpy
-        import pandas
-
-        assert (pandas, numpy) == local_import("pandas", "numpy")
-
-    def test_local_import_single_fail(self):
-        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
-            local_import("not-a-module")
-
-    @pytest.mark.dsl
-    def test_local_import_multiple_fail(self):
-        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
-            local_import("pandas", "not-a-module")
-
-    @pytest.mark.coredeps
-    def test_dsl_deps_not_installed(self):
-        for dep in ["geopandas", "pandas", "shapely", "sympy", "numpy"]:
-            with pytest.raises(CogniteImportError, match=dep):
-                local_import(dep)
 
 
 class TestUrlEncode:
@@ -172,17 +140,6 @@ class TestSplitIntoChunks:
         assert len(actual_output) == len(expected_output)
         for element in expected_output:
             assert element in actual_output
-
-
-class TestAssertions:
-    @pytest.mark.parametrize("var, var_name, types", [(1, "var1", [int]), ("1", "var2", [int, str])])
-    def test_assert_type_ok(self, var, var_name, types):
-        assert_type(var, var_name, types=types)
-
-    @pytest.mark.parametrize("var, var_name, types", [("1", "var", [int, float]), ((1,), "var2", [dict, list])])
-    def test_assert_type_fail(self, var, var_name, types):
-        with pytest.raises(TypeError, match=str(types)):
-            assert_type(var, var_name, types)
 
 
 class TestFindDuplicates:
@@ -286,7 +243,7 @@ class MyTestResource(CogniteResource):
         self.foo_bar_baz = foo_bar_baz
         self._cognite_client = cognite_client
 
-    def _load(*a, **kw):
+    def load(*a, **kw):
         raise NotImplementedError
 
 
