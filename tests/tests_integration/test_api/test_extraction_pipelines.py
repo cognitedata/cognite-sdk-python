@@ -11,7 +11,7 @@ from cognite.client.utils._text import random_string
 from cognite.client.utils._time import YearAligner
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def new_extpipe(cognite_client: CogniteClient):
     testid = random_string(50)
     dataset = cognite_client.data_sets.list()[0]
@@ -37,7 +37,7 @@ def new_extpipe(cognite_client: CogniteClient):
     assert cognite_client.extraction_pipelines.retrieve(extpipe.id) is None
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipeline) -> ExtractionPipelineRunList:
     now = datetime_to_ms(dt_now := datetime.now(timezone.utc))
     a_year_ago = datetime_to_ms(YearAligner.add_units(dt_now, -1))
