@@ -3,9 +3,13 @@ from __future__ import annotations
 import getpass
 import pprint
 from contextlib import suppress
+from typing import TYPE_CHECKING, Callable
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
+
+if TYPE_CHECKING:
+    from cognite.client.utils._api_usage import RequestDetails
 
 
 class GlobalConfig:
@@ -39,6 +43,7 @@ class GlobalConfig:
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
         self.proxies: dict[str, str] | None = {}
+        self.usage_tracking_callback: Callable[[RequestDetails], None] | None = None
 
 
 global_config = GlobalConfig()
