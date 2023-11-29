@@ -35,12 +35,21 @@ class Capability(ABC):
     def __post_init__(self) -> None:
         if (capability_cls := type(self)) is UnknownAcl:
             return
-        acl = capability_cls.__name__
+        try:
+            # There are so many things that may fail validation; non-enum passed, not iterable etc.
+            # We always want to show the example usage to the user.
+            self._validate()
+        except Exception as err:
+            raise ValueError(
+                f"Could not instantiate {capability_cls.__name__} due to: {err}. " + self.show_example_usage()
+            ) from err
+
+    def _validate(self) -> None:
+        acl = (capability_cls := type(self)).__name__
         if bad_actions := [a for a in self.actions if a not in capability_cls.Action]:
             full_action_examples = ", ".join(f"{acl}.Action.{action.name}" for action in capability_cls.Action)
             raise ValueError(
-                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]. "
-                + self.show_example_usage()
+                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]."
             )
         allowed_scopes, scope_names = _VALID_SCOPES_BY_CAPABILITY[capability_cls]
         if type(self.scope) in allowed_scopes or not allowed_scopes:
@@ -52,8 +61,7 @@ class Capability(ABC):
         else:
             full_scope_examples = ", ".join(f"{acl}.Scope.{name}" for name in scope_names)
             raise ValueError(
-                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]. "
-                + self.show_example_usage()
+                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]."
             )
 
     @classmethod
