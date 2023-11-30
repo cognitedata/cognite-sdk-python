@@ -255,6 +255,14 @@ class And(CompoundFilter):
 
     Args:
         *filters (Filter): The filters to combine.
+
+
+    Example:
+
+        Combine an In and an Equals filter::
+
+            >>> from cognite.client.data_classes.filters import And, Equals, In
+            >>> filter = And(Equals(("some", "property"), 42), In(("another", "property"), ["a", "b", "c"]))
     """
 
     _filter_name = "and"
@@ -266,6 +274,13 @@ class Or(CompoundFilter):
 
     Args:
         *filters (Filter): The filters to combine.
+
+    Example:
+
+        Combine an In and an Equals filter::
+
+            >>> from cognite.client.data_classes.filters import Or, Equals, In
+            >>> filter = Or(Equals(("some", "property"), 42), In(("another", "property"), ["a", "b", "c"]))
     """
 
     _filter_name = "or"
@@ -277,6 +292,13 @@ class Not(CompoundFilter):
 
     Args:
         filter (Filter): The filter to negate.
+
+    Example:
+
+        Negate an Equals filter:
+
+            >>> from cognite.client.data_classes.filters import Or, Equals
+            >>> filter = Not(Equals(("some", "property"), 42))
     """
 
     _filter_name = "not"
@@ -296,6 +318,15 @@ class Nested(Filter):
         scope (PropertyReference): The direct relation property to traverse.
         filter (Filter): The filter to apply.
 
+    Example:
+
+        Filter on a related node's property:
+
+            >>> from cognite.client.data_classes.filters import Nested, Equals
+            >>> filter = Nested(
+            ...     ("somespace", "somecontainer", "related"),
+            ...     Equals(("somespace", "somecontainer", "someProperty"), 42)
+            ... )
     """
 
     _filter_name = "nested"
@@ -310,7 +341,15 @@ class Nested(Filter):
 
 @final
 class MatchAll(Filter):
-    """A filter that matches all instances."""
+    """A filter that matches all instances.
+
+    Example:
+
+        Match everything:
+
+            >>> from cognite.client.data_classes.filters import MatchAll
+            >>> filter = MatchAll()
+    """
 
     _filter_name = "matchAll"
 
@@ -325,6 +364,13 @@ class HasData(Filter):
     Args:
         containers (Sequence[tuple[str, str] | ContainerId] | None): Containers to check for data.
         views (Sequence[tuple[str, str, str] | ViewId] | None): Views to check for data.
+
+    Example:
+
+        Filter on having data in a specific container:
+
+            >>> from cognite.client.data_classes.filters import HasData
+            >>> filter = HasData(containers=[("somespace", "somecontainer")])
     """
 
     _filter_name = "hasData"
@@ -362,6 +408,13 @@ class Range(FilterWithProperty):
         gte (FilterValue | None): Greater than or equal to.
         lt (FilterValue | None): Less than.
         lte (FilterValue | None): Less than or equal to.
+
+    Example:
+
+        Retrieve all instances with a property value greater than 42:
+
+            >>> from cognite.client.data_classes.filters import Range
+            >>> filter = Range(("some", "property"), gt=42)
     """
 
     _filter_name = "range"
@@ -405,6 +458,14 @@ class Overlaps(Filter):
         gte (FilterValue | None): Greater than or equal to.
         lt (FilterValue | None): Less than.
         lte (FilterValue | None): Less than or equal to.
+
+
+    Example:
+
+        Retrieve all instances with a range overlapping with the range (42, 100):
+
+            >>> from cognite.client.data_classes.filters import Overlaps
+            >>> filter = Overlaps(("some", "startProperty"), ("some", "endProperty"), gt=42, lt=100)
     """
 
     _filter_name = "overlaps"
@@ -449,6 +510,13 @@ class Equals(FilterWithPropertyAndValue):
     Args:
         property (PropertyReference): The property to filter on.
         value (FilterValue): The value to filter on.
+
+    Example:
+
+        Retrieve all instances where the property value equals 42:
+
+            >>> from cognite.client.data_classes.filters import Equals
+            >>> filter = Equals(("some", "property"), 42)
     """
 
     _filter_name = "equals"
@@ -461,6 +529,13 @@ class In(FilterWithPropertyAndValueList):
     Args:
         property (PropertyReference): The property to filter on.
         values (FilterValueList): The values to filter on.
+
+    Example:
+
+        Retrieve all instances where the property value equals 42 or 43:
+
+            >>> from cognite.client.data_classes.filters import In
+            >>> filter = In(("some", "property"), [42, 43])
     """
 
     _filter_name = "in"
@@ -472,6 +547,13 @@ class Exists(FilterWithProperty):
 
     Args:
         property (PropertyReference): The property to filter on.
+
+    Example:
+
+        Retrieve all instances where the property value is set:
+
+            >>> from cognite.client.data_classes.filters import Exists
+            >>> filter = Exists(("some", "property"))
     """
 
     _filter_name = "exists"
@@ -484,6 +566,13 @@ class Prefix(FilterWithPropertyAndValue):
     Args:
         property (PropertyReference): The property to filter on.
         value (FilterValue): The value to filter on.
+
+    Example:
+
+        Retrieve all instances where the property value starts with "somePrefix":
+
+            >>> from cognite.client.data_classes.filters import Prefix
+            >>> filter = Prefix(("some", "property"), "somePrefix")
     """
 
     _filter_name = "prefix"
@@ -496,6 +585,13 @@ class ContainsAny(FilterWithPropertyAndValueList):
     Args:
         property (PropertyReference): The property to filter on.
         values (FilterValueList): The value to filter on.
+
+    Example:
+
+        Retrieve all instances where the property value contains either 42 or 43:
+
+            >>> from cognite.client.data_classes.filters import ContainsAny
+            >>> filter = ContainsAny(("some", "property"), [42, 43])
     """
 
     _filter_name = "containsAny"
@@ -508,6 +604,13 @@ class ContainsAll(FilterWithPropertyAndValueList):
     Args:
         property (PropertyReference): The property to filter on.
         values (FilterValueList): The value to filter on.
+
+    Example:
+
+        Retrieve all instances where the property value contains both 42 and 43:
+
+            >>> from cognite.client.data_classes.filters import ContainsAll
+            >>> filter = ContainsAll(("some", "property"), [42, 43])
     """
 
     _filter_name = "containsAll"
