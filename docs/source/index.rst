@@ -39,7 +39,13 @@ Contents
    cognite_client
    extensions_and_optional_dependencies
    identity_and_access_management
-   core_data_model
+   data_modeling
+   assets
+   events
+   files
+   time_series
+   sequences
+   geospatial
    3d
    contextualization
    documents
@@ -47,7 +53,6 @@ Contents
    data_organization
    transformations
    functions
-   data_modeling
    workflow_orchestration
    unit_catalog
    filters
