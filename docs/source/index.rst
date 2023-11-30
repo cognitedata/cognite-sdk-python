@@ -50,6 +50,7 @@ Contents
    data_modeling
    workflow_orchestration
    unit_catalog
+   filters
    deprecated
    base_data_classes
    exceptions

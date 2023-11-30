@@ -251,16 +251,34 @@ class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
 
 @final
 class And(CompoundFilter):
+    """A filter that combines multiple filters with a logical AND.
+
+    Args:
+        *filters (Filter): The filters to combine.
+    """
+
     _filter_name = "and"
 
 
 @final
 class Or(CompoundFilter):
+    """A filter that combines multiple filters with a logical OR.
+
+    Args:
+        *filters (Filter): The filters to combine.
+    """
+
     _filter_name = "or"
 
 
 @final
 class Not(CompoundFilter):
+    """A filter that negates another filter.
+
+    Args:
+        filter (Filter): The filter to negate.
+    """
+
     _filter_name = "not"
 
     def __init__(self, filter: Filter) -> None:
@@ -272,6 +290,14 @@ class Not(CompoundFilter):
 
 @final
 class Nested(Filter):
+    """A filter to apply to the node at the other side of a direct relation.
+
+    Args:
+        scope (PropertyReference): The direct relation property to traverse.
+        filter (Filter): The filter to apply.
+
+    """
+
     _filter_name = "nested"
 
     def __init__(self, scope: PropertyReference, filter: Filter) -> None:
@@ -284,6 +310,8 @@ class Nested(Filter):
 
 @final
 class MatchAll(Filter):
+    """A filter that matches all instances."""
+
     _filter_name = "matchAll"
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
@@ -292,6 +320,13 @@ class MatchAll(Filter):
 
 @final
 class HasData(Filter):
+    """Return only instances that have data in the provided containers/views.
+
+    Args:
+        containers (Sequence[tuple[str, str] | ContainerId] | None): Containers to check for data.
+        views (Sequence[tuple[str, str, str] | ViewId] | None): Views to check for data.
+    """
+
     _filter_name = "hasData"
 
     def __init__(
@@ -319,6 +354,16 @@ class HasData(Filter):
 
 @final
 class Range(FilterWithProperty):
+    """Filters results based on a range of values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        gt (FilterValue | None): Greater than.
+        gte (FilterValue | None): Greater than or equal to.
+        lt (FilterValue | None): Less than.
+        lte (FilterValue | None): Less than or equal to.
+    """
+
     _filter_name = "range"
 
     def __init__(
@@ -350,6 +395,18 @@ class Range(FilterWithProperty):
 
 @final
 class Overlaps(Filter):
+    """Filters results based whether or not the provided range overlaps with the range given by the start and end
+    properties.
+
+    Args:
+        start_property (PropertyReference): The property to filter on.
+        end_property (PropertyReference): The property to filter on.
+        gt (FilterValue | None): Greater than.
+        gte (FilterValue | None): Greater than or equal to.
+        lt (FilterValue | None): Less than.
+        lte (FilterValue | None): Less than or equal to.
+    """
+
     _filter_name = "overlaps"
 
     def __init__(
@@ -387,31 +444,72 @@ class Overlaps(Filter):
 
 @final
 class Equals(FilterWithPropertyAndValue):
+    """Filters results based on whether the property equals the provided value.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        value (FilterValue): The value to filter on.
+    """
+
     _filter_name = "equals"
 
 
 @final
 class In(FilterWithPropertyAndValueList):
+    """Filters results based on whether the property equals one of the provided values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        values (FilterValueList): The values to filter on.
+    """
+
     _filter_name = "in"
 
 
 @final
 class Exists(FilterWithProperty):
+    """Filters results based on whether the property is set or not.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+    """
+
     _filter_name = "exists"
 
 
 @final
 class Prefix(FilterWithPropertyAndValue):
+    """Prefix filter results based on whether the (text) property starts with the provided value.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        value (FilterValue): The value to filter on.
+    """
+
     _filter_name = "prefix"
 
 
 @final
 class ContainsAny(FilterWithPropertyAndValueList):
+    """Returns results where the referenced property contains _any_ of the provided values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        values (FilterValueList): The value to filter on.
+    """
+
     _filter_name = "containsAny"
 
 
 @final
 class ContainsAll(FilterWithPropertyAndValueList):
+    """Returns results where the referenced property contains _all_ of the provided values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        values (FilterValueList): The value to filter on.
+    """
+
     _filter_name = "containsAll"
 
 
