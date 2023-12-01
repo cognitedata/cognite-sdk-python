@@ -111,6 +111,8 @@ class ClientConfig:
     def _validate_config(self) -> None:
         if not self.project:
             raise ValueError(f"Invalid value for ClientConfig.project: <{self.project}>")
+        if not self.base_url:
+            raise ValueError(f"Invalid value for ClientConfig.base_url: <{self.base_url}>")
 
     def __str__(self) -> str:
         return pprint.pformat(self.__dict__, indent=4)
