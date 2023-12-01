@@ -297,7 +297,7 @@ class Not(CompoundFilter):
 
         Negate an Equals filter:
 
-            >>> from cognite.client.data_classes.filters import Or, Equals
+            >>> from cognite.client.data_classes.filters import Equals, Not
             >>> filter = Not(Equals(("some", "property"), 42))
     """
 
