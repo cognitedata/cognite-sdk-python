@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.5.1] - 2023-12-01
+### Changed
+- Raise an exception if `ClientConfig:base_url` is set to `None` or an empty string
+
 ## [7.5.0] - 2023-11-30
 ### Added
 - `chain_to` to `NodeResultSetExpression` and `NodeResultSetExpression`, and `direction` to `NodeResultSetExpression`.
