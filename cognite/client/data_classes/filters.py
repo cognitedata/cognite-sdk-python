@@ -513,7 +513,7 @@ class Equals(FilterWithPropertyAndValue):
 
     Example:
 
-        Retrieve all instances where the property value equals 42:
+        Filter than can be used to retrieve items where the property value equals 42:
 
             >>> from cognite.client.data_classes.filters import Equals
             >>> filter = Equals(("some", "property"), 42)
@@ -532,7 +532,7 @@ class In(FilterWithPropertyAndValueList):
 
     Example:
 
-        Retrieve all instances where the property value equals 42 or 43:
+        Filter than can be used to retrieve items where the property value equals 42 or 43 (or both):
 
             >>> from cognite.client.data_classes.filters import In
             >>> filter = In(("some", "property"), [42, 43])
@@ -550,7 +550,7 @@ class Exists(FilterWithProperty):
 
     Example:
 
-        Retrieve all instances where the property value is set:
+        Filter than can be used to retrieve items where the property value is set:
 
             >>> from cognite.client.data_classes.filters import Exists
             >>> filter = Exists(("some", "property"))
@@ -569,7 +569,7 @@ class Prefix(FilterWithPropertyAndValue):
 
     Example:
 
-        Retrieve all instances where the property value starts with "somePrefix":
+        Filter than can be used to retrieve items where the property value starts with "somePrefix":
 
             >>> from cognite.client.data_classes.filters import Prefix
             >>> filter = Prefix(("some", "property"), "somePrefix")
@@ -588,7 +588,7 @@ class ContainsAny(FilterWithPropertyAndValueList):
 
     Example:
 
-        Retrieve all instances where the property value contains either 42 or 43:
+        Filter than can be used to retrieve items where the property value contains either 42 or 43:
 
             >>> from cognite.client.data_classes.filters import ContainsAny
             >>> filter = ContainsAny(("some", "property"), [42, 43])
@@ -607,7 +607,7 @@ class ContainsAll(FilterWithPropertyAndValueList):
 
     Example:
 
-        Retrieve all instances where the property value contains both 42 and 43:
+        Filter than can be used to retrieve items where the property value contains both 42 and 43:
 
             >>> from cognite.client.data_classes.filters import ContainsAll
             >>> filter = ContainsAll(("some", "property"), [42, 43])

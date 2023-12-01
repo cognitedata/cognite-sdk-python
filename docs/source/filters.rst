@@ -103,7 +103,8 @@ The `Prefix` filter checks if a string property starts with a specified prefix.
 
 Range
 ^^^^^
-The `Range` filter checks if a numeric property's value is within a specified range.
+The `Range` filter checks if a numeric property's value is within a specified range that can be
+open-ended.
 
 .. autoclass:: cognite.client.data_classes.filters.Range
     :members:
@@ -163,7 +164,7 @@ Data Modeling-Specific Filters
 ------------------------------
 HasData
 ^^^^^^^
-The `HasData` filter checks if an item has data for a given property.
+The `HasData` filter checks if an instance has data for a given property.
 
 .. autoclass:: cognite.client.data_classes.filters.HasData
     :members:
@@ -171,7 +172,7 @@ The `HasData` filter checks if an item has data for a given property.
 
 MatchAll
 ^^^^^^^^
-The `MatchAll` filter combines multiple sub-filters using a logical AND operation.
+The `MatchAll` filter matches all instances.
 
 .. autoclass:: cognite.client.data_classes.filters.MatchAll
     :members:
@@ -179,7 +180,7 @@ The `MatchAll` filter combines multiple sub-filters using a logical AND operatio
 
 Nested
 ^^^^^^
-The `Nested` filter applies a filter to a nested property.
+The `Nested` filter applies a filter to the node pointed to by a direct relation property.
 
 .. autoclass:: cognite.client.data_classes.filters.Nested
     :members:
