@@ -315,9 +315,12 @@ class TestGeospatialAPI:
                 filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
                 limit=10,
             )
-            raise pytest.fail("searching features with wrong dimensionality should raise exception")
+            pytest.fail("searching features with wrong dimensionality did not raise an exception")
         except CogniteAPIError:
             pass
+
+    def test_search_feature_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
             filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
@@ -493,9 +496,12 @@ class TestGeospatialAPI:
                 filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
             )
             _ = [x for x in stream_res]
-            raise pytest.fail("searching features with wrong dimensionality should raise exception")
+            pytest.fail("searching features with wrong dimensionality did not raise an exception")
         except CogniteAPIError:
             pass
+
+    def test_stream_features_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
         stream_res = cognite_client.geospatial.stream_features(
             feature_type_external_id=test_feature_type.external_id,
             filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},

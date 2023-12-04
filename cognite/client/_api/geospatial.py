@@ -543,7 +543,7 @@ class GeospatialAPI(APIClient):
             limit (int): Maximum number of results
             order_by (Sequence[OrderSpec] | None): The order specification
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
-            allow_dimensionality_mismatch (bool): Indicating if the spatial filter operators allow input geometries with a different dimensionality than the properties they are applied to.
+            allow_dimensionality_mismatch (bool): Indicating if the spatial filter operators allow input geometries with a different dimensionality than the properties they are applied to. Defaults to False.
 
         Returns:
             FeatureList: the filtered features
@@ -633,8 +633,8 @@ class GeospatialAPI(APIClient):
                 "limit": limit,
                 "output": {"properties": properties},
                 "sort": order,
-                "allowCrsTransformation": (True if allow_crs_transformation else None),
-                "allowDimensionalityMismatch": (True if allow_dimensionality_mismatch else None),
+                "allowCrsTransformation": allow_crs_transformation,
+                "allowDimensionalityMismatch": allow_dimensionality_mismatch,
             },
         )
         return FeatureList.load(res.json()["items"], cognite_client=self._cognite_client)
@@ -659,7 +659,7 @@ class GeospatialAPI(APIClient):
             filter (dict[str, Any] | None): the search filter
             properties (dict[str, Any] | None): the output property selection
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
-            allow_dimensionality_mismatch (bool): Indicating if the spatial filter operators allow input geometries with a different dimensionality than the properties they are applied to.
+            allow_dimensionality_mismatch (bool): Indicating if the spatial filter operators allow input geometries with a different dimensionality than the properties they are applied to. Defaults to False.
         Yields:
             Feature: a generator for the filtered features
 
@@ -694,8 +694,8 @@ class GeospatialAPI(APIClient):
         payload = {
             "filter": filter or {},
             "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"},
-            "allowCrsTransformation": "true" if allow_crs_transformation else "false",
-            "allowDimensionalityMismatch": "true" if allow_dimensionality_mismatch else "false",
+            "allowCrsTransformation": allow_crs_transformation,
+            "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
         res = self._do_request("POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True)
 
