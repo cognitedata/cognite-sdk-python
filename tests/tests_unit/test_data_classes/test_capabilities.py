@@ -249,13 +249,13 @@ class TestCapabilities:
         assert grp1.dump() == grp2.dump()
 
     def test_create_capability_forget_initializing_scope__not_supported(self):
-        with pytest.raises(ValueError, match="^DataSetsAcl got an unknown scope"):
+        with pytest.raises(ValueError, match="DataSetsAcl got an unknown scope"):
             DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=CurrentUserScope)
 
-        with pytest.raises(ValueError, match="^DataSetsAcl got an unknown scope"):
+        with pytest.raises(ValueError, match="DataSetsAcl got an unknown scope"):
             DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=GroupsAcl.Scope.CurrentUser)
 
-        with pytest.raises(ValueError, match="^ExperimentsAcl got an unknown scope"):
+        with pytest.raises(ValueError, match="ExperimentsAcl got an unknown scope"):
             ExperimentsAcl(actions=[ExperimentsAcl.Action.Use], scope=AllScope)
 
 
@@ -412,8 +412,8 @@ def test_idscopes_camel_case():
     with pytest.raises(ValueError) as err:
         Capability.load(dct)
     assert err.value.args[0].startswith(
-        "DataSetsAcl got an unknown scope: IDScopeLowerCase(ids=[2495]), expected an instance of one of: "
-        "[DataSetsAcl.Scope.All, DataSetsAcl.Scope.ID]"
+        "Could not instantiate DataSetsAcl due to: DataSetsAcl got an unknown scope: IDScopeLowerCase(ids=[2495]), "
+        "expected an instance of one of: [DataSetsAcl.Scope.All, DataSetsAcl.Scope.ID]"
     )
 
 
