@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.5.2] - 2023-12-05
+### Fixed
+- The built-in `hash` function was mistakenly stored on `WorkflowDefinitionUpsert` instances after `__init__` and has been removed.
+
 ## [7.5.1] - 2023-12-01
 ### Changed
 - Raise an exception if `ClientConfig:base_url` is set to `None` or an empty string
@@ -32,8 +36,7 @@ Changes are grouped as follows
 
 ## [7.4.1] - 2023-11-28
 ### Fixed
-- Error in logic when creating a `Transformation`. This is causing when calling `client.transformations.update`. 
-  This is now fixed. 
+- Error in validation logic when creating a `Transformation` caused many calls to `client.transformations.update` to fail.
 
 ## [7.4.0] - 2023-11-27
 ### Changed
