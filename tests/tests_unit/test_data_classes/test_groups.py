@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 
 from cognite.client.data_classes import Group, GroupList
+from cognite.client.data_classes.capabilities import DataModelInstancesAcl
 
 
 def raw_groups():
@@ -39,6 +40,10 @@ def raw_groups():
 
 
 class TestGroups:
+    def test_group_init__accept_single_acl(self) -> None:
+        acl = DataModelInstancesAcl([DataModelInstancesAcl.Action.Write], DataModelInstancesAcl.Scope.All())
+        assert Group(name="a", capabilities=acl) == Group(name="a", capabilities=[acl])
+
     @pytest.mark.parametrize("raw", list(raw_groups()))
     def test_load_dump_unknown_group(self, raw: dict[str, Any]) -> None:
         group = Group.load(raw)
