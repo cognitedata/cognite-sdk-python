@@ -263,7 +263,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 "externalId": external_id,
                 "partitions": [p.dump(camel_case=True) for p in current_partitions],
                 "limit": limit,
-                "timeoutSeconds": 5, # keep the request open until data is available, up to 5 seconds
+                "timeoutSeconds": 5,  # keep the request open until data is available
             }
             if start is not None:
                 body["initializeCursors"] = start
