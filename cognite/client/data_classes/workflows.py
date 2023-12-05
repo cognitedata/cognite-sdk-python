@@ -466,8 +466,8 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            ("callId" if camel_case else "call_id"): self.call_id,
-            ("functionId" if camel_case else "function_id"): self.function_id,
+            "callId" if camel_case else "call_id": self.call_id,
+            "functionId" if camel_case else "function_id": self.function_id,
             "response": self.response,
         }
 
@@ -629,7 +629,6 @@ class WorkflowDefinitionUpsert(CogniteResource):
         tasks: list[WorkflowTask],
         description: str | None,
     ) -> None:
-        self.hash = hash
         self.tasks = tasks
         self.description = description
 
