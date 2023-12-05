@@ -580,6 +580,14 @@ class GeospatialAPI(APIClient):
                 ...     properties={"temperature": {}, "pressure": {}}
                 ... )
 
+            Search for features and do CRS conversion on an output property:
+
+                >>> res = c.geospatial.search_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     filter={},
+                ...     properties={"location": {"srid": 3995}}
+                ... )
+
             Search for features and order results:
 
                 >>> res = c.geospatial.search_features(
@@ -660,6 +668,7 @@ class GeospatialAPI(APIClient):
             properties (dict[str, Any] | None): the output property selection
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
             allow_dimensionality_mismatch (bool): Indicating if the spatial filter operators allow input geometries with a different dimensionality than the properties they are applied to. Defaults to False.
+
         Yields:
             Feature: a generator for the filtered features
 

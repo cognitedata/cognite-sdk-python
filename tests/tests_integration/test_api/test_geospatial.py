@@ -309,15 +309,12 @@ class TestGeospatialAPI:
         )
         assert res[0].external_id == test_feature.external_id
 
-        try:
+        with pytest.raises(CogniteAPIError):
             res = cognite_client.geospatial.search_features(
                 feature_type_external_id=test_feature_type.external_id,
                 filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
                 limit=10,
             )
-            pytest.fail("searching features with wrong dimensionality did not raise an exception")
-        except CogniteAPIError:
-            pass
 
     def test_search_feature_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
         polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
@@ -366,15 +363,12 @@ class TestGeospatialAPI:
         assert res[0].external_id == test_feature.external_id
 
     def test_search_wrong_crs(self, cognite_client, test_feature_type, test_feature):
-        try:
+        with pytest.raises(CogniteAPIError):
             cognite_client.geospatial.search_features(
                 feature_type_external_id=test_feature_type.external_id,
                 filter={"stWithin": {"property": "location", "value": {"wkt": "", "srid": 3857}}},
                 limit=10,
             )
-            raise pytest.fail("searching features using a geometry in invalid crs should have raised an exception")
-        except CogniteAPIError:
-            pass
 
     def test_get_coordinate_reference_system(self, cognite_client):
         res = cognite_client.geospatial.get_coordinate_reference_systems(srids=4326)
@@ -490,15 +484,12 @@ class TestGeospatialAPI:
         res = [x for x in stream_res]
         assert res[0].external_id == test_feature.external_id
 
-        try:
+        with pytest.raises(CogniteAPIError):
             stream_res = cognite_client.geospatial.stream_features(
                 feature_type_external_id=test_feature_type.external_id,
                 filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
             )
             _ = [x for x in stream_res]
-            pytest.fail("searching features with wrong dimensionality did not raise an exception")
-        except CogniteAPIError:
-            pass
 
     def test_stream_features_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
         polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
