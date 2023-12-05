@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.7.0] - 2023-12-20
+### Added
+- Support for `ViewProperty` type `ReverseSingleHopConnection` in data modeling.
+
 ## [7.6.0] - 2023-12-13
 ### Added
 - Support for querying data models through graphql. See `client.data_modeling.graphql.query`.
