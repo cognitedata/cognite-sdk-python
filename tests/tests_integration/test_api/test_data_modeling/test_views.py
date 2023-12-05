@@ -14,6 +14,7 @@ from cognite.client.data_classes.data_modeling import (
     DirectRelation,
     DirectRelationReference,
     MappedPropertyApply,
+    PropertyId,
     Space,
     Text,
     View,
@@ -21,7 +22,10 @@ from cognite.client.data_classes.data_modeling import (
     ViewId,
     ViewList,
 )
-from cognite.client.data_classes.data_modeling.views import SingleHopConnectionDefinitionApply
+from cognite.client.data_classes.data_modeling.views import (
+    ReverseSingleHopConnectionApply,
+    SingleHopConnectionDefinitionApply,
+)
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -38,6 +42,11 @@ def person_view(movie_views: ViewList) -> View:
 @pytest.fixture()
 def movie_view(movie_views: ViewList) -> View:
     return cast(View, movie_views.get(external_id="Movie"))
+
+
+@pytest.fixture()
+def actor_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Actor"))
 
 
 class TestViewsAPI:
@@ -262,7 +271,7 @@ class TestViewsAPI:
             space=integration_test_space.space,
             external_id="Critic",
             version="v1",
-            description="This i a test view, and should not persist.",
+            description="This is a test view, and should not persist.",
             name="Critic",
             properties={
                 "name": MappedPropertyApply(
@@ -308,3 +317,32 @@ class TestViewsAPI:
             # Cleanup
             cognite_client.data_modeling.views.delete(new_view.as_id())
             cognite_client.data_modeling.containers.delete(new_container.as_id())
+
+    def test_apply_view_with_reverse_direct_relation(
+        self, cognite_client: CogniteClient, integration_test_space: Space, person_view: View, actor_view: View
+    ) -> None:
+        new_view = ViewApply(
+            space=integration_test_space.space,
+            external_id="Critic",
+            version="v3",
+            description="This is a test view, and should not persist.",
+            name="Critic",
+            properties={
+                "persons": ReverseSingleHopConnectionApply(
+                    source=person_view.as_id(),
+                    name="Person",
+                    through=PropertyId(source=actor_view.as_id(), property="person"),
+                    connection_type="single_reverse_direct_relation",
+                )
+            },
+        )
+
+        try:
+            # Act
+            created_view = cognite_client.data_modeling.views.apply(new_view)
+
+            # Assert
+            assert created_view.created_time
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.views.delete(new_view.as_id())

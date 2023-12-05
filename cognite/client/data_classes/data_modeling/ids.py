@@ -145,20 +145,20 @@ class ViewId(VersionedDataModelingId):
 
 
 @dataclass(frozen=True)
-class ViewPropertyId(CogniteObject):
-    view_id: ViewId
+class PropertyId(CogniteObject):
+    source: ViewId | ContainerId
     property: str
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            view_id=ViewId.load(resource["source"]),
+            source=ViewId.load(resource["source"]),
             property=resource["identifier"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            "source": self.view_id.dump(camel_case=camel_case, include_type=True),
+            "source": self.source.dump(camel_case=camel_case, include_type=True),
             "identifier": self.property,
         }
 

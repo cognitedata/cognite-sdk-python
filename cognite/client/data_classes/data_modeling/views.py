@@ -18,7 +18,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     PropertyType,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId, ViewPropertyId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_snake_case
 
@@ -480,7 +480,7 @@ class ReverseSingleHopConnection(ConnectionDefinition):
     Args:
         source (ViewId): The node(s) containing the direct relation property can be read through
             the view specified in 'source'.
-        through (ViewPropertyId): The view or container of the node containing the direct relation property.
+        through (PropertyId): The view or container of the node containing the direct relation property.
         connection_type (Literal["single_reverse_direct_relation", "multi_reverse_direct_relation"]):
             The type of connection. The single_reverse_direct_relation type is used to indicate that only a
             single direct relation is expected to exist. The multi_reverse_direct_relation type is used to
@@ -491,7 +491,7 @@ class ReverseSingleHopConnection(ConnectionDefinition):
     """
 
     source: ViewId
-    through: ViewPropertyId
+    through: PropertyId
     connection_type: Literal["single_reverse_direct_relation", "multi_reverse_direct_relation"]
     name: str | None = None
     description: str | None = None
@@ -500,7 +500,7 @@ class ReverseSingleHopConnection(ConnectionDefinition):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             source=ViewId.load(resource["source"]),
-            through=ViewPropertyId.load(resource["through"]),
+            through=PropertyId.load(resource["through"]),
             connection_type=resource["connectionType"],
             name=resource.get("name"),
             description=resource.get("description"),
@@ -602,7 +602,7 @@ class ReverseSingleHopConnectionApply(ConnectionDefinitionApply):
     Args:
         source (ViewId): The node(s) containing the direct relation property can be read through
             the view specified in 'source'.
-        through (ViewPropertyId): The view or container of the node containing the direct relation property.
+        through (PropertyId): The view or container of the node containing the direct relation property.
         connection_type (Literal["single_reverse_direct_relation", "multi_reverse_direct_relation"]):
             The type of connection. The single_reverse_direct_relation type is used to indicate that only a
             single direct relation is expected to exist. The multi_reverse_direct_relation type is used to
@@ -613,7 +613,7 @@ class ReverseSingleHopConnectionApply(ConnectionDefinitionApply):
     """
 
     source: ViewId
-    through: ViewPropertyId
+    through: PropertyId
     connection_type: Literal["single_reverse_direct_relation", "multi_reverse_direct_relation"]
     name: str | None = None
     description: str | None = None
@@ -622,7 +622,7 @@ class ReverseSingleHopConnectionApply(ConnectionDefinitionApply):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             source=ViewId.load(resource["source"]),
-            through=ViewPropertyId.load(resource["through"]),
+            through=PropertyId.load(resource["through"]),
             connection_type=resource["connectionType"],
             name=resource.get("name"),
             description=resource.get("description"),
