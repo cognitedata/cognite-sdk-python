@@ -418,6 +418,27 @@ class ConnectionDefinition(ViewProperty, ABC):
 
 @dataclass
 class SingleHopConnectionDefinition(ConnectionDefinition):
+    """Describes the edge(s) that are likely to exist to aid in discovery and documentation of the view.
+    A listed edge is not required. i.e. It does not have to exist when included in this list.
+    A connection has a max distance of one hop.
+
+    It is called 'EdgeConnection' in the API spec.
+
+    Args:
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
+            consists of a space and an external-id.
+        source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
+        name (str | None): Readable property name.
+        description (str | None): Description of the content and suggested use for this property.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
+            'edgeSource'.
+        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
+            indicate that the edge points from the source to the target. The inward direction is used to indicate
+            that the edge points from the target to the source.
+        connection_type (Literal["single_edge_connection", "multi_edge_connection"]): The type of connection,
+            either a single or multi edge connections are expected to exist.
+    """
+
     type: DirectRelationReference
     source: ViewId
     name: str | None = None
@@ -549,6 +570,27 @@ T_ConnectionDefinitionApply = TypeVar("T_ConnectionDefinitionApply", bound=Conne
 
 @dataclass
 class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
+    """Describes the edge(s) that are likely to exist to aid in discovery and documentation of the view.
+    A listed edge is not required. i.e. It does not have to exist when included in this list.
+    A connection has a max distance of one hop.
+
+    It is called 'EdgeConnection' in the API spec.
+
+    Args:
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
+            consists of a space and an external-id.
+        source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
+        name (str | None): Readable property name.
+        description (str | None): Description of the content and suggested use for this property.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
+            'edgeSource'.
+        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
+            indicate that the edge points from the source to the target. The inward direction is used to indicate
+            that the edge points from the target to the source.
+        connection_type (Literal["single_edge_connection", "multi_edge_connection"]): The type of connection,
+            either a single or multi edge connections are expected to exist.
+    """
+
     type: DirectRelationReference
     source: ViewId
     name: str | None = None
