@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
 
+from typing_extensions import Self
+
+from cognite.client.data_classes._base import CogniteObject
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 from cognite.client.utils.useful_types import SequenceNotStr
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass(frozen=True)
@@ -136,6 +142,25 @@ class ViewId(VersionedDataModelingId):
 
     def as_property_ref(self, property: str) -> tuple[str, ...]:
         return (self.space, self.as_source_identifier(), property)
+
+
+@dataclass(frozen=True)
+class ViewPropertyId(CogniteObject):
+    view_id: ViewId
+    property: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            view_id=ViewId.load(resource["source"]),
+            property=resource["identifier"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "source": self.view_id.dump(camel_case=camel_case, include_type=True),
+            "identifier": self.property,
+        }
 
 
 @dataclass(frozen=True)
