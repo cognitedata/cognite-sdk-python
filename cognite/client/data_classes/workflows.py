@@ -117,7 +117,7 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return CDFTaskParameters._load(parameters)
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
-        elif type == "subworkflow":
+        elif type_ == "subworkflow":
             return SubworkflowTaskParameters._load(parameters)
         else:
             raise ValueError(
