@@ -579,7 +579,7 @@ class APIClient:
             return retrieved_items
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = execute_tasks(get_partition, tasks, max_workers=partitions, fail_fast=True)
+        tasks_summary = execute_tasks(get_partition, tasks, max_workers=self._config.max_workers, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
