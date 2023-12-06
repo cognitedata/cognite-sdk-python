@@ -816,7 +816,13 @@ class APIClient:
             if isinstance(el, CogniteResource):
                 dumped = el.dump()
                 if "external_id" in dumped:
+                    if "space" in dumped:
+                        return f"{dumped['space']}:{dumped['external_id']}"
                     return dumped["external_id"]
+                if "externalId" in dumped:
+                    if "space" in dumped:
+                        return f"{dumped['space']}:{dumped['externalId']}"
+                    return dumped["externalId"]
                 return dumped
             return el
 

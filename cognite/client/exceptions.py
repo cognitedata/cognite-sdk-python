@@ -94,15 +94,22 @@ class CogniteMultiException(CogniteException):
     def _unwrap_list(self, lst: list) -> list:
         return [self._unwrap_fn(elem) for elem in lst]
 
+    def _truncate_elements(self, lst: list) -> str:
+        truncate_at = 10
+        elements = ",".join([str(element) for element in lst[:truncate_at]])
+        if len(elements) > truncate_at:
+            elements += ", ..."
+        return f"[{elements}]"
+
     def _get_multi_exception_summary(self) -> str:
         if len(self.successful) == 0 and len(self.unknown) == 0 and len(self.failed) == 0 and len(self.skipped) == 0:
             return ""
         summary = [
             "",  # start string with newline
             "The API Failed to process some items.",
-            f"Successful (2xx): {self._unwrap_list(self.successful)}",
-            f"Unknown (5xx): {self._unwrap_list(self.unknown)}",
-            f"Failed (4xx): {self._unwrap_list(self.failed)}",
+            f"Successful (2xx): {self._truncate_elements(self._unwrap_list(self.successful))}",
+            f"Unknown (5xx): {self._truncate_elements(self._unwrap_list(self.unknown))}",
+            f"Failed (4xx): {self._truncate_elements(self._unwrap_list(self.failed))}",
         ]
         # Only show 'skipped' when tasks were skipped to avoid confusion:
         if skipped := self._unwrap_list(self.skipped):
@@ -175,9 +182,9 @@ class CogniteAPIError(CogniteMultiException):
     def __str__(self) -> str:
         msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
         if self.missing:
-            msg += f"\nMissing: {self.missing}"
+            msg += f"\nMissing: {self._truncate_elements(self.missing)}"
         if self.duplicated:
-            msg += f"\nDuplicated: {self.duplicated}"
+            msg += f"\nDuplicated: {self._truncate_elements(self.duplicated)}"
         msg += self._get_multi_exception_summary()
         if self.extra:
             pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
