@@ -27,7 +27,7 @@ class GlobalConfig:
             Defaults to 50.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
         proxies (Dict[str, str]): Dictionary mapping from protocol to url. e.g. {"https": "http://10.10.1.10:1080"}
-        max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 10.
+        max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
     """
 
     def __init__(self) -> None:
@@ -41,7 +41,7 @@ class GlobalConfig:
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
         self.proxies: dict[str, str] | None = {}
-        self.max_workers: int = 10
+        self.max_workers: int = 5
 
 
 global_config = GlobalConfig()
@@ -56,8 +56,8 @@ class ClientConfig:
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str | None): API subversion
         base_url (str | None): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        max_workers (int | None): DEPRECATED. use global_config.max_workers instead.
-            Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
+        max_workers (int | None): DEPRECATED. Use global_config.max_workers instead.
+            Max number of workers to spawn when parallelizing data fetching. Defaults to 5.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 30 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
