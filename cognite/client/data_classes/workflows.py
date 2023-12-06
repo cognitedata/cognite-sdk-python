@@ -96,8 +96,11 @@ class WorkflowList(CogniteResourceList[Workflow]):
         return [workflow.external_id for workflow in self.data]
 
 
+ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow"]
+
+
 class WorkflowTaskParameters(CogniteObject, ABC):
-    task_type: ClassVar[Literal["function", "transformation", "cdf", "dynamic", "subworkflow"]]
+    task_type: ClassVar[ValidTaskType]
 
     @classmethod
     def load_parameters(cls, data: dict) -> WorkflowTaskParameters:
@@ -120,9 +123,7 @@ class WorkflowTaskParameters(CogniteObject, ABC):
         elif type_ == "subworkflow":
             return SubworkflowTaskParameters._load(parameters)
         else:
-            raise ValueError(
-                f"Unknown task type: {type_}. Expected 'function', 'transformation', 'cdf, 'dynamic' or 'subworkflow'"
-            )
+            raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -413,7 +414,7 @@ class WorkflowTask(CogniteResource):
         self.depends_on = depends_on
 
     @property
-    def type(self) -> Literal["function", "transformation", "cdf", "dynamic", "subworkflow"]:
+    def type(self) -> ValidTaskType:
         return self.parameters.task_type
 
     @classmethod
@@ -634,7 +635,7 @@ class WorkflowTaskExecution(CogniteObject):
         self.reason_for_incompletion = reason_for_incompletion
 
     @property
-    def task_type(self) -> Literal["function", "transformation", "cdf", "dynamic", "subworkflow"]:
+    def task_type(self) -> ValidTaskType:
         return self.input.task_type
 
     @classmethod
