@@ -416,11 +416,9 @@ class APIClient:
         resource_path = resource_path or self._RESOURCE_PATH
         total_items_retrieved = 0
         current_limit = self._LIST_LIMIT
-        if chunk_size and chunk_size <= self._LIST_LIMIT:
-            current_limit = chunk_size
         next_cursor = initial_cursor
         filter = filter or {}
-        current_items = []
+        unprocessed_items = []
         while True:
             if limit:
                 num_of_remaining_items = limit - total_items_retrieved
@@ -463,16 +461,20 @@ class APIClient:
                 for item in last_received_items:
                     yield resource_cls._load(item, cognite_client=self._cognite_client)
             else:
-                current_items.extend(last_received_items)
-                if len(current_items) >= chunk_size:
-                    items_to_yield = current_items[:chunk_size]
-                    current_items = current_items[chunk_size:]
-                    yield list_cls._load(items_to_yield, cognite_client=self._cognite_client)
+                unprocessed_items.extend(last_received_items)
+                if len(unprocessed_items) >= chunk_size:
+                    chunks = split_into_chunks(unprocessed_items, chunk_size)
+                    if chunks and len(chunks[-1]) < chunk_size:
+                        unprocessed_items = chunks.pop(-1)
+                    else:
+                        unprocessed_items = []
+                    for chunk in chunks:
+                        yield list_cls._load(chunk, cognite_client=self._cognite_client)
 
             next_cursor = res.json().get("nextCursor")
             if total_items_retrieved == limit or next_cursor is None:
-                if chunk_size and current_items:
-                    yield list_cls._load(current_items, cognite_client=self._cognite_client)
+                if chunk_size and unprocessed_items:
+                    yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
                 break
 
     def _list(
