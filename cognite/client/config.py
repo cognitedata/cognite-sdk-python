@@ -41,7 +41,7 @@ class GlobalConfig:
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
         self.proxies: dict[str, str] | None = {}
-        self.max_workers: int = 5
+        self.max_workers: int = 10
 
 
 global_config = GlobalConfig()
