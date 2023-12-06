@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import getpass
 import pprint
+import warnings
 from contextlib import suppress
 
 from cognite.client._version import __api_subversion__
@@ -26,6 +27,7 @@ class GlobalConfig:
             Defaults to 50.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
         proxies (Dict[str, str]): Dictionary mapping from protocol to url. e.g. {"https": "http://10.10.1.10:1080"}
+        max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 10.
     """
 
     def __init__(self) -> None:
@@ -39,6 +41,7 @@ class GlobalConfig:
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
         self.proxies: dict[str, str] | None = {}
+        self.max_workers: int = 10
 
 
 global_config = GlobalConfig()
@@ -53,7 +56,8 @@ class ClientConfig:
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str | None): API subversion
         base_url (str | None): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        max_workers (int | None): Max number of workers to spawn when parallelizing data fetching. Defaults to 10. Can not be changed after your first API call.
+        max_workers (int | None): DEPRECATED. use global_config.max_workers instead.
+            Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 30 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
@@ -78,7 +82,13 @@ class ClientConfig:
         self.credentials = credentials
         self.api_subversion = api_subversion or __api_subversion__
         self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
-        self.max_workers = max_workers if max_workers is not None else 10
+        if max_workers is not None:
+            # TODO: Remove max_workers from ClientConfig in next major version
+            warnings.warn(
+                "Passing max_workers to ClientConfig is deprecated. Please use global_config.max_workers instead",
+                DeprecationWarning,
+            )
+        self.max_workers = max_workers if max_workers is not None else global_config.max_workers
         self.headers = headers or {}
         self.timeout = timeout or 30
         self.file_transfer_timeout = file_transfer_timeout or 600
