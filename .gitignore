@@ -58,3 +58,4 @@ scripts/local_client.py
 playground.py
 scripts/tmp/
 my_file.txt
+.venv/

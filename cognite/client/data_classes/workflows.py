@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
@@ -158,7 +157,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             ...             "workflow_data": "${workflow.input}",
             ...             "task1_input": "${task1.input}",
             ...             "task1_output": "${task1.output}"
-            ...             },
+            ...         },
             ...     ),
             ... )
     """
@@ -313,7 +312,6 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
 
     @classmethod
     def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
         return cls(
@@ -504,8 +502,8 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            ("callId" if camel_case else "call_id"): self.call_id,
-            ("functionId" if camel_case else "function_id"): self.function_id,
+            "callId" if camel_case else "call_id": self.call_id,
+            "functionId" if camel_case else "function_id": self.function_id,
             "response": self.response,
         }
 
@@ -685,7 +683,6 @@ class WorkflowDefinitionUpsert(CogniteResource):
         tasks: list[WorkflowTask],
         description: str | None,
     ) -> None:
-        self.hash = hash
         self.tasks = tasks
         self.description = description
 

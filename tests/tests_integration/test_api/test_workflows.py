@@ -278,7 +278,7 @@ class TestWorkflowVersions:
 
             assert created_version.workflow_external_id == version.workflow_external_id
             assert created_version.workflow_definition.description == version.workflow_definition.description
-            assert created_version.workflow_definition.hash is not None
+            assert isinstance(created_version.workflow_definition.hash_, str)
         finally:
             if created_version is not None:
                 cognite_client.workflows.versions.delete(

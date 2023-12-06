@@ -585,8 +585,9 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
                 >>> c = CogniteClient()
                 >>>
-                >>> column_def = [SequenceColumn(value_type ="String",external_id="user", description ="some description"),
-                ...              SequenceColumn(value_type="Double", external_id="amount")]
+                >>> column_def = [
+                ...     SequenceColumn(value_type ="String",external_id="user", description ="some description"),
+                ...     SequenceColumn(value_type="Double", external_id="amount")]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = c.sequences.update(my_update)
 
@@ -732,12 +733,11 @@ class SequencesAPI(APIClient):
             return them sorted by created time:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_asset = f.Equals("asset_id", 123)
-                >>> is_efficiency = f.Equals(["metadata", "type"], "efficiency")
-                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficiency), sort="created_time")
+                >>> asset_filter = flt.Equals("asset_id", 123)
+                >>> is_efficiency = flt.Equals(["metadata", "type"], "efficiency")
+                >>> res = c.time_series.filter(filter=flt.And(asset_filter, is_efficiency), sort="created_time")
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -746,14 +746,14 @@ class SequencesAPI(APIClient):
             for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_asset = f.Equals(SequenceProperty.asset_id, 123)
-                >>> is_efficiency = f.Equals(SequenceProperty.metadata_key("type"), "efficiency")
-                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficiency),
-                ...                            sort=SortableSequenceProperty.created_time)
+                >>> asset_filter = flt.Equals(SequenceProperty.asset_id, 123)
+                >>> is_efficiency = flt.Equals(SequenceProperty.metadata_key("type"), "efficiency")
+                >>> res = c.time_series.filter(
+                ...     filter=flt.And(asset_filter, is_efficiency),
+                ...     sort=SortableSequenceProperty.created_time)
 
         """
         self._validate_filter(filter)

@@ -308,12 +308,12 @@ class FakeCogniteResourceGenerator:
             # DataPointSubscriptionCreate requires either timeseries_ids or filter
             keyword_arguments.pop("filter", None)
         if resource_cls is Query:
-            # keys in with must match keys in select
-            selects = list(keyword_arguments["select"].values())
-            new_selects = {}
-            for i, key in enumerate(keyword_arguments["with_"]):
-                new_selects[key] = selects[i]
-            keyword_arguments["select"] = new_selects
+            # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
+            # by making sure that the list of equal length, so we make both to length 1.
+            with_key, with_value = next(iter(keyword_arguments["with_"].items()))
+            select_value = next(iter(keyword_arguments["select"].values()))
+            keyword_arguments["with_"] = {with_key: with_value}
+            keyword_arguments["select"] = {with_key: select_value}
         elif resource_cls is Relationship:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
@@ -347,8 +347,8 @@ class FakeCogniteResourceGenerator:
             # schedule and jobs must match external id and id
             keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
             keyword_arguments["schedule"].id = keyword_arguments["id"]
-            keyword_arguments["running_job"].id = keyword_arguments["id"]
-            keyword_arguments["last_finished_job"].id = keyword_arguments["id"]
+            keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
+            keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:

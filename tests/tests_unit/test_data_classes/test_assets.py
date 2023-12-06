@@ -6,7 +6,7 @@ import textwrap
 import time
 from contextlib import redirect_stdout
 from pathlib import Path
-from unittest import mock
+from unittest import TestCase, mock
 from unittest.mock import call
 
 import pytest
@@ -127,7 +127,7 @@ class TestAssetList:
 
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]
-        assert expected == resources
+        TestCase().assertCountEqual(expected, resources)  # Asserts equal, but ignores ordering
 
     @pytest.mark.dsl
     def test_to_pandas_nullable_int(self, cognite_client):

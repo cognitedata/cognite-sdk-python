@@ -17,9 +17,34 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
  
-## [7.3.4] - 2023-11-22
+## [7.5.3] - 2023-12-06
 ### Added
 - Support for `subworkflow` tasks in `workflows`.
+
+## [7.5.2] - 2023-12-05
+### Fixed
+- The built-in `hash` function was mistakenly stored on `WorkflowDefinitionUpsert` instances after `__init__` and has been removed.
+
+## [7.5.1] - 2023-12-01
+### Changed
+- Raise an exception if `ClientConfig:base_url` is set to `None` or an empty string
+
+## [7.5.0] - 2023-11-30
+### Added
+- `chain_to` to `NodeResultSetExpression` and `NodeResultSetExpression`, and `direction` to `NodeResultSetExpression`.
+
+## [7.4.2] - 2023-11-28
+### Improved
+- Quality of life improvement to `client.extraction_pipelines.runs.list` method. The `statuses` parameter now accepts
+  a single value and the annotation is improved. The parameter `created_time` can now be given on the format `12d-ago`.
+
+## [7.4.1] - 2023-11-28
+### Fixed
+- Error in validation logic when creating a `Transformation` caused many calls to `client.transformations.update` to fail.
+
+## [7.4.0] - 2023-11-27
+### Changed
+- Unit Catalog API is out of beta and will no longer issue warnings on usage. Access is unchanged: `client.units`.
 
 ## [7.3.3] - 2023-11-22
 ### Fixed
@@ -75,7 +100,7 @@ Changes are grouped as follows
 This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example,
 `my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump`
-methods are `json` and `yaml` serializable.
+methods are `json` and `yaml` serializable. Additionally, the default for `camel_case` has been changed to `True`.
 
 ### Improved
 - Read operations, like `retrieve_multiple` will now fast-fail. Previously, all requests would be executed
@@ -97,6 +122,8 @@ methods are `json` and `yaml` serializable.
   and replaced by properties with the same names.
 
 ### Changed
+- All `.dump` methods now uses `camel_case=True` by default. This is to match the intended use case, preparing the
+  object to be sent in an API request.
 - `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
 `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
 with no easy way to add a prefix. Also, it no longer expands metadata by default.

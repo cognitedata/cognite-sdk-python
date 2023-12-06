@@ -20,11 +20,12 @@ class Group(CogniteResource):
     Args:
         name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability] | None): No description.
-        id (int | None): No description.
+        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        id (int | None): A server-generated ID for the object.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
-        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value. Limits:
+        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value.
+            Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -42,6 +43,8 @@ class Group(CogniteResource):
         self.name = name
         self.source_id = source_id
         self.capabilities = capabilities
+        if isinstance(self.capabilities, Capability):
+            self.capabilities = [capabilities]
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time

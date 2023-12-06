@@ -728,10 +728,9 @@ class TimeSeriesAPI(APIClient):
             Find all numeric time series and return them sorted by external id:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.filters import Equals
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_numeric = f.Equals("is_string", False)
+                >>> is_numeric = Equals("is_string", False)
                 >>> res = c.time_series.filter(filter=is_numeric, sort="external_id")
 
             Note that you can check the API documentation above to see which properties you can filter on
@@ -741,11 +740,10 @@ class TimeSeriesAPI(APIClient):
             for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.filters import Equals
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
+                >>> is_numeric = Equals(TimeSeriesProperty.is_string, False)
                 >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
         self._validate_filter(filter)
