@@ -654,7 +654,13 @@ in beta and thus we reserve the right to break it without bumping the major vers
 
 ## [6.6.1] - 2023-07-07
 ### Improved
-- Documentation for entity matching
+- Added convenience function to instantiate a `CogniteClient.default(...)` to save the users from typing the
+  default URLs.
+
+## [6.6.0] - 2023-07-06
+### Fixed
+- Support for query and sync endpoints across instances in the Data Modeling API with the implementation
+  `client.data_modeling.instances`, the methods `query` and `sync`.
 
 ## [6.5.8] - 2023-06-30
 ### Fixed
@@ -663,21 +669,21 @@ in beta and thus we reserve the right to break it without bumping the major vers
 
 ## [6.5.7] - 2023-06-29
 ### Fixed
-- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)` 
-  trigger a 400 response from the API. 
+- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)`
+  trigger a 400 response from the API.
 
 ## [6.5.6] - 2023-06-29
 ### Fixed
-- A bug causing `ClientConfig(debug=True)` to raise an AttributeError 
+- A bug causing `ClientConfig(debug=True)` to raise an AttributeError
 
 ## [6.5.5] - 2023-06-28
 ### Fixed
-- A bug where we would raise the wrong exception when errors on occured on `data_modeling.spaces.delete`
-- A bug causing incosistent MRO in DataModelList
+- A bug where we would raise the wrong exception when errors on occurred on `data_modeling.spaces.delete`
+- A bug causing inconsistent MRO in DataModelList
 
 ## [6.5.4] - 2023-06-28
 ### Added
-- Missing query parameters: 
+- Missing query parameters:
      * `inline_views` in `data_modeling.data_models.retrieve()`.
      * `include_global` in `data_modeling.spaces.list()`.
      * `include_inherited_properties` in `data_modeling.views.retrieve()`.
@@ -698,12 +704,12 @@ in beta and thus we reserve the right to break it without bumping the major vers
 
 ## [6.5.0] - 2023-06-27
 ### Added
-- Support for searching and aggregating across instances in the Data Modeling API with the implementation 
+- Support for searching and aggregating across instances in the Data Modeling API with the implementation
   `client.data_modeling.instances`, the methods `search`, `histogram` and `aggregate`.
 
 ## [6.4.8] - 2023-06-23
 ### Fixed
-- Handling non 200 responses in `data_modeling.spaces.apply`, `data_modeling.data_models.apply`, 
+- Handling non 200 responses in `data_modeling.spaces.apply`, `data_modeling.data_models.apply`,
   `data_modeling.views.apply` and `data_modeling.containers.apply`
 
 ## [6.4.7] - 2023-06-22
@@ -733,7 +739,7 @@ but we accept the cost of breaking a few consumers now early on the really nail 
 - Make VersionedDataModelingId:load accept `tuple[str, str]`
 - Rename ConstraintIdentifier to Constraint - it was not an id but the definition itself
 - Rename IndexIdentifier to Index - it was not an id but the definition itself
-- Rename ContainerPropertyIdentifier to ContaienrProperty - it was not an id but the definition itself
+- Rename ContainerPropertyIdentifier to ContainerProperty - it was not an id but the definition itself
 
 ### Removed
 - Redundant EdgeApply:create method. It simply mirrored the EdgeApply constructor.
@@ -745,7 +751,7 @@ but we accept the cost of breaking a few consumers now early on the really nail 
 
 ## [6.4.2] - 2023-06-15
 ### Changed
-- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not 
+- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not
 have to specify the instance type in each tuple
 
 ### Fixed
@@ -757,7 +763,7 @@ have to specify the instance type in each tuple
 
 ## [6.4.0] - 2023-06-12
 ### Added
-- Partial support for the instance resource in the Data Modeling API with the implementation 
+- Partial support for the instance resource in the Data Modeling API with the implementation
   `client.data_modeling.instances`, the endpoints `list`, `delete`, `retrieve`, and `apply`
 
 ## [6.3.2] - 2023-06-08
@@ -860,7 +866,7 @@ have to specify the instance type in each tuple
 
 ## [6.0.0] - 2023-04-19
 ### Removed
-- Removed support for legacy auth (apikeys, serviceaccounts, login.status)
+- Removed support for legacy auth (API keys, service accounts, login.status)
 - Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
 - Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
 - Removed the deprecated `client.extraction_pipeline_runs` accessor attribute. The extraction pipeline run API can only be accessed through `client.extraction_pipelines.runs` now.
@@ -1297,7 +1303,7 @@ It will also cache the token between runs.
 ### Changed
 - Client configuration no longer respects any environment variables. There are other libraries better
 suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
-been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+been several reports of envvar name clash issues in tools built on top the SDK. We therefore
 consider this something that should be handled by the application consuming the SDK. All configuration of
 `cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
 `max_connection_pool_size` and other options which apply to all client instances are now configured through
