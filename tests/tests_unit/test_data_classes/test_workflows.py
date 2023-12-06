@@ -11,12 +11,24 @@ from cognite.client.data_classes.workflows import (
     FunctionTaskOutput,
     FunctionTaskParameters,
     TransformationTaskOutput,
+    TransformationTaskParameters,
+    WorkflowDefinition,
+    WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
     WorkflowTask,
     WorkflowTaskOutput,
     WorkflowVersionId,
 )
+
+
+class TestWorkFlowDefinitions:
+    def test_upsert_variant_doesnt_accept_hash(self):
+        task = WorkflowTask(external_id="foo", parameters=TransformationTaskParameters(external_id="something"))
+        WorkflowDefinition(tasks=[task], description="desc", hash_="very-random")
+
+        with pytest.raises(TypeError, match="unexpected keyword argument 'hash_'$"):
+            WorkflowDefinitionUpsert(tasks=[task], description="desc", hash_="very-random")
 
 
 class TestWorkflowTaskOutput:
@@ -45,7 +57,7 @@ class TestWorkflowId:
         ],
     )
     def test_serialization(self, workflow_id: WorkflowVersionId):
-        assert WorkflowVersionId._load(workflow_id.dump(camel_case=True)).dump() == workflow_id.dump()
+        assert WorkflowVersionId.load(workflow_id.dump(camel_case=True)).dump() == workflow_id.dump()
 
 
 class TestWorkflowIds:
@@ -73,7 +85,7 @@ class TestWorkflowIds:
         ],
     )
     def test_load(self, resource: Any, expected: WorkflowIds):
-        assert WorkflowIds._load(resource) == expected
+        assert WorkflowIds.load(resource) == expected
 
 
 class TestWorkflowExecutionDetailed:
@@ -84,7 +96,7 @@ class TestWorkflowExecutionDetailed:
             return json.load(f)
 
     def test_dump(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
         dumped = wf_execution.dump(camel_case=False)
         dumped_camel = wf_execution.dump(camel_case=True)
         assert dumped["metadata"] == {"supervisor": "Jimmy", "best_number": 42}
@@ -99,7 +111,7 @@ class TestWorkflowExecutionDetailed:
         assert dumped["input"] == dumped_camel["input"]
 
     def test_load(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
         assert wf_execution.id == "7b6bf517-4812-4874-b227-fa7db36830a3"
         assert wf_execution.workflow_external_id == "TestWorkflowTypeBidProcess"
         assert wf_execution.version == "latest"
@@ -117,7 +129,7 @@ class TestWorkflowExecutionDetailed:
         }
 
     def test_definition_parsed_correctly(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
         assert wf_execution.workflow_definition.hash_ == "8AE17296EE6BCCD0B7D9C184E100A5F98069553C"
 
         expected = [
@@ -133,6 +145,7 @@ class TestWorkflowExecutionDetailed:
                 ),
                 retries=2,
                 timeout=300,
+                on_failure="abortWorkflow",
             ),
             WorkflowTask(
                 external_id="applicationExecution",
@@ -140,6 +153,7 @@ class TestWorkflowExecutionDetailed:
                 parameters=DynamicTaskParameters(tasks="${testTaskDispatcher.output.response.testTasks}"),
                 retries=0,
                 timeout=3600,
+                on_failure="skipTask",
                 depends_on=["testTaskDispatcher"],
             ),
         ]
@@ -154,7 +168,7 @@ class TestWorkflowExecutionDetailed:
             assert actual_task.depends_on == expected_task.depends_on
 
     def test_executed_tasks_parsed_correctly(self, execution_data: dict):
-        wf_execution = WorkflowExecutionDetailed._load(execution_data)
+        wf_execution = WorkflowExecutionDetailed.load(execution_data)
 
         expected = [
             ("38b3e696-adcb-4bf8-9217-747449f55289", "function", "completed", 1453249902969082),

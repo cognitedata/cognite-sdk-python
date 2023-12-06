@@ -3,14 +3,14 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overload
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._validation import process_data_set_ids
+from cognite.client.utils._validation import assert_type, process_data_set_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -298,7 +298,7 @@ class RelationshipsAPI(APIClient):
                         task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
                     tasks.append((task_filter,))
 
-            tasks_summary = utils._concurrency.execute_tasks(
+            tasks_summary = execute_tasks(
                 lambda filter: self._list(
                     list_cls=RelationshipList,
                     resource_cls=Relationship,
@@ -311,7 +311,7 @@ class RelationshipsAPI(APIClient):
                 tasks,
                 max_workers=self._config.max_workers,
             )
-            tasks_summary.raise_first_encountered_exception()
+            tasks_summary.raise_compound_exception_if_failed_tasks()
 
             return RelationshipList(tasks_summary.joined_results())
         return self._list(
@@ -363,7 +363,7 @@ class RelationshipsAPI(APIClient):
                 ... )
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
-        utils._auxiliary.assert_type(relationship, "relationship", [Relationship, Sequence])
+        assert_type(relationship, "relationship", [Relationship, Sequence])
         if isinstance(relationship, Sequence):
             relationship = [r._validate_resource_types() for r in relationship]
         else:

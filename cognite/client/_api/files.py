@@ -16,11 +16,10 @@ from typing import (
     overload,
 )
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
-    FileAggregate,
+    CountAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -31,8 +30,9 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.exceptions import CogniteFileUploadError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -166,7 +166,7 @@ class FilesAPI(APIClient):
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         file_metadata = FileMetadata._load(returned_file_metadata)
-        return (file_metadata, upload_url)
+        return file_metadata, upload_url
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
@@ -233,14 +233,14 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict | None): Filter on file metadata filter with exact match
 
         Returns:
-            list[FileAggregate]: List of file aggregates
+            list[CountAggregate]: List of count aggregates
 
         Examples:
 
@@ -251,7 +251,7 @@ class FilesAPI(APIClient):
                 >>> aggregate_uploaded = c.files.aggregate(filter={"uploaded": True})
         """
 
-        return self._aggregate(filter=filter, cls=FileAggregate)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
@@ -480,9 +480,7 @@ class FilesAPI(APIClient):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
                         tasks.append((file_metadata, file_path, overwrite))
-            tasks_summary = utils._concurrency.execute_tasks(
-                self._upload_file_from_path, tasks, self._config.max_workers
-            )
+            tasks_summary = execute_tasks(self._upload_file_from_path, tasks, self._config.max_workers)
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
         raise ValueError(f"The path '{path}' does not exist")
@@ -493,7 +491,7 @@ class FilesAPI(APIClient):
             if _RUNNING_IN_BROWSER:
                 # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
                 fh = fh.read()
-            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump())
+            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
         return file_metadata
 
     def upload_bytes(
@@ -564,10 +562,17 @@ class FilesAPI(APIClient):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
+        try:
+            res = self._post(
+                url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
+            )
+        except CogniteAPIError as e:
+            if e.code == 403 and "insufficient access rights" in e.message:
+                dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
+                msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+            raise
 
-        res = self._post(
-            url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
-        )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
@@ -607,7 +612,7 @@ class FilesAPI(APIClient):
             dict(url_path="/files/downloadlink", json={"items": id_batch}, params=query_params)
             for id_batch in id_batches
         ]
-        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
         return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
@@ -766,9 +771,7 @@ class FilesAPI(APIClient):
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)
         tasks = [(directory, id, id_to_metadata, filepath) for id, filepath in zip(all_ids, filepaths)]
-        tasks_summary = utils._concurrency.execute_tasks(
-            self._process_file_download, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = execute_tasks(self._process_file_download, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: id_to_metadata[IdentifierSequence.unwrap_identifier(task[1])],
             str_format_element_fn=lambda metadata: metadata.id,
@@ -819,7 +822,8 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        assert path.parent.is_dir(), f"{path.parent} is not a directory"
+        if not path.parent.is_dir():
+            raise NotADirectoryError(f"{path.parent} is not a directory")
         identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)

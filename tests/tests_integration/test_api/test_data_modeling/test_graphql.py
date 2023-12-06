@@ -1,3 +1,5 @@
+import textwrap
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -49,3 +51,16 @@ class TestDataModelingGraphQLAPI:
         exception_message = str(exc.value)
         assert "version" in exception_message
         assert "invalid value" in exception_message
+
+    def test_wipe_and_regenerate_dml(self, cognite_client: CogniteClient, data_model: DataModel) -> None:
+        res = cognite_client.data_modeling.graphql._unsafely_wipe_and_regenerate_dml(data_model.as_id())
+        expected = """
+            type SomeType @view(version: "31e24bb338352b") {
+              someProp: String!
+            }
+
+            type AnotherType @view(version: "855f080c9de22f") {
+              anotherProp: String!
+            }
+        """
+        assert res.strip() == textwrap.dedent(expected).strip()

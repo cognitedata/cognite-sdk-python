@@ -1,19 +1,20 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import Any
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import DataModelingResource
 
 
-class SpaceCore(DataModelingResource):
+class SpaceCore(DataModelingResource, ABC):
     """A workspace for data models and instances.
 
     Args:
-        space (str): A unique identifier for space.
+        space (str): A unique identifier for the space.
         description (str | None): Textual description of the space
         name (str | None): Human readable name for the space.
     """
@@ -31,7 +32,7 @@ class SpaceApply(SpaceCore):
     """A workspace for data models and instances. This is the write version
 
     Args:
-        space (str): A unique identifier for space.
+        space (str): A unique identifier for the space.
         description (str | None): Textual description of the space
         name (str | None): Human readable name for the space.
         **_ (Any): No description.
@@ -52,7 +53,7 @@ class Space(SpaceCore):
     """A workspace for data models and instances. This is the read version.
 
     Args:
-        space (str): a unique identifier for the space.
+        space (str): A unique identifier for the space.
         is_global (bool): Whether the space is global or not.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.

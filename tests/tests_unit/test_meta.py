@@ -23,7 +23,6 @@ def test_ensure_all_files_use_future_annots():
     def keep(path):
         skip_list = [
             "_pb2.py",  # Auto-generated, dislikes changes ;)
-            "cognite/client/utils/_priority_tpe.py",  # Module docstring at the top takes priority
         ]
         return all(skip not in str(path.as_posix()) for skip in skip_list)
 

@@ -20,7 +20,7 @@ from cognite.client.data_classes.transformations.common import (
     Nodes,
     NonceCredentials,
     OidcCredentials,
-    SequenceRows,
+    SequenceRowsDestination,
     ViewInfo,
 )
 from cognite.client.exceptions import CogniteAPIError
@@ -444,14 +444,12 @@ class TestTransformationsAPI:
 
     def test_preview(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
-        assert (
-            query_result.schema is not None
-            and query_result.results is not None
-            and len(query_result.schema) == 2
-            and len(query_result.results) == 1
-            and query_result.results[0]["id"] == 1
-            and query_result.results[0]["name"] == "asd"
-        )
+        assert query_result.schema is not None
+        assert query_result.results is not None
+        assert len(query_result.schema) == 2
+        assert len(query_result.results) == 1
+        assert query_result.results[0]["id"] == 1
+        assert query_result.results[0]["name"] == "asd"
 
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
@@ -515,11 +513,13 @@ class TestTransformationsAPI:
         )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
-        new_transformation.destination = SequenceRows("myTest")
+        new_transformation.destination = SequenceRowsDestination("myTest")
         updated_transformation = cognite_client.transformations.update(new_transformation)
         assert updated_transformation.destination == TransformationDestination.sequence_rows("myTest")
 
-        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(SequenceRows("myTest2"))
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            SequenceRowsDestination("myTest2")
+        )
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.sequence_rows("myTest2")
 

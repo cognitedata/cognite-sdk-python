@@ -38,7 +38,6 @@ jobs:
           diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
           diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
 
-
   build_docs:
     runs-on: ubuntu-latest
     steps:
@@ -71,8 +70,6 @@ jobs:
           poetry install
 
       - name: Test core
-        env:
-          CI: 1
         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl'
           --test-deps-only-core
 
@@ -104,7 +101,6 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-          CI: 1
         run: |
           pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
 

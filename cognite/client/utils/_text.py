@@ -38,7 +38,10 @@ def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
 
 
 def convert_all_keys_to_camel_case(dct: dict[str, Any]) -> dict[str, Any]:
-    return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
+    try:
+        return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
+    except AttributeError:
+        raise TypeError("Expected a dictionary")
 
 
 def convert_all_keys_to_camel_case_recursive(dct: dict[str, Any]) -> dict[str, Any]:

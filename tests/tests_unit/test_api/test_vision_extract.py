@@ -267,5 +267,4 @@ class TestVisionExtract:
         assert isinstance(retrieved_job, VisionExtractJob)
         assert retrieved_job.job_id == job.job_id
 
-        with pytest.raises(CogniteException, match="Extract job does not contain any predictions."):
-            retrieved_job.save_predictions()
+        assert retrieved_job.save_predictions() == []

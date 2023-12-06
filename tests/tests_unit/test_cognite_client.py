@@ -77,7 +77,7 @@ class TestCogniteClient:
 
     def test_client_debug_mode(self):
         CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla"), debug=True))
-        log = logging.getLogger("cognite-sdk")
+        log = logging.getLogger("cognite.client")
         assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
         log.handlers = []
         log.propagate = False

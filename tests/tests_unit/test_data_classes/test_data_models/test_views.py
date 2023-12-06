@@ -21,7 +21,7 @@ class TestViewPropertyDefinition:
         assert isinstance(actual, MappedProperty)
         assert actual.source == ViewId(space="mySpace", external_id="myExternalId", version="myVersion")
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
             "auto_increment": False,
             "container": {"external_id": "myExternalId", "space": "mySpace"},
             "container_property_identifier": "name",
@@ -30,7 +30,6 @@ class TestViewPropertyDefinition:
             "name": "fullName",
             "nullable": False,
             "type": {
-                "container": None,
                 "type": "direct",
                 "source": {"external_id": "myExternalId", "space": "mySpace", "version": "myVersion"},
             },
@@ -46,7 +45,7 @@ class TestViewPropertyDefinition:
         }
         actual = ViewPropertyApply.load(input)
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
             "container": {"external_id": "myExternalId", "space": "mySpace", "type": "container"},
             "container_property_identifier": "name",
             "name": "fullName",
@@ -55,6 +54,7 @@ class TestViewPropertyDefinition:
 
     def test_load_dump_connection_property(self) -> None:
         input = {
+            "connectionType": "multiEdgeConnection",
             "type": {"space": "mySpace", "externalId": "myExternalId"},
             "source": {"type": "view", "space": "mySpace", "externalId": "myExternalId", "version": "myVersion"},
             "direction": "outwards",
@@ -63,7 +63,8 @@ class TestViewPropertyDefinition:
         }
         actual = ViewProperty.load(input)
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
+            "connection_type": "multiEdgeConnection",
             "description": None,
             "direction": "outwards",
             "edge_source": None,
@@ -79,12 +80,14 @@ class TestViewPropertyDefinition:
             "direction": "outwards",
             "name": "fullName",
             "edgeSource": None,
+            "connectionType": "multiEdgeConnection",
         }
         actual = ViewPropertyApply.load(input)
 
-        assert actual.dump() == {
+        assert actual.dump(camel_case=False) == {
             "direction": "outwards",
             "name": "fullName",
             "source": {"external_id": "myExternalId", "space": "mySpace", "type": "view", "version": "myVersion"},
             "type": {"external_id": "myExternalId", "space": "mySpace"},
+            "connection_type": "multiEdgeConnection",
         }

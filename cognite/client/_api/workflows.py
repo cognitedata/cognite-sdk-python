@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence, Tuple, Union
+from urllib.parse import quote
 
 from typing_extensions import TypeAlias
 
@@ -31,6 +32,7 @@ from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
+    from cognite.client.data_classes import ClientCredentials
 
 
 class BetaWorkflowAPIClient(APIClient, ABC):
@@ -101,7 +103,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
             json=body,
         )
-        return WorkflowTaskExecution._load(response.json())
+        return WorkflowTaskExecution.load(response.json())
 
 
 class WorkflowExecutionAPI(BetaWorkflowAPIClient):
@@ -139,21 +141,24 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             if e.code == 400:
                 return None
             raise
-        return WorkflowExecutionDetailed._load(response.json())
+        return WorkflowExecutionDetailed.load(response.json())
 
     def trigger(
         self,
         workflow_external_id: str,
         version: str,
         input: dict | None = None,
+        metadata: dict | None = None,
+        client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
         """`Trigger a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
         Args:
             workflow_external_id (str): External id of the workflow.
             version (str): Version of the workflow.
-            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the strind "${workflow.input}"
-                                See tip below for more information.
+            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
+            metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
+            client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
@@ -171,30 +176,35 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
         Examples:
 
-            Trigger workflow execution for workflow my workflow version 1:
+            Trigger a workflow execution for the workflow "foo", version 1:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.workflows.executions.trigger("my workflow", "1")
+                >>> res = c.workflows.executions.trigger("foo", "1")
 
-            Trigger workflow execution for workflow my workflow version 1 with input data '{"a": 1, "b": 2}:
+            Trigger a workflow execution with input data:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.trigger("my workflow", "1", input={"a": 1, "b": 2})
+                >>> res = c.workflows.executions.trigger("foo", "1", input={"a": 1, "b": 2})
 
+            Trigger a workflow execution using a specific set of client credentials (i.e. not your current credentials):
+
+                >>> import os
+                >>> from cognite.client.data_classes import ClientCredentials
+                >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
+                >>> res = c.workflows.executions.trigger("foo", "1", client_credentials=credentials)
         """
         self._warning.warn()
-        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Workflow API")
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
+        )
         body = {"authentication": {"nonce": nonce}}
         if input is not None:
             body["input"] = input
+        if metadata is not None:
+            body["metadata"] = metadata
 
-        response = self._post(
-            url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
-            json=body,
-        )
-        return WorkflowExecution._load(response.json())
+        response = self._post(url_path=f"/workflows/{workflow_external_id}/versions/{version}/run", json=body)
+        return WorkflowExecution.load(response.json())
 
     def list(
         self,
@@ -234,7 +244,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         self._warning.warn()
         filter_: dict[str, Any] = {}
         if workflow_version_ids is not None:
-            filter_["workflowFilters"] = WorkflowIds._load(workflow_version_ids).dump(
+            filter_["workflowFilters"] = WorkflowIds.load(workflow_version_ids).dump(
                 camel_case=True, as_external_id=True
             )
         if created_time_start is not None:
@@ -295,7 +305,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 ...        description="This workflow has one step",
                 ...    ),
                 ... )
-                >>> res = c.workflows.upsert(new_version)
+                >>> res = c.workflows.versions.upsert(new_version)
         """
         self._warning.warn()
         if mode != "replace":
@@ -306,7 +316,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             json={"items": [version.dump(camel_case=True)]},
         )
 
-        return WorkflowVersion._load(response.json()["items"][0])
+        return WorkflowVersion.load(response.json()["items"][0])
 
     def delete(
         self,
@@ -336,7 +346,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
         """
         self._warning.warn()
-        identifiers = WorkflowIds._load(workflow_version_id).dump(camel_case=True)
+        identifiers = WorkflowIds.load(workflow_version_id).dump(camel_case=True)
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
@@ -364,14 +374,14 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         self._warning.warn()
         try:
             response = self._get(
-                url_path=f"/workflows/{workflow_external_id}/versions/{version}",
+                url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}",
             )
         except CogniteAPIError as e:
             if e.code == 404:
                 return None
             raise e
 
-        return WorkflowVersion._load(response.json())
+        return WorkflowVersion.load(response.json())
 
     def list(
         self,
@@ -413,7 +423,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         if workflow_version_ids is None:
             workflow_ids_dumped = []
         else:
-            workflow_ids_dumped = WorkflowIds._load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
+            workflow_ids_dumped = WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
         return self._list(
             method="POST",
@@ -468,7 +478,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
         )
-        return Workflow._load(response.json()["items"][0])
+        return Workflow.load(response.json()["items"][0])
 
     def retrieve(self, external_id: str) -> Workflow | None:
         """`Retrieve a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
@@ -489,12 +499,12 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         """
         self._warning.warn()
         try:
-            response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
+            response = self._get(url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}")
         except CogniteAPIError as e:
             if e.code == 404:
                 return None
             raise e
-        return Workflow._load(response.json())
+        return Workflow.load(response.json())
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_

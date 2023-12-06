@@ -8,7 +8,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -40,7 +39,7 @@ class FileMetadata(CogniteResource):
         source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
         security_categories (Sequence[int] | None): The security category IDs required to access this file.
         id (int | None): A server-generated ID for the object.
-        uploaded (bool | None): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
+        uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -92,12 +91,20 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FileMetadata:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FileMetadata:
         instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
-        if instance.geo_location is not None:
+        if isinstance(instance.geo_location, dict):
             instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        return result
 
 
 class FileMetadataFilter(CogniteFilter):
@@ -117,8 +124,8 @@ class FileMetadataFilter(CogniteFilter):
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        source_created_time (dict[str, Any] | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-        source_modified_time (dict[str, Any] | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+        source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+        source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
         uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
@@ -139,8 +146,8 @@ class FileMetadataFilter(CogniteFilter):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         uploaded_time: dict[str, Any] | TimestampRange | None = None,
-        source_created_time: dict[str, Any] | None = None,
-        source_modified_time: dict[str, Any] | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
@@ -169,12 +176,20 @@ class FileMetadataFilter(CogniteFilter):
         if geo_location is not None and not isinstance(geo_location, GeoLocationFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         if isinstance(self.geo_location, GeoLocationFilter):
-            result["geoLocation"] = self.geo_location.dump(camel_case)
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        keys = (
+            ["createdTime", "lastUpdatedTime", "uploadedTime", "sourceCreatedTime", "sourceModifiedTime"]
+            if camel_case
+            else ["created_time", "last_updated_time", "uploaded_time", "source_created_time", "source_modified_time"]
+        )
+        for key in keys:
+            if key in result and isinstance(result[key], TimestampRange):
+                result[key] = result[key].dump(camel_case)
         return result
 
 
@@ -280,21 +295,6 @@ class FileMetadataUpdate(CogniteUpdate):
             PropertySpec("labels", is_container=True),
             PropertySpec("geo_location"),
         ]
-
-
-class FileAggregate(dict):
-    """Aggregation results for files
-
-    Args:
-        count (int | None): Number of filtered items included in aggregation
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class FileMetadataList(CogniteResourceList[FileMetadata], IdTransformerMixin):

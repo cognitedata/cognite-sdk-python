@@ -6,7 +6,7 @@ import textwrap
 import time
 from contextlib import redirect_stdout
 from pathlib import Path
-from unittest import mock
+from unittest import TestCase, mock
 from unittest.mock import call
 
 import pytest
@@ -127,7 +127,7 @@ class TestAssetList:
 
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]
-        assert expected == resources
+        TestCase().assertCountEqual(expected, resources)  # Asserts equal, but ignores ordering
 
     @pytest.mark.dsl
     def test_to_pandas_nullable_int(self, cognite_client):
@@ -226,36 +226,31 @@ def cycles_issue_output():
 
 class TestAssetHierarchy:
     @pytest.mark.parametrize(
-        "exc_type, asset",
+        "asset",
         (
             # Invalid name:
-            (AssertionError, Asset(name="", external_id="foo")),
-            (CogniteAssetHierarchyError, Asset(name="", external_id="foo")),
-            (AssertionError, Asset(name=None, external_id="foo")),
-            (CogniteAssetHierarchyError, Asset(name=None, external_id="foo")),
+            Asset(name="", external_id="foo"),
+            Asset(name=None, external_id="foo"),
             # Invalid external_id (empty str allowed):
-            (AssertionError, Asset(name="a", external_id=None)),
-            (CogniteAssetHierarchyError, Asset(name="a", external_id=None)),
+            Asset(name="a", external_id=None),
             # Id given:
-            (AssertionError, Asset(name="a", external_id="", id=123)),
-            (CogniteAssetHierarchyError, Asset(name="a", external_id="", id=123)),
+            Asset(name="a", external_id="", id=123),
         ),
     )
-    def test_validate_asset_hierarchy___invalid_assets(self, exc_type, asset):
+    def test_validate_asset_hierarchy___invalid_assets(self, asset):
         hierarchy = AssetHierarchy([asset]).validate(on_error="ignore")
         assert len(hierarchy.invalid) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 invalid$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 invalid$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy__orphans_given_ignore_false(self, exc_type):
+    def test_validate_asset_hierarchy__orphans_given_ignore_false(self):
         assets = [
             Asset(name="a", parent_external_id="1", external_id="2"),
             Asset(name="a", parent_external_id="2", external_id="3"),
         ]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
         assert len(hierarchy.orphans) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 orphans$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 orphans$"):
             hierarchy.is_valid(on_error="raise")
 
     @pytest.mark.parametrize("n", [1, 2, 3, 10])
@@ -283,28 +278,25 @@ class TestAssetHierarchy:
         assert len(hierarchy.orphans) == 1  # note: still marked as orphans, but no issues are raised:
         assert hierarchy.is_valid(on_error="raise") is True
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self, exc_type):
+    def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
         assets = [
             Asset(name="a", external_id="1"),
             Asset(name="a", parent_external_id="1", parent_id=1, external_id="2"),
         ]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.unsure_parents) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 unsure_parents$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 unsure_parents$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_duplicate_ref_ids(self, exc_type):
+    def test_validate_asset_hierarchy_duplicate_ref_ids(self):
         assets = [Asset(name="a", external_id="1"), Asset(name="a", parent_external_id="1", external_id="1")]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert list(hierarchy.duplicates) == ["1"]
         assert sum(len(assets) for assets in hierarchy.duplicates.values()) == 2
-        with pytest.raises(exc_type, match=r"Issue\(s\): 2 duplicates$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 2 duplicates$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_circular_dependency(self, exc_type):
+    def test_validate_asset_hierarchy_circular_dependency(self):
         assets = [
             Asset(name="a", external_id="1", parent_external_id="3"),
             Asset(name="a", external_id="2", parent_external_id="1"),
@@ -312,16 +304,15 @@ class TestAssetHierarchy:
         ]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.cycles) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 cycles$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 cycles$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_self_dependency(self, exc_type):
+    def test_validate_asset_hierarchy_self_dependency(self):
         # Shortest cycle possible is self->self:
         assets = [Asset(name="a", external_id="2", parent_external_id="2")]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.cycles) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 cycles$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 cycles$"):
             hierarchy.is_valid(on_error="raise")
 
     def test_validate_asset_hierarchy__everything_is_wrong(self):

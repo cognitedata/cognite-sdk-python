@@ -24,8 +24,7 @@ jobs:
           poetry install -E numpy
 
       - name: Linting and static code checks
-        run: |
-          pre-commit run --all-files
+        run: pre-commit run --all-files
 
       - name: Verify proto files
         env:
@@ -53,8 +52,6 @@ jobs:
           poetry install
 
       - name: Test core
-        env:
-          CI: 1
         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl'
           --test-deps-only-core
 
@@ -86,9 +83,7 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-          CI: 1
-        run: |
-          pytest tests --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
+        run: pytest tests --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@v3
         with:
@@ -97,7 +92,8 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: [lint, test_full]
+    needs: [lint, test_core, test_full]
+    environment: CD
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
@@ -122,8 +118,9 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: twine upload --verbose dist/* || echo 'Version exists'
 
-      - name: Push code snippets to service-contracts
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: sh ./scripts/deploy_code_snippets.sh || echo 'PR failed. There is probably
-          nothing to commit'
+      # TODO: Make this work again
+      # - name: Push code snippets to service-contracts
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: sh ./scripts/deploy_code_snippets.sh || echo 'PR failed. There is probably
+      #     nothing to commit'

@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
     EnumProperty,
     IdTransformerMixin,
+    NoCaseConversionPropertyList,
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class SourceFile(CogniteResource):
+class SourceFile(CogniteObject):
     """
     The source file that a document is derived from.
 
@@ -75,22 +76,21 @@ class SourceFile(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SourceFile:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SourceFile:
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.labels:
             output["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location:
             output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
-        for key in ["metadata", "labels", "asset_ids"]:
-            # Remove empty lists and dicts:
-            if not output[key]:
+        for key in ["metadata", "labels", "asset_ids", "assetIds"]:
+            # Remove empty lists and dicts
+            if key in output and not output[key]:
                 del output[key]
         return output
 
@@ -166,17 +166,15 @@ class Document(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Document:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Document:
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.source_file, dict):
-            instance.source_file = SourceFile._load(instance.source_file)
+            instance.source_file = SourceFile.load(instance.source_file)
         if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = GeoLocation.load(instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.source_file:
             output[("sourceFile" if camel_case else "source_file")] = self.source_file.dump(camel_case)
@@ -192,7 +190,7 @@ class DocumentList(CogniteResourceList[Document], IdTransformerMixin):
 
 
 @dataclass
-class Highlight(CogniteResource):
+class Highlight(CogniteObject):
     """
     Highlighted snippets from name and content fields which show where the query matches are.
 
@@ -206,11 +204,15 @@ class Highlight(CogniteResource):
     name: list[str]
     content: list[str]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "name": self.name,
             "content": self.content,
         }
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(name=resource["name"], content=resource["content"])
 
 
 @dataclass
@@ -229,17 +231,13 @@ class DocumentHighlight(CogniteResource):
     document: Document
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
+        return cls(
+            highlight=Highlight._load(resource["highlight"]),
+            document=Document._load(resource["document"]),
+        )
 
-        instance = cls(**convert_all_keys_to_snake_case(resource))
-        if isinstance(instance.highlight, dict):
-            instance.highlight = Highlight(**convert_all_keys_to_snake_case(instance.highlight))
-        if isinstance(instance.document, dict):
-            instance.document = Document._load(instance.document)
-        return instance
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.highlight:
             output["highlight"] = self.highlight.dump(camel_case)
@@ -283,7 +281,7 @@ class SourceFileProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["sourceFile", "metadata", key]
+        return NoCaseConversionPropertyList(["sourceFile", "metadata", key])
 
     def as_reference(self) -> list[str]:
         return ["sourceFile", self.value]

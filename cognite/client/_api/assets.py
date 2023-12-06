@@ -29,16 +29,15 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
-    AssetAggregate,
     AssetFilter,
     AssetHierarchy,
     AssetList,
     AssetUpdate,
+    CountAggregate,
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
@@ -47,19 +46,23 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, SortableAssetProperty
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import classify_error, get_priority_executor
+from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._importing import import_as_completed
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils._validation import (
+    assert_type,
+    prepare_filter_sort,
+    process_asset_subtree_ids,
+    process_data_set_ids,
+)
 
 if TYPE_CHECKING:
-    from concurrent.futures import Future
+    from concurrent.futures import Future, ThreadPoolExecutor
 
-    from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
-
+as_completed = import_as_completed()
 
 SortSpec: TypeAlias = Union[
     AssetSort,
@@ -103,8 +106,8 @@ class AssetsAPI(APIClient):
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        created_time: TimestampRange | dict[str, Any] | None = None,
+        last_updated_time: TimestampRange | dict[str, Any] | None = None,
         root: bool | None = None,
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[str] | None = None,
@@ -128,8 +131,8 @@ class AssetsAPI(APIClient):
             labels (LabelFilter | None): Return only the assets matching the specified label.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this asset
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             root (bool | None): filtered assets are root assets or not
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
@@ -244,14 +247,14 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[AssetAggregate]:
+    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[CountAggregate]:
         """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             filter (AssetFilter | dict | None): Filter on assets with strict matching.
 
         Returns:
-            list[AssetAggregate]: List of asset aggregates
+            list[CountAggregate]: List of asset aggregates
 
         Examples:
 
@@ -261,63 +264,10 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
-        return self._aggregate(filter=filter, cls=AssetAggregate)
-
-    def aggregate_metadata_keys(self, filter: AssetFilter | dict | None = None) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Note:
-            In the case of text fields, the values are aggregated in a case-insensitive manner
-
-        Args:
-            filter (AssetFilter | dict | None): Filter on assets with strict matching.
-
-        Returns:
-            Sequence[AggregateBucketResult]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_by_prefix = c.assets.aggregate_metadata_keys(filter={"external_id_prefix": "prefix"})
-        """
         warnings.warn(
-            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+            f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
         )
-        return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
-
-    def aggregate_metadata_values(
-        self, keys: Sequence[str], filter: AssetFilter | dict | None = None
-    ) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Note:
-            In the case of text fields, the values are aggregated in a case-insensitive manner
-
-        Args:
-            keys (Sequence[str]): Metadata key(s) to apply the aggregation on. Currently supports exactly one key per request.
-            filter (AssetFilter | dict | None): Filter on assets with strict matching.
-
-        Returns:
-            Sequence[AggregateBucketResult]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_by_prefix = c.assets.aggregate_metadata_values(
-                ...     keys=["someKey"],
-                ...     filter={"external_id_prefix": "prefix"}
-                ... )
-        """
-        warnings.warn(
-            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
-        )
-        return self._aggregate(filter=filter, aggregate="metadataValues", keys=keys, cls=AggregateBucketResult)
+        return self._aggregate(filter=filter, cls=CountAggregate)
 
     def aggregate_count(
         self,
@@ -346,10 +296,10 @@ class AssetsAPI(APIClient):
         Count the number of assets with the metadata key "timezone" in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.filters import ContainsAny
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> c = CogniteClient()
-            >>> has_timezone = filters.ContainsAny(AssetProperty.metadata, "timezone")
+            >>> has_timezone = ContainsAny(AssetProperty.metadata, "timezone")
             >>> asset_count = c.assets.aggregate_count(advanced_filter=has_timezone)
 
         """
@@ -390,11 +340,13 @@ class AssetsAPI(APIClient):
             Count the number of timezones (metadata key) for assets with the word "critical" in the description in your CDF project:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.filters import Search
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> c = CogniteClient()
-                >>> is_critical = filters.Search(AssetProperty.description, "critical")
-                >>> critical_assets = c.assets.aggregate_cardinality_values(AssetProperty.metadata_key("timezone"), advanced_filter=is_critical)
+                >>> is_critical = Search(AssetProperty.description, "critical")
+                >>> critical_assets = c.assets.aggregate_cardinality_values(
+                ...     AssetProperty.metadata_key("timezone"),
+                ...     advanced_filter=is_critical)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -450,6 +402,9 @@ class AssetsAPI(APIClient):
     ) -> UniqueResultList:
         """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
+
         Args:
             property (AssetPropertyLike): The property to group by.
             advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
@@ -472,12 +427,12 @@ class AssetsAPI(APIClient):
         Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes import filters as flt
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
             >>> c = CogniteClient()
-            >>> created_after_2020 = filters.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> created_after_2020 = flt.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
@@ -486,10 +441,11 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations as aggs, filters
+            >>> from cognite.client.data_classes import aggregations as aggs
+            >>> from cognite.client.data_classes import filters as flt
             >>> c = CogniteClient()
             >>> not_test = aggs.Not(aggs.Prefix("test"))
-            >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> created_after_2020 = flt.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
@@ -512,8 +468,11 @@ class AssetsAPI(APIClient):
     ) -> UniqueResultList:
         """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner.
+
         Args:
-            path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
+            path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -578,7 +537,7 @@ class AssetsAPI(APIClient):
                 >>> asset = Asset(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = c.assets.create(asset)
         """
-        utils._auxiliary.assert_type(asset, "asset", [Asset, Sequence])
+        assert_type(asset, "asset", [Asset, Sequence])
         return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset)
 
     def create_hierarchy(
@@ -708,7 +667,7 @@ class AssetsAPI(APIClient):
             raise ValueError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
 
         if not isinstance(assets, AssetHierarchy):
-            utils._auxiliary.assert_type(assets, "assets", [Sequence])
+            assert_type(assets, "assets", [Sequence])
             assets = AssetHierarchy(assets, ignore_orphans=True)
 
         return _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
@@ -883,12 +842,10 @@ class AssetsAPI(APIClient):
             and sort by external id ascending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> in_timezone = f.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = c.assets.filter(filter=in_timezone,
-                ...                       sort=("external_id", "asc"))
+                >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = c.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -897,13 +854,13 @@ class AssetsAPI(APIClient):
             for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
                 >>> c = CogniteClient()
-                >>> f = filters
-                >>> in_timezone = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-                >>> res = c.assets.filter(filter=in_timezone,
-                ...                       sort=(SortableAssetProperty.external_id, "asc"))
+                >>> in_timezone = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+                >>> res = c.assets.filter(
+                ...     filter=in_timezone,
+                ...     sort=(SortableAssetProperty.external_id, "asc"))
 
         """
         self._validate_filter(filter)
@@ -918,7 +875,7 @@ class AssetsAPI(APIClient):
             resource_cls=Asset,
             method="POST",
             limit=limit,
-            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
             sort=prepare_filter_sort(sort, AssetSort),
             other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
         )
@@ -1016,7 +973,7 @@ class AssetsAPI(APIClient):
     def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
         tasks = [{"parent_ids": chunk, "limit": -1} for chunk in split_into_chunks(ids, 100)]
-        tasks_summary = utils._concurrency.execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results
         children = []
@@ -1132,11 +1089,6 @@ class AssetsAPI(APIClient):
         )
 
 
-class _CreateTask(NamedTuple):
-    items: set[Asset]
-    priority: int
-
-
 class _TaskResult(NamedTuple):
     successful: list[Asset]
     failed: list[Asset]
@@ -1157,15 +1109,15 @@ class _AssetHierarchyCreator:
         # Each thread needs to store its latest exception:
         self.latest_exception: dict[int, Exception | None] = {}
 
-        self.__counter = itertools.count().__next__
+        self._counter = itertools.count().__next__
 
     def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
         insert_fn = functools.partial(self._insert, upsert=upsert, upsert_mode=upsert_mode)
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        with get_priority_executor(max_workers=self.max_workers) as pool:
-            created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)
+        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
+        created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
 
         if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
             self._raise_latest_exception(all_exceptions, created_assets)
@@ -1173,7 +1125,7 @@ class _AssetHierarchyCreator:
 
     def _create(
         self,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         insert_fn: Callable[[list[Asset]], _TaskResult],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
@@ -1193,7 +1145,7 @@ class _AssetHierarchyCreator:
         futures = queue_fn(insert_dct.pop(None))
 
         while futures:
-            futures.remove(fut := next(pool.as_completed(futures)))
+            futures.remove(fut := next(as_completed(futures)))
             new_assets, failed, unknown = fut.result()
             created_assets.extend(new_assets)
             if unknown or failed:
@@ -1210,7 +1162,7 @@ class _AssetHierarchyCreator:
         self,
         assets: list[Asset],
         *,
-        pool: PriorityThreadPoolExecutor,
+        pool: ThreadPoolExecutor,
         insert_fn: Callable,
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
@@ -1218,7 +1170,7 @@ class _AssetHierarchyCreator:
         if not assets:
             return set()
         return {
-            pool.submit(insert_fn, task.items, priority=self.n_assets - task.priority)
+            pool.submit(insert_fn, task)
             for task in self._split_and_prioritise_assets(assets, insert_dct, subtree_count)
         }
 
@@ -1232,7 +1184,7 @@ class _AssetHierarchyCreator:
     ) -> _TaskResult:
         try:
             resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
-            successful = list(map(Asset._load, resp.json()["items"]))
+            successful = list(map(Asset.load, resp.json()["items"]))
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
             self._set_latest_exception(err)
@@ -1280,7 +1232,7 @@ class _AssetHierarchyCreator:
     def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
         try:
             resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
-            updated = [Asset._load(item) for item in resp.json()["items"]]
+            updated = [Asset.load(item) for item in resp.json()["items"]]
             self._set_latest_exception(None)  # Update worked, so we hide exception
             return updated
         except Exception as err:
@@ -1327,7 +1279,7 @@ class _AssetHierarchyCreator:
         to_create: list[Asset],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
-    ) -> Iterator[_CreateTask]:
+    ) -> Iterator[set[Asset]]:
         # We want to dive as deep down the hierarchy as possible while prioritising assets with the biggest
         # subtree, that way we more quickly get into a state with enough unblocked parents to always keep
         # our worker threads fed with create-requests.
@@ -1338,7 +1290,7 @@ class _AssetHierarchyCreator:
             for chunk in split_into_n_parts(to_create, n=n_parts)
         ]
         # Also, to not waste worker threads on tiny requests, we might recombine:
-        tasks.sort(key=lambda task: len(task.items))
+        tasks.sort(key=len)
         yield from self._recombine_chunks(tasks, limit=self.create_limit)
 
     @staticmethod
@@ -1346,14 +1298,14 @@ class _AssetHierarchyCreator:
         return {"items": [asset.dump(camel_case=True) for asset in assets]}
 
     @staticmethod
-    def _recombine_chunks(lst: list[_CreateTask], limit: int) -> Iterator[_CreateTask]:
+    def _recombine_chunks(lst: list[set[Asset]], limit: int) -> Iterator[set[Asset]]:
         task = lst[0]
         for next_task in lst[1:]:
-            if len(task.items) + len(next_task.items) > limit:
+            if len(task) + len(next_task) > limit:
                 yield task
                 task = next_task
             else:
-                task = _CreateTask(task.items | next_task.items, max(task.priority, next_task.priority))
+                task |= next_task
         yield task
 
     def _extend_with_unblocked_from_subtree(
@@ -1361,10 +1313,9 @@ class _AssetHierarchyCreator:
         to_create: set[Asset],
         insert_dct: dict[str | None, list[Asset]],
         subtree_count: dict[str, int],
-    ) -> _CreateTask:
-        pri_q = [(-subtree_count[cast(str, asset.external_id)], self.__counter(), asset) for asset in to_create]
+    ) -> set[Asset]:
+        pri_q = [(-subtree_count[cast(str, asset.external_id)], self._counter(), asset) for asset in to_create]
         heapq.heapify(pri_q)
-        priority = -pri_q[0][0]  # No child asset can have a larger subtree than its parent
 
         while pri_q:  # Queue should seriously be spelled q
             *_, asset = heapq.heappop(pri_q)
@@ -1374,9 +1325,9 @@ class _AssetHierarchyCreator:
             if len(to_create) == self.create_limit:
                 break
             for child in insert_dct.get(asset.external_id, []):
-                heapq.heappush(pri_q, (-subtree_count[cast(str, child.external_id)], self.__counter(), child))
+                heapq.heappush(pri_q, (-subtree_count[cast(str, child.external_id)], self._counter(), child))
 
-        return _CreateTask(to_create, priority)
+        return to_create
 
     @staticmethod
     def _pop_child_assets(assets: Iterable[Asset], insert_dct: dict[str | None, list[Asset]]) -> Iterator[Asset]:

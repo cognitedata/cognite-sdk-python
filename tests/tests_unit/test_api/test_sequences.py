@@ -4,10 +4,10 @@ import pytest
 
 from cognite.client.data_classes import (
     Sequence,
-    SequenceData,
-    SequenceDataList,
     SequenceFilter,
     SequenceList,
+    SequenceRows,
+    SequenceRowsList,
     SequenceUpdate,
 )
 from tests.utils import jsgz_load
@@ -84,7 +84,7 @@ def mock_get_sequence_data(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "ceid"}],
+        "columns": [{"externalId": "ceid", "valueType": "Double"}],
         "rows": [{"rowNumber": 0, "values": [1]}],
     }
     rsps.add(
@@ -98,7 +98,7 @@ def mock_get_sequence_data(rsps, cognite_client):
 
 @pytest.fixture
 def mock_get_sequence_empty_data(rsps, cognite_client):
-    json = {"id": 0, "externalId": "eid", "columns": [{"externalId": "ceid"}, {"id": 1}], "rows": []}
+    json = {"id": 0, "externalId": "eid", "columns": [{"externalId": "ceid"}, {"externalId": "ceid2"}], "rows": []}
     rsps.add(
         rsps.POST,
         cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
@@ -230,19 +230,23 @@ class TestSequences:
         } == jsgz_load(mock_seq_response.calls[0].request.body)["filter"]
 
     def test_create_single(self, cognite_client, mock_seq_response):
-        res = cognite_client.sequences.create(Sequence(external_id="1", name="blabla", columns=[{}]))
+        res = cognite_client.sequences.create(
+            Sequence(external_id="1", name="blabla", columns=[{"externalId": "column0"}])
+        )
         assert isinstance(res, Sequence)
         assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
-        assert {"items": [{"name": "blabla", "externalId": "1", "columns": [{"externalId": "column0"}]}]} == jsgz_load(
-            mock_seq_response.calls[0].request.body
-        )
+        assert {
+            "items": [
+                {"name": "blabla", "externalId": "1", "columns": [{"externalId": "column0", "valueType": "Double"}]}
+            ]
+        } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     def test_create_single_multicol(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
             Sequence(
                 external_id="1",
                 name="blabla",
-                columns=[{"valueType": "string", "last_updated_time": 123}, {"externalId": "c2"}],
+                columns=[{"valueType": "String", "externalId": "column0"}, {"externalId": "c2"}],
             )
         )
         assert isinstance(res, Sequence)
@@ -252,14 +256,17 @@ class TestSequences:
                 {
                     "name": "blabla",
                     "externalId": "1",
-                    "columns": [{"externalId": "column0", "valueType": "STRING"}, {"externalId": "c2"}],
+                    "columns": [
+                        {"externalId": "column0", "valueType": "String"},
+                        {"externalId": "c2", "valueType": "Double"},
+                    ],
                 }
             ]
         } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     def test_create_columnid_passed(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
-            Sequence(external_id="1", name="blabla", columns=[{"id": 1, "externalId": "a", "valueType": "STRING"}])
+            Sequence(external_id="1", name="blabla", columns=[{"externalId": "a", "valueType": "STRING"}])
         )
         assert isinstance(res, Sequence)
         assert {
@@ -411,14 +418,14 @@ class TestSequences:
         } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
 
     def test_retrieve_no_data(self, cognite_client, mock_seq_response, mock_get_sequence_empty_data):
-        data = cognite_client.sequences.data.retrieve(id=1, start=0, end=None)
-        assert isinstance(data, SequenceData)
+        data = cognite_client.sequences.rows.retrieve(id=1, start=0, end=None)
+        assert isinstance(data, SequenceRows)
         assert 0 == len(data)
         assert 2 == len(data.column_external_ids)
 
     def test_retrieve_multi_data(self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col_with_zero):
         data = cognite_client.sequences.data.retrieve(id=[1, 2], start=0, end=None)
-        assert isinstance(data, SequenceDataList)
+        assert isinstance(data, SequenceRowsList)
         assert 2 == len(data)
         assert 2 == len(data[0].column_external_ids)
         assert 2 == len(data[1].column_external_ids)
@@ -426,8 +433,8 @@ class TestSequences:
     def test_retrieve_multi_data_mixed(
         self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col_with_zero
     ):
-        data = cognite_client.sequences.data.retrieve(external_id=["a"], id=[1, 2], start=0, end=None)
-        assert isinstance(data, SequenceDataList)
+        data = cognite_client.sequences.data.retrieve(external_id="a", id=[1, 2])
+        assert isinstance(data, SequenceRowsList)
         assert 3 == len(data)
         assert 2 == len(data[0].column_external_ids)
         assert 2 == len(data[1].column_external_ids)
@@ -435,19 +442,19 @@ class TestSequences:
 
     def test_retrieve_by_id(self, cognite_client, mock_seq_response, mock_get_sequence_data):
         data = cognite_client.sequences.data.retrieve(id=123, start=123, end=None)
-        assert isinstance(data, SequenceData)
+        assert isinstance(data, SequenceRows)
         assert 1 == len(data)
 
     def test_retrieve_by_external_id(self, cognite_client, mock_seq_response, mock_get_sequence_data):
         data = cognite_client.sequences.data.retrieve(external_id="foo", start=1, end=1000)
-        assert isinstance(data, SequenceData)
+        assert isinstance(data, SequenceRows)
         assert 1 == len(data)
 
     def test_retrieve_missing_column_external_id(
         self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col
     ):
         data = cognite_client.sequences.data.retrieve(id=123, start=123, end=None)
-        assert isinstance(data, SequenceData)
+        assert isinstance(data, SequenceRows)
         assert 1 == len(data)
 
     def test_retrieve_neg_1_end_index(self, cognite_client, mock_seq_response, mock_get_sequence_data):
@@ -469,7 +476,7 @@ class TestSequences:
     def test_retrieve_rows(self, cognite_client, mock_seq_response, mock_get_sequence_data):
         seq = cognite_client.sequences.retrieve(id=1)
         data = seq.rows(start=0, end=None)
-        assert isinstance(data, SequenceData)
+        assert isinstance(data, SequenceRows)
         assert 1 == len(data)
 
     def test_rows_helper_functions(self, cognite_client, mock_seq_response, mock_get_sequence_data):
@@ -499,7 +506,6 @@ class TestSequences:
         r1 = cognite_client.sequences.data.retrieve(id=0, start=0, end=None)
         r2 = cognite_client.sequences.data.retrieve(id=0, start=0, end=None)
         assert r1 == r2
-        assert r1.__eq__(r2)
         assert str(r1) == str(r2)
         assert r1.dump() == r2.dump()
         list_request = next(call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url)
@@ -512,56 +518,60 @@ class TestSequences:
 @pytest.mark.dsl
 class TestSequencesPandasIntegration:
     def test_retrieve_dataframe(self, cognite_client, mock_seq_response, mock_get_sequence_data):
-        df = cognite_client.sequences.data.retrieve_dataframe(external_id="foo", start=1000000, end=1100000)
+        df = cognite_client.sequences.data.retrieve(external_id="foo", start=1000000, end=1100000).to_pandas()
         assert {"ceid"} == set(df.columns)
         assert df.shape[0] > 0
         assert df.index == [0]
 
     def test_retrieve_dataframe_columns_mixed(self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col):
         data = cognite_client.sequences.data.retrieve(external_id="foo", start=1000000, end=1100000)
-        assert isinstance(data, SequenceData)
+        assert isinstance(data, SequenceRows)
         assert ["col1", "col2"] == list(data.to_pandas().columns)
 
     def test_retrieve_dataframe_multi(self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col):
-        data = cognite_client.sequences.data.retrieve(external_id="foo", id=[2], start=1000000, end=1100000)
-        assert isinstance(data, SequenceDataList)
-        assert ["col1", "col2", "col1", "col2"] == list(data.to_pandas(column_names="columnExternalId").columns)
+        data = cognite_client.sequences.data.retrieve(external_id="foo", id=2, start=1000000, end=1100000)
+        assert isinstance(data, SequenceRowsList)
+        assert ["col1", "col2", "col1", "col2"] == list(
+            data.to_pandas(column_names="columnExternalId", concat=True).columns
+        )
 
     def test_to_pandas_invalid(self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col):
         with pytest.raises(ValueError):
-            cognite_client.sequences.data.retrieve_dataframe(
-                external_id="foo", id=[2], start=1000000, end=1000001, column_names="id~columnExternalId"
+            cognite_client.sequences.data.retrieve(external_id="foo", id=2, start=1000000, end=1000001).to_pandas(
+                column_names="id~columnExternalId"
             )
         with pytest.raises(ValueError):
-            cognite_client.sequences.data.retrieve_dataframe(
-                external_id="foo", id=[2], start=1000000, end=1000001, column_names="columnExternalIds"
+            cognite_client.sequences.data.retrieve(external_id="foo", id=2, start=1000000, end=1000001).to_pandas(
+                column_names="columnExternalIds"
             )
 
     def test_retrieve_dataframe_column_names(self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col):
         data = cognite_client.sequences.data.retrieve(external_id=["eid", "eid"], start=1000000, end=1100000)
-        assert isinstance(data, SequenceDataList)
-        assert ["col1", "col2", "col1", "col2"] == list(data.to_pandas(column_names="columnExternalId").columns)
-        assert ["eid", "eid", "eid", "eid"] == list(data.to_pandas(column_names="externalId").columns)
-        assert ["eid|col1", "eid|col2", "eid|col1", "eid|col2"] == list(data.to_pandas().columns)
+        assert isinstance(data, SequenceRowsList)
+        assert ["col1", "col2", "col1", "col2"] == list(
+            data.to_pandas(column_names="columnExternalId", concat=True).columns
+        )
+        assert ["eid", "eid", "eid", "eid"] == list(data.to_pandas(column_names="externalId", concat=True).columns)
+        assert ["eid|col1", "eid|col2", "eid|col1", "eid|col2"] == list(data.to_pandas(concat=True).columns)
 
     def test_retrieve_dataframe_columns_mixed_with_zero(
         self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col_with_zero
     ):
         import pandas as pd
 
-        data = cognite_client.sequences.data.retrieve(external_id="foo", start=0, end=100)
-        assert isinstance(data, SequenceData)
-        df = data.to_pandas()
-        expected_df = pd.DataFrame(index=[12], data=[["string-12", 0]], columns=["str", "lon"])
-        pd.testing.assert_frame_equal(expected_df, df)
+        data = cognite_client.sequences.data.retrieve_dataframe(external_id="foo", start=0, end=100)
+        expected_df = pd.DataFrame(index=[12], data=[["string-12", 0]], columns=["str", "lon"]).astype(
+            {"str": pd.StringDtype(), "lon": pd.Int64Dtype()}
+        )
+        pd.testing.assert_frame_equal(expected_df, data)
 
     def test_retrieve_dataframe_columns_many_extid(self, cognite_client, mock_get_sequence_data_many_columns):
         data = cognite_client.sequences.data.retrieve(external_id="foo", start=1000000, end=1100000)
-        assert isinstance(data, SequenceData)
+        assert isinstance(data, SequenceRows)
         assert [f"ceid{i}" for i in range(200)] == list(data.to_pandas().columns)
 
     def test_retrieve_dataframe_convert_null(self, cognite_client, mock_seq_response, mock_get_sequence_data_with_null):
-        df = cognite_client.sequences.data.retrieve_dataframe(external_id="foo", start=0, end=None)
+        df = cognite_client.sequences.data.retrieve(external_id="foo", start=0, end=None).to_pandas()
         assert {"strcol", "intcol"} == set(df.columns)
         assert "None" not in df.strcol
         assert df.strcol.isna().any()
@@ -571,7 +581,7 @@ class TestSequencesPandasIntegration:
     def test_retrieve_empty_dataframe(self, cognite_client, mock_seq_response, mock_get_sequence_empty_data):
         import pandas as pd
 
-        df = cognite_client.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
+        df = cognite_client.sequences.data.retrieve(id=1, start=0, end=None).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert df.empty
         assert 2 == len(df.columns)
@@ -594,7 +604,7 @@ class TestSequencesPandasIntegration:
     def test_sequences_to_pandas(self, cognite_client, mock_seq_response):
         import pandas as pd
 
-        df = cognite_client.sequences.retrieve(id=1).to_pandas()
+        df = cognite_client.sequences.retrieve(id=1).to_pandas(expand_metadata=True, metadata_prefix="")
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert "string" == df.loc["description"][0]

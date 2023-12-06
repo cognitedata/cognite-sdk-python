@@ -149,7 +149,7 @@ class EntityMatchingAPI(APIClient):
         filter = {k: v for k, v in filter.items() if v is not None}
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
-        return EntityMatchingModelList._load(models, cognite_client=self._cognite_client)
+        return EntityMatchingModelList.load(models, cognite_client=self._cognite_client)
 
     def list_jobs(self) -> ContextualizationJobList:
         # TODO: Not in service contract
@@ -158,7 +158,7 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             ContextualizationJobList: List of jobs."""
-        return ContextualizationJobList._load(
+        return ContextualizationJobList.load(
             self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 
@@ -204,7 +204,7 @@ class EntityMatchingAPI(APIClient):
 
         Args:
             sources (Sequence[dict | CogniteResource]): entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
-            targets (Sequence[dict | CogniteResource]): entities to match to, should have an 'id' field.  Tolerant to passing more than is needed or used.
+            targets (Sequence[dict | CogniteResource]): entities to match to, should have an 'id' field. Tolerant to passing more than is needed or used.
             true_matches (Sequence[dict | tuple[int | str, int | str]] | None): Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'targetId', 'targetExternalId'). If omitted, uses an unsupervised model. A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
             match_fields (dict | Sequence[tuple[str, str]] | None): List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
             feature_type (str | None): feature type that defines the combination of features used, see API docs for details.
@@ -252,7 +252,7 @@ class EntityMatchingAPI(APIClient):
                 "ignoreMissingFields": ignore_missing_fields,
             },
         )
-        return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
+        return EntityMatchingModel.load(response.json(), cognite_client=self._cognite_client)
 
     def predict(
         self,
@@ -274,7 +274,7 @@ class EntityMatchingAPI(APIClient):
 
         Args:
             sources (Sequence[dict] | None): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
-            targets (Sequence[dict] | None): entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
+            targets (Sequence[dict] | None): entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
             num_matches (int): number of matches to return for each item.
             score_threshold (float | None): only return matches with a score above this threshold
             id (int | None): ids of the model to use.

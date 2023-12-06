@@ -640,11 +640,11 @@ class DocumentsAPI(APIClient):
                 break
 
         if highlight:
-            return DocumentHighlightList._load(
+            return DocumentHighlightList.load(
                 ({"highlight": item["highlight"], "document": item["item"]} for item in json_content["items"]),
                 cognite_client=self._cognite_client,
             )
-        return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
+        return DocumentList.load((item["item"] for item in results), cognite_client=self._cognite_client)
 
     def list(self, filter: Filter | dict | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> DocumentList:
         """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_

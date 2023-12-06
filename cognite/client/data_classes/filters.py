@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, List, Mapping, Sequence, Tuple, Union, ca
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import EnumProperty, Geometry
+from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConversionPropertyList
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import to_camel_case
 
@@ -29,41 +29,38 @@ class ParameterValue:
     parameter: str
 
 
-FilterValue = Union[RawValue, PropertyReferenceValue, ParameterValue]
-FilterValueList = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
+FilterValue: TypeAlias = Union[RawValue, PropertyReferenceValue, ParameterValue]
+FilterValueList: TypeAlias = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
 
 
 def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
     if isinstance(filter_value, PropertyReferenceValue):
-        return {
-            "property": filter_value.property.as_reference()
-            if isinstance(filter_value.property, EnumProperty)
-            else filter_value.property
-        }
+        if isinstance(filter_value.property, EnumProperty):
+            return {"property": filter_value.property.as_reference()}
+        return {"property": filter_value.property}
+
     if isinstance(filter_value, ParameterValue):
         return {"parameter": filter_value.parameter}
-    else:
-        return filter_value
+    return filter_value
 
 
 def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
     if isinstance(value, Mapping) and len(value.keys()) == 1:
-        (value_key,) = value
+        ((value_key, to_load),) = value.items()
         if value_key == "property":
-            return PropertyReferenceValue(value[value_key])
+            return PropertyReferenceValue(to_load)
         if value_key == "parameter":
-            return ParameterValue(value[value_key])
+            return ParameterValue(to_load)
     return value
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, EnumProperty):
+    if isinstance(property_, (EnumProperty, NoCaseConversionPropertyList)):
         return property_.as_reference()
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):
-        output = [to_camel_case(p) if camel_case else p for p in property_]
-        return tuple(output) if isinstance(property_, tuple) else output
+        return type(property_)(map(to_camel_case, property_)) if camel_case else property_
     else:
         raise ValueError(f"Invalid property format {property_}")
 
@@ -71,8 +68,20 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
 class Filter(ABC):
     _filter_name: str
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {self._filter_name: self._filter_body(camel_case)}
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        """
+        Dump the filter to a dictionary.
+
+        Args:
+            camel_case_property (bool): Whether to camel case the property names. Defaults to False. Typically,
+                when the filter is used in data modeling, the property names should not be changed,
+                while when used with Assets, Events, Sequences, or Files, the property names should be camel cased.
+
+        Returns:
+            dict[str, Any]: The filter as a dictionary.
+
+        """
+        return {self._filter_name: self._filter_body(camel_case_property=camel_case_property)}
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
@@ -142,20 +151,25 @@ class Filter(ABC):
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
+        elif filter_name == ContainsAll._filter_name:
+            return ContainsAll(
+                property=filter_body["property"],
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
+            )
         elif filter_name == GeoJSONIntersects._filter_name:
             return GeoJSONIntersects(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == GeoJSONDisjoint._filter_name:
             return GeoJSONDisjoint(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == GeoJSONWithin._filter_name:
             return GeoJSONWithin(
                 property=filter_body["property"],
-                geometry=Geometry._load(filter_body["geometry"]),
+                geometry=Geometry.load(filter_body["geometry"]),
             )
         elif filter_name == InAssetSubtree._filter_name:
             return InAssetSubtree(
@@ -190,7 +204,7 @@ def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[
         raise ValueError(f"The filters {names} are not supported for {api_name}")
 
 
-class CompoundFilter(Filter):
+class CompoundFilter(Filter, ABC):
     _filter_name = "compound"
 
     def __init__(self, *filters: Filter) -> None:
@@ -200,7 +214,7 @@ class CompoundFilter(Filter):
         return [filter_.dump(camel_case_property) for filter_ in self._filters]
 
 
-class FilterWithProperty(Filter):
+class FilterWithProperty(Filter, ABC):
     _filter_name = "propertyFilter"
 
     def __init__(self, property: PropertyReference) -> None:
@@ -213,7 +227,7 @@ class FilterWithProperty(Filter):
         return {"property": self._dump_property(camel_case_property)}
 
 
-class FilterWithPropertyAndValue(FilterWithProperty):
+class FilterWithPropertyAndValue(FilterWithProperty, ABC):
     _filter_name = "propertyAndValueFilter"
 
     def __init__(self, property: PropertyReference, value: FilterValue) -> None:
@@ -224,7 +238,7 @@ class FilterWithPropertyAndValue(FilterWithProperty):
         return {"property": self._dump_property(camel_case_property), "value": _dump_filter_value(self._value)}
 
 
-class FilterWithPropertyAndValueList(FilterWithProperty):
+class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
     _filter_name = "propertyAndValueListFilter"
 
     def __init__(self, property: PropertyReference, values: FilterValueList) -> None:
@@ -237,16 +251,56 @@ class FilterWithPropertyAndValueList(FilterWithProperty):
 
 @final
 class And(CompoundFilter):
+    """A filter that combines multiple filters with a logical AND.
+
+    Args:
+        *filters (Filter): The filters to combine.
+
+
+    Example:
+
+        Combine an In and an Equals filter::
+
+            >>> from cognite.client.data_classes.filters import And, Equals, In
+            >>> filter = And(Equals(("some", "property"), 42), In(("another", "property"), ["a", "b", "c"]))
+    """
+
     _filter_name = "and"
 
 
 @final
 class Or(CompoundFilter):
+    """A filter that combines multiple filters with a logical OR.
+
+    Args:
+        *filters (Filter): The filters to combine.
+
+    Example:
+
+        Combine an In and an Equals filter::
+
+            >>> from cognite.client.data_classes.filters import Or, Equals, In
+            >>> filter = Or(Equals(("some", "property"), 42), In(("another", "property"), ["a", "b", "c"]))
+    """
+
     _filter_name = "or"
 
 
 @final
 class Not(CompoundFilter):
+    """A filter that negates another filter.
+
+    Args:
+        filter (Filter): The filter to negate.
+
+    Example:
+
+        Negate an Equals filter:
+
+            >>> from cognite.client.data_classes.filters import Equals, Not
+            >>> filter = Not(Equals(("some", "property"), 42))
+    """
+
     _filter_name = "not"
 
     def __init__(self, filter: Filter) -> None:
@@ -258,6 +312,23 @@ class Not(CompoundFilter):
 
 @final
 class Nested(Filter):
+    """A filter to apply to the node at the other side of a direct relation.
+
+    Args:
+        scope (PropertyReference): The direct relation property to traverse.
+        filter (Filter): The filter to apply.
+
+    Example:
+
+        Filter on a related node's property:
+
+            >>> from cognite.client.data_classes.filters import Nested, Equals
+            >>> filter = Nested(
+            ...     ("somespace", "somecontainer", "related"),
+            ...     Equals(("somespace", "somecontainer", "someProperty"), 42)
+            ... )
+    """
+
     _filter_name = "nested"
 
     def __init__(self, scope: PropertyReference, filter: Filter) -> None:
@@ -270,6 +341,16 @@ class Nested(Filter):
 
 @final
 class MatchAll(Filter):
+    """A filter that matches all instances.
+
+    Example:
+
+        Match everything:
+
+            >>> from cognite.client.data_classes.filters import MatchAll
+            >>> filter = MatchAll()
+    """
+
     _filter_name = "matchAll"
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
@@ -278,6 +359,20 @@ class MatchAll(Filter):
 
 @final
 class HasData(Filter):
+    """Return only instances that have data in the provided containers/views.
+
+    Args:
+        containers (Sequence[tuple[str, str] | ContainerId] | None): Containers to check for data.
+        views (Sequence[tuple[str, str, str] | ViewId] | None): Views to check for data.
+
+    Example:
+
+        Filter on having data in a specific container:
+
+            >>> from cognite.client.data_classes.filters import HasData
+            >>> filter = HasData(containers=[("somespace", "somecontainer")])
+    """
+
     _filter_name = "hasData"
 
     def __init__(
@@ -305,6 +400,23 @@ class HasData(Filter):
 
 @final
 class Range(FilterWithProperty):
+    """Filters results based on a range of values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        gt (FilterValue | None): Greater than.
+        gte (FilterValue | None): Greater than or equal to.
+        lt (FilterValue | None): Less than.
+        lte (FilterValue | None): Less than or equal to.
+
+    Example:
+
+        Retrieve all instances with a property value greater than 42:
+
+            >>> from cognite.client.data_classes.filters import Range
+            >>> filter = Range(("some", "property"), gt=42)
+    """
+
     _filter_name = "range"
 
     def __init__(
@@ -336,6 +448,26 @@ class Range(FilterWithProperty):
 
 @final
 class Overlaps(Filter):
+    """Filters results based whether or not the provided range overlaps with the range given by the start and end
+    properties.
+
+    Args:
+        start_property (PropertyReference): The property to filter on.
+        end_property (PropertyReference): The property to filter on.
+        gt (FilterValue | None): Greater than.
+        gte (FilterValue | None): Greater than or equal to.
+        lt (FilterValue | None): Less than.
+        lte (FilterValue | None): Less than or equal to.
+
+
+    Example:
+
+        Retrieve all instances with a range overlapping with the range (42, 100):
+
+            >>> from cognite.client.data_classes.filters import Overlaps
+            >>> filter = Overlaps(("some", "startProperty"), ("some", "endProperty"), gt=42, lt=100)
+    """
+
     _filter_name = "overlaps"
 
     def __init__(
@@ -373,31 +505,114 @@ class Overlaps(Filter):
 
 @final
 class Equals(FilterWithPropertyAndValue):
+    """Filters results based on whether the property equals the provided value.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        value (FilterValue): The value to filter on.
+
+    Example:
+
+        Filter than can be used to retrieve items where the property value equals 42:
+
+            >>> from cognite.client.data_classes.filters import Equals
+            >>> filter = Equals(("some", "property"), 42)
+    """
+
     _filter_name = "equals"
 
 
 @final
 class In(FilterWithPropertyAndValueList):
+    """Filters results based on whether the property equals one of the provided values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        values (FilterValueList): The values to filter on.
+
+    Example:
+
+        Filter than can be used to retrieve items where the property value equals 42 or 43 (or both):
+
+            >>> from cognite.client.data_classes.filters import In
+            >>> filter = In(("some", "property"), [42, 43])
+    """
+
     _filter_name = "in"
 
 
 @final
 class Exists(FilterWithProperty):
+    """Filters results based on whether the property is set or not.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+
+    Example:
+
+        Filter than can be used to retrieve items where the property value is set:
+
+            >>> from cognite.client.data_classes.filters import Exists
+            >>> filter = Exists(("some", "property"))
+    """
+
     _filter_name = "exists"
 
 
 @final
 class Prefix(FilterWithPropertyAndValue):
+    """Prefix filter results based on whether the (text) property starts with the provided value.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        value (FilterValue): The value to filter on.
+
+    Example:
+
+        Filter than can be used to retrieve items where the property value starts with "somePrefix":
+
+            >>> from cognite.client.data_classes.filters import Prefix
+            >>> filter = Prefix(("some", "property"), "somePrefix")
+    """
+
     _filter_name = "prefix"
 
 
 @final
 class ContainsAny(FilterWithPropertyAndValueList):
+    """Returns results where the referenced property contains _any_ of the provided values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        values (FilterValueList): The value to filter on.
+
+    Example:
+
+        Filter than can be used to retrieve items where the property value contains either 42 or 43:
+
+            >>> from cognite.client.data_classes.filters import ContainsAny
+            >>> filter = ContainsAny(("some", "property"), [42, 43])
+    """
+
     _filter_name = "containsAny"
 
 
 @final
 class ContainsAll(FilterWithPropertyAndValueList):
+    """Returns results where the referenced property contains _all_ of the provided values.
+
+    Args:
+        property (PropertyReference): The property to filter on.
+        values (FilterValueList): The value to filter on.
+
+    Example:
+
+        Filter than can be used to retrieve items where the property value contains both 42 and 43:
+
+            >>> from cognite.client.data_classes.filters import ContainsAll
+            >>> filter = ContainsAll(("some", "property"), [42, 43])
+    """
+
     _filter_name = "containsAll"
 
 

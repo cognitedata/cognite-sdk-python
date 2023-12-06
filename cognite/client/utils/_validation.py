@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping, Sequence, Tup
 from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import T_CogniteSort
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 if TYPE_CHECKING:
@@ -18,6 +19,14 @@ SortSpec: TypeAlias = Union[
     Tuple[str, Literal["asc", "desc"]],
     Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
 ]
+
+
+def assert_type(var: Any, var_name: str, types: list[type], allow_none: bool = False) -> None:
+    if var is None:
+        if not allow_none:
+            raise TypeError(f"{var_name} cannot be None")
+    elif not isinstance(var, tuple(types)):
+        raise TypeError(f"{var_name!r} must be one of types {types}, not {type(var)}")
 
 
 def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[str]) -> dict[str, T_ID]:
@@ -66,3 +75,17 @@ def prepare_filter_sort(
             sort = [sort]
         return [sort_type.load(item).dump(camel_case=True) for item in sort]
     return None
+
+
+def verify_limit(limit: Any) -> None:
+    if is_unlimited(limit):
+        return
+
+    if isinstance(limit, int):
+        if limit <= 0:
+            raise ValueError("limit must be strictly positive")
+    else:
+        raise TypeError(
+            "A finite 'limit' must be given as a strictly positive integer. "
+            "To indicate 'no limit' use one of: [None, -1, math.inf]."
+        )

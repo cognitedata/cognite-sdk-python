@@ -299,15 +299,28 @@ class TransformationsAPI(APIClient):
 
             Perform a partial update on a transformation, updating the query and making it private::
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationUpdate
-                >>> c = CogniteClient()
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
-        """
 
+            Update the session used for reading (source) and writing (destination) when authenticating for all
+            transformations in a given data set:
+
+                >>> from cognite.client.data_classes import NonceCredentials
+                >>> to_update = c.transformations.list(data_set_external_ids=["foo"])
+                >>> new_session = c.iam.sessions.create()
+                >>> new_nonce = NonceCredentials(
+                ...     session_id=new_session.id,
+                ...     nonce=new_session.nonce,
+                ...     cdf_project_name=c.config.project
+                ... )
+                >>> for tr in to_update:
+                ...     tr.source_nonce = new_nonce
+                ...     tr.destination_nonce = new_nonce
+                >>> res = c.transformations.update(to_update)
+        """
         if isinstance(item, Sequence):
-            item = list(item).copy()
+            item = list(item)
             sessions: dict[str, NonceCredentials] = {}
             for i, t in enumerate(item):
                 if isinstance(t, Transformation):
@@ -321,7 +334,7 @@ class TransformationsAPI(APIClient):
             item._process_credentials(keep_none=True)
         elif not isinstance(item, TransformationUpdate):
             raise TypeError(
-                "item must be Sequence[Transformation], Transformation, Sequence[TransformationUpdate] or TransformationUpdate"
+                "item must be one of: TransformationUpdate, Transformation, Sequence[TransformationUpdate | Transformation]."
             )
 
         return self._update_multiple(
@@ -367,7 +380,7 @@ class TransformationsAPI(APIClient):
         id = {"externalId": transformation_external_id, "id": transformation_id}
 
         response = self._post(json=id, url_path=self._RESOURCE_PATH + "/run")
-        job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
+        job = TransformationJob.load(response.json(), cognite_client=self._cognite_client)
 
         if wait:
             return job.wait(timeout=timeout)
@@ -482,6 +495,6 @@ class TransformationsAPI(APIClient):
         }
 
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
-        result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
+        result = TransformationPreviewResult.load(response.json(), cognite_client=self._cognite_client)
 
         return result

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -12,6 +11,7 @@ from cognite.client.data_classes import (
     TransformationJobMetric,
     TransformationJobMetricList,
 )
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
 
 
@@ -96,7 +96,7 @@ class TransformationJobsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.list_metrics(id=1)
         """
-        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
 
         return self._list(
             list_cls=TransformationJobMetricList,

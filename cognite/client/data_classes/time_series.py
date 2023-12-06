@@ -11,13 +11,13 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
+    NoCaseConversionPropertyList,
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -39,6 +39,7 @@ class TimeSeries(CogniteResource):
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
+        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
         asset_id (int | None): Asset ID of equipment linked to this time series.
         is_step (bool | None): Whether the time series is a step series or not.
         description (str | None): Description of the time series.
@@ -58,6 +59,7 @@ class TimeSeries(CogniteResource):
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
         asset_id: int | None = None,
         is_step: bool | None = None,
         description: str | None = None,
@@ -74,6 +76,7 @@ class TimeSeries(CogniteResource):
         self.is_string = is_string
         self.metadata = metadata
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.asset_id = asset_id
         self.is_step = is_step
         self.description = description
@@ -93,13 +96,13 @@ class TimeSeries(CogniteResource):
             int: The number of datapoints in this time series.
 
         Raises:
-            ValueError: If the time series is string as count aggregate is only supported for numeric data
+            RuntimeError: If the time series is string, as count aggregate is only supported for numeric data
 
         Returns:
             int: The total number of datapoints
         """
         if self.is_string:
-            raise ValueError("String time series does not support count aggregate.")
+            raise RuntimeError("String time series does not support count aggregate.")
 
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
@@ -153,6 +156,8 @@ class TimeSeriesFilter(CogniteFilter):
     Args:
         name (str | None): Filter on name.
         unit (str | None): Filter on unit.
+        unit_external_id (str | None): Filter on unit external ID.
+        unit_quantity (str | None): Filter on unit quantity.
         is_string (bool | None): Filter on isString.
         is_step (bool | None): Filter on isStep.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -169,6 +174,8 @@ class TimeSeriesFilter(CogniteFilter):
         self,
         name: str | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -182,6 +189,8 @@ class TimeSeriesFilter(CogniteFilter):
     ) -> None:
         self.name = name
         self.unit = unit
+        self.unit_external_id = unit_external_id
+        self.unit_quantity = unit_quantity
         self.is_string = is_string
         self.is_step = is_step
         self.metadata = metadata
@@ -250,6 +259,10 @@ class TimeSeriesUpdate(CogniteUpdate):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "unit")
 
     @property
+    def unit_external_id(self) -> _PrimitiveTimeSeriesUpdate:
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "unitExternalId")
+
+    @property
     def asset_id(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "assetId")
 
@@ -278,27 +291,13 @@ class TimeSeriesUpdate(CogniteUpdate):
             # TimeSeries does not support setting metadata to an empty array.
             PropertySpec("metadata", is_container=True, is_nullable=False),
             PropertySpec("unit"),
+            PropertySpec("unit_external_id", is_beta=True),
             PropertySpec("asset_id"),
             PropertySpec("description"),
             PropertySpec("is_step", is_nullable=False),
             PropertySpec("security_categories", is_container=True),
             PropertySpec("data_set_id"),
         ]
-
-
-class TimeSeriesAggregate(dict):
-    """No description.
-
-    Args:
-        count (int | None): No description.
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class TimeSeriesList(CogniteResourceList[TimeSeries], IdTransformerMixin):
@@ -310,6 +309,8 @@ class TimeSeriesProperty(EnumProperty):
     external_id = "externalId"
     name = "name"
     unit = "unit"
+    unit_external_id = "unitExternalId"
+    unit_quantity = "unitQuantity"
     asset_id = "assetId"
     asset_root_id = "assetRootId"
     created_time = "createdTime"
@@ -324,7 +325,7 @@ class TimeSeriesProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 class SortableTimeSeriesProperty(EnumProperty):
@@ -338,7 +339,7 @@ class SortableTimeSeriesProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["metadata", key]
+        return NoCaseConversionPropertyList(["metadata", key])
 
 
 SortableTimeSeriesPropertyLike: TypeAlias = Union[SortableTimeSeriesProperty, str, List[str]]

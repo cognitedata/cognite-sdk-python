@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import functools
-import importlib
+import json
 import math
 import numbers
 import platform
 import warnings
 from decimal import Decimal
-from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,8 +19,6 @@ from typing import (
 )
 from urllib.parse import quote
 
-import cognite.client
-from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -32,11 +29,14 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-    from cognite.client.data_classes._base import T_CogniteResource
-
+    from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
 T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
+
+
+def no_op(x: T) -> T:
+    return x
 
 
 def is_unlimited(limit: float | int | None) -> bool:
@@ -49,10 +49,14 @@ def get_accepted_params(cls: type[T_CogniteResource]) -> dict[str, str]:
 
 
 def fast_dict_load(
-    cls: type[T_CogniteResource], item: dict[str, Any], cognite_client: CogniteClient | None
-) -> T_CogniteResource:
-    instance = cls(cognite_client=cognite_client)
+    cls: type[T_CogniteObject], item: dict[str, Any], cognite_client: CogniteClient | None
+) -> T_CogniteObject:
+    try:
+        instance = cls(cognite_client=cognite_client)  # type: ignore [call-arg]
+    except TypeError:
+        instance = cls()
     # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
+    # Accepted: {camel_case(attribute_name): attribute_name}
     accepted = get_accepted_params(cls)  # type: ignore [arg-type]
     for camel_attr, value in item.items():
         try:
@@ -60,6 +64,15 @@ def fast_dict_load(
         except KeyError:
             pass
     return instance
+
+
+def load_yaml_or_json(resource: str) -> Any:
+    try:
+        import yaml
+
+        return yaml.safe_load(resource)
+    except ImportError:
+        return json.loads(resource)
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
@@ -111,64 +124,14 @@ def json_dump_default(x: Any) -> Any:
     raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
-def assert_type(var: Any, var_name: str, types: list[type], allow_none: bool = False) -> None:
-    if var is None:
-        if not allow_none:
-            raise TypeError(f"{var_name} cannot be None")
-    elif not isinstance(var, tuple(types)):
-        raise TypeError(f"{var_name!r} must be one of types {types}, not {type(var)}")
-
-
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
     return path.format(*[quote(str(arg), safe="") for arg in args])
 
 
-@overload
-def local_import(m1: str, /) -> ModuleType:
-    ...
-
-
-@overload
-def local_import(m1: str, m2: str, /) -> tuple[ModuleType, ModuleType]:
-    ...
-
-
-@overload
-def local_import(m1: str, m2: str, m3: str, /) -> tuple[ModuleType, ModuleType, ModuleType]:
-    ...
-
-
-@overload
-def local_import(m1: str, m2: str, m3: str, m4: str, /) -> tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
-    ...
-
-
-def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:
-    assert_type(module, "module", [tuple])
-    if len(module) == 1:
-        name = module[0]
-        try:
-            return importlib.import_module(name)
-        except ImportError as e:
-            raise CogniteImportError(name.split(".")[0]) from e
-
-    modules = []
-    for name in module:
-        try:
-            modules.append(importlib.import_module(name))
-        except ImportError as e:
-            raise CogniteImportError(name.split(".")[0]) from e
-    return tuple(modules)
-
-
-def import_legacy_protobuf() -> bool:
-    from google.protobuf import __version__ as pb_version
-
-    return 4 > int(pb_version.split(".")[0])
-
-
 def get_current_sdk_version() -> str:
-    return cognite.client.__version__
+    from cognite.client import __version__
+
+    return __version__
 
 
 @functools.lru_cache(maxsize=1)
@@ -232,7 +195,7 @@ def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list] | 
         collection = list(collection.items())
         return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
-    raise ValueError(f"Can only split list or dict, not {type(collection)}")
+    raise TypeError(f"Can only split list or dict, not {type(collection)}")
 
 
 def convert_true_match(true_match: dict | list | tuple[int | str, int | str]) -> dict:
@@ -257,7 +220,11 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:
-    return sum(1 if a is not None else 0 for a in args) == 1
+    return sum(a is not None for a in args) == 1
+
+
+def at_least_one_is_not_none(*args: Any) -> bool:
+    return sum(a is not None for a in args) >= 1
 
 
 def rename_and_exclude_keys(
@@ -266,3 +233,13 @@ def rename_and_exclude_keys(
     aliases = aliases or {}
     exclude = exclude or set()
     return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}
+
+
+def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
+    if (res := dct.get(key)) is not None:
+        return cls._load(res)
+    return None
+
+
+def unpack_items_in_payload(payload: dict[str, dict[str, Any]]) -> list:
+    return payload["json"]["items"]

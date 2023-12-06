@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     TransformationDestination,
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 
 
 class TransformationSchemaAPI(APIClient):
@@ -34,7 +34,7 @@ class TransformationSchemaAPI(APIClient):
                 >>> columns = c.transformations.schema.retrieve(destination = TransformationDestination.assets())
         """
 
-        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))
         filter = destination.dump(True)
         filter.pop("type")
         other_params = {"conflictMode": conflict_mode} if conflict_mode else None

@@ -58,7 +58,7 @@ class TestSpacesAPI:
             # Assert
             assert deleted_spaces, "The deleted spaces should be returned."
             assert deleted_spaces[0] == my_space.space
-            assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
+            assert cognite_client.data_modeling.spaces.retrieve(spaces=my_space.space) is None
         finally:
             # Cleanup
             if created_space and not deleted_spaces:
@@ -90,14 +90,12 @@ class TestSpacesAPI:
         with pytest.raises(CogniteAPIError) as error:
             cognite_client.data_modeling.spaces.apply(SpaceApply(space="myInvalidSpace", name="wayTooLong" * 255))
 
-        # Assert
         assert error.value.code == 400
-        assert "name size must be between 0 and 255" in error.value.message
+        assert error.value.message == "Name must be at most 255 characters long."
 
     def test_apply_failed_and_successful_task(
         self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
     ) -> None:
-        # Arrange
         valid_space = SpaceApply(
             space="myNewValidSpace",
         )
@@ -105,18 +103,15 @@ class TestSpacesAPI:
         monkeypatch.setattr(cognite_client.data_modeling.spaces, "_CREATE_LIMIT", 1)
 
         try:
-            # Act
             with pytest.raises(CogniteAPIError) as error:
                 cognite_client.data_modeling.spaces.apply([valid_space, invalid_space])
 
-            # Assert
-            assert "name size must be between 0 and 255" in error.value.message
+            assert error.value.message == "Name must be at most 255 characters long."
             assert error.value.code == 400
             assert len(error.value.successful) == 1
             assert len(error.value.failed) == 1
 
         finally:
-            # Cleanup
             cognite_client.data_modeling.spaces.delete(valid_space.as_id())
 
     def test_dump_json_serialize_load(self, cdf_spaces: SpaceList) -> None:

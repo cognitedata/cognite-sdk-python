@@ -4,7 +4,7 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, MutableMapping
 
-import cognite.client as cc
+import cognite.client as cc  # Do not import individual entities
 from cognite.client._http_client import _RetryTracker
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import CredentialProvider
@@ -40,7 +40,6 @@ def patch_sdk_for_pyodide() -> None:
 
     # - Set all usage of thread pool executors to use dummy/serial-implementations:
     cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
-    cc.utils._concurrency.ConcurrencySettings.priority_executor_type = "mainthread"
 
     # - Auto-ignore protobuf warning for the user (as they can't fix this):
     warnings.filterwarnings(
