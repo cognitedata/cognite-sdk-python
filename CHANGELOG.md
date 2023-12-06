@@ -16,6 +16,10 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
+ 
+## [7.5.3] - 2023-12-06
+### Added
+- Support for `subworkflow` tasks in `workflows`.
 
 ## [7.5.2] - 2023-12-05
 ### Fixed
