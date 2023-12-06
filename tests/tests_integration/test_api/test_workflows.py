@@ -260,10 +260,17 @@ class TestWorkflowVersions:
             workflow_definition=WorkflowDefinitionUpsert(
                 tasks=[
                     WorkflowTask(
-                        external_id="integration_test-workflow_definitions-test_create_delete-task1",
-                        parameters=FunctionTaskParameters(
-                            external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
-                            data={"a": 1, "b": 2},
+                        external_id="integration_test-workflow_definitions-test_create_delete-subworkflow1",
+                        parameters=SubworkflowTaskParameters(
+                            tasks=[
+                                WorkflowTask(
+                                    external_id="integration_test-workflow_definitions-test_create_delete-task1",
+                                    parameters=FunctionTaskParameters(
+                                        external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
+                                        data={"a": 1, "b": 2},
+                                    ),
+                                )
+                            ]
                         ),
                     )
                 ],
