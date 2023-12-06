@@ -16,7 +16,14 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
- 
+
+
+## [7.5.4] - 2023-12-06
+### Changed
+- The `partitions` parameter is no longer respected when using generator methods to list resources
+- The `max_workers` config option has been moved from ClientConfig to the global config.
+- The default for the `max_workers` option has been changed from 10 to 5.
+
 ## [7.5.3] - 2023-12-06
 ### Added
 - Support for `subworkflow` tasks in `workflows`.
