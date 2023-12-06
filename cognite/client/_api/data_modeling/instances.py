@@ -223,7 +223,7 @@ class InstancesAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
-            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (list[ViewId] | ViewId | None): Views to retrieve properties from.
@@ -695,7 +695,7 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to search in.
             query (str): Query string that will be parsed and used for search.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
@@ -799,7 +799,7 @@ class InstancesAPI(APIClient):
             view (ViewId): View to aggregate over.
             aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]): The properties to aggregate over.
             group_by (str | SequenceNotStr[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
             properties (str | SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
@@ -892,7 +892,7 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to to aggregate over.
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
@@ -1073,7 +1073,7 @@ class InstancesAPI(APIClient):
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

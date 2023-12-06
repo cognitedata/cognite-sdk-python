@@ -584,7 +584,7 @@ class DocumentsAPI(APIClient):
             query (str): The free text search query.
             highlight (bool): Whether or not matches in search results should be highlighted.
             filter (Filter | dict | None): The filter to narrow down the documents to search.
-            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
             limit (int): Maximum number of items to return. When using highlights, the maximum value is reduced to 20. Defaults to 25.
 
         Returns:
