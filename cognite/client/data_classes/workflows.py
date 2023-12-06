@@ -311,8 +311,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls: type[Self], resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
 
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
