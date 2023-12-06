@@ -131,10 +131,7 @@ def cdf_function_add(cognite_client: CogniteClient) -> Function:
         return output
 
     cognite_client.functions.create(name="Add", external_id=external_id, function_handle=handle)
-    pytest.skip(
-        "Function need to be redeployed, skipping tests that need it",
-        allow_module_level=True,
-    )
+    pytest.skip("Function need to be redeployed, skipping tests that need it", allow_module_level=True)
 
 
 @pytest.fixture(scope="session")
