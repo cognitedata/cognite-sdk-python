@@ -154,8 +154,6 @@ class EntityMatchingAPI(APIClient):
     def list_jobs(self) -> ContextualizationJobList:
         # TODO: Not in service contract
         """List jobs, typically model fit and predict runs.
-        Args: None
-
         Returns:
             ContextualizationJobList: List of jobs."""
         return ContextualizationJobList.load(
@@ -171,8 +169,6 @@ class EntityMatchingAPI(APIClient):
         Args:
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | Sequence[str] | None): External ID or list of external ids
-        Returns: None
-
         Examples:
             >>> from cognite.client import CogniteClient
             >>> client = CogniteClient()
