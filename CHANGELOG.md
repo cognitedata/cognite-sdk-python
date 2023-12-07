@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.5.2] - 2023-12-07
+### Added
+- Added `poll_timeout` parameter on `time_series.subscriptions.iterate_data`. Will keep the connection open and waiting,
+  until new data is available, up to `poll_timeout` seconds.
+
 ## [7.5.1] - 2023-12-01
 ### Changed
 - Raise an exception if `ClientConfig:base_url` is set to `None` or an empty string
