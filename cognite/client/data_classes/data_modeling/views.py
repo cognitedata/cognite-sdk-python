@@ -87,6 +87,14 @@ class ViewApply(ViewCore):
         filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
         properties (dict[str, ViewPropertyApply] | None): No description.
+
+    !!! note "implements"
+        The order of elements (i.e., `ViewId`) in `implements` matters, as it indicates priority on how to handle
+        collisions of same properties from different views. 
+        See
+        [Containers, views, polymorphism, data models](https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels/#implemented-property-conflicts-and-precedence)
+        for more details.
+    
     """
 
     def __init__(
