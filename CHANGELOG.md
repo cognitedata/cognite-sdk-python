@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.5.5] - 2023-12-07
+### Added
+- Support for `workflows.cancel`.
 
 ## [7.5.4] - 2023-12-06
 ### Changed
