@@ -557,7 +557,7 @@ class AssetsAPI(APIClient):
         Args:
             assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
             upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
-            upsert_mode (Literal['patch', 'replace']): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
+            upsert_mode (Literal["patch", "replace"]): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
         Returns:
             AssetList: Created (and possibly updated) asset hierarchy
@@ -786,7 +786,7 @@ class AssetsAPI(APIClient):
 
         Args:
             item (Asset | Sequence[Asset]): Asset or list of assets to upsert.
-            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Asset | AssetList: The upserted asset(s).
@@ -828,7 +828,7 @@ class AssetsAPI(APIClient):
         Args:
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            aggregated_properties (Sequence[Literal['child_count', 'path', 'depth']] | None): Set of aggregated properties to include. Options are childCount, path, depth.
+            aggregated_properties (Sequence[Literal["child_count", "path", "depth"]] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:

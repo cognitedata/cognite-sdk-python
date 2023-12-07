@@ -242,7 +242,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
 
     Args:
         resource_path (str): The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
-        method (Literal['GET', 'POST', 'PUT', 'DELETE'] | str): The HTTP method of the request.
+        method (Literal["GET", "POST", "PUT", "DELETE"] | str): The HTTP method of the request.
         query_parameters (dict | str | None): The query parameters of the request. Defaults to None.
         body (dict | str | None): The body of the request. Defaults to None. Limited to 1024KiB in size
         request_timeout_in_millis (int | str): The timeout of the request in milliseconds. Defaults to 10000.
@@ -826,7 +826,7 @@ class WorkflowExecution(CogniteResource):
     Args:
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
-        status (Literal['running', 'completed', 'failed', 'timed_out', 'terminated', 'paused']): The status of the workflow execution.
+        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
@@ -900,7 +900,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow.
-        status (Literal['running', 'completed', 'failed', 'timed_out', 'terminated', 'paused']): The status of the workflow execution.
+        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
         executed_tasks (list[WorkflowTaskExecution]): The executed tasks of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.

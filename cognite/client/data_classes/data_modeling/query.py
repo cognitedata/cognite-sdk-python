@@ -216,8 +216,8 @@ class NodeResultSetExpression(ResultSetExpression):
         sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         limit (int | None): Limit the result set to this number of instances.
         through (list[str] | tuple[str, str, str] | None): Chain your result-expression through this view. The tuple must be on the form (space, view/version, property).
-        direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
-        chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
+        direction (Literal["outwards", "inwards"]): The direction to use when traversing direct relations. Only applicable when through is specified.
+        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
     """
 
     def __init__(
@@ -271,7 +271,7 @@ class EdgeResultSetExpression(ResultSetExpression):
     Args:
         from_ (str | None): Chain your result expression from this edge.
         max_distance (int | None): The largest - max - number of levels to traverse.
-        direction (Literal['outwards', 'inwards']): The direction to use when traversing.
+        direction (Literal["outwards", "inwards"]): The direction to use when traversing.
         filter (Filter | None): Filter the result set based on this filter.
         node_filter (Filter | None): Filter the result set based on this filter.
         termination_filter (Filter | None): Filter the result set based on this filter.
@@ -279,7 +279,7 @@ class EdgeResultSetExpression(ResultSetExpression):
         sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         post_sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         limit (int | None): Limit the result set to this number of instances.
-        chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
+        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
 
     """
 
