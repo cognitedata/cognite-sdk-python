@@ -88,13 +88,13 @@ class ViewApply(ViewCore):
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
         properties (dict[str, ViewPropertyApply] | None): No description.
 
-    !!! note "implements"
-        The order of elements (i.e., `ViewId`) in `implements` matters, as it indicates priority on how to handle
-        collisions of same properties from different views. 
-        See
-        [Containers, views, polymorphism, data models](https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels/#implemented-property-conflicts-and-precedence)
+    .. note::
+        The order of elements (i.e., `ViewId`) in :code:`implements` matters, as it indicates priority on how to handle
+        collisions of same properties from different views.
+        See docs on
+        `implemented property conflicts <https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels/#implemented-property-conflicts-and-precedence>`_
         for more details.
-    
+
     """
 
     def __init__(
