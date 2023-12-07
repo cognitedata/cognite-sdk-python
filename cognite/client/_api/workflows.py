@@ -9,6 +9,7 @@ from typing_extensions import TypeAlias
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
+    CancelExecution,
     Workflow,
     WorkflowExecution,
     WorkflowExecutionDetailed,
@@ -259,6 +260,36 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             filter=filter_,
             limit=limit,
         )
+
+    def cancel(self, executions: Sequence[CancelExecution]) -> Sequence[WorkflowExecution]:
+        """`cancel a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/CancelationOfSpecificRunsOfWorkflow>`_
+
+        Args:
+            executions (Sequence[CancelExecution]): List of executions to cancel.
+
+        Tip:
+            Cancelling a workflow only prevents it from starting new tasks, tasks already running on
+            other services (transformations and functions) will keep running there.
+
+        Returns:
+            Sequence[WorkflowExecution]: The canceled workflow executions.
+
+        Examples:
+
+            Trigger a workflow execution for the workflow "foo", version 1 and cancel it:
+
+                >>> from cognite.client import CogniteClient, CancelExecution
+                >>> c = CogniteClient()
+                >>> res = c.workflows.executions.trigger("foo", "1")
+                >>> c.workflows.executions.cancel([CancelExecution(res.id, "test cancelation")])
+        """
+        self._warning.warn()
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/cancel",
+            json={"items": [execution.dump(camel_case=True) for execution in executions]},
+        )
+
+        return [WorkflowExecution.load(execution) for execution in response.json()["items"]]
 
 
 class WorkflowVersionAPI(BetaWorkflowAPIClient):
