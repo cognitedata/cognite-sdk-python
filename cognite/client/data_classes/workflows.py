@@ -95,8 +95,11 @@ class WorkflowList(CogniteResourceList[Workflow]):
         return [workflow.external_id for workflow in self.data]
 
 
+ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow"]
+
+
 class WorkflowTaskParameters(CogniteObject, ABC):
-    task_type: ClassVar[Literal["function", "transformation", "cdf", "dynamic"]]
+    task_type: ClassVar[ValidTaskType]
 
     @classmethod
     def load_parameters(cls, data: dict) -> WorkflowTaskParameters:
@@ -116,8 +119,10 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return CDFTaskParameters._load(parameters)
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
+        elif type_ == "subworkflow":
+            return SubworkflowTaskParameters._load(parameters)
         else:
-            raise ValueError(f"Unknown task type: {type_}. Expected 'function', 'transformation', 'cdf, or 'dynamic'")
+            raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -288,6 +293,35 @@ class CDFTaskParameters(WorkflowTaskParameters):
         }
 
 
+class SubworkflowTaskParameters(WorkflowTaskParameters):
+    """
+    The subworkflow task parameters are used to specify a subworkflow task.
+
+    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for conveniece. It takes the tasks parameter which is an array of
+    function, transformation, and cdf task definitions. This array needs to be statically set on the worklow definition (if it needs to be defined at runtime, use a
+    dynamic task).
+
+    Args:
+        tasks (list[WorkflowTask]): The tasks belonging to the subworkflow.
+    """
+
+    task_type = "subworkflow"
+
+    def __init__(self, tasks: list[WorkflowTask]) -> None:
+        self.tasks = tasks
+
+    @classmethod
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        subworkflow: dict[str, Any] = resource[cls.task_type]
+
+        return cls(
+            [WorkflowTask._load(task) for task in subworkflow["tasks"]],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
+
+
 class DynamicTaskParameters(WorkflowTaskParameters):
     """
     The dynamic task parameters are used to specify a dynamic task.
@@ -377,7 +411,7 @@ class WorkflowTask(CogniteResource):
         self.depends_on = depends_on
 
     @property
-    def type(self) -> Literal["function", "transformation", "cdf", "dynamic"]:
+    def type(self) -> ValidTaskType:
         return self.parameters.task_type
 
     @classmethod
@@ -433,6 +467,8 @@ class WorkflowTaskOutput(ABC):
             return CDFTaskOutput.load(data)
         elif task_type == "dynamic":
             return DynamicTaskOutput.load(data)
+        elif task_type == "subworkflow":
+            return SubworkflowTaskOutput.load(data)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
 
@@ -466,8 +502,8 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            ("callId" if camel_case else "call_id"): self.call_id,
-            ("functionId" if camel_case else "function_id"): self.function_id,
+            "callId" if camel_case else "call_id": self.call_id,
+            "functionId" if camel_case else "function_id": self.function_id,
             "response": self.response,
         }
 
@@ -539,6 +575,24 @@ class DynamicTaskOutput(WorkflowTaskOutput):
         return {}
 
 
+class SubworkflowTaskOutput(WorkflowTaskOutput):
+    """
+    The subworkflow task output is used to specify the output of a subworkflow task.
+    """
+
+    task_type: ClassVar[str] = "subworkflow"
+
+    def __init__(self) -> None:
+        ...
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
+        return cls()
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {}
+
+
 class WorkflowTaskExecution(CogniteObject):
     """
     This class represents a task execution.
@@ -578,7 +632,7 @@ class WorkflowTaskExecution(CogniteObject):
         self.reason_for_incompletion = reason_for_incompletion
 
     @property
-    def task_type(self) -> Literal["function", "transformation", "cdf", "dynamic"]:
+    def task_type(self) -> ValidTaskType:
         return self.input.task_type
 
     @classmethod
@@ -629,7 +683,6 @@ class WorkflowDefinitionUpsert(CogniteResource):
         tasks: list[WorkflowTask],
         description: str | None,
     ) -> None:
-        self.hash = hash
         self.tasks = tasks
         self.description = description
 

@@ -17,10 +17,23 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.5.2] - 2023-12-07
+## [7.5.5] - 2023-12-07
 ### Added
 - Added `poll_timeout` parameter on `time_series.subscriptions.iterate_data`. Will keep the connection open and waiting,
   until new data is available, up to `poll_timeout` seconds.
+
+## [7.5.4] - 2023-12-06
+### Changed
+- The `partitions` parameter is no longer respected when using generator methods to list resources
+- The `max_workers` config option has been moved from ClientConfig to the global config.
+
+## [7.5.3] - 2023-12-06
+### Added
+- Support for `subworkflow` tasks in `workflows`.
+
+## [7.5.2] - 2023-12-05
+### Fixed
+- The built-in `hash` function was mistakenly stored on `WorkflowDefinitionUpsert` instances after `__init__` and has been removed.
 
 ## [7.5.1] - 2023-12-01
 ### Changed
@@ -37,8 +50,7 @@ Changes are grouped as follows
 
 ## [7.4.1] - 2023-11-28
 ### Fixed
-- Error in logic when creating a `Transformation`. This is causing when calling `client.transformations.update`. 
-  This is now fixed. 
+- Error in validation logic when creating a `Transformation` caused many calls to `client.transformations.update` to fail.
 
 ## [7.4.0] - 2023-11-27
 ### Changed
