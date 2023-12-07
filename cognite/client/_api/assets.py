@@ -786,7 +786,9 @@ class AssetsAPI(APIClient):
 
         Args:
             item (Asset | Sequence[Asset]): Asset or list of assets to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If
+                you set 'patch', the call will only update fields with non-null values (default).
+                Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Asset | AssetList: The upserted asset(s).

@@ -622,7 +622,8 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified. Note replace will skip beta properties (unit_external_id), if you want to replace the beta properties you have to use the update method.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+                Note replace will skip beta properties (unit_external_id), if you want to replace the beta properties you have to use the update method.
 
         Returns:
             TimeSeries | TimeSeriesList: The upserted time series(s).
