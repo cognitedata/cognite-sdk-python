@@ -373,6 +373,15 @@ class SpaceIDScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class LegacySpaceScope(Capability.Scope):
+    _scope_name = "spaceScope"
+    external_ids: list[str]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, s) for s in self.external_ids}
+
+
+@dataclass(frozen=True)
 class DataModelScope(Capability.Scope):
     _scope_name = "dataModelScope"
     external_ids: list[str]
@@ -946,6 +955,7 @@ class DataModelInstancesAcl(Capability):
     class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
+        LegacySpace = LegacySpaceScope
 
 
 @dataclass
