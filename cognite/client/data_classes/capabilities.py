@@ -373,6 +373,24 @@ class SpaceIDScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class LegacySpaceScope(Capability.Scope):
+    _scope_name = "spaceScope"
+    external_ids: list[str]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, s) for s in self.external_ids}
+
+
+@dataclass(frozen=True)
+class LegacyDataModelScope(Capability.Scope):
+    _scope_name = "dataModelScope"
+    external_ids: list[str]
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, s) for s in self.external_ids}
+
+
+@dataclass(frozen=True)
 class UnknownScope(Capability.Scope):
     """
     This class is used for scopes that are not implemented in this version of the SDK.
@@ -937,6 +955,7 @@ class DataModelInstancesAcl(Capability):
     class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
+        LegacySpace = LegacySpaceScope
 
 
 @dataclass
@@ -952,6 +971,7 @@ class DataModelsAcl(Capability):
     class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
+        LegacyDataModel = LegacyDataModelScope
 
 
 @dataclass

@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.5.5] - 2023-12-07
+## [7.5.6] - 2023-12-11
+### Added
+- Missing legacy scopes for `Capability`: `LegacySpaceScope` and `LegacyDataModelScope`.
+
+## [7.5.5] - 2023-12-11
 ### Added
 - Added `poll_timeout` parameter on `time_series.subscriptions.iterate_data`. Will keep the connection open and waiting,
   until new data is available, up to `poll_timeout` seconds.
