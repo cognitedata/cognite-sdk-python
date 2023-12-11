@@ -31,7 +31,14 @@ def all_acls():
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["372"]}}}},
         {"dataModelInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"dataModelInstancesAcl": {"actions": ["READ"], "scope": {"spaceScope": {"externalIds": ["maintain"]}}}},
         {"dataModelsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {
+            "dataModelsAcl": {
+                "actions": ["READ"],
+                "scope": {"dataModelScope": {"externalIds": ["maintain", "main-data"]}},
+            }
+        },
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}},
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idScope": {"ids": ["2918026428"]}}}},
         {"digitalTwinAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
