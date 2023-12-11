@@ -382,7 +382,7 @@ class LegacySpaceScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
-class DataModelScope(Capability.Scope):
+class LegacyDataModelScope(Capability.Scope):
     _scope_name = "dataModelScope"
     external_ids: list[str]
 
@@ -971,7 +971,7 @@ class DataModelsAcl(Capability):
     class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
-        DataModel = DataModelScope
+        LegacyDataModel = LegacyDataModelScope
 
 
 @dataclass
