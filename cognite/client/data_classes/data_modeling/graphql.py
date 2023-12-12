@@ -40,3 +40,12 @@ class DMLApplyResult(CogniteObject):
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
+
+
+@dataclass
+class GraphQlQueryResult(CogniteObject):
+    items: list[dict[str, Any]]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(resource["items"])
