@@ -71,7 +71,7 @@ class CogniteResponse:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
@@ -130,7 +130,7 @@ class CogniteObject:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
@@ -296,7 +296,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             list[dict[str, Any]]: A list of dicts representing the instance.
@@ -573,7 +573,7 @@ class CogniteFilter:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.

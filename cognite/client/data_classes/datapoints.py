@@ -336,7 +336,7 @@ class DatapointsArray(CogniteResource):
         """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Default: False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
@@ -522,7 +522,7 @@ class Datapoints(CogniteResource):
         """Dump the datapoints into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representing the instance.
@@ -789,7 +789,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Default: False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
