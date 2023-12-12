@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.6.0] - 2023-12-13
+### Added
+- Support for querying data models through graphql. See `client.data_modeling.graphql.query`.
+
 ## [7.5.7] - 2023-12-12
 ### Fixed
 - Certain combinations of `start`/`end` and `granularity` would cause `retrieve_dataframe_in_tz` to raise due to
