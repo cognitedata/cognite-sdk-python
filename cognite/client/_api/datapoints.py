@@ -1592,7 +1592,6 @@ class RetrieveLatestDpsFetcher:
         parsed_xids = cast(Union[None, str, Sequence[str]], self._parse_user_input(external_id, "external_id"))
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
-        self._validate_query()
 
     @property
     def input_is_singleton(self) -> bool:
@@ -1649,18 +1648,19 @@ class RetrieveLatestDpsFetcher:
         return all_ids
 
     def _validate_and_create_query(self, chunk: list) -> dict[str, Any]:
-        payload = {
-            "url_path": self.dps_client._RESOURCE_PATH + "/latest",
-            "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
-        }
+        args = {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids}
+
         if self.target_unit is not None and self.target_unit_system is not None:
             raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
-
         if self.target_unit is not None:
-            payload["json"]["targetUnit"] = self.target_unit
+            args["targetUnit"] = self.target_unit
         elif self.target_unit_system is not None:
-            payload["json"]["targetUnitSystem"] = self.target_unit_system
-        return payload
+            args["targetUnitSystem"] = self.target_unit_system
+
+        return {
+            "url_path": self.dps_client._RESOURCE_PATH + "/latest",
+            "json": args,
+        }
 
     def fetch_datapoints(self) -> list[dict[str, Any]]:
         tasks = [
