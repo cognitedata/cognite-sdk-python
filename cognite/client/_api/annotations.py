@@ -10,7 +10,7 @@ from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import assert_type
 
 
@@ -183,18 +183,13 @@ class AnnotationsAPI(APIClient):
         Returns:
             AnnotationList: list of annotations
         """
-        assert_type(limit, "limit", [int], allow_none=False)
         assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
 
         if isinstance(filter, AnnotationFilter):
             filter = filter.dump(camel_case=True)
-
         elif isinstance(filter, dict):
-            filter = {to_camel_case(k): v for k, v in filter.items()}
-
+            filter = convert_all_keys_to_camel_case(filter)
         if "annotatedResourceIds" in filter:
-            filter["annotatedResourceIds"] = [
-                {to_camel_case(k): v for k, v in f.items()} for f in filter["annotatedResourceIds"]
-            ]
+            filter["annotatedResourceIds"] = list(map(convert_all_keys_to_camel_case, filter["annotatedResourceIds"]))
 
         return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
