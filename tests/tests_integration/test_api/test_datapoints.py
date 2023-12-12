@@ -1794,6 +1794,28 @@ class TestRetrieveLatestDatapointsAPI:
         assert res[0].timestamp < timestamp_to_ms("1h-ago")
 
     @pytest.mark.parametrize(
+        "kwargs",
+        [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
+    )
+    def test_retrieve_latest_in_target_unit(
+        self,
+        kwargs: dict,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        timeseries = timeseries_degree_c_minus40_0_100
+
+        res = cognite_client.time_series.data.retrieve_latest(
+            external_id=timeseries.external_id, before="now", **kwargs
+        )
+
+        if isinstance(res, pd.DataFrame):
+            res = DatapointsArray(value=res.values)
+
+        assert math.isclose(res.value[0], 212)
+        assert res.unit_external_id == "temperature:deg_f"
+
+    @pytest.mark.parametrize(
         "attr, multiple",
         (
             ("id", False),

@@ -1181,6 +1181,8 @@ class DatapointsAPI(APIClient):
         id: int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None = None,
         external_id: str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None = None,
         before: None | int | str | datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Datapoints | DatapointsList | None:
         """`Get the latest datapoint for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getLatest>`_
@@ -1189,6 +1191,8 @@ class DatapointsAPI(APIClient):
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
             before (None | int | str | datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
+            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -1231,7 +1235,9 @@ class DatapointsAPI(APIClient):
                 ...     id=id_queries,
                 ...     external_id=LatestDatapointQuery(external_id="abc", before="3h-ago"))
         """
-        fetcher = RetrieveLatestDpsFetcher(id, external_id, before, ignore_unknown_ids, self)
+        fetcher = RetrieveLatestDpsFetcher(
+            id, external_id, before, target_unit, target_unit_system, ignore_unknown_ids, self
+        )
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
             return DatapointsList.load(res, cognite_client=self._cognite_client)
@@ -1570,11 +1576,15 @@ class RetrieveLatestDpsFetcher:
         id: None | int | LatestDatapointQuery | list[int | LatestDatapointQuery],
         external_id: None | str | LatestDatapointQuery | list[str | LatestDatapointQuery],
         before: None | int | str | datetime,
+        target_unit: None | str,
+        target_unit_system: None | str,
         ignore_unknown_ids: bool,
         dps_client: DatapointsAPI,
     ) -> None:
         self.before_settings: dict[tuple[str, int], None | int | str | datetime] = {}
         self.default_before = before
+        self.target_unit = target_unit
+        self.target_unit_system = target_unit_system
         self.ignore_unknown_ids = ignore_unknown_ids
         self.dps_client = dps_client
 
@@ -1582,6 +1592,7 @@ class RetrieveLatestDpsFetcher:
         parsed_xids = cast(Union[None, str, Sequence[str]], self._parse_user_input(external_id, "external_id"))
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
+        self._validate_query()
 
     @property
     def input_is_singleton(self) -> bool:
@@ -1637,12 +1648,23 @@ class RetrieveLatestDpsFetcher:
         all_ids.extend(all_xids)
         return all_ids
 
+    def _validate_and_create_query(self, chunk: list) -> dict[str, Any]:
+        payload = {
+            "url_path": self.dps_client._RESOURCE_PATH + "/latest",
+            "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
+        }
+        if self.target_unit is not None and self.target_unit_system is not None:
+            raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
+
+        if self.target_unit is not None:
+            payload["json"]["targetUnit"] = self.target_unit
+        elif self.target_unit_system is not None:
+            payload["json"]["targetUnitSystem"] = self.target_unit_system
+        return payload
+
     def fetch_datapoints(self) -> list[dict[str, Any]]:
         tasks = [
-            {
-                "url_path": self.dps_client._RESOURCE_PATH + "/latest",
-                "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
-            }
+            self._validate_and_create_query(chunk)
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)

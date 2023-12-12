@@ -35,7 +35,7 @@ from google.protobuf.message import Message
 from typing_extensions import NotRequired, TypeAlias
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
-from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import import_legacy_protobuf
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
@@ -285,9 +285,7 @@ class _SingleTSQueryValidator:
         limit = self._verify_limit(dct["limit"])
 
         target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
-        if exactly_one_is_not_none(target_unit, target_unit_system):
-            self._user_query_requires_beta_api_subversion = True
-        elif target_unit is not None and target_unit_system is not None:
+        if target_unit is not None and target_unit_system is not None:
             raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
 
         granularity, aggregates = dct["granularity"], dct["aggregates"]
