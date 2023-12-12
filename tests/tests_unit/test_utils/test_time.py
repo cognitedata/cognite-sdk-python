@@ -674,21 +674,39 @@ class TestDateTimeAligner:
     # TODO: QuarterAligner
     # TODO: YearAligner
 
-    def test_month_aligner__ceil(self):
-        assert MonthAligner.ceil(datetime(2023, 11, 1)) == datetime(2023, 11, 1)
-        assert MonthAligner.ceil(datetime(2023, 10, 15)) == datetime(2023, 11, 1)
-        assert MonthAligner.ceil(datetime(2023, 12, 15)) == datetime(2024, 1, 1)
-        assert MonthAligner.ceil(datetime(2024, 1, 10)) == datetime(2024, 2, 1)
-        # Bug prior to 7.5.7 would cause this to raise:
-        assert MonthAligner.ceil(datetime(2023, 11, 2)) == datetime(2023, 12, 1)
+    @pytest.mark.parametrize(
+        "dt, expected",
+        (
+            (datetime(2023, 11, 1), datetime(2023, 11, 1)),
+            (datetime(2023, 10, 15), datetime(2023, 11, 1)),
+            (datetime(2023, 12, 15), datetime(2024, 1, 1)),
+            (datetime(2024, 1, 10), datetime(2024, 2, 1)),
+            # Bug prior to 7.5.7 would cause this to raise:
+            (datetime(2023, 11, 2), datetime(2023, 12, 1)),
+        ),
+    )
+    def test_month_aligner__ceil(self, dt, expected):
+        assert expected == MonthAligner.ceil(dt)
 
-    def test_month_aligner__add_unites(self):
-        assert MonthAligner.add_units(datetime(2023, 7, 2), 12) == datetime(2024, 7, 2)
-        assert MonthAligner.add_units(datetime(2023, 7, 2), 12 * 12) == datetime(2035, 7, 2)
-        assert MonthAligner.add_units(datetime(2023, 7, 2), -12 * 2) == datetime(2021, 7, 2)
+    def test_month_aligner_ceil__invalid_date(self):
+        with pytest.raises(ValueError, match="^day is out of range for month$"):
+            MonthAligner.add_units(datetime(2023, 7, 31), 2)  # sept has 30 days
+
+    @pytest.mark.parametrize(
+        "dt, n_units, expected",
+        (
+            (datetime(2023, 7, 2), 12, datetime(2024, 7, 2)),
+            (datetime(2023, 7, 2), 12 * 12, datetime(2035, 7, 2)),
+            (datetime(2023, 7, 2), -12 * 2, datetime(2021, 7, 2)),
+            # Bug prior to 7.5.7 would cause these to raise:
+            (datetime(2023, 11, 15), 1, datetime(2023, 12, 15)),
+            (datetime(2023, 12, 15), 0, datetime(2023, 12, 15)),
+            (datetime(2024, 1, 15), -1, datetime(2023, 12, 15)),
+        ),
+    )
+    def test_month_aligner__add_unites(self, dt, n_units, expected):
+        assert expected == MonthAligner.add_units(dt, n_units)
+
+    def test_month_aligner_add_unites__invalid_date(self):
         with pytest.raises(ValueError, match="^day is out of range for month$"):
             MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year
-        # Bug prior to 7.5.7 would cause these to raise:
-        assert MonthAligner.add_units(datetime(2023, 11, 15), 1) == datetime(2023, 12, 15)
-        assert MonthAligner.add_units(datetime(2023, 12, 15), 0) == datetime(2023, 12, 15)
-        assert MonthAligner.add_units(datetime(2024, 1, 15), -1) == datetime(2023, 12, 15)
