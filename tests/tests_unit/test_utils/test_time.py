@@ -14,6 +14,7 @@ from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
+    MonthAligner,
     align_large_granularity,
     align_start_and_end_for_granularity,
     convert_and_isoformat_time_attrs,
@@ -28,11 +29,6 @@ from cognite.client.utils._time import (
     to_fixed_utc_intervals,
     to_pandas_freq,
     validate_timezone,
-    DayAligner,
-    WeekAligner,
-    MonthAligner,
-    QuarterAligner,
-    YearAligner,
 )
 from tests.utils import cdf_aggregate, tmp_set_envvar
 
@@ -685,3 +681,14 @@ class TestDateTimeAligner:
         assert MonthAligner.ceil(datetime(2024, 1, 10)) == datetime(2024, 2, 1)
         # Bug prior to 7.5.7 would cause this to raise:
         assert MonthAligner.ceil(datetime(2023, 11, 2)) == datetime(2023, 12, 1)
+
+    def test_month_aligner__add_unites(self):
+        assert MonthAligner.add_units(datetime(2023, 7, 2), 12) == datetime(2024, 7, 2)
+        assert MonthAligner.add_units(datetime(2023, 7, 2), 12 * 12) == datetime(2035, 7, 2)
+        assert MonthAligner.add_units(datetime(2023, 7, 2), -12 * 2) == datetime(2021, 7, 2)
+        with pytest.raises(ValueError, match="^day is out of range for month$"):
+            MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year
+        # Bug prior to 7.5.7 would cause these to raise:
+        assert MonthAligner.add_units(datetime(2023, 11, 15), 1) == datetime(2023, 12, 15)
+        assert MonthAligner.add_units(datetime(2023, 12, 15), 0) == datetime(2023, 12, 15)
+        assert MonthAligner.add_units(datetime(2024, 1, 15), -1) == datetime(2023, 12, 15)
