@@ -335,7 +335,7 @@ class MonthAligner(DateTimeAligner):
     def add_units(cls, date: datetime, units: int) -> datetime:
         """
         Adds 'units' number of months to 'date', ignoring timezone. The resulting date might not be valid,
-        for example Jan 31 + 1 unit, as April only has 30 days. In such cases, datetime will raise a ValueError.
+        for example Jan 29 + 1 unit in a non-leap year. In such cases, datetime will raise a ValueError.
         """
         extra_years, month = divmod(date.month + units - 1, 12)
         return date.replace(year=date.year + extra_years, month=month + 1)
@@ -382,7 +382,7 @@ class QuarterAligner(DateTimeAligner):
     def add_units(cls, date: datetime, units: int) -> datetime:
         """
         Adds 'units' number of quarters to 'date', ignoring timezone. The resulting date might not be valid,
-        for example Feb 29 in a non-leap year. In such cases, datetime will raise a ValueError.
+        for example Jan 31 + 1 unit, as April only has 30 days. In such cases, datetime will raise a ValueError.
         """
         extra_years, month = divmod(date.month + 3 * units, 12)
         return date.replace(year=date.year + extra_years, month=month)
