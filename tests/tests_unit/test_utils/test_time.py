@@ -28,6 +28,11 @@ from cognite.client.utils._time import (
     to_fixed_utc_intervals,
     to_pandas_freq,
     validate_timezone,
+    DayAligner,
+    WeekAligner,
+    MonthAligner,
+    QuarterAligner,
+    YearAligner,
 )
 from tests.utils import cdf_aggregate, tmp_set_envvar
 
@@ -664,3 +669,19 @@ class TestPandasDateRangeTz:
 
         # Assert
         assert len(index) == expected_length
+
+
+class TestDateTimeAligner:
+    # TODO: DayAligner
+    # TODO: WeekAligner
+    # TODO: MonthAligner
+    # TODO: QuarterAligner
+    # TODO: YearAligner
+
+    def test_month_aligner__ceil(self):
+        assert MonthAligner.ceil(datetime(2023, 11, 1)) == datetime(2023, 11, 1)
+        assert MonthAligner.ceil(datetime(2023, 10, 15)) == datetime(2023, 11, 1)
+        assert MonthAligner.ceil(datetime(2023, 12, 15)) == datetime(2024, 1, 1)
+        assert MonthAligner.ceil(datetime(2024, 1, 10)) == datetime(2024, 2, 1)
+        # Bug prior to 7.5.7 would cause this to raise:
+        assert MonthAligner.ceil(datetime(2023, 11, 2)) == datetime(2023, 12, 1)

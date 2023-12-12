@@ -320,8 +320,8 @@ class MonthAligner(DateTimeAligner):
         """
         if date == datetime(year=date.year, month=date.month, day=1, tzinfo=date.tzinfo):
             return date
-        extra, month = divmod(date.month + 1, 12)
-        return cls.normalize(date.replace(year=date.year + extra, month=month, day=1))
+        extra, month = divmod(date.month, 12)  # this works because month is one-indexed
+        return cls.normalize(date.replace(year=date.year + extra, month=month + 1, day=1))
 
     @classmethod
     def floor(cls, date: datetime) -> datetime:
