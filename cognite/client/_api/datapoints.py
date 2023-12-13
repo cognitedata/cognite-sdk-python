@@ -88,7 +88,6 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-
 as_completed = import_as_completed()
 
 _TSQueryList = List[_SingleTSQueryBase]
@@ -1647,15 +1646,18 @@ class RetrieveLatestDpsFetcher:
         all_ids.extend(all_xids)
         return all_ids
 
-    def _validate_and_create_query(self, chunk: list) -> dict[str, Any]:
-        args = {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids}
-
+    def _validate_and_create_query(self, chunk: list[dict]) -> dict[str, Any]:
         if self.target_unit is not None and self.target_unit_system is not None:
             raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
+
+        target_dict: dict[str, Any] = {}
         if self.target_unit is not None:
-            args["targetUnit"] = self.target_unit
+            target_dict["targetUnit"] = self.target_unit
         elif self.target_unit_system is not None:
-            args["targetUnitSystem"] = self.target_unit_system
+            target_dict["targetUnitSystem"] = self.target_unit_system
+
+        chunk_with_target = [(dct | target_dict) for dct in chunk]
+        args = {"items": chunk_with_target, "ignoreUnknownIds": self.ignore_unknown_ids}
 
         return {
             "url_path": self.dps_client._RESOURCE_PATH + "/latest",
