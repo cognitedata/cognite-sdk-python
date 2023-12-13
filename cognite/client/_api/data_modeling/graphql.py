@@ -8,6 +8,7 @@ from cognite.client.data_classes.data_modeling import DataModelIdentifier
 from cognite.client.data_classes.data_modeling.graphql import DMLApplyResult
 from cognite.client.data_classes.data_modeling.ids import DataModelId
 from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 
 
 class DataModelingGraphQLAPI(APIClient):
@@ -133,3 +134,32 @@ class DataModelingGraphQLAPI(APIClient):
         query_name = "upsertGraphQlDmlVersion"
         res = self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
         return DMLApplyResult.load(res[query_name]["result"])
+
+    def query(self, id: DataModelIdentifier, query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Execute a GraphQl query against a given data model.
+
+        Args:
+            id (DataModelIdentifier): The data model to query.
+            query (str): The query to issue.
+            variables (dict[str, Any] | None): An optional dict of variables to pass to the query.
+
+        Returns:
+            dict[str, Any]: The query result
+
+        Examples:
+
+            Execute a graphql query against a given data model::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.data_modeling.graphql.query(
+                ...     id=("mySpace", "myDataModel", "v1"),
+                ...     query="listThings { items { thingProperty } }",
+                ... )
+        """
+        dm_id = DataModelId.load(id)
+        endpoint = interpolate_and_url_encode(
+            "/userapis/spaces/{}/datamodels/{}/versions/{}/graphql", dm_id.space, dm_id.external_id, dm_id.version
+        )
+        res = self._post_graphql(url_path=endpoint, query_name="", json={"query": query, "variables": variables})
+        return res
