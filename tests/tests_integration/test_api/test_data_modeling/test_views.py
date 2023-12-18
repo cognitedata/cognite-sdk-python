@@ -23,8 +23,8 @@ from cognite.client.data_classes.data_modeling import (
     ViewList,
 )
 from cognite.client.data_classes.data_modeling.views import (
-    ReverseSingleHopConnectionApply,
-    SingleHopConnectionDefinitionApply,
+    MultiEdgeConnectionApply,
+    SingleReverseDirectRelationApply,
 )
 from cognite.client.exceptions import CogniteAPIError
 
@@ -293,7 +293,7 @@ class TestViewsAPI:
                     container_property_identifier="reviews",
                     name="reviews",
                 ),
-                "movies": SingleHopConnectionDefinitionApply(
+                "movies": MultiEdgeConnectionApply(
                     type=DirectRelationReference(
                         space=integration_test_space.space,
                         external_id="Critic.movies",
@@ -328,11 +328,10 @@ class TestViewsAPI:
             description="This is a test view, and should not persist.",
             name="Critic",
             properties={
-                "persons": ReverseSingleHopConnectionApply(
+                "persons": SingleReverseDirectRelationApply(
                     source=person_view.as_id(),
                     name="Person",
                     through=PropertyId(source=actor_view.as_id(), property="person"),
-                    connection_type="single_reverse_direct_relation",
                 )
             },
         )

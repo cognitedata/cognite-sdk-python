@@ -82,7 +82,7 @@ class TestViewPropertyDefinition:
             "name": "fullName",
             "description": "my single edge connection",
             "edgeSource": None,
-            "connectionType": "singleEdgeConnection",
+            "connectionType": "single_edge_connection",
         }
         actual = ViewPropertyApply.load(input)
 
@@ -92,7 +92,7 @@ class TestViewPropertyDefinition:
             "name": "fullName",
             "source": {"external_id": "myExternalId", "space": "mySpace", "type": "view", "version": "myVersion"},
             "type": {"external_id": "myExternalId", "space": "mySpace"},
-            "connection_type": "singleEdgeConnection",
+            "connection_type": "single_edge_connection",
         }
 
     def test_load_dump_multi_edge_connection_property(self) -> None:
