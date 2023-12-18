@@ -16,6 +16,9 @@ class CogniteException(Exception):
     pass
 
 
+class CogniteTypeError(CogniteException): ...
+
+
 @dataclass
 class GraphQLErrorSpec:
     message: str
