@@ -18,6 +18,9 @@ class CogniteException(Exception):
     pass
 
 
+class CogniteTypeError(CogniteException): ...
+
+
 class CogniteProjectAccessError(CogniteException):
     """Raised when we get a 401 response from the API which means we don't have project access at all."""
 
