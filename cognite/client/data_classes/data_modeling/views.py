@@ -662,19 +662,27 @@ class ReverseSingleHopConnectionApply(ConnectionDefinitionApply):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
+        instance = cls(
             source=ViewId.load(resource["source"]),
             through=PropertyId.load(resource["through"]),
             connection_type=resource["connectionType"],
-            name=resource.get("name"),
-            description=resource.get("description"),
         )
+        if "name" in resource:
+            instance.name = resource["name"]
+        if "description" in resource:
+            instance.description = resource["description"]
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
+        return instance
+
+    def dump(self, camel_case: bool = True) -> dict:
+        output: dict[str, Any] = {
             "source": self.source.dump(camel_case, include_type=True),
             "through": self.through.dump(camel_case),
-            "name": self.name,
-            "description": self.description,
             "connectionType" if camel_case else "connection_type": self.connection_type,
         }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+
+        return output

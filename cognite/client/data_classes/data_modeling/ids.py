@@ -152,9 +152,17 @@ class PropertyId(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            source=ViewId.load(resource["source"]),
+            source=cls.load_view_or_container_id(resource["source"]),
             property=resource["identifier"],
         )
+
+    @staticmethod
+    def load_view_or_container_id(view_or_container_id: dict[str, Any]) -> ViewId | ContainerId:
+        if "type" in view_or_container_id and view_or_container_id["type"] in {"view", "container"}:
+            if view_or_container_id["type"] == "view":
+                return ViewId.load(view_or_container_id)
+            return ContainerId.load(view_or_container_id)
+        raise ValueError(f"Invalid type {view_or_container_id}")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
