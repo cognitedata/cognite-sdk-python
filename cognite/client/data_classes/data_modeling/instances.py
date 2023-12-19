@@ -107,14 +107,14 @@ class CogniteInstanceList(CogniteResourceList, Generic[T_CogniteResource]):
 
         prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
         if remove_property_prefix:
-            # We only do this if we have a single source:
-            view_id, *extra = set(prop for item in self for prop in item.properties)
+            # We only do/allow this if we have a single source:
+            view_id, *extra = set(vid for item in self for vid in item.properties)
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property columns as source was not unique",
-                    UserWarning,
+                    RuntimeWarning,
                 )
         return df.join(prop_df)
 
