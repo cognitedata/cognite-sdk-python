@@ -377,7 +377,7 @@ class InstanceApplyResult(InstanceCore):
 
 
 class InstanceAggregationResult(DataModelingResource):
-    """A node or edge. This represents the update on the instance.
+    """Represents instances aggregation results.
 
     Args:
         aggregates (list[AggregatedNumberedValue]): List of aggregated values.
