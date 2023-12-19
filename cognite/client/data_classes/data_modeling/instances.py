@@ -84,7 +84,7 @@ class CogniteInstanceList(CogniteResourceList, Generic[T_CogniteResource]):
         Args:
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
             convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate columns.
+            expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
             remove_property_prefix (bool): Remove view ID prefix from columns names of expanded properties. Requires data to be from a single view.
             **kwargs (Any): For backwards compatability.
 
@@ -94,6 +94,11 @@ class CogniteInstanceList(CogniteResourceList, Generic[T_CogniteResource]):
         kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
         if kwargs:
             raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+        if not expand_properties:
+            warnings.warn(
+                "Keyword argyment 'expand_properties' will change default from False to True in the next major version.",
+                DeprecationWarning,
+            )
 
         df = super().to_pandas(camel_case=camel_case, expand_metadata=False, convert_timestamps=convert_timestamps)
 
