@@ -214,7 +214,16 @@ class View(ViewCore):
         properties: dict[str, ViewPropertyApply] | None = None
         if self.properties:
             for k, v in self.properties.items():
-                if isinstance(v, (MappedProperty, SingleEdgeConnection, MultiEdgeConnection)):
+                if isinstance(
+                    v,
+                    (
+                        MappedProperty,
+                        SingleEdgeConnection,
+                        MultiEdgeConnection,
+                        SingleReverseDirectRelation,
+                        MultiReverseDirectRelation,
+                    ),
+                ):
                     if properties is None:
                         properties = {}
                     properties[k] = v.as_apply()
@@ -416,12 +425,13 @@ class ConnectionDefinition(ViewProperty, ABC):
 
         raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
 @dataclass
-class EdgeConnection(ConnectionDefinition):
+class EdgeConnection(ConnectionDefinition, ABC):
     """Describes the edge(s) that are likely to exist to aid in discovery and documentation of the view.
     A listed edge is not required. i.e. It does not have to exist when included in this list.
     A connection has a max distance of one hop.
@@ -460,6 +470,7 @@ class EdgeConnection(ConnectionDefinition):
 
         return instance
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
         if self.type:
@@ -520,7 +531,7 @@ SingleHopConnectionDefinition: TypeAlias = "MultiEdgeConnection"
 
 
 @dataclass
-class ReverseDirectRelation(ConnectionDefinition):
+class ReverseDirectRelation(ConnectionDefinition, ABC):
     """Describes the direct relation(s) pointing to instances read through this view. This connection type is used to
     aid in discovery and documentation of the view
 
@@ -549,6 +560,7 @@ class ReverseDirectRelation(ConnectionDefinition):
             description=resource.get("description"),
         )
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case),
@@ -616,6 +628,7 @@ class ConnectionDefinitionApply(ViewPropertyApply, ABC):
             return cast(Self, MultiReverseDirectRelationApply.load(resource))
         raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -624,7 +637,7 @@ T_ConnectionDefinitionApply = TypeVar("T_ConnectionDefinitionApply", bound=Conne
 
 
 @dataclass
-class EdgeConnectionApply(ConnectionDefinitionApply):
+class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
     """Describes the edge(s) that are likely to exist to aid in discovery and documentation of the view.
     A listed edge is not required. i.e. It does not have to exist when included in this list.
     A connection has a max distance of one hop.
@@ -664,6 +677,7 @@ class EdgeConnectionApply(ConnectionDefinitionApply):
             instance.direction = resource["direction"]
         return instance
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict:
         output: dict[str, Any] = {
             "type": self.type.dump(camel_case),
@@ -710,7 +724,7 @@ SingleHopConnectionDefinitionApply: TypeAlias = "MultiEdgeConnectionApply"
 
 
 @dataclass
-class ReverseDirectRelationApply(ConnectionDefinitionApply):
+class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
     """Describes the direct relation(s) pointing to instances read through this view. This connection type is used to
     aid in discovery and documentation of the view.
 
@@ -743,6 +757,7 @@ class ReverseDirectRelationApply(ConnectionDefinitionApply):
 
         return instance
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "source": self.source.dump(camel_case, include_type=True),
