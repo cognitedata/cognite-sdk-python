@@ -1128,6 +1128,34 @@ class UserProfilesAcl(Capability):
         All = AllScope
 
 
+@dataclass
+class ModelHostingAcl(Capability):
+    _capability_name = "modelHostingAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class GenericsAcl(Capability):
+    _capability_name = "genericsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+
 _CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProxyType(
     {c._capability_name: c for c in Capability.__subclasses__() if c is not UnknownAcl}
 )
