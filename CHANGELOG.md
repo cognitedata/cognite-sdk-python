@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.7.1] - 2023-12-20
+### Fixed
+- Missing capablity ACLs: `modelHostingAcl` and `genericsAcl`.  
+
 ## [7.7.0] - 2023-12-20
 ### Added
 - Support for `ViewProperty` types `SingleReverseDirectRelation` and `MultiReverseDirectRelation` in data modeling.
