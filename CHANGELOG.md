@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.7.0] - 2023-12-20
 ### Added
-- Support for `ViewProperty` type `ReverseSingleHopConnection` in data modeling.
+- Support for `ViewProperty` types `SingleReverseDirectRelation` and `MultiReverseDirectRelation` in data modeling.
 
 ## [7.6.0] - 2023-12-13
 ### Added
