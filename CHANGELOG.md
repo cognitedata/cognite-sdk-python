@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.7.1] - 2023-12-20
+### Fixed
+- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.  
+- The `IAMAPI.compare_capabilities` fails with a `AttributeError: 'UnknownAcl' object has no attribute '_capability_name'`
+  if the user has an unknwon ACL. This is now fixed by skipping comparison of unknown ACLs and issuing a warning.
+
 ## [7.7.0] - 2023-12-20
 ### Added
 - Support for `ViewProperty` types `SingleReverseDirectRelation` and `MultiReverseDirectRelation` in data modeling.

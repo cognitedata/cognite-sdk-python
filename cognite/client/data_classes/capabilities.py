@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import enum
 import inspect
+import itertools
 import logging
+import warnings
 from abc import ABC
 from dataclasses import asdict, dataclass, field
 from itertools import product
@@ -176,6 +178,13 @@ class Capability(ABC):
         )
 
 
+@dataclass
+class LegacyCapability(Capability, ABC):
+    """This is a base class for capabilities that are no longer in use by the API."""
+
+    ...
+
+
 class ProjectScope(ABC):
     name: ClassVar[str] = "projectScope"
 
@@ -245,15 +254,23 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
 
     def as_tuples(self, project: str | None = None) -> set[tuple]:
         project = self._infer_project(project)
-        return set().union(
-            *(
-                proj_cap.capability.as_tuples()
-                for proj_cap in self
-                if isinstance(proj_cap.project_scope, AllProjectsScope)
+
+        output: set[tuple] = set()
+        for proj_cap in self:
+            cap = proj_cap.capability
+            if isinstance(cap, UnknownAcl):
+                warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
+                continue
+            if isinstance(cap, LegacyCapability):
+                # Legacy capabilities are no longer in use, so they are safe to skip.
+                continue
+            if (
+                isinstance(proj_cap.project_scope, AllProjectsScope)
                 or isinstance(proj_cap.project_scope, ProjectsScope)
                 and project in proj_cap.project_scope.projects
-            )
-        )
+            ):
+                output |= cap.as_tuples()
+        return output
 
 
 @dataclass(frozen=True)
@@ -1128,8 +1145,40 @@ class UserProfilesAcl(Capability):
         All = AllScope
 
 
+@dataclass
+class LegacyModelHostingAcl(LegacyCapability):
+    _capability_name = "modelHostingAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class LegacyGenericsAcl(LegacyCapability):
+    _capability_name = "genericsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+
 _CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProxyType(
-    {c._capability_name: c for c in Capability.__subclasses__() if c is not UnknownAcl}
+    {
+        c._capability_name: c
+        for c in itertools.chain(Capability.__subclasses__(), LegacyCapability.__subclasses__())
+        if c not in (UnknownAcl, LegacyCapability)
+    }
 )
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
