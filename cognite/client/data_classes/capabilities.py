@@ -269,7 +269,7 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
                 or isinstance(proj_cap.project_scope, ProjectsScope)
                 and project in proj_cap.project_scope.projects
             ):
-                output.union(cap.as_tuples())
+                output |= cap.as_tuples()
         return output
 
 
