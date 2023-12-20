@@ -262,7 +262,7 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
                 warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
                 continue
             if isinstance(cap, LegacyCapability):
-                # Legacy capabilities should be encouraged to be migrated to the new format, so we skip them.
+                # Legacy capabilities are no longer in use, so they are safe to skip.
                 continue
             if (
                 isinstance(proj_cap.project_scope, AllProjectsScope)

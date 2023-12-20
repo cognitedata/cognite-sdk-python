@@ -404,6 +404,13 @@ class TestIAMCompareCapabilities:
         missing = cognite_client.iam.compare_capabilities(unknown, desired)
         assert missing == desired
 
+    def test_legacy_capability(self, cognite_client):
+        legacy = [Capability.load({"modelHostingAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}})]
+        desired = [Capability.load({"modelHostingAcl": {"actions": ["READ"], "scope": {"all": {}}}})]
+
+        missing = cognite_client.iam.compare_capabilities(legacy, desired)
+        assert not missing
+
 
 @pytest.mark.parametrize(
     "dct",

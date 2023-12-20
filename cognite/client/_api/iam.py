@@ -73,7 +73,7 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
                 has_skipped = True
                 continue
             if isinstance(cap, LegacyCapability):
-                # Legacy capabilities should be encouraged to be migrated to the new format, so we skip them.
+                # Legacy capabilities are no longer in use, so they are safe to skip.
                 has_skipped = True
                 continue
             tpls.update(cap.as_tuples())  # type: ignore [union-attr]
