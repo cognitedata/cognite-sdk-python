@@ -1,10 +1,19 @@
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+
 from cognite.client.data_classes.data_modeling import (
     ContainerId,
     DirectRelationReference,
+    Edge,
     EdgeApply,
+    EdgeList,
     Node,
     NodeApply,
     NodeId,
+    NodeList,
     NodeOrEdgeData,
 )
 
@@ -135,3 +144,75 @@ class TestNode:
             "type": {"externalId": "someType", "space": "someSpace"},
             "version": 1,
         }
+
+
+@pytest.fixture
+def node_dumped() -> dict[str, Any]:
+    return {
+        "space": "craft",
+        "externalId": "xid",
+        "version": "V",
+        "lastUpdatedTime": 123,
+        "createdTime": 123,
+        "properties": {
+            "space": {"view/version": {"num": "210113347", "jsån": {"why": "is", "this": "here"}, "title": "sir"}}
+        },
+    }
+
+
+@pytest.fixture
+def edge_dumped(node_dumped: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **node_dumped,
+        "type": {"space": "sp", "externalId": "xid"},
+        "startNode": {"space": "spsp", "externalId": "xid2"},
+        "endNode": {"space": "spspsp", "externalId": "xid3"},
+    }
+
+
+class TestInstancesToPandas:
+    @pytest.mark.parametrize("inst_cls", (Node, Edge))
+    def test_expand_properties(
+        self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
+    ) -> None:
+        raw = node_dumped if inst_cls is Node else edge_dumped
+        # Need .copy() because load does inplace update of properties:
+        not_expanded = inst_cls._load(raw.copy()).to_pandas(expand_properties=False)
+        expanded = inst_cls._load(raw.copy()).to_pandas(expand_properties=True, remove_property_prefix=True)
+        expanded_with_prefix = inst_cls._load(raw.copy()).to_pandas(
+            expand_properties=True, remove_property_prefix=False
+        )
+
+        assert "properties" in not_expanded.index
+        assert "properties" not in expanded.index
+        assert "properties" not in expanded_with_prefix.index
+
+        assert raw["properties"] == not_expanded.loc["properties"].item()
+
+        for k, v in raw["properties"]["space"]["view/version"].items():
+            assert v == expanded.loc[k].item()
+            assert v == expanded_with_prefix.loc[f"space.view/version.{k}"].item()
+
+    @pytest.mark.parametrize("inst_cls", (NodeList, EdgeList))
+    def test_expand_properties__list_class(
+        self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
+    ) -> None:
+        raw = node_dumped if inst_cls is Node else edge_dumped
+        # Need .copy() because load does inplace update of properties:
+        not_expanded = inst_cls._load([raw.copy(), raw.copy()]).to_pandas(expand_properties=False)
+        expanded = inst_cls._load([raw.copy(), raw.copy()]).to_pandas(
+            expand_properties=True, remove_property_prefix=True
+        )
+        expanded_with_prefix = inst_cls._load([raw.copy(), raw.copy()]).to_pandas(
+            expand_properties=True, remove_property_prefix=False
+        )
+
+        assert "properties" in not_expanded.columns
+        assert "properties" not in expanded.columns
+        assert "properties" not in expanded_with_prefix.columns
+
+        assert raw["properties"] == not_expanded.loc[0, "properties"]
+
+        for k, v in raw["properties"]["space"]["view/version"].items():
+            assert v == expanded.loc[0, k]
+            assert v == expanded_with_prefix.loc[0, f"space.view/version.{k}"]
