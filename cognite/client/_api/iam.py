@@ -25,6 +25,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.capabilities import (
     AllScope,
     Capability,
+    LegacyCapability,
     ProjectCapability,
     ProjectCapabilityList,
     RawAcl,
@@ -63,16 +64,20 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
         capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
     if isinstance(capabilities, Sequence):
         tpls: set[tuple] = set()
-        has_unknown = False
+        has_skipped = False
         for cap in capabilities:
             if isinstance(cap, dict):
                 cap = Capability.load(cap)
             if isinstance(cap, UnknownAcl):
                 warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
-                has_unknown = True
+                has_skipped = True
+                continue
+            if isinstance(cap, LegacyCapability):
+                # Legacy capabilities should be encouraged to be migrated to the new format, so we skip them.
+                has_skipped = True
                 continue
             tpls.update(cap.as_tuples())  # type: ignore [union-attr]
-        if tpls or has_unknown:
+        if tpls or has_skipped:
             return tpls
         raise ValueError("No capabilities given")
     raise TypeError(
@@ -99,6 +104,10 @@ class IAMAPI(APIClient):
         ignore_allscope_meaning: bool = False,
     ) -> list[Capability]:
         """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
+
+        Warning:
+            Capabilities that are no longer supported by the API will be ignored. These are named prefixed `Legacy` and
+            all iherit from the base class `LegacyCapability`. If you want to check for these, you must do so manually.
 
         Args:
             existing_capabilities (ComparableCapability): List of existing capabilities.

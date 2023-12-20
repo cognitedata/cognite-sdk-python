@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-import cognite.client.data_classes.capabilities as capabilities_module  # noqa F401
+import cognite.client.data_classes.capabilities as capabilities_module  # F401
 from cognite.client.data_classes.capabilities import (
     AllProjectsScope,
     AllScope,
@@ -442,6 +442,8 @@ def test_show_example_usage(capability):
     if capability is UnknownAcl:
         with pytest.raises(NotImplementedError):
             capability.show_example_usage()
+    elif capability is capabilities_module.LegacyCapability:
+        pytest.skip("LegacyCapability is abstract")
     else:
         cmd = capability.show_example_usage()[15:]  # TODO PY39: .removeprefix
         exec(f"{capability.__name__} = capabilities_module.{capability.__name__}")

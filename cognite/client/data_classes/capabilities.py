@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import inspect
+import itertools
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass, field
@@ -174,6 +175,13 @@ class Capability(ABC):
                 [self._capability_name], [action.value for action in self.actions], self.scope.as_tuples()
             )
         )
+
+
+@dataclass
+class LegacyCapability(Capability, ABC):
+    """This is a base class for capabilities that are no longer supported by the API."""
+
+    ...
 
 
 class ProjectScope(ABC):
@@ -1133,7 +1141,7 @@ class UserProfilesAcl(Capability):
 
 
 @dataclass
-class LegacyModelHostingAcl(Capability):
+class LegacyModelHostingAcl(LegacyCapability):
     _capability_name = "modelHostingAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
@@ -1147,7 +1155,7 @@ class LegacyModelHostingAcl(Capability):
 
 
 @dataclass
-class LegacyGenericsAcl(Capability):
+class LegacyGenericsAcl(LegacyCapability):
     _capability_name = "genericsAcl"
     actions: Sequence[Action]
     scope: AllScope
@@ -1161,7 +1169,11 @@ class LegacyGenericsAcl(Capability):
 
 
 _CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProxyType(
-    {c._capability_name: c for c in Capability.__subclasses__() if c is not UnknownAcl}
+    {
+        c._capability_name: c
+        for c in itertools.chain(Capability.__subclasses__(), LegacyCapability.__subclasses__())
+        if c is not UnknownAcl and c is not LegacyCapability
+    }
 )
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
