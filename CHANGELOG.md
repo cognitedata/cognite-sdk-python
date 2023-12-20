@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.8.0] - 2023-12-20
+### Added
+- Instance classes `Node`, `Edge`, `NodeList` and `EdgeList` now supports a new flag `expand_properties` in their `to_pandas` method,
+  that makes it much simpler to work with the fetched properties. Additionally, `remove_property_prefix` allows easy prefix
+  removal (of the view ID, e.g. `space.external_id/version.my_prop` -> `my_prop`).
+
 ## [7.7.1] - 2023-12-20
 ### Fixed
 - Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.  
