@@ -393,17 +393,16 @@ class TestIAMCompareCapabilities:
             assert RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t3"]})) in missing
             assert RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})) in missing
 
-    @pytest.mark.skip(reason="Not implemented yet")
     def test_unknown_existing_capability(self, cognite_client):
-        existing = [
-            Capability.load({"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}}),
+        desired = [
+            Capability.load({"datasetsAcl": {"actions": ["READ"], "scope": {"all": {}}}}),
         ]
         unknown = Capability.load(
             {"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}
         )
 
-        missing = cognite_client.iam.compare_capabilities(unknown, existing)
-        assert missing == [existing]
+        missing = cognite_client.iam.compare_capabilities(unknown, desired)
+        assert missing == desired
 
 
 @pytest.mark.parametrize(
