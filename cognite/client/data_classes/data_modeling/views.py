@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -18,11 +18,9 @@ from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     PropertyType,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
-from cognite.client.utils._text import (
-    convert_all_keys_to_camel_case_recursive,
-)
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -216,7 +214,16 @@ class View(ViewCore):
         properties: dict[str, ViewPropertyApply] | None = None
         if self.properties:
             for k, v in self.properties.items():
-                if isinstance(v, (MappedProperty, SingleHopConnectionDefinition)):
+                if isinstance(
+                    v,
+                    (
+                        MappedProperty,
+                        SingleEdgeConnection,
+                        MultiEdgeConnection,
+                        SingleReverseDirectRelation,
+                        MultiReverseDirectRelation,
+                    ),
+                ):
                     if properties is None:
                         properties = {}
                     properties[k] = v.as_apply()
@@ -293,8 +300,8 @@ class ViewFilter(CogniteFilter):
 class ViewProperty(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "direction" in resource:
-            return cast(Self, SingleHopConnectionDefinition.load(resource))
+        if "connectionType" in resource:
+            return cast(Self, ConnectionDefinition.load(resource))
         else:
             return cast(Self, MappedProperty.load(resource))
 
@@ -306,8 +313,8 @@ class ViewProperty(CogniteObject, ABC):
 class ViewPropertyApply(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "direction" in resource:
-            return cast(Self, SingleHopConnectionDefinitionApply.load(resource))
+        if "connectionType" in resource:
+            return cast(Self, ConnectionDefinitionApply.load(resource))
         else:
             return cast(Self, MappedPropertyApply.load(resource))
 
@@ -400,19 +407,54 @@ class MappedProperty(ViewProperty):
 
 
 @dataclass
-class ConnectionDefinition(ViewProperty):
-    ...
+class ConnectionDefinition(ViewProperty, ABC):
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "connectionType" not in resource:
+            raise ValueError(f"{cls.__name__} must have a connectionType")
+        connection_type = to_snake_case(resource["connectionType"])
+
+        if connection_type == "single_edge_connection":
+            return cast(Self, SingleEdgeConnection.load(resource))
+        if connection_type == "multi_edge_connection":
+            return cast(Self, MultiEdgeConnection.load(resource))
+        if connection_type == "single_reverse_direct_relation":
+            return cast(Self, SingleReverseDirectRelation.load(resource))
+        if connection_type == "multi_reverse_direct_relation":
+            return cast(Self, MultiReverseDirectRelation.load(resource))
+
+        raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
+
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        raise NotImplementedError
 
 
 @dataclass
-class SingleHopConnectionDefinition(ConnectionDefinition):
+class EdgeConnection(ConnectionDefinition, ABC):
+    """Describes the edge(s) that are likely to exist to aid in discovery and documentation of the view.
+    A listed edge is not required. i.e. It does not have to exist when included in this list.
+    A connection has a max distance of one hop.
+
+    Args:
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
+            consists of a space and an external-id.
+        source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
+        name (str | None): Readable property name.
+        description (str | None): Description of the content and suggested use for this property.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
+            'edgeSource'.
+        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
+            indicate that the edge points from the source to the target. The inward direction is used to indicate
+            that the edge points from the target to the source.
+    """
+
     type: DirectRelationReference
     source: ViewId
     name: str | None = None
     description: str | None = None
     edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
-    connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -425,29 +467,35 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
         )
         if "direction" in resource:
             instance.direction = resource["direction"]
-        if "connectionType" in resource:
-            instance.connection_type = resource["connectionType"]
+
         return instance
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
-
         if self.type:
             output["type"] = self.type.dump(camel_case)
-
         if self.source:
             output["source"] = self.source.dump(camel_case)
-
         if self.edge_source:
             output["edge_source"] = self.edge_source.dump(camel_case)
 
-        if self.connection_type is not None:
-            output["connection_type"] = self.connection_type
-
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
-    def as_apply(self) -> SingleHopConnectionDefinitionApply:
-        return SingleHopConnectionDefinitionApply(
+
+@dataclass
+class SingleEdgeConnection(EdgeConnection):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "single_edge_connection"
+        else:
+            output["connection_type"] = "single_edge_connection"
+
+        return output
+
+    def as_apply(self) -> SingleEdgeConnectionApply:
+        return SingleEdgeConnectionApply(
             type=self.type,
             source=self.source,
             name=self.name,
@@ -458,22 +506,163 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
 
 @dataclass
-class ConnectionDefinitionApply(ViewPropertyApply):
-    ...
+class MultiEdgeConnection(EdgeConnection):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "multi_edge_connection"
+        else:
+            output["connection_type"] = "multi_edge_connection"
+
+        return output
+
+    def as_apply(self) -> MultiEdgeConnectionApply:
+        return MultiEdgeConnectionApply(
+            type=self.type,
+            source=self.source,
+            name=self.name,
+            description=self.description,
+            edge_source=self.edge_source,
+            direction=self.direction,
+        )
+
+
+SingleHopConnectionDefinition: TypeAlias = "MultiEdgeConnection"
+
+
+@dataclass
+class ReverseDirectRelation(ConnectionDefinition, ABC):
+    """Describes the direct relation(s) pointing to instances read through this view. This connection type is used to
+    aid in discovery and documentation of the view
+
+    It is called 'ReverseDirectRelationConnection' in the API spec.
+
+    Args:
+        source (ViewId): The node(s) containing the direct relation property can be read through
+            the view specified in 'source'.
+        through (PropertyId): The view or container of the node containing the direct relation property.
+        name (str | None): Readable property name.
+        description (str | None): Description of the content and suggested use for this property.
+
+    """
+
+    source: ViewId
+    through: PropertyId
+    name: str | None = None
+    description: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            source=ViewId.load(resource["source"]),
+            through=PropertyId.load(resource["through"]),
+            name=resource.get("name"),
+            description=resource.get("description"),
+        )
+
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "source": self.source.dump(camel_case),
+            "through": self.through.dump(camel_case),
+            "name": self.name,
+            "description": self.description,
+        }
+
+
+@dataclass
+class SingleReverseDirectRelation(ReverseDirectRelation):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "single_reverse_direct_relation"
+        else:
+            output["connection_type"] = "single_reverse_direct_relation"
+
+        return output
+
+    def as_apply(self) -> SingleReverseDirectRelationApply:
+        return SingleReverseDirectRelationApply(
+            source=self.source,
+            through=self.through,
+            name=self.name,
+            description=self.description,
+        )
+
+
+@dataclass
+class MultiReverseDirectRelation(ReverseDirectRelation):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "multi_reverse_direct_relation"
+        else:
+            output["connection_type"] = "multi_reverse_direct_relation"
+
+        return output
+
+    def as_apply(self) -> MultiReverseDirectRelationApply:
+        return MultiReverseDirectRelationApply(
+            source=self.source,
+            through=self.through,
+            name=self.name,
+            description=self.description,
+        )
+
+
+@dataclass
+class ConnectionDefinitionApply(ViewPropertyApply, ABC):
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "connectionType" not in resource:
+            raise ValueError(f"{cls.__name__} must have a connectionType")
+        connection_type = to_snake_case(resource["connectionType"])
+
+        if connection_type == "single_edge_connection":
+            return cast(Self, SingleEdgeConnectionApply.load(resource))
+        if connection_type == "multi_edge_connection":
+            return cast(Self, MultiEdgeConnectionApply.load(resource))
+        if connection_type == "single_reverse_direct_relation":
+            return cast(Self, SingleReverseDirectRelationApply.load(resource))
+        if connection_type == "multi_reverse_direct_relation":
+            return cast(Self, MultiReverseDirectRelationApply.load(resource))
+        raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
+
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        raise NotImplementedError
 
 
 T_ConnectionDefinitionApply = TypeVar("T_ConnectionDefinitionApply", bound=ConnectionDefinitionApply)
 
 
 @dataclass
-class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
+class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
+    """Describes the edge(s) that are likely to exist to aid in discovery and documentation of the view.
+    A listed edge is not required. i.e. It does not have to exist when included in this list.
+    A connection has a max distance of one hop.
+
+    It is called 'EdgeConnection' in the API spec.
+
+    Args:
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
+            consists of a space and an external-id.
+        source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
+        name (str | None): Readable property name.
+        description (str | None): Description of the content and suggested use for this property.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
+            'edgeSource'.
+        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
+            indicate that the edge points from the source to the target. The inward direction is used to indicate
+            that the edge points from the target to the source.
+    """
+
     type: DirectRelationReference
     source: ViewId
     name: str | None = None
     description: str | None = None
     edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
-    connection_type: Literal["multiEdgeConnection"] = "multiEdgeConnection"
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -486,10 +675,9 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
         )
         if "direction" in resource:
             instance.direction = resource["direction"]
-        if "connectionType" in resource:
-            instance.connection_type = resource["connectionType"]
         return instance
 
+    @abstractmethod
     def dump(self, camel_case: bool = True) -> dict:
         output: dict[str, Any] = {
             "type": self.type.dump(camel_case),
@@ -504,7 +692,104 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
             output[("edgeSource" if camel_case else "edge_source")] = self.edge_source.dump(
                 camel_case, include_type=True
             )
-        if self.connection_type is not None:
-            output[("connectionType" if camel_case else "connection_type")] = self.connection_type
+
+        return output
+
+
+@dataclass
+class SingleEdgeConnectionApply(EdgeConnectionApply):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "single_edge_connection"
+        else:
+            output["connection_type"] = "single_edge_connection"
+
+        return output
+
+
+@dataclass
+class MultiEdgeConnectionApply(EdgeConnectionApply):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "multi_edge_connection"
+        else:
+            output["connection_type"] = "multi_edge_connection"
+
+        return output
+
+
+SingleHopConnectionDefinitionApply: TypeAlias = "MultiEdgeConnectionApply"
+
+
+@dataclass
+class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
+    """Describes the direct relation(s) pointing to instances read through this view. This connection type is used to
+    aid in discovery and documentation of the view.
+
+    It is called 'ReverseDirectRelationConnection' in the API spec.
+
+    Args:
+        source (ViewId): The node(s) containing the direct relation property can be read through
+            the view specified in 'source'.
+        through (PropertyId): The view or container of the node containing the direct relation property.
+        name (str | None): Readable property name.
+        description (str | None): Description of the content and suggested use for this property.
+
+    """
+
+    source: ViewId
+    through: PropertyId
+    name: str | None = None
+    description: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = cls(
+            source=ViewId.load(resource["source"]),
+            through=PropertyId.load(resource["through"]),
+        )
+        if "name" in resource:
+            instance.name = resource["name"]
+        if "description" in resource:
+            instance.description = resource["description"]
+
+        return instance
+
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "source": self.source.dump(camel_case, include_type=True),
+            "through": self.through.dump(camel_case),
+        }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+
+        return output
+
+
+@dataclass
+class SingleReverseDirectRelationApply(ReverseDirectRelationApply):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "single_reverse_direct_relation"
+        else:
+            output["connection_type"] = "single_reverse_direct_relation"
+
+        return output
+
+
+@dataclass
+class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = super().dump(camel_case)
+        if camel_case:
+            output["connectionType"] = "multi_reverse_direct_relation"
+        else:
+            output["connection_type"] = "multi_reverse_direct_relation"
 
         return output

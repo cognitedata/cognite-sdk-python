@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
 
+from typing_extensions import Self
+
+from cognite.client.data_classes._base import CogniteObject
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 from cognite.client.utils.useful_types import SequenceNotStr
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass(frozen=True)
@@ -136,6 +142,33 @@ class ViewId(VersionedDataModelingId):
 
     def as_property_ref(self, property: str) -> tuple[str, ...]:
         return (self.space, self.as_source_identifier(), property)
+
+
+@dataclass(frozen=True)
+class PropertyId(CogniteObject):
+    source: ViewId | ContainerId
+    property: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            source=cls.__load_view_or_container_id(resource["source"]),
+            property=resource["identifier"],
+        )
+
+    @staticmethod
+    def __load_view_or_container_id(view_or_container_id: dict[str, Any]) -> ViewId | ContainerId:
+        if "type" in view_or_container_id and view_or_container_id["type"] in {"view", "container"}:
+            if view_or_container_id["type"] == "view":
+                return ViewId.load(view_or_container_id)
+            return ContainerId.load(view_or_container_id)
+        raise ValueError(f"Invalid type {view_or_container_id}")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "source": self.source.dump(camel_case=camel_case, include_type=True),
+            "identifier": self.property,
+        }
 
 
 @dataclass(frozen=True)
