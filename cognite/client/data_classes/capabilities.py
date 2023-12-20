@@ -4,6 +4,7 @@ import enum
 import inspect
 import itertools
 import logging
+import warnings
 from abc import ABC
 from dataclasses import asdict, dataclass, field
 from itertools import product
@@ -179,7 +180,7 @@ class Capability(ABC):
 
 @dataclass
 class LegacyCapability(Capability, ABC):
-    """This is a base class for capabilities that are no longer supported by the API."""
+    """This is a base class for capabilities that are no longer in use by the API."""
 
     ...
 
@@ -253,19 +254,23 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
 
     def as_tuples(self, project: str | None = None) -> set[tuple]:
         project = self._infer_project(project)
-        return set().union(
-            *(
-                proj_cap.capability.as_tuples()
-                for proj_cap in self
-                if (
-                    isinstance(proj_cap.project_scope, AllProjectsScope)
-                    or isinstance(proj_cap.project_scope, ProjectsScope)
-                    and project in proj_cap.project_scope.projects
-                )
-                and not isinstance(proj_cap.capability.scope, UnknownScope)
-                and not isinstance(proj_cap.capability, UnknownAcl)
-            )
-        )
+
+        output: set[tuple] = set()
+        for proj_cap in self:
+            cap = proj_cap.capability
+            if isinstance(cap, UnknownAcl):
+                warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
+                continue
+            if isinstance(cap, LegacyCapability):
+                # Legacy capabilities should be encouraged to be migrated to the new format, so we skip them.
+                continue
+            if (
+                isinstance(proj_cap.project_scope, AllProjectsScope)
+                or isinstance(proj_cap.project_scope, ProjectsScope)
+                and project in proj_cap.project_scope.projects
+            ):
+                output.union(cap.as_tuples())
+        return output
 
 
 @dataclass(frozen=True)
@@ -1172,7 +1177,7 @@ _CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProx
     {
         c._capability_name: c
         for c in itertools.chain(Capability.__subclasses__(), LegacyCapability.__subclasses__())
-        if c is not UnknownAcl and c is not LegacyCapability
+        if c not in (UnknownAcl, LegacyCapability)
     }
 )
 # Give all Actions a better error message (instead of implementing __missing__ for all):

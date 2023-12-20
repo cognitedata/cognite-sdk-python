@@ -105,9 +105,9 @@ class IAMAPI(APIClient):
     ) -> list[Capability]:
         """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
 
-        Warning:
-            Capabilities that are no longer supported by the API will be ignored. These are named prefixed `Legacy` and
-            all iherit from the base class `LegacyCapability`. If you want to check for these, you must do so manually.
+        Note:
+            Capabilities that are no longer in use by the API will be ignored. These have names prefixed with `Legacy` and
+            all inherit from the base class `LegacyCapability`. If you want to check for these, you must do so manually.
 
         Args:
             existing_capabilities (ComparableCapability): List of existing capabilities.
