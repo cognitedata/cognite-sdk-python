@@ -1133,7 +1133,7 @@ class UserProfilesAcl(Capability):
 
 
 @dataclass
-class ModelHostingAcl(Capability):
+class LegacyModelHostingAcl(Capability):
     _capability_name = "modelHostingAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
@@ -1147,7 +1147,7 @@ class ModelHostingAcl(Capability):
 
 
 @dataclass
-class GenericsAcl(Capability):
+class LegacyGenericsAcl(Capability):
     _capability_name = "genericsAcl"
     actions: Sequence[Action]
     scope: AllScope

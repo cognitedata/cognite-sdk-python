@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.7.1] - 2023-12-20
 ### Fixed
-- Missing capablity ACLs: `modelHostingAcl` and `genericsAcl`.  
+- Missing legacy capablity ACLs: `modelHostingAcl` and `genericsAcl`.  
 - The `IAMAPI.compare_capabilities` fails with a `AttributeError: 'UnknownAcl' object has no attribute '_capability_name'`
   if the user has an unknwon ACL. This is now fixed by skipping comparison of unknown ACLs and issuing a warning.
 
