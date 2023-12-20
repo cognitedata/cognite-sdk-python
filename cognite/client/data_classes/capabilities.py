@@ -249,9 +249,13 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
             *(
                 proj_cap.capability.as_tuples()
                 for proj_cap in self
-                if isinstance(proj_cap.project_scope, AllProjectsScope)
-                or isinstance(proj_cap.project_scope, ProjectsScope)
-                and project in proj_cap.project_scope.projects
+                if (
+                    isinstance(proj_cap.project_scope, AllProjectsScope)
+                    or isinstance(proj_cap.project_scope, ProjectsScope)
+                    and project in proj_cap.project_scope.projects
+                )
+                and not isinstance(proj_cap.capability.scope, UnknownScope)
+                and not isinstance(proj_cap.capability, UnknownAcl)
             )
         )
 
