@@ -11,7 +11,6 @@ from typing import (
     Any,
     Collection,
     Dict,
-    Generic,
     ItemsView,
     Iterator,
     KeysView,
@@ -28,10 +27,14 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.core import DataModelingResource, DataModelingSort
+from cognite.client.data_classes.data_modeling.core import (
+    DataModelingInstancesList,
+    DataModelingResource,
+    DataModelingSort,
+)
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -67,56 +70,6 @@ PropertyValue: TypeAlias = Union[
 ]
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
-
-
-class CogniteInstanceList(CogniteResourceList, Generic[T_CogniteResource]):
-    def to_pandas(  # type: ignore [override]
-        self,
-        camel_case: bool = False,
-        convert_timestamps: bool = True,
-        expand_properties: bool = False,
-        remove_property_prefix: bool = True,
-        **kwargs: Any,
-    ) -> pd.DataFrame:
-        """Convert the instance into a pandas DataFrame. Note that if the properties column is expanded and there are
-        keys in the metadata that already exist in the DataFrame, then an error will be raised by pandas during joining.
-
-        Args:
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
-            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
-            remove_property_prefix (bool): Remove view ID prefix from columns names of expanded properties. Requires data to be from a single view.
-            **kwargs (Any): For backwards compatability.
-
-        Returns:
-            pd.DataFrame: The Cognite resource as a dataframe.
-        """
-        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
-        if kwargs:
-            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
-        if not expand_properties:
-            warnings.warn(
-                "Keyword argyment 'expand_properties' will change default from False to True in the next major version.",
-                DeprecationWarning,
-            )
-
-        df = super().to_pandas(camel_case=camel_case, expand_metadata=False, convert_timestamps=convert_timestamps)
-
-        if not expand_properties or "properties" not in df.columns:
-            return df
-
-        prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
-        if remove_property_prefix:
-            # We only do/allow this if we have a single source:
-            view_id, *extra = set(vid for item in self for vid in item.properties)
-            if not extra:
-                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
-            else:
-                warnings.warn(
-                    "Can't remove view ID prefix from expanded property columns as source was not unique",
-                    RuntimeWarning,
-                )
-        return df.join(prop_df)
 
 
 @dataclass
@@ -342,6 +295,57 @@ class Instance(InstanceCore):
         if "properties" in dumped:
             dumped["properties"] = self.properties.dump()
         return dumped
+
+    def to_pandas(  # type: ignore [override]
+        self,
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+        expand_properties: bool = False,
+        remove_property_prefix: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties (bool): Expand the properties into separate rows. Note: Will change default to True in the next major version.
+            remove_property_prefix (bool): Remove view ID prefix from row names of expanded properties (in index). Requires data to be from a single view.
+            **kwargs (Any): For backwards compatability.
+
+        Returns:
+            pd.DataFrame: The dataframe.
+        """
+        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
+        if kwargs:
+            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+        if not expand_properties:
+            warnings.warn(
+                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
+                DeprecationWarning,
+            )
+        df = super().to_pandas(
+            expand_metadata=False, ignore=ignore, camel_case=camel_case, convert_timestamps=convert_timestamps
+        )
+        if not expand_properties or "properties" not in df.index:
+            return df
+
+        pd = local_import("pandas")
+        col = df.squeeze()
+        prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
+        if remove_property_prefix:
+            # We only do/allow this if we have a single source:
+            view_id, *extra = self.properties.keys()
+            if not extra:
+                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+            else:
+                warnings.warn(
+                    "Can't remove view ID prefix from expanded property rows as source was not unique",
+                    RuntimeWarning,
+                )
+        return pd.concat((col, prop_df.T.squeeze())).to_frame(name="value")
 
     @abstractmethod
     def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> InstanceApply:
@@ -778,7 +782,7 @@ class EdgeApplyResult(InstanceApplyResult):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
-class NodeApplyResultList(CogniteInstanceList[NodeApplyResult]):
+class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
     _RESOURCE = NodeApplyResult
 
     def as_ids(self) -> list[NodeId]:
@@ -791,7 +795,7 @@ class NodeApplyResultList(CogniteInstanceList[NodeApplyResult]):
         return [result.as_id() for result in self]
 
 
-class NodeApplyList(CogniteInstanceList[NodeApply]):
+class NodeApplyList(CogniteResourceList[NodeApply]):
     _RESOURCE = NodeApply
 
     def as_ids(self) -> list[NodeId]:
@@ -804,7 +808,7 @@ class NodeApplyList(CogniteInstanceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(CogniteInstanceList[Node]):
+class NodeList(DataModelingInstancesList[Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -825,7 +829,7 @@ class NodeListWithCursor(NodeList):
         self.cursor = cursor
 
 
-class EdgeApplyResultList(CogniteInstanceList[EdgeApplyResult]):
+class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
     def as_ids(self) -> list[EdgeId]:
@@ -838,7 +842,7 @@ class EdgeApplyResultList(CogniteInstanceList[EdgeApplyResult]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeApplyList(CogniteInstanceList[EdgeApply]):
+class EdgeApplyList(CogniteResourceList[EdgeApply]):
     _RESOURCE = EdgeApply
 
     def as_ids(self) -> list[EdgeId]:
@@ -851,7 +855,7 @@ class EdgeApplyList(CogniteInstanceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(CogniteInstanceList[Edge]):
+class EdgeList(DataModelingInstancesList[Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
