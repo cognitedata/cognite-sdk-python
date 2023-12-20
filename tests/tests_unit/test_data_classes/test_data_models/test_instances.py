@@ -170,6 +170,7 @@ def edge_dumped(node_dumped: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+@pytest.mark.dsl
 class TestInstancesToPandas:
     @pytest.mark.parametrize("inst_cls", (Node, Edge))
     def test_expand_properties(
