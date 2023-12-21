@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.8.2] - 2023-12-21
+### Fixed
+- Revert `SingleHopConnectionDefinitionApply` from a string to child class of `ViewPropertyApply`.
+
 ## [7.8.1] - 2023-12-21
 ### Fixed
 - Calling `to_pandas` with `expand_aggregates=True` on an Asset with aggregated properties would yield a pandas DataFrame
