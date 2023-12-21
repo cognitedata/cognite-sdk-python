@@ -527,7 +527,7 @@ class MultiEdgeConnection(EdgeConnection):
         )
 
 
-SingleHopConnectionDefinition: TypeAlias = "MultiEdgeConnection"
+SingleHopConnectionDefinition: TypeAlias = MultiEdgeConnection
 
 
 @dataclass
