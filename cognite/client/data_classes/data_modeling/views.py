@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
@@ -302,6 +303,13 @@ class ViewProperty(CogniteObject, ABC):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if "connectionType" in resource:
             return cast(Self, ConnectionDefinition.load(resource))
+        elif "direction" in resource:
+            warnings.warn(
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "This will be required in the next major version",
+                DeprecationWarning,
+            )
+            return cast(Self, MultiEdgeConnection.load(resource))
         else:
             return cast(Self, MappedProperty.load(resource))
 
@@ -315,6 +323,13 @@ class ViewPropertyApply(CogniteObject, ABC):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if "connectionType" in resource:
             return cast(Self, ConnectionDefinitionApply.load(resource))
+        elif "direction" in resource:
+            warnings.warn(
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "This will be required in the next major version",
+                DeprecationWarning,
+            )
+            return cast(Self, MultiEdgeConnectionApply.load(resource))
         else:
             return cast(Self, MappedPropertyApply.load(resource))
 
