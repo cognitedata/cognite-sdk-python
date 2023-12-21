@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
@@ -29,7 +30,11 @@ from typing_extensions import Self, TypeAlias
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.core import DataModelingResource, DataModelingSort
+from cognite.client.data_classes.data_modeling.core import (
+    DataModelingInstancesList,
+    DataModelingResource,
+    DataModelingSort,
+)
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -41,10 +46,14 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import CogniteClient
+
 PropertyValue: TypeAlias = Union[
     str,
     int,
@@ -181,7 +190,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
                     raise ValueError("View id must be in the format <external_id>/<version>")
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
-        return Properties(props)
+        return cls(props)
 
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
@@ -287,6 +296,57 @@ class Instance(InstanceCore):
             dumped["properties"] = self.properties.dump()
         return dumped
 
+    def to_pandas(  # type: ignore [override]
+        self,
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+        expand_properties: bool = False,
+        remove_property_prefix: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties (bool): Expand the properties into separate rows. Note: Will change default to True in the next major version.
+            remove_property_prefix (bool): Remove view ID prefix from row names of expanded properties (in index). Requires data to be from a single view.
+            **kwargs (Any): For backwards compatability.
+
+        Returns:
+            pd.DataFrame: The dataframe.
+        """
+        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
+        if kwargs:
+            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+        if not expand_properties:
+            warnings.warn(
+                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
+                DeprecationWarning,
+            )
+        df = super().to_pandas(
+            expand_metadata=False, ignore=ignore, camel_case=camel_case, convert_timestamps=convert_timestamps
+        )
+        if not expand_properties or "properties" not in df.index:
+            return df
+
+        pd = local_import("pandas")
+        col = df.squeeze()
+        prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
+        if remove_property_prefix:
+            # We only do/allow this if we have a single source:
+            view_id, *extra = self.properties.keys()
+            if not extra:
+                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+            else:
+                warnings.warn(
+                    "Can't remove view ID prefix from expanded property rows as source was not unique",
+                    RuntimeWarning,
+                )
+        return pd.concat((col, prop_df.T.squeeze())).to_frame(name="value")
+
     @abstractmethod
     def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> InstanceApply:
         """Convert the instance to an apply instance."""
@@ -326,7 +386,7 @@ class InstanceApplyResult(InstanceCore):
 
 
 class InstanceAggregationResult(DataModelingResource):
-    """A node or edge. This represents the update on the instance.
+    """Represents instances aggregation results.
 
     Args:
         aggregates (list[AggregatedNumberedValue]): List of aggregated values.
@@ -748,7 +808,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(CogniteResourceList[Node]):
+class NodeList(DataModelingInstancesList[Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -795,7 +855,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(CogniteResourceList[Edge]):
+class EdgeList(DataModelingInstancesList[Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
