@@ -145,3 +145,27 @@ class TestViewPropertyDefinition:
             },
             "connection_type": "multi_reverse_direct_relation",
         }
+
+    def test_load_view_property_legacy(self) -> None:
+        # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
+        # the property. This test ensures that the old format is still supported.
+        legacy_view = {
+            "type": {"space": "IntegrationTestsImmutable", "externalId": "Person.roles"},
+            "source": {"space": "IntegrationTestsImmutable", "externalId": "Role", "version": "2", "type": "view"},
+            "name": "roles",
+            "description": None,
+            "edgeSource": None,
+            "direction": "outwards",
+        }
+
+        actual = ViewProperty._load(legacy_view)
+
+        assert actual.dump() == {
+            "type": {"space": "IntegrationTestsImmutable", "externalId": "Person.roles"},
+            "source": {"space": "IntegrationTestsImmutable", "externalId": "Role", "version": "2", "type": "view"},
+            "name": "roles",
+            "description": None,
+            "edgeSource": None,
+            "direction": "outwards",
+            "connectionType": "multi_edge_connection",
+        }
