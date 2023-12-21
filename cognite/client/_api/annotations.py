@@ -29,10 +29,10 @@ class AnnotationsAPI(APIClient):
         """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
 
         Args:
-            annotations (Annotation | Sequence[Annotation]): annotation(s) to create
+            annotations (Annotation | Sequence[Annotation]): Annotation(s) to create
 
         Returns:
-            Annotation | AnnotationList: created annotation(s)
+            Annotation | AnnotationList: Created annotation(s)
         """
         assert_type(annotations, "annotations", [Annotation, Sequence])
         return self._create_multiple(
