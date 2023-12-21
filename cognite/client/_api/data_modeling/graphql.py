@@ -156,6 +156,27 @@ class DataModelingGraphQLAPI(APIClient):
                 ...     id=("mySpace", "myDataModel", "v1"),
                 ...     query="listThings { items { thingProperty } }",
                 ... )
+
+            Execute a graphql with result paginated and returning a cursor to next page::
+
+                >>> query = '''
+                ...     listThings (
+                ...         first: 10
+                ...         after: '<previous endCursor>'
+                ...     ) {
+                ...         items {
+                ...             thingProperty
+                ...         }
+                ...         pageInfo {
+                ...             endCursor
+                ...             hasNextPage
+                ...         }
+                ...     }
+                ... '''
+                >>> res = c.data_modeling.graphql.query(
+                ...     id=("mySpace", "myDataModel", "v1"),
+                ...     query=query,
+                ... )
         """
         dm_id = DataModelId.load(id)
         endpoint = interpolate_and_url_encode(
