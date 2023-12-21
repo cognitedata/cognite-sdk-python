@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.8.3] - 2023-12-21
+### Fixed
+- Revert `SingleHopConnectionDefinition` from a string to child class of `ViewProperty`.
+- If a `ViewProperty` or `ViewPropertyApply` dumped before version `7.6` was dumped and loaded after `7.6`, the
+  user got a `KeyError: 'container'`. The `load` methods are now backwards compatible with the old format.
+
 ## [7.8.2] - 2023-12-21
 ### Fixed
 - Revert `SingleHopConnectionDefinitionApply` from a string to child class of `ViewPropertyApply`.
