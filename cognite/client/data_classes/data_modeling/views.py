@@ -720,7 +720,7 @@ class MultiEdgeConnectionApply(EdgeConnectionApply):
         return output
 
 
-SingleHopConnectionDefinitionApply: TypeAlias = "MultiEdgeConnectionApply"
+SingleHopConnectionDefinitionApply: TypeAlias = MultiEdgeConnectionApply
 
 
 @dataclass
