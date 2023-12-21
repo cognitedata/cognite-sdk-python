@@ -182,6 +182,16 @@ class AnnotationsAPI(APIClient):
 
         Returns:
             AnnotationList: list of annotations
+
+        Example:
+
+            List all annotations for the file with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AnnotationFilter
+                >>> client = CogniteClient()
+                >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
+                >>> res = client.annotations.list(flt, limit=None)
         """
         assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
 
