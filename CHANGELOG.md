@@ -17,7 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.8.0] - 2023-12-20
+## [7.8.1] - 2023-12-21
+### Fixed
+- Calling `to_pandas` with `expand_aggregates=True` on an Asset with aggregated properties would yield a pandas DataFrame
+  with the column name `0` instead of `"value"`.
+### Improved
+- Specification of aggregated properties to `AssetsAPI.[list,filter,__call__]`.
+
+## [7.8.0] - 2023-12-21
 ### Added
 - Instance classes `Node`, `Edge`, `NodeList` and `EdgeList` now supports a new flag `expand_properties` in their `to_pandas` method,
   that makes it much simpler to work with the fetched properties. Additionally, `remove_property_prefix` allows easy prefix
