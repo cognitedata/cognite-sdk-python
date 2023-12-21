@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.7.2] - 2023-12-21
+### Fixed
+- Removed bogus quotes for `SingleHopConnectionDefinitionApply` type.  
+
 ## [7.7.1] - 2023-12-20
 ### Fixed
 - Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.  
