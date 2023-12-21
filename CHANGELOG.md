@@ -21,6 +21,7 @@ Changes are grouped as follows
 ### Fixed
 - Listing annotations now also accepts `None` and `inf` for the `limit` parameter (to return all), matching what
   was already described in the documentation for the endpoint (for the parameter).
+- Calling `to_pandas(...)` on an `DiagramDetectItem` no longer raises `KeyError`.
 
 ## [7.8.3] - 2023-12-21
 ### Fixed
