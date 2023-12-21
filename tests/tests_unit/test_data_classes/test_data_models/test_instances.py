@@ -155,7 +155,7 @@ def node_dumped() -> dict[str, Any]:
         "lastUpdatedTime": 123,
         "createdTime": 123,
         "properties": {
-            "space": {"view/version": {"num": "210113347", "jsån": {"why": "is", "this": "here"}, "title": "sir"}}
+            "my-space": {"my-view/v8": {"num": "210113347", "jsån": {"why": "is", "this": "here"}, "title": "sir"}}
         },
     }
 
@@ -190,9 +190,9 @@ class TestInstancesToPandas:
 
         assert raw["properties"] == not_expanded.loc["properties"].item()
 
-        for k, v in raw["properties"]["space"]["view/version"].items():
+        for k, v in raw["properties"]["my-space"]["my-view/v8"].items():
             assert v == expanded.loc[k].item()
-            assert v == expanded_with_prefix.loc[f"space.view/version.{k}"].item()
+            assert v == expanded_with_prefix.loc[f"my-space.my-view/v8.{k}"].item()
 
     @pytest.mark.parametrize("inst_cls", (NodeList, EdgeList))
     def test_expand_properties__list_class(
@@ -214,6 +214,6 @@ class TestInstancesToPandas:
 
         assert raw["properties"] == not_expanded.loc[0, "properties"]
 
-        for k, v in raw["properties"]["space"]["view/version"].items():
+        for k, v in raw["properties"]["my-space"]["my-view/v8"].items():
             assert v == expanded.loc[0, k]
-            assert v == expanded_with_prefix.loc[0, f"space.view/version.{k}"]
+            assert v == expanded_with_prefix.loc[0, f"my-space.my-view/v8.{k}"]
