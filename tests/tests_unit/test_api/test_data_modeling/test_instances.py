@@ -1,8 +1,8 @@
 import pytest
 
 from cognite.client._api.data_modeling.instances import InstancesAPI
-from cognite.client.data_classes.data_modeling import View
 from cognite.client.data_classes.data_modeling.ids import ViewId
+from tests.tests_unit.test_api.test_data_modeling.conftest import make_test_view
 
 SINGLE_SRC_DUMP = {"source": {"space": "a", "externalId": "b", "version": "c", "type": "view"}}
 SINGLE_SRC_DUMP_NO_VERSION = {"source": {"space": "a", "externalId": "b", "version": None, "type": "view"}}
@@ -16,14 +16,14 @@ SINGLE_SRC_DUMP_NO_VERSION = {"source": {"space": "a", "externalId": "b", "versi
         (("a", "b"), [SINGLE_SRC_DUMP_NO_VERSION]),
         (ViewId("a", "b", "c"), [SINGLE_SRC_DUMP]),
         (ViewId("a", "b"), [SINGLE_SRC_DUMP_NO_VERSION]),
-        (View("a", "b", "c", created_time=1, properties={}, last_updated_time=2), [SINGLE_SRC_DUMP]),
+        (make_test_view("a", "b", "c"), [SINGLE_SRC_DUMP]),
         # Multiple
         ((("a", "b", "c"), ("a", "b", "c")), [SINGLE_SRC_DUMP, SINGLE_SRC_DUMP]),
         ([("a", "b", "c"), ("a", "b")], [SINGLE_SRC_DUMP, SINGLE_SRC_DUMP_NO_VERSION]),
         ((ViewId("a", "b"), ("a", "b", "c")), [SINGLE_SRC_DUMP_NO_VERSION, SINGLE_SRC_DUMP]),
         ([ViewId("a", "b"), ViewId("a", "b", "c")], [SINGLE_SRC_DUMP_NO_VERSION, SINGLE_SRC_DUMP]),
         (
-            [View("a", "b", None, created_time=1, properties={}, last_updated_time=2), ViewId("a", "b", "c")],
+            [make_test_view("a", "b", None), ViewId("a", "b", "c")],
             [SINGLE_SRC_DUMP_NO_VERSION, SINGLE_SRC_DUMP],
         ),
     ),
