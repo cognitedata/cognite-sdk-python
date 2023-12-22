@@ -13,7 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.core import DataModelingResource
+from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     DirectRelationReference,
@@ -27,34 +27,21 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ViewCore(DataModelingResource):
+class ViewCore(DataModelingSchemaResource, ABC):
     def __init__(
         self,
         space: str,
         external_id: str,
         version: str,
-        description: str | None = None,
-        name: str | None = None,
-        filter: Filter | None = None,
-        implements: list[ViewId] | None = None,
-        **_: Any,
+        description: str | None,
+        name: str | None,
+        filter: Filter | None,
+        implements: list[ViewId] | None,
     ) -> None:
-        self.space = space
-        self.external_id = external_id
-        self.description = description
-        self.name = name
+        super().__init__(space=space, external_id=external_id, name=name, description=description)
         self.filter = filter
-        self.implements = implements
+        self.implements: list[ViewId] = implements or []
         self.version = version
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        if "implements" in resource:
-            resource["implements"] = [ViewId.load(v) for v in resource["implements"]] or None
-        if "filter" in resource:
-            resource["filter"] = Filter.load(resource["filter"])
-
-        return super()._load(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -146,7 +133,7 @@ class View(ViewCore):
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         version (str): DMS version.
-        properties (dict[str, MappedProperty | ConnectionDefinition]): View with included properties and expected edges, indexed by a unique space-local identifier.
+        properties (dict[str, ViewProperty]): View with included properties and expected edges, indexed by a unique space-local identifier.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str | None): Textual description of the view
@@ -156,7 +143,6 @@ class View(ViewCore):
         writable (bool): Whether the view supports write operations.
         used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -164,17 +150,16 @@ class View(ViewCore):
         space: str,
         external_id: str,
         version: str,
-        properties: dict[str, MappedProperty | ConnectionDefinition],
+        properties: dict[str, ViewProperty],
         last_updated_time: int,
         created_time: int,
-        description: str | None = None,
-        name: str | None = None,
-        filter: Filter | None = None,
-        implements: list[ViewId] | None = None,
-        writable: bool = False,
-        used_for: Literal["node", "edge", "all"] = "node",
-        is_global: bool = False,
-        **_: Any,
+        description: str | None,
+        name: str | None,
+        filter: Filter | None,
+        implements: list[ViewId] | None,
+        writable: bool,
+        used_for: Literal["node", "edge", "all"],
+        is_global: bool,
     ) -> None:
         super().__init__(
             space,
@@ -194,10 +179,21 @@ class View(ViewCore):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
-        if "properties" in resource and isinstance(resource["properties"], dict):
-            resource["properties"] = {k: ViewProperty.load(v) for k, v in resource["properties"].items()} or None
-
-        return super()._load(resource, cognite_client)
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            description=resource.get("description"),
+            name=resource.get("name"),
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
+            filter=Filter.load(resource["filter"]) if "filter" in resource else None,
+            implements=[ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None,
+            writable=resource["writable"],
+            used_for=resource["usedFor"],
+            is_global=resource["isGlobal"],
+            properties={k: ViewProperty.load(v) for k, v in resource.get("properties", {}).items()},
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -388,12 +384,12 @@ class MappedProperty(ViewProperty):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         type_ = resource["type"]
-        source = type_.pop("source", None) or resource.get("source")
+        source = type_.get("source", None) or resource.get("source")
 
         return cls(
             container=ContainerId.load(resource["container"]),
             container_property_identifier=resource["containerPropertyIdentifier"],
-            type=PropertyType.load(type_),
+            type=PropertyType.load({k: v for k, v in type_.items() if k != "source"}),
             nullable=resource["nullable"],
             auto_increment=resource["autoIncrement"],
             source=ViewId.load(source) if source else None,
@@ -466,10 +462,10 @@ class EdgeConnection(ConnectionDefinition, ABC):
 
     type: DirectRelationReference
     source: ViewId
-    name: str | None = None
-    description: str | None = None
-    edge_source: ViewId | None = None
-    direction: Literal["outwards", "inwards"] = "outwards"
+    name: str | None
+    description: str | None
+    edge_source: ViewId | None
+    direction: Literal["outwards", "inwards"]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -479,9 +475,8 @@ class EdgeConnection(ConnectionDefinition, ABC):
             name=resource.get("name"),
             description=resource.get("description"),
             edge_source=(edge_source := resource.get("edgeSource")) and ViewId.load(edge_source),
+            direction=resource["direction"],
         )
-        if "direction" in resource:
-            instance.direction = resource["direction"]
 
         return instance
 

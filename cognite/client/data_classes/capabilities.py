@@ -232,7 +232,7 @@ class ProjectCapability(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        project_scope_dct = {ProjectScope.name: resource.pop(ProjectScope.name)}
+        project_scope_dct = {ProjectScope.name: resource.get(ProjectScope.name)}
         return cls(
             capability=Capability.load(resource),
             project_scope=ProjectScope.load(project_scope_dct),

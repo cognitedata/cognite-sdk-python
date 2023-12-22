@@ -177,12 +177,9 @@ class TestInstancesToPandas:
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
     ) -> None:
         raw = node_dumped if inst_cls is Node else edge_dumped
-        # Need .copy() because load does inplace update of properties:
-        not_expanded = inst_cls._load(raw.copy()).to_pandas(expand_properties=False)
-        expanded = inst_cls._load(raw.copy()).to_pandas(expand_properties=True, remove_property_prefix=True)
-        expanded_with_prefix = inst_cls._load(raw.copy()).to_pandas(
-            expand_properties=True, remove_property_prefix=False
-        )
+        not_expanded = inst_cls._load(raw).to_pandas(expand_properties=False)
+        expanded = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=True)
+        expanded_with_prefix = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=False)
 
         assert "properties" in not_expanded.index
         assert "properties" not in expanded.index
@@ -199,12 +196,9 @@ class TestInstancesToPandas:
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
     ) -> None:
         raw = node_dumped if inst_cls is Node else edge_dumped
-        # Need .copy() because load does inplace update of properties:
-        not_expanded = inst_cls._load([raw.copy(), raw.copy()]).to_pandas(expand_properties=False)
-        expanded = inst_cls._load([raw.copy(), raw.copy()]).to_pandas(
-            expand_properties=True, remove_property_prefix=True
-        )
-        expanded_with_prefix = inst_cls._load([raw.copy(), raw.copy()]).to_pandas(
+        not_expanded = inst_cls._load([raw, raw]).to_pandas(expand_properties=False)
+        expanded = inst_cls._load([raw, raw]).to_pandas(expand_properties=True, remove_property_prefix=True)
+        expanded_with_prefix = inst_cls._load([raw, raw]).to_pandas(
             expand_properties=True, remove_property_prefix=False
         )
 

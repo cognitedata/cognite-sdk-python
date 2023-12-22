@@ -64,7 +64,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeList,
     EdgeListWithCursor,
     InstanceApply,
-    InstancesApply,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
@@ -175,6 +174,5 @@ __all__ = [
     "InstancesDeleteResult",
     "InstancesResult",
     "InstanceApply",
-    "InstancesApply",
     "query",
 ]
