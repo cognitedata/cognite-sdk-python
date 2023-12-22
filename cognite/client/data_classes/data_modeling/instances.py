@@ -286,9 +286,10 @@ class Instance(InstanceCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "properties" in resource:
-            resource["properties"] = Properties.load(resource["properties"])
-        return super()._load(resource)
+        instance = super()._load(resource)
+        if isinstance(instance.properties, dict):
+            instance.properties = Properties.load(instance.properties)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
