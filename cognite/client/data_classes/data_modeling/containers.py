@@ -12,7 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.core import DataModelingResource
+from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     PropertyType,
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ContainerCore(DataModelingResource, ABC):
+class ContainerCore(DataModelingSchemaResource, ABC):
     """Represent the physical storage of data. This is the base class for the read and write version.
 
     Args:
@@ -47,10 +47,7 @@ class ContainerCore(DataModelingResource, ABC):
         constraints: dict[str, Constraint] | None,
         indexes: dict[str, Index] | None,
     ) -> None:
-        self.space = space
-        self.external_id = external_id
-        self.description = description
-        self.name = name
+        super().__init__(space, external_id, description, name)
         self.properties = properties
         self.constraints: dict[str, Constraint] = constraints or {}
         self.indexes: dict[str, Index] = indexes or {}

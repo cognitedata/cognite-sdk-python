@@ -132,8 +132,8 @@ class InstanceCore(DataModelingResource, ABC):
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
+        super().__init__(space=space)
         self.instance_type = instance_type
-        self.space = space
         self.external_id = external_id
 
 
