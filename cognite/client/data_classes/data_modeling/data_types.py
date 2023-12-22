@@ -18,7 +18,7 @@ _PROPERTY_ALIAS = {"list": "isList"}
 _PROPERTY_ALIAS_INV = {"isList": "list", "is_list": "list"}
 
 
-@dataclass
+@dataclass(frozen=True)
 class DirectRelationReference:
     space: str
     external_id: str
