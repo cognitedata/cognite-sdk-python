@@ -26,12 +26,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     PropertySpec,
 )
-from cognite.client.data_classes.capabilities import ProjectCapability
-from cognite.client.data_classes.data_modeling.containers import Container, ContainerCore
-from cognite.client.data_classes.data_modeling.data_models import DataModel
-from cognite.client.data_classes.data_modeling.views import View, ViewCore
 from cognite.client.data_classes.datapoints import DatapointsArray
-from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscription, DatapointSubscriptionCore
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.geospatial import GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
@@ -181,15 +176,7 @@ class TestCogniteObject:
     ):
         # TODO: Fix _load methods of the following classes:
         to_skip = {
-            ProjectCapability,
-            Container,
-            ContainerCore,
-            DataModel,
-            View,
-            ViewCore,
             DatapointsArray,
-            DatapointSubscription,
-            DatapointSubscriptionCore,
         }
         if cognite_object_subclass in to_skip:
             pytest.skip(f"TODO: Fix _load method for {cognite_object_subclass}")

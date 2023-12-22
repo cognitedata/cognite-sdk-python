@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from abc import ABC
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResourceList
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.core import DataModelingResource, DataModelingSort
+from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource, DataModelingSort
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataModelCore(DataModelingResource):
+class DataModelCore(DataModelingSchemaResource, ABC):
     """A group of views.
 
     Args:
@@ -24,7 +25,6 @@ class DataModelCore(DataModelingResource):
         version (str): DMS version.
         description (str | None): Textual description of the data model
         name (str | None): Human readable name for the data model.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -32,14 +32,10 @@ class DataModelCore(DataModelingResource):
         space: str,
         external_id: str,
         version: str,
-        description: str | None = None,
-        name: str | None = None,
-        **_: Any,
+        description: str | None,
+        name: str | None,
     ) -> None:
-        self.space = space
-        self.external_id = external_id
-        self.description = description
-        self.name = name
+        super().__init__(space, external_id, name, description)
         self.version = version
 
     def as_id(self) -> DataModelId:
@@ -114,7 +110,6 @@ class DataModel(DataModelCore, Generic[T_View]):
         description (str | None): Textual description of the data model
         name (str | None): Human readable name for the data model.
         views (list[T_View] | None): List of views included in this data model.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -125,10 +120,9 @@ class DataModel(DataModelCore, Generic[T_View]):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: str | None = None,
-        name: str | None = None,
-        views: list[T_View] | None = None,
-        **_: Any,
+        description: str | None,
+        name: str | None,
+        views: list[T_View] | None,
     ) -> None:
         super().__init__(space, external_id, version, description, name)
         self.views: list[T_View] = views or []
@@ -137,18 +131,25 @@ class DataModel(DataModelCore, Generic[T_View]):
         self.created_time = created_time
 
     @classmethod
-    def _load_view(cls, view_data: dict) -> ViewId | View:
+    def _load_view(cls, view_data: dict) -> T_View:
         if "type" in view_data:
-            return ViewId.load(view_data)
+            return cast(T_View, ViewId.load(view_data))
         else:
-            return View._load(view_data)
+            return cast(T_View, View._load(view_data))
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "views" in resource:
-            resource["views"] = [cls._load_view(v) for v in resource["views"]] or None
-
-        return super()._load(resource)
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            name=resource.get("name"),
+            description=resource.get("description"),
+            is_global=resource["isGlobal"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
+            views=[cls._load_view(v) for v in resource.get("views", [])],
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)

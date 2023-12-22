@@ -16,7 +16,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.utils._auxiliary import json_dump_default
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -25,6 +24,9 @@ if TYPE_CHECKING:
 
 
 class DataModelingResource(CogniteResource, ABC):
+    def __init__(self, space: str):
+        self.space = space
+
     def __repr__(self) -> str:
         args = []
         if hasattr(self, "space"):
@@ -39,9 +41,19 @@ class DataModelingResource(CogniteResource, ABC):
 
         return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(**convert_all_keys_to_snake_case(resource))
+
+class DataModelingSchemaResource(DataModelingResource, ABC):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        name: str | None,
+        description: str | None,
+    ) -> None:
+        super().__init__(space=space)
+        self.external_id = external_id
+        self.name = name
+        self.description = description
 
 
 class DataModelingInstancesList(CogniteResourceList, Generic[T_CogniteResource]):

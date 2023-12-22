@@ -250,7 +250,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         self.data[view_id] = properties
 
 
-class Instance(InstanceCore):
+class Instance(InstanceCore, ABC):
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -262,7 +262,6 @@ class Instance(InstanceCore):
         instance_type (Literal["node", "edge"]): The type of instance.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the instance.
-        **_ (Any): This is used to capture any changes in the API without breaking the SDK.
     """
 
     def __init__(
@@ -272,10 +271,9 @@ class Instance(InstanceCore):
         version: int,
         last_updated_time: int,
         created_time: int,
-        instance_type: Literal["node", "edge"] = "node",
-        deleted_time: int | None = None,
-        properties: Properties | None = None,
-        **_: Any,
+        instance_type: Literal["node", "edge"],
+        deleted_time: int | None,
+        properties: Properties | None,
     ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -283,13 +281,6 @@ class Instance(InstanceCore):
         self.created_time = created_time
         self.deleted_time = deleted_time
         self.properties: Properties = properties or Properties({})
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource)
-        if isinstance(instance.properties, dict):
-            instance.properties = Properties.load(instance.properties)
-        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
@@ -354,7 +345,7 @@ class Instance(InstanceCore):
         raise NotImplementedError()
 
 
-class InstanceApplyResult(InstanceCore):
+class InstanceApplyResult(InstanceCore, ABC):
     """A node or edge. This represents the update on the instance.
 
     Args:
@@ -365,7 +356,6 @@ class InstanceApplyResult(InstanceCore):
         was_modified (bool): Whether the instance was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -377,7 +367,6 @@ class InstanceApplyResult(InstanceCore):
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
-        **_: Any,
     ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -496,7 +485,6 @@ class Node(Instance):
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the node.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -509,7 +497,6 @@ class Node(Instance):
         deleted_time: int | None,
         properties: Properties | None,
         type: DirectRelationReference | None,
-        **_: Any,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
         self.type = type
@@ -573,18 +560,10 @@ class NodeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the node was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **_ (Any): No description.
     """
 
     def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        was_modified: bool,
-        last_updated_time: int,
-        created_time: int,
-        **_: Any,
+        self, space: str, external_id: str, version: int, was_modified: bool, last_updated_time: int, created_time: int
     ) -> None:
         super().__init__(
             instance_type="node",
@@ -594,6 +573,17 @@ class NodeApplyResult(InstanceApplyResult):
             was_modified=was_modified,
             last_updated_time=last_updated_time,
             created_time=created_time,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            was_modified=resource["wasModified"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
         )
 
     def as_id(self) -> NodeId:
@@ -674,7 +664,6 @@ class Edge(Instance):
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): No description.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -687,9 +676,8 @@ class Edge(Instance):
         created_time: int,
         start_node: DirectRelationReference,
         end_node: DirectRelationReference,
-        deleted_time: int | None = None,
-        properties: Properties | None = None,
-        **_: Any,
+        deleted_time: int | None,
+        properties: Properties | None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
         self.type = type
@@ -738,12 +726,18 @@ class Edge(Instance):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource)
-
-        instance.type = DirectRelationReference.load(resource["type"])
-        instance.start_node = DirectRelationReference.load(resource["startNode"])
-        instance.end_node = DirectRelationReference.load(resource["endNode"])
-        return instance
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            type=DirectRelationReference.load(resource["type"]),
+            version=resource["version"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
+            start_node=DirectRelationReference.load(resource["startNode"]),
+            end_node=DirectRelationReference.load(resource["endNode"]),
+            deleted_time=resource.get("deletedTime"),
+            properties=Properties.load(resource["properties"]) if "properties" in resource else None,
+        )
 
 
 class EdgeApplyResult(InstanceApplyResult):
@@ -756,18 +750,10 @@ class EdgeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the edge was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **_ (Any): No description.
     """
 
     def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        was_modified: bool,
-        last_updated_time: int,
-        created_time: int,
-        **_: Any,
+        self, space: str, external_id: str, version: int, was_modified: bool, last_updated_time: int, created_time: int
     ) -> None:
         super().__init__(
             instance_type="edge",
@@ -777,6 +763,17 @@ class EdgeApplyResult(InstanceApplyResult):
             was_modified=was_modified,
             last_updated_time=last_updated_time,
             created_time=created_time,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            was_modified=resource["wasModified"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
         )
 
     def as_id(self) -> EdgeId:
@@ -875,20 +872,6 @@ class EdgeListWithCursor(EdgeList):
     ) -> None:
         super().__init__(resources, cognite_client)
         self.cursor = cursor
-
-
-@dataclass
-class InstancesApply:
-    """
-    This represents the write request of an instance query
-
-    Args:
-        nodes (NodeApplyList): A list of nodes.
-        edges (EdgeApplyList): A list of edges.
-    """
-
-    nodes: NodeApplyList
-    edges: EdgeApplyList
 
 
 class InstanceSort(DataModelingSort):
