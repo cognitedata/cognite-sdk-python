@@ -34,7 +34,7 @@ class DirectRelationReference:
         if isinstance(data, dict):
             return cls(
                 space=data["space"],
-                external_id=data["externalId"] if "externalId" in data else data["external_id"],
+                external_id=data["externalId"],
             )
         elif isinstance(data, tuple) and len(data) == 2:
             return cls(data[0], data[1])
