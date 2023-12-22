@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.8.4] - 2023-12-22
+### Fixed
+- `DirectRelationReference` is now immutable.
+- `DirectRelationReference.load` now correctly handles unknown parameters.
+
 ## [7.8.3] - 2023-12-21
 ### Fixed
 - Revert `SingleHopConnectionDefinition` from a string to child class of `ViewProperty`.
