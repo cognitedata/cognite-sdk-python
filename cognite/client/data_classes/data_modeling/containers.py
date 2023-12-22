@@ -47,7 +47,7 @@ class ContainerCore(DataModelingSchemaResource, ABC):
         constraints: dict[str, Constraint] | None,
         indexes: dict[str, Index] | None,
     ) -> None:
-        super().__init__(space, external_id, description, name)
+        super().__init__(space=space, external_id=external_id, description=description, name=name)
         self.properties = properties
         self.constraints: dict[str, Constraint] = constraints or {}
         self.indexes: dict[str, Index] = indexes or {}

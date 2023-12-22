@@ -40,7 +40,7 @@ class ViewCore(DataModelingSchemaResource, ABC):
     ) -> None:
         super().__init__(space=space, external_id=external_id, name=name, description=description)
         self.filter = filter
-        self.implements = implements
+        self.implements: list[ViewId] = implements or []
         self.version = version
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

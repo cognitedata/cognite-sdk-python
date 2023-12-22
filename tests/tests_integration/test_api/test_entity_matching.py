@@ -129,6 +129,7 @@ class TestEntityMatchingIntegration:
         models_list = cognite_client.entity_matching.list(feature_type="bigram")
         assert {model.feature_type for model in models_list} == {"bigram"}
 
+    @pytest.mark.skip("extremely slow due to lack of paging")
     def test_list_jobs(self, cognite_client):
         jobs_list = cognite_client.entity_matching.list_jobs()
         assert len(jobs_list) > 0
