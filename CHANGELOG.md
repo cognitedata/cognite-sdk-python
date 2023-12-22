@@ -17,10 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.8.4] - 2023-12-22
+## [7.8.5] - 2023-12-22
 ### Fixed
 - `DirectRelationReference` is now immutable.
 - `DirectRelationReference.load` now correctly handles unknown parameters.
+
+## [7.8.4] - 2023-12-22
+### Fixed
+- Listing annotations now also accepts `None` and `inf` for the `limit` parameter (to return all), matching what
+  was already described in the documentation for the endpoint (for the parameter).
+- Calling `to_pandas(...)` on an `DiagramDetectItem` no longer raises `KeyError`.
 
 ## [7.8.3] - 2023-12-21
 ### Fixed
