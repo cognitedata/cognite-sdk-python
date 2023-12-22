@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
 from typing import Any
@@ -25,6 +26,12 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     PropertySpec,
 )
+from cognite.client.data_classes.capabilities import ProjectCapability
+from cognite.client.data_classes.data_modeling.containers import Container, ContainerCore
+from cognite.client.data_classes.data_modeling.data_models import DataModel
+from cognite.client.data_classes.data_modeling.views import View, ViewCore
+from cognite.client.data_classes.datapoints import DatapointsArray
+from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscription, DatapointSubscriptionCore
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.geospatial import GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
@@ -163,6 +170,39 @@ class TestCogniteObject:
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_object_subclass",
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+    )
+    def test_load_has_no_side_effects(
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
+    ):
+        # TODO: Fix _load methods of the following classes:
+        to_skip = {
+            ProjectCapability,
+            Container,
+            ContainerCore,
+            DataModel,
+            View,
+            ViewCore,
+            DatapointsArray,
+            DatapointSubscription,
+            DatapointSubscriptionCore,
+        }
+        if cognite_object_subclass in to_skip:
+            pytest.skip(f"TODO: Fix _load method for {cognite_object_subclass}")
+
+        instance_generator = FakeCogniteResourceGenerator(seed=69_420, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        original_dumped = deepcopy(dumped)
+        _ = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+
+        # Ensure no part of load mutates the input dict:
+        assert dumped == original_dumped
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
