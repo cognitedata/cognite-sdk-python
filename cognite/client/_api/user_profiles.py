@@ -4,7 +4,7 @@ from typing import List, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
+from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList, UserProfilesConfiguration
 from cognite.client.utils._identifier import UserIdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -12,13 +12,15 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class UserProfilesAPI(APIClient):
     _RESOURCE_PATH = "/profiles"
 
-    def enable(self) -> None:
+    def enable(self) -> UserProfilesConfiguration:
         """Enable user profiles for the project"""
-        self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
+        res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
+        return UserProfilesConfiguration.load(res.json()["userProfilesConfiguration"])
 
-    def disable(self) -> None:
+    def disable(self) -> UserProfilesConfiguration:
         """Disable user profiles for the project"""
-        self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
+        res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
+        return UserProfilesConfiguration.load(res.json()["userProfilesConfiguration"])
 
     def me(self) -> UserProfile:
         """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
