@@ -267,7 +267,7 @@ class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifi
 class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
     # TODO: Inferred type from inherited methods 'as_dicts' and 'as_primitives' wrongly include 'int'
     @classmethod
-    def load(cls, user_identifiers: str | Sequence[str]) -> UserIdentifierSequence:
+    def load(cls, user_identifiers: str | SequenceNotStr[str]) -> UserIdentifierSequence:
         if isinstance(user_identifiers, str):
             return cls([UserIdentifier(user_identifiers)], is_singleton=True)
 

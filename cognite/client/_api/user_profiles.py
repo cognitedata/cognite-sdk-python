@@ -1,15 +1,24 @@
 from __future__ import annotations
 
-from typing import List, MutableSequence, cast, overload
+from typing import List, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
 from cognite.client.utils._identifier import UserIdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class UserProfilesAPI(APIClient):
     _RESOURCE_PATH = "/profiles"
+
+    def enable(self) -> None:
+        """Enable user profiles for the project"""
+        self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
+
+    def disable(self) -> None:
+        """Disable user profiles for the project"""
+        self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
 
     def me(self) -> UserProfile:
         """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
@@ -36,19 +45,17 @@ class UserProfilesAPI(APIClient):
     def retrieve(self, user_identifier: str) -> UserProfile | None:
         ...
 
-    @overload  # Note, can't use Sequence[str], as str itself matches this requirement...
-    def retrieve(self, user_identifier: MutableSequence[str] | tuple[str, ...]) -> UserProfileList:
+    @overload
+    def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList:
         ...
 
-    def retrieve(
-        self, user_identifier: str | MutableSequence[str] | tuple[str, ...]
-    ) -> UserProfile | UserProfileList | None:
+    def retrieve(self, user_identifier: str | SequenceNotStr[str]) -> UserProfile | UserProfileList | None:
         """`Retrieve user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/operation/getUserProfilesByIds>`_
 
         Retrieves one or more user profiles indexed by the user identifier in the same CDF project.
 
         Args:
-            user_identifier (str | MutableSequence[str] | tuple[str, ...]): The single user identifier (or sequence of) to retrieve profile(s) for.
+            user_identifier (str | SequenceNotStr[str]): The single user identifier (or sequence of) to retrieve profile(s) for.
 
         Returns:
             UserProfile | UserProfileList | None: UserProfileList if a sequence of user identifier were requested, else UserProfile. If a single user identifier is requested and it is not found, None is returned.
