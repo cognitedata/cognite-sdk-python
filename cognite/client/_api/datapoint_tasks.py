@@ -30,7 +30,7 @@ from typing import (
 )
 
 from google.protobuf.message import Message
-from sortedcontainers import SortedDict, SortedList
+from sortedcontainers import SortedDict
 from typing_extensions import NotRequired
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
@@ -577,11 +577,6 @@ def create_dps_container() -> DefaultSortedDict:
     return DefaultSortedDict(list)
 
 
-def create_subtask_lst() -> SortedList:
-    """Initialises a new sorted list for subtasks"""
-    return SortedList(key=op.attrgetter("subtask_idx"))
-
-
 def ensure_int(val: float, change_nan_to: int = 0) -> int:
     if math.isnan(val):
         return change_nan_to
@@ -649,6 +644,7 @@ class BaseDpsFetchSubtask:
         self.target_unit = target_unit
         self.target_unit_system = target_unit_system
         self.is_done = False
+        self.n_dps_fetched = 0
 
         self.static_kwargs = identifier.as_dict()
         if target_unit is not None:
@@ -663,9 +659,6 @@ class BaseDpsFetchSubtask:
     @abstractmethod
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         ...
-
-
-T_BaseDpsFetchSubtask = TypeVar("T_BaseDpsFetchSubtask", bound=BaseDpsFetchSubtask)
 
 
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
@@ -707,7 +700,6 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         self.aggregates = aggregates
         self.granularity = granularity
         self.subtask_idx = subtask_idx
-        self.n_dps_fetched = 0
         self.next_start = self.start
 
         if not self.is_raw_query:
@@ -803,7 +795,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, **self._static_params)
             for start, end, idx in zip(boundaries[1:-1], boundaries[2:], split_idxs)
         ]
-        self.parent.subtasks.update(new_subtasks)
+        self.parent._update_subtasks(new_subtasks)  # type: ignore [arg-type]
         return new_subtasks
 
 
@@ -830,7 +822,7 @@ class BaseTaskOrchestrator(ABC):
         # we also use them for serial fetchers (nice for outside points as well):
         self.ts_data = create_dps_container()
         self.dps_data = create_dps_container()
-        self.subtasks = create_subtask_lst()
+        self.subtasks: list[BaseDpsFetchSubtask] = []
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points for free (if asked for) and ts info:
@@ -929,6 +921,10 @@ class BaseTaskOrchestrator(ABC):
             # Append the outside subtask to returned subtasks so that it will be queued:
             subtasks.append(self.subtask_outside_points)
 
+    def _update_subtasks(self, to_add: list[BaseDpsFetchSubtask]) -> None:
+        self.subtasks.extend(to_add)
+        self.subtasks.sort(key=op.attrgetter("subtask_idx"))
+
     @abstractmethod
     def get_remaining_limit(self) -> float:  # What I really want: 'Literal[math.inf]'
         ...
@@ -974,7 +970,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
                 subtask_idx=FIRST_IDX,
             )
         ]
-        self.subtasks.update(subtasks)
+        self._update_subtasks(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
         return subtasks
 
@@ -1080,7 +1076,7 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
         # we hold back to not create too many subtasks:
         n_workers_per_queries = max(1, round(max_workers / n_tot_queries))
         subtasks: list[BaseDpsFetchSubtask] = self._create_uniformly_split_subtasks(n_workers_per_queries)
-        self.subtasks.update(subtasks)
+        self._update_subtasks(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
         return subtasks
 
