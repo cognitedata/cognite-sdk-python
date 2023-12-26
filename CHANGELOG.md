@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.8.6] - 2024-01-03
+### Improved
+- SDK dependency on the `sortedcontainers` package was dropped.
+
 ## [7.8.5] - 2023-12-22
 ### Fixed
 - `DirectRelationReference` is now immutable.
