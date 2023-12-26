@@ -5,6 +5,7 @@ import numbers
 import operator as op
 import warnings
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
@@ -14,15 +15,16 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    DefaultDict,
     Dict,
-    Generic,
-    Hashable,
     Iterator,
+    List,
     Literal,
     MutableSequence,
     NoReturn,
     Optional,
     Sequence,
+    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -30,8 +32,7 @@ from typing import (
 )
 
 from google.protobuf.message import Message
-from sortedcontainers import SortedDict
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypeAlias
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
@@ -562,21 +563,6 @@ class DpsUnpackFns:
         return op.attrgetter(*lst)
 
 
-class DefaultSortedDict(SortedDict, Generic[_T]):
-    def __init__(self, default_factory: Callable[[], _T], /, **kw: Any) -> None:
-        self.default_factory = default_factory
-        super().__init__(**kw)
-
-    def __missing__(self, key: Hashable) -> _T:
-        self[key] = self.default_factory()
-        return self[key]
-
-
-def create_dps_container() -> DefaultSortedDict:
-    """Initialises a new sorted container for datapoints storage"""
-    return DefaultSortedDict(list)
-
-
 def ensure_int(val: float, change_nan_to: int = 0) -> int:
     if math.isnan(val):
         return change_nan_to
@@ -605,21 +591,28 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
     }
 
 
-def create_array_from_dps_container(container: DefaultSortedDict) -> npt.NDArray:
-    return np.hstack(list(chain.from_iterable(container.values())))
+_DataContainer: TypeAlias = DefaultDict[Tuple[float, ...], List]
 
 
-def create_aggregates_arrays_from_dps_container(container: DefaultSortedDict, n_aggs: int) -> list[npt.NDArray]:
-    all_aggs_arr = np.vstack(list(chain.from_iterable(container.values())))
+def datapoints_in_order(container: _DataContainer) -> Iterator[list]:
+    return chain.from_iterable(container[k] for k in sorted(container))
+
+
+def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
+    return np.hstack(list(datapoints_in_order(container)))
+
+
+def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:
+    all_aggs_arr = np.vstack(list(datapoints_in_order(container)))
     return list(map(np.ravel, np.hsplit(all_aggs_arr, n_aggs)))
 
 
-def create_list_from_dps_container(container: DefaultSortedDict) -> list:
-    return list(chain.from_iterable(chain.from_iterable(container.values())))
+def create_list_from_dps_container(container: _DataContainer) -> list:
+    return list(chain.from_iterable(datapoints_in_order(container)))
 
 
-def create_aggregates_list_from_dps_container(container: DefaultSortedDict) -> Iterator[list[list]]:
-    concatenated = chain.from_iterable(chain.from_iterable(container.values()))
+def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iterator[list[list]]:
+    concatenated = chain.from_iterable(datapoints_in_order(container))
     return map(list, zip(*concatenated))  # rows to columns
 
 
@@ -818,10 +811,8 @@ class BaseTaskOrchestrator(ABC):
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
 
-        # Only concurrent fetchers really need auto-sorted containers. To keep indexing simple,
-        # we also use them for serial fetchers (nice for outside points as well):
-        self.ts_data = create_dps_container()
-        self.dps_data = create_dps_container()
+        self.ts_data: _DataContainer = defaultdict(list)
+        self.dps_data: _DataContainer = defaultdict(list)
         self.subtasks: list[BaseDpsFetchSubtask] = []
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
@@ -1132,7 +1123,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         self.float_aggs = aggs_camel_case[:]
         self.is_count_query = "count" in self.float_aggs
         if self.is_count_query:
-            self.count_data = create_dps_container()
+            self.count_data: _DataContainer = defaultdict(list)
             self.float_aggs.remove("count")  # Only aggregate that is (supposed to be) integer, handle separately
 
         self.has_non_count_aggs = bool(self.float_aggs)
