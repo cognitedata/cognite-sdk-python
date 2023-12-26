@@ -788,7 +788,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, **self._static_params)
             for start, end, idx in zip(boundaries[1:-1], boundaries[2:], split_idxs)
         ]
-        self.parent._update_subtasks(new_subtasks)  # type: ignore [arg-type]
+        self.parent.subtasks.extend(new_subtasks)
         return new_subtasks
 
 
@@ -912,10 +912,6 @@ class BaseTaskOrchestrator(ABC):
             # Append the outside subtask to returned subtasks so that it will be queued:
             subtasks.append(self.subtask_outside_points)
 
-    def _update_subtasks(self, to_add: list[BaseDpsFetchSubtask]) -> None:
-        self.subtasks.extend(to_add)
-        self.subtasks.sort(key=op.attrgetter("subtask_idx"))
-
     @abstractmethod
     def get_remaining_limit(self) -> float:  # What I really want: 'Literal[math.inf]'
         ...
@@ -961,7 +957,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
                 subtask_idx=FIRST_IDX,
             )
         ]
-        self._update_subtasks(subtasks)
+        self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
         return subtasks
 
@@ -1067,7 +1063,7 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
         # we hold back to not create too many subtasks:
         n_workers_per_queries = max(1, round(max_workers / n_tot_queries))
         subtasks: list[BaseDpsFetchSubtask] = self._create_uniformly_split_subtasks(n_workers_per_queries)
-        self._update_subtasks(subtasks)
+        self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
         return subtasks
 
