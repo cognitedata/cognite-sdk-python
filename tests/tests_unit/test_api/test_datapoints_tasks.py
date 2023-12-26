@@ -7,16 +7,13 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
-from sortedcontainers import SortedKeysView
 
 from cognite.client._api.datapoint_tasks import (
     _DatapointsQuery,
     _SingleTSQueryValidator,
-    create_dps_container,
-    create_subtask_lst,
 )
 from cognite.client.utils._text import random_string
-from tests.utils import random_aggregates, random_cognite_ids, random_gamma_dist_integer, random_granularity
+from tests.utils import random_aggregates, random_cognite_ids, random_granularity
 
 LIMIT_KWS = dict(dps_limit_raw=1234, dps_limit_agg=5678)
 
@@ -205,43 +202,3 @@ class TestSingleTSQueryValidator:
         user_query = _DatapointsQuery(id=id_dct_lst, include_outside_points=False)
         with pytest.raises(ValueError, match="'Include outside points' is not supported for aggregates."):
             _SingleTSQueryValidator(user_query, **LIMIT_KWS).validate_and_create_single_queries()
-
-
-@pytest.fixture
-def create_random_int_tuples(n_min=5):
-    return {
-        tuple(random.choices(range(-5, 5), k=random.randint(1, 5)))
-        for _ in range(max(n_min, random_gamma_dist_integer(100)))
-    }
-
-
-class TestSortedContainers:
-    def test_dps_container(self, create_random_int_tuples):
-        container = create_dps_container()
-        for k in create_random_int_tuples:
-            container[k] = None
-        assert isinstance(container.keys(), SortedKeysView)
-        assert list(container.keys()) == sorted(create_random_int_tuples)
-
-    def test_dps_container__with_duplicates(self, create_random_int_tuples):
-        container = create_dps_container()
-        tpls = list(create_random_int_tuples)
-        for k in tpls + tpls[:5]:
-            container[k].append(None)
-        assert isinstance(container.keys(), SortedKeysView)
-        assert list(container.keys()) == sorted(create_random_int_tuples)
-
-    @pytest.mark.parametrize("with_duplicates", (False, True))
-    def test_subtask_lst(self, with_duplicates, create_random_int_tuples):
-        class Foo:
-            def __init__(self, idx):
-                self.subtask_idx = idx
-
-        tpls = create_random_int_tuples
-        if with_duplicates:
-            tpls = list(tpls) + list(tpls)[:5]
-
-        random_foos = [Foo(tpl) for tpl in tpls]
-        container = create_subtask_lst()
-        container.update(random_foos)
-        assert list(container) == sorted(random_foos, key=lambda foo: foo.subtask_idx)
