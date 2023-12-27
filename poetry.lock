@@ -2065,17 +2065,6 @@ files = [
 ]
 
 [[package]]
-name = "sortedcontainers"
-version = "2.4.0"
-description = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
-optional = false
-python-versions = "*"
-files = [
-    {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
-    {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
-]
-
-[[package]]
 name = "sphinx"
 version = "5.3.0"
 description = "Python documentation generator"
@@ -2479,4 +2468,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "d08907975c3e1943efa3595f4e515cb2eda35231665c8af15f92c2eec47a1ba7"
+content-hash = "5f2085fadba7c28b78bc8991f3402cd8dd93363bf16b9f2a1040496e975da78c"
