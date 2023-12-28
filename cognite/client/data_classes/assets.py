@@ -6,6 +6,7 @@ import operator as op
 import textwrap
 import threading
 import warnings
+from abc import ABC
 from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
@@ -19,6 +20,7 @@ from typing import (
     Optional,
     Sequence,
     TextIO,
+    TypeVar,
     Union,
     cast,
 )
@@ -42,7 +44,7 @@ from cognite.client.data_classes._base import (
     NoCaseConversionPropertyList,
     PropertySpec,
 )
-from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelDefinition, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteAssetHierarchyError
 from cognite.client.utils._auxiliary import split_into_chunks
@@ -81,8 +83,9 @@ class AggregateResultItem(CogniteObject):
         self.path = path
 
 
-class Asset(CogniteResource):
-    """A representation of a physical asset, for example a factory or a piece of equipment.
+class AssetCore(CogniteResource, ABC):
+    """A representation of a physical asset, for example, a factory or a piece of equipment. This
+    is the parent class for the Asset and AssetWrite classes.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
@@ -91,7 +94,70 @@ class Asset(CogniteResource):
         parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
         description (str | None): The description of the asset.
         data_set_id (int | None): The id of the dataset this asset belongs to.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source (str | None): The source of the asset.
+        labels (list[Label] | None): A list of the labels associated with this resource item.
+        geo_location (GeoLocation | None): The geographic metadata of the asset.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        parent_id: int | None = None,
+        parent_external_id: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        labels: list[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+    ) -> None:
+        if geo_location is not None and not isinstance(geo_location, GeoLocation):
+            raise TypeError("Asset.geo_location should be of type GeoLocation")
+        self.external_id = external_id
+        self.name = name
+        self.parent_id = parent_id
+        self.parent_external_id = parent_external_id
+        self.description = description
+        self.data_set_id = data_set_id
+        self.metadata = metadata
+        self.source = source
+        self.labels = labels
+        self.geo_location = geo_location
+
+    @classmethod
+    def _load(cls: type[T_Asset], resource: dict, cognite_client: CogniteClient | None = None) -> T_Asset:
+        instance = super()._load(resource, cognite_client)
+        instance.labels = Label._load_list(instance.labels)
+        if isinstance(instance.geo_location, dict):
+            instance.geo_location = GeoLocation._load(instance.geo_location)
+        return instance
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location is not None:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        return result
+
+
+T_Asset = TypeVar("T_Asset", bound=AssetCore)
+
+
+class Asset(AssetCore):
+    """A representation of a physical asset, for example, a factory or a piece of equipment. This
+    is the read version of the Asset class, it is used when retrieving assets from the Cognite API.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): The name of the asset.
+        parent_id (int | None): The parent of the node, null if it is the root node.
+        parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
+        description (str | None): The description of the asset.
+        data_set_id (int | None): The id of the dataset this asset belongs to.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): The source of the asset.
         labels (list[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
         geo_location (GeoLocation | None): The geographic metadata of the asset.
@@ -122,18 +188,18 @@ class Asset(CogniteResource):
         aggregates: AggregateResultItem | dict[str, Any] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        if geo_location is not None and not isinstance(geo_location, GeoLocation):
-            raise TypeError("Asset.geo_location should be of type GeoLocation")
-        self.external_id = external_id
-        self.name = name
-        self.parent_id = parent_id
-        self.parent_external_id = parent_external_id
-        self.description = description
-        self.data_set_id = data_set_id
-        self.metadata = metadata
-        self.source = source
-        self.labels = Label._load_list(labels)
-        self.geo_location = geo_location
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            parent_id=parent_id,
+            parent_external_id=parent_external_id,
+            description=description,
+            data_set_id=data_set_id,
+            metadata=metadata,
+            source=source,
+            labels=Label._load_list(labels),
+            geo_location=geo_location,
+        )
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -146,10 +212,24 @@ class Asset(CogniteResource):
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.aggregates, dict):
             instance.aggregates = AggregateResultItem._load(instance.aggregates)
-        instance.labels = Label._load_list(instance.labels)
-        if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
+
+    def as_write(self) -> AssetWrite:
+        """Returns this Asset in its writing version."""
+        if self.name is None:
+            raise ValueError("name is required for the writing version of an asset.")
+        return AssetWrite(
+            external_id=self.external_id,
+            name=self.name,
+            parent_id=self.parent_id,
+            parent_external_id=self.parent_external_id,
+            description=self.description,
+            data_set_id=self.data_set_id,
+            metadata=self.metadata,
+            source=self.source,
+            labels=self.labels,  # type: ignore[arg-type]
+            geo_location=self.geo_location,
+        )
 
     def __hash__(self) -> int:
         return hash(self.external_id)
@@ -231,10 +311,6 @@ class Asset(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
-        if self.labels is not None:
-            result["labels"] = [label.dump(camel_case) for label in self.labels]
-        if self.geo_location is not None:
-            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
         if isinstance(self.aggregates, AggregateResultItem):
             result["aggregates"] = self.aggregates.dump(camel_case)
         return result
@@ -277,6 +353,50 @@ class Asset(CogniteResource):
         col = df.squeeze()
         aggregates = convert_dict_to_case(col.pop("aggregates"), camel_case)
         return pd.concat((col, pd.Series(aggregates).add_prefix(aggregates_prefix))).to_frame(name="value")
+
+
+class AssetWrite(AssetCore):
+    """A representation of a physical asset, for example, a factory or a piece of equipment. This is the
+    writing version of the Asset class, and is used when inserting new assets.
+
+    Args:
+        name (str): The name of the asset.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        parent_id (int | None): The parent of the node, null if it is the root node.
+        parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
+        description (str | None): The description of the asset.
+        data_set_id (int | None): The id of the dataset this asset belongs to.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source (str | None): The source of the asset.
+        labels (list[Label | str | LabelDefinitionWrite | dict] | None): A list of the labels associated with this resource item.
+        geo_location (GeoLocation | None): The geographic metadata of the asset.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        external_id: str | None = None,
+        parent_id: int | None = None,
+        parent_external_id: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        labels: list[Label | str | LabelDefinitionWrite | dict] | None = None,
+        geo_location: GeoLocation | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            parent_id=parent_id,
+            parent_external_id=parent_external_id,
+            description=description,
+            data_set_id=data_set_id,
+            metadata=metadata,
+            source=source,
+            labels=Label._load_list(labels),
+            geo_location=geo_location,
+        )
 
 
 class AssetUpdate(CogniteUpdate):
