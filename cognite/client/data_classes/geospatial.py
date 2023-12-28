@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, List, cast
+from typing import TYPE_CHECKING, Any, List, TypeVar, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, ExternalIDTransformerMixin
 from cognite.client.utils._importing import local_import
@@ -169,26 +169,20 @@ class FeatureTypePatch:
     search_spec_patches: Patches | None = None
 
 
-class Feature(CogniteResource):
-    """A representation of a feature in the geospatial api."""
+class FeatureCore(CogniteResource, ABC):
+    """A representation of a feature in the geospatial api.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        **properties (Any): The properties of the feature.
+    """
 
     PRE_DEFINED_SNAKE_CASE_NAMES = frozenset({to_snake_case(key) for key in RESERVED_PROPERTIES})
 
-    def __init__(
-        self, external_id: str | None = None, cognite_client: CogniteClient | None = None, **properties: Any
-    ) -> None:
+    def __init__(self, external_id: str | None = None, **properties: Any) -> None:
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Feature:
-        return cls(
-            external_id=resource.get("externalId"),
-            cognite_client=cognite_client,
-            **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
-        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         def handle_case(key: str) -> str:
@@ -202,6 +196,68 @@ class Feature(CogniteResource):
             for key, value in self.__dict__.items()
             if value is not None and not key.startswith("_")
         }
+
+
+T_Feature = TypeVar("T_Feature", bound=FeatureCore)
+
+
+class Feature(FeatureCore):
+    """A representation of a feature in the geospatial api.
+    This is the reading version of the Feature class, it is used when retrieving features from the api.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        cognite_client (CogniteClient | None): The client to associate with this object.
+        **properties (Any): The properties of the feature.
+    """
+
+    def __init__(
+        self, external_id: str | None = None, cognite_client: CogniteClient | None = None, **properties: Any
+    ) -> None:
+        super().__init__(external_id=external_id, **properties)
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Feature:
+        return cls(
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+            **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
+        )
+
+    def as_write(self) -> FeatureWrite:
+        """Returns a write version of this feature."""
+        if self.external_id is None:
+            raise ValueError("External ID must be set to create a feature")
+
+        return FeatureWrite(
+            external_id=self.external_id,
+            **{
+                key: value
+                for key, value in self.__dict__.items()
+                if value is not None and not key.startswith("_") and key != "external_id"
+            },
+        )
+
+
+class FeatureWrite(FeatureCore):
+    """A representation of a feature in the geospatial api.
+    This is the writing version of the Feature class, it is used when creating features in the api.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        **properties (Any): The properties of the feature.
+    """
+
+    def __init__(self, external_id: str, **properties: Any) -> None:
+        super().__init__(external_id=external_id, **properties)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FeatureWrite:
+        return cls(
+            external_id=resource["externalId"],
+            **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
+        )
 
 
 def _is_geometry_type(property_type: str) -> bool:
@@ -245,9 +301,7 @@ def _to_feature_property_name(property_name: str) -> str:
     return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
-class FeatureList(CogniteResourceList[Feature]):
-    _RESOURCE = Feature
-
+class FeatureListCore(CogniteResourceList[T_Feature], ExternalIDTransformerMixin):
     def to_geopandas(self, geometry: str, camel_case: bool = False) -> geopandas.GeoDataFrame:
         """Convert the instance into a GeoPandas GeoDataFrame.
 
@@ -346,6 +400,17 @@ class FeatureList(CogniteResourceList[Feature]):
                     setattr(feature, prop_name, column_value)
             features.append(feature)
         return FeatureList(features)
+
+
+class FeatureList(FeatureListCore[Feature]):
+    _RESOURCE = Feature
+
+    def as_write(self) -> FeatureWriteList:
+        return FeatureWriteList([feature.as_write() for feature in self], cognite_client=self._cognite_client)
+
+
+class FeatureWriteList(FeatureListCore[FeatureWrite]):
+    _RESOURCE = FeatureWrite
 
 
 def nan_to_none(column_value: Any) -> Any:
