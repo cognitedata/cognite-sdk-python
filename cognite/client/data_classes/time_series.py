@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
@@ -29,22 +30,71 @@ if TYPE_CHECKING:
     from cognite.client.data_classes import Asset, Datapoint
 
 
-class TimeSeries(CogniteResource):
+class TimeSeriesCore(CogniteResource, ABC):
     """No description.
 
     Args:
-        id (int | None): A server-generated ID for the object.
         external_id (str | None): The externally supplied ID for the time series.
         name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
         is_string (bool | None): Whether the time series is string valued or not.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
         unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
         asset_id (int | None): Asset ID of equipment linked to this time series.
         is_step (bool | None): Whether the time series is a step series or not.
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
-        data_set_id (int | None): The dataSet Id for the item.
+        data_set_id (int | None): The dataSet ID for the item.
+        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        is_string: bool | None = None,
+        metadata: dict[str, str] | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        asset_id: int | None = None,
+        is_step: bool | None = None,
+        description: str | None = None,
+        security_categories: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        legacy_name: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.is_string = is_string
+        self.metadata = metadata
+        self.unit = unit
+        self.unit_external_id = unit_external_id
+        self.asset_id = asset_id
+        self.is_step = is_step
+        self.description = description
+        self.security_categories = security_categories
+        self.data_set_id = data_set_id
+        self.legacy_name = legacy_name
+
+
+class TimeSeries(TimeSeriesCore):
+    """This represents a sequence of data points. The TimeSeries object is the metadata about
+    the datapoints, and the Datapoint object is the actual data points. This is the reading version
+    of TimesSeries, which is used when retrieving from CDF.
+
+    Args:
+        id (int | None): A server-generated ID for the object.
+        external_id (str | None): The externally supplied ID for the time series.
+        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        is_string (bool | None): Whether the time series is string valued or not.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit (str | None): The physical unit of the time series.
+        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
+        asset_id (int | None): Asset ID of equipment linked to this time series.
+        is_step (bool | None): Whether the time series is a step series or not.
+        description (str | None): Description of the time series.
+        security_categories (Sequence[int] | None): The required security categories to access this time series.
+        data_set_id (int | None): The dataSet ID for the item.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
@@ -70,21 +120,24 @@ class TimeSeries(CogniteResource):
         legacy_name: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            is_string=is_string,
+            metadata=metadata,
+            unit=unit,
+            unit_external_id=unit_external_id,
+            asset_id=asset_id,
+            is_step=is_step,
+            description=description,
+            security_categories=security_categories,
+            data_set_id=data_set_id,
+            legacy_name=legacy_name,
+        )
+
         self.id = id
-        self.external_id = external_id
-        self.name = name
-        self.is_string = is_string
-        self.metadata = metadata
-        self.unit = unit
-        self.unit_external_id = unit_external_id
-        self.asset_id = asset_id
-        self.is_step = is_step
-        self.description = description
-        self.security_categories = security_categories
-        self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.legacy_name = legacy_name
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def count(self) -> int:
@@ -148,6 +201,57 @@ class TimeSeries(CogniteResource):
         if self.asset_id is None:
             raise ValueError("asset_id is None")
         return cast("Asset", self._cognite_client.assets.retrieve(id=self.asset_id))
+
+
+class TimeSeriesWrite(TimeSeriesCore):
+    """This represents a sequence of data points. The TimeSeries object is the metadata about
+    the datapoints, and the Datapoint object is the actual data points. This is the writing version
+    of TimesSeries, which is used when writing to CDF.
+
+    Args:
+        external_id (str): The externally supplied ID for the time series.
+        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        is_string (bool | None): Whether the time series is string valued or not.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit (str | None): The physical unit of the time series.
+        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
+        asset_id (int | None): Asset ID of equipment linked to this time series.
+        is_step (bool | None): Whether the time series is a step series or not.
+        description (str | None): Description of the time series.
+        security_categories (Sequence[int] | None): The required security categories to access this time series.
+        data_set_id (int | None): The dataSet ID for the item.
+        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        name: str | None = None,
+        is_string: bool | None = None,
+        metadata: dict[str, str] | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        asset_id: int | None = None,
+        is_step: bool | None = None,
+        description: str | None = None,
+        security_categories: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        legacy_name: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            is_string=is_string,
+            metadata=metadata,
+            unit=unit,
+            unit_external_id=unit_external_id,
+            asset_id=asset_id,
+            is_step=is_step,
+            description=description,
+            security_categories=security_categories,
+            data_set_id=data_set_id,
+            legacy_name=legacy_name,
+        )
 
 
 class TimeSeriesFilter(CogniteFilter):
