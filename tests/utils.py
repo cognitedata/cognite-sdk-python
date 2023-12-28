@@ -31,6 +31,7 @@ from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.data_modeling.query import Query
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.workflows import (
     FunctionTaskOutput,
     FunctionTaskParameters,
@@ -349,6 +350,9 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["schedule"].id = keyword_arguments["id"]
             keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
             keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
+        elif resource_cls is TransformationScheduleWrite:
+            # TransformationScheduleWrite requires either id or external_id
+            keyword_arguments.pop("id", None)
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
