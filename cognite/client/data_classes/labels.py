@@ -106,6 +106,15 @@ class LabelDefinitionWrite(LabelDefinitionCore):
             data_set_id=data_set_id,
         )
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LabelDefinitionWrite:
+        return cls(
+            external_id=resource["externalId"],
+            name=resource["name"],
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+        )
+
 
 class LabelDefinitionFilter(CogniteFilter):
     """Filter on labels definitions with strict matching.

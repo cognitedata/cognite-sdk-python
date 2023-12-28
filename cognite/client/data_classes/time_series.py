@@ -140,6 +140,26 @@ class TimeSeries(TimeSeriesCore):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def as_write(self) -> TimeSeriesWrite:
+        """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""
+        if self.external_id is None:
+            raise ValueError("External ID is required to create a TimeSeriesWrite object.")
+
+        return TimeSeriesWrite(
+            external_id=self.external_id,
+            name=self.name,
+            is_string=self.is_string,
+            metadata=self.metadata,
+            unit=self.unit,
+            unit_external_id=self.unit_external_id,
+            asset_id=self.asset_id,
+            is_step=self.is_step,
+            description=self.description,
+            security_categories=self.security_categories,
+            data_set_id=self.data_set_id,
+            legacy_name=self.legacy_name,
+        )
+
     def count(self) -> int:
         """Returns the number of datapoints in this time series.
 
@@ -251,6 +271,23 @@ class TimeSeriesWrite(TimeSeriesCore):
             security_categories=security_categories,
             data_set_id=data_set_id,
             legacy_name=legacy_name,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TimeSeriesWrite:
+        return cls(
+            external_id=resource["externalId"],
+            name=resource.get("name"),
+            is_string=resource.get("isString"),
+            metadata=resource.get("metadata"),
+            unit=resource.get("unit"),
+            unit_external_id=resource.get("unitExternalId"),
+            asset_id=resource.get("assetId"),
+            is_step=resource.get("isStep"),
+            description=resource.get("description"),
+            security_categories=resource.get("securityCategories"),
+            data_set_id=resource.get("dataSetId"),
+            legacy_name=resource.get("legacyName"),
         )
 
 

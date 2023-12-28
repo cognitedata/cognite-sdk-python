@@ -398,6 +398,21 @@ class AssetWrite(AssetCore):
             geo_location=geo_location,
         )
 
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> AssetWrite:
+        return cls(
+            external_id=resource.get("externalId"),
+            name=resource["name"],
+            parent_id=resource.get("parentId"),
+            parent_external_id=resource.get("parentExternalId"),
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+            metadata=resource.get("metadata"),
+            source=resource.get("source"),
+            labels=(labels := resource.get("labels")) and Label._load_list(labels),  # type: ignore[arg-type]
+            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+        )
+
 
 class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
