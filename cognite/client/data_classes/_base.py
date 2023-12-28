@@ -753,6 +753,12 @@ class HasExternalId(Protocol):
         ...
 
 
+class HasName(Protocol):
+    @property
+    def name(self) -> str | None:
+        ...
+
+
 class HasExternalAndInternalId(Protocol):
     @property
     def external_id(self) -> str | None:
@@ -780,6 +786,25 @@ class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
                 raise ValueError(f"All {type(x).__name__} must have external_id")
             external_ids.append(x.external_id)
         return external_ids
+
+
+class NameTransformerMixin(Sequence[HasName], ABC):
+    def as_names(self) -> list[str]:
+        """
+        Returns the names of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have a name.
+
+        Returns:
+            list[str]: The names of all resources in the list.
+        """
+        names: list[str] = []
+        for x in self:
+            if x.name is None:
+                raise ValueError(f"All {type(x).__name__} must have name")
+            names.append(x.name)
+        return names
 
 
 class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
