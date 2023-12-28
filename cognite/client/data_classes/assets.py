@@ -40,6 +40,7 @@ from cognite.client.data_classes._base import (
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
@@ -520,6 +521,9 @@ class AssetList(CogniteResourceList[Asset], IdTransformerMixin):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
+    def as_write(self) -> AssetWriteList:
+        return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._cognite_client)
+
     def time_series(self) -> TimeSeriesList:
         """Retrieve all time series related to these assets.
 
@@ -576,6 +580,10 @@ class AssetList(CogniteResourceList[Asset], IdTransformerMixin):
         tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(ids, self._retrieve_chunk_size)]
         res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
         return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
+
+
+class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin):
+    _RESOURCE = AssetWrite
 
 
 class AssetFilter(CogniteFilter):

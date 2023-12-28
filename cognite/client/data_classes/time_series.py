@@ -17,6 +17,7 @@ from cognite.client.data_classes._base import (
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
@@ -443,6 +444,13 @@ class TimeSeriesUpdate(CogniteUpdate):
 
 class TimeSeriesList(CogniteResourceList[TimeSeries], IdTransformerMixin):
     _RESOURCE = TimeSeries
+
+    def as_write(self) -> TimeSeriesWriteList:
+        return TimeSeriesWriteList([ts.as_write() for ts in self.data], cognite_client=self._cognite_client)
+
+
+class TimeSeriesWriteList(CogniteResourceList[TimeSeriesWrite], ExternalIDTransformerMixin):
+    _RESOURCE = TimeSeriesWrite
 
 
 class TimeSeriesProperty(EnumProperty):

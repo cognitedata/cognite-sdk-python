@@ -8,6 +8,7 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
     CogniteResourceList,
+    ExternalIDTransformerMixin,
 )
 
 if TYPE_CHECKING:
@@ -139,8 +140,16 @@ class LabelDefinitionFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
+class LabelDefinitionList(CogniteResourceList[LabelDefinition], ExternalIDTransformerMixin):
     _RESOURCE = LabelDefinition
+
+    def as_write(self) -> LabelDefinitionWriteList:
+        """Returns this LabelDefinitionList in its writing version."""
+        return LabelDefinitionWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
+
+
+class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = LabelDefinitionWrite
 
 
 class Label(CogniteObject):
