@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.data_classes._base import (
@@ -11,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
 )
@@ -46,8 +48,60 @@ class ExtractionPipelineContact(CogniteObject):
         )
 
 
-class ExtractionPipeline(CogniteResource):
+class ExtractionPipelineCore(CogniteResource, ABC):
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): The name of the extraction pipeline.
+        description (str | None): The description of the extraction pipeline.
+        data_set_id (int | None): The id of the dataset this extraction pipeline related with.
+        raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
+        schedule (str | None): None/On trigger/Continuous/cron regex.
+        contacts (list[ExtractionPipelineContact] | None): list of contacts
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source (str | None): Source text value for extraction pipeline.
+        documentation (str | None): Documentation text value for extraction pipeline.
+        created_by (str | None): Extraction pipeline creator, usually an email.
+
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        raw_tables: list[dict[str, str]] | None = None,
+        schedule: str | None = None,
+        contacts: list[ExtractionPipelineContact] | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        documentation: str | None = None,
+        created_by: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.description = description
+        self.data_set_id = data_set_id
+        self.raw_tables = raw_tables
+        self.schedule = schedule
+        self.contacts = contacts
+        self.metadata = metadata
+        self.source = source
+        self.documentation = documentation
+        self.created_by = created_by
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.contacts:
+            result["contacts"] = [contact.dump(camel_case) for contact in self.contacts]
+        return result
+
+
+class ExtractionPipeline(ExtractionPipelineCore):
+    """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
+    This is the reading version of the ExtractionPipeline class, which is used when retrieving extraction pipelines.
 
     Args:
         id (int | None): A server-generated ID for the object.
@@ -93,6 +147,19 @@ class ExtractionPipeline(CogniteResource):
         created_by: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            description=description,
+            data_set_id=data_set_id,
+            raw_tables=raw_tables,
+            schedule=schedule,
+            contacts=contacts,
+            metadata=metadata,
+            source=source,
+            documentation=documentation,
+            created_by=created_by,
+        )
         self.id = id
         self.external_id = external_id
         self.name = name
@@ -113,6 +180,24 @@ class ExtractionPipeline(CogniteResource):
         self.created_by = created_by
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def as_write(self) -> ExtractionPipelineWrite:
+        """Returns this ExtractionPipeline as a ExtractionPipelineWrite"""
+        if self.external_id is None or self.name is None or self.data_set_id is None:
+            raise ValueError("external_id, name and data_set_id are required to create a ExtractionPipeline")
+        return ExtractionPipelineWrite(
+            external_id=self.external_id,
+            name=self.name,
+            description=self.description,
+            data_set_id=self.data_set_id,
+            raw_tables=self.raw_tables,
+            schedule=self.schedule,
+            contacts=self.contacts,
+            metadata=self.metadata,
+            source=self.source,
+            documentation=self.documentation,
+            created_by=self.created_by,
+        )
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
         instance = super()._load(resource, cognite_client)
@@ -123,14 +208,71 @@ class ExtractionPipeline(CogniteResource):
             ]
         return instance
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case)
-        if self.contacts:
-            result["contacts"] = [contact.dump(camel_case) for contact in self.contacts]
-        return result
-
     def __hash__(self) -> int:
         return hash(self.external_id)
+
+
+class ExtractionPipelineWrite(ExtractionPipelineCore):
+    """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
+    This is the writing version of the ExtractionPipeline class, which is used when creating extraction pipelines.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): The name of the extraction pipeline.
+        data_set_id (int): The id of the dataset this extraction pipeline related with.
+        description (str | None): The description of the extraction pipeline.
+        raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
+        schedule (str | None): None/On trigger/Continuous/cron regex.
+        contacts (list[ExtractionPipelineContact] | None): list of contacts
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source (str | None): Source text value for extraction pipeline.
+        documentation (str | None): Documentation text value for extraction pipeline.
+        created_by (str | None): Extraction pipeline creator, usually an email.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        data_set_id: int,
+        description: str | None = None,
+        raw_tables: list[dict[str, str]] | None = None,
+        schedule: str | None = None,
+        contacts: list[ExtractionPipelineContact] | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        documentation: str | None = None,
+        created_by: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            description=description,
+            data_set_id=data_set_id,
+            raw_tables=raw_tables,
+            schedule=schedule,
+            contacts=contacts,
+            metadata=metadata,
+            source=source,
+            documentation=documentation,
+            created_by=created_by,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineWrite:
+        return cls(
+            external_id=resource["externalId"],
+            name=resource["name"],
+            description=resource.get("description"),
+            data_set_id=resource["dataSetId"],
+            raw_tables=resource.get("rawTables"),
+            schedule=resource["schedule"],
+            contacts=[ExtractionPipelineContact.load(contact) for contact in resource.get("contacts") or []] or None,
+            metadata=resource.get("metadata"),
+            source=resource.get("source"),
+            documentation=resource.get("documentation"),
+            created_by=resource.get("createdBy"),
+        )
 
 
 class ExtractionPipelineUpdate(CogniteUpdate):
@@ -225,6 +367,13 @@ class ExtractionPipelineUpdate(CogniteUpdate):
 
 class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline], IdTransformerMixin):
     _RESOURCE = ExtractionPipeline
+
+    def as_write(self) -> ExtractionPipelineWriteList:
+        return ExtractionPipelineWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+
+
+class ExtractionPipelineWriteList(CogniteResourceList[ExtractionPipelineWrite], ExternalIDTransformerMixin):
+    _RESOURCE = ExtractionPipelineWrite
 
 
 class ExtractionPipelineRun(CogniteResource):
