@@ -486,6 +486,20 @@ class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
             created_time=resource.get("createdTime"),
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dct = super().dump(camel_case=camel_case)
+        # Note: No way to make this id/xid API mixup completely correct. Either:
+        # 1. We use id / external_id for respectively "self id" / "ext.pipe external id"
+        #   - Problem: Only dataclass in the SDK where id and external_id does not point to same object...
+        # 2. We rename external_id to extpipe_external_id in the SDK only
+        #   - Problem: This dump method might be surprising to the user - if used (its public)...
+        # ...and 2 was chosen:
+        if camel_case:
+            dct["externalId"] = dct.pop("extpipeExternalId", None)
+        else:
+            dct["external_id"] = dct.pop("extpipe_external_id", None)
+        return dct
+
 
 class ExtractionPipelineRunList(CogniteResourceList[ExtractionPipelineRun]):
     _RESOURCE = ExtractionPipelineRun
@@ -530,6 +544,32 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         self.statuses = statuses
         self.message = message
         self.created_time = created_time
+
+
+class ExtractionPipelineConfigRevisionCore(CogniteResource):
+    """An extraction pipeline config revision
+
+    Args:
+        external_id (str | None): The external ID of the associated extraction pipeline.
+        revision (int | None): The revision number of this config as a positive integer.
+        description (str | None): Short description of this configuration revision.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient | None): The client to associate with this object.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        revision: int | None = None,
+        description: str | None = None,
+        created_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.revision = revision
+        self.description = description
+        self.created_time = created_time
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ExtractionPipelineConfigRevision(CogniteResource):
@@ -588,6 +628,57 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
         )
         self.config = config
 
+    def as_write(self) -> ExtractionPipelineConfigWrite:
+        """Returns this ExtractionPipelineConfig as a ExtractionPipelineConfigWrite"""
+        if self.external_id is None:
+            raise ValueError("external_id is required to create a ExtractionPipelineConfig")
+        return ExtractionPipelineConfigWrite(
+            external_id=self.external_id,
+            config=self.config,
+            description=self.description,
+        )
+
+
+class ExtractionPipelineConfigWrite(CogniteResource):
+    """An extraction pipeline config
+
+    Args:
+        external_id (str): The external ID of the associated extraction pipeline.
+        config (str | None): Contents of this configuration revision.
+        description (str | None): Short description of this configuration revision.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        config: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.config = config
+        self.description = description
+
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> ExtractionPipelineConfigWrite:
+        return cls(
+            external_id=resource["externalId"],
+            config=resource.get("config"),
+            description=resource.get("description"),
+        )
+
 
 class ExtractionPipelineConfigRevisionList(CogniteResourceList[ExtractionPipelineConfigRevision]):
     _RESOURCE = ExtractionPipelineConfigRevision
+
+
+class ExtractionPipelineConfigList(CogniteResourceList[ExtractionPipelineConfig]):
+    _RESOURCE = ExtractionPipelineConfig
+
+    def as_write(self) -> ExtractionPipelineConfigWriteList:
+        return ExtractionPipelineConfigWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+
+
+class ExtractionPipelineConfigWriteList(CogniteResourceList[ExtractionPipelineConfigWrite]):
+    _RESOURCE = ExtractionPipelineConfigWrite
