@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, Literal, Sequence, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -161,23 +161,12 @@ class ExtractionPipeline(ExtractionPipelineCore):
             created_by=created_by,
         )
         self.id = id
-        self.external_id = external_id
-        self.name = name
-        self.description = description
-        self.data_set_id = data_set_id
-        self.raw_tables = raw_tables
-        self.schedule = schedule
-        self.contacts = contacts
-        self.metadata = metadata
-        self.source = source
-        self.documentation = documentation
         self.last_success = last_success
         self.last_failure = last_failure
         self.last_message = last_message
         self.last_seen = last_seen
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.created_by = created_by
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> ExtractionPipelineWrite:
@@ -376,7 +365,27 @@ class ExtractionPipelineWriteList(CogniteResourceList[ExtractionPipelineWrite], 
     _RESOURCE = ExtractionPipelineWrite
 
 
-class ExtractionPipelineRun(CogniteResource):
+class ExtractionPipelineRunCore(CogniteResource, ABC):
+    """A representation of an extraction pipeline run.
+
+    Args:
+        status (str | None): success/failure/seen.
+        message (str | None): Optional status message.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+    """
+
+    def __init__(
+        self,
+        status: str | None = None,
+        message: str | None = None,
+        created_time: int | None = None,
+    ) -> None:
+        self.status = status
+        self.message = message
+        self.created_time = created_time
+
+
+class ExtractionPipelineRun(ExtractionPipelineRunCore):
     """A representation of an extraction pipeline run.
 
     Args:
@@ -397,12 +406,28 @@ class ExtractionPipelineRun(CogniteResource):
         cognite_client: CogniteClient | None = None,
         id: int | None = None,
     ) -> None:
+        super().__init__(
+            status=status,
+            message=message,
+            created_time=created_time,
+        )
         self.id = id
         self.extpipe_external_id = extpipe_external_id
-        self.status = status
-        self.message = message
-        self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> ExtractionPipelineRunWrite:
+        """Returns this ExtractionPipelineRun as a ExtractionPipelineRunWrite"""
+        if self.extpipe_external_id is None:
+            raise ValueError("extpipe_external_id is required to create a ExtractionPipelineRun")
+        return ExtractionPipelineRunWrite(
+            extpipe_external_id=self.extpipe_external_id,
+            status=cast(
+                Literal["success", "failure", "seen"],
+                self.status,
+            ),
+            message=self.message,
+            created_time=self.created_time,
+        )
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRun:
@@ -427,8 +452,50 @@ class ExtractionPipelineRun(CogniteResource):
         return dct
 
 
+class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
+    """A representation of an extraction pipeline run.
+    This is the writing version of the ExtractionPipelineRun class, which is used when creating extraction pipeline runs.
+
+    Args:
+        extpipe_external_id (str): The external ID of the extraction pipeline.
+        status (Literal["success", "failure", "seen"]): success/failure/seen.
+        message (str | None): Optional status message.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+    """
+
+    def __init__(
+        self,
+        extpipe_external_id: str,
+        status: Literal["success", "failure", "seen"],
+        message: str | None = None,
+        created_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            status=status,
+            message=message,
+            created_time=created_time,
+        )
+        self.extpipe_external_id = extpipe_external_id
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRunWrite:
+        return cls(
+            extpipe_external_id=resource["externalId"],
+            status=resource["status"],
+            message=resource.get("message"),
+            created_time=resource.get("createdTime"),
+        )
+
+
 class ExtractionPipelineRunList(CogniteResourceList[ExtractionPipelineRun]):
     _RESOURCE = ExtractionPipelineRun
+
+    def as_write(self) -> ExtractionPipelineRunWriteList:
+        return ExtractionPipelineRunWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+
+
+class ExtractionPipelineRunWriteList(CogniteResourceList[ExtractionPipelineRunWrite]):
+    _RESOURCE = ExtractionPipelineRunWrite
 
 
 class StringFilter(CogniteFilter):
