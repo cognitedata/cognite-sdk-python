@@ -143,9 +143,6 @@ class TimeSeries(TimeSeriesCore):
 
     def as_write(self) -> TimeSeriesWrite:
         """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""
-        if self.external_id is None:
-            raise ValueError("External ID is required to create a TimeSeriesWrite object.")
-
         return TimeSeriesWrite(
             external_id=self.external_id,
             name=self.name,
@@ -230,7 +227,7 @@ class TimeSeriesWrite(TimeSeriesCore):
     of TimesSeries, which is used when writing to CDF.
 
     Args:
-        external_id (str): The externally supplied ID for the time series.
+        external_id (str | None): The externally supplied ID for the time series.
         name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -246,7 +243,7 @@ class TimeSeriesWrite(TimeSeriesCore):
 
     def __init__(
         self,
-        external_id: str,
+        external_id: str | None = None,
         name: str | None = None,
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -272,23 +269,6 @@ class TimeSeriesWrite(TimeSeriesCore):
             security_categories=security_categories,
             data_set_id=data_set_id,
             legacy_name=legacy_name,
-        )
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TimeSeriesWrite:
-        return cls(
-            external_id=resource["externalId"],
-            name=resource.get("name"),
-            is_string=resource.get("isString"),
-            metadata=resource.get("metadata"),
-            unit=resource.get("unit"),
-            unit_external_id=resource.get("unitExternalId"),
-            asset_id=resource.get("assetId"),
-            is_step=resource.get("isStep"),
-            description=resource.get("description"),
-            security_categories=resource.get("securityCategories"),
-            data_set_id=resource.get("dataSetId"),
-            legacy_name=resource.get("legacyName"),
         )
 
 

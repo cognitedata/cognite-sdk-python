@@ -145,8 +145,6 @@ class Event(EventCore):
 
     def as_write(self) -> EventWrite:
         """Returns this Event in its writing version."""
-        if self.external_id is None:
-            raise ValueError("External ID must be set to create an event")
         return EventWrite(
             external_id=self.external_id,
             data_set_id=self.data_set_id,
@@ -166,7 +164,7 @@ class EventWrite(EventCore):
     This is the writing version of the Event class. It is used when creating new events.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         data_set_id (int | None): The id of the dataset this event belongs to.
         start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -180,7 +178,7 @@ class EventWrite(EventCore):
 
     def __init__(
         self,
-        external_id: str,
+        external_id: str | None = None,
         data_set_id: int | None = None,
         start_time: int | None = None,
         end_time: int | None = None,
@@ -202,21 +200,6 @@ class EventWrite(EventCore):
             metadata=metadata,
             asset_ids=asset_ids,
             source=source,
-        )
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> EventWrite:
-        return cls(
-            external_id=resource["externalId"],
-            data_set_id=resource.get("dataSetId"),
-            start_time=resource.get("startTime"),
-            end_time=resource.get("endTime"),
-            type=resource.get("type"),
-            subtype=resource.get("subtype"),
-            description=resource.get("description"),
-            metadata=resource.get("metadata"),
-            asset_ids=resource.get("assetIds"),
-            source=resource.get("source"),
         )
 
 
