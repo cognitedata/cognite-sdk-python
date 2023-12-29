@@ -21,7 +21,7 @@ Changes are grouped as follows
 ### Added
 - All Cognite resources now have write-version. For example, we have `Asset` and `AssetWrite`, `Event` and `EventWrite`, and so on.
   The new write class reflects the required/optional fields in the API, and is now recommended when creating resources. In addition,
-  all read classes and list classes now have a convince method `as_write` that returns the write class with the same data.
+  all read classes and list classes now have a convenience method `as_write` that returns the write class with the same data.
   For example, if you have a `assets` of type `AssetList` you can call `assets.as_write()` which will return a `AssetWriteList`, 
   and thus removing all server set fields (like `created_time` and `last_updated_time`). This is useful if you want to 
   compare a resource from CDF with a local configuration. In addition, this makes it easier to create a new resource 
