@@ -517,7 +517,11 @@ class TimeSeriesAPI(APIClient):
             time_series = time_series.as_write()
 
         return self._create_multiple(
-            list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series, api_subversion=api_subversion
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            items=time_series,
+            api_subversion=api_subversion,
+            input_resource_cls=TimeSeriesWrite,
         )
 
     def delete(
