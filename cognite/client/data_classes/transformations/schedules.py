@@ -77,9 +77,12 @@ class TransformationSchedule(TransformationScheduleCore):
         """Returns this TransformationSchedule as a TransformationScheduleWrite"""
         if self.interval is None:
             raise ValueError("interval is required to create a TransformationSchedule")
+        id_, external_id = self.id, self.external_id
+        if id_ is not None and external_id is not None:
+            id_ = None
         return TransformationScheduleWrite(
-            id=self.id,
-            external_id=self.external_id,
+            id=id_,
+            external_id=external_id,
             interval=self.interval,
             is_paused=self.is_paused,
         )
@@ -112,7 +115,7 @@ class TransformationScheduleWrite(TransformationScheduleCore, ABC):
             is_paused=is_paused,
         )
         if exactly_one_is_not_none(id, external_id):
-            raise ValueError("id xor external_id must be specified")
+            raise ValueError(f"Either id or external_id must be specified (but not both), got {id=} and {external_id=}")
 
     @classmethod
     def _load(
