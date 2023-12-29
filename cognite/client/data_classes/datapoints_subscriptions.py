@@ -15,6 +15,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
@@ -112,6 +113,17 @@ class DatapointSubscription(DatapointSubscriptionCore):
             time_series_count=resource["timeSeriesCount"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
+        )
+
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription as a DataPointSubscriptionWrite"""
+        return DataPointSubscriptionWrite(
+            external_id=self.external_id,
+            partition_count=self.partition_count,
+            filter=self.filter,
+            name=self.name,
+            description=self.description,
+            data_set_id=self.data_set_id,
         )
 
 
@@ -383,8 +395,18 @@ class _DatapointSubscriptionBatchWithPartitions:
         return resource
 
 
-class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
+class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription], ExternalIDTransformerMixin):
     _RESOURCE = DatapointSubscription
+
+    def as_write(self) -> DatapointSubscriptionWriteList:
+        """Returns this DatapointSubscriptionList as a DatapointSubscriptionWriteList"""
+        return DatapointSubscriptionWriteList(
+            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
+        )
+
+
+class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = DataPointSubscriptionWrite
 
 
 class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
