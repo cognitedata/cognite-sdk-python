@@ -23,6 +23,7 @@ from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.sequences import (
     SequenceProperty,
     SequenceSort,
+    SequenceWrite,
     SortableSequenceProperty,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -465,18 +466,20 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def create(self, sequence: Sequence) -> Sequence:
+    def create(self, sequence: Sequence | SequenceWrite) -> Sequence:
         ...
 
     @overload
-    def create(self, sequence: typing.Sequence[Sequence]) -> SequenceList:
+    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList:
         ...
 
-    def create(self, sequence: Sequence | typing.Sequence[Sequence]) -> Sequence | SequenceList:
+    def create(
+        self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
+    ) -> Sequence | SequenceList:
         """`Create one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_
 
         Args:
-            sequence (Sequence | typing.Sequence[Sequence]): Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
+            sequence (Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]): Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
 
         Returns:
             Sequence | SequenceList: The created sequence(s).
@@ -486,21 +489,28 @@ class SequencesAPI(APIClient):
             Create a new sequence::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> c = CogniteClient()
                 >>> column_def = [
-                ...     SequenceColumn(value_type="String", external_id="user", description="some description"),
-                ...     SequenceColumn(value_type="Double", external_id="amount")
+                ...     SequenceColumnWrite(value_type="String", external_id="user", description="some description"),
+                ...     SequenceColumnWrite(value_type="Double", external_id="amount")
                 ... ]
-                >>> seq = c.sequences.create(Sequence(external_id="my_sequence", columns=column_def))
+                >>> seq = c.sequences.create(SequenceWrite(external_id="my_sequence", columns=column_def))
 
             Create a new sequence with the same column specifications as an existing sequence::
 
-                >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=column_def))
+                >>> seq2 = c.sequences.create(SequenceWrite(external_id="my_copied_sequence", columns=column_def))
 
         """
-        assert_type(sequence, "sequences", [typing.Sequence, Sequence])
-        return self._create_multiple(list_cls=SequenceList, resource_cls=Sequence, items=sequence)
+        assert_type(sequence, "sequences", [typing.Sequence, Sequence, SequenceWrite])
+        if isinstance(sequence, typing.Sequence):
+            sequence = [seq.as_write() if isinstance(seq, Sequence) else seq for seq in sequence]
+        elif isinstance(sequence, Sequence):
+            sequence = sequence.as_write()
+
+        return self._create_multiple(
+            list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite
+        )
 
     def delete(
         self,

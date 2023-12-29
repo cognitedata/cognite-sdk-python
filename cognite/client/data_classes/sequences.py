@@ -168,7 +168,7 @@ class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransfor
 
     def as_write(self) -> SequenceColumnWriteList:
         """Returns a writeable version of this column list."""
-        return SequenceColumnWriteList([col.as_write() for col in self], cognite_client=self._cognite_client)
+        return SequenceColumnWriteList([col.as_write() for col in self], cognite_client=self._get_cognite_client())
 
 
 class SequenceColumnWriteList(CogniteResourceList[SequenceColumnWrite], ExternalIDTransformerMixin):
