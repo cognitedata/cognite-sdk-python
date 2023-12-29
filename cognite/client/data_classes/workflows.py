@@ -80,6 +80,13 @@ class Workflow(WorkflowCore):
             created_time=resource["createdTime"],
         )
 
+    def as_write(self) -> WorkflowUpsert:
+        """Returns this workflow as in the writing format."""
+        return WorkflowUpsert(
+            external_id=self.external_id,
+            description=self.description,
+        )
+
 
 class WorkflowList(CogniteResourceList[Workflow]):
     """This class represents a list of workflows."""
@@ -93,6 +100,14 @@ class WorkflowList(CogniteResourceList[Workflow]):
             list[str]: List of external ids.
         """
         return [workflow.external_id for workflow in self.data]
+
+    def as_write(self) -> WorkflowUpsertList:
+        """Returns this workflow list as in the writing format."""
+        return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
+
+
+class WorkflowUpsertList(CogniteResourceList[WorkflowUpsert]):
+    _RESOURCE = WorkflowUpsert
 
 
 ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow"]
@@ -735,9 +750,9 @@ class WorkflowDefinition(WorkflowDefinitionUpsert):
         return output
 
 
-class WorkflowVersionUpsert(CogniteResource):
+class WorkflowVersionCore(CogniteResource):
     """
-    This class represents a workflow version. This is the write-variant, used when creating or updating a workflow variant.
+    This class represents a workflow version.
 
     Args:
         workflow_external_id (str): The external ID of the workflow.
@@ -779,7 +794,31 @@ class WorkflowVersionUpsert(CogniteResource):
         )
 
 
-class WorkflowVersion(WorkflowVersionUpsert):
+class WorkflowVersionUpsert(WorkflowVersionCore):
+    """
+    This class represents a workflow version. This is the write-variant, used when creating or updating a workflow variant.
+
+    Args:
+        workflow_external_id (str): The external ID of the workflow.
+        version (str): The version of the workflow.
+        workflow_definition (WorkflowDefinitionUpsert): The workflow definition of the workflow version.
+
+    """
+
+    def __init__(
+        self,
+        workflow_external_id: str,
+        version: str,
+        workflow_definition: WorkflowDefinitionUpsert,
+    ) -> None:
+        super().__init__(
+            workflow_external_id=workflow_external_id,
+            version=version,
+            workflow_definition=workflow_definition,
+        )
+
+
+class WorkflowVersion(WorkflowVersionCore):
     """
     This class represents a workflow version. This is the read variant, used when retrieving/listing a workflow variant.
 
@@ -806,6 +845,14 @@ class WorkflowVersion(WorkflowVersionUpsert):
             workflow_definition=WorkflowDefinition._load(workflow_definition),
         )
 
+    def as_write(self) -> WorkflowVersionUpsert:
+        """Returns a WorkflowVersionUpsert object with the same data."""
+        return WorkflowVersionUpsert(
+            workflow_external_id=self.workflow_external_id,
+            version=self.version,
+            workflow_definition=self.workflow_definition,
+        )
+
 
 class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
     """
@@ -813,6 +860,22 @@ class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
     """
 
     _RESOURCE = WorkflowVersion
+
+    def as_ids(self) -> WorkflowIds:
+        """Returns a WorkflowIds object with the workflow version ids."""
+        return WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
+
+    def as_write(self) -> WorkflowVersionUpsertList:
+        """Returns a WorkflowVersionUpsertList object with the same data."""
+        return WorkflowVersionUpsertList([workflow_version.as_write() for workflow_version in self.data])
+
+
+class WorkflowVersionUpsertList(CogniteResourceList[WorkflowVersionUpsert]):
+    """
+    This class represents a list of workflow versions.
+    """
+
+    _RESOURCE = WorkflowVersionUpsert
 
     def as_ids(self) -> WorkflowIds:
         """Returns a WorkflowIds object with the workflow version ids."""
