@@ -115,7 +115,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         )
 
 
-class DataPointSubscriptionCreate(DatapointSubscriptionCore):
+class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     """A data point subscription is a way to listen to changes to time series data points, in ingestion order.
         This is the write version of a subscription, used to create new subscriptions.
 
@@ -159,6 +159,9 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
         )
+
+
+DataPointSubscriptionCreate = DataPointSubscriptionWrite
 
 
 class DataPointSubscriptionUpdate(CogniteUpdate):

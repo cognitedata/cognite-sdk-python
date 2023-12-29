@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
-    DataPointSubscriptionCreate,
+    DataPointSubscriptionWrite,
     EndTimeFilter,
     Relationship,
     SequenceData,
@@ -305,7 +305,7 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments[name] = value
 
         # Special cases
-        if resource_cls is DataPointSubscriptionCreate:
+        if resource_cls is DataPointSubscriptionWrite:
             # DataPointSubscriptionCreate requires either timeseries_ids or filter
             keyword_arguments.pop("filter", None)
         if resource_cls is Query:

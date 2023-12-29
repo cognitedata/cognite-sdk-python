@@ -7,10 +7,10 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DatapointSubscriptionBatch,
-    DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
+    DataPointSubscriptionWrite,
     TimeSeriesID,
     TimeSeriesIDList,
     _DatapointSubscriptionBatchWithPartitions,
@@ -32,13 +32,13 @@ class DatapointsSubscriptionAPI(APIClient):
             api_maturity="beta", sdk_maturity="alpha", feature_name="DataPoint Subscriptions"
         )
 
-    def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
+    def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
 
         Create a subscription that can be used to listen for changes in data points for a set of time series.
 
         Args:
-            subscription (DataPointSubscriptionCreate): Subscription to create.
+            subscription (DataPointSubscriptionWrite): Subscription to create.
 
         Returns:
             DatapointSubscription: Created subscription
@@ -48,21 +48,21 @@ class DatapointsSubscriptionAPI(APIClient):
             Create a subscription with explicit time series IDs:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import DataPointSubscriptionCreate
+                >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> c = CogniteClient()
-                >>> sub = DataPointSubscriptionCreate("mySubscription", partition_count=1, time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"], name="My subscription")
+                >>> sub = DataPointSubscriptionWrite("mySubscription", partition_count=1, time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"], name="My subscription")
                 >>> created = c.time_series.subscriptions.create(sub)
 
             Create a filter defined subscription for all numeric time series:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import DataPointSubscriptionCreate
+                >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionFilterProperties
                 >>> c = CogniteClient()
                 >>> prop = DatapointSubscriptionFilterProperties.is_string
                 >>> numeric_timeseries = flt.Equals(prop, False)
-                >>> sub = DataPointSubscriptionCreate(
+                >>> sub = DataPointSubscriptionWrite(
                 ...     "mySubscription",
                 ...     partition_count=1,
                 ...     filter=numeric_timeseries,
@@ -75,7 +75,7 @@ class DatapointsSubscriptionAPI(APIClient):
             subscription,
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
-            input_resource_cls=DataPointSubscriptionCreate,
+            input_resource_cls=DataPointSubscriptionWrite,
         )
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:

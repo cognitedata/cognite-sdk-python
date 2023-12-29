@@ -13,9 +13,9 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, filters
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
-    DataPointSubscriptionCreate,
     DatapointSubscriptionFilterProperties,
     DataPointSubscriptionUpdate,
+    DataPointSubscriptionWrite,
 )
 from cognite.client.utils._text import random_string
 
@@ -24,7 +24,7 @@ TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in r
 
 @contextmanager
 def create_subscription_with_cleanup(
-    client: CogniteClient, sub_to_create: DataPointSubscriptionCreate
+    client: CogniteClient, sub_to_create: DataPointSubscriptionWrite
 ) -> DatapointSubscription:
     sub = None
     try:
@@ -65,7 +65,7 @@ def subscription(cognite_client: CogniteClient, all_time_series_external_ids: li
     sub = cognite_client.time_series.subscriptions.retrieve(external_id, ignore_unknown_ids=True)
     if sub is not None:
         return sub
-    new_sub = DataPointSubscriptionCreate(
+    new_sub = DataPointSubscriptionWrite(
         external_id=external_id,
         name=f"{external_id}_3ts",
         time_series_ids=all_time_series_external_ids[:3],
@@ -85,7 +85,7 @@ class TestDatapointSubscriptions:
     ):
         data_set = cognite_client.data_sets.list(limit=1)[0]
         # Arrange
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionCreateRetrieveDeleteTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionCreateRetrieveDeleteTest",
             time_series_ids=time_series_external_ids,
@@ -121,7 +121,7 @@ class TestDatapointSubscriptions:
 
     def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
         # Arrange
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionUpdateTest",
             time_series_ids=time_series_external_ids,
@@ -150,7 +150,7 @@ class TestDatapointSubscriptions:
         p = DatapointSubscriptionFilterProperties
         numerical_timeseries = f.And(f.Equals(p.is_string, False))
 
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKFilterDefinedDataPointSubscriptionUpdateTest-{random_string(10)}",
             name="PYSDKFilterDefinedDataPointSubscriptionUpdateTest",
             filter=numerical_timeseries,
@@ -174,7 +174,7 @@ class TestDatapointSubscriptions:
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         # Arrange
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionListDataTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionListDataTest",
             time_series_ids=time_series_external_ids,
@@ -199,7 +199,7 @@ class TestDatapointSubscriptions:
     ):
         # Arrange
         first_ts, second_ts = time_series_external_ids[:2]
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionChangedTimeSeriesTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionChangedTimeSeriesTest",
             time_series_ids=[first_ts],
@@ -234,7 +234,7 @@ class TestDatapointSubscriptions:
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         # Arrange
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionChangedTimeSeriesTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionChangedTimeSeriesTest",
             time_series_ids=[time_series_external_ids[0]],
@@ -285,7 +285,7 @@ class TestDatapointSubscriptions:
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         # Arrange
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionJumpToEndTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionJumpToEndTest",
             time_series_ids=time_series_external_ids,
@@ -326,7 +326,7 @@ class TestDatapointSubscriptions:
             f.Equals(p.is_string, False), f.Prefix(p.external_id, "PYSDK DataPoint Subscription Test")
         )
 
-        new_subscription = DataPointSubscriptionCreate(
+        new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionUpdateFilterTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionUpdateFilterTest",
             filter=numerical_timeseries,

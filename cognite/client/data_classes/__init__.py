@@ -50,6 +50,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
+    DataPointSubscriptionWrite,
 )
 from cognite.client.data_classes.documents import (
     Document,
@@ -445,6 +446,7 @@ __all__ = [
     "TimeSeriesWriteList",
     "TimeSeriesUpdate",
     "DatapointSubscription",
+    "DataPointSubscriptionWrite",
     "DataPointSubscriptionCreate",
     "DatapointSubscriptionList",
     "DataPointSubscriptionUpdate",
