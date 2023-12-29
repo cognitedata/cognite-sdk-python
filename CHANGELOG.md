@@ -32,6 +32,8 @@ Changes are grouped as follows
 ### Changed
 - The class `DatapointSubscriptionCreate` has been renamed to `DatapointSubscriptionWrite` to be consistent with the other write classes.
   This is not a breaking change, as the old class is still available for backwards compatibility, but will be removed in the next major version.
+### Fixed
+- The `node.type` was not set when calling `.as_apply()` or `.as_write()` on a `Node` or `NodeList`. This is now fixed.
 
 ## [7.8.6] - 2023-12-27
 ### Improved
