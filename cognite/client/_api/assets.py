@@ -500,21 +500,21 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def create(self, asset: Sequence[Asset | AssetWrite]) -> AssetList:
+    def create(self, asset: Sequence[Asset] | Sequence[AssetWrite]) -> AssetList:
         ...
 
     @overload
     def create(self, asset: Asset | AssetWrite) -> Asset:
         ...
 
-    def create(self, asset: Asset | AssetWrite | Sequence[Asset | AssetWrite]) -> Asset | AssetList:
+    def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """`Create one or more assets. <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
 
         Args:
-            asset (Asset | AssetWrite | Sequence[Asset | AssetWrite]): Asset or list of assets to create.
+            asset (Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]): Asset or list of assets to create.
 
         Returns:
             Asset | AssetList: Created asset(s)

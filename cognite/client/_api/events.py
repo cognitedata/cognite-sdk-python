@@ -18,7 +18,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
-from cognite.client.data_classes.events import EventPropertyLike, EventSort, SortableEventProperty
+from cognite.client.data_classes.events import EventPropertyLike, EventSort, EventWrite, SortableEventProperty
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
@@ -455,18 +455,18 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def create(self, event: Sequence[Event]) -> EventList:
+    def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList:
         ...
 
     @overload
-    def create(self, event: Event) -> Event:
+    def create(self, event: Event | EventWrite) -> Event:
         ...
 
-    def create(self, event: Event | Sequence[Event]) -> Event | EventList:
+    def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """`Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
 
         Args:
-            event (Event | Sequence[Event]): Event or list of events to create.
+            event (Event | EventWrite | Sequence[Event] | Sequence[EventWrite]): Event or list of events to create.
 
         Returns:
             Event | EventList: Created event(s)
@@ -476,12 +476,17 @@ class EventsAPI(APIClient):
             Create new events::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Event
+                >>> from cognite.client.data_classes import EventWrite
                 >>> c = CogniteClient()
-                >>> events = [Event(start_time=0, end_time=1), Event(start_time=2, end_time=3)]
+                >>> events = [EventWrite(external_id="order1", start_time=0, end_time=1), EventWrite(external_id="order2", start_time=2, end_time=3)]
                 >>> res = c.events.create(events)
         """
-        return self._create_multiple(list_cls=EventList, resource_cls=Event, items=event)
+        if isinstance(event, Sequence):
+            event = [e.as_write() if isinstance(e, Event) else e for e in event]
+        elif isinstance(event, Event):
+            event = event.as_write()
+
+        return self._create_multiple(list_cls=EventList, resource_cls=Event, items=event, input_resource_cls=EventWrite)
 
     def delete(
         self,
