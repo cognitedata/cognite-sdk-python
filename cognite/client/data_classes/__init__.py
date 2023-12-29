@@ -51,6 +51,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
     DataPointSubscriptionWrite,
+    DatapointSubscriptionWriteList,
 )
 from cognite.client.data_classes.documents import (
     Document,
@@ -296,10 +297,12 @@ from cognite.client.data_classes.workflows import (
     WorkflowTask,
     WorkflowTaskExecution,
     WorkflowUpsert,
+    WorkflowUpsertList,
     WorkflowVersion,
     WorkflowVersionId,
     WorkflowVersionList,
     WorkflowVersionUpsert,
+    WorkflowVersionUpsertList,
 )
 
 __all__ = [
@@ -450,6 +453,7 @@ __all__ = [
     "DataPointSubscriptionCreate",
     "DatapointSubscriptionList",
     "DataPointSubscriptionUpdate",
+    "DatapointSubscriptionWriteList",
     "OidcCredentials",
     "RawTable",
     "Transformation",
@@ -549,4 +553,6 @@ __all__ = [
     "WorkflowTaskExecution",
     "Workflow",
     "WorkflowTask",
+    "WorkflowUpsertList",
+    "WorkflowVersionUpsertList",
 ]
