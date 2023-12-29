@@ -478,7 +478,7 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
                 >>> c = CogniteClient()
-                >>> events = [EventWrite(external_id="order1", start_time=0, end_time=1), EventWrite(external_id="order2", start_time=2, end_time=3)]
+                >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
                 >>> res = c.events.create(events)
         """
         if isinstance(event, Sequence):
