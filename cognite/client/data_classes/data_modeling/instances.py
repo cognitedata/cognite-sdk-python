@@ -518,8 +518,8 @@ class Node(Instance):
             sources=[
                 NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
             ]
-            if self.properties
-            else None,
+            or None,
+            type=self.type,
         )
 
     def as_write(self) -> NodeApply:
