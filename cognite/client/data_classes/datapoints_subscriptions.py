@@ -173,6 +173,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         )
 
 
+# Todo: Remove this in next major release
 DataPointSubscriptionCreate = DataPointSubscriptionWrite
 
 

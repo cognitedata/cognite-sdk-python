@@ -17,7 +17,23 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.8.6] - 2024-01-03
+## [7.9.0] - 2024-01-03
+### Added
+- All Cognite resources now have write-version. For example, we have `Asset` and `AssetWrite`, `Event` and `EventWrite`, and so on.
+  The new write class reflects the required/optional fields in the API, and is now recommended when creating resources. In addition,
+  all read classes and list classes now have a convince method `as_write` that returns the write class with the same data.
+  For example, if you have a `assets` of type `AssetList` you can call `assets.as_write()` which will return a `AssetWriteList`, 
+  and thus removing all server set fields (like `created_time` and `last_updated_time`). This is useful if you want to 
+  compare a resource from CDF with a local configuration. In addition, this makes it easier to create a new resource 
+  using an existing resource as a template.
+- Missing overloading of the `.create` methods on `client.iam.security_categories.create`, `client.iam.groups.create`,
+  `client.labels.create`, `client.three_d.models.create`, `client.three_d.revisions.create`, `client.three_d.asset_mappings.create`,
+  `client.transformations.create`, and `client.transformations.schedules.create`. 
+### Changed
+- The class `DatapointSubscriptionCreate` has been renamed to `DatapointSubscriptionWrite` to be consistent with the other write classes.
+  This is not a breaking change, as the old class is still available for backwards compatibility, but will be removed in the next major version.
+
+## [7.8.6] - 2023-12-27
 ### Improved
 - SDK dependency on the `sortedcontainers` package was dropped.
 
