@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
     CogniteResourceList,
+    ExternalIDTransformerMixin,
 )
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 
@@ -88,25 +89,17 @@ class Workflow(WorkflowCore):
         )
 
 
-class WorkflowList(CogniteResourceList[Workflow]):
+class WorkflowList(CogniteResourceList[Workflow], ExternalIDTransformerMixin):
     """This class represents a list of workflows."""
 
     _RESOURCE = Workflow
-
-    def as_external_ids(self) -> list[str]:
-        """Returns a list of external ids for the workflows in the list.
-
-        Returns:
-            list[str]: List of external ids.
-        """
-        return [workflow.external_id for workflow in self.data]
 
     def as_write(self) -> WorkflowUpsertList:
         """Returns this workflow list as in the writing format."""
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-class WorkflowUpsertList(CogniteResourceList[WorkflowUpsert]):
+class WorkflowUpsertList(CogniteResourceList[WorkflowUpsert], ExternalIDTransformerMixin):
     _RESOURCE = WorkflowUpsert
 
 
