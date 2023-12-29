@@ -369,6 +369,18 @@ class TestAssetsAPI:
             ("metadata", key.casefold()) for a in asset_list for key in a.metadata or []
         }
 
+    def test_retrieve_modify_create(self, cognite_client: CogniteClient, new_asset: Asset) -> None:
+        my_new_asset = new_asset.external_id = "my_new_asset"
+
+        try:
+            created = cognite_client.assets.create(new_asset)
+            assert created.external_id == my_new_asset
+            assert created.name == "any"
+            assert created.description == "haha"
+            assert created.metadata == {"a": "b"}
+        finally:
+            cognite_client.assets.delete(external_id="my_new_asset", ignore_unknown_ids=True)
+
 
 def generate_orphan_assets(n_id, n_xid, sample_from):
     # Orphans only: We link all assets to an existing asset (some by ID, others by XID):

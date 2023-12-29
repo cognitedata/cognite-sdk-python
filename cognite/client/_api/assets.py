@@ -44,7 +44,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
-from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, SortableAssetProperty
+from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, AssetWrite, SortableAssetProperty
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
@@ -500,21 +500,21 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def create(self, asset: Sequence[Asset]) -> AssetList:
+    def create(self, asset: Sequence[Asset | AssetWrite]) -> AssetList:
         ...
 
     @overload
-    def create(self, asset: Asset) -> Asset:
+    def create(self, asset: Asset | AssetWrite) -> Asset:
         ...
 
-    def create(self, asset: Asset | Sequence[Asset]) -> Asset | AssetList:
+    def create(self, asset: Asset | AssetWrite | Sequence[Asset | AssetWrite]) -> Asset | AssetList:
         """`Create one or more assets. <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
 
         Args:
-            asset (Asset | Sequence[Asset]): Asset or list of assets to create.
+            asset (Asset | AssetWrite | Sequence[Asset | AssetWrite]): Asset or list of assets to create.
 
         Returns:
             Asset | AssetList: Created asset(s)
@@ -524,9 +524,9 @@ class AssetsAPI(APIClient):
             Create new assets::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset
+                >>> from cognite.client.data_classes import AssetWrite
                 >>> c = CogniteClient()
-                >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
+                >>> assets = [AssetWrite(name="asset1"), AssetWrite(name="asset2")]
                 >>> res = c.assets.create(assets)
 
             Create asset with label::
@@ -534,11 +534,16 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset, Label
                 >>> c = CogniteClient()
-                >>> asset = Asset(name="my_pump", labels=[Label(external_id="PUMP")])
+                >>> asset = AssetWrite(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = c.assets.create(asset)
         """
-        assert_type(asset, "asset", [Asset, Sequence])
-        return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset)
+        assert_type(asset, "asset", [Asset, AssetWrite, Sequence])
+        if isinstance(asset, Sequence):
+            asset = [a.as_write() if isinstance(a, Asset) else a for a in asset]
+        elif isinstance(asset, Asset):
+            asset = asset.as_write()
+
+        return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite)
 
     def create_hierarchy(
         self,
