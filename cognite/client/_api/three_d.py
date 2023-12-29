@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -9,11 +9,13 @@ from cognite.client.data_classes import (
     BoundingBox3D,
     ThreeDAssetMapping,
     ThreeDAssetMappingList,
+    ThreeDAssetMappingWrite,
     ThreeDModel,
     ThreeDModelList,
     ThreeDModelRevision,
     ThreeDModelRevisionList,
     ThreeDModelRevisionUpdate,
+    ThreeDModelRevisionWrite,
     ThreeDModelUpdate,
     ThreeDNode,
     ThreeDNodeList,
@@ -267,14 +269,29 @@ class ThreeDRevisionsAPI(APIClient):
             identifier=InternalId(id),
         )
 
+    @overload
+    def create(self, model_id: int, revision: ThreeDModelRevision | ThreeDModelRevisionWrite) -> ThreeDModelRevision:
+        ...
+
+    @overload
     def create(
-        self, model_id: int, revision: ThreeDModelRevision | Sequence[ThreeDModelRevision]
+        self, model_id: int, revision: Sequence[ThreeDModelRevision] | Sequence[ThreeDModelRevisionWrite]
+    ) -> ThreeDModelRevisionList:
+        ...
+
+    def create(
+        self,
+        model_id: int,
+        revision: ThreeDModelRevision
+        | ThreeDModelRevisionWrite
+        | Sequence[ThreeDModelRevision]
+        | Sequence[ThreeDModelRevisionWrite],
     ) -> ThreeDModelRevision | ThreeDModelRevisionList:
         """`Create a revisions for a specified 3d model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/create3DRevisions>`_
 
         Args:
             model_id (int): Create revisions for this model.
-            revision (ThreeDModelRevision | Sequence[ThreeDModelRevision]): The revision(s) to create.
+            revision (ThreeDModelRevision | ThreeDModelRevisionWrite | Sequence[ThreeDModelRevision] | Sequence[ThreeDModelRevisionWrite]): The revision(s) to create.
 
         Returns:
             ThreeDModelRevision | ThreeDModelRevisionList: The created revision(s)
@@ -284,16 +301,22 @@ class ThreeDRevisionsAPI(APIClient):
             Create 3d model revision::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ThreeDModelRevision
+                >>> from cognite.client.data_classes import ThreeDModelRevisionWrite
                 >>> c = CogniteClient()
-                >>> my_revision = ThreeDModelRevision(file_id=1)
+                >>> my_revision = ThreeDModelRevisionWrite(file_id=1)
                 >>> res = c.three_d.revisions.create(model_id=1, revision=my_revision)
         """
+        if isinstance(revision, Sequence):
+            revision = [rev.as_write() if isinstance(rev, ThreeDModelRevision) else rev for rev in revision]
+        elif isinstance(revision, ThreeDModelRevision):
+            revision = revision.as_write()
+
         return self._create_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             items=revision,
+            input_resource_cls=ThreeDModelRevisionWrite,
         )
 
     def list(
@@ -605,15 +628,36 @@ class ThreeDAssetMappingAPI(APIClient):
             limit=limit,
         )
 
+    @overload
     def create(
-        self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
+        self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | ThreeDAssetMappingWrite
+    ) -> ThreeDAssetMapping:
+        ...
+
+    @overload
+    def create(
+        self,
+        model_id: int,
+        revision_id: int,
+        asset_mapping: Sequence[ThreeDAssetMapping] | Sequence[ThreeDAssetMappingWrite],
+    ) -> ThreeDAssetMappingList:
+        ...
+
+    def create(
+        self,
+        model_id: int,
+        revision_id: int,
+        asset_mapping: ThreeDAssetMapping
+        | ThreeDAssetMappingWrite
+        | Sequence[ThreeDAssetMapping]
+        | Sequence[ThreeDAssetMappingWrite],
     ) -> ThreeDAssetMapping | ThreeDAssetMappingList:
         """`Create 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/create3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            asset_mapping (ThreeDAssetMapping | Sequence[ThreeDAssetMapping]): The asset mapping(s) to create.
+            asset_mapping (ThreeDAssetMapping | ThreeDAssetMappingWrite | Sequence[ThreeDAssetMapping] | Sequence[ThreeDAssetMappingWrite]): The asset mapping(s) to create.
 
         Returns:
             ThreeDAssetMapping | ThreeDAssetMappingList: The created asset mapping(s).
@@ -623,14 +667,23 @@ class ThreeDAssetMappingAPI(APIClient):
             Create new 3d node asset mapping::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ThreeDAssetMapping
-                >>> my_mapping = ThreeDAssetMapping(node_id=1, asset_id=1)
+                >>> from cognite.client.data_classes import ThreeDAssetMappingWrite
+                >>> my_mapping = ThreeDAssetMappingWrite(node_id=1, asset_id=1)
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
+        if isinstance(asset_mapping, Sequence):
+            asset_mapping = [a.as_write() if isinstance(a, ThreeDAssetMapping) else a for a in asset_mapping]
+        elif isinstance(asset_mapping, ThreeDAssetMapping):
+            asset_mapping = asset_mapping.as_write()
+
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._create_multiple(
-            list_cls=ThreeDAssetMappingList, resource_cls=ThreeDAssetMapping, resource_path=path, items=asset_mapping
+            list_cls=ThreeDAssetMappingList,
+            resource_cls=ThreeDAssetMapping,
+            resource_path=path,
+            items=asset_mapping,
+            input_resource_cls=ThreeDAssetMappingWrite,
         )
 
     def delete(

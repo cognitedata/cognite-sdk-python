@@ -232,13 +232,17 @@ class Test3DModelRevisions:
     def test_create(self, cognite_client, mock_3d_model_revision_response):
         res = cognite_client.three_d.revisions.create(model_id=1, revision=ThreeDModelRevision(file_id=123))
         assert isinstance(res, ThreeDModelRevision)
-        assert {"items": [{"fileId": 123}]} == jsgz_load(mock_3d_model_revision_response.calls[0].request.body)
+        assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
+            mock_3d_model_revision_response.calls[0].request.body
+        )
         assert mock_3d_model_revision_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_model_revision_response):
         res = cognite_client.three_d.revisions.create(model_id=1, revision=[ThreeDModelRevision(file_id=123)])
         assert isinstance(res, ThreeDModelRevisionList)
-        assert {"items": [{"fileId": 123}]} == jsgz_load(mock_3d_model_revision_response.calls[0].request.body)
+        assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
+            mock_3d_model_revision_response.calls[0].request.body
+        )
         assert mock_3d_model_revision_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_update_thumbnail(self, cognite_client, mock_3d_model_revision_thumbnail_response):
