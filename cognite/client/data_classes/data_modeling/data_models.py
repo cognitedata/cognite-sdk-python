@@ -178,6 +178,9 @@ class DataModel(DataModelCore, Generic[T_View]):
             views=views,
         )
 
+    def as_write(self) -> DataModelApply:
+        return self.as_apply()
+
 
 class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply

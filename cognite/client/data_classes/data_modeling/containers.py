@@ -183,6 +183,9 @@ class Container(ContainerCore):
             indexes=self.indexes,
         )
 
+    def as_write(self) -> ContainerApply:
+        return self.as_apply()
+
 
 class ContainerList(CogniteResourceList[Container]):
     _RESOURCE = Container

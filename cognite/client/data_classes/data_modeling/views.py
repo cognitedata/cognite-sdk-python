@@ -238,6 +238,9 @@ class View(ViewCore):
             properties=properties,
         )
 
+    def as_write(self) -> ViewApply:
+        return self.as_apply()
+
 
 class ViewList(CogniteResourceList[View]):
     _RESOURCE = View

@@ -88,6 +88,9 @@ class Space(SpaceCore):
             name=self.name,
         )
 
+    def as_write(self) -> SpaceApply:
+        return self.as_apply()
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
