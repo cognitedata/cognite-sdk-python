@@ -522,6 +522,9 @@ class Node(Instance):
             else None,
         )
 
+    def as_write(self) -> NodeApply:
+        return self.as_apply()
+
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
@@ -701,6 +704,9 @@ class Edge(Instance):
             ]
             or None,
         )
+
+    def as_write(self) -> EdgeApply:
+        return self.as_apply()
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
