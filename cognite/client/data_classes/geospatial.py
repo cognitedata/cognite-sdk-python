@@ -63,12 +63,14 @@ class FeatureType(FeatureTypeCore):
         search_spec: dict[str, Any] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.data_set_id = data_set_id
+        super().__init__(
+            external_id=external_id,
+            data_set_id=data_set_id,
+            properties=properties,
+            search_spec=search_spec,
+        )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.properties = properties
-        self.search_spec = search_spec
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
