@@ -40,7 +40,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
-    ContainerIdentifier,
     EdgeId,
     NodeId,
     ViewId,
@@ -340,7 +339,7 @@ class Instance(InstanceCore, ABC):
         return pd.concat((col, prop_df.T.squeeze())).to_frame(name="value")
 
     @abstractmethod
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> InstanceApply:
+    def as_apply(self) -> InstanceApply:
         """Convert the instance to an apply instance."""
         raise NotImplementedError()
 
@@ -501,16 +500,12 @@ class Node(Instance):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
         self.type = type
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> NodeApply:
+    def as_apply(self) -> NodeApply:
         """
         This is a convenience function for converting the read to a write node.
 
         It makes the simplifying assumption that all properties are from the same view. Note that this
         is not true in general.
-
-        Args:
-            source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
             NodeApply: A write node, NodeApply
@@ -519,7 +514,7 @@ class Node(Instance):
         return NodeApply(
             space=self.space,
             external_id=self.external_id,
-            existing_version=existing_version,
+            existing_version=self.version,
             sources=[
                 NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
             ]
@@ -684,16 +679,12 @@ class Edge(Instance):
         self.start_node = start_node
         self.end_node = end_node
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int | None = None) -> EdgeApply:
+    def as_apply(self) -> EdgeApply:
         """
         This is a convenience function for converting the read to a write edge.
 
         It makes the simplifying assumption that all properties are from the same view. Note that this
         is not true in general.
-
-        Args:
-            source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
             EdgeApply: A write edge, EdgeApply
@@ -704,7 +695,7 @@ class Edge(Instance):
             type=self.type,
             start_node=self.start_node,
             end_node=self.end_node,
-            existing_version=existing_version or None,
+            existing_version=self.version,
             sources=[
                 NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
             ]
