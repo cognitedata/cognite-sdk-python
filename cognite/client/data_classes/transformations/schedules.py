@@ -114,7 +114,7 @@ class TransformationScheduleWrite(TransformationScheduleCore, ABC):
             interval=interval,
             is_paused=is_paused,
         )
-        if exactly_one_is_not_none(id, external_id):
+        if not exactly_one_is_not_none(id, external_id):
             raise ValueError(f"Either id or external_id must be specified (but not both), got {id=} and {external_id=}")
 
     @classmethod
