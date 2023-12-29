@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
@@ -15,6 +15,7 @@ from cognite.client.data_classes.transformations import (
     TransformationFilter,
     TransformationPreviewResult,
     TransformationUpdate,
+    TransformationWrite,
 )
 from cognite.client.data_classes.transformations.common import NonceCredentials
 from cognite.client.utils._identifier import IdentifierSequence
@@ -42,11 +43,22 @@ class TransformationsAPI(APIClient):
         self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
         self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
 
-    def create(self, transformation: Transformation | Sequence[Transformation]) -> Transformation | TransformationList:
+    @overload
+    def create(self, transformation: Transformation | TransformationWrite) -> Transformation:
+        ...
+
+    @overload
+    def create(self, transformation: Sequence[Transformation] | Sequence[TransformationWrite]) -> TransformationList:
+        ...
+
+    def create(
+        self,
+        transformation: Transformation | TransformationWrite | Sequence[Transformation] | Sequence[TransformationWrite],
+    ) -> Transformation | TransformationList:
         """`Create one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/createTransformations>`_
 
         Args:
-            transformation (Transformation | Sequence[Transformation]): Transformation or list of transformations to create.
+            transformation (Transformation | TransformationWrite | Sequence[Transformation] | Sequence[TransformationWrite]): Transformation or list of transformations to create.
 
         Returns:
             Transformation | TransformationList: Created transformation(s)
@@ -56,42 +68,56 @@ class TransformationsAPI(APIClient):
             Create new transformations:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Transformation, TransformationDestination
+                >>> from cognite.client.data_classes import TransformationWrite, TransformationDestination
                 >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
                 >>> c = CogniteClient()
                 >>> transformations = [
-                >>>     Transformation(
+                >>>     TransformationWrite(
+                >>>         external_id="transformation1",
                 >>>         name="transformation1",
+                >>>         ignore_null_fields=False,
                 >>>         destination=TransformationDestination.assets()
                 >>>     ),
-                >>>     Transformation(
+                >>>     TransformationWrite(
+                >>>         external_id="transformation2",
                 >>>         name="transformation2",
+                >>>         ignore_null_fields=False,
                 >>>         destination=TransformationDestination.raw("myDatabase", "myTable")
                 >>>     ),
-                >>>      Transformation(
-                >>>      name="transformation3",
-                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
-                >>>      destination=TransformationDestination.nodes(view, "InstanceSpace")
+                >>>      TransformationWrite(
+                >>>          external_id="transformation3",
+                >>>          name="transformation3",
+                >>>          ignore_null_fields=False,
+                >>>          view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
+                >>>          destination=TransformationDestination.nodes(view, "InstanceSpace")
                 >>>      ),
-                >>>      Transformation(
-                >>>      name="transformation4",
-                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
-                >>>      destination=TransformationDestination.edges(view, "InstanceSpace")
+                >>>      TransformationWrite(
+                >>>          external_id="transformation4",
+                >>>          name="transformation4",
+                >>>          ignore_null_fields=False,
+                >>>          view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
+                >>>          destination=TransformationDestination.edges(view, "InstanceSpace")
                 >>>      ),
-                >>>      Transformation(
-                >>>      name="transformation5",
-                >>>      edge_type = EdgeType(space="TypeSpace", external_id="TypeExtId"),
-                >>>      destination=TransformationDestination.edges(edge_type,"InstanceSpace")
+                >>>      TransformationWrite(
+                >>>          external_id="transformation5",
+                >>>          name="transformation5",
+                >>>          ignore_null_fields=False,
+                >>>          edge_type = EdgeType(space="TypeSpace", external_id="TypeExtId"),
+                >>>          destination=TransformationDestination.edges(edge_type,"InstanceSpace")
                 >>>      ),
-                >>>      Transformation(
-                >>>      name="transformation6",
-                >>>      data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId"),
-                >>>      destination=TransformationDestination.instances(data_model,"InstanceSpace")
+                >>>      TransformationWrite(
+                >>>          external_id="transformation6",
+                >>>          name="transformation6",
+                >>>          ignore_null_fields=False,
+                >>>          data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId"),
+                >>>          destination=TransformationDestination.instances(data_model,"InstanceSpace")
                 >>>      ),
-                >>>      Transformation(
-                >>>      name="transformation7",
-                >>>      data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId", destination_relationship_from_type="connectionPropertyName"),
-                >>>      destination=TransformationDestination.instances(data_model,"InstanceSpace")
+                >>>      TransformationWrite(
+                >>>          external_id="transformation7",
+                >>>          name="transformation7",
+                >>>          ignore_null_fields=False,
+                >>>          data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId", destination_relationship_from_type="connectionPropertyName"),
+                >>>          destination=TransformationDestination.instances(data_model,"InstanceSpace")
                 >>>      ),
                 >>> ]
                 >>> res = c.transformations.create(transformations)
@@ -99,18 +125,27 @@ class TransformationsAPI(APIClient):
         """
         if isinstance(transformation, Sequence):
             sessions: dict[str, NonceCredentials] = {}
-            transformation = [t.copy() for t in transformation]
+            # When calling as_write() the transformation is copied
+            transformation = [t.as_write() if isinstance(t, Transformation) else t.copy() for t in transformation]
             for t in transformation:
-                t._cognite_client = self._cognite_client
-                t._process_credentials(sessions_cache=sessions)
+                t._process_credentials(cognite_client=self._cognite_client, sessions_cache=sessions)
         elif isinstance(transformation, Transformation):
+            transformation = transformation.as_write()
+            transformation._process_credentials(self._cognite_client)
+        elif isinstance(transformation, TransformationWrite):
             transformation = transformation.copy()
-            transformation._cognite_client = self._cognite_client
-            transformation._process_credentials()
+            transformation._process_credentials(self._cognite_client)
         else:
-            raise TypeError("transformation must be Sequence[Transformation] or Transformation")
+            raise TypeError(
+                "transformation must be Sequence[Transformation] or Sequence[TransformationWrite] or Transformation or TransformationWrite"
+            )
 
-        return self._create_multiple(list_cls=TransformationList, resource_cls=Transformation, items=transformation)
+        return self._create_multiple(
+            list_cls=TransformationList,
+            resource_cls=Transformation,
+            items=transformation,
+            input_resource_cls=TransformationWrite,
+        )
 
     def delete(
         self,

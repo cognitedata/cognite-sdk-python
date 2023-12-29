@@ -143,6 +143,84 @@ class TransformationCore(CogniteResource, ABC):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
 
+    def _process_credentials(
+        self,
+        cognite_client: CogniteClient,
+        sessions_cache: dict[str, NonceCredentials] | None = None,
+        keep_none: bool = False,
+    ) -> None:
+        if sessions_cache is None:
+            sessions_cache = {}
+
+        if self.source_nonce is None and self.source_oidc_credentials:
+            self.source_nonce = self._try_get_or_create_nonce(
+                self.source_oidc_credentials,
+                sessions_cache,
+                keep_none,
+                credentials_name="source",
+                cognite_client=cognite_client,
+            )
+            if self.source_nonce:
+                self.source_oidc_credentials = None
+
+        if self.destination_nonce is None and self.destination_oidc_credentials:
+            self.destination_nonce = self._try_get_or_create_nonce(
+                self.destination_oidc_credentials,
+                sessions_cache,
+                keep_none,
+                credentials_name="destination",
+                cognite_client=cognite_client,
+            )
+            if self.destination_nonce:
+                self.destination_oidc_credentials = None
+
+    @staticmethod
+    def _try_get_or_create_nonce(
+        oidc_credentials: OidcCredentials,
+        sessions_cache: dict[str, NonceCredentials],
+        keep_none: bool,
+        credentials_name: Literal["source", "destination"],
+        cognite_client: CogniteClient,
+    ) -> NonceCredentials | None:
+        if keep_none and oidc_credentials is None:
+            return None
+
+        project = oidc_credentials.cdf_project_name or cognite_client.config.project
+
+        key = "DEFAULT"
+        if oidc_credentials:
+            key = f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
+
+        if (ret := sessions_cache.get(key)) is None:
+            credentials = None
+            if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
+                credentials = oidc_credentials.as_client_credentials()
+
+            # We want to create a session using the supplied 'oidc_credentials' (either 'source_oidc_credentials'
+            # or 'destination_oidc_credentials') and send the nonce to the Transformations backend, to avoid sending
+            # (and it having to store) the full set of client credentials. However, there is no easy way to do this
+            # without instantiating a new 'CogniteClient' with the given credentials:
+            from cognite.client import CogniteClient
+
+            config = deepcopy(cognite_client.config)
+            config.project = project
+            config.credentials = oidc_credentials.as_credential_provider()
+            other_client = CogniteClient(config)
+            try:
+                session = other_client.iam.sessions.create(credentials)
+                ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
+            except CogniteAPIError as err:
+                # This is fine, we might be missing SessionsACL. The OIDC credentials will then be passed
+                # directly to the backend service. We do however not catch CogniteAuthError as that would
+                # mean the credentials are invalid.
+                msg = (
+                    f"Unable to create a session and get a nonce towards {project=} using the provided "
+                    f"{credentials_name} credentials: {err!r}"
+                    "\nProvided OIDC credentials will be passed on to the transformation service."
+                )
+                warnings.warn(msg, UserWarning)
+        return ret
+
 
 class Transformation(TransformationCore):
     """The transformation resource allows transforming data in CDF.
@@ -264,14 +342,14 @@ class Transformation(TransformationCore):
     def as_write(self) -> TransformationWrite:
         """Returns a writeable version of this transformation."""
         if self.external_id is None or self.name is None or self.ignore_null_fields is None:
-            raise ValueError("External ID, name and ignote null fields are required to create a transformation.")
+            raise ValueError("External ID, name and ignore null fields are required to create a transformation.")
         return TransformationWrite(
             external_id=self.external_id,
             name=self.name,
             ignore_null_fields=self.ignore_null_fields,
             query=self.query,
             destination=self.destination,
-            conflict_mode=self.conflict_mode,
+            conflict_mode=cast(Literal["abort", "delete", "update", "upsert"], self.conflict_mode),
             is_public=self.is_public,
             source_oidc_credentials=self.source_oidc_credentials,
             destination_oidc_credentials=self.destination_oidc_credentials,
@@ -320,77 +398,10 @@ class Transformation(TransformationCore):
             self.tags,
         )
 
-    def _process_credentials(
+    def _process_credentials(  # type: ignore[override]
         self, sessions_cache: dict[str, NonceCredentials] | None = None, keep_none: bool = False
     ) -> None:
-        if sessions_cache is None:
-            sessions_cache = {}
-
-        if self.source_nonce is None and self.source_oidc_credentials:
-            self.source_nonce = self._try_get_or_create_nonce(
-                self.source_oidc_credentials,
-                sessions_cache,
-                keep_none,
-                credentials_name="source",
-            )
-            if self.source_nonce:
-                self.source_oidc_credentials = None
-
-        if self.destination_nonce is None and self.destination_oidc_credentials:
-            self.destination_nonce = self._try_get_or_create_nonce(
-                self.destination_oidc_credentials,
-                sessions_cache,
-                keep_none,
-                credentials_name="destination",
-            )
-            if self.destination_nonce:
-                self.destination_oidc_credentials = None
-
-    def _try_get_or_create_nonce(
-        self,
-        oidc_credentials: OidcCredentials,
-        sessions_cache: dict[str, NonceCredentials],
-        keep_none: bool,
-        credentials_name: Literal["source", "destination"],
-    ) -> NonceCredentials | None:
-        if keep_none and oidc_credentials is None:
-            return None
-
-        project = oidc_credentials.cdf_project_name or self._cognite_client.config.project
-
-        key = "DEFAULT"
-        if oidc_credentials:
-            key = f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
-
-        if (ret := sessions_cache.get(key)) is None:
-            credentials = None
-            if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
-                credentials = oidc_credentials.as_client_credentials()
-
-            # We want to create a session using the supplied 'oidc_credentials' (either 'source_oidc_credentials'
-            # or 'destination_oidc_credentials') and send the nonce to the Transformations backend, to avoid sending
-            # (and it having to store) the full set of client credentials. However, there is no easy way to do this
-            # without instantiating a new 'CogniteClient' with the given credentials:
-            from cognite.client import CogniteClient
-
-            config = deepcopy(self._cognite_client.config)
-            config.project = project
-            config.credentials = oidc_credentials.as_credential_provider()
-            other_client = CogniteClient(config)
-            try:
-                session = other_client.iam.sessions.create(credentials)
-                ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
-            except CogniteAPIError as err:
-                # This is fine, we might be missing SessionsACL. The OIDC credentials will then be passed
-                # directly to the backend service. We do however not catch CogniteAuthError as that would
-                # mean the credentials are invalid.
-                msg = (
-                    f"Unable to create a session and get a nonce towards {project=} using the provided "
-                    f"{credentials_name} credentials: {err!r}"
-                    "\nProvided OIDC credentials will be passed on to the transformation service."
-                )
-                warnings.warn(msg, UserWarning)
-        return ret
+        super()._process_credentials(self._cognite_client, sessions_cache=sessions_cache, keep_none=keep_none)
 
     def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
@@ -455,7 +466,7 @@ class TransformationWrite(TransformationCore):
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
         query (str | None): SQL query of the transformation.
         destination (TransformationDestination | None): see TransformationDestination for options.
-        conflict_mode (str | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        conflict_mode (Literal["abort", "delete", "update", "upsert"] | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         source_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials key on the destination.
         destination_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials on the destination.
@@ -472,7 +483,7 @@ class TransformationWrite(TransformationCore):
         ignore_null_fields: bool,
         query: str | None = None,
         destination: TransformationDestination | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         is_public: bool = True,
         source_oidc_credentials: OidcCredentials | None = None,
         destination_oidc_credentials: OidcCredentials | None = None,
@@ -516,6 +527,23 @@ class TransformationWrite(TransformationCore):
             destination_nonce=(destination_nonce := resource.get("destinationNonce"))
             and NonceCredentials.load(destination_nonce),
             tags=resource.get("tags"),
+        )
+
+    def copy(self) -> TransformationWrite:
+        return TransformationWrite(
+            cast(str, self.external_id),
+            cast(str, self.name),
+            self.ignore_null_fields,
+            self.query,
+            self.destination,
+            cast(Literal["abort", "delete", "update", "upsert"], self.conflict_mode),
+            self.is_public,
+            self.source_oidc_credentials,
+            self.destination_oidc_credentials,
+            self.data_set_id,
+            self.source_nonce,
+            self.destination_nonce,
+            self.tags,
         )
 
 
