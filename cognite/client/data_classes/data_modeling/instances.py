@@ -874,6 +874,20 @@ class EdgeListWithCursor(EdgeList):
         self.cursor = cursor
 
 
+# This is a utility class. It is not used by in the SDK codebase, but used in projects that use the SDK.
+@dataclass
+class InstancesApply:
+    """
+    This represents the write request of an instance query
+    Args:
+        nodes (NodeApplyList): A list of nodes.
+        edges (EdgeApplyList): A list of edges.
+    """
+
+    nodes: NodeApplyList
+    edges: EdgeApplyList
+
+
 class InstanceSort(DataModelingSort):
     def __init__(
         self,
