@@ -267,7 +267,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         Args:
             executions (Sequence[CancelExecution]): List of executions to cancel.
 
-        Tip:
+        Note:
             Cancelling a workflow only prevents it from starting new tasks, tasks already running on
             other services (transformations and functions) will keep running there.
 
