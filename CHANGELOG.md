@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.8.7] - 2024-02-03
+## [7.8.8] - 2024-01-03
+### Added
+- Support for `workflows.cancel`.
+
+## [7.8.7] - 2024-01-03
 ### Fixed
 - Added back `InstancesApply` that was removed in 7.8.6.
 
