@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.8.9] - 2024-01-04
+### Fixed
+- Pyodide-users of the SDK can now create Transformations with non-nonce credentials without a `pyodide.JsException`
+  exception being raised.
+
 ## [7.8.8] - 2024-01-03
 ### Added
 - Support for `workflows.cancel`.
