@@ -239,7 +239,7 @@ class TemplateInstance(CogniteResource):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
@@ -371,7 +371,7 @@ class View(CogniteResource):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.

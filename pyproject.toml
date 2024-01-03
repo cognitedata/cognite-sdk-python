@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "7.5.5"
+version = "7.8.8"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
@@ -24,7 +24,6 @@ python = "^3.8"
 requests = "^2"
 requests_oauthlib = "^1"
 msal = "^1"
-sortedcontainers = "^2.2"
 protobuf = ">=3.16.0"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"

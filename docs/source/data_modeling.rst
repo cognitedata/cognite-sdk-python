@@ -260,3 +260,7 @@ GraphQL
 Apply DML
 ^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.apply_dml
+
+Execute GraphQl query
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.query

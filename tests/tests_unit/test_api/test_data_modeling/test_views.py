@@ -1,18 +1,18 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling import View
+from tests.tests_unit.test_api.test_data_modeling.conftest import make_test_view
 
 
 class TestViewsRetrieveLatest:
     @pytest.fixture
     def views(self):
         return [
-            View("mySpace", "myView", "v1", created_time=1, properties={}, last_updated_time=9),
-            View("mySpace", "myView", "v2", created_time=2, properties={}, last_updated_time=9),
-            View("mySpace", "myOtherView", "v1", created_time=1, properties={}, last_updated_time=9),
-            View("mySpace", "myOtherView", "v2", created_time=3, properties={}, last_updated_time=9),
-            View("myOtherSpace", "myView", "v1", created_time=1, properties={}, last_updated_time=9),
-            View("myOtherSpace", "myView", "v2", created_time=2, properties={}, last_updated_time=9),
+            make_test_view("mySpace", "myView", "v1", created_time=1),
+            make_test_view("mySpace", "myView", "v2", created_time=2),
+            make_test_view("mySpace", "myOtherView", "v1", created_time=1),
+            make_test_view("mySpace", "myOtherView", "v2", created_time=3),
+            make_test_view("myOtherSpace", "myView", "v1", created_time=1),
+            make_test_view("myOtherSpace", "myView", "v2", created_time=2),
         ]
 
     def test_different_versions(self, cognite_client, views):

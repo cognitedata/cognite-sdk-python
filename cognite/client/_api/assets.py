@@ -64,6 +64,8 @@ if TYPE_CHECKING:
 
 as_completed = import_as_completed()
 
+AggregateAssetProperty: TypeAlias = Literal["child_count", "path", "depth"]
+
 SortSpec: TypeAlias = Union[
     AssetSort,
     str,
@@ -110,7 +112,7 @@ class AssetsAPI(APIClient):
         last_updated_time: TimestampRange | dict[str, Any] | None = None,
         root: bool | None = None,
         external_id_prefix: str | None = None,
-        aggregated_properties: Sequence[str] | None = None,
+        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
     ) -> Iterator[Asset] | Iterator[AssetList]:
@@ -135,16 +137,14 @@ class AssetsAPI(APIClient):
             last_updated_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             root (bool | None): filtered assets are root assets or not
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
+            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of assets to return. Defaults to return all items.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Returns:
             Iterator[Asset] | Iterator[AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
         """
-        if aggregated_properties:
-            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
-
+        agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -172,7 +172,7 @@ class AssetsAPI(APIClient):
             filter=filter,
             limit=limit,
             partitions=partitions,
-            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+            other_params=agg_props,
         )
 
     def __iter__(self) -> Iterator[Asset]:
@@ -818,7 +818,7 @@ class AssetsAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
+        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
@@ -830,7 +830,7 @@ class AssetsAPI(APIClient):
         Args:
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            aggregated_properties (Sequence[Literal["child_count", "path", "depth"]] | None): Set of aggregated properties to include. Options are childCount, path, depth.
+            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -864,12 +864,7 @@ class AssetsAPI(APIClient):
 
         """
         self._validate_filter(filter)
-
-        if aggregated_properties:
-            aggregated_properties_camel = [to_camel_case(prop) for prop in aggregated_properties]
-        else:
-            aggregated_properties_camel = None
-
+        agg_props = self._process_aggregated_props(aggregated_properties)
         return self._list(
             list_cls=AssetList,
             resource_cls=Asset,
@@ -877,7 +872,7 @@ class AssetsAPI(APIClient):
             limit=limit,
             advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
             sort=prepare_filter_sort(sort, AssetSort),
-            other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
+            other_params=agg_props,
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
@@ -981,6 +976,12 @@ class AssetsAPI(APIClient):
             children.extend(res)
         return children
 
+    @staticmethod
+    def _process_aggregated_props(agg_props: Sequence[AggregateAssetProperty] | None) -> dict[str, list[str]]:
+        if not agg_props:
+            return {}
+        return {"aggregatedProperties": [to_camel_case(prop) for prop in agg_props]}
+
     def list(
         self,
         name: str | None = None,
@@ -998,7 +999,7 @@ class AssetsAPI(APIClient):
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         root: bool | None = None,
         external_id_prefix: str | None = None,
-        aggregated_properties: Sequence[str] | None = None,
+        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
@@ -1020,7 +1021,7 @@ class AssetsAPI(APIClient):
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             root (bool | None): filtered assets are root assets or not.
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
+            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
             limit (int | None): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
@@ -1057,9 +1058,7 @@ class AssetsAPI(APIClient):
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
                 >>> asset_list = c.assets.list(labels=my_label_filter)
         """
-        if aggregated_properties:
-            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
-
+        agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -1084,7 +1083,7 @@ class AssetsAPI(APIClient):
             method="POST",
             limit=limit,
             filter=filter,
-            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+            other_params=agg_props,
             partitions=partitions,
         )
 

@@ -3,7 +3,12 @@ import textwrap
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling import DataModel, DataModelApply, DataModelId, Space
+from cognite.client.data_classes.data_modeling import (
+    DataModel,
+    DataModelApply,
+    DataModelId,
+    Space,
+)
 from cognite.client.exceptions import CogniteGraphQLError
 
 
@@ -12,6 +17,15 @@ def data_model(cognite_client: CogniteClient, integration_test_space: Space) -> 
     return cognite_client.data_modeling.data_models.apply(
         DataModelApply(integration_test_space.space, "DataModelForDmlTest", "1")
     )
+
+
+@pytest.fixture(scope="session")
+def data_model_for_query_test(cognite_client: CogniteClient, integration_test_space: Space) -> DataModel:
+    data_model = cognite_client.data_modeling.data_models.apply(
+        DataModelApply(integration_test_space.space, "DataModelForGraphQlQueryTest", "1")
+    )
+    cognite_client.data_modeling.graphql.apply_dml(data_model.as_id(), "type Thing { someProp: String! }")
+    return data_model
 
 
 class TestDataModelingGraphQLAPI:
@@ -64,3 +78,64 @@ class TestDataModelingGraphQLAPI:
             }
         """
         assert res.strip() == textwrap.dedent(expected).strip()
+
+    def test_query(self, cognite_client: CogniteClient, data_model_for_query_test: DataModel) -> None:
+        query = """
+            {
+                listThing {
+                    items {
+                        externalId
+                        space
+                        someProp
+                    }
+                }
+            }
+        """
+        res = cognite_client.data_modeling.graphql.query(data_model_for_query_test.as_id(), query)
+        assert res == {"listThing": {"items": []}}
+
+    def test_query_with_intent(self, cognite_client: CogniteClient, data_model_for_query_test: DataModel) -> None:
+        query = """
+            query MyQuery {
+                listThing {
+                    items {
+                        externalId
+                        space
+                        someProp
+                    }
+                }
+            }
+        """
+        res = cognite_client.data_modeling.graphql.query(data_model_for_query_test.as_id(), query)
+        assert res == {"listThing": {"items": []}}
+
+    def test_query_with_variables(self, cognite_client: CogniteClient, data_model_for_query_test: DataModel) -> None:
+        query = """
+            query MyQuery($first: Int) {
+                listThing(first: $first) {
+                    items {
+                        externalId
+                        space
+                        someProp
+                    }
+                }
+            }
+        """
+        res = cognite_client.data_modeling.graphql.query(
+            data_model_for_query_test.as_id(), query, variables={"first": 10}
+        )
+        assert res == {"listThing": {"items": []}}
+
+    def test_query_with_error(self, cognite_client: CogniteClient, data_model_for_query_test: DataModel) -> None:
+        query = """
+            {
+                listThing {
+                    items {
+                        i_dont_exist
+                    }
+                }
+            }
+        """
+
+        with pytest.raises(CogniteGraphQLError, match="Field 'i_dont_exist' in type 'Thing' is undefined"):
+            cognite_client.data_modeling.graphql.query(data_model_for_query_test.as_id(), query)

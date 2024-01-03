@@ -5,6 +5,7 @@ import numbers
 import operator as op
 import warnings
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
@@ -14,15 +15,16 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    DefaultDict,
     Dict,
-    Generic,
-    Hashable,
     Iterator,
+    List,
     Literal,
     MutableSequence,
     NoReturn,
     Optional,
     Sequence,
+    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -30,8 +32,7 @@ from typing import (
 )
 
 from google.protobuf.message import Message
-from sortedcontainers import SortedDict, SortedList
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypeAlias
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
@@ -562,26 +563,6 @@ class DpsUnpackFns:
         return op.attrgetter(*lst)
 
 
-class DefaultSortedDict(SortedDict, Generic[_T]):
-    def __init__(self, default_factory: Callable[[], _T], /, **kw: Any) -> None:
-        self.default_factory = default_factory
-        super().__init__(**kw)
-
-    def __missing__(self, key: Hashable) -> _T:
-        self[key] = self.default_factory()
-        return self[key]
-
-
-def create_dps_container() -> DefaultSortedDict:
-    """Initialises a new sorted container for datapoints storage"""
-    return DefaultSortedDict(list)
-
-
-def create_subtask_lst() -> SortedList:
-    """Initialises a new sorted list for subtasks"""
-    return SortedList(key=op.attrgetter("subtask_idx"))
-
-
 def ensure_int(val: float, change_nan_to: int = 0) -> int:
     if math.isnan(val):
         return change_nan_to
@@ -610,21 +591,28 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
     }
 
 
-def create_array_from_dps_container(container: DefaultSortedDict) -> npt.NDArray:
-    return np.hstack(list(chain.from_iterable(container.values())))
+_DataContainer: TypeAlias = DefaultDict[Tuple[float, ...], List]
 
 
-def create_aggregates_arrays_from_dps_container(container: DefaultSortedDict, n_aggs: int) -> list[npt.NDArray]:
-    all_aggs_arr = np.vstack(list(chain.from_iterable(container.values())))
+def datapoints_in_order(container: _DataContainer) -> Iterator[list]:
+    return chain.from_iterable(container[k] for k in sorted(container))
+
+
+def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
+    return np.hstack(list(datapoints_in_order(container)))
+
+
+def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:
+    all_aggs_arr = np.vstack(list(datapoints_in_order(container)))
     return list(map(np.ravel, np.hsplit(all_aggs_arr, n_aggs)))
 
 
-def create_list_from_dps_container(container: DefaultSortedDict) -> list:
-    return list(chain.from_iterable(chain.from_iterable(container.values())))
+def create_list_from_dps_container(container: _DataContainer) -> list:
+    return list(chain.from_iterable(datapoints_in_order(container)))
 
 
-def create_aggregates_list_from_dps_container(container: DefaultSortedDict) -> Iterator[list[list]]:
-    concatenated = chain.from_iterable(chain.from_iterable(container.values()))
+def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iterator[list[list]]:
+    concatenated = chain.from_iterable(datapoints_in_order(container))
     return map(list, zip(*concatenated))  # rows to columns
 
 
@@ -649,6 +637,7 @@ class BaseDpsFetchSubtask:
         self.target_unit = target_unit
         self.target_unit_system = target_unit_system
         self.is_done = False
+        self.n_dps_fetched = 0
 
         self.static_kwargs = identifier.as_dict()
         if target_unit is not None:
@@ -663,9 +652,6 @@ class BaseDpsFetchSubtask:
     @abstractmethod
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         ...
-
-
-T_BaseDpsFetchSubtask = TypeVar("T_BaseDpsFetchSubtask", bound=BaseDpsFetchSubtask)
 
 
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
@@ -707,7 +693,6 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         self.aggregates = aggregates
         self.granularity = granularity
         self.subtask_idx = subtask_idx
-        self.n_dps_fetched = 0
         self.next_start = self.start
 
         if not self.is_raw_query:
@@ -803,7 +788,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, **self._static_params)
             for start, end, idx in zip(boundaries[1:-1], boundaries[2:], split_idxs)
         ]
-        self.parent.subtasks.update(new_subtasks)
+        self.parent.subtasks.extend(new_subtasks)
         return new_subtasks
 
 
@@ -826,11 +811,9 @@ class BaseTaskOrchestrator(ABC):
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
 
-        # Only concurrent fetchers really need auto-sorted containers. To keep indexing simple,
-        # we also use them for serial fetchers (nice for outside points as well):
-        self.ts_data = create_dps_container()
-        self.dps_data = create_dps_container()
-        self.subtasks = create_subtask_lst()
+        self.ts_data: _DataContainer = defaultdict(list)
+        self.dps_data: _DataContainer = defaultdict(list)
+        self.subtasks: list[BaseDpsFetchSubtask] = []
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points for free (if asked for) and ts info:
@@ -974,7 +957,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
                 subtask_idx=FIRST_IDX,
             )
         ]
-        self.subtasks.update(subtasks)
+        self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
         return subtasks
 
@@ -1080,7 +1063,7 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
         # we hold back to not create too many subtasks:
         n_workers_per_queries = max(1, round(max_workers / n_tot_queries))
         subtasks: list[BaseDpsFetchSubtask] = self._create_uniformly_split_subtasks(n_workers_per_queries)
-        self.subtasks.update(subtasks)
+        self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
         return subtasks
 
@@ -1136,7 +1119,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         self.float_aggs = aggs_camel_case[:]
         self.is_count_query = "count" in self.float_aggs
         if self.is_count_query:
-            self.count_data = create_dps_container()
+            self.count_data: _DataContainer = defaultdict(list)
             self.float_aggs.remove("count")  # Only aggregate that is (supposed to be) integer, handle separately
 
         self.has_non_count_aggs = bool(self.float_aggs)
