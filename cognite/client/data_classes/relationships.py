@@ -11,11 +11,12 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     ExternalIDTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 RelationshipType: TypeAlias = Literal["asset", "timeseries", "file", "event", "sequence"]
 
 
-class RelationshipCore(CogniteResource, ABC):
+class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
 
     Args:
@@ -278,6 +279,10 @@ class RelationshipWrite(RelationshipCore):
             labels=(labels := resource.get("labels")) and Label._load_list(labels),
         )
 
+    def as_write(self) -> RelationshipWrite:
+        """Returns this RelationshipWrite instance."""
+        return self
+
 
 class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
@@ -408,13 +413,13 @@ class RelationshipUpdate(CogniteUpdate):
         ]
 
 
-class RelationshipList(CogniteResourceList[Relationship], ExternalIDTransformerMixin):
+class RelationshipWriteList(CogniteResourceList[RelationshipWrite], ExternalIDTransformerMixin):
+    _RESOURCE = RelationshipWrite
+
+
+class RelationshipList(WriteableCogniteResourceList[Relationship, RelationshipWriteList], ExternalIDTransformerMixin):
     _RESOURCE = Relationship
 
     def as_write(self) -> RelationshipWriteList:
         """Returns this RelationshipList in its writing version."""
         return RelationshipWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
-
-
-class RelationshipWriteList(CogniteResourceList[RelationshipWrite], ExternalIDTransformerMixin):
-    _RESOURCE = RelationshipWrite

@@ -8,12 +8,13 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataSetCore(CogniteResource):
+class DataSetCore(WriteableCogniteResource["DataSetWrite"]):
     """Data sets let you document and track data lineage, ensure data integrity, and allow 3rd parties to write their insights securely back to a Cognite Data Fusion (CDF) project.
     This is the read version of the DataSet, which is used when retrieving from CDF.
 
@@ -125,6 +126,10 @@ class DataSetWrite(DataSetCore):
             metadata=metadata,
             write_protected=write_protected,
         )
+
+    def as_write(self) -> DataSetWrite:
+        """Returns this DataSetWrite instance."""
+        return self
 
 
 class DataSetFilter(CogniteFilter):
@@ -232,12 +237,12 @@ class DataSetUpdate(CogniteUpdate):
         ]
 
 
-class DataSetList(CogniteResourceList[DataSet], IdTransformerMixin):
+class DataSetWriteList(CogniteResourceList[DataSetWrite], ExternalIDTransformerMixin):
+    _RESOURCE = DataSetWrite
+
+
+class DataSetList(WriteableCogniteResourceList[DataSet, DataSetWriteList], IdTransformerMixin):
     _RESOURCE = DataSet
 
     def as_write(self) -> DataSetWriteList:
         return DataSetWriteList([ds.as_write() for ds in self.data], cognite_client=self._cognite_client)
-
-
-class DataSetWriteList(CogniteResourceList[DataSetWrite], ExternalIDTransformerMixin):
-    _RESOURCE = DataSetWrite

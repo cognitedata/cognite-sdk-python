@@ -6,16 +6,17 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
-    CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class LabelDefinitionCore(CogniteResource, ABC):
+class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC):
     """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
     This is the parent for the reading and writing versions.
 
@@ -116,6 +117,10 @@ class LabelDefinitionWrite(LabelDefinitionCore):
             data_set_id=resource.get("dataSetId"),
         )
 
+    def as_write(self) -> LabelDefinitionWrite:
+        """Returns this LabelDefinitionWrite instance."""
+        return self
+
 
 class LabelDefinitionFilter(CogniteFilter):
     """Filter on labels definitions with strict matching.
@@ -140,16 +145,18 @@ class LabelDefinitionFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class LabelDefinitionList(CogniteResourceList[LabelDefinition], ExternalIDTransformerMixin):
+class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = LabelDefinitionWrite
+
+
+class LabelDefinitionList(
+    WriteableCogniteResourceList[LabelDefinition, LabelDefinitionWriteList], ExternalIDTransformerMixin
+):
     _RESOURCE = LabelDefinition
 
     def as_write(self) -> LabelDefinitionWriteList:
         """Returns this LabelDefinitionList in its writing version."""
         return LabelDefinitionWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
-
-
-class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], ExternalIDTransformerMixin):
-    _RESOURCE = LabelDefinitionWrite
 
 
 class Label(CogniteObject):
