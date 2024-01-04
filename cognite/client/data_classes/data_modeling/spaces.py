@@ -7,15 +7,16 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.core import DataModelingResource
+from cognite.client.data_classes.data_modeling.core import WritableDataModelingResource
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class SpaceCore(DataModelingResource, ABC):
+class SpaceCore(WritableDataModelingResource["SpaceApply"], ABC):
     """A workspace for data models and instances.
 
     Args:
@@ -53,6 +54,10 @@ class SpaceApply(SpaceCore):
             description=resource.get("description"),
             name=resource.get("name"),
         )
+
+    def as_write(self) -> SpaceApply:
+        """Returns this SpaceApply instance."""
+        return self
 
 
 class Space(SpaceCore):
@@ -116,7 +121,7 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
         return [item.space for item in self]
 
 
-class SpaceList(CogniteResourceList[Space]):
+class SpaceList(WriteableCogniteResourceList[Space, SpaceApplyList]):
     _RESOURCE = Space
 
     def as_ids(self) -> list[str]:
@@ -139,3 +144,6 @@ class SpaceList(CogniteResourceList[Space]):
             resources=[item.as_apply() for item in self],
             cognite_client=self._cognite_client,
         )
+
+    def as_write(self) -> SpaceApplyList:
+        return self.as_apply()

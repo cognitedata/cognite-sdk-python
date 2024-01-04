@@ -27,13 +27,14 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteResourceList
+from cognite.client.data_classes._base import CogniteResourceList, T_CogniteResource
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
     DataModelingInstancesList,
     DataModelingResource,
     DataModelingSort,
+    WritableDataModelingResource,
 )
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
@@ -136,7 +137,14 @@ class InstanceCore(DataModelingResource, ABC):
         self.external_id = external_id
 
 
-class InstanceApply(InstanceCore, ABC):
+class WritableInstanceCore(WritableDataModelingResource[T_CogniteResource], ABC):
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
+        super().__init__(space=space)
+        self.instance_type = instance_type
+        self.external_id = external_id
+
+
+class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the write version of the instance.
 
     Args:
@@ -249,7 +257,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         self.data[view_id] = properties
 
 
-class Instance(InstanceCore, ABC):
+class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -425,7 +433,7 @@ class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResul
     _RESOURCE = InstanceAggregationResult
 
 
-class NodeApply(InstanceApply):
+class NodeApply(InstanceApply["NodeApply"]):
     """A node. This is the write version of the node.
 
     Args:
@@ -471,8 +479,12 @@ class NodeApply(InstanceApply):
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
+    def as_write(self) -> NodeApply:
+        """Returns this NodeApply instance"""
+        return self
 
-class Node(Instance):
+
+class Node(Instance["NodeApply"]):
     """A node. This is the read version of the node.
 
     Args:
@@ -588,7 +600,7 @@ class NodeApplyResult(InstanceApplyResult):
         return NodeId(space=self.space, external_id=self.external_id)
 
 
-class EdgeApply(InstanceApply):
+class EdgeApply(InstanceApply["EdgeApply"]):
     """An Edge. This is the write version of the edge.
 
     Args:
@@ -647,8 +659,12 @@ class EdgeApply(InstanceApply):
             end_node=DirectRelationReference.load(resource["endNode"]),
         )
 
+    def as_write(self) -> EdgeApply:
+        """Returns this EdgeApply instance"""
+        return self
 
-class Edge(Instance):
+
+class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 
     Args:
@@ -803,7 +819,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[Node]):
+class NodeList(DataModelingInstancesList[Node, NodeApplyList]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -814,6 +830,10 @@ class NodeList(DataModelingInstancesList[Node]):
             list[NodeId]: A list of node ids.
         """
         return [node.as_id() for node in self]
+
+    def as_write(self) -> NodeApplyList:
+        """Returns this NodeList as a NodeApplyList"""
+        return NodeApplyList([node.as_write() for node in self])
 
 
 class NodeListWithCursor(NodeList):
@@ -850,7 +870,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[Edge]):
+class EdgeList(DataModelingInstancesList[Edge, EdgeApplyList]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
@@ -861,6 +881,10 @@ class EdgeList(DataModelingInstancesList[Edge]):
             list[EdgeId]: A list of edge ids.
         """
         return [edge.as_id() for edge in self]
+
+    def as_write(self) -> EdgeApplyList:
+        """Returns this EdgeList as a EdgeApplyList"""
+        return EdgeApplyList([edge.as_write() for edge in self])
 
 
 class EdgeListWithCursor(EdgeList):
