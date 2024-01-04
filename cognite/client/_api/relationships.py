@@ -330,6 +330,14 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
+    @overload
+    def create(self, relationship: Relationship | RelationshipWrite) -> Relationship:
+        ...
+
+    @overload
+    def create(self, relationship: Sequence[Relationship | RelationshipWrite]) -> RelationshipList:
+        ...
+
     def create(
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
     ) -> Relationship | RelationshipList:

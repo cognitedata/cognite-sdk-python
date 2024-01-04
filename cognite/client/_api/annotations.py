@@ -22,16 +22,16 @@ class AnnotationsAPI(APIClient):
         ...
 
     @overload
-    def create(self, annotations: Sequence[Annotation] | Sequence[AnnotationWrite]) -> AnnotationList:
+    def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList:
         ...
 
     def create(
-        self, annotations: Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]
+        self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
     ) -> Annotation | AnnotationList:
         """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
 
         Args:
-            annotations (Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]): Annotation(s) to create
+            annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
 
         Returns:
             Annotation | AnnotationList: Created annotation(s)
