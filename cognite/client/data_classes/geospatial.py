@@ -425,7 +425,7 @@ class FeatureWriteList(FeatureListCore[FeatureWrite]):
         return self
 
 
-class FeatureList(WriteableCogniteResourceList[Feature, FeatureWriteList]):
+class FeatureList(FeatureListCore[Feature]):
     _RESOURCE = Feature
 
     def as_write(self) -> FeatureWriteList:
