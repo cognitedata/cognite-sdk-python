@@ -22,8 +22,8 @@ class TransformationScheduleCore(CogniteResource, ABC):
 
     Args:
         id (int | None): Transformation id.
-        external_id (str | None): Transformation externalId.
-        interval (str | None): Cron expression describes when the function should be called. Use http://www.cronmaker.com to create a cron expression.
+        external_id (str | None): Transformation external id.
+        interval (str | None): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
         is_paused (bool): If true, the transformation is not scheduled.
     """
 
@@ -45,10 +45,10 @@ class TransformationSchedule(TransformationScheduleCore):
 
     Args:
         id (int | None): Transformation id.
-        external_id (str | None): Transformation externalId.
+        external_id (str | None): Transformation external id.
         created_time (int | None): Time when the schedule was created.
         last_updated_time (int | None): Time when the schedule was last updated.
-        interval (str | None): Cron expression describes when the function should be called. Use http://www.cronmaker.com to create a cron expression.
+        interval (str | None): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
         is_paused (bool): If true, the transformation is not scheduled.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
@@ -95,9 +95,9 @@ class TransformationScheduleWrite(TransformationScheduleCore, ABC):
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
-        interval (str): Cron expression describes when the function should be called. Use http://www.cronmaker.com to create a cron expression.
+        interval (str): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
         id (int | None): Transformation id.
-        external_id (str | None): Transformation externalId.
+        external_id (str | None): Transformation external id.
         is_paused (bool): If true, the transformation is not scheduled.
     """
 

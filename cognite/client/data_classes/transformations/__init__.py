@@ -519,17 +519,20 @@ class TransformationWrite(TransformationCore):
             name=resource["name"],
             ignore_null_fields=resource["ignoreNullFields"],
             query=resource.get("query"),
-            destination=(destination := resource.get("destination")) and _load_destination_dct(destination),
+            destination=_load_destination_dct(resource["destination"]) if "destination" in resource else None,
             conflict_mode=resource.get("conflictMode"),
             is_public=resource.get("isPublic", True),
-            source_oidc_credentials=(source_oidc_credentials := resource.get("sourceOidcCredentials"))
-            and OidcCredentials.load(source_oidc_credentials),
-            destination_oidc_credentials=(destination_oidc_credentials := resource.get("destinationOidcCredentials"))
-            and OidcCredentials.load(destination_oidc_credentials),
+            source_oidc_credentials=OidcCredentials.load(resource["sourceOidcCredentials"])
+            if "sourceOidcCredentials" in resource
+            else None,
+            destination_oidc_credentials=OidcCredentials.load(resource["destinationOidcCredentials"])
+            if "destinationOidcCredentials" in resource
+            else None,
             data_set_id=resource.get("dataSetId"),
-            source_nonce=(source_nonce := resource.get("sourceNonce")) and NonceCredentials.load(source_nonce),
-            destination_nonce=(destination_nonce := resource.get("destinationNonce"))
-            and NonceCredentials.load(destination_nonce),
+            source_nonce=NonceCredentials.load(resource["sourceNonce"]) if "sourceNonce" in resource else None,
+            destination_nonce=NonceCredentials.load(resource["destinationNonce"])
+            if "destinationNonce" in resource
+            else None,
             tags=resource.get("tags"),
         )
 
