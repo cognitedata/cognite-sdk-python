@@ -138,8 +138,8 @@ from cognite.client.data_classes.iam import (
     GroupWriteList,
     SecurityCategory,
     SecurityCategoryList,
-    SecurityCategoryListWrite,
     SecurityCategoryWrite,
+    SecurityCategoryWriteList,
     Session,
     SessionList,
 )
@@ -384,7 +384,7 @@ __all__ = [
     "SecurityCategory",
     "SecurityCategoryWrite",
     "SecurityCategoryList",
-    "SecurityCategoryListWrite",
+    "SecurityCategoryWriteList",
     "Session",
     "SessionList",
     "Label",

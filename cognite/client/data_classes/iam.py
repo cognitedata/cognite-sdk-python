@@ -11,6 +11,8 @@ from cognite.client.data_classes._base import (
     CogniteResponse,
     InternalIdTransformerMixin,
     NameTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.capabilities import Capability, ProjectCapabilityList
 from cognite.client.utils._importing import local_import
@@ -21,7 +23,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class GroupCore(CogniteResource, ABC):
+class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     """No description.
 
     Args:
@@ -161,8 +163,16 @@ class GroupWrite(GroupCore):
             metadata=metadata,
         )
 
+    def as_write(self) -> GroupWrite:
+        """Returns this GroupWrite instance."""
+        return self
 
-class GroupList(CogniteResourceList[Group], NameTransformerMixin, InternalIdTransformerMixin):
+
+class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
+    _RESOURCE = GroupWrite
+
+
+class GroupList(WriteableCogniteResourceList[Group, GroupWriteList], NameTransformerMixin, InternalIdTransformerMixin):
     _RESOURCE = Group
 
     def as_write(self) -> GroupWriteList:
@@ -187,11 +197,7 @@ class GroupList(CogniteResourceList[Group], NameTransformerMixin, InternalIdTran
         return df
 
 
-class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
-    _RESOURCE = GroupWrite
-
-
-class SecurityCategoryCore(CogniteResource, ABC):
+class SecurityCategoryCore(WriteableCogniteResource["SecurityCategoryWrite"], ABC):
     """No description.
 
     Args:
@@ -242,17 +248,23 @@ class SecurityCategoryWrite(SecurityCategoryCore):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(name=resource["name"])
 
+    def as_write(self) -> SecurityCategoryWrite:
+        """Returns this SecurityCategoryWrite instance."""
+        return self
 
-class SecurityCategoryList(CogniteResourceList[SecurityCategory], NameTransformerMixin):
+
+class SecurityCategoryWriteList(CogniteResourceList[SecurityCategory], NameTransformerMixin):
     _RESOURCE = SecurityCategory
 
-    def as_write(self) -> SecurityCategoryListWrite:
+
+class SecurityCategoryList(
+    WriteableCogniteResourceList[SecurityCategory, SecurityCategoryWriteList], NameTransformerMixin
+):
+    _RESOURCE = SecurityCategory
+
+    def as_write(self) -> SecurityCategoryWriteList:
         """Returns a writing version of this security category list."""
-        return SecurityCategoryListWrite([s.as_write() for s in self], cognite_client=self._cognite_client)
-
-
-class SecurityCategoryListWrite(CogniteResourceList[SecurityCategory], NameTransformerMixin):
-    _RESOURCE = SecurityCategory
+        return SecurityCategoryWriteList([s.as_write() for s in self], cognite_client=self._cognite_client)
 
 
 class ProjectSpec(CogniteResponse):
