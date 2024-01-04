@@ -743,42 +743,22 @@ class WorkflowDefinition(WorkflowDefinitionUpsert):
         return output
 
 
-class WorkflowVersionCore(CogniteResource):
+class WorkflowVersionCore(CogniteResource, ABC):
     """
     This class represents a workflow version.
 
     Args:
         workflow_external_id (str): The external ID of the workflow.
         version (str): The version of the workflow.
-        workflow_definition (WorkflowDefinitionUpsert): The workflow definition of the workflow version.
-
     """
 
     def __init__(
         self,
         workflow_external_id: str,
         version: str,
-        workflow_definition: WorkflowDefinitionUpsert,
     ) -> None:
         self.workflow_external_id = workflow_external_id
         self.version = version
-        self.workflow_definition = workflow_definition
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
-        return cls(
-            workflow_external_id=resource["workflowExternalId"],
-            version=resource["version"],
-            workflow_definition=WorkflowDefinitionUpsert._load(workflow_definition),
-        )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
-            "version": self.version,
-            ("workflowDefinition" if camel_case else "workflow_definition"): self.workflow_definition.dump(camel_case),
-        }
 
     def as_id(self) -> WorkflowVersionId:
         return WorkflowVersionId(
@@ -798,17 +778,28 @@ class WorkflowVersionUpsert(WorkflowVersionCore):
 
     """
 
-    def __init__(
-        self,
-        workflow_external_id: str,
-        version: str,
-        workflow_definition: WorkflowDefinitionUpsert,
-    ) -> None:
+    def __init__(self, workflow_external_id: str, version: str, workflow_definition: WorkflowDefinitionUpsert) -> None:
         super().__init__(
             workflow_external_id=workflow_external_id,
             version=version,
-            workflow_definition=workflow_definition,
         )
+        self.workflow_definition = workflow_definition
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
+        return cls(
+            workflow_external_id=resource["workflowExternalId"],
+            version=resource["version"],
+            workflow_definition=WorkflowDefinitionUpsert._load(workflow_definition),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
+            "version": self.version,
+            ("workflowDefinition" if camel_case else "workflow_definition"): self.workflow_definition.dump(camel_case),
+        }
 
 
 class WorkflowVersion(WorkflowVersionCore):
@@ -821,6 +812,18 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow version.
     """
 
+    def __init__(
+        self,
+        workflow_external_id: str,
+        version: str,
+        workflow_definition: WorkflowDefinition,
+    ) -> None:
+        super().__init__(
+            workflow_external_id=workflow_external_id,
+            version=version,
+        )
+        self.workflow_definition = workflow_definition
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
@@ -829,6 +832,13 @@ class WorkflowVersion(WorkflowVersionCore):
             version=resource["version"],
             workflow_definition=WorkflowDefinition._load(workflow_definition),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
+            "version": self.version,
+            ("workflowDefinition" if camel_case else "workflow_definition"): self.workflow_definition.dump(camel_case),
+        }
 
     def as_write(self) -> WorkflowVersionUpsert:
         """Returns a WorkflowVersionUpsert object with the same data."""
