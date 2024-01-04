@@ -672,9 +672,8 @@ class WorkflowTaskExecution(CogniteObject):
         return output
 
 
-class WorkflowDefinitionUpsert(CogniteResource):
-    """
-    This class represents a workflow definition. This represents the write/update version of a workflow definiton.
+class WorkflowDefinitionCore(CogniteResource, ABC):
+    """This class represents a workflow definition.
 
     A workflow definition defines the tasks and order/dependencies of these tasks.
 
@@ -695,7 +694,7 @@ class WorkflowDefinitionUpsert(CogniteResource):
         self.description = description
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinitionUpsert:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
             description=resource.get("description"),
@@ -708,7 +707,46 @@ class WorkflowDefinitionUpsert(CogniteResource):
         return output
 
 
-class WorkflowDefinition(WorkflowDefinitionUpsert):
+class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
+    """
+    This class represents a workflow definition. This represents the write/update version of a workflow definiton.
+
+    A workflow definition defines the tasks and order/dependencies of these tasks.
+
+    Args:
+        tasks (list[WorkflowTask]): The tasks of the workflow definition.
+        description (str | None): The description of the workflow definition. Note that when updating a workflow definition
+                            description, it will always be overwritten also if it is set to None. Meaning if the
+                            wokflow definition already has a description, and you want to keep it, you need to provide
+                            the description when updating it.
+    """
+
+    def __init__(
+        self,
+        tasks: list[WorkflowTask],
+        description: str | None,
+    ) -> None:
+        super().__init__(tasks, description)
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinitionUpsert:
+        return cls(
+            tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
+            description=resource.get("description"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"tasks": [task.dump(camel_case) for task in self.tasks]}
+        if self.description:
+            output["description"] = self.description
+        return output
+
+    def as_write(self) -> WorkflowDefinitionUpsert:
+        """Returns this WorkflowDefinitionUpsert in its write format."""
+        return self
+
+
+class WorkflowDefinition(WorkflowDefinitionCore):
     """
     This class represents a workflow definition. This represents the read version of a workflow definiton.
 
@@ -741,6 +779,13 @@ class WorkflowDefinition(WorkflowDefinitionUpsert):
         output = super().dump(camel_case)
         output["hash"] = self.hash_
         return output
+
+    def as_write(self) -> WorkflowDefinitionUpsert:
+        """Returns this WorkflowDefinition in its write format."""
+        return WorkflowDefinitionUpsert(
+            tasks=self.tasks,
+            description=self.description,
+        )
 
 
 class WorkflowVersionCore(CogniteResource, ABC):
@@ -801,6 +846,10 @@ class WorkflowVersionUpsert(WorkflowVersionCore):
             ("workflowDefinition" if camel_case else "workflow_definition"): self.workflow_definition.dump(camel_case),
         }
 
+    def as_write(self) -> WorkflowVersionUpsert:
+        """Returns a WorkflowVersionUpsert object with the same data."""
+        return self
+
 
 class WorkflowVersion(WorkflowVersionCore):
     """
@@ -845,7 +894,7 @@ class WorkflowVersion(WorkflowVersionCore):
         return WorkflowVersionUpsert(
             workflow_external_id=self.workflow_external_id,
             version=self.version,
-            workflow_definition=self.workflow_definition,
+            workflow_definition=self.workflow_definition.as_write(),
         )
 
 
