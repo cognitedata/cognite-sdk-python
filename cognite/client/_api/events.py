@@ -481,11 +481,6 @@ class EventsAPI(APIClient):
                 >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
                 >>> res = c.events.create(events)
         """
-        if isinstance(event, Sequence):
-            event = [e.as_write() if isinstance(e, Event) else e for e in event]
-        elif isinstance(event, Event):
-            event = event.as_write()
-
         return self._create_multiple(list_cls=EventList, resource_cls=Event, items=event, input_resource_cls=EventWrite)
 
     def delete(

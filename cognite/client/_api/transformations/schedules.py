@@ -11,6 +11,7 @@ from cognite.client.data_classes import (
     TransformationScheduleWrite,
 )
 from cognite.client.data_classes.transformations import TransformationFilter
+from cognite.client.data_classes.transformations.schedules import TransformationScheduleCore
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 
@@ -63,11 +64,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> schedules = [TransformationScheduleWrite(id = 1, interval = "0 * * * *"), TransformationScheduleWrite(external_id="transformation2", interval = "5 * * * *"))]
                 >>> res = c.transformations.schedules.create(schedules)
         """
-        assert_type(schedule, "schedule", [TransformationSchedule, TransformationScheduleWrite, Sequence])
-        if isinstance(schedule, Sequence):
-            schedule = [sch.as_write() if isinstance(sch, TransformationSchedule) else sch for sch in schedule]
-        elif isinstance(schedule, TransformationSchedule):
-            schedule = schedule.as_write()
+        assert_type(schedule, "schedule", [TransformationScheduleCore, Sequence])
 
         return self._create_multiple(
             list_cls=TransformationScheduleList,

@@ -5,8 +5,15 @@ from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overlo
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
+from cognite.client.data_classes import (
+    Relationship,
+    RelationshipFilter,
+    RelationshipList,
+    RelationshipUpdate,
+    RelationshipWrite,
+)
 from cognite.client.data_classes.labels import LabelFilter
+from cognite.client.data_classes.relationships import RelationshipCore
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
@@ -323,11 +330,13 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def create(self, relationship: Relationship | Sequence[Relationship]) -> Relationship | RelationshipList:
+    def create(
+        self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
+    ) -> Relationship | RelationshipList:
         """`Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_
 
         Args:
-            relationship (Relationship | Sequence[Relationship]): Relationship or list of relationships to create.
+            relationship (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to create.
 
         Returns:
             Relationship | RelationshipList: Created relationship(s)
@@ -363,13 +372,18 @@ class RelationshipsAPI(APIClient):
                 ... )
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
-        assert_type(relationship, "relationship", [Relationship, Sequence])
+        assert_type(relationship, "relationship", [RelationshipCore, Sequence])
         if isinstance(relationship, Sequence):
             relationship = [r._validate_resource_types() for r in relationship]
         else:
             relationship = relationship._validate_resource_types()
 
-        return self._create_multiple(list_cls=RelationshipList, resource_cls=Relationship, items=relationship)
+        return self._create_multiple(
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            items=relationship,
+            input_resource_cls=RelationshipWrite,
+        )
 
     def update(
         self, item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]

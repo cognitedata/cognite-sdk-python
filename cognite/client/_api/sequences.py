@@ -21,6 +21,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.sequences import (
+    SequenceCore,
     SequenceProperty,
     SequenceSort,
     SequenceWrite,
@@ -502,11 +503,7 @@ class SequencesAPI(APIClient):
                 >>> seq2 = c.sequences.create(SequenceWrite(external_id="my_copied_sequence", columns=column_def))
 
         """
-        assert_type(sequence, "sequences", [typing.Sequence, Sequence, SequenceWrite])
-        if isinstance(sequence, typing.Sequence):
-            sequence = [seq.as_write() if isinstance(seq, Sequence) else seq for seq in sequence]
-        elif isinstance(sequence, Sequence):
-            sequence = sequence.as_write()
+        assert_type(sequence, "sequences", [typing.Sequence, SequenceCore])
 
         return self._create_multiple(
             list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite

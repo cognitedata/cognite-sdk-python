@@ -286,11 +286,6 @@ class GroupsAPI(APIClient):
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = c.iam.groups.create(my_group)
         """
-        if isinstance(group, Sequence):
-            group = [g.as_write() if isinstance(g, Group) else g for g in group]
-        elif isinstance(group, Group):
-            group = group.as_write()
-
         return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
 
     def delete(self, id: int | Sequence[int]) -> None:
@@ -367,10 +362,6 @@ class SecurityCategoriesAPI(APIClient):
                 >>> my_category = SecurityCategoryWrite(name="My Category")
                 >>> res = c.iam.security_categories.create(my_category)
         """
-        if isinstance(security_category, Sequence):
-            security_category = [sc.as_write() if isinstance(sc, SecurityCategory) else sc for sc in security_category]
-        elif isinstance(security_category, SecurityCategory):
-            security_category = security_category.as_write()
         return self._create_multiple(
             list_cls=SecurityCategoryList,
             resource_cls=SecurityCategory,

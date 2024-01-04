@@ -10,6 +10,7 @@ from cognite.client.data_classes import (
     LabelDefinitionList,
     LabelDefinitionWrite,
 )
+from cognite.client.data_classes.labels import LabelDefinitionCore
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_data_set_ids
 
@@ -110,12 +111,12 @@ class LabelsAPI(APIClient):
         ...
 
     def create(
-        self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition] | Sequence[LabelDefinitionWrite]
+        self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
         """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
 
         Args:
-            label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition] | Sequence[LabelDefinitionWrite]): The label definition(s) to create.
+            label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
 
         Returns:
             LabelDefinition | LabelDefinitionList: Created label definition(s)
@@ -134,13 +135,11 @@ class LabelsAPI(APIClient):
                 >>> res = c.labels.create(labels)
         """
         if isinstance(label, Sequence):
-            if len(label) > 0 and not isinstance(label[0], (LabelDefinition, LabelDefinitionWrite)):
+            if len(label) > 0 and not isinstance(label[0], LabelDefinitionCore):
                 raise TypeError("'label' must be of type LabelDefinitionWrite or Sequence[LabelDefinitionWrite]")
-            label = [lab.as_write() if isinstance(lab, LabelDefinition) else lab for lab in label]
-        elif not isinstance(label, (LabelDefinition, LabelDefinitionWrite)):
+        elif not isinstance(label, LabelDefinitionCore):
             raise TypeError("'label' must be of type LabelDefinitionWrite or Sequence[LabelDefinitionWrite]")
-        elif isinstance(label, LabelDefinition):
-            label = label.as_write()
+
         return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
     def delete(self, external_id: str | Sequence[str] | None = None) -> None:

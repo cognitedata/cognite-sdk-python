@@ -5,7 +5,7 @@ import typing
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -47,6 +47,8 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
         labels (list[Label] | None): A list of the labels associated with this resource item.
     """
 
+    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
+
     def __init__(
         self,
         external_id: str | None = None,
@@ -77,6 +79,16 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
             result["labels"] = [label.dump(camel_case) for label in self.labels]
         return result
 
+    def _validate_resource_types(self) -> Self:
+        rel = copy.copy(self)
+        self._validate_resource_type(rel.source_type)
+        self._validate_resource_type(rel.target_type)
+        return rel
+
+    def _validate_resource_type(self, resource_type: str | None) -> None:
+        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
+            raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
+
 
 class Relationship(RelationshipCore):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
@@ -99,8 +111,6 @@ class Relationship(RelationshipCore):
         last_updated_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
-
-    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
 
     def __init__(
         self,
@@ -169,21 +179,11 @@ class Relationship(RelationshipCore):
     ) -> tuple[str, RelationshipType]:
         if external_id is None and (resource is None or isinstance(resource, dict)):
             raise ValueError("Creating a relationship requires either an external id or a loaded resource")
-        external_id = str if isinstance(external_id, str) else (resource and resource.external_id)  # type: ignore[union-attr,assignment]
+        external_id = external_id if isinstance(external_id, str) else (resource and resource.external_id)  # type: ignore[union-attr,assignment]
         if external_id is None:
             raise ValueError("Missing external id on loaded resource")
         resource_type = resource_type or type(resource).__name__.lower()
         return external_id, cast(RelationshipType, resource_type)
-
-    def _validate_resource_types(self) -> Relationship:
-        rel = copy.copy(self)
-        self._validate_resource_type(rel.source_type)
-        self._validate_resource_type(rel.target_type)
-        return rel
-
-    def _validate_resource_type(self, resource_type: str | None) -> None:
-        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
-            raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Relationship:

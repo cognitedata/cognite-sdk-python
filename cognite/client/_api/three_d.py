@@ -306,11 +306,6 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> my_revision = ThreeDModelRevisionWrite(file_id=1)
                 >>> res = c.three_d.revisions.create(model_id=1, revision=my_revision)
         """
-        if isinstance(revision, Sequence):
-            revision = [rev.as_write() if isinstance(rev, ThreeDModelRevision) else rev for rev in revision]
-        elif isinstance(revision, ThreeDModelRevision):
-            revision = revision.as_write()
-
         return self._create_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
@@ -672,11 +667,6 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
-        if isinstance(asset_mapping, Sequence):
-            asset_mapping = [a.as_write() if isinstance(a, ThreeDAssetMapping) else a for a in asset_mapping]
-        elif isinstance(asset_mapping, ThreeDAssetMapping):
-            asset_mapping = asset_mapping.as_write()
-
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._create_multiple(
             list_cls=ThreeDAssetMappingList,

@@ -103,10 +103,6 @@ class DataSetsAPI(APIClient):
                 >>> data_sets = [DataSetWrite(name="1st level"), DataSetWrite(name="2nd level")]
                 >>> res = c.data_sets.create(data_sets)
         """
-        if isinstance(data_set, Sequence):
-            data_set = [d.as_write() if isinstance(d, DataSet) else d for d in data_set]
-        elif isinstance(data_set, DataSet):
-            data_set = data_set.as_write()
         return self._create_multiple(
             list_cls=DataSetList, resource_cls=DataSet, items=data_set, input_resource_cls=DataSetWrite
         )

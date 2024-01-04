@@ -511,11 +511,6 @@ class TimeSeriesAPI(APIClient):
                 >>> ts = c.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
         """
         api_subversion = self._get_subapiversion_item(time_series)
-        if isinstance(time_series, Sequence):
-            time_series = [ts.as_write() if isinstance(ts, TimeSeries) else ts for ts in time_series]
-        elif isinstance(time_series, TimeSeries):
-            time_series = time_series.as_write()
-
         return self._create_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,

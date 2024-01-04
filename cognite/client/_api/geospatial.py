@@ -90,11 +90,6 @@ class GeospatialAPI(APIClient):
                 ... ]
                 >>> res = c.geospatial.create_feature_types(feature_types)
         """
-        if isinstance(feature_type, Sequence):
-            feature_type = [f.as_write() if isinstance(f, FeatureType) else f for f in feature_type]
-        elif isinstance(feature_type, FeatureType):
-            feature_type = feature_type.as_write()
-
         return self._create_multiple(
             list_cls=FeatureTypeList,
             resource_cls=FeatureType,
@@ -310,10 +305,6 @@ class GeospatialAPI(APIClient):
         if isinstance(feature, (FeatureList, FeatureWriteList)):
             feature = list(feature)
 
-        if isinstance(feature, Sequence):
-            feature = [f.as_write() if isinstance(f, Feature) else f for f in feature]
-        elif isinstance(feature, Feature):
-            feature = feature.as_write()
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(

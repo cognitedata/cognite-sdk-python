@@ -19,6 +19,8 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipelineConfigWrite,
+    ExtractionPipelineCore,
+    ExtractionPipelineRunCore,
     ExtractionPipelineRunWrite,
     ExtractionPipelineWrite,
     StringFilter,
@@ -168,13 +170,7 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> extpipes = [ExtractionPipelineWrite(name="extPipe1",...), ExtractionPipelineWrite(name="extPipe2",...)]
                 >>> res = c.extraction_pipelines.create(extpipes)
         """
-        assert_type(extraction_pipeline, "extraction_pipeline", [ExtractionPipeline, ExtractionPipelineWrite, Sequence])
-        if isinstance(extraction_pipeline, Sequence):
-            extraction_pipeline = [
-                e.as_write() if isinstance(e, ExtractionPipeline) else e for e in extraction_pipeline
-            ]
-        elif isinstance(extraction_pipeline, ExtractionPipeline):
-            extraction_pipeline = extraction_pipeline.as_write()
+        assert_type(extraction_pipeline, "extraction_pipeline", [ExtractionPipelineCore, Sequence])
 
         return self._create_multiple(
             list_cls=ExtractionPipelineList,
@@ -351,11 +347,7 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> res = c.extraction_pipelines.runs.create(
                 ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
         """
-        assert_type(run, "run", [ExtractionPipelineRun, ExtractionPipelineRunWrite, Sequence])
-        if isinstance(run, Sequence):
-            run = [e.as_write() if isinstance(e, ExtractionPipelineRun) else e for e in run]
-        elif isinstance(run, ExtractionPipelineRun):
-            run = run.as_write()
+        assert_type(run, "run", [ExtractionPipelineRunCore, Sequence])
         return self._create_multiple(
             list_cls=ExtractionPipelineRunList,
             resource_cls=ExtractionPipelineRun,

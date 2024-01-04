@@ -37,10 +37,6 @@ class AnnotationsAPI(APIClient):
             Annotation | AnnotationList: Created annotation(s)
         """
         assert_type(annotations, "annotations", [AnnotationCore, Sequence])
-        if isinstance(annotations, Sequence):
-            annotations = [ann.as_write() if isinstance(ann, Annotation) else ann for ann in annotations]
-        elif isinstance(annotations, Annotation):
-            annotations = annotations.as_write()
 
         return self._create_multiple(
             list_cls=AnnotationList,
