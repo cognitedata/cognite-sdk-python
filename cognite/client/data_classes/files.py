@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Sequence, TypeVar, cast
 
 from cognite.client.data_classes._base import (
@@ -8,12 +9,13 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class FileMetadataCore(CogniteResource):
+class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
     """No description.
 
     Args:
@@ -255,6 +257,10 @@ class FileMetadataWrite(FileMetadataCore):
             security_categories=resource.get("securityCategories"),
         )
 
+    def as_write(self) -> FileMetadataWrite:
+        """Returns self."""
+        return self
+
 
 class FileMetadataFilter(CogniteFilter):
     """No description.
@@ -446,13 +452,13 @@ class FileMetadataUpdate(CogniteUpdate):
         ]
 
 
-class FileMetadataList(CogniteResourceList[FileMetadata], IdTransformerMixin):
+class FileMetadataWriteList(CogniteResourceList[FileMetadataWrite], ExternalIDTransformerMixin):
+    _RESOURCE = FileMetadataWrite
+
+
+class FileMetadataList(WriteableCogniteResourceList[FileMetadata, FileMetadataWriteList], IdTransformerMixin):
     _RESOURCE = FileMetadata
 
     def as_write(self) -> FileMetadataWriteList:
         """Returns this FileMetadataList in its writing format."""
         return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
-
-
-class FileMetadataWriteList(CogniteResourceList[FileMetadataWrite], ExternalIDTransformerMixin):
-    _RESOURCE = FileMetadataWrite

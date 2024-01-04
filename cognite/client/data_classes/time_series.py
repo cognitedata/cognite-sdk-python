@@ -12,7 +12,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
@@ -21,6 +20,8 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     from cognite.client.data_classes import Asset, Datapoint
 
 
-class TimeSeriesCore(CogniteResource, ABC):
+class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
     """No description.
 
     Args:
@@ -239,7 +240,9 @@ class TimeSeriesWrite(TimeSeriesCore):
         legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
     """
 
-    ...
+    def as_write(self) -> TimeSeriesWrite:
+        """Returns this TimeSeriesWrite object."""
+        return self
 
 
 class TimeSeriesFilter(CogniteFilter):
@@ -392,15 +395,15 @@ class TimeSeriesUpdate(CogniteUpdate):
         ]
 
 
-class TimeSeriesList(CogniteResourceList[TimeSeries], IdTransformerMixin):
+class TimeSeriesWriteList(CogniteResourceList[TimeSeriesWrite], ExternalIDTransformerMixin):
+    _RESOURCE = TimeSeriesWrite
+
+
+class TimeSeriesList(WriteableCogniteResourceList[TimeSeries, TimeSeriesWriteList], IdTransformerMixin):
     _RESOURCE = TimeSeries
 
     def as_write(self) -> TimeSeriesWriteList:
         return TimeSeriesWriteList([ts.as_write() for ts in self.data], cognite_client=self._cognite_client)
-
-
-class TimeSeriesWriteList(CogniteResourceList[TimeSeriesWrite], ExternalIDTransformerMixin):
-    _RESOURCE = TimeSeriesWrite
 
 
 class TimeSeriesProperty(EnumProperty):

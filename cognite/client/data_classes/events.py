@@ -12,7 +12,6 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
@@ -21,6 +20,8 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -47,7 +48,7 @@ class EndTimeFilter(CogniteObject):
         self.is_null = is_null
 
 
-class EventCore(CogniteResource, ABC):
+class EventCore(WriteableCogniteResource["EventWrite"], ABC):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
     Args:
@@ -201,6 +202,10 @@ class EventWrite(EventCore):
             asset_ids=asset_ids,
             source=source,
         )
+
+    def as_write(self) -> EventWrite:
+        """Returns self."""
+        return self
 
 
 class EventFilter(CogniteFilter):
@@ -366,15 +371,15 @@ class EventUpdate(CogniteUpdate):
         ]
 
 
-class EventList(CogniteResourceList[Event], IdTransformerMixin):
+class EventWriteList(CogniteResourceList[EventWrite], ExternalIDTransformerMixin):
+    _RESOURCE = EventWrite
+
+
+class EventList(WriteableCogniteResourceList[Event, EventWriteList], IdTransformerMixin):
     _RESOURCE = Event
 
     def as_write(self) -> EventWriteList:
         return EventWriteList([event.as_write() for event in self.data], cognite_client=self._cognite_client)
-
-
-class EventWriteList(CogniteResourceList[EventWrite], ExternalIDTransformerMixin):
-    _RESOURCE = EventWrite
 
 
 class EventProperty(EnumProperty):

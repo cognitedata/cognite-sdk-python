@@ -35,7 +35,6 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
@@ -44,6 +43,8 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -84,7 +85,7 @@ class AggregateResultItem(CogniteObject):
         self.path = path
 
 
-class AssetCore(CogniteResource, ABC):
+class AssetCore(WriteableCogniteResource["AssetWrite"], ABC):
     """A representation of a physical asset, for example, a factory or a piece of equipment. This
     is the parent class for the Asset and AssetWrite classes.
 
@@ -414,6 +415,10 @@ class AssetWrite(AssetCore):
             geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
         )
 
+    def as_write(self) -> AssetWrite:
+        """Returns self."""
+        return self
+
 
 class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
@@ -514,7 +519,11 @@ class AssetUpdate(CogniteUpdate):
         ]
 
 
-class AssetList(CogniteResourceList[Asset], IdTransformerMixin):
+class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin):
+    _RESOURCE = AssetWrite
+
+
+class AssetList(WriteableCogniteResourceList[Asset, AssetWriteList], IdTransformerMixin):
     _RESOURCE = Asset
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
@@ -580,10 +589,6 @@ class AssetList(CogniteResourceList[Asset], IdTransformerMixin):
         tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(ids, self._retrieve_chunk_size)]
         res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
         return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
-
-
-class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin):
-    _RESOURCE = AssetWrite
 
 
 class AssetFilter(CogniteFilter):

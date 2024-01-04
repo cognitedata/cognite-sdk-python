@@ -23,6 +23,8 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import at_least_one_is_not_none
@@ -184,7 +186,7 @@ class SequenceColumnWriteList(CogniteResourceList[SequenceColumnWrite], External
         return [c.value_type for c in self]
 
 
-class SequenceCore(CogniteResource, ABC):
+class SequenceCore(WriteableCogniteResource["SequenceWrite"], ABC):
     """Information about the sequence stored in the database
 
     Args:
@@ -393,6 +395,10 @@ class SequenceWrite(SequenceCore):
         dumped["columns"] = self.columns.dump(camel_case)
         return dumped
 
+    def as_write(self) -> SequenceWrite:
+        """Returns this SequenceWrite."""
+        return self
+
 
 class SequenceFilter(CogniteFilter):
     """No description.
@@ -576,16 +582,16 @@ class SequenceUpdate(CogniteUpdate):
         ]
 
 
-class SequenceList(CogniteResourceList[Sequence], IdTransformerMixin):
+class SequenceWriteList(CogniteResourceList[SequenceWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SequenceWrite
+
+
+class SequenceList(WriteableCogniteResourceList[Sequence, SequenceWriteList], IdTransformerMixin):
     _RESOURCE = Sequence
 
     def as_write(self) -> SequenceWriteList:
         """Returns a writeable version of this sequence list."""
         return SequenceWriteList([item.as_write() for item in self], cognite_client=self._cognite_client)
-
-
-class SequenceWriteList(CogniteResourceList[SequenceWrite], ExternalIDTransformerMixin):
-    _RESOURCE = SequenceWrite
 
 
 RowValues: TypeAlias = Union[int, str, float, None]
