@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.8.10] - 2024-01-04
+### Changed
+- When using `OidcCredentials` to create a transformation, `cdf_project_name` is no longer optional as required
+  by the API.
+
 ## [7.8.9] - 2024-01-04
 ### Fixed
 - Pyodide-users of the SDK can now create Transformations with non-nonce credentials without a `pyodide.JsException`
