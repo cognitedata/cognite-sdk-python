@@ -290,8 +290,8 @@ class OidcCredentials:
         client_secret (str): Your application's client secret
         scopes (str | list[str]): A list of scopes or a comma-separated string (for backwards compatibility).
         token_uri (str): OAuth token url
+        cdf_project_name (str): Name of CDF project
         audience (str | None): Audience (optional)
-        cdf_project_name (str | None): Name of CDF project (optional)
     """
 
     def __init__(
@@ -300,8 +300,8 @@ class OidcCredentials:
         client_secret: str,
         scopes: str | list[str],
         token_uri: str,
+        cdf_project_name: str,
         audience: str | None = None,
-        cdf_project_name: str | None = None,
     ) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
@@ -355,8 +355,8 @@ class OidcCredentials:
             client_secret=data["clientSecret"],
             scopes=data["scopes"],
             token_uri=data["tokenUri"],
+            cdf_project_name=data["cdfProjectName"],
             audience=data.get("audience"),
-            cdf_project_name=data.get("cdfProjectName"),
         )
 
 
