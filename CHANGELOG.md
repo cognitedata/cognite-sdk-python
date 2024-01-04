@@ -28,7 +28,7 @@ Changes are grouped as follows
   using an existing resource as a template.
 - Missing overloading of the `.create` methods on `client.iam.security_categories.create`, `client.iam.groups.create`,
   `client.labels.create`, `client.three_d.models.create`, `client.three_d.revisions.create`, `client.three_d.asset_mappings.create`,
-  `client.transformations.create`, and `client.transformations.schedules.create`. 
+  `client.transformations.create`, `client.transformations.schedules.create`, and `client.relationships.create`.
 ### Changed
 - The class `DatapointSubscriptionCreate` has been renamed to `DatapointSubscriptionWrite` to be consistent with the other write classes.
   This is not a breaking change, as the old class is still available for backwards compatibility, but will be removed in the next major version.
