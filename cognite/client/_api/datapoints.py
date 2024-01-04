@@ -1656,7 +1656,7 @@ class RetrieveLatestDpsFetcher:
         elif self.target_unit_system is not None:
             target_dict["targetUnitSystem"] = self.target_unit_system
 
-        chunk_with_target = [(dct | target_dict) for dct in chunk]
+        chunk_with_target = [{**dct, **target_dict} for dct in chunk]
 
         args = {"items": chunk_with_target, "ignoreUnknownIds": self.ignore_unknown_ids}
 
