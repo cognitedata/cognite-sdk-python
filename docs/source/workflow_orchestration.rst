@@ -61,6 +61,10 @@ Trigger Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.trigger
 
+Cancel Workflow Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.cancel
+
 Workflow Tasks
 ------------------
 Update Status of Async Task

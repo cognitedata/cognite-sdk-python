@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.9.0] - 2024-01-03
+## [7.9.0] - 2024-01-04
 ### Added
 - All Cognite resources now have write-version. For example, we have `Asset` and `AssetWrite`, `Event` and `EventWrite`, and so on.
   The new write class reflects the required/optional fields in the API, and is now recommended when creating resources. In addition,
@@ -34,6 +34,19 @@ Changes are grouped as follows
   This is not a breaking change, as the old class is still available for backwards compatibility, but will be removed in the next major version.
 ### Fixed
 - The `node.type` was not set when calling `.as_apply()` or `.as_write()` on a `Node` or `NodeList`. This is now fixed.
+
+## [7.8.9] - 2024-01-04
+### Fixed
+- Pyodide-users of the SDK can now create Transformations with non-nonce credentials without a `pyodide.JsException`
+  exception being raised.
+
+## [7.8.8] - 2024-01-03
+### Added
+- Support for `workflows.cancel`.
+
+## [7.8.7] - 2024-01-03
+### Fixed
+- Added back `InstancesApply` that was removed in 7.8.6.
 
 ## [7.8.6] - 2023-12-27
 ### Improved

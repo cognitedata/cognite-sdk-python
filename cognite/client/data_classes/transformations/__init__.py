@@ -27,7 +27,7 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, PyodideJsException
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -219,6 +219,10 @@ class TransformationCore(CogniteResource, ABC):
                     "\nProvided OIDC credentials will be passed on to the transformation service."
                 )
                 warnings.warn(msg, UserWarning)
+            except PyodideJsException:
+                # CORS policy blocks call to get token with the provided credentials (url not Fusion,
+                # but e.g. Microsoft), so we must pass the credentials on to the backend
+                pass
         return ret
 
 
