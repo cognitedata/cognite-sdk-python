@@ -4,7 +4,13 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, List, TypeVar, cast
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, ExternalIDTransformerMixin
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    ExternalIDTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
+)
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case, to_snake_case
 
@@ -16,7 +22,7 @@ if TYPE_CHECKING:
 RESERVED_PROPERTIES = {"externalId", "dataSetId", "assetIds", "createdTime", "lastUpdatedTime"}
 
 
-class FeatureTypeCore(CogniteResource):
+class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
     """A representation of a feature type in the geospatial API.
 
     Args:
@@ -132,18 +138,22 @@ class FeatureTypeWrite(FeatureTypeCore):
             search_spec=resource.get("searchSpec"),
         )
 
+    def as_write(self) -> FeatureTypeWrite:
+        """Returns this FeatureTypeWrite instance."""
+        return self
 
-class FeatureTypeList(CogniteResourceList[FeatureType]):
+
+class FeatureTypeWriteList(CogniteResourceList[FeatureTypeWrite], ExternalIDTransformerMixin):
+    _RESOURCE = FeatureTypeWrite
+
+
+class FeatureTypeList(WriteableCogniteResourceList[FeatureType, FeatureTypeWriteList]):
     _RESOURCE = FeatureType
 
     def as_write(self) -> FeatureTypeWriteList:
         return FeatureTypeWriteList(
             [feature_type.as_write() for feature_type in self], cognite_client=self._cognite_client
         )
-
-
-class FeatureTypeWriteList(CogniteResourceList[FeatureTypeWrite], ExternalIDTransformerMixin):
-    _RESOURCE = FeatureTypeWrite
 
 
 class PropertyAndSearchSpec:
@@ -171,7 +181,7 @@ class FeatureTypePatch:
     search_spec_patches: Patches | None = None
 
 
-class FeatureCore(CogniteResource, ABC):
+class FeatureCore(WriteableCogniteResource["FeatureWrite"], ABC):
     """A representation of a feature in the geospatial API.
 
     Args:
@@ -261,6 +271,10 @@ class FeatureWrite(FeatureCore):
             **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
         )
 
+    def as_write(self) -> FeatureWrite:
+        """Returns this FeatureWrite instance."""
+        return self
+
 
 def _is_geometry_type(property_type: str) -> bool:
     return property_type in {
@@ -303,7 +317,7 @@ def _to_feature_property_name(property_name: str) -> str:
     return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
-class FeatureListCore(CogniteResourceList[T_Feature], ExternalIDTransformerMixin):
+class FeatureListCore(WriteableCogniteResourceList[T_Feature, "FeatureWriteList"], ExternalIDTransformerMixin):
     def to_geopandas(self, geometry: str, camel_case: bool = False) -> geopandas.GeoDataFrame:
         """Convert the instance into a GeoPandas GeoDataFrame.
 
@@ -404,15 +418,18 @@ class FeatureListCore(CogniteResourceList[T_Feature], ExternalIDTransformerMixin
         return FeatureList(features)
 
 
+class FeatureWriteList(FeatureListCore[FeatureWrite]):
+    _RESOURCE = FeatureWrite
+
+    def as_write(self) -> FeatureWriteList:
+        return self
+
+
 class FeatureList(FeatureListCore[Feature]):
     _RESOURCE = Feature
 
     def as_write(self) -> FeatureWriteList:
         return FeatureWriteList([feature.as_write() for feature in self], cognite_client=self._cognite_client)
-
-
-class FeatureWriteList(FeatureListCore[FeatureWrite]):
-    _RESOURCE = FeatureWrite
 
 
 def nan_to_none(column_value: Any) -> Any:
@@ -442,7 +459,7 @@ class FeatureAggregateList(CogniteResourceList[FeatureAggregate]):
     _RESOURCE = FeatureAggregate
 
 
-class CoordinateReferenceSystemCore(CogniteResource):
+class CoordinateReferenceSystemCore(WriteableCogniteResource["CoordinateReferenceSystemWrite"], ABC):
     """A representation of a feature in the geospatial API.
 
     Args:
@@ -539,8 +556,18 @@ class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
             proj_string=resource["projString"],
         )
 
+    def as_write(self) -> CoordinateReferenceSystemWrite:
+        """Returns this CoordinateReferenceSystemWrite instance."""
+        return self
 
-class CoordinateReferenceSystemList(CogniteResourceList[CoordinateReferenceSystem]):
+
+class CoordinateReferenceSystemWriteList(CogniteResourceList[CoordinateReferenceSystemWrite]):
+    _RESOURCE = CoordinateReferenceSystemWrite
+
+
+class CoordinateReferenceSystemList(
+    WriteableCogniteResourceList[CoordinateReferenceSystem, CoordinateReferenceSystemWriteList]
+):
     _RESOURCE = CoordinateReferenceSystem
 
     def as_write(self) -> CoordinateReferenceSystemWriteList:
@@ -548,10 +575,6 @@ class CoordinateReferenceSystemList(CogniteResourceList[CoordinateReferenceSyste
             [coordinate_reference_system.as_write() for coordinate_reference_system in self],
             cognite_client=self._cognite_client,
         )
-
-
-class CoordinateReferenceSystemWriteList(CogniteResourceList[CoordinateReferenceSystemWrite]):
-    _RESOURCE = CoordinateReferenceSystemWrite
 
 
 class OrderSpec:
