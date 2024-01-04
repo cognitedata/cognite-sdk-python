@@ -9,10 +9,11 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.utils._text import to_snake_case
 
@@ -40,7 +41,7 @@ AnnotationType: TypeAlias = Literal[
 ]
 
 
-class AnnotationCore(CogniteResource, ABC):
+class AnnotationCore(WriteableCogniteResource["AnnotationWrite"], ABC):
     """Representation of an annotation in CDF.
 
     Args:
@@ -218,6 +219,10 @@ class AnnotationWrite(AnnotationCore):
             annotated_resource_id=resource["annotatedResourceId"],
         )
 
+    def as_write(self) -> AnnotationWrite:
+        """Returns this AnnotationWrite."""
+        return self
+
 
 class AnnotationReverseLookupFilter(CogniteFilter):
     """Filter on annotations with various criteria
@@ -355,13 +360,13 @@ class AnnotationUpdate(CogniteUpdate):
         ]
 
 
-class AnnotationList(CogniteResourceList[Annotation]):
+class AnnotationWriteList(CogniteResourceList[AnnotationWrite]):
+    _RESOURCE = AnnotationWrite
+
+
+class AnnotationList(WriteableCogniteResourceList[Annotation, AnnotationWriteList]):
     _RESOURCE = Annotation
 
     def as_write(self) -> AnnotationWriteList:
         """Returns this AnnotationList in its writing version."""
         return AnnotationWriteList([ann.as_write() for ann in self.data], cognite_client=self._cognite_client)
-
-
-class AnnotationWriteList(CogniteResourceList[AnnotationWrite]):
-    _RESOURCE = AnnotationWrite
