@@ -4,7 +4,12 @@ from abc import ABC
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, NameTransformerMixin
+from cognite.client.data_classes._base import (
+    CogniteResourceList,
+    NameTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
+)
 from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
@@ -13,7 +18,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class RowCore(CogniteResource, ABC):
+class RowCore(WriteableCogniteResource["RowWrite"], ABC):
     """No description.
 
     Args:
@@ -91,8 +96,12 @@ class RowWrite(RowCore):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> RowWrite:
         return cls(resource["key"], resource["columns"])
 
+    def as_write(self) -> RowWrite:
+        """Returns this RowWrite instance."""
+        return self
 
-class RowListCore(CogniteResourceList[T_Row], ABC):
+
+class RowListCore(WriteableCogniteResourceList[T_Row, "RowWriteList"], ABC):
     def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
@@ -101,14 +110,6 @@ class RowListCore(CogniteResourceList[T_Row], ABC):
         """
         pd = local_import("pandas")
         return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
-
-
-class RowList(RowListCore[Row]):
-    _RESOURCE = Row
-
-    def as_write(self) -> RowWriteList:
-        """Returns this RowList as a RowWriteList"""
-        return RowWriteList([row.as_write() for row in self.data])
 
 
 class RowWriteList(RowListCore[RowWrite]):
@@ -123,8 +124,19 @@ class RowWriteList(RowListCore[RowWrite]):
         pd = local_import("pandas")
         return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
 
+    def as_write(self) -> RowWriteList:
+        return self
 
-class TableCore(CogniteResource):
+
+class RowList(RowListCore[Row]):
+    _RESOURCE = Row
+
+    def as_write(self) -> RowWriteList:
+        """Returns this RowList as a RowWriteList"""
+        return RowWriteList([row.as_write() for row in self.data])
+
+
+class TableCore(WriteableCogniteResource["TableWrite"]):
     """A NoSQL database table to store customer data
 
     Args:
@@ -212,8 +224,16 @@ class TableWrite(TableCore):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TableWrite:
         return cls(resource["name"])
 
+    def as_write(self) -> TableWrite:
+        """Returns this TableWrite instance."""
+        return self
 
-class TableList(CogniteResourceList[Table], NameTransformerMixin):
+
+class TableWriteList(CogniteResourceList[TableWrite], NameTransformerMixin):
+    _RESOURCE = TableWrite
+
+
+class TableList(WriteableCogniteResourceList[Table, TableWriteList], NameTransformerMixin):
     _RESOURCE = Table
 
     def as_write(self) -> TableWriteList:
@@ -221,11 +241,7 @@ class TableList(CogniteResourceList[Table], NameTransformerMixin):
         return TableWriteList([table.as_write() for table in self.data])
 
 
-class TableWriteList(CogniteResourceList[TableWrite], NameTransformerMixin):
-    _RESOURCE = TableWrite
-
-
-class DatabaseCore(CogniteResource, ABC):
+class DatabaseCore(WriteableCogniteResource["DatabaseWrite"], ABC):
     """A NoSQL database to store customer data.
 
     Args:
@@ -292,14 +308,18 @@ class DatabaseWrite(DatabaseCore):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> DatabaseWrite:
         return cls(resource["name"])
 
+    def as_write(self) -> DatabaseWrite:
+        """Returns this DatabaseWrite instance."""
+        return self
 
-class DatabaseList(CogniteResourceList[Database], NameTransformerMixin):
+
+class DatabaseWriteList(CogniteResourceList[DatabaseWrite], NameTransformerMixin):
+    _RESOURCE = DatabaseWrite
+
+
+class DatabaseList(WriteableCogniteResourceList[Database, DatabaseWriteList], NameTransformerMixin):
     _RESOURCE = Database
 
     def as_write(self) -> DatabaseWriteList:
         """Returns this DatabaseList as a DatabaseWriteList"""
         return DatabaseWriteList([db.as_write() for db in self.data])
-
-
-class DatabaseWriteList(CogniteResourceList[DatabaseWrite], NameTransformerMixin):
-    _RESOURCE = DatabaseWrite

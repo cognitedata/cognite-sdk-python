@@ -15,6 +15,8 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -48,7 +50,7 @@ class ExtractionPipelineContact(CogniteObject):
         )
 
 
-class ExtractionPipelineCore(CogniteResource, ABC):
+class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"], ABC):
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
 
     Args:
@@ -263,6 +265,10 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
             created_by=resource.get("createdBy"),
         )
 
+    def as_write(self) -> ExtractionPipelineWrite:
+        """Returns this ExtractionPipelineWrite instance."""
+        return self
+
 
 class ExtractionPipelineUpdate(CogniteUpdate):
     """Changes applied to an extraction pipeline
@@ -354,18 +360,20 @@ class ExtractionPipelineUpdate(CogniteUpdate):
         ]
 
 
-class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline], IdTransformerMixin):
+class ExtractionPipelineWriteList(CogniteResourceList[ExtractionPipelineWrite], ExternalIDTransformerMixin):
+    _RESOURCE = ExtractionPipelineWrite
+
+
+class ExtractionPipelineList(
+    WriteableCogniteResourceList[ExtractionPipeline, ExtractionPipelineWriteList], IdTransformerMixin
+):
     _RESOURCE = ExtractionPipeline
 
     def as_write(self) -> ExtractionPipelineWriteList:
         return ExtractionPipelineWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
 
 
-class ExtractionPipelineWriteList(CogniteResourceList[ExtractionPipelineWrite], ExternalIDTransformerMixin):
-    _RESOURCE = ExtractionPipelineWrite
-
-
-class ExtractionPipelineRunCore(CogniteResource, ABC):
+class ExtractionPipelineRunCore(WriteableCogniteResource["ExtractionPipelineRunWrite"], ABC):
     """A representation of an extraction pipeline run.
 
     Args:
@@ -500,16 +508,20 @@ class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
             dct["external_id"] = dct.pop("extpipe_external_id", None)
         return dct
 
-
-class ExtractionPipelineRunList(CogniteResourceList[ExtractionPipelineRun]):
-    _RESOURCE = ExtractionPipelineRun
-
-    def as_write(self) -> ExtractionPipelineRunWriteList:
-        return ExtractionPipelineRunWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+    def as_write(self) -> ExtractionPipelineRunWrite:
+        """Returns this ExtractionPipelineRunWrite instance."""
+        return self
 
 
 class ExtractionPipelineRunWriteList(CogniteResourceList[ExtractionPipelineRunWrite]):
     _RESOURCE = ExtractionPipelineRunWrite
+
+
+class ExtractionPipelineRunList(WriteableCogniteResourceList[ExtractionPipelineRun, ExtractionPipelineRunWriteList]):
+    _RESOURCE = ExtractionPipelineRun
+
+    def as_write(self) -> ExtractionPipelineRunWriteList:
+        return ExtractionPipelineRunWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
 
 
 class StringFilter(CogniteFilter):
@@ -546,32 +558,6 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         self.created_time = created_time
 
 
-class ExtractionPipelineConfigRevisionCore(CogniteResource):
-    """An extraction pipeline config revision
-
-    Args:
-        external_id (str | None): The external ID of the associated extraction pipeline.
-        revision (int | None): The revision number of this config as a positive integer.
-        description (str | None): Short description of this configuration revision.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        external_id: str | None = None,
-        revision: int | None = None,
-        description: str | None = None,
-        created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
-    ) -> None:
-        self.external_id = external_id
-        self.revision = revision
-        self.description = description
-        self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-
 class ExtractionPipelineConfigRevision(CogniteResource):
     """An extraction pipeline config revision
 
@@ -598,7 +584,27 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
+class ExtractionPipelineConfigCore(WriteableCogniteResource["ExtractionPipelineConfigWrite"], ABC):
+    """An extraction pipeline config
+
+    Args:
+        external_id (str | None): The external ID of the associated extraction pipeline.
+        config (str | None): Contents of this configuration revision.
+        description (str | None): Short description of this configuration revision.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        config: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.config = config
+        self.description = description
+
+
+class ExtractionPipelineConfig(ExtractionPipelineConfigCore):
     """An extraction pipeline config
 
     Args:
@@ -621,12 +627,12 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
     ) -> None:
         super().__init__(
             external_id=external_id,
-            revision=revision,
+            config=config,
             description=description,
-            created_time=created_time,
-            cognite_client=cognite_client,
         )
-        self.config = config
+        self.revision = revision
+        self.created_time = created_time
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> ExtractionPipelineConfigWrite:
         """Returns this ExtractionPipelineConfig as a ExtractionPipelineConfigWrite"""
@@ -639,7 +645,7 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
         )
 
 
-class ExtractionPipelineConfigWrite(CogniteResource):
+class ExtractionPipelineConfigWrite(ExtractionPipelineConfigCore):
     """An extraction pipeline config
 
     Args:
@@ -654,9 +660,7 @@ class ExtractionPipelineConfigWrite(CogniteResource):
         config: str | None = None,
         description: str | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.config = config
-        self.description = description
+        super().__init__(external_id, config, description)
 
     @classmethod
     def _load(
@@ -668,17 +672,23 @@ class ExtractionPipelineConfigWrite(CogniteResource):
             description=resource.get("description"),
         )
 
+    def as_write(self) -> ExtractionPipelineConfigWrite:
+        """Returns this ExtractionPipelineConfigWrite instance."""
+        return self
+
 
 class ExtractionPipelineConfigRevisionList(CogniteResourceList[ExtractionPipelineConfigRevision]):
     _RESOURCE = ExtractionPipelineConfigRevision
 
 
-class ExtractionPipelineConfigList(CogniteResourceList[ExtractionPipelineConfig]):
+class ExtractionPipelineConfigWriteList(CogniteResourceList[ExtractionPipelineConfigWrite]):
+    _RESOURCE = ExtractionPipelineConfigWrite
+
+
+class ExtractionPipelineConfigList(
+    WriteableCogniteResourceList[ExtractionPipelineConfig, ExtractionPipelineConfigWriteList]
+):
     _RESOURCE = ExtractionPipelineConfig
 
     def as_write(self) -> ExtractionPipelineConfigWriteList:
         return ExtractionPipelineConfigWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
-
-
-class ExtractionPipelineConfigWriteList(CogniteResourceList[ExtractionPipelineConfigWrite]):
-    _RESOURCE = ExtractionPipelineConfigWrite
