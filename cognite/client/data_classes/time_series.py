@@ -222,9 +222,7 @@ class TimeSeries(TimeSeriesCore):
 
 
 class TimeSeriesWrite(TimeSeriesCore):
-    """This represents a sequence of data points. The TimeSeries object is the metadata about
-    the datapoints, and the Datapoint object is the actual data points. This is the writing version
-    of TimesSeries, which is used when writing to CDF.
+    """This is the write version of TimeSeries, which is used when writing to CDF.
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
@@ -241,35 +239,7 @@ class TimeSeriesWrite(TimeSeriesCore):
         legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
     """
 
-    def __init__(
-        self,
-        external_id: str | None = None,
-        name: str | None = None,
-        is_string: bool | None = None,
-        metadata: dict[str, str] | None = None,
-        unit: str | None = None,
-        unit_external_id: str | None = None,
-        asset_id: int | None = None,
-        is_step: bool | None = None,
-        description: str | None = None,
-        security_categories: Sequence[int] | None = None,
-        data_set_id: int | None = None,
-        legacy_name: str | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            is_string=is_string,
-            metadata=metadata,
-            unit=unit,
-            unit_external_id=unit_external_id,
-            asset_id=asset_id,
-            is_step=is_step,
-            description=description,
-            security_categories=security_categories,
-            data_set_id=data_set_id,
-            legacy_name=legacy_name,
-        )
+    ...
 
 
 class TimeSeriesFilter(CogniteFilter):

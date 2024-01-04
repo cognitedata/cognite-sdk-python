@@ -57,7 +57,7 @@ class ExtractionPipelineCore(CogniteResource, ABC):
         description (str | None): The description of the extraction pipeline.
         data_set_id (int | None): The id of the dataset this extraction pipeline related with.
         raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
-        schedule (str | None): None/On trigger/Continuous/cron regex.
+        schedule (str | None): One of None/On trigger/Continuous/cron regex.
         contacts (list[ExtractionPipelineContact] | None): list of contacts
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): Source text value for extraction pipeline.
@@ -114,7 +114,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         last_failure (int | None): Milliseconds value of last failure status.
         last_message (str | None): Message of last failure.
         last_seen (int | None): Milliseconds value of last seen status.
-        schedule (str | None): None/On trigger/Continuous/cron regex.
+        schedule (str | None): One of None/On trigger/Continuous/cron regex.
         contacts (list[ExtractionPipelineContact] | None): list of contacts
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): Source text value for extraction pipeline.
@@ -211,7 +211,7 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
         data_set_id (int): The id of the dataset this extraction pipeline related with.
         description (str | None): The description of the extraction pipeline.
         raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
-        schedule (str | None): None/On trigger/Continuous/cron regex.
+        schedule (str | None): One of None/On trigger/Continuous/cron regex.
         contacts (list[ExtractionPipelineContact] | None): list of contacts
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): Source text value for extraction pipeline.

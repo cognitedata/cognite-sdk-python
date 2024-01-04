@@ -168,7 +168,7 @@ class Relationship(RelationshipCore):
     ) -> tuple[str, RelationshipType]:
         if external_id is None and (resource is None or isinstance(resource, dict)):
             raise ValueError("Creating a relationship requires either an external id or a loaded resource")
-        external_id = external_id or resource.external_id  # type: ignore[union-attr]
+        external_id = str if isinstance(external_id, str) else (resource and resource.external_id)  # type: ignore[union-attr,assignment]
         if external_id is None:
             raise ValueError("Missing external id on loaded resource")
         resource_type = resource_type or type(resource).__name__.lower()

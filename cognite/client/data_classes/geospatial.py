@@ -17,7 +17,7 @@ RESERVED_PROPERTIES = {"externalId", "dataSetId", "assetIds", "createdTime", "la
 
 
 class FeatureTypeCore(CogniteResource):
-    """A representation of a feature type in the geospatial api.
+    """A representation of a feature type in the geospatial API.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
@@ -40,7 +40,7 @@ class FeatureTypeCore(CogniteResource):
 
 
 class FeatureType(FeatureTypeCore):
-    """A representation of a feature type in the geospatial api.
+    """A representation of a feature type in the geospatial API.
     This is the reading version of the FeatureType class, it is used when retrieving feature types from the api.
 
     Args:
@@ -99,7 +99,7 @@ class FeatureType(FeatureTypeCore):
 
 
 class FeatureTypeWrite(FeatureTypeCore):
-    """A representation of a feature type in the geospatial api.
+    """A representation of a feature type in the geospatial API.
     This is the writing version of the FeatureType class, it is used when creating feature types in the api.
 
     Args:
@@ -172,7 +172,7 @@ class FeatureTypePatch:
 
 
 class FeatureCore(CogniteResource, ABC):
-    """A representation of a feature in the geospatial api.
+    """A representation of a feature in the geospatial API.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
@@ -204,7 +204,7 @@ T_Feature = TypeVar("T_Feature", bound=FeatureCore)
 
 
 class Feature(FeatureCore):
-    """A representation of a feature in the geospatial api.
+    """A representation of a feature in the geospatial API.
     This is the reading version of the Feature class, it is used when retrieving features from the api.
 
     Args:
@@ -243,7 +243,7 @@ class Feature(FeatureCore):
 
 
 class FeatureWrite(FeatureCore):
-    """A representation of a feature in the geospatial api.
+    """A representation of a feature in the geospatial API.
     This is the writing version of the Feature class, it is used when creating features in the api.
 
     Args:
@@ -424,7 +424,7 @@ def nan_to_none(column_value: Any) -> Any:
 
 
 class FeatureAggregate(CogniteResource):
-    """A result of aggregating features in geospatial api."""
+    """A result of aggregating features in geospatial API."""
 
     def __init__(self, cognite_client: CogniteClient | None = None) -> None:
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -443,7 +443,7 @@ class FeatureAggregateList(CogniteResourceList[FeatureAggregate]):
 
 
 class CoordinateReferenceSystemCore(CogniteResource):
-    """A representation of a feature in the geospatial api.
+    """A representation of a feature in the geospatial API.
 
     Args:
         srid (int | None): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
@@ -463,7 +463,7 @@ class CoordinateReferenceSystemCore(CogniteResource):
 
 
 class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
-    """A representation of a feature in the geospatial api.
+    """A representation of a feature in the geospatial API.
     This is the reading version of the CoordinateReferenceSystem class, it is used when retrieving from the CDF.
 
     Args:
@@ -509,7 +509,7 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
 
 
 class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
-    """A representation of a feature in the geospatial api.
+    """A representation of a feature in the geospatial API.
 
     Args:
         srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system

@@ -264,7 +264,7 @@ class ThreeDModelRevisionCore(CogniteResource, ABC):
 
 class ThreeDModelRevision(ThreeDModelRevisionCore):
     """This class represents a 3D model revision in Cognite Data Fusion.
-    This is the reading version of ThreeDModelRevision, which is used when retrieving 3D model revisions.
+    This is the read version of ThreeDModelRevision, which is used when retrieving 3D model revisions.
 
     Args:
         id (int | None): The ID of the revision.
@@ -337,7 +337,7 @@ class ThreeDModelRevisionWrite(ThreeDModelRevisionCore):
     This is the writing version of ThreeDModelRevision, which is used when creating 3D model revisions.
 
     Args:
-        file_id (int): TThe file id to a file uploaded to Cognite's Files API. Can only be set on revision creation, and can never be updated.
+        file_id (int): The file id to a file uploaded to Cognite's Files API. Can only be set on revision creation, and can never be updated.
         published (bool): True if the revision is marked as published.
         rotation (list[float] | None): No description.
         scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
