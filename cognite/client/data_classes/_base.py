@@ -231,7 +231,17 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
         return notebook_display_with_fallback(self)
 
 
+T_WriteClass = TypeVar("T_WriteClass", bound=CogniteResource)
+
+
+class WriteableCogniteResource(CogniteResource, Generic[T_WriteClass]):
+    @abstractmethod
+    def as_write(self) -> T_WriteClass:
+        raise NotImplementedError()
+
+
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
+T_WritableCogniteResource = TypeVar("T_WritableCogniteResource", bound=WriteableCogniteResource)
 
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
@@ -386,6 +396,14 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
+
+T_WriteList = TypeVar("T_WriteList", bound=CogniteResourceList)
+
+
+class WriteableCogniteResourceList(CogniteResourceList, Generic[T_CogniteResource, T_WriteList]):
+    @abstractmethod
+    def as_write(self) -> T_WriteList:
+        raise NotImplementedError()
 
 
 @dataclass
