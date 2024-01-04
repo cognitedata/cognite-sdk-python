@@ -19,6 +19,8 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
@@ -44,7 +46,7 @@ _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
 )
 
 
-class DatapointSubscriptionCore(CogniteResource, ABC):
+class DatapointSubscriptionCore(WriteableCogniteResource["DataPointSubscriptionWrite"], ABC):
     def __init__(
         self,
         external_id: ExternalId,
@@ -171,6 +173,10 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
         )
+
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription instance"""
+        return self
 
 
 # Todo: Remove this in next major release
@@ -396,7 +402,13 @@ class _DatapointSubscriptionBatchWithPartitions:
         return resource
 
 
-class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription], ExternalIDTransformerMixin):
+class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = DataPointSubscriptionWrite
+
+
+class DatapointSubscriptionList(
+    WriteableCogniteResourceList[DatapointSubscription, DatapointSubscriptionWriteList], ExternalIDTransformerMixin
+):
     _RESOURCE = DatapointSubscription
 
     def as_write(self) -> DatapointSubscriptionWriteList:
@@ -404,10 +416,6 @@ class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription], Exte
         return DatapointSubscriptionWriteList(
             [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
         )
-
-
-class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWrite], ExternalIDTransformerMixin):
-    _RESOURCE = DataPointSubscriptionWrite
 
 
 class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):

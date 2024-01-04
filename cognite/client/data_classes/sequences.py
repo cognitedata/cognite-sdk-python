@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 ValueType: TypeAlias = Literal["String", "Double", "Long"]
 
 
-class SequenceColumnCore(CogniteResource, ABC):
+class SequenceColumnCore(WriteableCogniteResource["SequenceColumnWrite"], ABC):
     """This represents a column in a sequence.
 
     Args:
@@ -154,6 +154,10 @@ class SequenceColumnWrite(SequenceColumnCore):
             value_type=resource.get("valueType", "Double"),
             metadata=resource.get("metadata"),
         )
+
+    def as_write(self) -> SequenceColumnWrite:
+        """Returns this SequenceColumnWrite."""
+        return self
 
 
 class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransformerMixin):
