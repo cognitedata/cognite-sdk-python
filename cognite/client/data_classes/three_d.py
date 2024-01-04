@@ -17,6 +17,8 @@ from cognite.client.data_classes._base import (
     InternalIdTransformerMixin,
     NameTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 
 if TYPE_CHECKING:
@@ -51,7 +53,7 @@ class BoundingBox3D(CogniteObject):
         self.min = min
 
 
-class ThreeDModelCore(CogniteResource, ABC):
+class ThreeDModelCore(WriteableCogniteResource["ThreeDModelWrite"], ABC):
     """This class represents a 3D model in Cognite Data Fusion.
 
 
@@ -145,6 +147,10 @@ class ThreeDModelWrite(ThreeDModelCore):
             metadata=resource.get("metadata"),
         )
 
+    def as_write(self) -> ThreeDModelWrite:
+        """Returns this ThreedModelWrite instance."""
+        return self
+
 
 class ThreeDModelUpdate(CogniteUpdate):
     """No description.
@@ -205,7 +211,13 @@ class ThreeDModelUpdate(CogniteUpdate):
         ]
 
 
-class ThreeDModelList(CogniteResourceList[ThreeDModel], NameTransformerMixin, InternalIdTransformerMixin):
+class ThreeDModelWriteList(CogniteResourceList[ThreeDModelWrite], NameTransformerMixin):
+    _RESOURCE = ThreeDModelWrite
+
+
+class ThreeDModelList(
+    WriteableCogniteResourceList[ThreeDModel, ThreeDModelWriteList], NameTransformerMixin, InternalIdTransformerMixin
+):
     _RESOURCE = ThreeDModel
 
     def as_write(self) -> ThreeDModelWriteList:
@@ -213,11 +225,7 @@ class ThreeDModelList(CogniteResourceList[ThreeDModel], NameTransformerMixin, In
         return ThreeDModelWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
 
 
-class ThreeDModelWriteList(CogniteResourceList[ThreeDModelWrite], NameTransformerMixin):
-    _RESOURCE = ThreeDModelWrite
-
-
-class ThreeDModelRevisionCore(CogniteResource, ABC):
+class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite"], ABC):
     """No description.
 
     Args:
@@ -378,6 +386,10 @@ class ThreeDModelRevisionWrite(ThreeDModelRevisionCore):
             metadata=resource.get("metadata"),
         )
 
+    def as_write(self) -> ThreeDModelRevisionWrite:
+        """Returns this ThreedModelRevisionWrite instance."""
+        return self
+
 
 class ThreeDModelRevisionUpdate(CogniteUpdate):
     """No description.
@@ -453,7 +465,13 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
         ]
 
 
-class ThreeDModelRevisionList(CogniteResourceList[ThreeDModelRevision], InternalIdTransformerMixin):
+class ThreeDModelRevisionWriteList(CogniteResourceList[ThreeDModelRevisionWrite]):
+    _RESOURCE = ThreeDModelRevisionWrite
+
+
+class ThreeDModelRevisionList(
+    WriteableCogniteResourceList[ThreeDModelRevision, ThreeDModelRevisionWriteList], InternalIdTransformerMixin
+):
     _RESOURCE = ThreeDModelRevision
 
     def as_write(self) -> ThreeDModelRevisionWriteList:
@@ -461,10 +479,6 @@ class ThreeDModelRevisionList(CogniteResourceList[ThreeDModelRevision], Internal
         return ThreeDModelRevisionWriteList(
             [item.as_write() for item in self.data], cognite_client=self._cognite_client
         )
-
-
-class ThreeDModelRevisionWriteList(CogniteResourceList[ThreeDModelRevisionWrite]):
-    _RESOURCE = ThreeDModelRevisionWrite
 
 
 class ThreeDNode(CogniteResource):
@@ -522,7 +536,7 @@ class ThreeDNodeList(CogniteResourceList[ThreeDNode]):
     _RESOURCE = ThreeDNode
 
 
-class ThreeDAssetMappingCore(CogniteResource, ABC):
+class ThreeDAssetMappingCore(WriteableCogniteResource["ThreeDAssetMappingWrite"], ABC):
     """No description.
 
     Args:
@@ -603,14 +617,18 @@ class ThreeDAssetMappingWrite(ThreeDAssetMappingCore):
             asset_id=resource["assetId"],
         )
 
+    def as_write(self) -> ThreeDAssetMappingWrite:
+        """Returns this ThreedAssetMappingWrite instance."""
+        return self
 
-class ThreeDAssetMappingList(CogniteResourceList[ThreeDAssetMapping]):
+
+class ThreeDAssetMappingWriteList(CogniteResourceList[ThreeDAssetMappingWrite]):
+    _RESOURCE = ThreeDAssetMappingWrite
+
+
+class ThreeDAssetMappingList(WriteableCogniteResourceList[ThreeDAssetMapping, ThreeDAssetMappingWriteList]):
     _RESOURCE = ThreeDAssetMapping
 
     def as_write(self) -> ThreeDAssetMappingWriteList:
         """Returns this ThreedAssetMappingList in a writing version."""
         return ThreeDAssetMappingWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
-
-
-class ThreeDAssetMappingWriteList(CogniteResourceList[ThreeDAssetMappingWrite]):
-    _RESOURCE = ThreeDAssetMappingWrite
