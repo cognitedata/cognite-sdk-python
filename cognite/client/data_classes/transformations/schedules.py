@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     IdTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class TransformationScheduleCore(CogniteResource, ABC):
+class TransformationScheduleCore(WriteableCogniteResource["TransformationScheduleWrite"], ABC):
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
@@ -128,6 +129,10 @@ class TransformationScheduleWrite(TransformationScheduleCore, ABC):
             is_paused=resource.get("isPaused", False),
         )
 
+    def as_write(self) -> TransformationScheduleWrite:
+        """Returns this TransformationScheduleWrite instance."""
+        return self
+
 
 class TransformationScheduleUpdate(CogniteUpdate):
     """Changes applied to transformation schedule
@@ -157,12 +162,14 @@ class TransformationScheduleUpdate(CogniteUpdate):
         ]
 
 
-class TransformationScheduleList(CogniteResourceList[TransformationSchedule], IdTransformerMixin):
+class TransformationScheduleWriteList(CogniteResourceList[TransformationScheduleWrite], IdTransformerMixin):
+    _RESOURCE = TransformationScheduleWrite
+
+
+class TransformationScheduleList(
+    WriteableCogniteResourceList[TransformationSchedule, TransformationScheduleWriteList], IdTransformerMixin
+):
     _RESOURCE = TransformationSchedule
 
     def as_write(self) -> TransformationScheduleWriteList:
         return TransformationScheduleWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
-
-
-class TransformationScheduleWriteList(CogniteResourceList[TransformationScheduleWrite], IdTransformerMixin):
-    _RESOURCE = TransformationScheduleWrite

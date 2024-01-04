@@ -15,6 +15,8 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import (
@@ -77,7 +79,7 @@ class SessionDetails:
         return ret
 
 
-class TransformationCore(CogniteResource, ABC):
+class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
     """The transformation resource allows transforming data in CDF.
 
     Args:
@@ -553,6 +555,10 @@ class TransformationWrite(TransformationCore):
             self.tags,
         )
 
+    def as_write(self) -> TransformationWrite:
+        """Returns this TransformationWrite instance."""
+        return self
+
 
 class TransformationUpdate(CogniteUpdate):
     """Changes applied to transformation
@@ -656,17 +662,17 @@ class TransformationUpdate(CogniteUpdate):
         ]
 
 
-class TransformationList(CogniteResourceList[Transformation], IdTransformerMixin):
+class TransformationWriteList(CogniteResourceList[TransformationWrite], ExternalIDTransformerMixin):
+    _RESOURCE = TransformationWrite
+
+
+class TransformationList(WriteableCogniteResourceList[Transformation, TransformationWriteList], IdTransformerMixin):
     _RESOURCE = Transformation
 
     def as_write(self) -> TransformationWriteList:
         return TransformationWriteList(
             [transformation.as_write() for transformation in self.data], cognite_client=self._cognite_client
         )
-
-
-class TransformationWriteList(CogniteResourceList[TransformationWrite], ExternalIDTransformerMixin):
-    _RESOURCE = TransformationWrite
 
 
 class TagsFilter:
