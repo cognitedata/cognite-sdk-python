@@ -14,6 +14,8 @@ from cognite.client.data_classes._base import (
     CogniteResponse,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._time import ms_to_datetime
@@ -24,7 +26,7 @@ if TYPE_CHECKING:
 RunTime: TypeAlias = Literal["py38", "py39", "py310", "py311"]
 
 
-class FunctionCore(CogniteResource, ABC):
+class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
     """A representation of a Cognite Function.
 
     Args:
@@ -307,6 +309,10 @@ class FunctionWrite(FunctionCore):
             extra_index_urls=resource.get("extraIndexUrls"),
         )
 
+    def as_write(self) -> FunctionWrite:
+        """Returns this FunctionWrite instance."""
+        return self
+
 
 class FunctionFilter(CogniteFilter):
     def __init__(
@@ -340,7 +346,7 @@ class FunctionCallsFilter(CogniteFilter):
         self.end_time = end_time
 
 
-class FunctionScheduleCore(CogniteResource, ABC):
+class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], ABC):
     """A representation of a Cognite Function Schedule.
 
     Args:
@@ -475,6 +481,10 @@ class FunctionScheduleWrite(FunctionScheduleCore):
             data=resource.get("data"),
         )
 
+    def as_write(self) -> FunctionScheduleWrite:
+        """Returns this FunctionScheduleWrite instance."""
+        return self
+
 
 class FunctionSchedulesFilter(CogniteFilter):
     def __init__(
@@ -492,7 +502,11 @@ class FunctionSchedulesFilter(CogniteFilter):
         self.cron_expression = cron_expression
 
 
-class FunctionSchedulesList(CogniteResourceList[FunctionSchedule]):
+class FunctionScheduleWriteList(CogniteResourceList[FunctionScheduleWrite]):
+    _RESOURCE = FunctionScheduleWrite
+
+
+class FunctionSchedulesList(WriteableCogniteResourceList[FunctionSchedule, FunctionScheduleWriteList]):
     _RESOURCE = FunctionSchedule
 
     def as_write(self) -> FunctionScheduleWriteList:
@@ -500,20 +514,16 @@ class FunctionSchedulesList(CogniteResourceList[FunctionSchedule]):
         return FunctionScheduleWriteList([f.as_write() for f in self.data], cognite_client=self._cognite_client)
 
 
-class FunctionScheduleWriteList(CogniteResourceList[FunctionScheduleWrite]):
-    _RESOURCE = FunctionScheduleWrite
+class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = FunctionWrite
 
 
-class FunctionList(CogniteResourceList[Function], IdTransformerMixin):
+class FunctionList(WriteableCogniteResourceList[Function, FunctionWriteList], IdTransformerMixin):
     _RESOURCE = Function
 
     def as_write(self) -> FunctionWriteList:
         """Returns a writeable version of this function."""
         return FunctionWriteList([f.as_write() for f in self.data], cognite_client=self._cognite_client)
-
-
-class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransformerMixin):
-    _RESOURCE = FunctionWrite
 
 
 class FunctionCall(CogniteResource):
