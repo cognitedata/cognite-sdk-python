@@ -82,7 +82,7 @@ class Workflow(WorkflowCore):
         )
 
     def as_write(self) -> WorkflowUpsert:
-        """Returns this workflow as in the writing format."""
+        """Returns this workflow in the writing format."""
         return WorkflowUpsert(
             external_id=self.external_id,
             description=self.description,
@@ -95,7 +95,7 @@ class WorkflowList(CogniteResourceList[Workflow], ExternalIDTransformerMixin):
     _RESOURCE = Workflow
 
     def as_write(self) -> WorkflowUpsertList:
-        """Returns this workflow list as in the writing format."""
+        """Returns these workflows in the writing format."""
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
@@ -821,14 +821,6 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow version.
     """
 
-    def __init__(
-        self,
-        workflow_external_id: str,
-        version: str,
-        workflow_definition: WorkflowDefinition,
-    ) -> None:
-        super().__init__(workflow_external_id, version, workflow_definition)
-
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
@@ -864,9 +856,7 @@ class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
 
 
 class WorkflowVersionUpsertList(CogniteResourceList[WorkflowVersionUpsert]):
-    """
-    This class represents a list of workflow versions.
-    """
+    """This class represents a list of workflow versions."""
 
     _RESOURCE = WorkflowVersionUpsert
 

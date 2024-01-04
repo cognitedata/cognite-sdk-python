@@ -369,10 +369,11 @@ class TestAssetsAPI:
             ("metadata", key.casefold()) for a in asset_list for key in a.metadata or []
         }
 
-    def test_retrieve_modify_create(self, cognite_client: CogniteClient, new_asset: Asset) -> None:
+    def test_create_strips_server_side_set_fields(self, cognite_client: CogniteClient, new_asset: Asset) -> None:
         my_new_asset = new_asset.external_id = "my_new_asset"
 
         try:
+            # New asset is obtained from .create, so it should have server-side set fields which need to be stripped.
             created = cognite_client.assets.create(new_asset)
             assert created.external_id == my_new_asset
             assert created.name == "any"

@@ -306,7 +306,7 @@ class FakeCogniteResourceGenerator:
 
         # Special cases
         if resource_cls is DataPointSubscriptionWrite:
-            # DataPointSubscriptionCreate requires either timeseries_ids or filter
+            # DataPointSubscriptionWrite requires either timeseries_ids or filter
             keyword_arguments.pop("filter", None)
         if resource_cls is Query:
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
