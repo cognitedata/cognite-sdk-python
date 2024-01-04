@@ -39,6 +39,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
     T_CogniteResource,
     T_CogniteResourceList,
+    WriteableCogniteResource,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
@@ -794,6 +795,8 @@ class APIClient:
             items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
             items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], items)
+
+        items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
 
         tasks = [
             (resource_path, task_items, params, headers)

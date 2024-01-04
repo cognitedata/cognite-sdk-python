@@ -538,10 +538,6 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.create(asset)
         """
         assert_type(asset, "asset", [Asset, AssetWrite, Sequence])
-        if isinstance(asset, Sequence):
-            asset = [a.as_write() if isinstance(a, Asset) else a for a in asset]
-        elif isinstance(asset, Asset):
-            asset = asset.as_write()
 
         return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite)
 
