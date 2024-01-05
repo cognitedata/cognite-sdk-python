@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -276,7 +276,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         if statuses is not None or message_substring is not None or created_time is not None:
             filter = ExtractionPipelineRunFilter(
                 external_id=external_id,
-                statuses=[statuses] if isinstance(statuses, str) else statuses,
+                statuses=cast(Union[SequenceNotStr[str], None], [statuses] if isinstance(statuses, str) else statuses),
                 message=StringFilter(substring=message_substring),
                 created_time=created_time,
             ).dump(camel_case=True)

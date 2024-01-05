@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast, overload
 
 from requests import Response
 
@@ -85,8 +85,9 @@ class DiagramsAPI(APIClient):
         file_references: Sequence[FileReference] | FileReference | None,
     ) -> list[dict[str, int | str | dict[str, int]] | dict[str, str] | dict[str, int]]:
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
-        external_ids = DiagramsAPI._list_from_instance_or_list(
-            external_ids, str, "external_ids must be str or list of str"
+        external_ids = cast(
+            SequenceNotStr[str],
+            DiagramsAPI._list_from_instance_or_list(external_ids, str, "external_ids must be str or list of str"),
         )
         file_references = DiagramsAPI._list_from_instance_or_list(
             file_references, FileReference, "file_references must be FileReference or list of FileReference"
