@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.9.0] - 2024-01-05
+### Added
+- You can now enable or disable user profiles for your CDF project with `client.iam.user_profiles.[enable/disable]`.
+
 ## [7.8.10] - 2024-01-04
 ### Changed
 - When using `OidcCredentials` to create a transformation, `cdf_project_name` is no longer optional as required
