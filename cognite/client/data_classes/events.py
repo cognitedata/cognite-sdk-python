@@ -21,6 +21,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -107,7 +108,7 @@ class EventFilter(CogniteFilter):
         active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
-        asset_external_ids (Sequence[str] | None): Asset External IDs of equipment that this event relates to.
+        asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of equipment that this event relates to.
         asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (Sequence[dict[str, Any]] | None): Only include events that belong to these datasets.
         source (str | None): The source of this event.
@@ -125,7 +126,7 @@ class EventFilter(CogniteFilter):
         active_at_time: dict[str, Any] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
         data_set_ids: Sequence[dict[str, Any]] | None = None,
         source: str | None = None,

@@ -16,6 +16,7 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -80,7 +81,7 @@ class DiagramsAPI(APIClient):
     @staticmethod
     def _process_file_ids(
         ids: Sequence[int] | int | None,
-        external_ids: Sequence[str] | str | None,
+        external_ids: SequenceNotStr[str] | str | None,
         file_references: Sequence[FileReference] | FileReference | None,
     ) -> list[dict[str, int | str | dict[str, int]] | dict[str, str] | dict[str, int]]:
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
@@ -107,7 +108,7 @@ class DiagramsAPI(APIClient):
         partial_match: bool = False,
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
-        file_external_ids: str | Sequence[str] | None = None,
+        file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
         configuration: dict[str, Any] | None = None,
@@ -124,7 +125,7 @@ class DiagramsAPI(APIClient):
         partial_match: bool = False,
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
-        file_external_ids: str | Sequence[str] | None = None,
+        file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
         configuration: dict[str, Any] | None = None,
@@ -141,7 +142,7 @@ class DiagramsAPI(APIClient):
         partial_match: bool = False,
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
-        file_external_ids: str | Sequence[str] | None = None,
+        file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
         configuration: dict[str, Any] | None = None,
@@ -155,7 +156,7 @@ class DiagramsAPI(APIClient):
         partial_match: bool = False,
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
-        file_external_ids: str | Sequence[str] | None = None,
+        file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool | None = None,
         configuration: dict[str, Any] | None = None,
@@ -174,7 +175,7 @@ class DiagramsAPI(APIClient):
             partial_match (bool): Allow for a partial match (e.g. missing prefix).
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
-            file_external_ids (str | Sequence[str] | None): File external ids, alternative to file_ids and file_references.
+            file_external_ids (str | SequenceNotStr[str] | None): File external ids, alternative to file_ids and file_references.
             file_references (list[FileReference] | FileReference | None): File references (id or external_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
             pattern_mode (bool | None): Only in beta. If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
             configuration (dict[str, Any] | None): Only in beta. Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.

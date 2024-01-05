@@ -62,6 +62,7 @@ from cognite.client.utils._identifier import (
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 from cognite.client.utils._validation import assert_type, verify_limit
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -592,8 +593,8 @@ class APIClient:
         resource_path: str | None = None,
         filter: CogniteFilter | dict | None = None,
         aggregate: str | None = None,
-        fields: Sequence[str] | None = None,
-        keys: Sequence[str] | None = None,
+        fields: SequenceNotStr[str] | None = None,
+        keys: SequenceNotStr[str] | None = None,
         headers: dict | None = None,
     ) -> list[T]:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Sequence
+from typing import TYPE_CHECKING, Iterator
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -17,6 +17,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -78,11 +79,11 @@ class DatapointsSubscriptionAPI(APIClient):
             input_resource_cls=DataPointSubscriptionCreate,
         )
 
-    def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete subscription(s). This operation cannot be undone. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/deleteSubscriptions>`_
 
         Args:
-            external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to delete.
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of subscriptions to delete.
             ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:

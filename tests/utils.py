@@ -488,6 +488,7 @@ class FakeCogniteResourceGenerator:
     ) -> Any:
         if annotation.endswith(" | None"):
             annotation = annotation[:-7]
+        annotation = annotation.replace("SequenceNotStr", "Sequence")
         try:
             return eval(annotation, resource_module_vars, local_vars)
         except TypeError:

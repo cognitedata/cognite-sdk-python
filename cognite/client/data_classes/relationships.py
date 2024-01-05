@@ -19,6 +19,7 @@ from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -133,10 +134,10 @@ class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
-        source_external_ids (typing.Sequence[str] | None): Include relationships that have any of these values in their `sourceExternalId` field
-        source_types (typing.Sequence[str] | None): Include relationships that have any of these values in their `sourceType` field
-        target_external_ids (typing.Sequence[str] | None): Include relationships that have any of these values in their `targetExternalId` field
-        target_types (typing.Sequence[str] | None): Include relationships that have any of these values in their `targetType` field
+        source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their `sourceExternalId` field
+        source_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their `sourceType` field
+        target_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their `targetExternalId` field
+        target_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their `targetType` field
         data_set_ids (typing.Sequence[dict[str, Any]] | None): Either one of `internalId` (int) or `externalId` (str)
         start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
@@ -149,10 +150,10 @@ class RelationshipFilter(CogniteFilter):
 
     def __init__(
         self,
-        source_external_ids: typing.Sequence[str] | None = None,
-        source_types: typing.Sequence[str] | None = None,
-        target_external_ids: typing.Sequence[str] | None = None,
-        target_types: typing.Sequence[str] | None = None,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
         data_set_ids: typing.Sequence[dict[str, Any]] | None = None,
         start_time: dict[str, int] | None = None,
         end_time: dict[str, int] | None = None,

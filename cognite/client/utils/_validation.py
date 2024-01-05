@@ -8,6 +8,7 @@ from typing_extensions import TypeAlias
 from cognite.client.data_classes._base import T_CogniteSort
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client.utils._identifier import T_ID
@@ -50,7 +51,7 @@ def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[st
 
 def _process_identifiers(
     ids: int | Sequence[int] | None,
-    external_ids: str | Sequence[str] | None,
+    external_ids: str | SequenceNotStr[str] | None,
     *,
     id_name: str,
 ) -> list[dict[str, int | str]] | None:
@@ -60,10 +61,10 @@ def _process_identifiers(
 
 
 process_data_set_ids: Callable[
-    [int | Sequence[int] | None, str | Sequence[str] | None], list[dict[str, int | str]] | None
+    [int | Sequence[int] | None, str | SequenceNotStr[str] | None], list[dict[str, int | str]] | None
 ] = functools.partial(_process_identifiers, id_name="data_set")
 process_asset_subtree_ids: Callable[
-    [int | Sequence[int] | None, str | Sequence[str] | None], list[dict[str, int | str]] | None
+    [int | Sequence[int] | None, str | SequenceNotStr[str] | None], list[dict[str, int | str]] | None
 ] = functools.partial(_process_identifiers, id_name="asset_subtree")
 
 

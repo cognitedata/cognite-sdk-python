@@ -223,7 +223,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     def load(
         cls,
         ids: int | Sequence[int] | None = None,
-        external_ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
+        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
         *,
         id_name: str = "",
     ) -> IdentifierSequence:
@@ -249,7 +249,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
                 all_identifiers.extend([str(extid) for extid in external_ids])
             else:
                 raise TypeError(
-                    f"{id_name}external_ids must be of type str or Sequence[str]. Found {type(external_ids)}"
+                    f"{id_name}external_ids must be of type str or SequenceNotStr[str]. Found {type(external_ids)}"
                 )
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1
@@ -267,14 +267,14 @@ class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifi
 class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
     # TODO: Inferred type from inherited methods 'as_dicts' and 'as_primitives' wrongly include 'int'
     @classmethod
-    def load(cls, user_identifiers: str | Sequence[str]) -> UserIdentifierSequence:
+    def load(cls, user_identifiers: str | SequenceNotStr[str]) -> UserIdentifierSequence:
         if isinstance(user_identifiers, str):
             return cls([UserIdentifier(user_identifiers)], is_singleton=True)
 
         elif isinstance(user_identifiers, Sequence):
             return cls(list(map(UserIdentifier, map(str, user_identifiers))), is_singleton=False)
 
-        raise TypeError(f"user_identifiers must be of type str or Sequence[str]. Found {type(user_identifiers)}")
+        raise TypeError(f"user_identifiers must be of type str or SequenceNotStr[str]. Found {type(user_identifiers)}")
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
@@ -298,7 +298,7 @@ class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionId
                 [WorkflowVersionIdentifier(entry["version"], entry["workflowExternalId"]) for entry in workflow_ids],
                 is_singleton=False,
             )
-        raise TypeError(f"WorkflowIdentifier must be of type str or Sequence[str]. Found {type(workflow_ids)}")
+        raise TypeError(f"WorkflowIdentifier must be of type str or SequenceNotStr[str]. Found {type(workflow_ids)}")
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():

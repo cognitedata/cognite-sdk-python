@@ -22,6 +22,7 @@ from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, 
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -72,11 +73,11 @@ class TimeSeriesAPI(APIClient):
         is_string: bool | None = None,
         is_step: bool | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         metadata: dict[str, Any] | None = None,
         external_id_prefix: str | None = None,
         created_time: dict[str, Any] | None = None,
@@ -97,11 +98,11 @@ class TimeSeriesAPI(APIClient):
             is_string (bool | None): Whether the time series is an string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
-            asset_external_ids (Sequence[str] | None): List time series related to these assets.
+            asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -192,14 +193,14 @@ class TimeSeriesAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -512,14 +513,14 @@ class TimeSeriesAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
@@ -769,11 +770,11 @@ class TimeSeriesAPI(APIClient):
         is_string: bool | None = None,
         is_step: bool | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         metadata: dict[str, Any] | None = None,
         external_id_prefix: str | None = None,
         created_time: dict[str, Any] | None = None,
@@ -793,11 +794,11 @@ class TimeSeriesAPI(APIClient):
             is_string (bool | None): Whether the time series is an string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
-            asset_external_ids (Sequence[str] | None): List time series related to these assets.
+            asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.

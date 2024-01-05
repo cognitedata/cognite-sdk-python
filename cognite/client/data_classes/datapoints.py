@@ -34,6 +34,7 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 from cognite.client.utils._time import convert_and_isoformat_time_attrs
+from cognite.client.utils.useful_types import SequenceNotStr
 
 Aggregate = Literal[
     "average",
@@ -423,7 +424,7 @@ class Datapoints(CogniteResource):
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Sequence[str] | Sequence[float] | None): The data values. Can be string or numeric
+        value (SequenceNotStr[str] | Sequence[float] | None): The data values. Can be string or numeric
         average (list[float] | None): The integral average values in the aggregate period
         max (list[float] | None): The maximum values in the aggregate period
         min (list[float] | None): The minimum values in the aggregate period
@@ -447,7 +448,7 @@ class Datapoints(CogniteResource):
         unit_external_id: str | None = None,
         granularity: str | None = None,
         timestamp: Sequence[int] | None = None,
-        value: Sequence[str] | Sequence[float] | None = None,
+        value: SequenceNotStr[str] | Sequence[float] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
         min: list[float] | None = None,

@@ -11,6 +11,7 @@ from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type, process_data_set_ids
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -26,10 +27,10 @@ class RelationshipsAPI(APIClient):
 
     def _create_filter(
         self,
-        source_external_ids: Sequence[str] | None = None,
-        source_types: Sequence[str] | None = None,
-        target_external_ids: Sequence[str] | None = None,
-        target_types: Sequence[str] | None = None,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
         data_set_ids: Sequence[dict[str, Any]] | None = None,
         start_time: dict[str, int] | None = None,
         end_time: dict[str, int] | None = None,
@@ -56,12 +57,12 @@ class RelationshipsAPI(APIClient):
 
     def __call__(
         self,
-        source_external_ids: Sequence[str] | None = None,
-        source_types: Sequence[str] | None = None,
-        target_external_ids: Sequence[str] | None = None,
-        target_types: Sequence[str] | None = None,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         start_time: dict[str, int] | None = None,
         end_time: dict[str, int] | None = None,
         confidence: dict[str, int] | None = None,
@@ -79,12 +80,12 @@ class RelationshipsAPI(APIClient):
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Args:
-            source_external_ids (Sequence[str] | None): Include relationships that have any of these values in their source External Id field
-            source_types (Sequence[str] | None): Include relationships that have any of these values in their source Type field
-            target_external_ids (Sequence[str] | None): Include relationships that have any of these values in their target External Id field
-            target_types (Sequence[str] | None): Include relationships that have any of these values in their target Type field
+            source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
+            source_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their source Type field
+            target_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their target External Id field
+            target_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their target Type field
             data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
             start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
             end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
             confidence (dict[str, int] | None): Range to filter the field for (inclusive).
@@ -173,12 +174,12 @@ class RelationshipsAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, external_ids: Sequence[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
+        self, external_ids: SequenceNotStr[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
         Args:
-            external_ids (Sequence[str]): External IDs
+            external_ids (SequenceNotStr[str]): External IDs
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
@@ -205,12 +206,12 @@ class RelationshipsAPI(APIClient):
 
     def list(
         self,
-        source_external_ids: Sequence[str] | None = None,
-        source_types: Sequence[str] | None = None,
-        target_external_ids: Sequence[str] | None = None,
-        target_types: Sequence[str] | None = None,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         start_time: dict[str, int] | None = None,
         end_time: dict[str, int] | None = None,
         confidence: dict[str, int] | None = None,
@@ -225,12 +226,12 @@ class RelationshipsAPI(APIClient):
         """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_
 
         Args:
-            source_external_ids (Sequence[str] | None): Include relationships that have any of these values in their source External Id field
-            source_types (Sequence[str] | None): Include relationships that have any of these values in their source Type field
-            target_external_ids (Sequence[str] | None): Include relationships that have any of these values in their target External Id field
-            target_types (Sequence[str] | None): Include relationships that have any of these values in their target Type field
+            source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
+            source_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their source Type field
+            target_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their target External Id field
+            target_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their target Type field
             data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
             start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
             end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
             confidence (dict[str, int] | None): Range to filter the field for (inclusive).
@@ -468,11 +469,11 @@ class RelationshipsAPI(APIClient):
             mode=mode,
         )
 
-    def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_
 
         Args:
-            external_id (str | Sequence[str]): External ID or list of external ids
+            external_id (str | SequenceNotStr[str]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
         Examples:
 

@@ -858,7 +858,7 @@ class InstancesAPI(APIClient):
         histograms: Histogram,
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
+        properties: SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue:
@@ -871,7 +871,7 @@ class InstancesAPI(APIClient):
         histograms: Sequence[Histogram],
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
+        properties: SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]:
@@ -883,7 +883,7 @@ class InstancesAPI(APIClient):
         histograms: Histogram | Sequence[Histogram],
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
+        properties: SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
@@ -894,7 +894,7 @@ class InstancesAPI(APIClient):
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
-            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 

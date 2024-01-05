@@ -30,6 +30,7 @@ from cognite.client.utils._identifier import (
     WorkflowVersionIdentifierSequence,
 )
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -538,11 +539,11 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             raise e
         return Workflow.load(response.json())
 
-    def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_
 
         Args:
-            external_id (str | Sequence[str]): External id or list of external ids to delete.
+            external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.
             ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
 
         Examples:

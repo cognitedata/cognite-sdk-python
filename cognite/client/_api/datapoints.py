@@ -71,6 +71,7 @@ from cognite.client.utils._time import (
     validate_timezone,
 )
 from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
@@ -1009,7 +1010,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         start: datetime,
         end: datetime,
         aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
@@ -1046,7 +1047,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (int | Sequence[int] | None): ID or list of IDs.
-            external_id (str | Sequence[str] | None): External ID or list of External IDs.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -1619,7 +1620,7 @@ class RetrieveLatestDpsFetcher:
         return user_input
 
     def _prepare_requests(
-        self, parsed_ids: None | int | Sequence[int], parsed_xids: None | str | Sequence[str]
+        self, parsed_ids: None | int | Sequence[int], parsed_xids: None | str | SequenceNotStr[str]
     ) -> list[dict]:
         all_ids, all_xids = [], []
         if parsed_ids is not None:

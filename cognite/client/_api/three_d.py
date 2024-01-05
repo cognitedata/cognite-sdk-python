@@ -22,6 +22,7 @@ from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_in
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -134,12 +135,12 @@ class ThreeDModelsAPI(APIClient):
         )
 
     def create(
-        self, name: str | Sequence[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
+        self, name: str | SequenceNotStr[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
     ) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
-            name (str | Sequence[str]): The name of the 3d model(s) to create.
+            name (str | SequenceNotStr[str]): The name of the 3d model(s) to create.
             data_set_id (int | None): The id of the dataset this 3D model belongs to.
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
                 Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.

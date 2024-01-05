@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -15,6 +15,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -298,7 +299,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
 
     Args:
         external_id (str | None): The external ID of related ExtractionPipeline provided by the client. Must be unique for the resource type.
-        statuses (Sequence[str] | None): success/failure/seen.
+        statuses (SequenceNotStr[str] | None): success/failure/seen.
         message (StringFilter | None): message filter.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
     """
@@ -306,7 +307,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
     def __init__(
         self,
         external_id: str | None = None,
-        statuses: Sequence[str] | None = None,
+        statuses: SequenceNotStr[str] | None = None,
         message: StringFilter | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
     ) -> None:
