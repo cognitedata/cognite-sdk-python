@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.9.0] - 2024-01-04
+## [7.10.0] - 2024-01-04
 ### Added
 - All Cognite resources now have write-version. For example, we have `Asset` and `AssetWrite`, `Event` and `EventWrite`, and so on.
   The new write class reflects the required/optional fields in the API, and is now recommended when creating resources. In addition,
@@ -34,6 +34,10 @@ Changes are grouped as follows
   This is not a breaking change, as the old class is still available for backwards compatibility, but will be removed in the next major version.
 ### Fixed
 - The `node.type` was not set when calling `.as_apply()` or `.as_write()` on a `Node` or `NodeList`. This is now fixed.
+
+## [7.9.0] - 2024-01-05
+### Added
+- You can now enable or disable user profiles for your CDF project with `client.iam.user_profiles.[enable/disable]`.
 
 ## [7.8.10] - 2024-01-04
 ### Changed
