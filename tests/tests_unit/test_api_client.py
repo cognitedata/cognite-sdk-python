@@ -382,6 +382,9 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
         )
+        # Second request may be skipped intentionally depending on which thread runs when:
+        rsps.assert_all_requests_are_fired = False
+
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteNotFoundError) as e:
                 api_client_with_token._retrieve_multiple(
