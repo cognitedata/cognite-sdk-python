@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, Table, TableList
+from cognite.client.data_classes.raw import RowCore
 from cognite.client.utils._auxiliary import (
     interpolate_and_url_encode,
     is_unlimited,
@@ -427,7 +428,7 @@ class RawRowsAPI(APIClient):
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     def _process_row_input(self, row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict) -> list[list[dict]]:
-        assert_type(row, "row", [Sequence, dict, Row, RowWrite])
+        assert_type(row, "row", [Sequence, dict, RowCore])
         rows = []
         if isinstance(row, dict):
             for key, columns in row.items():

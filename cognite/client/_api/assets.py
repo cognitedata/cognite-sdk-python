@@ -44,7 +44,13 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
-from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, AssetWrite, SortableAssetProperty
+from cognite.client.data_classes.assets import (
+    AssetCore,
+    AssetPropertyLike,
+    AssetSort,
+    AssetWrite,
+    SortableAssetProperty,
+)
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
@@ -537,7 +543,7 @@ class AssetsAPI(APIClient):
                 >>> asset = AssetWrite(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = c.assets.create(asset)
         """
-        assert_type(asset, "asset", [Asset, AssetWrite, Sequence])
+        assert_type(asset, "asset", [AssetCore, Sequence])
 
         return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite)
 
