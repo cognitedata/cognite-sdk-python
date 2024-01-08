@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.10.1] - 2024-01-08
+### Added
+- Fix retries for `POST /raw/rows`.
 
 ## [7.10.0] - 2024-01-08
 ### Added
