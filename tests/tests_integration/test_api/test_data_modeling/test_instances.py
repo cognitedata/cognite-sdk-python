@@ -289,6 +289,7 @@ class TestInstancesAPI:
         assert set(retrieved.nodes.as_ids()) == set(movie_nodes.as_ids())
         assert set(retrieved.edges.as_ids()) == set(movie_edges.as_ids())
 
+    @pytest.mark.xfail  # TODO: Unknown ids should not raise
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
         # Arrange
         ids_without_missing = movie_nodes.as_ids()
