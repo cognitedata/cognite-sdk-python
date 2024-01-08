@@ -1211,6 +1211,11 @@ class DatapointsAPI(APIClient):
 
                 >>> res = c.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
+            You can also retrieve the datapoint in a different unit or unit system::
+
+                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
+                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
+
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
@@ -1651,7 +1656,9 @@ class RetrieveLatestDpsFetcher:
                 if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
                 i_target_unit = self.target_unit_settings[(identifier_type, i)] or self.default_unit
-                i_target_unit_system = self.target_unit_system_settings[(identifier_type, i)] or self.default_unit_system
+                i_target_unit_system = (
+                    self.target_unit_system_settings[(identifier_type, i)] or self.default_unit_system
+                )
                 if i_target_unit is not None and i_target_unit_system is not None:
                     raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
                 if i_target_unit is not None:
