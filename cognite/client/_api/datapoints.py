@@ -1655,9 +1655,9 @@ class RetrieveLatestDpsFetcher:
                 i_before = self.before_settings.get((identifier_type, i), self.default_before)
                 if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
-                i_target_unit = self.target_unit_settings[(identifier_type, i)] or self.default_unit
+                i_target_unit = self.target_unit_settings.get(identifier_type, i) or self.default_unit
                 i_target_unit_system = (
-                    self.target_unit_system_settings[(identifier_type, i)] or self.default_unit_system
+                    self.target_unit_system_settings.get(identifier_type, i) or self.default_unit_system
                 )
                 if i_target_unit is not None and i_target_unit_system is not None:
                     raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
