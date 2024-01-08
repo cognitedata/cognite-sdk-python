@@ -1809,9 +1809,6 @@ class TestRetrieveLatestDatapointsAPI:
             external_id=timeseries.external_id, before="now", **kwargs
         )
 
-        if isinstance(res, pd.DataFrame):
-            res = DatapointsArray(value=res.values)
-
         assert math.isclose(res.value[0], 212)
         assert res.unit_external_id == "temperature:deg_f"
 
