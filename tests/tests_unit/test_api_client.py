@@ -1296,7 +1296,7 @@ class TestRetryableEndpoints:
                 # Retry for RAW on rows but not on dbs or tables as only the rows endpoints are idempotent
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/insert", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/delete", True),
             ]
         ),

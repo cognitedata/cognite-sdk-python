@@ -2,7 +2,7 @@
 name = "cognite-sdk"
 
 
-version = "7.10.0"
+version = "7.10.1"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
