@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [7.10.0] - 2024-01-08
+### Added
+- `geospatial.search_features` and `geospatial.stream_features` now accept the `allow_dimensionality_mismatch` parameter.
+
 ## [7.9.0] - 2024-01-05
 ### Added
 - You can now enable or disable user profiles for your CDF project with `client.iam.user_profiles.[enable/disable]`.
