@@ -208,12 +208,14 @@ from cognite.client.data_classes.transformations.schema import (
 )
 from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
 from cognite.client.data_classes.workflows import (
+    CancelExecution,
     CDFTaskOutput,
     CDFTaskParameters,
     DynamicTaskOutput,
     DynamicTaskParameters,
     FunctionTaskOutput,
     FunctionTaskParameters,
+    SubworkflowTaskParameters,
     TransformationTaskOutput,
     TransformationTaskParameters,
     Workflow,
@@ -400,6 +402,7 @@ __all__ = [
     "CoordinateReferenceSystem",
     "UserProfile",
     "UserProfileList",
+    "CancelExecution",
     "WorkflowUpsert",
     "WorkflowExecution",
     "WorkflowExecutionDetailed",
@@ -413,6 +416,7 @@ __all__ = [
     "TransformationTaskParameters",
     "CDFTaskParameters",
     "DynamicTaskParameters",
+    "SubworkflowTaskParameters",
     "FunctionTaskOutput",
     "TransformationTaskOutput",
     "CDFTaskOutput",

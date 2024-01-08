@@ -11,12 +11,24 @@ from cognite.client.data_classes.workflows import (
     FunctionTaskOutput,
     FunctionTaskParameters,
     TransformationTaskOutput,
+    TransformationTaskParameters,
+    WorkflowDefinition,
+    WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
     WorkflowTask,
     WorkflowTaskOutput,
     WorkflowVersionId,
 )
+
+
+class TestWorkFlowDefinitions:
+    def test_upsert_variant_doesnt_accept_hash(self):
+        task = WorkflowTask(external_id="foo", parameters=TransformationTaskParameters(external_id="something"))
+        WorkflowDefinition(tasks=[task], description="desc", hash_="very-random")
+
+        with pytest.raises(TypeError, match="unexpected keyword argument 'hash_'$"):
+            WorkflowDefinitionUpsert(tasks=[task], description="desc", hash_="very-random")
 
 
 class TestWorkflowTaskOutput:

@@ -18,20 +18,24 @@ _PROPERTY_ALIAS = {"list": "isList"}
 _PROPERTY_ALIAS_INV = {"isList": "list", "is_list": "list"}
 
 
-@dataclass
+@dataclass(frozen=True)
 class DirectRelationReference:
     space: str
     external_id: str
 
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        output = asdict(self)
-
-        return convert_all_keys_recursive(output, camel_case)
+        return {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+        }
 
     @classmethod
     def load(cls, data: dict | tuple[str, str]) -> DirectRelationReference:
         if isinstance(data, dict):
-            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+            return cls(
+                space=data["space"],
+                external_id=data["externalId"],
+            )
         elif isinstance(data, tuple) and len(data) == 2:
             return cls(data[0], data[1])
         else:

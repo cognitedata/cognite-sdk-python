@@ -496,7 +496,7 @@ class SequenceRows(CogniteResource):
         """Dump the sequence data into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representing the instance.

@@ -211,6 +211,7 @@ class DatapointsSubscriptionAPI(APIClient):
         start: str | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         partition: int = 0,
+        poll_timeout: int = 5,
         cursor: str | None = None,
     ) -> Iterator[DatapointSubscriptionBatch]:
         """`Iterate over data from a given subscription. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
@@ -227,6 +228,7 @@ class DatapointsSubscriptionAPI(APIClient):
             start (str | None): When to start the iteration. If set to None, the iteration will start from the beginning. The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute). For example, "12h-ago" will start the iteration from 12 hours ago. You can also set it to "now" to jump straight to the end. Defaults to None.
             limit (int): Approximate number of results to return across all partitions.
             partition (int): The partition to iterate over. Defaults to 0.
+            poll_timeout (int): How many seconds to wait for new data, until an empty response is sent. Defaults to 5.
             cursor (str | None): Optional cursor to start iterating from.
 
         Yields:
@@ -252,8 +254,6 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
-                ...     if not batch.has_next:
-                ...         time.sleep(1)
         """
         self._warning.warn()
 
@@ -263,6 +263,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 "externalId": external_id,
                 "partitions": [p.dump(camel_case=True) for p in current_partitions],
                 "limit": limit,
+                "pollTimeoutSeconds": poll_timeout,
             }
             if start is not None:
                 body["initializeCursors"] = start

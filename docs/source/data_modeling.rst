@@ -249,12 +249,6 @@ Instances query data classes
     :members:
     :show-inheritance:
 
-Data Modeling Filtering data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.filters
-    :members:
-    :show-inheritance:
-
 Data Modeling ID data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_modeling.ids
@@ -266,3 +260,7 @@ GraphQL
 Apply DML
 ^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.apply_dml
+
+Execute GraphQl query
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.query

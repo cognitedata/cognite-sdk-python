@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import time
 import unittest
 from collections import namedtuple
 from typing import Any, ClassVar, Literal, cast
@@ -381,6 +382,9 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
         )
+        # Second request may be skipped intentionally depending on which thread runs when:
+        rsps.assert_all_requests_are_fired = False
+
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteNotFoundError) as e:
                 api_client_with_token._retrieve_multiple(
@@ -495,6 +499,7 @@ class TestStandardList:
             if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
+                time.sleep(0.001)  # ensures bad luck race condition where 503 above executes last
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
 
         rsps.add_callback(
@@ -660,6 +665,24 @@ class TestStandardList:
             assert 1001 == len(resource_chunk)
             total_resources += 1001
         assert 2002 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
+    def test_standard_list_generator_vs_partitions(self, api_client_with_token):
+        total_resources = 0
+        for resource_chunk in api_client_with_token._list_generator(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            partitions=1,
+            limit=2000,
+            chunk_size=1001,
+        ):
+            # TODO: chunk_size is ignored when partitions is set, fix in next major version
+            assert isinstance(resource_chunk, SomeResource)
+            total_resources += 1
+
+        assert 2000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self, api_client_with_token):

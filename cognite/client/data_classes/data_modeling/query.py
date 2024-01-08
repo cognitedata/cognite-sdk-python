@@ -140,11 +140,21 @@ class Query(CogniteObject):
 
 
 class ResultSetExpression(CogniteObject, ABC):
-    def __init__(self, from_: str | None, filter: Filter | None, limit: int | None, sort: list[InstanceSort] | None):
+    def __init__(
+        self,
+        from_: str | None,
+        filter: Filter | None,
+        limit: int | None,
+        sort: list[InstanceSort] | None,
+        direction: Literal["outwards", "inwards"] = "outwards",
+        chain_to: Literal["destination", "source"] = "destination",
+    ):
         self.from_ = from_
         self.filter = filter
         self.limit = limit
         self.sort = sort
+        self.direction = direction
+        self.chain_to = chain_to
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -162,6 +172,8 @@ class ResultSetExpression(CogniteObject, ABC):
             node = {
                 "from_": query_node.get("from"),
                 "filter": Filter.load(query_node["filter"]) if "filter" in query_node else None,
+                "chain_to": query_node.get("chainTo"),
+                "direction": query_node.get("direction"),
             }
             if (through := query_node.get("through")) is not None:
                 node["through"] = [
@@ -182,6 +194,7 @@ class ResultSetExpression(CogniteObject, ABC):
                 if "terminationFilter" in query_edge
                 else None,
                 "limit_each": query_edge.get("limitEach"),
+                "chain_to": query_edge.get("chainTo"),
             }
             post_sort = [InstanceSort.load(sort) for sort in resource["postSort"]] if "postSort" in resource else []
             return cast(
@@ -195,6 +208,25 @@ class ResultSetExpression(CogniteObject, ABC):
 
 
 class NodeResultSetExpression(ResultSetExpression):
+    """Describes how to query for nodes in the data model.
+
+    Args:
+        from_ (str | None): Chain your result-expression based on this view.
+        filter (Filter | None): Filter the result set based on this filter.
+        sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
+        limit (int | None): Limit the result set to this number of instances.
+        through (list[str] | tuple[str, str, str] | None): Chain your result-expression through this view.
+            The tuple must be on the form (space, view/version, property).
+        direction (Literal["outwards", "inwards"]): The direction to use when traversing direct relations.
+            Only applicable when through is specified.
+        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
+            The chain_to option is only applicable if the result rexpression referenced in `from`
+            contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're
+            following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to
+            end if you're following edges outwards i.e `direction=outwards`. If you're following edges
+            inwards i.e, `direction=inwards`, it will chain to start.
+    """
+
     def __init__(
         self,
         from_: str | None = None,
@@ -202,8 +234,10 @@ class NodeResultSetExpression(ResultSetExpression):
         sort: list[InstanceSort] | None = None,
         limit: int | None = None,
         through: list[str] | tuple[str, str, str] | None = None,
-    ):
-        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort)
+        direction: Literal["outwards", "inwards"] = "outwards",
+        chain_to: Literal["destination", "source"] = "destination",
+    ) -> None:
+        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
         self.through = through
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -225,6 +259,10 @@ class NodeResultSetExpression(ResultSetExpression):
                 },
                 "identifier": self.through[2],
             }
+        if self.chain_to:
+            nodes["chainTo" if camel_case else "chain_to"] = self.chain_to
+        if self.direction:
+            nodes["direction"] = self.direction
 
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
@@ -235,6 +273,30 @@ class NodeResultSetExpression(ResultSetExpression):
 
 
 class EdgeResultSetExpression(ResultSetExpression):
+    """Describes how to query for edges in the data model.
+
+    Args:
+        from_ (str | None): Chain your result expression from this edge.
+        max_distance (int | None): The largest - max - number of levels to traverse.
+        direction (Literal["outwards", "inwards"]): The direction to use when traversing.
+        filter (Filter | None): Filter the result set based on this filter.
+        node_filter (Filter | None): Filter the result set based on this filter.
+        termination_filter (Filter | None): Filter the result set based on this filter.
+        limit_each (int | None): Limit the number of returned edges for each of the source nodes in the result set.
+            The indicated uniform limit applies to the result set from the referenced from.
+            limitEach only has meaning when you also specify maxDistance=1 and from.
+        sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
+        post_sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
+        limit (int | None): Limit the result set to this number of instances.
+        chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
+            The chain_to option is only applicable if the result rexpression referenced in `from`
+            contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're
+            following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to
+            end if you're following edges outwards i.e `direction=outwards`. If you're following edges
+            inwards i.e, `direction=inwards`, it will chain to start.
+
+    """
+
     def __init__(
         self,
         from_: str | None = None,
@@ -247,10 +309,10 @@ class EdgeResultSetExpression(ResultSetExpression):
         sort: list[InstanceSort] | None = None,
         post_sort: list[InstanceSort] | None = None,
         limit: int | None = None,
-    ):
-        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort)
+        chain_to: Literal["destination", "source"] = "destination",
+    ) -> None:
+        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
         self.max_distance = max_distance
-        self.direction = direction
         self.node_filter = node_filter
         self.termination_filter = termination_filter
         self.limit_each = limit_each
@@ -273,6 +335,8 @@ class EdgeResultSetExpression(ResultSetExpression):
             edges["terminationFilter" if camel_case else "termination_filter"] = self.termination_filter.dump()
         if self.limit_each:
             edges["limitEach" if camel_case else "limit_each"] = self.limit_each
+        if self.chain_to:
+            edges["chainTo" if camel_case else "chain_to"] = self.chain_to
 
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]

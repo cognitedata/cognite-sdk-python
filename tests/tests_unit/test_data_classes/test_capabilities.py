@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-import cognite.client.data_classes.capabilities as capabilities_module  # noqa F401
+import cognite.client.data_classes.capabilities as capabilities_module  # F401
 from cognite.client.data_classes.capabilities import (
     AllProjectsScope,
     AllScope,
@@ -31,7 +31,14 @@ def all_acls():
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["372"]}}}},
         {"dataModelInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"dataModelInstancesAcl": {"actions": ["READ"], "scope": {"spaceScope": {"externalIds": ["maintain"]}}}},
         {"dataModelsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {
+            "dataModelsAcl": {
+                "actions": ["READ"],
+                "scope": {"dataModelScope": {"externalIds": ["maintain", "main-data"]}},
+            }
+        },
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}},
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idScope": {"ids": ["2918026428"]}}}},
         {"digitalTwinAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
@@ -48,10 +55,12 @@ def all_acls():
         {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"functionsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"genericsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"groupsAcl": {"actions": ["LIST", "READ", "DELETE", "UPDATE", "CREATE"], "scope": {"all": {}}}},
         {"groupsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"currentuserscope": {}}}},
         {"hostedExtractorsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"labelsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"modelHostingAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"monitoringTasksAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"notificationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"pipelinesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
@@ -249,13 +258,13 @@ class TestCapabilities:
         assert grp1.dump() == grp2.dump()
 
     def test_create_capability_forget_initializing_scope__not_supported(self):
-        with pytest.raises(ValueError, match="^DataSetsAcl got an unknown scope"):
+        with pytest.raises(ValueError, match="DataSetsAcl got an unknown scope"):
             DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=CurrentUserScope)
 
-        with pytest.raises(ValueError, match="^DataSetsAcl got an unknown scope"):
+        with pytest.raises(ValueError, match="DataSetsAcl got an unknown scope"):
             DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=GroupsAcl.Scope.CurrentUser)
 
-        with pytest.raises(ValueError, match="^ExperimentsAcl got an unknown scope"):
+        with pytest.raises(ValueError, match="ExperimentsAcl got an unknown scope"):
             ExperimentsAcl(actions=[ExperimentsAcl.Action.Use], scope=AllScope)
 
 
@@ -384,6 +393,24 @@ class TestIAMCompareCapabilities:
             assert RawAcl([RawAcl.Action.Read], RawAcl.Scope.Table({"db1": ["t3"]})) in missing
             assert RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})) in missing
 
+    def test_unknown_existing_capability(self, cognite_client):
+        desired = [
+            Capability.load({"datasetsAcl": {"actions": ["READ"], "scope": {"all": {}}}}),
+        ]
+        unknown = Capability.load(
+            {"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}
+        )
+
+        missing = cognite_client.iam.compare_capabilities(unknown, desired)
+        assert missing == desired
+
+    def test_legacy_capability(self, cognite_client):
+        legacy = [Capability.load({"modelHostingAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}})]
+        desired = [Capability.load({"modelHostingAcl": {"actions": ["READ"], "scope": {"all": {}}}})]
+
+        missing = cognite_client.iam.compare_capabilities(legacy, desired)
+        assert not missing
+
 
 @pytest.mark.parametrize(
     "dct",
@@ -412,8 +439,8 @@ def test_idscopes_camel_case():
     with pytest.raises(ValueError) as err:
         Capability.load(dct)
     assert err.value.args[0].startswith(
-        "DataSetsAcl got an unknown scope: IDScopeLowerCase(ids=[2495]), expected an instance of one of: "
-        "[DataSetsAcl.Scope.All, DataSetsAcl.Scope.ID]"
+        "Could not instantiate DataSetsAcl due to: DataSetsAcl got an unknown scope: IDScopeLowerCase(ids=[2495]), "
+        "expected an instance of one of: [DataSetsAcl.Scope.All, DataSetsAcl.Scope.ID]"
     )
 
 
@@ -422,6 +449,8 @@ def test_show_example_usage(capability):
     if capability is UnknownAcl:
         with pytest.raises(NotImplementedError):
             capability.show_example_usage()
+    elif capability is capabilities_module.LegacyCapability:
+        pytest.skip("LegacyCapability is abstract")
     else:
         cmd = capability.show_example_usage()[15:]  # TODO PY39: .removeprefix
         exec(f"{capability.__name__} = capabilities_module.{capability.__name__}")

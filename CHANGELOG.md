@@ -17,14 +17,128 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.5.0] - 2023-11-29
+
+## [7.10.0] - 2024-01-08
 ### Added
 - `geospatial.search_features` and `geospatial.stream_features` now accept the `allow_dimensionality_mismatch` parameter.
 
+## [7.9.0] - 2024-01-05
+### Added
+- You can now enable or disable user profiles for your CDF project with `client.iam.user_profiles.[enable/disable]`.
+
+## [7.8.10] - 2024-01-04
+### Changed
+- When using `OidcCredentials` to create a transformation, `cdf_project_name` is no longer optional as required
+  by the API.
+
+## [7.8.9] - 2024-01-04
+### Fixed
+- Pyodide-users of the SDK can now create Transformations with non-nonce credentials without a `pyodide.JsException`
+  exception being raised.
+
+## [7.8.8] - 2024-01-03
+### Added
+- Support for `workflows.cancel`.
+
+## [7.8.7] - 2024-01-03
+### Fixed
+- Added back `InstancesApply` that was removed in 7.8.6.
+
+## [7.8.6] - 2023-12-27
+### Improved
+- SDK dependency on the `sortedcontainers` package was dropped.
+
+## [7.8.5] - 2023-12-22
+### Fixed
+- `DirectRelationReference` is now immutable.
+- `DirectRelationReference.load` now correctly handles unknown parameters.
+
+## [7.8.4] - 2023-12-22
+### Fixed
+- Listing annotations now also accepts `None` and `inf` for the `limit` parameter (to return all), matching what
+  was already described in the documentation for the endpoint (for the parameter).
+- Calling `to_pandas(...)` on an `DiagramDetectItem` no longer raises `KeyError`.
+
+## [7.8.3] - 2023-12-21
+### Fixed
+- Revert `SingleHopConnectionDefinition` from a string to child class of `ViewProperty`.
+- If a `ViewProperty` or `ViewPropertyApply` dumped before version `7.6` was dumped and loaded after `7.6`, the
+  user got a `KeyError: 'container'`. The `load` methods are now backwards compatible with the old format.
+
+## [7.8.2] - 2023-12-21
+### Fixed
+- Revert `SingleHopConnectionDefinitionApply` from a string to child class of `ViewPropertyApply`.
+
+## [7.8.1] - 2023-12-21
+### Fixed
+- Calling `to_pandas` with `expand_aggregates=True` on an Asset with aggregated properties would yield a pandas DataFrame
+  with the column name `0` instead of `"value"`.
+### Improved
+- Specification of aggregated properties to `AssetsAPI.[list,filter,__call__]`.
+
+## [7.8.0] - 2023-12-21
+### Added
+- Instance classes `Node`, `Edge`, `NodeList` and `EdgeList` now supports a new flag `expand_properties` in their `to_pandas` method,
+  that makes it much simpler to work with the fetched properties. Additionally, `remove_property_prefix` allows easy prefix
+  removal (of the view ID, e.g. `space.external_id/version.my_prop` -> `my_prop`).
+
+## [7.7.1] - 2023-12-20
+### Fixed
+- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.  
+- The `IAMAPI.compare_capabilities` fails with a `AttributeError: 'UnknownAcl' object has no attribute '_capability_name'`
+  if the user has an unknwon ACL. This is now fixed by skipping comparison of unknown ACLs and issuing a warning.
+
+## [7.7.0] - 2023-12-20
+### Added
+- Support for `ViewProperty` types `SingleReverseDirectRelation` and `MultiReverseDirectRelation` in data modeling.
+
+## [7.6.0] - 2023-12-13
+### Added
+- Support for querying data models through graphql. See `client.data_modeling.graphql.query`.
+
+## [7.5.7] - 2023-12-12
+### Fixed
+- Certain combinations of `start`/`end` and `granularity` would cause `retrieve_dataframe_in_tz` to raise due to
+  a bug in the calender-arithmetic (`MonthAligner`).
+
+## [7.5.6] - 2023-12-11
+### Added
+- Missing legacy scopes for `Capability`: `LegacySpaceScope` and `LegacyDataModelScope`.
+
+## [7.5.5] - 2023-12-11
+### Added
+- Added `poll_timeout` parameter on `time_series.subscriptions.iterate_data`. Will keep the connection open and waiting,
+  until new data is available, up to `poll_timeout` seconds.
+
+## [7.5.4] - 2023-12-06
+### Changed
+- The `partitions` parameter is no longer respected when using generator methods to list resources
+- The `max_workers` config option has been moved from ClientConfig to the global config.
+
+## [7.5.3] - 2023-12-06
+### Added
+- Support for `subworkflow` tasks in `workflows`.
+
+## [7.5.2] - 2023-12-05
+### Fixed
+- The built-in `hash` function was mistakenly stored on `WorkflowDefinitionUpsert` instances after `__init__` and has been removed.
+
+## [7.5.1] - 2023-12-01
+### Changed
+- Raise an exception if `ClientConfig:base_url` is set to `None` or an empty string
+
+## [7.5.0] - 2023-11-30
+### Added
+- `chain_to` to `NodeResultSetExpression` and `NodeResultSetExpression`, and `direction` to `NodeResultSetExpression`.
+
+## [7.4.2] - 2023-11-28
+### Improved
+- Quality of life improvement to `client.extraction_pipelines.runs.list` method. The `statuses` parameter now accepts
+  a single value and the annotation is improved. The parameter `created_time` can now be given on the format `12d-ago`.
+
 ## [7.4.1] - 2023-11-28
 ### Fixed
-- Error in logic when creating a `Transformation`. This is causing when calling `client.transformations.update`. 
-  This is now fixed. 
+- Error in validation logic when creating a `Transformation` caused many calls to `client.transformations.update` to fail.
 
 ## [7.4.0] - 2023-11-27
 ### Changed

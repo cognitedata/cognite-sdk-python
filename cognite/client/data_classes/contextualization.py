@@ -489,7 +489,7 @@ class DiagramDetectItem(CogniteResource):
             pandas.DataFrame: The dataframe.
         """
         df = super().to_pandas(camel_case=camel_case)
-        df.loc["annotations"] = f"{len(df['annotations'])} annotations"
+        df.loc["annotations"] = f"{len(self.annotations or [])} annotations"
         return df
 
 

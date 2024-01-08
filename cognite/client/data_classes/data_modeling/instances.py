@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
@@ -29,7 +30,11 @@ from typing_extensions import Self, TypeAlias
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.core import DataModelingResource, DataModelingSort
+from cognite.client.data_classes.data_modeling.core import (
+    DataModelingInstancesList,
+    DataModelingResource,
+    DataModelingSort,
+)
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -41,10 +46,14 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import CogniteClient
+
 PropertyValue: TypeAlias = Union[
     str,
     int,
@@ -123,8 +132,8 @@ class InstanceCore(DataModelingResource, ABC):
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
+        super().__init__(space=space)
         self.instance_type = instance_type
-        self.space = space
         self.external_id = external_id
 
 
@@ -181,7 +190,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
                     raise ValueError("View id must be in the format <external_id>/<version>")
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
-        return Properties(props)
+        return cls(props)
 
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
@@ -241,7 +250,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         self.data[view_id] = properties
 
 
-class Instance(InstanceCore):
+class Instance(InstanceCore, ABC):
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -253,7 +262,6 @@ class Instance(InstanceCore):
         instance_type (Literal["node", "edge"]): The type of instance.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the instance.
-        **_ (Any): This is used to capture any changes in the API without breaking the SDK.
     """
 
     def __init__(
@@ -263,10 +271,9 @@ class Instance(InstanceCore):
         version: int,
         last_updated_time: int,
         created_time: int,
-        instance_type: Literal["node", "edge"] = "node",
-        deleted_time: int | None = None,
-        properties: Properties | None = None,
-        **_: Any,
+        instance_type: Literal["node", "edge"],
+        deleted_time: int | None,
+        properties: Properties | None,
     ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -275,17 +282,62 @@ class Instance(InstanceCore):
         self.deleted_time = deleted_time
         self.properties: Properties = properties or Properties({})
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "properties" in resource:
-            resource["properties"] = Properties.load(resource["properties"])
-        return super()._load(resource)
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if "properties" in dumped:
             dumped["properties"] = self.properties.dump()
         return dumped
+
+    def to_pandas(  # type: ignore [override]
+        self,
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+        expand_properties: bool = False,
+        remove_property_prefix: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties (bool): Expand the properties into separate rows. Note: Will change default to True in the next major version.
+            remove_property_prefix (bool): Remove view ID prefix from row names of expanded properties (in index). Requires data to be from a single view.
+            **kwargs (Any): For backwards compatability.
+
+        Returns:
+            pd.DataFrame: The dataframe.
+        """
+        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
+        if kwargs:
+            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+        if not expand_properties:
+            warnings.warn(
+                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
+                DeprecationWarning,
+            )
+        df = super().to_pandas(
+            expand_metadata=False, ignore=ignore, camel_case=camel_case, convert_timestamps=convert_timestamps
+        )
+        if not expand_properties or "properties" not in df.index:
+            return df
+
+        pd = local_import("pandas")
+        col = df.squeeze()
+        prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
+        if remove_property_prefix:
+            # We only do/allow this if we have a single source:
+            view_id, *extra = self.properties.keys()
+            if not extra:
+                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+            else:
+                warnings.warn(
+                    "Can't remove view ID prefix from expanded property rows as source was not unique",
+                    RuntimeWarning,
+                )
+        return pd.concat((col, prop_df.T.squeeze())).to_frame(name="value")
 
     @abstractmethod
     def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> InstanceApply:
@@ -293,7 +345,7 @@ class Instance(InstanceCore):
         raise NotImplementedError()
 
 
-class InstanceApplyResult(InstanceCore):
+class InstanceApplyResult(InstanceCore, ABC):
     """A node or edge. This represents the update on the instance.
 
     Args:
@@ -304,7 +356,6 @@ class InstanceApplyResult(InstanceCore):
         was_modified (bool): Whether the instance was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -316,7 +367,6 @@ class InstanceApplyResult(InstanceCore):
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
-        **_: Any,
     ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -326,7 +376,7 @@ class InstanceApplyResult(InstanceCore):
 
 
 class InstanceAggregationResult(DataModelingResource):
-    """A node or edge. This represents the update on the instance.
+    """Represents instances aggregation results.
 
     Args:
         aggregates (list[AggregatedNumberedValue]): List of aggregated values.
@@ -435,7 +485,6 @@ class Node(Instance):
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the node.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -448,7 +497,6 @@ class Node(Instance):
         deleted_time: int | None,
         properties: Properties | None,
         type: DirectRelationReference | None,
-        **_: Any,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
         self.type = type
@@ -512,18 +560,10 @@ class NodeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the node was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **_ (Any): No description.
     """
 
     def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        was_modified: bool,
-        last_updated_time: int,
-        created_time: int,
-        **_: Any,
+        self, space: str, external_id: str, version: int, was_modified: bool, last_updated_time: int, created_time: int
     ) -> None:
         super().__init__(
             instance_type="node",
@@ -533,6 +573,17 @@ class NodeApplyResult(InstanceApplyResult):
             was_modified=was_modified,
             last_updated_time=last_updated_time,
             created_time=created_time,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            was_modified=resource["wasModified"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
         )
 
     def as_id(self) -> NodeId:
@@ -613,7 +664,6 @@ class Edge(Instance):
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): No description.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -626,9 +676,8 @@ class Edge(Instance):
         created_time: int,
         start_node: DirectRelationReference,
         end_node: DirectRelationReference,
-        deleted_time: int | None = None,
-        properties: Properties | None = None,
-        **_: Any,
+        deleted_time: int | None,
+        properties: Properties | None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
         self.type = type
@@ -677,12 +726,18 @@ class Edge(Instance):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource)
-
-        instance.type = DirectRelationReference.load(resource["type"])
-        instance.start_node = DirectRelationReference.load(resource["startNode"])
-        instance.end_node = DirectRelationReference.load(resource["endNode"])
-        return instance
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            type=DirectRelationReference.load(resource["type"]),
+            version=resource["version"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
+            start_node=DirectRelationReference.load(resource["startNode"]),
+            end_node=DirectRelationReference.load(resource["endNode"]),
+            deleted_time=resource.get("deletedTime"),
+            properties=Properties.load(resource["properties"]) if "properties" in resource else None,
+        )
 
 
 class EdgeApplyResult(InstanceApplyResult):
@@ -695,18 +750,10 @@ class EdgeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the edge was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **_ (Any): No description.
     """
 
     def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        was_modified: bool,
-        last_updated_time: int,
-        created_time: int,
-        **_: Any,
+        self, space: str, external_id: str, version: int, was_modified: bool, last_updated_time: int, created_time: int
     ) -> None:
         super().__init__(
             instance_type="edge",
@@ -716,6 +763,17 @@ class EdgeApplyResult(InstanceApplyResult):
             was_modified=was_modified,
             last_updated_time=last_updated_time,
             created_time=created_time,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            was_modified=resource["wasModified"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
         )
 
     def as_id(self) -> EdgeId:
@@ -748,7 +806,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(CogniteResourceList[Node]):
+class NodeList(DataModelingInstancesList[Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -795,7 +853,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(CogniteResourceList[Edge]):
+class EdgeList(DataModelingInstancesList[Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
@@ -816,11 +874,11 @@ class EdgeListWithCursor(EdgeList):
         self.cursor = cursor
 
 
+# This is a utility class. It is not used by in the SDK codebase, but used in projects that use the SDK.
 @dataclass
 class InstancesApply:
     """
     This represents the write request of an instance query
-
     Args:
         nodes (NodeApplyList): A list of nodes.
         edges (EdgeApplyList): A list of edges.

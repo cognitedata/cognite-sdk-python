@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from itertools import groupby
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Dict, Sequence, Union
@@ -24,9 +25,11 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.capabilities import (
     AllScope,
     Capability,
+    LegacyCapability,
     ProjectCapability,
     ProjectCapabilityList,
     RawAcl,
+    UnknownAcl,
 )
 from cognite.client.data_classes.iam import TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
@@ -61,11 +64,20 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
         capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
     if isinstance(capabilities, Sequence):
         tpls: set[tuple] = set()
+        has_skipped = False
         for cap in capabilities:
             if isinstance(cap, dict):
                 cap = Capability.load(cap)
+            if isinstance(cap, UnknownAcl):
+                warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
+                has_skipped = True
+                continue
+            if isinstance(cap, LegacyCapability):
+                # Legacy capabilities are no longer in use, so they are safe to skip.
+                has_skipped = True
+                continue
             tpls.update(cap.as_tuples())  # type: ignore [union-attr]
-        if tpls:
+        if tpls or has_skipped:
             return tpls
         raise ValueError("No capabilities given")
     raise TypeError(
@@ -92,6 +104,10 @@ class IAMAPI(APIClient):
         ignore_allscope_meaning: bool = False,
     ) -> list[Capability]:
         """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
+
+        Note:
+            Capabilities that are no longer in use by the API will be ignored. These have names prefixed with `Legacy` and
+            all inherit from the base class `LegacyCapability`. If you want to check for these, you must do so manually.
 
         Args:
             existing_capabilities (ComparableCapability): List of existing capabilities.
