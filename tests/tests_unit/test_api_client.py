@@ -1189,6 +1189,7 @@ def convert_resource_to_patch_object_test_cases():
             "update": {
                 "name": {"set": "bla"},
                 "unit": {"setNull": True},
+                "unitExternalId": {"setNull": True},
                 "assetId": {"setNull": True},
                 "description": {"setNull": True},
                 "dataSetId": {"setNull": True},
