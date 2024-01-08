@@ -1828,7 +1828,7 @@ class TestRetrieveLatestDatapointsAPI:
         timeseries = timeseries_degree_c_minus40_0_100
 
         res = cognite_client.time_series.data.retrieve_latest(
-            LatestDatapointQuery(id=None, external_id=timeseries.external_id, before="now", **kwargs)
+            external_id=LatestDatapointQuery(external_id=timeseries.external_id, before="now", **kwargs)
         )
 
         if isinstance(res, pd.DataFrame):
@@ -1845,7 +1845,7 @@ class TestRetrieveLatestDatapointsAPI:
             )
         with pytest.raises(ValueError, match="You must use either 'target_unit' or 'target_unit_system', not both."):
             cognite_client.time_series.data.retrieve_latest(
-                LatestDatapointQuery(
+                id=LatestDatapointQuery(
                     id=ts.id, before="1h-ago", target_unit="temperature:deg_f", target_unit_system="imperial"
                 )
             )
