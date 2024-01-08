@@ -1656,8 +1656,10 @@ class RetrieveLatestDpsFetcher:
                 )
                 if i_target_unit is not None and i_target_unit_system is not None:
                     raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
-                dct["targetUnit"] = i_target_unit
-                dct["targetUnitSystem"] = i_target_unit_system
+                if i_target_unit is not None:
+                    dct["targetUnit"] = i_target_unit
+                if i_target_unit_system is not None:
+                    dct["targetUnitSystem"] = i_target_unit_system
         all_ids.extend(all_xids)
         return all_ids
 
