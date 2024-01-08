@@ -1828,7 +1828,7 @@ class TestRetrieveLatestDatapointsAPI:
         timeseries = timeseries_degree_c_minus40_0_100
 
         res = cognite_client.time_series.data.retrieve_latest(
-            LatestDatapointQuery(external_id=timeseries.external_id, before="now", **kwargs)
+            LatestDatapointQuery(id=None, external_id=timeseries.external_id, before="now", **kwargs)
         )
 
         if isinstance(res, pd.DataFrame):
