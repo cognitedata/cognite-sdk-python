@@ -88,8 +88,8 @@ class LatestDatapointQuery:
     id: int | None = None
     external_id: str | None = None
     before: None | int | str | datetime = None
-    target_unit: str | None = (None,)
-    target_unit_system: str | None = (None,)
+    target_unit: str | None = None
+    target_unit_system: str | None = None
 
     def __post_init__(self) -> None:
         # Ensure user have just specified one of id/xid:
