@@ -81,11 +81,15 @@ class LatestDatapointQuery:
         id (Optional[int]): The internal ID of the time series to query.
         external_id (Optional[str]): The external ID of the time series to query.
         before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
+        target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+        target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
     """
 
     id: int | None = None
     external_id: str | None = None
     before: None | int | str | datetime = None
+    target_unit: str | None = (None,)
+    target_unit_system: str | None = (None,)
 
     def __post_init__(self) -> None:
         # Ensure user have just specified one of id/xid:

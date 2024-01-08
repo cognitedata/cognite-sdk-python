@@ -88,6 +88,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
+
 as_completed = import_as_completed()
 
 _TSQueryList = List[_SingleTSQueryBase]
@@ -1582,8 +1583,10 @@ class RetrieveLatestDpsFetcher:
     ) -> None:
         self.before_settings: dict[tuple[str, int], None | int | str | datetime] = {}
         self.default_before = before
-        self.target_unit = target_unit
-        self.target_unit_system = target_unit_system
+        self.default_unit = target_unit
+        self.default_unit_system = target_unit_system
+        self.target_unit_settings: dict[tuple[str, int], None | str] = {}
+        self.target_unit_system_settings: dict[tuple[str, int], None | str] = {}
         self.ignore_unknown_ids = ignore_unknown_ids
         self.dps_client = dps_client
 
@@ -1617,6 +1620,8 @@ class RetrieveLatestDpsFetcher:
         elif isinstance(user_input, LatestDatapointQuery):
             as_primitive = self._get_and_check_identifier(user_input, identifier_type)
             self.before_settings[(identifier_type, 0)] = user_input.before
+            self.target_unit_settings[(identifier_type, 0)] = user_input.target_unit
+            self.target_unit_system_settings[(identifier_type, 0)] = user_input.target_unit_system
             return as_primitive
         elif isinstance(user_input, MutableSequence):
             user_input = user_input[:]  # Modify a shallow copy to avoid side effects
@@ -1624,6 +1629,8 @@ class RetrieveLatestDpsFetcher:
                 if isinstance(inp, LatestDatapointQuery):
                     as_primitive = self._get_and_check_identifier(inp, identifier_type)
                     self.before_settings[(identifier_type, i)] = inp.before
+                    self.target_unit_settings[(identifier_type, i)] = inp.target_unit
+                    self.target_unit_system_settings[(identifier_type, i)] = inp.target_unit_system
                     user_input[i] = as_primitive  # mutating while iterating like a boss
         return user_input
 
@@ -1643,31 +1650,23 @@ class RetrieveLatestDpsFetcher:
                 i_before = self.before_settings.get((identifier_type, i), self.default_before)
                 if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
+                i_target_unit = self.target_unit_settings.get((identifier_type, i), self.default_unit)
+                i_target_unit_system = self.target_unit_system_settings.get(
+                    (identifier_type, i), self.default_unit_system
+                )
+                if i_target_unit is not None and i_target_unit_system is not None:
+                    raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
+                dct["targetUnit"] = i_target_unit
+                dct["targetUnitSystem"] = i_target_unit_system
         all_ids.extend(all_xids)
         return all_ids
 
-    def _validate_and_create_query(self, chunk: list[dict[str, Any]]) -> dict[str, Any]:
-        if self.target_unit is not None and self.target_unit_system is not None:
-            raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
-
-        target_dict: dict[str, str] = {}
-        if self.target_unit is not None:
-            target_dict["targetUnit"] = self.target_unit
-        elif self.target_unit_system is not None:
-            target_dict["targetUnitSystem"] = self.target_unit_system
-
-        chunk_with_target = [{**dct, **target_dict} for dct in chunk]
-
-        args = {"items": chunk_with_target, "ignoreUnknownIds": self.ignore_unknown_ids}
-
-        return {
-            "url_path": self.dps_client._RESOURCE_PATH + "/latest",
-            "json": args,
-        }
-
     def fetch_datapoints(self) -> list[dict[str, Any]]:
         tasks = [
-            self._validate_and_create_query(chunk)
+            {
+                "url_path": self.dps_client._RESOURCE_PATH + "/latest",
+                "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
+            }
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
