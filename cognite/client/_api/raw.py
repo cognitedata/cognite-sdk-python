@@ -496,7 +496,7 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            Retrieve a row with key 'k1' from tablew 't1' in database 'db1'::
+            Retrieve a row with key 'k1' from table 't1' in database 'db1'::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
