@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
+from cognite.client.data_classes import (
+    TransformationSchedule,
+    TransformationScheduleList,
+    TransformationScheduleUpdate,
+    TransformationScheduleWrite,
+)
 from cognite.client.data_classes.transformations import TransformationFilter
+from cognite.client.data_classes.transformations.schedules import TransformationScheduleCore
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 
@@ -23,13 +29,27 @@ class TransformationSchedulesAPI(APIClient):
         self._DELETE_LIMIT = 5
         self._UPDATE_LIMIT = 5
 
+    @overload
+    def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule:
+        ...
+
+    @overload
     def create(
-        self, schedule: TransformationSchedule | Sequence[TransformationSchedule]
+        self, schedule: Sequence[TransformationSchedule] | Sequence[TransformationScheduleWrite]
+    ) -> TransformationScheduleList:
+        ...
+
+    def create(
+        self,
+        schedule: TransformationSchedule
+        | TransformationScheduleWrite
+        | Sequence[TransformationSchedule]
+        | Sequence[TransformationScheduleWrite],
     ) -> TransformationSchedule | TransformationScheduleList:
         """`Schedule the specified transformation with the specified configuration(s). <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/createTransformationSchedules>`_
 
         Args:
-            schedule (TransformationSchedule | Sequence[TransformationSchedule]): Configuration or list of configurations of the schedules to create.
+            schedule (TransformationSchedule | TransformationScheduleWrite | Sequence[TransformationSchedule] | Sequence[TransformationScheduleWrite]): Configuration or list of configurations of the schedules to create.
 
         Returns:
             TransformationSchedule | TransformationScheduleList: Created schedule(s)
@@ -39,14 +59,18 @@ class TransformationSchedulesAPI(APIClient):
             Create new schedules:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TransformationSchedule
+                >>> from cognite.client.data_classes import TransformationScheduleWrite
                 >>> c = CogniteClient()
-                >>> schedules = [TransformationSchedule(id = 1, interval = "0 * * * *"), TransformationSchedule(external_id="transformation2", interval = "5 * * * *"))]
+                >>> schedules = [TransformationScheduleWrite(id = 1, interval = "0 * * * *"), TransformationScheduleWrite(external_id="transformation2", interval = "5 * * * *"))]
                 >>> res = c.transformations.schedules.create(schedules)
         """
-        assert_type(schedule, "schedule", [TransformationSchedule, list])
+        assert_type(schedule, "schedule", [TransformationScheduleCore, Sequence])
+
         return self._create_multiple(
-            list_cls=TransformationScheduleList, resource_cls=TransformationSchedule, items=schedule
+            list_cls=TransformationScheduleList,
+            resource_cls=TransformationSchedule,
+            items=schedule,
+            input_resource_cls=TransformationScheduleWrite,
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> TransformationSchedule | None:

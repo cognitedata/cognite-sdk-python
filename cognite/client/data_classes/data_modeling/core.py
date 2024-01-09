@@ -10,8 +10,11 @@ from typing_extensions import Self
 from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
-    CogniteResourceList,
     T_CogniteResource,
+    T_WritableCogniteResource,
+    T_WriteClass,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
     basic_instance_dump,
 )
 from cognite.client.utils._auxiliary import json_dump_default
@@ -42,7 +45,26 @@ class DataModelingResource(CogniteResource, ABC):
         return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
 
 
-class DataModelingSchemaResource(DataModelingResource, ABC):
+class WritableDataModelingResource(WriteableCogniteResource[T_CogniteResource], ABC):
+    def __init__(self, space: str) -> None:
+        self.space = space
+
+    def __repr__(self) -> str:
+        args = []
+        if hasattr(self, "space"):
+            space = self.space
+            args.append(f"{space=}")
+        if hasattr(self, "external_id"):
+            external_id = self.external_id
+            args.append(f"{external_id=}")
+        if hasattr(self, "version"):
+            version = self.version
+            args.append(f"{version=}")
+
+        return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
+
+
+class DataModelingSchemaResource(WritableDataModelingResource[T_CogniteResource], ABC):
     def __init__(
         self,
         space: str,
@@ -56,7 +78,7 @@ class DataModelingSchemaResource(DataModelingResource, ABC):
         self.description = description
 
 
-class DataModelingInstancesList(CogniteResourceList, Generic[T_CogniteResource]):
+class DataModelingInstancesList(WriteableCogniteResourceList, Generic[T_WriteClass, T_WritableCogniteResource], ABC):
     def to_pandas(  # type: ignore [override]
         self,
         camel_case: bool = False,

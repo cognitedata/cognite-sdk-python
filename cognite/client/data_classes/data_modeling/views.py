@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
     CogniteResourceList,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ViewCore(DataModelingSchemaResource, ABC):
+class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
     def __init__(
         self,
         space: str,
@@ -124,6 +125,10 @@ class ViewApply(ViewCore):
             output["properties"] = {k: v.dump(camel_case) for k, v in output["properties"].items()}
 
         return output
+
+    def as_write(self) -> ViewApply:
+        """Returns this ViewApply instance."""
+        return self
 
 
 class View(ViewCore):
@@ -238,8 +243,23 @@ class View(ViewCore):
             properties=properties,
         )
 
+    def as_write(self) -> ViewApply:
+        return self.as_apply()
 
-class ViewList(CogniteResourceList[View]):
+
+class ViewApplyList(CogniteResourceList[ViewApply]):
+    _RESOURCE = ViewApply
+
+    def as_ids(self) -> list[ViewId]:
+        """Returns the list of ViewIds
+
+        Returns:
+            list[ViewId]: The list of ViewIds
+        """
+        return [v.as_id() for v in self]
+
+
+class ViewList(WriteableCogniteResourceList[ViewApply, View]):
     _RESOURCE = View
 
     def as_apply(self) -> ViewApplyList:
@@ -258,17 +278,8 @@ class ViewList(CogniteResourceList[View]):
         """
         return [v.as_id() for v in self]
 
-
-class ViewApplyList(CogniteResourceList[ViewApply]):
-    _RESOURCE = ViewApply
-
-    def as_ids(self) -> list[ViewId]:
-        """Returns the list of ViewIds
-
-        Returns:
-            list[ViewId]: The list of ViewIds
-        """
-        return [v.as_id() for v in self]
+    def as_write(self) -> ViewApplyList:
+        return self.as_apply()
 
 
 class ViewFilter(CogniteFilter):

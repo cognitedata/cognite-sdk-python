@@ -10,6 +10,7 @@ from cognite.client.data_classes import (
     DataSetFilter,
     DataSetList,
     DataSetUpdate,
+    DataSetWrite,
     TimestampRange,
 )
 from cognite.client.utils._identifier import IdentifierSequence
@@ -74,18 +75,20 @@ class DataSetsAPI(APIClient):
         return cast(Iterator[DataSet], self())
 
     @overload
-    def create(self, data_set: Sequence[DataSet]) -> DataSetList:
+    def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList:
         ...
 
     @overload
-    def create(self, data_set: DataSet) -> DataSet:
+    def create(self, data_set: DataSet | DataSetWrite) -> DataSet:
         ...
 
-    def create(self, data_set: DataSet | Sequence[DataSet]) -> DataSet | DataSetList:
+    def create(
+        self, data_set: DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]
+    ) -> DataSet | DataSetList:
         """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
 
         Args:
-            data_set (DataSet | Sequence[DataSet]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
+            data_set (DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
 
         Returns:
             DataSet | DataSetList: Created data set(s)
@@ -95,12 +98,14 @@ class DataSetsAPI(APIClient):
             Create new data sets::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import DataSet
+                >>> from cognite.client.data_classes import DataSetWrite
                 >>> c = CogniteClient()
-                >>> data_sets = [DataSet(name="1st level"), DataSet(name="2nd level")]
+                >>> data_sets = [DataSetWrite(name="1st level"), DataSetWrite(name="2nd level")]
                 >>> res = c.data_sets.create(data_sets)
         """
-        return self._create_multiple(list_cls=DataSetList, resource_cls=DataSet, items=data_set)
+        return self._create_multiple(
+            list_cls=DataSetList, resource_cls=DataSet, items=data_set, input_resource_cls=DataSetWrite
+        )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
         """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_

@@ -28,7 +28,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
-from cognite.client.data_classes.geospatial import GeospatialComputedItem
+from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
@@ -202,7 +202,7 @@ class TestCogniteObject:
     def test_handle_unknown_arguments_when_loading(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
-        if cognite_object_subclass in {Feature, FeatureAggregate, GeospatialComputedItem}:
+        if cognite_object_subclass in {Feature, FeatureWrite, FeatureAggregate, GeospatialComputedItem}:
             # ignore these as they are not compatible
             return
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)

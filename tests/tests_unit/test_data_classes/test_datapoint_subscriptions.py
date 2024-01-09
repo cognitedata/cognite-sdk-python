@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client.data_classes import filters
-from cognite.client.data_classes.datapoints_subscriptions import DataPointSubscriptionCreate
+from cognite.client.data_classes.datapoints_subscriptions import DataPointSubscriptionWrite
 
 
 class TestDataPointSubscription:
@@ -14,7 +14,7 @@ class TestDataPointSubscription:
 
         # Act
         with pytest.raises(ValueError) as e:
-            DataPointSubscriptionCreate(
+            DataPointSubscriptionWrite(
                 external_id="MySubscription", partition_count=10, name="MySubscription", filter=nested_fileter
             )
 

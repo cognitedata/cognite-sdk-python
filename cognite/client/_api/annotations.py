@@ -7,7 +7,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
-from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
+from cognite.client.data_classes.annotations import AnnotationCore, AnnotationReverseLookupFilter, AnnotationWrite
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -18,25 +18,32 @@ class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
     @overload
-    def create(self, annotations: Annotation) -> Annotation:
+    def create(self, annotations: Annotation | AnnotationWrite) -> Annotation:
         ...
 
     @overload
-    def create(self, annotations: Sequence[Annotation]) -> AnnotationList:
+    def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList:
         ...
 
-    def create(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
+    def create(
+        self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
+    ) -> Annotation | AnnotationList:
         """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
 
         Args:
-            annotations (Annotation | Sequence[Annotation]): Annotation(s) to create
+            annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
 
         Returns:
             Annotation | AnnotationList: Created annotation(s)
         """
-        assert_type(annotations, "annotations", [Annotation, Sequence])
+        assert_type(annotations, "annotations", [AnnotationCore, Sequence])
+
         return self._create_multiple(
-            list_cls=AnnotationList, resource_cls=Annotation, resource_path=self._RESOURCE_PATH + "/", items=annotations
+            list_cls=AnnotationList,
+            resource_cls=Annotation,
+            resource_path=self._RESOURCE_PATH + "/",
+            items=annotations,
+            input_resource_cls=AnnotationWrite,
         )
 
     @overload

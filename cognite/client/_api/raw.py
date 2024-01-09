@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
+from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, Table, TableList
+from cognite.client.data_classes.raw import RowCore
 from cognite.client.utils._auxiliary import (
     interpolate_and_url_encode,
     is_unlimited,
@@ -361,14 +362,18 @@ class RawRowsAPI(APIClient):
         )
 
     def insert(
-        self, db_name: str, table_name: str, row: Sequence[Row] | Row | dict, ensure_parent: bool = False
+        self,
+        db_name: str,
+        table_name: str,
+        row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict,
+        ensure_parent: bool = False,
     ) -> None:
         """`Insert one or more rows into a table. <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            row (Sequence[Row] | Row | dict): The row(s) to insert
+            row (Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict): The row(s) to insert
             ensure_parent (bool): Create database/table if they don't already exist.
 
         Examples:
@@ -376,8 +381,9 @@ class RawRowsAPI(APIClient):
             Insert new rows into a table::
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import RowWrite
                 >>> c = CogniteClient()
-                >>> rows = {"r1": {"col1": "val1", "col2": "val1"}, "r2": {"col1": "val2", "col2": "val2"}}
+                >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}), RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
                 >>> c.raw.rows.insert("db1", "table1", rows)
         """
         chunks = self._process_row_input(row)
@@ -418,11 +424,11 @@ class RawRowsAPI(APIClient):
                 >>> res = c.raw.rows.insert_dataframe("db1", "table1", df)
         """
         df_dict = dataframe.to_dict(orient="index")
-        rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
+        rows = [RowWrite(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
-    def _process_row_input(self, row: Sequence[Row] | Row | dict) -> list[list[dict]]:
-        assert_type(row, "row", [Sequence, dict, Row])
+    def _process_row_input(self, row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict) -> list[list[dict]]:
+        assert_type(row, "row", [Sequence, dict, RowCore])
         rows = []
         if isinstance(row, dict):
             for key, columns in row.items():
@@ -430,10 +436,14 @@ class RawRowsAPI(APIClient):
         elif isinstance(row, list):
             for elem in row:
                 if isinstance(elem, Row):
+                    rows.append(elem.as_write().dump(camel_case=True))
+                elif isinstance(elem, RowWrite):
                     rows.append(elem.dump(camel_case=True))
                 else:
                     raise TypeError("list elements must be Row objects.")
         elif isinstance(row, Row):
+            rows.append(row.as_write().dump(camel_case=True))
+        elif isinstance(row, RowWrite):
             rows.append(row.dump(camel_case=True))
         return split_into_chunks(rows, self._CREATE_LIMIT)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import Self
@@ -13,7 +14,11 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    InternalIdTransformerMixin,
+    NameTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 
 if TYPE_CHECKING:
@@ -48,15 +53,37 @@ class BoundingBox3D(CogniteObject):
         self.min = min
 
 
-class ThreeDModel(CogniteResource):
-    """No description.
+class ThreeDModelCore(WriteableCogniteResource["ThreeDModelWrite"], ABC):
+    """This class represents a 3D model in Cognite Data Fusion.
+
+
+    Args:
+        name (str | None): The name of the model.
+        data_set_id (int | None): The id of the dataset this 3D model belongs to.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+    """
+
+    def __init__(
+        self,
+        name: str | None = None,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> None:
+        self.name = name
+        self.data_set_id = data_set_id
+        self.metadata = metadata
+
+
+class ThreeDModel(ThreeDModelCore):
+    """This class represents a 3D model in Cognite Data Fusion.
+    This is the reading version of ThreeDModel, which is used when retrieving 3D models.
 
     Args:
         name (str | None): The name of the model.
         id (int | None): The ID of the model.
         created_time (int | None): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
         data_set_id (int | None): The id of the dataset this 3D model belongs to.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -69,12 +96,60 @@ class ThreeDModel(CogniteResource):
         metadata: dict[str, str] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.name = name
+        super().__init__(
+            name=name,
+            data_set_id=data_set_id,
+            metadata=metadata,
+        )
         self.id = id
         self.created_time = created_time
-        self.data_set_id = data_set_id
-        self.metadata = metadata
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> ThreeDModelWrite:
+        """Returns this ThreedModel in a writing version."""
+        if self.name is None:
+            raise ValueError("ThreeDModel must have a name to be writable")
+        return ThreeDModelWrite(
+            name=self.name,
+            data_set_id=self.data_set_id,
+            metadata=self.metadata,
+        )
+
+
+class ThreeDModelWrite(ThreeDModelCore):
+    """This class represents a 3D model in Cognite Data Fusion.
+    This is the writing version of ThreeDModel, which is used when creating 3D models.
+
+
+    Args:
+        name (str): The name of the model.
+        data_set_id (int | None): The id of the dataset this 3D model belongs to.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            data_set_id=data_set_id,
+            metadata=metadata,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDModelWrite:
+        return cls(
+            name=resource["name"],
+            data_set_id=resource.get("dataSetId"),
+            metadata=resource.get("metadata"),
+        )
+
+    def as_write(self) -> ThreeDModelWrite:
+        """Returns this ThreedModelWrite instance."""
+        return self
 
 
 class ThreeDModelUpdate(CogniteUpdate):
@@ -136,12 +211,68 @@ class ThreeDModelUpdate(CogniteUpdate):
         ]
 
 
-class ThreeDModelList(CogniteResourceList[ThreeDModel]):
+class ThreeDModelWriteList(CogniteResourceList[ThreeDModelWrite], NameTransformerMixin):
+    _RESOURCE = ThreeDModelWrite
+
+
+class ThreeDModelList(
+    WriteableCogniteResourceList[ThreeDModelWrite, ThreeDModel], NameTransformerMixin, InternalIdTransformerMixin
+):
     _RESOURCE = ThreeDModel
 
+    def as_write(self) -> ThreeDModelWriteList:
+        """Returns this ThreedModelList in a writing version."""
+        return ThreeDModelWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
 
-class ThreeDModelRevision(CogniteResource):
+
+class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite"], ABC):
     """No description.
+
+    Args:
+        file_id (int | None): The file id.
+        published (bool | None): True if the revision is marked as published.
+        rotation (list[float] | None): No description.
+        scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation (list[float] | None): 3D offset of the model.
+        camera (RevisionCameraProperties | dict[str, Any] | None): Initial camera position and target.
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+    """
+
+    def __init__(
+        self,
+        file_id: int | None = None,
+        published: bool | None = None,
+        rotation: list[float] | None = None,
+        scale: list[float] | None = None,
+        translation: list[float] | None = None,
+        camera: RevisionCameraProperties | dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> None:
+        self.file_id = file_id
+        self.published = published
+        self.rotation = rotation
+        self.scale = scale
+        self.translation = translation
+        self.camera = camera
+        self.metadata = metadata
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(instance.camera, dict):
+            instance.camera = RevisionCameraProperties._load(instance.camera)
+        return instance
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if isinstance(self.camera, RevisionCameraProperties):
+            result["camera"] = self.camera.dump(camel_case=camel_case)
+        return result
+
+
+class ThreeDModelRevision(ThreeDModelRevisionCore):
+    """This class represents a 3D model revision in Cognite Data Fusion.
+    This is the read version of ThreeDModelRevision, which is used when retrieving 3D model revisions.
 
     Args:
         id (int | None): The ID of the revision.
@@ -177,33 +308,87 @@ class ThreeDModelRevision(CogniteResource):
         created_time: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
+        super().__init__(
+            file_id=file_id,
+            published=published,
+            rotation=rotation,
+            scale=scale,
+            translation=translation,
+            camera=camera,
+            metadata=metadata,
+        )
         self.id = id
-        self.file_id = file_id
-        self.published = published
-        self.rotation = rotation
-        self.scale = scale
-        self.translation = translation
-        self.camera = camera
         self.status = status
-        self.metadata = metadata
         self.thumbnail_threed_file_id = thumbnail_threed_file_id
         self.thumbnail_url = thumbnail_url
         self.asset_mapping_count = asset_mapping_count
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.camera, dict):
-            instance.camera = RevisionCameraProperties._load(instance.camera)
-        return instance
+    def as_write(self) -> ThreeDModelRevisionWrite:
+        """Returns this ThreedModelRevision in a writing version."""
+        if self.file_id is None:
+            raise ValueError("ThreeDModelRevision must have a file_id to be writable")
+        return ThreeDModelRevisionWrite(
+            file_id=self.file_id,
+            published=self.published or False,
+            rotation=self.rotation,
+            scale=self.scale,
+            translation=self.translation,
+            camera=self.camera,
+            metadata=self.metadata,
+        )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case)
-        if isinstance(self.camera, RevisionCameraProperties):
-            result["camera"] = self.camera.dump(camel_case=camel_case)
-        return result
+
+class ThreeDModelRevisionWrite(ThreeDModelRevisionCore):
+    """This class represents a 3D model revision in Cognite Data Fusion.
+    This is the writing version of ThreeDModelRevision, which is used when creating 3D model revisions.
+
+    Args:
+        file_id (int): The file id to a file uploaded to Cognite's Files API. Can only be set on revision creation, and can never be updated.
+        published (bool): True if the revision is marked as published.
+        rotation (list[float] | None): No description.
+        scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation (list[float] | None): 3D offset of the model.
+        camera (RevisionCameraProperties | dict[str, Any] | None): Initial camera position and target.
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+    """
+
+    def __init__(
+        self,
+        file_id: int,
+        published: bool = False,
+        rotation: list[float] | None = None,
+        scale: list[float] | None = None,
+        translation: list[float] | None = None,
+        camera: RevisionCameraProperties | dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            file_id=file_id,
+            published=published,
+            rotation=rotation,
+            scale=scale,
+            translation=translation,
+            camera=camera,
+            metadata=metadata,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDModelRevisionWrite:
+        return cls(
+            file_id=resource["fileId"],
+            published=resource.get("published", False),
+            rotation=resource.get("rotation"),
+            scale=resource.get("scale"),
+            translation=resource.get("translation"),
+            camera=(camera := resource.get("camera")) and RevisionCameraProperties._load(camera),
+            metadata=resource.get("metadata"),
+        )
+
+    def as_write(self) -> ThreeDModelRevisionWrite:
+        """Returns this ThreedModelRevisionWrite instance."""
+        return self
 
 
 class ThreeDModelRevisionUpdate(CogniteUpdate):
@@ -280,8 +465,20 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
         ]
 
 
-class ThreeDModelRevisionList(CogniteResourceList[ThreeDModelRevision]):
+class ThreeDModelRevisionWriteList(CogniteResourceList[ThreeDModelRevisionWrite]):
+    _RESOURCE = ThreeDModelRevisionWrite
+
+
+class ThreeDModelRevisionList(
+    WriteableCogniteResourceList[ThreeDModelRevisionWrite, ThreeDModelRevision], InternalIdTransformerMixin
+):
     _RESOURCE = ThreeDModelRevision
+
+    def as_write(self) -> ThreeDModelRevisionWriteList:
+        """Returns this ThreedModelRevisionList in a writing version."""
+        return ThreeDModelRevisionWriteList(
+            [item.as_write() for item in self.data], cognite_client=self._cognite_client
+        )
 
 
 class ThreeDNode(CogniteResource):
@@ -339,8 +536,26 @@ class ThreeDNodeList(CogniteResourceList[ThreeDNode]):
     _RESOURCE = ThreeDNode
 
 
-class ThreeDAssetMapping(CogniteResource):
+class ThreeDAssetMappingCore(WriteableCogniteResource["ThreeDAssetMappingWrite"], ABC):
     """No description.
+
+    Args:
+        node_id (int | None): The ID of the node.
+        asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
+    """
+
+    def __init__(
+        self,
+        node_id: int | None = None,
+        asset_id: int | None = None,
+    ) -> None:
+        self.node_id = node_id
+        self.asset_id = asset_id
+
+
+class ThreeDAssetMapping(ThreeDAssetMappingCore):
+    """3D Asset mappings.
+    This is the reading version of ThreeDAssetMapping, which is used when retrieving 3D asset mappings.
 
     Args:
         node_id (int | None): The ID of the node.
@@ -358,12 +573,62 @@ class ThreeDAssetMapping(CogniteResource):
         subtree_size: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.node_id = node_id
-        self.asset_id = asset_id
+        super().__init__(
+            node_id=node_id,
+            asset_id=asset_id,
+        )
         self.tree_index = tree_index
         self.subtree_size = subtree_size
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def as_write(self) -> ThreeDAssetMappingWrite:
+        """Returns this ThreedAssetMapping in a writing version."""
+        if self.node_id is None or self.asset_id is None:
+            raise ValueError("ThreeDAssetMapping must have a node_id and asset_id to be writable")
+        return ThreeDAssetMappingWrite(
+            node_id=self.node_id,
+            asset_id=self.asset_id,
+        )
 
-class ThreeDAssetMappingList(CogniteResourceList[ThreeDAssetMapping]):
+
+class ThreeDAssetMappingWrite(ThreeDAssetMappingCore):
+    """3D Asset mappings.
+    This is the writing version of ThreeDAssetMapping, which is used when creating 3D asset mappings.
+
+    Args:
+        node_id (int): The ID of the node.
+        asset_id (int): The ID of the associated asset (Cognite's Assets API).
+    """
+
+    def __init__(
+        self,
+        node_id: int,
+        asset_id: int,
+    ) -> None:
+        super().__init__(
+            node_id=node_id,
+            asset_id=asset_id,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ThreeDAssetMappingWrite:
+        return cls(
+            node_id=resource["nodeId"],
+            asset_id=resource["assetId"],
+        )
+
+    def as_write(self) -> ThreeDAssetMappingWrite:
+        """Returns this ThreedAssetMappingWrite instance."""
+        return self
+
+
+class ThreeDAssetMappingWriteList(CogniteResourceList[ThreeDAssetMappingWrite]):
+    _RESOURCE = ThreeDAssetMappingWrite
+
+
+class ThreeDAssetMappingList(WriteableCogniteResourceList[ThreeDAssetMappingWrite, ThreeDAssetMapping]):
     _RESOURCE = ThreeDAssetMapping
+
+    def as_write(self) -> ThreeDAssetMappingWriteList:
+        """Returns this ThreedAssetMappingList in a writing version."""
+        return ThreeDAssetMappingWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
