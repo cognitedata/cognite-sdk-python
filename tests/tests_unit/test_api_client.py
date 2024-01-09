@@ -1181,23 +1181,6 @@ def convert_resource_to_patch_object_test_cases():
         id="Patch TimeSeries",
     )
     yield pytest.param(
-        TimeSeries(external_id="myTimeseries", name="bla"),
-        TimeSeriesUpdate._get_update_properties(),
-        "replace",
-        {
-            "externalId": "myTimeseries",
-            "update": {
-                "name": {"set": "bla"},
-                "unit": {"setNull": True},
-                "assetId": {"setNull": True},
-                "description": {"setNull": True},
-                "dataSetId": {"setNull": True},
-                "securityCategories": {"set": []},
-            },
-        },
-        id="Replace TimeSeries and ignore beta property",
-    )
-    yield pytest.param(
         TimeSeries(id=42, description="updated"),
         TimeSeriesUpdate._get_update_properties(),
         "replace_ignore_null",

@@ -56,7 +56,6 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
@@ -108,9 +107,6 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _Datapoints
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
     api_subversion = None
-    if validator.beta_api_subversion_is_needed():
-        api_subversion = "beta"
-        dps_client._unit_warning.warn()
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
@@ -561,7 +557,6 @@ class DatapointsAPI(APIClient):
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
         self._GRANULARITY_HOURS_LIMIT = 100_000
-        self._unit_warning = FeaturePreviewWarning("beta", "alpha", feature_name="Datapoints Target Unit")
 
     def retrieve(
         self,

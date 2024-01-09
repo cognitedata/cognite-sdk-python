@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.0] - 2024-01-09
+### Changed
+- Units on Time Series (including unit conversion) is out of beta and will no longer issue warnings on usage.
+
 ## [7.12.0] - 2024-01-09
 ### Added
 - `DatapointsAPI.retrieve_latest` now accepts `target_unit` or `target_unit_system` parameter.
