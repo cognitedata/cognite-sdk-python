@@ -117,14 +117,16 @@ class Annotation(AnnotationCore):
         last_updated_time: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.annotation_type = annotation_type
-        self.data = data
-        self.status = status
-        self.creating_app = creating_app
-        self.creating_app_version = creating_app_version
-        self.creating_user = creating_user
-        self.annotated_resource_type = annotated_resource_type
-        self.annotated_resource_id = annotated_resource_id
+        super().__init__(
+            annotation_type,
+            data,
+            status,
+            creating_app,
+            creating_app_version,
+            creating_user,
+            annotated_resource_type,
+            annotated_resource_id,
+        )
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
