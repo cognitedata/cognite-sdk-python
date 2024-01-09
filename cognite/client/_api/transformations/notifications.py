@@ -5,8 +5,11 @@ from typing import Sequence
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
-from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter, \
-    TransformationNotificationWrite, TransformationNotificationCore
+from cognite.client.data_classes.transformations.notifications import (
+    TransformationNotificationCore,
+    TransformationNotificationFilter,
+    TransformationNotificationWrite,
+)
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 
@@ -37,7 +40,10 @@ class TransformationNotificationsAPI(APIClient):
         """
         assert_type(notification, "notification", [TransformationNotificationCore, Sequence])
         return self._create_multiple(
-            list_cls=TransformationNotificationList, resource_cls=TransformationNotification, items=notification, input_resource_cls=TransformationNotificationWrite
+            list_cls=TransformationNotificationList,
+            resource_cls=TransformationNotification,
+            items=notification,
+            input_resource_cls=TransformationNotificationWrite,
         )
 
     def list(
