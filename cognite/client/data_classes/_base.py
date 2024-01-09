@@ -146,8 +146,8 @@ class CogniteObject:
         yaml = local_import("yaml")
         return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
-    @final
     @classmethod
+    @final
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         if isinstance(resource, dict):
