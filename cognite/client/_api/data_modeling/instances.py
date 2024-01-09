@@ -22,7 +22,7 @@ from typing import (
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResourceList, WriteableCogniteResource
 from cognite.client.data_classes.aggregations import (
     AggregatedNumberedValue,
     Aggregation,
@@ -645,7 +645,7 @@ class InstancesAPI(APIClient):
         edges = edges if isinstance(edges, Sequence) else [edges]
 
         res = self._create_multiple(
-            items=cast(Sequence[CogniteResource], (*nodes, *edges)),
+            items=cast(Sequence[WriteableCogniteResource], (*nodes, *edges)),
             list_cls=_NodeOrEdgeApplyResultList,
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
