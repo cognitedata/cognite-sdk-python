@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import warnings
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Generic, Literal
 
 from typing_extensions import Self
 
@@ -11,7 +11,8 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
     T_CogniteResource,
-    T_WriteList,
+    T_WritableCogniteResource,
+    T_WriteClass,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
     basic_instance_dump,
@@ -77,7 +78,9 @@ class DataModelingSchemaResource(WritableDataModelingResource[T_CogniteResource]
         self.description = description
 
 
-class DataModelingInstancesList(WriteableCogniteResourceList[T_CogniteResource, T_WriteList], ABC):
+class DataModelingInstancesList(
+    WriteableCogniteResourceList, Generic[T_WriteClass, T_WritableCogniteResource[T_WriteClass]], ABC
+):
     def to_pandas(  # type: ignore [override]
         self,
         camel_case: bool = False,

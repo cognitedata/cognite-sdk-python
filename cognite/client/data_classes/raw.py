@@ -101,7 +101,7 @@ class RowWrite(RowCore):
         return self
 
 
-class RowListCore(WriteableCogniteResourceList[T_Row, "RowWriteList"], ABC):
+class RowListCore(WriteableCogniteResourceList[RowWrite, T_Row], ABC):
     def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
@@ -233,7 +233,7 @@ class TableWriteList(CogniteResourceList[TableWrite], NameTransformerMixin):
     _RESOURCE = TableWrite
 
 
-class TableList(WriteableCogniteResourceList[Table, TableWriteList], NameTransformerMixin):
+class TableList(WriteableCogniteResourceList[TableWrite, Table], NameTransformerMixin):
     _RESOURCE = Table
 
     def as_write(self) -> TableWriteList:
@@ -317,7 +317,7 @@ class DatabaseWriteList(CogniteResourceList[DatabaseWrite], NameTransformerMixin
     _RESOURCE = DatabaseWrite
 
 
-class DatabaseList(WriteableCogniteResourceList[Database, DatabaseWriteList], NameTransformerMixin):
+class DatabaseList(WriteableCogniteResourceList[DatabaseWrite, Database], NameTransformerMixin):
     _RESOURCE = Database
 
     def as_write(self) -> DatabaseWriteList:

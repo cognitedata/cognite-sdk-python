@@ -375,7 +375,7 @@ class EventWriteList(CogniteResourceList[EventWrite], ExternalIDTransformerMixin
     _RESOURCE = EventWrite
 
 
-class EventList(WriteableCogniteResourceList[Event, EventWriteList], IdTransformerMixin):
+class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMixin):
     _RESOURCE = Event
 
     def as_write(self) -> EventWriteList:

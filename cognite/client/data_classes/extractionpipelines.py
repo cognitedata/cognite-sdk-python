@@ -365,7 +365,7 @@ class ExtractionPipelineWriteList(CogniteResourceList[ExtractionPipelineWrite], 
 
 
 class ExtractionPipelineList(
-    WriteableCogniteResourceList[ExtractionPipeline, ExtractionPipelineWriteList], IdTransformerMixin
+    WriteableCogniteResourceList[ExtractionPipelineWrite, ExtractionPipeline], IdTransformerMixin
 ):
     _RESOURCE = ExtractionPipeline
 
@@ -517,7 +517,7 @@ class ExtractionPipelineRunWriteList(CogniteResourceList[ExtractionPipelineRunWr
     _RESOURCE = ExtractionPipelineRunWrite
 
 
-class ExtractionPipelineRunList(WriteableCogniteResourceList[ExtractionPipelineRun, ExtractionPipelineRunWriteList]):
+class ExtractionPipelineRunList(WriteableCogniteResourceList[ExtractionPipelineRunWrite, ExtractionPipelineRun]):
     _RESOURCE = ExtractionPipelineRun
 
     def as_write(self) -> ExtractionPipelineRunWriteList:
@@ -686,7 +686,7 @@ class ExtractionPipelineConfigWriteList(CogniteResourceList[ExtractionPipelineCo
 
 
 class ExtractionPipelineConfigList(
-    WriteableCogniteResourceList[ExtractionPipelineConfig, ExtractionPipelineConfigWriteList]
+    WriteableCogniteResourceList[ExtractionPipelineConfigWrite, ExtractionPipelineConfig]
 ):
     _RESOURCE = ExtractionPipelineConfig
 

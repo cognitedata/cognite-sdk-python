@@ -150,7 +150,7 @@ class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], Extern
 
 
 class LabelDefinitionList(
-    WriteableCogniteResourceList[LabelDefinition, LabelDefinitionWriteList], ExternalIDTransformerMixin
+    WriteableCogniteResourceList[LabelDefinitionWrite, LabelDefinition], ExternalIDTransformerMixin
 ):
     _RESOURCE = LabelDefinition
 

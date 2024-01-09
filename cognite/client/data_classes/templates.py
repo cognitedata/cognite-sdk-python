@@ -124,7 +124,7 @@ class TemplateGroupWriteList(CogniteResourceList[TemplateGroupWrite]):
     _RESOURCE = TemplateGroupWrite
 
 
-class TemplateGroupList(WriteableCogniteResourceList[TemplateGroup, TemplateGroupWriteList]):
+class TemplateGroupList(WriteableCogniteResourceList[TemplateGroupWrite, TemplateGroup]):
     _RESOURCE = TemplateGroup
 
     def as_write(self) -> TemplateGroupWriteList:
@@ -658,18 +658,18 @@ class TemplateInstanceWriteList(CogniteResourceList[TemplateInstanceWrite]):
     _RESOURCE = TemplateInstanceWrite
 
 
-class TemplateInstanceList(WriteableCogniteResourceList[TemplateInstance, TemplateInstanceWriteList]):
+class TemplateInstanceList(WriteableCogniteResourceList[TemplateInstanceWrite, TemplateInstance]):
     _RESOURCE = TemplateInstance
 
     def as_write(self) -> TemplateInstanceWriteList:
         return TemplateInstanceWriteList([item.as_write() for item in self], cognite_client=self._get_cognite_client())
 
 
-class ViewWriteList(CogniteResourceList[View]):
-    _RESOURCE = View
+class ViewWriteList(CogniteResourceList[ViewWrite]):
+    _RESOURCE = ViewWrite
 
 
-class ViewList(WriteableCogniteResourceList[View, ViewWriteList]):
+class ViewList(WriteableCogniteResourceList[ViewWrite, View]):
     _RESOURCE = View
 
     def as_write(self) -> ViewWriteList:

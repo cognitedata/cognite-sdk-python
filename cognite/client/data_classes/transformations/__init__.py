@@ -666,7 +666,7 @@ class TransformationWriteList(CogniteResourceList[TransformationWrite], External
     _RESOURCE = TransformationWrite
 
 
-class TransformationList(WriteableCogniteResourceList[Transformation, TransformationWriteList], IdTransformerMixin):
+class TransformationList(WriteableCogniteResourceList[TransformationWrite, Transformation], IdTransformerMixin):
     _RESOURCE = Transformation
 
     def as_write(self) -> TransformationWriteList:

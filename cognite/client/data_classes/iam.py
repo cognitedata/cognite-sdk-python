@@ -172,7 +172,7 @@ class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
     _RESOURCE = GroupWrite
 
 
-class GroupList(WriteableCogniteResourceList[Group, GroupWriteList], NameTransformerMixin, InternalIdTransformerMixin):
+class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformerMixin, InternalIdTransformerMixin):
     _RESOURCE = Group
 
     def as_write(self) -> GroupWriteList:
@@ -253,13 +253,11 @@ class SecurityCategoryWrite(SecurityCategoryCore):
         return self
 
 
-class SecurityCategoryWriteList(CogniteResourceList[SecurityCategory], NameTransformerMixin):
-    _RESOURCE = SecurityCategory
+class SecurityCategoryWriteList(CogniteResourceList[SecurityCategoryWrite], NameTransformerMixin):
+    _RESOURCE = SecurityCategoryWrite
 
 
-class SecurityCategoryList(
-    WriteableCogniteResourceList[SecurityCategory, SecurityCategoryWriteList], NameTransformerMixin
-):
+class SecurityCategoryList(WriteableCogniteResourceList[SecurityCategoryWrite, SecurityCategory], NameTransformerMixin):
     _RESOURCE = SecurityCategory
 
     def as_write(self) -> SecurityCategoryWriteList:

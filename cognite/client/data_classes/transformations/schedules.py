@@ -167,7 +167,7 @@ class TransformationScheduleWriteList(CogniteResourceList[TransformationSchedule
 
 
 class TransformationScheduleList(
-    WriteableCogniteResourceList[TransformationSchedule, TransformationScheduleWriteList], IdTransformerMixin
+    WriteableCogniteResourceList[TransformationScheduleWrite, TransformationSchedule], IdTransformerMixin
 ):
     _RESOURCE = TransformationSchedule
 

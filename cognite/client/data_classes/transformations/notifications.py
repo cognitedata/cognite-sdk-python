@@ -117,7 +117,7 @@ class TransformationNotificationWriteList(CogniteResourceList[TransformationNoti
 
 
 class TransformationNotificationList(
-    WriteableCogniteResourceList[TransformationNotification, TransformationNotificationWriteList],
+    WriteableCogniteResourceList[TransformationNotificationWrite, TransformationNotification],
     InternalIdTransformerMixin,
 ):
     _RESOURCE = TransformationNotification

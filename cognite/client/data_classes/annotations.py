@@ -366,7 +366,7 @@ class AnnotationWriteList(CogniteResourceList[AnnotationWrite]):
     _RESOURCE = AnnotationWrite
 
 
-class AnnotationList(WriteableCogniteResourceList[Annotation, AnnotationWriteList]):
+class AnnotationList(WriteableCogniteResourceList[AnnotationWrite, Annotation]):
     _RESOURCE = Annotation
 
     def as_write(self) -> AnnotationWriteList:

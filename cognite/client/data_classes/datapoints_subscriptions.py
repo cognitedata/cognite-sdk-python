@@ -407,7 +407,7 @@ class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWr
 
 
 class DatapointSubscriptionList(
-    WriteableCogniteResourceList[DatapointSubscription, DatapointSubscriptionWriteList], ExternalIDTransformerMixin
+    WriteableCogniteResourceList[DataPointSubscriptionWrite, DatapointSubscription], ExternalIDTransformerMixin
 ):
     _RESOURCE = DatapointSubscription
 

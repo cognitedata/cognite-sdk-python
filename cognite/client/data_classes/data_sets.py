@@ -241,7 +241,7 @@ class DataSetWriteList(CogniteResourceList[DataSetWrite], ExternalIDTransformerM
     _RESOURCE = DataSetWrite
 
 
-class DataSetList(WriteableCogniteResourceList[DataSet, DataSetWriteList], IdTransformerMixin):
+class DataSetList(WriteableCogniteResourceList[DataSetWrite, DataSet], IdTransformerMixin):
     _RESOURCE = DataSet
 
     def as_write(self) -> DataSetWriteList:

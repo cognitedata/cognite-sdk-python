@@ -397,12 +397,10 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
-T_WriteList = TypeVar("T_WriteList", bound=CogniteResourceList)
 
-
-class WriteableCogniteResourceList(CogniteResourceList, Generic[T_CogniteResource, T_WriteList]):
+class WriteableCogniteResourceList(CogniteResourceList, Generic[T_WriteClass, T_WritableCogniteResource[T_WriteClass]]):
     @abstractmethod
-    def as_write(self) -> T_WriteList:
+    def as_write(self) -> CogniteResourceList[T_WriteClass]:
         raise NotImplementedError()
 
 

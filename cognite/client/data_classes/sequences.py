@@ -590,7 +590,7 @@ class SequenceWriteList(CogniteResourceList[SequenceWrite], ExternalIDTransforme
     _RESOURCE = SequenceWrite
 
 
-class SequenceList(WriteableCogniteResourceList[Sequence, SequenceWriteList], IdTransformerMixin):
+class SequenceList(WriteableCogniteResourceList[SequenceWrite, Sequence], IdTransformerMixin):
     _RESOURCE = Sequence
 
     def as_write(self) -> SequenceWriteList:

@@ -99,7 +99,7 @@ class WorkflowUpsertList(CogniteResourceList[WorkflowUpsert], ExternalIDTransfor
     _RESOURCE = WorkflowUpsert
 
 
-class WorkflowList(WriteableCogniteResourceList[Workflow, WorkflowUpsertList], ExternalIDTransformerMixin):
+class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], ExternalIDTransformerMixin):
     """This class represents a list of workflows."""
 
     _RESOURCE = Workflow
@@ -914,7 +914,7 @@ class WorkflowVersionUpsertList(CogniteResourceList[WorkflowVersionUpsert]):
         return WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
 
 
-class WorkflowVersionList(WriteableCogniteResourceList[WorkflowVersion, WorkflowVersionUpsertList]):
+class WorkflowVersionList(WriteableCogniteResourceList[WorkflowVersionUpsert, WorkflowVersion]):
     """
     This class represents a list of workflow versions.
     """

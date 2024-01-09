@@ -506,7 +506,7 @@ class FunctionScheduleWriteList(CogniteResourceList[FunctionScheduleWrite]):
     _RESOURCE = FunctionScheduleWrite
 
 
-class FunctionSchedulesList(WriteableCogniteResourceList[FunctionSchedule, FunctionScheduleWriteList]):
+class FunctionSchedulesList(WriteableCogniteResourceList[FunctionScheduleWrite, FunctionSchedule]):
     _RESOURCE = FunctionSchedule
 
     def as_write(self) -> FunctionScheduleWriteList:
@@ -518,7 +518,7 @@ class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransforme
     _RESOURCE = FunctionWrite
 
 
-class FunctionList(WriteableCogniteResourceList[Function, FunctionWriteList], IdTransformerMixin):
+class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTransformerMixin):
     _RESOURCE = Function
 
     def as_write(self) -> FunctionWriteList:

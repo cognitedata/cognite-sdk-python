@@ -204,7 +204,7 @@ class ContainerApplyList(CogniteResourceList[ContainerApply]):
         return [v.as_id() for v in self]
 
 
-class ContainerList(WriteableCogniteResourceList[Container, ContainerApplyList]):
+class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
     _RESOURCE = Container
 
     def as_apply(self) -> ContainerApplyList:

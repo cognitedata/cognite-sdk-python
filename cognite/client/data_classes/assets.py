@@ -523,7 +523,7 @@ class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin
     _RESOURCE = AssetWrite
 
 
-class AssetList(WriteableCogniteResourceList[Asset, AssetWriteList], IdTransformerMixin):
+class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:

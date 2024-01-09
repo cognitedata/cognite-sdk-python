@@ -819,7 +819,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[Node, NodeApplyList]):
+class NodeList(DataModelingInstancesList[NodeApply, Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -870,7 +870,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[Edge, EdgeApplyList]):
+class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:

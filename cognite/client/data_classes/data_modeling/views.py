@@ -259,7 +259,7 @@ class ViewApplyList(CogniteResourceList[ViewApply]):
         return [v.as_id() for v in self]
 
 
-class ViewList(WriteableCogniteResourceList[View, ViewApplyList]):
+class ViewList(WriteableCogniteResourceList[ViewApply, View]):
     _RESOURCE = View
 
     def as_apply(self) -> ViewApplyList:

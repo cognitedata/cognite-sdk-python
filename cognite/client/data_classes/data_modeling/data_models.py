@@ -203,7 +203,7 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
         return [d.as_id() for d in self]
 
 
-class DataModelList(WriteableCogniteResourceList[DataModel[T_View], DataModelApplyList]):
+class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_View]]):
     _RESOURCE = DataModel
 
     def as_apply(self) -> DataModelApplyList:

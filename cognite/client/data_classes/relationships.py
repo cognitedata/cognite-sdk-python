@@ -417,7 +417,7 @@ class RelationshipWriteList(CogniteResourceList[RelationshipWrite], ExternalIDTr
     _RESOURCE = RelationshipWrite
 
 
-class RelationshipList(WriteableCogniteResourceList[Relationship, RelationshipWriteList], ExternalIDTransformerMixin):
+class RelationshipList(WriteableCogniteResourceList[RelationshipWrite, Relationship], ExternalIDTransformerMixin):
     _RESOURCE = Relationship
 
     def as_write(self) -> RelationshipWriteList:

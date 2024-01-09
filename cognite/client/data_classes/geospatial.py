@@ -147,7 +147,7 @@ class FeatureTypeWriteList(CogniteResourceList[FeatureTypeWrite], ExternalIDTran
     _RESOURCE = FeatureTypeWrite
 
 
-class FeatureTypeList(WriteableCogniteResourceList[FeatureType, FeatureTypeWriteList]):
+class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType]):
     _RESOURCE = FeatureType
 
     def as_write(self) -> FeatureTypeWriteList:
@@ -317,7 +317,7 @@ def _to_feature_property_name(property_name: str) -> str:
     return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
-class FeatureListCore(WriteableCogniteResourceList[T_Feature, "FeatureWriteList"], ExternalIDTransformerMixin):
+class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], ExternalIDTransformerMixin):
     def to_geopandas(self, geometry: str, camel_case: bool = False) -> geopandas.GeoDataFrame:
         """Convert the instance into a GeoPandas GeoDataFrame.
 
@@ -566,7 +566,7 @@ class CoordinateReferenceSystemWriteList(CogniteResourceList[CoordinateReference
 
 
 class CoordinateReferenceSystemList(
-    WriteableCogniteResourceList[CoordinateReferenceSystem, CoordinateReferenceSystemWriteList]
+    WriteableCogniteResourceList[CoordinateReferenceSystemWrite, CoordinateReferenceSystem]
 ):
     _RESOURCE = CoordinateReferenceSystem
 

@@ -456,7 +456,7 @@ class FileMetadataWriteList(CogniteResourceList[FileMetadataWrite], ExternalIDTr
     _RESOURCE = FileMetadataWrite
 
 
-class FileMetadataList(WriteableCogniteResourceList[FileMetadata, FileMetadataWriteList], IdTransformerMixin):
+class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetadata], IdTransformerMixin):
     _RESOURCE = FileMetadata
 
     def as_write(self) -> FileMetadataWriteList:

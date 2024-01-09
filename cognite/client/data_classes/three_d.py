@@ -216,7 +216,7 @@ class ThreeDModelWriteList(CogniteResourceList[ThreeDModelWrite], NameTransforme
 
 
 class ThreeDModelList(
-    WriteableCogniteResourceList[ThreeDModel, ThreeDModelWriteList], NameTransformerMixin, InternalIdTransformerMixin
+    WriteableCogniteResourceList[ThreeDModelWrite, ThreeDModel], NameTransformerMixin, InternalIdTransformerMixin
 ):
     _RESOURCE = ThreeDModel
 
@@ -470,7 +470,7 @@ class ThreeDModelRevisionWriteList(CogniteResourceList[ThreeDModelRevisionWrite]
 
 
 class ThreeDModelRevisionList(
-    WriteableCogniteResourceList[ThreeDModelRevision, ThreeDModelRevisionWriteList], InternalIdTransformerMixin
+    WriteableCogniteResourceList[ThreeDModelRevisionWrite, ThreeDModelRevision], InternalIdTransformerMixin
 ):
     _RESOURCE = ThreeDModelRevision
 
@@ -626,7 +626,7 @@ class ThreeDAssetMappingWriteList(CogniteResourceList[ThreeDAssetMappingWrite]):
     _RESOURCE = ThreeDAssetMappingWrite
 
 
-class ThreeDAssetMappingList(WriteableCogniteResourceList[ThreeDAssetMapping, ThreeDAssetMappingWriteList]):
+class ThreeDAssetMappingList(WriteableCogniteResourceList[ThreeDAssetMappingWrite, ThreeDAssetMapping]):
     _RESOURCE = ThreeDAssetMapping
 
     def as_write(self) -> ThreeDAssetMappingWriteList:

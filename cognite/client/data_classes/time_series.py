@@ -399,7 +399,7 @@ class TimeSeriesWriteList(CogniteResourceList[TimeSeriesWrite], ExternalIDTransf
     _RESOURCE = TimeSeriesWrite
 
 
-class TimeSeriesList(WriteableCogniteResourceList[TimeSeries, TimeSeriesWriteList], IdTransformerMixin):
+class TimeSeriesList(WriteableCogniteResourceList[TimeSeriesWrite, TimeSeries], IdTransformerMixin):
     _RESOURCE = TimeSeries
 
     def as_write(self) -> TimeSeriesWriteList:
