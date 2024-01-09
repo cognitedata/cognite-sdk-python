@@ -20,6 +20,9 @@ Changes are grouped as follows
 ## [7.12.0] - 2024-01-08
 ### Added
 - `DatapointsAPI.retrieve_latest` now accepts `target_unit` or `target_unit_system` parameter.
+### Fixed
+- `DatapointsAPI.retrieve_latest` when given `LatestDatapointQuery`(s) without a setting for `before`, now correctly use
+  the (default) `before` setting as specified in the method call.
 
 ## [7.11.0] - 2024-01-09
 ### Added

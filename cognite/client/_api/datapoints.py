@@ -1228,17 +1228,20 @@ class DatapointsAPI(APIClient):
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
 
-            If you need to specify a different value of 'before' for each time series, you may pass several
-            LatestDatapointQuery objects::
+            If you need to specify a different value of 'before' for each time series, or different values for
+            unit or unit system, you may pass several LatestDatapointQuery objects::
 
                 >>> from datetime import datetime, timezone
                 >>> id_queries = [
                 ...     123,
                 ...     LatestDatapointQuery(id=456, before="1w-ago"),
-                ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc))]
+                ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc)),
+                ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f")]
                 >>> res = c.time_series.data.retrieve_latest(
                 ...     id=id_queries,
-                ...     external_id=LatestDatapointQuery(external_id="abc", before="3h-ago"))
+                ...     external_id=LatestDatapointQuery(
+                ...         external_id="abc", before="3h-ago", target_unit_system="Imperial")
+                ... )
         """
         fetcher = RetrieveLatestDpsFetcher(
             id, external_id, before, target_unit, target_unit_system, ignore_unknown_ids, self
@@ -1652,7 +1655,7 @@ class RetrieveLatestDpsFetcher:
         # specify a particular timestamp for 'now' in order to possibly get a datapoint a few hundred ms fresher:
         for identifiers, identifier_type in zip([all_ids, all_xids], ["id", "external_id"]):
             for i, dct in enumerate(identifiers):
-                i_before = self.before_settings.get((identifier_type, i), self.default_before)
+                i_before = self.before_settings.get((identifier_type, i)) or self.default_before
                 if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
                 i_target_unit = self.target_unit_settings.get((identifier_type, i)) or self.default_unit
