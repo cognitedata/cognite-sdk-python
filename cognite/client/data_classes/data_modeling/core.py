@@ -78,9 +78,7 @@ class DataModelingSchemaResource(WritableDataModelingResource[T_CogniteResource]
         self.description = description
 
 
-class DataModelingInstancesList(
-    WriteableCogniteResourceList, Generic[T_WriteClass, T_WritableCogniteResource[T_WriteClass]], ABC
-):
+class DataModelingInstancesList(WriteableCogniteResourceList, Generic[T_WriteClass, T_WritableCogniteResource], ABC):
     def to_pandas(  # type: ignore [override]
         self,
         camel_case: bool = False,
