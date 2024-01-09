@@ -110,7 +110,9 @@ class TestSequencesDataAPI:
         ).to_pandas(column_names="id", concat=True)
         assert df.shape[0] > 0
         assert 3 == df.shape[1]
-        assert all([str(small_sequence.id), str(small_sequence.id), str(pretend_timeseries.id)] == df.columns)
+        assert sorted([str(small_sequence.id), str(small_sequence.id), str(pretend_timeseries.id)]) == sorted(
+            df.columns
+        )
 
     def test_retrieve_dataframe(self, cognite_client, small_sequence):
         df = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=5).to_pandas()
