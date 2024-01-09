@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, WriteableCogniteResource, WriteableCogniteResourceList, \
-    T_WriteClass, InternalIdTransformerMixin, T_WriteList
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResourceList,
+    InternalIdTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
+)
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
+
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
@@ -74,7 +80,7 @@ class TransformationNotificationWrite(TransformationNotificationCore):
     This is the write format of a transformation notification.
 
     Args:
-        destination (str | None): Email address where notifications should be sent.
+        destination (str): Email address where notifications should be sent.
         transformation_id (int | None): Transformation ID.
         transformation_external_id (str | None): Transformation external ID.
     """
@@ -95,17 +101,32 @@ class TransformationNotificationWrite(TransformationNotificationCore):
         """Returns this TransformationNotification instance"""
         return self
 
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> TransformationNotificationWrite:
+        return cls(
+            destination=resource["destination"],
+            transformation_id=resource.get("transformationId"),
+            transformation_external_id=resource.get("transformationExternalId"),
+        )
+
 
 class TransformationNotificationWriteList(CogniteResourceList[TransformationNotificationWrite]):
     _RESOURCE = TransformationNotificationWrite
 
 
-class TransformationNotificationList(WriteableCogniteResourceList[TransformationNotification, TransformationNotificationWriteList], InternalIdTransformerMixin):
+class TransformationNotificationList(
+    WriteableCogniteResourceList[TransformationNotification, TransformationNotificationWriteList],
+    InternalIdTransformerMixin,
+):
     _RESOURCE = TransformationNotification
 
     def as_write(self) -> TransformationNotificationWriteList:
         """Returns this TransformationNotificationList instance"""
-        return TransformationNotificationWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return TransformationNotificationWriteList(
+            [item.as_write() for item in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class TransformationNotificationFilter(CogniteFilter):
