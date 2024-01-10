@@ -257,7 +257,7 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
             description=resource.get("description"),
             data_set_id=resource["dataSetId"],
             raw_tables=resource.get("rawTables"),
-            schedule=resource["schedule"],
+            schedule=resource.get("schedule"),
             contacts=[ExtractionPipelineContact.load(contact) for contact in resource.get("contacts") or []] or None,
             metadata=resource.get("metadata"),
             source=resource.get("source"),
