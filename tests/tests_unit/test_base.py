@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
 from typing import Any
@@ -25,8 +26,9 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     PropertySpec,
 )
+from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
-from cognite.client.data_classes.geospatial import GeospatialComputedItem
+from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
@@ -167,6 +169,31 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+    )
+    def test_load_has_no_side_effects(
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
+    ):
+        # TODO: Fix _load methods of the following classes:
+        to_skip = {
+            DatapointsArray,
+        }
+        if cognite_object_subclass in to_skip:
+            pytest.skip(f"TODO: Fix _load method for {cognite_object_subclass}")
+
+        instance_generator = FakeCogniteResourceGenerator(seed=69_420, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass)
+
+        dumped = instance.dump(camel_case=True)
+        original_dumped = deepcopy(dumped)
+        _ = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+
+        # Ensure no part of load mutates the input dict:
+        assert dumped == original_dumped
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_object_subclass",
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
             for class_ in all_concrete_subclasses(CogniteObject)
@@ -175,7 +202,7 @@ class TestCogniteObject:
     def test_handle_unknown_arguments_when_loading(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
-        if cognite_object_subclass in {Feature, FeatureAggregate, GeospatialComputedItem}:
+        if cognite_object_subclass in {Feature, FeatureWrite, FeatureAggregate, GeospatialComputedItem}:
             # ignore these as they are not compatible
             return
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)

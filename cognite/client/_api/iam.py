@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import warnings
 from itertools import groupby
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -24,11 +25,13 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.capabilities import (
     AllScope,
     Capability,
+    LegacyCapability,
     ProjectCapability,
     ProjectCapabilityList,
     RawAcl,
+    UnknownAcl,
 )
-from cognite.client.data_classes.iam import TokenInspection
+from cognite.client.data_classes.iam import GroupWrite, SecurityCategoryWrite, TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -61,11 +64,20 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
         capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
     if isinstance(capabilities, Sequence):
         tpls: set[tuple] = set()
+        has_skipped = False
         for cap in capabilities:
             if isinstance(cap, dict):
                 cap = Capability.load(cap)
+            if isinstance(cap, UnknownAcl):
+                warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
+                has_skipped = True
+                continue
+            if isinstance(cap, LegacyCapability):
+                # Legacy capabilities are no longer in use, so they are safe to skip.
+                has_skipped = True
+                continue
             tpls.update(cap.as_tuples())  # type: ignore [union-attr]
-        if tpls:
+        if tpls or has_skipped:
             return tpls
         raise ValueError("No capabilities given")
     raise TypeError(
@@ -92,6 +104,10 @@ class IAMAPI(APIClient):
         ignore_allscope_meaning: bool = False,
     ) -> list[Capability]:
         """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
+
+        Note:
+            Capabilities that are no longer in use by the API will be ignored. These have names prefixed with `Legacy` and
+            all inherit from the base class `LegacyCapability`. If you want to check for these, you must do so manually.
 
         Args:
             existing_capabilities (ComparableCapability): List of existing capabilities.
@@ -242,11 +258,19 @@ class GroupsAPI(APIClient):
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         return GroupList.load(res.json()["items"])
 
-    def create(self, group: Group | Sequence[Group]) -> Group | GroupList:
+    @overload
+    def create(self, group: Group | GroupWrite) -> Group:
+        ...
+
+    @overload
+    def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList:
+        ...
+
+    def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
 
         Args:
-            group (Group | Sequence[Group]): Group or list of groups to create.
+            group (Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]): Group or list of groups to create.
         Returns:
             Group | GroupList: The created group(s).
 
@@ -255,14 +279,14 @@ class GroupsAPI(APIClient):
             Create group::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Group
+                >>> from cognite.client.data_classes import GroupWrite
                 >>> from cognite.client.data_classes.capabilities import GroupsAcl
                 >>> c = CogniteClient()
                 >>> my_capabilities = [GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All())]
-                >>> my_group = Group(name="My Group", capabilities=my_capabilities)
+                >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = c.iam.groups.create(my_group)
         """
-        return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group)
+        return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
 
     def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
@@ -303,13 +327,27 @@ class SecurityCategoriesAPI(APIClient):
         """
         return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
+    @overload
+    def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory:
+        ...
+
+    @overload
     def create(
-        self, security_category: SecurityCategory | Sequence[SecurityCategory]
+        self, security_category: Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]
+    ) -> SecurityCategoryList:
+        ...
+
+    def create(
+        self,
+        security_category: SecurityCategory
+        | SecurityCategoryWrite
+        | Sequence[SecurityCategory]
+        | Sequence[SecurityCategoryWrite],
     ) -> SecurityCategory | SecurityCategoryList:
         """`Create one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
-            security_category (SecurityCategory | Sequence[SecurityCategory]): Security category or list of categories to create.
+            security_category (SecurityCategory | SecurityCategoryWrite | Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]): Security category or list of categories to create.
 
         Returns:
             SecurityCategory | SecurityCategoryList: The created security category or categories.
@@ -319,13 +357,16 @@ class SecurityCategoriesAPI(APIClient):
             Create security category::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SecurityCategory
+                >>> from cognite.client.data_classes import SecurityCategoryWrite
                 >>> c = CogniteClient()
-                >>> my_category = SecurityCategory(name="My Category")
+                >>> my_category = SecurityCategoryWrite(name="My Category")
                 >>> res = c.iam.security_categories.create(my_category)
         """
         return self._create_multiple(
-            list_cls=SecurityCategoryList, resource_cls=SecurityCategory, items=security_category
+            list_cls=SecurityCategoryList,
+            resource_cls=SecurityCategory,
+            items=security_category,
+            input_resource_cls=SecurityCategoryWrite,
         )
 
     def delete(self, id: int | Sequence[int]) -> None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, MutableSequence, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.units import (
@@ -10,6 +10,7 @@ from cognite.client.data_classes.units import (
     UnitSystemList,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -32,16 +33,16 @@ class UnitAPI(APIClient):
         ...
 
     @overload
-    def retrieve(self, external_id: MutableSequence[str], ignore_unknown_ids: bool = False) -> UnitList:
+    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList:
         ...
 
     def retrieve(
-        self, external_id: str | MutableSequence[str], ignore_unknown_ids: bool = False
+        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
 
         Args:
-            external_id (str | MutableSequence[str]): External ID or list of external IDs
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:

@@ -187,17 +187,18 @@ class DiagramsAPI(APIClient):
                 >>> from cognite.client.data_classes.contextualization import FileReference
                 >>> client = CogniteClient()
                 >>> detect_job = client.diagrams.detect(
-                    entities=[{"userDefinedField": "21PT1017","ignoredField": "AA11"}, {"userDefinedField": "21PT1018"}],
-                    search_field="userDefinedField",
-                    partial_match=True,
-                    min_tokens=2,
-                    file_ids=[101],
-                    file_external_ids=["Test1"],
-                    file_references=[
-                        FileReference(id=20, first_page=1, last_page=10),
-                        FileReference(external_id="ext_20", first_page=11, last_page=20)
-                    ],
-                )
+                ...     entities=[
+                ...         {"userDefinedField": "21PT1017","ignoredField": "AA11"},
+                ...         {"userDefinedField": "21PT1018"}],
+                ...     search_field="userDefinedField",
+                ...     partial_match=True,
+                ...     min_tokens=2,
+                ...     file_ids=[101],
+                ...     file_external_ids=["Test1"],
+                ...     file_references=[
+                ...         FileReference(id=20, first_page=1, last_page=10),
+                ...         FileReference(external_id="ext_20", first_page=11, last_page=20)
+                ...     ])
                 >>> result = detect_job.result
                 >>> print(result)
                 <code>

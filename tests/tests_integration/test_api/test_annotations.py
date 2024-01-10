@@ -11,6 +11,7 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate, FileMetadata
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import is_unlimited
 
 
 def delete_with_check(cognite_client: CogniteClient, delete_ids: list[int], check_ids: list[int] | None = None) -> None:
@@ -179,7 +180,7 @@ def _test_list_on_created_annotations(
     )
     annotations_list = cognite_client.annotations.list(filter=filter, limit=limit)
     assert isinstance(annotations_list, AnnotationList)
-    if limit == -1 or limit > len(annotations):
+    if is_unlimited(limit) or limit > len(annotations):
         assert len(annotations_list) == len(annotations)
     else:
         assert len(annotations_list) == limit
@@ -309,6 +310,8 @@ class TestAnnotationsIntegration:
         _test_list_on_created_annotations(cognite_client, created_annotations)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=30)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=-1)
+        _test_list_on_created_annotations(cognite_client, created_annotations, limit=None)
+        _test_list_on_created_annotations(cognite_client, created_annotations, limit=float("inf"))
 
     def test_retrieve(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
         created_annotation = cognite_client.annotations.create(base_annotation)
@@ -321,13 +324,7 @@ class TestAnnotationsIntegration:
         ids = [c.id for c in created_annotations]
         retrieved_annotations = cognite_client.annotations.retrieve_multiple(ids)
         assert isinstance(retrieved_annotations, AnnotationList)
-
-        # TODO assert the order and do without sorting
-        # as soon as the API is fixed
-        for ret, new in zip(
-            sorted(retrieved_annotations, key=lambda a: a.id), sorted(created_annotations, key=lambda a: a.id)
-        ):
-            assert ret.dump() == new.dump()
+        assert retrieved_annotations.dump() == created_annotations.dump()
 
     def test_annotations_reverse_lookup(
         self, asset_link_annotation: Annotation, cognite_client: CogniteClient, permanent_file_id: int

@@ -18,8 +18,12 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.data_classes.time_series import (
+    SortableTimeSeriesProperty,
+    TimeSeriesProperty,
+    TimeSeriesSort,
+    TimeSeriesWrite,
+)
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 
@@ -60,7 +64,6 @@ class TimeSeriesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.data = DatapointsAPI(config, api_version, cognite_client)
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
-        self._unit_warning = FeaturePreviewWarning("beta", "alpha", "Timeseries Unit External ID")
 
     def __call__(
         self,
@@ -132,8 +135,6 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         )
 
-        api_subversion = self._get_api_subversion(filter.unit_external_id, filter.unit_quantity)
-
         return self._list_generator(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
@@ -142,7 +143,6 @@ class TimeSeriesAPI(APIClient):
             filter=filter.dump(camel_case=True),
             limit=limit,
             partitions=partitions,
-            api_subversion=api_subversion,
         )
 
     def __iter__(self) -> Iterator[TimeSeries]:
@@ -185,8 +185,6 @@ class TimeSeriesAPI(APIClient):
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             identifiers=identifiers,
-            # Unit external id is only supported in beta, this can be removed when it is released in GA.
-            api_subversion="beta",
         )
 
     def retrieve_multiple(
@@ -225,8 +223,6 @@ class TimeSeriesAPI(APIClient):
             resource_cls=TimeSeries,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
-            # Unit external id is only supported in beta, this can be removed when it is released in GA.
-            api_subversion="beta",
         )
 
     def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[CountAggregate]:
@@ -288,7 +284,6 @@ class TimeSeriesAPI(APIClient):
             "count",
             filter=filter,
             advanced_filter=advanced_filter,
-            api_subversion="beta",
         )
 
     def aggregate_cardinality_values(
@@ -339,7 +334,6 @@ class TimeSeriesAPI(APIClient):
             filter=filter,
             advanced_filter=advanced_filter,
             aggregate_filter=aggregate_filter,
-            api_subversion="beta",
         )
 
     def aggregate_cardinality_properties(
@@ -375,7 +369,6 @@ class TimeSeriesAPI(APIClient):
             filter=filter,
             advanced_filter=advanced_filter,
             aggregate_filter=aggregate_filter,
-            api_subversion="beta",
         )
 
     def aggregate_unique_values(
@@ -437,7 +430,6 @@ class TimeSeriesAPI(APIClient):
             filter=filter,
             advanced_filter=advanced_filter,
             aggregate_filter=aggregate_filter,
-            api_subversion="beta",
         )
 
     def aggregate_unique_properties(
@@ -474,22 +466,23 @@ class TimeSeriesAPI(APIClient):
             filter=filter,
             advanced_filter=advanced_filter,
             aggregate_filter=aggregate_filter,
-            api_subversion="beta",
         )
 
     @overload
-    def create(self, time_series: Sequence[TimeSeries]) -> TimeSeriesList:
+    def create(self, time_series: Sequence[TimeSeries] | Sequence[TimeSeriesWrite]) -> TimeSeriesList:
         ...
 
     @overload
-    def create(self, time_series: TimeSeries) -> TimeSeries:
+    def create(self, time_series: TimeSeries | TimeSeriesWrite) -> TimeSeries:
         ...
 
-    def create(self, time_series: TimeSeries | Sequence[TimeSeries]) -> TimeSeries | TimeSeriesList:
+    def create(
+        self, time_series: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]
+    ) -> TimeSeries | TimeSeriesList:
         """`Create one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/postTimeSeries>`_
 
         Args:
-            time_series (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to create.
+            time_series (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]): TimeSeries or list of TimeSeries to create.
 
         Returns:
             TimeSeries | TimeSeriesList: The created time series.
@@ -499,14 +492,15 @@ class TimeSeriesAPI(APIClient):
             Create a new time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TimeSeries
+                >>> from cognite.client.data_classes import TimeSeriesWrite
                 >>> c = CogniteClient()
-                >>> ts = c.time_series.create(TimeSeries(name="my_ts", data_set_id=123, external_id="foo"))
+                >>> ts = c.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
         """
-        api_subversion = self._get_subapiversion_item(time_series)
-
         return self._create_multiple(
-            list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series, api_subversion=api_subversion
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            items=time_series,
+            input_resource_cls=TimeSeriesWrite,
         )
 
     def delete(
@@ -573,35 +567,13 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)
         """
-        api_subversion = self._get_subapiversion_item(item)
 
         return self._update_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             update_cls=TimeSeriesUpdate,
             items=item,
-            api_subversion=api_subversion,
         )
-
-    def _get_subapiversion_item(
-        self, item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]
-    ) -> str | None:
-        api_subversion: str | None = None
-        if isinstance(item, TimeSeries) and item.unit_external_id:
-            api_subversion = "beta"
-        elif isinstance(item, TimeSeriesUpdate) and "unitExternalId" in item.dump(camel_case=True).get("update", {}):
-            api_subversion = "beta"
-        elif isinstance(item, Sequence) and any(
-            ts.unit_external_id
-            if isinstance(ts, TimeSeries)
-            else "unitExternalId" in ts.dump(camel_case=True).get("update", {})
-            for ts in item
-        ):
-            api_subversion = "beta"
-
-        if api_subversion == "beta":
-            self._unit_warning.warn()
-        return api_subversion
 
     @overload
     def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
@@ -623,7 +595,6 @@ class TimeSeriesAPI(APIClient):
         Args:
             item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
             mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
-                Note replace will skip beta properties (unit_external_id), if you want to replace the beta properties you have to use the update method.
 
         Returns:
             TimeSeries | TimeSeriesList: The upserted time series(s).
@@ -640,7 +611,6 @@ class TimeSeriesAPI(APIClient):
                 >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
                 >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
-        api_subversion = self._get_subapiversion_item(item)
 
         return self._upsert_multiple(
             item,
@@ -649,7 +619,6 @@ class TimeSeriesAPI(APIClient):
             update_cls=TimeSeriesUpdate,
             input_resource_cls=TimeSeries,
             mode=mode,
-            api_subversion=api_subversion,
         )
 
     def search(
@@ -688,19 +657,11 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.search(filter={"asset_ids":[123]})
         """
 
-        if isinstance(filter, TimeSeriesFilter):
-            api_subversion: str | None = self._get_api_subversion(filter.unit_external_id, filter.unit_quantity)
-        elif isinstance(filter, dict):
-            api_subversion = self._get_api_subversion(filter.get("unitExternalId"), filter.get("unitQuantity"))
-        else:
-            api_subversion = None
-
         return self._search(
             list_cls=TimeSeriesList,
             search={"name": name, "description": description, "query": query},
             filter=filter or {},
             limit=limit,
-            api_subversion=api_subversion,
         )
 
     def filter(
@@ -850,8 +811,6 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
 
-        api_subversion = self._get_api_subversion(unit_external_id, unit_quantity)
-
         return self._list(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
@@ -859,12 +818,4 @@ class TimeSeriesAPI(APIClient):
             filter=filter,
             limit=limit,
             partitions=partitions,
-            api_subversion=api_subversion,
         )
-
-    def _get_api_subversion(self, unit_external_id: str | None, unit_quantity: str | None) -> str | None:
-        api_subversion: str | None = None
-        if unit_external_id is not None or unit_quantity is not None:
-            api_subversion = "beta"
-            self._unit_warning.warn()
-        return api_subversion

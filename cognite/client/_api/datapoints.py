@@ -56,7 +56,6 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
@@ -108,9 +107,6 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _Datapoints
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
     api_subversion = None
-    if validator.beta_api_subversion_is_needed():
-        api_subversion = "beta"
-        dps_client._unit_warning.warn()
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
@@ -561,7 +557,6 @@ class DatapointsAPI(APIClient):
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
         self._GRANULARITY_HOURS_LIMIT = 100_000
-        self._unit_warning = FeaturePreviewWarning("beta", "alpha", feature_name="Datapoints Target Unit")
 
     def retrieve(
         self,
@@ -1181,6 +1176,8 @@ class DatapointsAPI(APIClient):
         id: int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None = None,
         external_id: str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None = None,
         before: None | int | str | datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Datapoints | DatapointsList | None:
         """`Get the latest datapoint for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getLatest>`_
@@ -1189,6 +1186,8 @@ class DatapointsAPI(APIClient):
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
             before (None | int | str | datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
+            target_unit (str | None): The unit_external_id of the data point returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the data point returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -1207,6 +1206,11 @@ class DatapointsAPI(APIClient):
 
                 >>> res = c.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
+            You can also retrieve the datapoint in a different unit or unit system::
+
+                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
+                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
+
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
@@ -1219,19 +1223,24 @@ class DatapointsAPI(APIClient):
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
 
-            If you need to specify a different value of 'before' for each time series, you may pass several
-            LatestDatapointQuery objects::
+            If you need to specify a different value of 'before' for each time series, or different values for
+            unit or unit system, you may pass several LatestDatapointQuery objects::
 
                 >>> from datetime import datetime, timezone
                 >>> id_queries = [
                 ...     123,
                 ...     LatestDatapointQuery(id=456, before="1w-ago"),
-                ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc))]
+                ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc)),
+                ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f")]
                 >>> res = c.time_series.data.retrieve_latest(
                 ...     id=id_queries,
-                ...     external_id=LatestDatapointQuery(external_id="abc", before="3h-ago"))
+                ...     external_id=LatestDatapointQuery(
+                ...         external_id="abc", before="3h-ago", target_unit_system="Imperial")
+                ... )
         """
-        fetcher = RetrieveLatestDpsFetcher(id, external_id, before, ignore_unknown_ids, self)
+        fetcher = RetrieveLatestDpsFetcher(
+            id, external_id, before, target_unit, target_unit_system, ignore_unknown_ids, self
+        )
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
             return DatapointsList.load(res, cognite_client=self._cognite_client)
@@ -1570,11 +1579,17 @@ class RetrieveLatestDpsFetcher:
         id: None | int | LatestDatapointQuery | list[int | LatestDatapointQuery],
         external_id: None | str | LatestDatapointQuery | list[str | LatestDatapointQuery],
         before: None | int | str | datetime,
+        target_unit: None | str,
+        target_unit_system: None | str,
         ignore_unknown_ids: bool,
         dps_client: DatapointsAPI,
     ) -> None:
         self.before_settings: dict[tuple[str, int], None | int | str | datetime] = {}
         self.default_before = before
+        self.default_unit = target_unit
+        self.default_unit_system = target_unit_system
+        self.target_unit_settings: dict[tuple[str, int], None | str] = {}
+        self.target_unit_system_settings: dict[tuple[str, int], None | str] = {}
         self.ignore_unknown_ids = ignore_unknown_ids
         self.dps_client = dps_client
 
@@ -1608,6 +1623,8 @@ class RetrieveLatestDpsFetcher:
         elif isinstance(user_input, LatestDatapointQuery):
             as_primitive = self._get_and_check_identifier(user_input, identifier_type)
             self.before_settings[(identifier_type, 0)] = user_input.before
+            self.target_unit_settings[(identifier_type, 0)] = user_input.target_unit
+            self.target_unit_system_settings[(identifier_type, 0)] = user_input.target_unit_system
             return as_primitive
         elif isinstance(user_input, MutableSequence):
             user_input = user_input[:]  # Modify a shallow copy to avoid side effects
@@ -1615,6 +1632,8 @@ class RetrieveLatestDpsFetcher:
                 if isinstance(inp, LatestDatapointQuery):
                     as_primitive = self._get_and_check_identifier(inp, identifier_type)
                     self.before_settings[(identifier_type, i)] = inp.before
+                    self.target_unit_settings[(identifier_type, i)] = inp.target_unit
+                    self.target_unit_system_settings[(identifier_type, i)] = inp.target_unit_system
                     user_input[i] = as_primitive  # mutating while iterating like a boss
         return user_input
 
@@ -1631,9 +1650,19 @@ class RetrieveLatestDpsFetcher:
         # specify a particular timestamp for 'now' in order to possibly get a datapoint a few hundred ms fresher:
         for identifiers, identifier_type in zip([all_ids, all_xids], ["id", "external_id"]):
             for i, dct in enumerate(identifiers):
-                i_before = self.before_settings.get((identifier_type, i), self.default_before)
+                i_before = self.before_settings.get((identifier_type, i)) or self.default_before
                 if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
+                i_target_unit = self.target_unit_settings.get((identifier_type, i)) or self.default_unit
+                i_target_unit_system = (
+                    self.target_unit_system_settings.get((identifier_type, i)) or self.default_unit_system
+                )
+                if i_target_unit is not None and i_target_unit_system is not None:
+                    raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
+                if i_target_unit is not None:
+                    dct["targetUnit"] = i_target_unit
+                if i_target_unit_system is not None:
+                    dct["targetUnitSystem"] = i_target_unit_system
         all_ids.extend(all_xids)
         return all_ids
 

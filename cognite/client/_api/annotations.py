@@ -7,10 +7,10 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
-from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
+from cognite.client.data_classes.annotations import AnnotationCore, AnnotationReverseLookupFilter, AnnotationWrite
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import assert_type
 
 
@@ -18,25 +18,32 @@ class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
     @overload
-    def create(self, annotations: Annotation) -> Annotation:
+    def create(self, annotations: Annotation | AnnotationWrite) -> Annotation:
         ...
 
     @overload
-    def create(self, annotations: Sequence[Annotation]) -> AnnotationList:
+    def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList:
         ...
 
-    def create(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
+    def create(
+        self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
+    ) -> Annotation | AnnotationList:
         """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
 
         Args:
-            annotations (Annotation | Sequence[Annotation]): annotation(s) to create
+            annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
 
         Returns:
-            Annotation | AnnotationList: created annotation(s)
+            Annotation | AnnotationList: Created annotation(s)
         """
-        assert_type(annotations, "annotations", [Annotation, Sequence])
+        assert_type(annotations, "annotations", [AnnotationCore, Sequence])
+
         return self._create_multiple(
-            list_cls=AnnotationList, resource_cls=Annotation, resource_path=self._RESOURCE_PATH + "/", items=annotations
+            list_cls=AnnotationList,
+            resource_cls=Annotation,
+            resource_path=self._RESOURCE_PATH + "/",
+            items=annotations,
+            input_resource_cls=AnnotationWrite,
         )
 
     @overload
@@ -182,19 +189,24 @@ class AnnotationsAPI(APIClient):
 
         Returns:
             AnnotationList: list of annotations
+
+        Example:
+
+            List all annotations for the file with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AnnotationFilter
+                >>> client = CogniteClient()
+                >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
+                >>> res = client.annotations.list(flt, limit=None)
         """
-        assert_type(limit, "limit", [int], allow_none=False)
         assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
 
         if isinstance(filter, AnnotationFilter):
             filter = filter.dump(camel_case=True)
-
         elif isinstance(filter, dict):
-            filter = {to_camel_case(k): v for k, v in filter.items()}
-
+            filter = convert_all_keys_to_camel_case(filter)
         if "annotatedResourceIds" in filter:
-            filter["annotatedResourceIds"] = [
-                {to_camel_case(k): v for k, v in f.items()} for f in filter["annotatedResourceIds"]
-            ]
+            filter["annotatedResourceIds"] = list(map(convert_all_keys_to_camel_case, filter["annotatedResourceIds"]))
 
         return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)

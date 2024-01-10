@@ -382,6 +382,9 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
         )
+        # Second request may be skipped intentionally depending on which thread runs when:
+        rsps.assert_all_requests_are_fired = False
+
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteNotFoundError) as e:
                 api_client_with_token._retrieve_multiple(
@@ -1178,23 +1181,6 @@ def convert_resource_to_patch_object_test_cases():
         id="Patch TimeSeries",
     )
     yield pytest.param(
-        TimeSeries(external_id="myTimeseries", name="bla"),
-        TimeSeriesUpdate._get_update_properties(),
-        "replace",
-        {
-            "externalId": "myTimeseries",
-            "update": {
-                "name": {"set": "bla"},
-                "unit": {"setNull": True},
-                "assetId": {"setNull": True},
-                "description": {"setNull": True},
-                "dataSetId": {"setNull": True},
-                "securityCategories": {"set": []},
-            },
-        },
-        id="Replace TimeSeries and ignore beta property",
-    )
-    yield pytest.param(
         TimeSeries(id=42, description="updated"),
         TimeSeriesUpdate._get_update_properties(),
         "replace_ignore_null",
@@ -1293,7 +1279,7 @@ class TestRetryableEndpoints:
                 # Retry for RAW on rows but not on dbs or tables as only the rows endpoints are idempotent
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/insert", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/delete", True),
             ]
         ),

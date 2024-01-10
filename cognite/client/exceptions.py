@@ -5,6 +5,7 @@ import reprlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable
 
+from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.utils._auxiliary import no_op
 
 if TYPE_CHECKING:
@@ -348,3 +349,14 @@ class ModelFailedException(Exception):
 
 class CogniteAuthorizationError(CogniteAPIError):
     ...
+
+
+if _RUNNING_IN_BROWSER:
+    from pyodide.ffi import JsException  # type: ignore [import-not-found]
+else:
+
+    class JsException(Exception):  # type: ignore [no-redef]
+        ...
+
+
+PyodideJsException = JsException

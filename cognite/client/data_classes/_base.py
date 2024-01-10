@@ -71,7 +71,7 @@ class CogniteResponse:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
@@ -130,7 +130,7 @@ class CogniteObject:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
@@ -146,8 +146,8 @@ class CogniteObject:
         yaml = local_import("yaml")
         return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
-    @final
     @classmethod
+    @final
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         if isinstance(resource, dict):
@@ -231,7 +231,17 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
         return notebook_display_with_fallback(self)
 
 
+T_WriteClass = TypeVar("T_WriteClass", bound=CogniteResource)
+
+
+class WriteableCogniteResource(CogniteResource, Generic[T_WriteClass]):
+    @abstractmethod
+    def as_write(self) -> T_WriteClass:
+        raise NotImplementedError()
+
+
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
+T_WritableCogniteResource = TypeVar("T_WritableCogniteResource", bound=WriteableCogniteResource)
 
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
@@ -296,7 +306,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             list[dict[str, Any]]: A list of dicts representing the instance.
@@ -386,6 +396,12 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
+
+
+class WriteableCogniteResourceList(CogniteResourceList, Generic[T_WriteClass, T_WritableCogniteResource]):
+    @abstractmethod
+    def as_write(self) -> CogniteResourceList[T_WriteClass]:
+        raise NotImplementedError()
 
 
 @dataclass
@@ -573,7 +589,7 @@ class CogniteFilter:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
@@ -753,6 +769,18 @@ class HasExternalId(Protocol):
         ...
 
 
+class HasName(Protocol):
+    @property
+    def name(self) -> str | None:
+        ...
+
+
+class HasInternalId(Protocol):
+    @property
+    def id(self) -> int | None:
+        ...
+
+
 class HasExternalAndInternalId(Protocol):
     @property
     def external_id(self) -> str | None:
@@ -780,6 +808,44 @@ class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
                 raise ValueError(f"All {type(x).__name__} must have external_id")
             external_ids.append(x.external_id)
         return external_ids
+
+
+class NameTransformerMixin(Sequence[HasName], ABC):
+    def as_names(self) -> list[str]:
+        """
+        Returns the names of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have a name.
+
+        Returns:
+            list[str]: The names of all resources in the list.
+        """
+        names: list[str] = []
+        for x in self:
+            if x.name is None:
+                raise ValueError(f"All {type(x).__name__} must have name")
+            names.append(x.name)
+        return names
+
+
+class InternalIdTransformerMixin(Sequence[HasInternalId], ABC):
+    def as_ids(self) -> list[int]:
+        """
+        Returns the ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an id.
+
+        Returns:
+            list[int]: The ids of all resources in the list.
+        """
+        ids: list[int] = []
+        for x in self:
+            if x.id is None:
+                raise ValueError(f"All {type(x).__name__} must have id")
+            ids.append(x.id)
+        return ids
 
 
 class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):

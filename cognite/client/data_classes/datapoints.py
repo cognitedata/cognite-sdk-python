@@ -81,11 +81,15 @@ class LatestDatapointQuery:
         id (Optional[int]): The internal ID of the time series to query.
         external_id (Optional[str]): The external ID of the time series to query.
         before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
+        target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+        target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
     """
 
     id: int | None = None
     external_id: str | None = None
     before: None | int | str | datetime = None
+    target_unit: str | None = None
+    target_unit_system: str | None = None
 
     def __post_init__(self) -> None:
         # Ensure user have just specified one of id/xid:
@@ -336,7 +340,7 @@ class DatapointsArray(CogniteResource):
         """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Default: False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
@@ -419,7 +423,7 @@ class Datapoints(CogniteResource):
         external_id (str | None): External id of the timeseries the datapoints belong to
         is_string (bool | None): Whether the time series is string valued or not.
         is_step (bool | None): Whether the time series is a step series or not.
-        unit (str | None): The physical unit of the time series (free-text field).
+        unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
@@ -522,7 +526,7 @@ class Datapoints(CogniteResource):
         """Dump the datapoints into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representing the instance.
@@ -789,7 +793,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Default: False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:

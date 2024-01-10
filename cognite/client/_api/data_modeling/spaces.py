@@ -114,7 +114,7 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.spaces.delete(space=["mySpace", "myOtherSpace"])
+                >>> c.data_modeling.spaces.delete(spaces=["mySpace", "myOtherSpace"])
         """
         deleted_spaces = cast(
             list,

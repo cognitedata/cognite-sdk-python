@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
-    DataPointSubscriptionCreate,
+    DataPointSubscriptionWrite,
     EndTimeFilter,
     Relationship,
     SequenceData,
@@ -31,6 +31,8 @@ from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.data_modeling.query import Query
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
+from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.workflows import (
     FunctionTaskOutput,
     FunctionTaskParameters,
@@ -304,8 +306,8 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments[name] = value
 
         # Special cases
-        if resource_cls is DataPointSubscriptionCreate:
-            # DataPointSubscriptionCreate requires either timeseries_ids or filter
+        if resource_cls is DataPointSubscriptionWrite:
+            # DataPointSubscriptionWrite requires either timeseries_ids or filter
             keyword_arguments.pop("filter", None)
         if resource_cls is Query:
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
@@ -349,6 +351,12 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["schedule"].id = keyword_arguments["id"]
             keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
             keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
+        elif resource_cls is TransformationScheduleWrite:
+            # TransformationScheduleWrite requires either id or external_id
+            keyword_arguments.pop("id", None)
+        elif resource_cls is TransformationNotificationWrite:
+            # TransformationNotificationWrite requires either transformation_id or transformation_external_id
+            keyword_arguments.pop("transformation_id", None)
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
