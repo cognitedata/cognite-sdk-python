@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.1] - 2024-01-10
+### Improved
+- Respect the `isAutoRetryable` flag on error responses from the API when retrying requests.
+
 ## [7.13.0] - 2024-01-09
 ### Changed
 - Units on Time Series (including unit conversion) is out of beta and will no longer issue warnings on usage.
