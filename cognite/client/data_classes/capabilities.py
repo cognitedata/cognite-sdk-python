@@ -855,7 +855,7 @@ class TimeSeriesAcl(Capability):
 class TimeSeriesSubscriptionsAcl(Capability):
     _capability_name = "timeSeriesSubscriptionsAcl"
     actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
+    scope: AllScope | DataSetScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):
         Read = "READ"
