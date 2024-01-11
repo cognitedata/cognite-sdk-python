@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
@@ -72,13 +72,12 @@ class SyntheticDatapointsAPI(APIClient):
             limit = cast(int, float("inf"))
 
         tasks = []
-        expressions_to_iterate = cast(
-            SequenceNotStr[Union[str, sympy.Expr]],
+        expressions_to_iterate = (
             (expressions if isinstance(expressions, Sequence) and not isinstance(expressions, str) else [expressions]),
         )
 
         for exp in expressions_to_iterate:
-            expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)
+            expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)  # type: ignore[arg-type]
             query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
             values: list[float] = []  # mypy
             query_datapoints = Datapoints(value=values, error=[])

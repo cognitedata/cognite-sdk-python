@@ -543,6 +543,8 @@ class FakeCogniteResourceGenerator:
         elif annotation.startswith("typing.Sequence[") and annotation.endswith("]"):
             # This is used in the Sequence data class file to avoid name collision
             return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("Sequence[") and annotation.endswith("]"):
+            return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
         raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod
