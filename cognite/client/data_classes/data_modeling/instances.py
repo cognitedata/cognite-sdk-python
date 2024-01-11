@@ -472,7 +472,7 @@ class NodeApply(InstanceApply["NodeApply"]):
             space=resource["space"],
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
-            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])],
+            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
@@ -653,7 +653,7 @@ class EdgeApply(InstanceApply["EdgeApply"]):
             space=resource["space"],
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
-            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])],
+            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
             type=DirectRelationReference.load(resource["type"]),
             start_node=DirectRelationReference.load(resource["startNode"]),
             end_node=DirectRelationReference.load(resource["endNode"]),
