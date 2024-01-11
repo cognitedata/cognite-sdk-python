@@ -419,7 +419,7 @@ class TransformationBlockedInfo:
 
 
 def _load_destination_dct(
-    dct: dict[str, Any]
+    dct: dict[str, Any],
 ) -> RawTable | Nodes | Edges | SequenceRowsDestination | TransformationDestination:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
