@@ -340,3 +340,22 @@ class DiagramsAPI(APIClient):
             items=self._process_detect_job(detect_job),
             job_cls=DiagramConvertResults,
         )
+
+    def ocr(self, file_id: int, start_page: int = 1, limit: int = 50) -> list[dict[str, Any]]:
+        """
+        Get ocr text from a file that has been through diagram/detect before.
+        Args:
+            file_id (int): file id
+            start_page (int): First page to get ocr from.
+            limit (int): The maximum number of pages to get ocr from.
+        Returns:
+            (list[dict[str, Any]): List of ocr results per page.
+        """
+
+        response = self._camel_post(
+            "/ocr",
+            json={"file_id": file_id, "start_page": start_page, "limit": limit},
+        )
+        items = response.json()["items"]
+        assert isinstance(items, list)
+        return items
