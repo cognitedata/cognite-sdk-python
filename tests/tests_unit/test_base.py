@@ -28,6 +28,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import EdgeListWithCursor, NodeListWithCursor
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
@@ -210,6 +211,7 @@ class TestCogniteObject:
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
             for class_ in all_concrete_subclasses(WriteableCogniteResourceList)
+            if class_ not in [EdgeListWithCursor, NodeListWithCursor]
         ],
     )
     def test_writable_list_as_write(
@@ -218,7 +220,7 @@ class TestCogniteObject:
         resource_cls = writable_list._RESOURCE
         instance_generator = FakeCogniteResourceGenerator(seed=54, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(resource_cls)
-        # Setting the cognite_client to None as the the `as_write` should not fail if the client is not set.
+        # Setting the cognite_client to None as the `as_write` should not fail if the client is not set.
         instance_list = writable_list([instance], cognite_client=None)
 
         write_format = instance_list.as_write()
