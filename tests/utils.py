@@ -272,7 +272,7 @@ class FakeCogniteResourceGenerator:
         self._random = random.Random(seed)
         self._cognite_client = cognite_client or CogniteClientMock()
 
-    def create_instance(self, resource_cls: type[T_Object]) -> T_Object:
+    def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
         signature = inspect.signature(resource_cls.__init__)
         try:
             type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
@@ -293,6 +293,8 @@ class FakeCogniteResourceGenerator:
                 continue
             elif parameter.annotation is inspect.Parameter.empty:
                 raise ValueError(f"Parameter {name} of {resource_cls.__name__} is missing annotation")
+            elif skip_defaulted_args and parameter.default is not inspect.Parameter.empty:
+                continue
 
             if resource_cls is Geometry and name == "geometries":
                 # Special case for Geometry to avoid recursion.
