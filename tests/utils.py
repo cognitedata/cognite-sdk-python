@@ -388,7 +388,7 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["transformation_external_id"] = "my_transformation"
             else:
                 keyword_arguments.pop("transformation_id", None)
-        elif resource_cls is NodeResultSetExpression:
+        elif resource_cls is NodeResultSetExpression and not skip_defaulted_args:
             # Through has a special format.
             keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
 
