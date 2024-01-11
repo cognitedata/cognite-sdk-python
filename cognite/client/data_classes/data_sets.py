@@ -8,11 +8,13 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -20,14 +22,42 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataSet(CogniteResource):
-    """No description.
+class DataSetCore(WriteableCogniteResource["DataSetWrite"]):
+    """Data sets let you document and track data lineage, ensure data integrity, and allow 3rd parties to write their insights securely back to a Cognite Data Fusion (CDF) project.
+    This is the read version of the DataSet, which is used when retrieving from CDF.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): The name of the data set.
         description (str | None): The description of the data set.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        write_protected (bool | None): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set. To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        write_protected: bool | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.description = description
+        self.metadata = metadata
+        self.write_protected = write_protected
+
+
+class DataSet(DataSetCore):
+    """Data sets let you document and track data lineage, ensure data integrity, and allow 3rd parties to write their insights securely back to a Cognite Data Fusion (CDF) project.
+    This is the read version of the DataSet, which is used when retrieving from CDF.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): The name of the data set.
+        description (str | None): The description of the data set.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         write_protected (bool | None): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set. To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
         id (int | None): A server-generated ID for the object.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -47,15 +77,59 @@ class DataSet(CogniteResource):
         last_updated_time: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.name = name
-        self.description = description
-        self.metadata = metadata
-        self.write_protected = write_protected
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            description=description,
+            metadata=metadata,
+            write_protected=write_protected,
+        )
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> DataSetWrite:
+        return DataSetWrite(
+            external_id=self.external_id,
+            name=self.name,
+            description=self.description,
+            metadata=self.metadata,
+            write_protected=self.write_protected,
+        )
+
+
+class DataSetWrite(DataSetCore):
+    """Data sets let you document and track data lineage, ensure data integrity, and allow 3rd parties to write their insights securely back to a Cognite Data Fusion (CDF) project.
+    This is the read version of the DataSet, which is used when retrieving from CDF.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): The name of the data set.
+        description (str | None): The description of the data set.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        write_protected (bool | None): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set. To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        write_protected: bool | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            description=description,
+            metadata=metadata,
+            write_protected=write_protected,
+        )
+
+    def as_write(self) -> DataSetWrite:
+        """Returns this DataSetWrite instance."""
+        return self
 
 
 class DataSetFilter(CogniteFilter):
@@ -163,5 +237,12 @@ class DataSetUpdate(CogniteUpdate):
         ]
 
 
-class DataSetList(CogniteResourceList[DataSet], IdTransformerMixin):
+class DataSetWriteList(CogniteResourceList[DataSetWrite], ExternalIDTransformerMixin):
+    _RESOURCE = DataSetWrite
+
+
+class DataSetList(WriteableCogniteResourceList[DataSetWrite, DataSet], IdTransformerMixin):
     _RESOURCE = DataSet
+
+    def as_write(self) -> DataSetWriteList:
+        return DataSetWriteList([ds.as_write() for ds in self.data], cognite_client=self._cognite_client)

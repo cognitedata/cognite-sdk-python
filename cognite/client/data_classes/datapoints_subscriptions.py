@@ -15,9 +15,12 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
@@ -43,7 +46,7 @@ _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
 )
 
 
-class DatapointSubscriptionCore(CogniteResource, ABC):
+class DatapointSubscriptionCore(WriteableCogniteResource["DataPointSubscriptionWrite"], ABC):
     def __init__(
         self,
         external_id: ExternalId,
@@ -114,8 +117,19 @@ class DatapointSubscription(DatapointSubscriptionCore):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription as a DataPointSubscriptionWrite"""
+        return DataPointSubscriptionWrite(
+            external_id=self.external_id,
+            partition_count=self.partition_count,
+            filter=self.filter,
+            name=self.name,
+            description=self.description,
+            data_set_id=self.data_set_id,
+        )
 
-class DataPointSubscriptionCreate(DatapointSubscriptionCore):
+
+class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     """A data point subscription is a way to listen to changes to time series data points, in ingestion order.
         This is the write version of a subscription, used to create new subscriptions.
 
@@ -159,6 +173,14 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
         )
+
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription instance"""
+        return self
+
+
+# Todo: Remove this in next major release
+DataPointSubscriptionCreate = DataPointSubscriptionWrite
 
 
 class DataPointSubscriptionUpdate(CogniteUpdate):
@@ -380,8 +402,20 @@ class _DatapointSubscriptionBatchWithPartitions:
         return resource
 
 
-class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
+class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = DataPointSubscriptionWrite
+
+
+class DatapointSubscriptionList(
+    WriteableCogniteResourceList[DataPointSubscriptionWrite, DatapointSubscription], ExternalIDTransformerMixin
+):
     _RESOURCE = DatapointSubscription
+
+    def as_write(self) -> DatapointSubscriptionWriteList:
+        """Returns this DatapointSubscriptionList as a DatapointSubscriptionWriteList"""
+        return DatapointSubscriptionWriteList(
+            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):

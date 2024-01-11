@@ -11,13 +11,16 @@ from cognite.client.data_classes.templates import (
     TemplateGroupList,
     TemplateGroupVersion,
     TemplateGroupVersionList,
+    TemplateGroupWrite,
     TemplateInstance,
     TemplateInstanceList,
     TemplateInstanceUpdate,
+    TemplateInstanceWrite,
     View,
     ViewList,
     ViewResolveItem,
     ViewResolveList,
+    ViewWrite,
 )
 from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
@@ -111,7 +114,12 @@ class TemplateGroupsAPI(APIClient):
                 >>> c.templates.groups.create([template_group_1, template_group_2])
         """
         TemplatesAPI._deprecation_warning()
-        return self._create_multiple(list_cls=TemplateGroupList, resource_cls=TemplateGroup, items=template_groups)
+        return self._create_multiple(
+            list_cls=TemplateGroupList,
+            resource_cls=TemplateGroup,
+            items=template_groups,
+            input_resource_cls=TemplateGroupWrite,
+        )
 
     def upsert(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Upsert one or more template groups.`
@@ -384,7 +392,11 @@ class TemplateInstancesAPI(APIClient):
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._create_multiple(
-            list_cls=TemplateInstanceList, resource_cls=TemplateInstance, resource_path=resource_path, items=instances
+            list_cls=TemplateInstanceList,
+            resource_cls=TemplateInstance,
+            resource_path=resource_path,
+            items=instances,
+            input_resource_cls=TemplateInstanceWrite,
         )
 
     def upsert(
@@ -610,7 +622,9 @@ class TemplateViewsAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._create_multiple(list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views)
+        return self._create_multiple(
+            list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views, input_resource_cls=ViewWrite
+        )
 
     def upsert(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
         """`Upsert one or more template views.`

@@ -1,23 +1,47 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from abc import ABC
+from typing import TYPE_CHECKING, Any, Literal, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
+AnnotationType: TypeAlias = Literal[
+    "images.ObjectDetection",
+    "images.Classification",
+    "images.KeypointCollection",
+    "images.AssetLink",
+    "images.TextRegion",
+    "images.InstanceLink",
+    "isoplan.IsoPlanAnnotation",
+    "diagrams.AssetLink",
+    "diagrams.FileLink",
+    "diagrams.InstanceLink",
+    "diagrams.UnhandledTextObject",
+    "diagrams.UnhandledSymbolObject",
+    "documents.ExtractedText",
+    "diagrams.Line",
+    "diagrams.Junction",
+    "pointcloud.BoundingVolume",
+    "forms.Detection",
+]
 
-class Annotation(CogniteResource):
+
+class AnnotationCore(WriteableCogniteResource["AnnotationWrite"], ABC):
     """Representation of an annotation in CDF.
 
     Args:
@@ -50,10 +74,63 @@ class Annotation(CogniteResource):
         self.creating_user = creating_user
         self.annotated_resource_type = annotated_resource_type
         self.annotated_resource_id = annotated_resource_id
-        self.id: int | None = None  # Read only
-        self.created_time: int | None = None  # Read only
-        self.last_updated_time: int | None = None  # Read only
-        self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        # Special handling of created_user, which has a valid None value
+        key = "creatingUser" if camel_case else "creating_user"
+        result[key] = self.creating_user
+        return result
+
+
+class Annotation(AnnotationCore):
+    """Representation of an annotation in CDF.
+    This is the reading version of the Annotation class. It is never to be used when creating new annotations.
+
+    Args:
+        annotation_type (str): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
+        data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
+        status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
+        creating_app (str): The name of the app from which this annotation was created.
+        creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
+        creating_user (str | None): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_id (int | None): The internal ID of the annotated resource.
+        id (int | None): A server-generated ID for the object.
+        created_time (int | None): The timestamp for when the annotation was created, in milliseconds since epoch.
+        last_updated_time (int | None): The timestamp for when the annotation was last updated, in milliseconds since epoch.
+        cognite_client (CogniteClient | None): The client to associate with this object.
+    """
+
+    def __init__(
+        self,
+        annotation_type: str,
+        data: dict,
+        status: str,
+        creating_app: str,
+        creating_app_version: str,
+        creating_user: str | None,
+        annotated_resource_type: str,
+        annotated_resource_id: int | None = None,
+        id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            annotation_type,
+            data,
+            status,
+            creating_app,
+            creating_app_version,
+            creating_user,
+            annotated_resource_type,
+            annotated_resource_id,
+        )
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:
@@ -63,7 +140,7 @@ class Annotation(CogniteResource):
     def from_dict(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:
         # Create base annotation
         data = {to_snake_case(key): val for key, val in resource.items()}
-        annotation = Annotation(
+        return Annotation(
             annotation_type=data["annotation_type"],
             data=data["data"],
             status=data.get("status", "suggested"),
@@ -72,20 +149,81 @@ class Annotation(CogniteResource):
             creating_user=data.get("creating_user"),
             annotated_resource_type=data["annotated_resource_type"],
             annotated_resource_id=data.get("annotated_resource_id"),
+            id=data.get("id"),
+            created_time=data.get("created_time"),
+            last_updated_time=data.get("last_updated_time"),
+            cognite_client=cognite_client,
         )
-        # Fill in read-only values, if available
-        annotation.id = data.get("id")
-        annotation.created_time = data.get("created_time")
-        annotation.last_updated_time = data.get("last_updated_time")
-        annotation._cognite_client = cast("CogniteClient", cognite_client)
-        return annotation
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case=camel_case)
-        # Special handling of created_user, which has a valid None value
-        key = "creatingUser" if camel_case else "creating_user"
-        result[key] = self.creating_user
-        return result
+    def as_write(self) -> AnnotationWrite:
+        """Returns this Annotation in its writing version."""
+        if self.annotated_resource_id is None:
+            raise ValueError("Annotated resource ID is required for the writing version of an annotation.")
+        return AnnotationWrite(
+            annotation_type=cast(AnnotationType, self.annotation_type),
+            data=self.data,
+            status=cast(Literal["suggested", "approved", "rejected"], self.status),
+            creating_app=self.creating_app,
+            creating_app_version=self.creating_app_version,
+            creating_user=self.creating_user,
+            annotated_resource_type=cast(Literal["file", "threedmodel"], self.annotated_resource_type),
+            annotated_resource_id=self.annotated_resource_id,
+        )
+
+
+class AnnotationWrite(AnnotationCore):
+    """Representation of an annotation in CDF.
+    This is the writing version of the Annotation class. It is used when creating new annotations.
+
+    Args:
+        annotation_type (AnnotationType): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
+        data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
+        status (Literal["suggested", "approved", "rejected"]): The status of the annotation, e.g. "suggested", "approved", "rejected".
+        creating_app (str): The name of the app from which this annotation was created.
+        creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
+        creating_user (str | None): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        annotated_resource_type (Literal["file", "threedmodel"]): Type name of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_id (int): The internal ID of the annotated resource.
+    """
+
+    def __init__(
+        self,
+        annotation_type: AnnotationType,
+        data: dict,
+        status: Literal["suggested", "approved", "rejected"],
+        creating_app: str,
+        creating_app_version: str,
+        creating_user: str | None,
+        annotated_resource_type: Literal["file", "threedmodel"],
+        annotated_resource_id: int,
+    ) -> None:
+        super().__init__(
+            annotation_type=annotation_type,
+            data=data,
+            status=status,
+            creating_app=creating_app,
+            creating_app_version=creating_app_version,
+            creating_user=creating_user,
+            annotated_resource_type=annotated_resource_type,
+            annotated_resource_id=annotated_resource_id,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AnnotationWrite:
+        return cls(
+            annotation_type=resource["annotationType"],
+            data=resource["data"],
+            status=resource["status"],
+            creating_app=resource["creatingApp"],
+            creating_app_version=resource["creatingAppVersion"],
+            creating_user=resource["creatingUser"],
+            annotated_resource_type=resource["annotatedResourceType"],
+            annotated_resource_id=resource["annotatedResourceId"],
+        )
+
+    def as_write(self) -> AnnotationWrite:
+        """Returns this AnnotationWrite."""
+        return self
 
 
 class AnnotationReverseLookupFilter(CogniteFilter):
@@ -224,5 +362,13 @@ class AnnotationUpdate(CogniteUpdate):
         ]
 
 
-class AnnotationList(CogniteResourceList[Annotation]):
+class AnnotationWriteList(CogniteResourceList[AnnotationWrite]):
+    _RESOURCE = AnnotationWrite
+
+
+class AnnotationList(WriteableCogniteResourceList[AnnotationWrite, Annotation]):
     _RESOURCE = Annotation
+
+    def as_write(self) -> AnnotationWriteList:
+        """Returns this AnnotationList in its writing version."""
+        return AnnotationWriteList([ann.as_write() for ann in self.data], cognite_client=self._cognite_client)

@@ -39,6 +39,8 @@ from cognite.client.data_classes._base import (
     PropertySpec,
     T_CogniteResource,
     T_CogniteResourceList,
+    T_WritableCogniteResource,
+    WriteableCogniteResource,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
@@ -85,7 +87,8 @@ class APIClient:
             "/timeseries/data(/(list|latest|delete))?",
             "/timeseries/synthetic/query",
             "/sequences/data(/(list|delete))?",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows/.*",
+            "/raw/dbs/[^/]+/tables/[^/]+/rows",
+            "/raw/dbs/[^/]+/tables/[^/]+/rows/delete",
             "/context/entitymatching/(byids|list|jobs)",
             "/sessions/revoke",
             "/models/.*",
@@ -742,9 +745,9 @@ class APIClient:
     @overload
     def _create_multiple(
         self,
-        items: Sequence[CogniteResource] | Sequence[dict[str, Any]],
+        items: Sequence[WriteableCogniteResource] | Sequence[dict[str, Any]],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
         params: dict | None = None,
         headers: dict | None = None,
@@ -759,9 +762,9 @@ class APIClient:
     @overload
     def _create_multiple(
         self,
-        items: CogniteResource | dict[str, Any],
+        items: WriteableCogniteResource | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
         params: dict | None = None,
         headers: dict | None = None,
@@ -770,14 +773,17 @@ class APIClient:
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResource:
+    ) -> T_WritableCogniteResource:
         ...
 
     def _create_multiple(
         self,
-        items: Sequence[CogniteResource] | Sequence[dict[str, Any]] | CogniteResource | dict[str, Any],
+        items: Sequence[WriteableCogniteResource]
+        | Sequence[dict[str, Any]]
+        | WriteableCogniteResource
+        | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
         params: dict | None = None,
         headers: dict | None = None,
@@ -786,15 +792,17 @@ class APIClient:
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList | T_CogniteResource:
+    ) -> T_CogniteResourceList | T_WritableCogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
-            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], [items])
+            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
-            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], items)
+            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], items)
+
+        items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
 
         tasks = [
             (resource_path, task_items, params, headers)
@@ -956,18 +964,18 @@ class APIClient:
 
     def _upsert_multiple(
         self,
-        items: CogniteResource | Sequence[CogniteResource],
+        items: WriteableCogniteResource | Sequence[WriteableCogniteResource],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         update_cls: type[CogniteUpdate],
         mode: Literal["patch", "replace"],
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResource | T_CogniteResourceList:
+    ) -> T_WritableCogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
-        is_single = isinstance(items, CogniteResource)
-        items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
+        is_single = isinstance(items, WriteableCogniteResource)
+        items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
         try:
             result = self._update_multiple(
                 items, list_cls, resource_cls, update_cls, mode=mode, api_subversion=api_subversion

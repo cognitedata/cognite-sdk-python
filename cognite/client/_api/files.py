@@ -24,6 +24,7 @@ from cognite.client.data_classes import (
     FileMetadataFilter,
     FileMetadataList,
     FileMetadataUpdate,
+    FileMetadataWrite,
     GeoLocation,
     GeoLocationFilter,
     Label,
@@ -139,11 +140,13 @@ class FilesAPI(APIClient):
         """
         return cast(Iterator[FileMetadata], self())
 
-    def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> tuple[FileMetadata, str]:
+    def create(
+        self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
+    ) -> tuple[FileMetadata, str]:
         """Create file without uploading content.
 
         Args:
-            file_metadata (FileMetadata): File metadata for the file to create.
+            file_metadata (FileMetadata | FileMetadataWrite): File metadata for the file to create.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
@@ -154,13 +157,14 @@ class FilesAPI(APIClient):
             Create a file::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import FileMetadata
+                >>> from cognite.client.data_classes import FileMetadataWrite
                 >>> c = CogniteClient()
-                >>> file_metadata = FileMetadata(name="MyFile")
+                >>> file_metadata = FileMetadataWrite(name="MyFile")
                 >>> res = c.files.create(file_metadata)
 
         """
-
+        if isinstance(file_metadata, FileMetadata):
+            file_metadata = file_metadata.as_write()
         res = self._post(
             url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
         )

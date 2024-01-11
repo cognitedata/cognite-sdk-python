@@ -17,6 +17,51 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.2] - 2024-01-11
+### Fixed
+* When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+
+## [7.13.1] - 2024-01-10
+### Improved
+- Respect the `isAutoRetryable` flag on error responses from the API when retrying requests.
+
+## [7.13.0] - 2024-01-09
+### Changed
+- Units on Time Series (including unit conversion) is out of beta and will no longer issue warnings on usage.
+
+## [7.12.0] - 2024-01-09
+### Added
+- `DatapointsAPI.retrieve_latest` now accepts `target_unit` or `target_unit_system` parameter.
+### Fixed
+- `DatapointsAPI.retrieve_latest` when given `LatestDatapointQuery`(s) without a setting for `before`, now correctly use
+  the (default) `before` setting as specified in the method call.
+
+## [7.11.0] - 2024-01-09
+### Added
+- All Cognite resources now have write-version. For example, we have `Asset` and `AssetWrite`, `Event` and `EventWrite`, and so on.
+  The new write class reflects the required/optional fields in the API, and is now recommended when creating resources. In addition,
+  all read classes and list classes now have a convenience method `as_write` that returns the write class with the same data.
+  For example, if you have a `assets` of type `AssetList` you can call `assets.as_write()` which will return a `AssetWriteList`,
+  and thus removing all server set fields (like `created_time` and `last_updated_time`). This is useful if you want to
+  compare a resource from CDF with a local configuration. In addition, this makes it easier to create a new resource
+  using an existing resource as a template.
+- Missing overloading of the `.create` methods on `client.iam.security_categories.create`, `client.iam.groups.create`,
+  `client.labels.create`, `client.three_d.models.create`, `client.three_d.revisions.create`, `client.three_d.asset_mappings.create`,
+  `client.transformations.create`, `client.transformations.schedules.create`, and `client.relationships.create`.
+### Changed
+- The class `DatapointSubscriptionCreate` has been renamed to `DatapointSubscriptionWrite` to be consistent with the other write classes.
+  This is not a breaking change, as the old class is still available for backwards compatibility, but will be removed in the next major version.
+### Fixed
+- The `node.type` was not set when calling `.as_apply()` or `.as_write()` on a `Node` or `NodeList`. This is now fixed.
+
+## [7.10.1] - 2024-01-08
+### Added
+- Fix retries for `POST /raw/rows`.
+
+## [7.10.0] - 2024-01-08
+### Added
+- `geospatial.search_features` and `geospatial.stream_features` now accept the `allow_dimensionality_mismatch` parameter.
+
 ## [7.9.0] - 2024-01-05
 ### Added
 - You can now enable or disable user profiles for your CDF project with `client.iam.user_profiles.[enable/disable]`.

@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
     CogniteResourceList,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ContainerCore(DataModelingSchemaResource, ABC):
+class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
     """Represent the physical storage of data. This is the base class for the read and write version.
 
     Args:
@@ -113,6 +114,10 @@ class ContainerApply(ContainerCore):
             else None,
         )
 
+    def as_write(self) -> ContainerApply:
+        """Returns this ContainerApply instance."""
+        return self
+
 
 class Container(ContainerCore):
     """Represent the physical storage of data. This is the read format of the container
@@ -183,8 +188,23 @@ class Container(ContainerCore):
             indexes=self.indexes,
         )
 
+    def as_write(self) -> ContainerApply:
+        return self.as_apply()
 
-class ContainerList(CogniteResourceList[Container]):
+
+class ContainerApplyList(CogniteResourceList[ContainerApply]):
+    _RESOURCE = ContainerApply
+
+    def as_ids(self) -> list[ContainerId]:
+        """Convert to a container id list.
+
+        Returns:
+            list[ContainerId]: The container id list.
+        """
+        return [v.as_id() for v in self]
+
+
+class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
     _RESOURCE = Container
 
     def as_apply(self) -> ContainerApplyList:
@@ -203,17 +223,8 @@ class ContainerList(CogniteResourceList[Container]):
         """
         return [v.as_id() for v in self]
 
-
-class ContainerApplyList(CogniteResourceList[ContainerApply]):
-    _RESOURCE = ContainerApply
-
-    def as_ids(self) -> list[ContainerId]:
-        """Convert to a container id list.
-
-        Returns:
-            list[ContainerId]: The container id list.
-        """
-        return [v.as_id() for v in self]
+    def as_write(self) -> ContainerApplyList:
+        return self.as_apply()
 
 
 class ContainerFilter(CogniteFilter):

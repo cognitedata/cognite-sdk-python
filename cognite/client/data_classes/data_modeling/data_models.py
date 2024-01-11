@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteResourceList
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResourceList,
+    WriteableCogniteResourceList,
+)
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource, DataModelingSort
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
@@ -16,7 +20,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataModelCore(DataModelingSchemaResource, ABC):
+class DataModelCore(DataModelingSchemaResource["DataModelApply"], ABC):
     """A group of views.
 
     Args:
@@ -92,6 +96,10 @@ class DataModelApply(DataModelCore):
             output["views"] = [v.dump(camel_case) for v in self.views]
 
         return output
+
+    def as_write(self) -> DataModelApply:
+        """Returns this DataModelApply instance."""
+        return self
 
 
 T_View = TypeVar("T_View", bound=Union[ViewId, View])
@@ -178,6 +186,9 @@ class DataModel(DataModelCore, Generic[T_View]):
             views=views,
         )
 
+    def as_write(self) -> DataModelApply:
+        return self.as_apply()
+
 
 class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
@@ -192,7 +203,7 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
         return [d.as_id() for d in self]
 
 
-class DataModelList(CogniteResourceList[DataModel[T_View]]):
+class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_View]]):
     _RESOURCE = DataModel
 
     def as_apply(self) -> DataModelApplyList:
@@ -229,6 +240,9 @@ class DataModelList(CogniteResourceList[DataModel[T_View]]):
             list[DataModelId]: The list of data model ids.
         """
         return [d.as_id() for d in self]
+
+    def as_write(self) -> DataModelApplyList:
+        return self.as_apply()
 
 
 class DataModelFilter(CogniteFilter):

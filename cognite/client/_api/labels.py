@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
+from cognite.client.data_classes import (
+    LabelDefinition,
+    LabelDefinitionFilter,
+    LabelDefinitionList,
+    LabelDefinitionWrite,
+)
+from cognite.client.data_classes.labels import LabelDefinitionCore
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -97,11 +103,21 @@ class LabelsAPI(APIClient):
             list_cls=LabelDefinitionList, resource_cls=LabelDefinition, method="POST", limit=limit, filter=filter
         )
 
-    def create(self, label: LabelDefinition | Sequence[LabelDefinition]) -> LabelDefinition | LabelDefinitionList:
+    @overload
+    def create(self, label: LabelDefinition | LabelDefinitionWrite) -> LabelDefinition:
+        ...
+
+    @overload
+    def create(self, label: Sequence[LabelDefinition | LabelDefinitionWrite]) -> LabelDefinitionList:
+        ...
+
+    def create(
+        self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
+    ) -> LabelDefinition | LabelDefinitionList:
         """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
 
         Args:
-            label (LabelDefinition | Sequence[LabelDefinition]): No description.
+            label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
 
         Returns:
             LabelDefinition | LabelDefinitionList: Created label definition(s)
@@ -114,16 +130,17 @@ class LabelsAPI(APIClient):
             Create new label definitions::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import LabelDefinition
+                >>> from cognite.client.data_classes import LabelDefinitionWrite
                 >>> c = CogniteClient()
-                >>> labels = [LabelDefinition(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinition(external_id="PUMP", name="pump")]
+                >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
                 >>> res = c.labels.create(labels)
         """
         if isinstance(label, Sequence):
-            if len(label) > 0 and not isinstance(label[0], LabelDefinition):
-                raise TypeError("'label' must be of type LabelDefinition or Sequence[LabelDefinition]")
-        elif not isinstance(label, LabelDefinition):
-            raise TypeError("'label' must be of type LabelDefinition or Sequence[LabelDefinition]")
+            if len(label) > 0 and not isinstance(label[0], LabelDefinitionCore):
+                raise TypeError("'label' must be of type LabelDefinitionWrite or Sequence[LabelDefinitionWrite]")
+        elif not isinstance(label, LabelDefinitionCore):
+            raise TypeError("'label' must be of type LabelDefinitionWrite or Sequence[LabelDefinitionWrite]")
+
         return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
     def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:

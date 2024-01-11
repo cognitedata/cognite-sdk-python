@@ -35,7 +35,7 @@ from google.protobuf.message import Message
 from typing_extensions import NotRequired, TypeAlias
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
-from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import import_legacy_protobuf
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
@@ -179,17 +179,11 @@ class _SingleTSQueryValidator:
             ignore_unknown_ids=user_query.ignore_unknown_ids,
         )
         self._user_query_is_valid = False
-        self._user_query_requires_beta_api_subversion = False
 
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
         # exception 'end not after start' if both are set to the same value.
         self.__time_now = timestamp_to_ms("now")
-
-    def beta_api_subversion_is_needed(self) -> bool:
-        if self._user_query_is_valid:
-            return self._user_query_requires_beta_api_subversion
-        raise RuntimeError("user query is invalid or validation has not run yet")
 
     def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
         queries = []
@@ -286,9 +280,7 @@ class _SingleTSQueryValidator:
         limit = self._verify_limit(dct["limit"])
 
         target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
-        if exactly_one_is_not_none(target_unit, target_unit_system):
-            self._user_query_requires_beta_api_subversion = True
-        elif target_unit is not None and target_unit_system is not None:
+        if target_unit is not None and target_unit_system is not None:
             raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
 
         granularity, aggregates = dct["granularity"], dct["aggregates"]

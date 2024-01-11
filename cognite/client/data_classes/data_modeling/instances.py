@@ -27,20 +27,20 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteResourceList
+from cognite.client.data_classes._base import CogniteResourceList, T_CogniteResource
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
     DataModelingInstancesList,
     DataModelingResource,
     DataModelingSort,
+    WritableDataModelingResource,
 )
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
-    ContainerIdentifier,
     EdgeId,
     NodeId,
     ViewId,
@@ -137,7 +137,14 @@ class InstanceCore(DataModelingResource, ABC):
         self.external_id = external_id
 
 
-class InstanceApply(InstanceCore, ABC):
+class WritableInstanceCore(WritableDataModelingResource[T_CogniteResource], ABC):
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
+        super().__init__(space=space)
+        self.instance_type = instance_type
+        self.external_id = external_id
+
+
+class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the write version of the instance.
 
     Args:
@@ -250,7 +257,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         self.data[view_id] = properties
 
 
-class Instance(InstanceCore, ABC):
+class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -340,7 +347,7 @@ class Instance(InstanceCore, ABC):
         return pd.concat((col, prop_df.T.squeeze())).to_frame(name="value")
 
     @abstractmethod
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> InstanceApply:
+    def as_apply(self) -> InstanceApply:
         """Convert the instance to an apply instance."""
         raise NotImplementedError()
 
@@ -426,7 +433,7 @@ class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResul
     _RESOURCE = InstanceAggregationResult
 
 
-class NodeApply(InstanceApply):
+class NodeApply(InstanceApply["NodeApply"]):
     """A node. This is the write version of the node.
 
     Args:
@@ -472,8 +479,12 @@ class NodeApply(InstanceApply):
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
+    def as_write(self) -> NodeApply:
+        """Returns this NodeApply instance"""
+        return self
 
-class Node(Instance):
+
+class Node(Instance["NodeApply"]):
     """A node. This is the read version of the node.
 
     Args:
@@ -501,16 +512,12 @@ class Node(Instance):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
         self.type = type
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> NodeApply:
+    def as_apply(self) -> NodeApply:
         """
         This is a convenience function for converting the read to a write node.
 
         It makes the simplifying assumption that all properties are from the same view. Note that this
         is not true in general.
-
-        Args:
-            source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
             NodeApply: A write node, NodeApply
@@ -519,13 +526,16 @@ class Node(Instance):
         return NodeApply(
             space=self.space,
             external_id=self.external_id,
-            existing_version=existing_version,
+            existing_version=self.version,
             sources=[
                 NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
             ]
-            if self.properties
-            else None,
+            or None,
+            type=self.type,
         )
+
+    def as_write(self) -> NodeApply:
+        return self.as_apply()
 
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
@@ -590,7 +600,7 @@ class NodeApplyResult(InstanceApplyResult):
         return NodeId(space=self.space, external_id=self.external_id)
 
 
-class EdgeApply(InstanceApply):
+class EdgeApply(InstanceApply["EdgeApply"]):
     """An Edge. This is the write version of the edge.
 
     Args:
@@ -649,8 +659,12 @@ class EdgeApply(InstanceApply):
             end_node=DirectRelationReference.load(resource["endNode"]),
         )
 
+    def as_write(self) -> EdgeApply:
+        """Returns this EdgeApply instance"""
+        return self
 
-class Edge(Instance):
+
+class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 
     Args:
@@ -684,16 +698,12 @@ class Edge(Instance):
         self.start_node = start_node
         self.end_node = end_node
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int | None = None) -> EdgeApply:
+    def as_apply(self) -> EdgeApply:
         """
         This is a convenience function for converting the read to a write edge.
 
         It makes the simplifying assumption that all properties are from the same view. Note that this
         is not true in general.
-
-        Args:
-            source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
             EdgeApply: A write edge, EdgeApply
@@ -704,12 +714,15 @@ class Edge(Instance):
             type=self.type,
             start_node=self.start_node,
             end_node=self.end_node,
-            existing_version=existing_version or None,
+            existing_version=self.version,
             sources=[
                 NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
             ]
             or None,
         )
+
+    def as_write(self) -> EdgeApply:
+        return self.as_apply()
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
@@ -806,7 +819,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[Node]):
+class NodeList(DataModelingInstancesList[NodeApply, Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -817,6 +830,10 @@ class NodeList(DataModelingInstancesList[Node]):
             list[NodeId]: A list of node ids.
         """
         return [node.as_id() for node in self]
+
+    def as_write(self) -> NodeApplyList:
+        """Returns this NodeList as a NodeApplyList"""
+        return NodeApplyList([node.as_write() for node in self])
 
 
 class NodeListWithCursor(NodeList):
@@ -853,7 +870,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[Edge]):
+class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
@@ -864,6 +881,10 @@ class EdgeList(DataModelingInstancesList[Edge]):
             list[EdgeId]: A list of edge ids.
         """
         return [edge.as_id() for edge in self]
+
+    def as_write(self) -> EdgeApplyList:
+        """Returns this EdgeList as a EdgeApplyList"""
+        return EdgeApplyList([edge.as_write() for edge in self])
 
 
 class EdgeListWithCursor(EdgeList):

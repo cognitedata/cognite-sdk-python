@@ -2,21 +2,26 @@ from __future__ import annotations
 
 import copy
 import typing
-from typing import TYPE_CHECKING, Any, cast
+from abc import ABC
+from typing import TYPE_CHECKING, Any, Literal, cast
+
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    ExternalIDTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelDefinition, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -24,9 +29,71 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
+RelationshipType: TypeAlias = Literal["asset", "timeseries", "file", "event", "sequence"]
 
-class Relationship(CogniteResource):
+
+class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
+
+    Args:
+        external_id (str | None): External id of the relationship, must be unique within the project.
+        source_external_id (str | None): External id of the CDF resource that constitutes the relationship source.
+        source_type (str | None): The CDF resource type of the relationship source. Must be one of the specified values.
+        target_external_id (str | None): External id of the CDF resource that constitutes the relationship target.
+        target_type (str | None): The CDF resource type of the relationship target. Must be one of the specified values.
+        start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id (int | None): The id of the dataset this relationship belongs to.
+        labels (list[Label] | None): A list of the labels associated with this resource item.
+    """
+
+    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        source_external_id: str | None = None,
+        source_type: str | None = None,
+        target_external_id: str | None = None,
+        target_type: str | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        confidence: float | None = None,
+        data_set_id: int | None = None,
+        labels: list[Label] | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.source_external_id = source_external_id
+        self.source_type = source_type
+        self.target_external_id = target_external_id
+        self.target_type = target_type
+        self.start_time = start_time
+        self.end_time = end_time
+        self.confidence = confidence
+        self.data_set_id = data_set_id
+        self.labels = labels
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result: dict[str, Any] = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        return result
+
+    def _validate_resource_types(self) -> Self:
+        rel = copy.copy(self)
+        self._validate_resource_type(rel.source_type)
+        self._validate_resource_type(rel.target_type)
+        return rel
+
+    def _validate_resource_type(self, resource_type: str | None) -> None:
+        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
+            raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
+
+
+class Relationship(RelationshipCore):
+    """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
+    This is the reading version of the relationship class, it is used when retrieving from CDF.
 
     Args:
         external_id (str | None): External id of the relationship, must be unique within the project.
@@ -46,8 +113,6 @@ class Relationship(CogniteResource):
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
-    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
-
     def __init__(
         self,
         external_id: str | None = None,
@@ -66,31 +131,60 @@ class Relationship(CogniteResource):
         last_updated_time: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.source_external_id = source_external_id
-        self.source_type = source_type
+        super().__init__(
+            external_id=external_id,
+            source_external_id=source_external_id,
+            source_type=source_type,
+            target_external_id=target_external_id,
+            target_type=target_type,
+            start_time=start_time,
+            end_time=end_time,
+            confidence=confidence,
+            data_set_id=data_set_id,
+            labels=Label._load_list(labels),
+        )
         self.source = source
-        self.target_external_id = target_external_id
-        self.target_type = target_type
         self.target = target
-        self.start_time = start_time
-        self.end_time = end_time
-        self.confidence = confidence
-        self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.labels = Label._load_list(labels)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def _validate_resource_types(self) -> Relationship:
-        rel = copy.copy(self)
-        self._validate_resource_type(rel.source_type)
-        self._validate_resource_type(rel.target_type)
-        return rel
+    def as_write(self) -> RelationshipWrite:
+        """Returns this Relationship in its writing version."""
+        if self.external_id is None:
+            raise ValueError("External ID is required for the writing version of a relationship.")
+        source_external_id, source_type = self._get_external_id_and_type(
+            self.source_external_id, self.source_type, self.source
+        )
+        target_external_id, target_type = self._get_external_id_and_type(
+            self.target_external_id, self.target_type, self.target
+        )
+        return RelationshipWrite(
+            external_id=self.external_id,
+            source_external_id=source_external_id,
+            source_type=source_type,
+            target_external_id=target_external_id,
+            target_type=target_type,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            confidence=self.confidence,
+            data_set_id=self.data_set_id,
+            labels=self.labels,
+        )
 
-    def _validate_resource_type(self, resource_type: str | None) -> None:
-        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
-            raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
+    @staticmethod
+    def _get_external_id_and_type(
+        external_id: str | None,
+        resource_type: str | None,
+        resource: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None,
+    ) -> tuple[str, RelationshipType]:
+        if external_id is None and (resource is None or isinstance(resource, dict)):
+            raise ValueError("Creating a relationship requires either an external id or a loaded resource")
+        external_id = external_id if isinstance(external_id, str) else (resource and resource.external_id)  # type: ignore[union-attr,assignment]
+        if external_id is None:
+            raise ValueError("Missing external id on loaded resource")
+        resource_type = resource_type or type(resource).__name__.lower()
+        return external_id, cast(RelationshipType, resource_type)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Relationship:
@@ -104,8 +198,6 @@ class Relationship(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = super().dump(camel_case)
-        if self.labels is not None:
-            result["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.source is not None and not isinstance(self.source, dict):
             result["source"] = self.source.dump(camel_case)
         if self.target is not None and not isinstance(self.target, dict):
@@ -128,6 +220,69 @@ class Relationship(CogniteResource):
         if resource_type == "event":
             return Event._load(resource, cognite_client=cognite_client)
         return resource
+
+
+class RelationshipWrite(RelationshipCore):
+    """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
+    This is the writing version of the relationship class, and is used when creating new relationships.
+
+    Args:
+        external_id (str): External id of the relationship, must be unique within the project.
+        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
+        source_type (RelationshipType): The CDF resource type of the relationship source. Must be one of the specified values.
+        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
+        target_type (RelationshipType): The CDF resource type of the relationship target. Must be one of the specified values.
+        start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id (int | None): The id of the dataset this relationship belongs to.
+        labels (typing.Sequence[Label | str | LabelDefinitionWrite | dict] | None): A list of the labels associated with this resource item.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        source_external_id: str,
+        source_type: RelationshipType,
+        target_external_id: str,
+        target_type: RelationshipType,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        confidence: float | None = None,
+        data_set_id: int | None = None,
+        labels: typing.Sequence[Label | str | LabelDefinitionWrite | dict] | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            source_external_id=source_external_id,
+            source_type=source_type,
+            target_external_id=target_external_id,
+            target_type=target_type,
+            start_time=start_time,
+            end_time=end_time,
+            confidence=confidence,
+            data_set_id=data_set_id,
+            labels=Label._load_list(labels),
+        )
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> RelationshipWrite:
+        return cls(
+            external_id=resource["externalId"],
+            source_external_id=resource["sourceExternalId"],
+            source_type=resource["sourceType"],
+            target_external_id=resource["targetExternalId"],
+            target_type=resource["targetType"],
+            start_time=resource.get("startTime"),
+            end_time=resource.get("endTime"),
+            confidence=resource.get("confidence"),
+            data_set_id=resource.get("dataSetId"),
+            labels=(labels := resource.get("labels")) and Label._load_list(labels),
+        )
+
+    def as_write(self) -> RelationshipWrite:
+        """Returns this RelationshipWrite instance."""
+        return self
 
 
 class RelationshipFilter(CogniteFilter):
@@ -259,5 +414,13 @@ class RelationshipUpdate(CogniteUpdate):
         ]
 
 
-class RelationshipList(CogniteResourceList[Relationship]):
+class RelationshipWriteList(CogniteResourceList[RelationshipWrite], ExternalIDTransformerMixin):
+    _RESOURCE = RelationshipWrite
+
+
+class RelationshipList(WriteableCogniteResourceList[RelationshipWrite, Relationship], ExternalIDTransformerMixin):
     _RESOURCE = Relationship
+
+    def as_write(self) -> RelationshipWriteList:
+        """Returns this RelationshipList in its writing version."""
+        return RelationshipWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)

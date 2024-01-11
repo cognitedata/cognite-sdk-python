@@ -12,12 +12,16 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     CoordinateReferenceSystemList,
+    CoordinateReferenceSystemWrite,
     Feature,
     FeatureAggregateList,
     FeatureList,
     FeatureType,
     FeatureTypeList,
     FeatureTypePatch,
+    FeatureTypeWrite,
+    FeatureWrite,
+    FeatureWriteList,
     GeospatialComputedResponse,
     GeospatialComputeFunction,
     OrderSpec,
@@ -51,19 +55,21 @@ class GeospatialAPI(APIClient):
         return f"{GeospatialAPI._RESOURCE_PATH}/compute"
 
     @overload
-    def create_feature_types(self, feature_type: FeatureType) -> FeatureType:
+    def create_feature_types(self, feature_type: FeatureType | FeatureTypeWrite) -> FeatureType:
         ...
 
     @overload
-    def create_feature_types(self, feature_type: Sequence[FeatureType]) -> FeatureTypeList:
+    def create_feature_types(self, feature_type: Sequence[FeatureType] | Sequence[FeatureTypeWrite]) -> FeatureTypeList:
         ...
 
-    def create_feature_types(self, feature_type: FeatureType | Sequence[FeatureType]) -> FeatureType | FeatureTypeList:
+    def create_feature_types(
+        self, feature_type: FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]
+    ) -> FeatureType | FeatureTypeList:
         """`Creates feature types`
         <https://developer.cognite.com/api#tag/Geospatial/operation/createFeatureTypes>
 
         Args:
-            feature_type (FeatureType | Sequence[FeatureType]): feature type definition or list of feature type definitions to create.
+            feature_type (FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]): feature type definition or list of feature type definitions to create.
 
         Returns:
             FeatureType | FeatureTypeList: Created feature type definition(s)
@@ -73,11 +79,11 @@ class GeospatialAPI(APIClient):
             Create new type definitions:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.geospatial import FeatureType
+                >>> from cognite.client.data_classes.geospatial import FeatureTypeWrite
                 >>> c = CogniteClient()
                 >>> feature_types = [
-                ...     FeatureType(external_id="wells", properties={"location": {"type": "POINT", "srid": 4326}})
-                ...     FeatureType(
+                ...     FeatureTypeWrite(external_id="wells", properties={"location": {"type": "POINT", "srid": 4326}})
+                ...     FeatureTypeWrite(
                 ...       external_id="cities",
                 ...       properties={"name": {"type": "STRING", "size": 10}},
                 ...       search_spec={"name_index": {"properties": ["name"]}}
@@ -90,6 +96,7 @@ class GeospatialAPI(APIClient):
             resource_cls=FeatureType,
             items=feature_type,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
+            input_resource_cls=FeatureTypeWrite,
         )
 
     def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
@@ -233,7 +240,7 @@ class GeospatialAPI(APIClient):
     def create_features(
         self,
         feature_type_external_id: str,
-        feature: Feature,
+        feature: Feature | FeatureWrite,
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
     ) -> Feature:
@@ -243,7 +250,7 @@ class GeospatialAPI(APIClient):
     def create_features(
         self,
         feature_type_external_id: str,
-        feature: Sequence[Feature] | FeatureList,
+        feature: Sequence[Feature] | Sequence[FeatureWrite] | FeatureList | FeatureWriteList,
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
     ) -> FeatureList:
@@ -252,7 +259,7 @@ class GeospatialAPI(APIClient):
     def create_features(
         self,
         feature_type_external_id: str,
-        feature: Feature | Sequence[Feature] | FeatureList,
+        feature: Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite] | FeatureList | FeatureWriteList,
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
     ) -> Feature | FeatureList:
@@ -261,7 +268,7 @@ class GeospatialAPI(APIClient):
 
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
-            feature (Feature | Sequence[Feature] | FeatureList): one feature or a list of features to create or a FeatureList object
+            feature (Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite] | FeatureList | FeatureWriteList): one feature or a list of features to create or a FeatureList object
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
             chunk_size (int | None): maximum number of items in a single request to the api
 
@@ -273,9 +280,10 @@ class GeospatialAPI(APIClient):
             Create a new feature type and corresponding feature:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.geospatial import FeatureTypeWrite, FeatureWrite
                 >>> c = CogniteClient()
                 >>> feature_types = [
-                ...     FeatureType(
+                ...     FeatureTypeWrite(
                 ...         external_id="my_feature_type",
                 ...         properties={
                 ...             "location": {"type": "POINT", "srid": 4326},
@@ -286,7 +294,7 @@ class GeospatialAPI(APIClient):
                 >>> res = c.geospatial.create_feature_types(feature_types)
                 >>> res = c.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     feature=Feature(
+                ...     feature=FeatureWrite(
                 ...         external_id="my_feature",
                 ...         location={"wkt": "POINT(1 1)"},
                 ...         temperature=12.4
@@ -295,8 +303,9 @@ class GeospatialAPI(APIClient):
         """
         if chunk_size is not None and (chunk_size < 1 or chunk_size > self._CREATE_LIMIT):
             raise ValueError(f"The chunk_size must be strictly positive and not exceed {self._CREATE_LIMIT}")
-        if isinstance(feature, FeatureList):
+        if isinstance(feature, (FeatureList, FeatureWriteList)):
             feature = list(feature)
+
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
@@ -306,6 +315,7 @@ class GeospatialAPI(APIClient):
             resource_path=resource_path,
             extra_body_fields=extra_body_fields,
             limit=chunk_size,
+            input_resource_cls=FeatureWrite,
         )
 
     def delete_features(
@@ -530,6 +540,7 @@ class GeospatialAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
         order_by: Sequence[OrderSpec] | None = None,
         allow_crs_transformation: bool = False,
+        allow_dimensionality_mismatch: bool = False,
     ) -> FeatureList:
         """`Search for features`
         <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeatures>
@@ -545,6 +556,7 @@ class GeospatialAPI(APIClient):
             limit (int): Maximum number of results
             order_by (Sequence[OrderSpec] | None): The order specification
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
+            allow_dimensionality_mismatch (bool): Indicating if the spatial filter operators allow input geometries with a different dimensionality than the properties they are applied to. Defaults to False.
 
         Returns:
             FeatureList: the filtered features
@@ -579,6 +591,14 @@ class GeospatialAPI(APIClient):
                 ...     feature_type_external_id=my_feature_type,
                 ...     filter={},
                 ...     properties={"temperature": {}, "pressure": {}}
+                ... )
+
+            Search for features and do CRS conversion on an output property:
+
+                >>> res = c.geospatial.search_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     filter={},
+                ...     properties={"location": {"srid": 3995}}
                 ... )
 
             Search for features and order results:
@@ -634,7 +654,8 @@ class GeospatialAPI(APIClient):
                 "limit": limit,
                 "output": {"properties": properties},
                 "sort": order,
-                "allowCrsTransformation": (True if allow_crs_transformation else None),
+                "allowCrsTransformation": allow_crs_transformation,
+                "allowDimensionalityMismatch": allow_dimensionality_mismatch,
             },
         )
         return FeatureList.load(res.json()["items"], cognite_client=self._cognite_client)
@@ -645,6 +666,7 @@ class GeospatialAPI(APIClient):
         filter: dict[str, Any] | None = None,
         properties: dict[str, Any] | None = None,
         allow_crs_transformation: bool = False,
+        allow_dimensionality_mismatch: bool = False,
     ) -> Iterator[Feature]:
         """`Stream features`
         <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeaturesStreaming>
@@ -658,6 +680,7 @@ class GeospatialAPI(APIClient):
             filter (dict[str, Any] | None): the search filter
             properties (dict[str, Any] | None): the output property selection
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
+            allow_dimensionality_mismatch (bool): Indicating if the spatial filter operators allow input geometries with a different dimensionality than the properties they are applied to. Defaults to False.
 
         Yields:
             Feature: a generator for the filtered features
@@ -693,11 +716,10 @@ class GeospatialAPI(APIClient):
         payload = {
             "filter": filter or {},
             "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"},
+            "allowCrsTransformation": allow_crs_transformation,
+            "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
-        params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
-        res = self._do_request(
-            "POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True, params=params
-        )
+        res = self._do_request("POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True)
 
         try:
             for line in res.iter_lines():
@@ -811,13 +833,17 @@ class GeospatialAPI(APIClient):
         return CoordinateReferenceSystemList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create_coordinate_reference_systems(
-        self, crs: CoordinateReferenceSystem | Sequence[CoordinateReferenceSystem]
+        self,
+        crs: CoordinateReferenceSystem
+        | CoordinateReferenceSystemWrite
+        | Sequence[CoordinateReferenceSystem]
+        | Sequence[CoordinateReferenceSystemWrite],
     ) -> CoordinateReferenceSystemList:
         """`Create Coordinate Reference System`
         <https://developer.cognite.com/api#tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
 
         Args:
-            crs (CoordinateReferenceSystem | Sequence[CoordinateReferenceSystem]): a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
+            crs (CoordinateReferenceSystem | CoordinateReferenceSystemWrite | Sequence[CoordinateReferenceSystem] | Sequence[CoordinateReferenceSystemWrite]): a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
 
         Returns:
             CoordinateReferenceSystemList: list of CRSs.
@@ -827,8 +853,9 @@ class GeospatialAPI(APIClient):
             Create a custom CRS:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import CoordinateReferenceSystemWrite
                 >>> c = CogniteClient()
-                >>> custom_crs = CoordinateReferenceSystem(
+                >>> custom_crs = CoordinateReferenceSystemWrite(
                 ...     srid = 121111,
                 ...     wkt=(
                 ...          'PROJCS["NTF (Paris) / Lambert zone II",'
@@ -864,7 +891,11 @@ class GeospatialAPI(APIClient):
                 >>> crs = c.geospatial.create_coordinate_reference_systems(custom_crs)
         """
         if isinstance(crs, CoordinateReferenceSystem):
+            crs = [crs.as_write()]
+        elif isinstance(crs, CoordinateReferenceSystemWrite):
             crs = [crs]
+        elif isinstance(crs, Sequence):
+            crs = [it.as_write() if isinstance(it, CoordinateReferenceSystem) else it for it in crs]
 
         res = self._post(
             url_path=f"{self._RESOURCE_PATH}/crs", json={"items": [it.dump(camel_case=True) for it in crs]}
