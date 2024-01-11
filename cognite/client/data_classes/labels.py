@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -171,7 +172,12 @@ class Label(CogniteObject):
         self.external_id = external_id
 
     @classmethod
-    def _load_list(cls, labels: Sequence[str | dict | LabelDefinitionCore | Label] | None) -> list[Label] | None:
+    def _load_list(
+        cls,
+        labels: SequenceNotStr[str | dict | LabelDefinitionCore | Label]
+        | Sequence[dict | LabelDefinitionCore | Label]
+        | None,
+    ) -> list[Label] | None:
         def convert_label(label: Label | str | LabelDefinitionCore | dict) -> Label:
             if isinstance(label, Label):
                 return label

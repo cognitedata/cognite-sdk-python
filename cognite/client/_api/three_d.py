@@ -479,7 +479,7 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        properties: dict[str, dict[str, Sequence[str]]] | None = None,
+        properties: dict[str, dict[str, SequenceNotStr[str]]] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
     ) -> ThreeDNodeList:
@@ -488,7 +488,7 @@ class ThreeDRevisionsAPI(APIClient):
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            properties (dict[str, dict[str, Sequence[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the category+property combination with a value that is contained within the corresponding list in the filter.
+            properties (dict[str, dict[str, SequenceNotStr[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the category+property combination with a value that is contained within the corresponding list in the filter.
             limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
 

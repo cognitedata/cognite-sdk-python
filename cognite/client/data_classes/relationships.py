@@ -107,7 +107,7 @@ class Relationship(RelationshipCore):
         end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (int | None): The id of the dataset this relationship belongs to.
-        labels (typing.Sequence[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
+        labels (SequenceNotStr[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
         created_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
         last_updated_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
         cognite_client (CogniteClient | None): The client to associate with this object.
@@ -126,7 +126,7 @@ class Relationship(RelationshipCore):
         end_time: int | None = None,
         confidence: float | None = None,
         data_set_id: int | None = None,
-        labels: typing.Sequence[Label | str | LabelDefinition | dict] | None = None,
+        labels: SequenceNotStr[Label | str | LabelDefinition | dict] | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         cognite_client: CogniteClient | None = None,
@@ -236,7 +236,7 @@ class RelationshipWrite(RelationshipCore):
         end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (int | None): The id of the dataset this relationship belongs to.
-        labels (typing.Sequence[Label | str | LabelDefinitionWrite | dict] | None): A list of the labels associated with this resource item.
+        labels (SequenceNotStr[Label | str | LabelDefinitionWrite | dict] | None): A list of the labels associated with this resource item.
     """
 
     def __init__(
@@ -250,7 +250,7 @@ class RelationshipWrite(RelationshipCore):
         end_time: int | None = None,
         confidence: float | None = None,
         data_set_id: int | None = None,
-        labels: typing.Sequence[Label | str | LabelDefinitionWrite | dict] | None = None,
+        labels: SequenceNotStr[Label | str | LabelDefinitionWrite | dict] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
