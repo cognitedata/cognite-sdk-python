@@ -77,7 +77,7 @@ class SyntheticDatapointsAPI(APIClient):
         )
 
         for exp in expressions_to_iterate:
-            expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)  # type: ignore[arg-type]
+            expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)
             query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
             values: list[float] = []  # mypy
             query_datapoints = Datapoints(value=values, error=[])
