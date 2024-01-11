@@ -73,7 +73,7 @@ class SyntheticDatapointsAPI(APIClient):
 
         tasks = []
         expressions_to_iterate = (
-            (expressions if isinstance(expressions, Sequence) and not isinstance(expressions, str) else [expressions]),
+            expressions if isinstance(expressions, Sequence) and not isinstance(expressions, str) else [expressions]
         )
 
         for exp in expressions_to_iterate:
