@@ -156,7 +156,9 @@ class LabelDefinitionList(
 
     def as_write(self) -> LabelDefinitionWriteList:
         """Returns this LabelDefinitionList in its writing version."""
-        return LabelDefinitionWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
+        return LabelDefinitionWriteList(
+            [item.as_write() for item in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class Label(CogniteObject):

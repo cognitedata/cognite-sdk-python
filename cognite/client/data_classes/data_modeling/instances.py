@@ -884,7 +884,7 @@ class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
 
     def as_write(self) -> EdgeApplyList:
         """Returns this EdgeList as a EdgeApplyList"""
-        return EdgeApplyList([edge.as_write() for edge in self])
+        return EdgeApplyList([edge.as_write() for edge in self], cognite_client=self._get_cognite_client())
 
 
 class EdgeListWithCursor(EdgeList):

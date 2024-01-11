@@ -172,4 +172,6 @@ class TransformationScheduleList(
     _RESOURCE = TransformationSchedule
 
     def as_write(self) -> TransformationScheduleWriteList:
-        return TransformationScheduleWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+        return TransformationScheduleWriteList(
+            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
+        )
