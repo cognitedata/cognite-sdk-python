@@ -25,6 +25,7 @@ from cognite.client.data_classes._base import (
     CogniteResponse,
     CogniteUpdate,
     PropertySpec,
+    WriteableCogniteResource,
 )
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
@@ -184,6 +185,23 @@ class TestCogniteObject:
         loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_object_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(WriteableCogniteResource)
+        ],
+    )
+    def test_writable_as_write(
+        self, cognite_object_subclass: type[WriteableCogniteResource], cognite_mock_client_placeholder
+    ):
+        instance_generator = FakeCogniteResourceGenerator(seed=54, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass)
+
+        write_format = instance.as_write()
+        assert isinstance(write_format, CogniteResource)
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(

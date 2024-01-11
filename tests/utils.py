@@ -416,6 +416,9 @@ class FakeCogniteResourceGenerator:
                 # Remove filters which are only used by data modeling classes
                 implementations.remove(filters.HasData)
                 implementations.remove(filters.Nested)
+                implementations.remove(filters.GeoJSONWithin)
+                implementations.remove(filters.GeoJSONDisjoint)
+                implementations.remove(filters.GeoJSONIntersects)
             if type_ is WorkflowTaskOutput:
                 # For Workflow Output has to match the input type
                 selected = FunctionTaskOutput
