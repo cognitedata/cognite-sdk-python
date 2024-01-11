@@ -31,7 +31,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
-from cognite.client.data_classes.data_modeling.query import Query
+from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
@@ -388,6 +388,10 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["transformation_external_id"] = "my_transformation"
             else:
                 keyword_arguments.pop("transformation_id", None)
+        elif resource_cls is NodeResultSetExpression:
+            # Through has a special format.
+            keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
+
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
