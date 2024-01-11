@@ -22,7 +22,10 @@ from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
     EndTimeFilter,
     Relationship,
+    SequenceColumn,
+    SequenceColumnList,
     SequenceData,
+    SequenceRow,
     SequenceRows,
     Transformation,
     filters,
@@ -310,7 +313,11 @@ class FakeCogniteResourceGenerator:
         # Special cases
         if resource_cls is DataPointSubscriptionWrite:
             # DataPointSubscriptionWrite requires either timeseries_ids or filter
-            keyword_arguments.pop("filter", None)
+            if skip_defaulted_args:
+                keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
+            else:
+                keyword_arguments.pop("filter", None)
+
         if resource_cls is Query:
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
             # by making sure that the list of equal length, so we make both to length 1.
@@ -318,11 +325,11 @@ class FakeCogniteResourceGenerator:
             select_value = next(iter(keyword_arguments["select"].values()))
             keyword_arguments["with_"] = {with_key: with_value}
             keyword_arguments["select"] = {with_key: select_value}
-        elif resource_cls is Relationship:
+        elif resource_cls is Relationship and not skip_defaulted_args:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
             keyword_arguments["target_type"] = type(keyword_arguments["target"]).__name__
-        elif resource_cls is Datapoints:
+        elif resource_cls is Datapoints and not skip_defaulted_args:
             # All lists have to be equal in length and only value and timestamp
             keyword_arguments["timestamp"] = keyword_arguments["timestamp"][:1]
             keyword_arguments["value"] = keyword_arguments["value"][:1]
@@ -334,20 +341,39 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is SequenceRows:
             # All row values must match the number of columns
             # Reducing to one column, and one value for each row
+            if skip_defaulted_args:
+                keyword_arguments["external_id"] = "my_sequence_rows"
             keyword_arguments["columns"] = keyword_arguments["columns"][:1]
             for row in keyword_arguments["rows"]:
                 row.values = row.values[:1]
         elif resource_cls is SequenceData:
-            # All row values must match the number of columns
-            keyword_arguments.pop("rows", None)
-            keyword_arguments["columns"] = keyword_arguments["columns"][:1]
-            keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
-            keyword_arguments["values"] = keyword_arguments["values"][:1]
-            keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
+            if skip_defaulted_args:
+                # At least external_id or id must be set
+                keyword_arguments["external_id"] = "my_sequence"
+                keyword_arguments["rows"] = [
+                    SequenceRow(
+                        row_number=1,
+                        values=[
+                            1,
+                        ],
+                    )
+                ]
+                keyword_arguments["columns"] = SequenceColumnList(
+                    [
+                        SequenceColumn("my_column"),
+                    ]
+                )
+            else:
+                # All row values must match the number of columns
+                keyword_arguments.pop("rows", None)
+                keyword_arguments["columns"] = keyword_arguments["columns"][:1]
+                keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
+                keyword_arguments["values"] = keyword_arguments["values"][:1]
+                keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
         elif resource_cls is EndTimeFilter:
             # EndTimeFilter requires either is null or (max and/or min)
             keyword_arguments.pop("is_null", None)
-        elif resource_cls is Transformation:
+        elif resource_cls is Transformation and not skip_defaulted_args:
             # schedule and jobs must match external id and id
             keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
             keyword_arguments["schedule"].id = keyword_arguments["id"]
@@ -358,7 +384,10 @@ class FakeCogniteResourceGenerator:
             keyword_arguments.pop("id", None)
         elif resource_cls is TransformationNotificationWrite:
             # TransformationNotificationWrite requires either transformation_id or transformation_external_id
-            keyword_arguments.pop("transformation_id", None)
+            if skip_defaulted_args:
+                keyword_arguments["transformation_external_id"] = "my_transformation"
+            else:
+                keyword_arguments.pop("transformation_id", None)
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
