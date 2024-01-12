@@ -20,8 +20,7 @@ Changes are grouped as follows
 ## [7.13.15] - 2024-01-12
 ### Added
 - Included EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses to data_modeling's init.
-- Added example on creating Edge properties on a View.
-  
+
 ## [7.13.4] - 2024-01-11
 ### Fixed
 * When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
