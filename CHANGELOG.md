@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.13.15] - 2024-01-12
+## [7.13.5] - 2024-01-12
 ### Added
 - Included EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses to data_modeling's init.
 
