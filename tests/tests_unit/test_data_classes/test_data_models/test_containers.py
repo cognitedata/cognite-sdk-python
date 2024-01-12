@@ -1,6 +1,30 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling.containers import Constraint, ContainerProperty, Index
+from cognite.client.data_classes.data_modeling.containers import (
+    Constraint,
+    Container,
+    ContainerApply,
+    ContainerProperty,
+    Index,
+)
+
+
+class TestContainer:
+    def test_as_property_ref(self) -> None:
+        params = dict(
+            space="sp",
+            externalId="ex",
+            properties={},
+            isGlobal=False,
+            lastUpdatedTime=123,
+            createdTime=12,
+            usedFor="node",
+        )
+        cont = Container.load(params)
+        cont_apply = ContainerApply.load(params)
+
+        assert cont.as_property_ref("foo") == ("sp", "ex", "foo")
+        assert cont_apply.as_property_ref("foo") == ("sp", "ex", "foo")
 
 
 class TestContainerProperty:
