@@ -1,5 +1,24 @@
-from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
 from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply
+
+
+class TestView:
+    def test_as_property_ref(self) -> None:
+        params = dict(
+            space="spa",
+            externalId="de",
+            version="69",
+            lastUpdatedTime=123,
+            createdTime=12,
+            writable=False,
+            usedFor="node",
+            isGlobal=False,
+        )
+        cont = View.load(params)
+        cont_apply = ViewApply.load(params)
+
+        assert cont.as_property_ref("bar") == ("spa", "de/69", "bar")
+        assert cont_apply.as_property_ref("bar") == ("spa", "de/69", "bar")
 
 
 class TestViewPropertyDefinition:
