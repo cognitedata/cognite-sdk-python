@@ -422,4 +422,4 @@ class RelationshipList(WriteableCogniteResourceList[RelationshipWrite, Relations
 
     def as_write(self) -> RelationshipWriteList:
         """Returns this RelationshipList in its writing version."""
-        return RelationshipWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
+        return RelationshipWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())

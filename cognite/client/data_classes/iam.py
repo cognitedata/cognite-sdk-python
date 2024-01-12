@@ -177,7 +177,7 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
 
     def as_write(self) -> GroupWriteList:
         """Returns a writing version of this group list."""
-        return GroupWriteList([s.as_write() for s in self], cognite_client=self._cognite_client)
+        return GroupWriteList([s.as_write() for s in self], cognite_client=self._get_cognite_client())
 
     def to_pandas(
         self,
@@ -262,7 +262,7 @@ class SecurityCategoryList(WriteableCogniteResourceList[SecurityCategoryWrite, S
 
     def as_write(self) -> SecurityCategoryWriteList:
         """Returns a writing version of this security category list."""
-        return SecurityCategoryWriteList([s.as_write() for s in self], cognite_client=self._cognite_client)
+        return SecurityCategoryWriteList([s.as_write() for s in self], cognite_client=self._get_cognite_client())
 
 
 class ProjectSpec(CogniteResponse):

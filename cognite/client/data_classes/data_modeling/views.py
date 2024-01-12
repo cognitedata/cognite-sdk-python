@@ -61,6 +61,9 @@ class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
             version=self.version,
         )
 
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
+        return self.as_id().as_property_ref(property)
+
 
 class ViewApply(ViewCore):
     """A group of properties. Write only version.

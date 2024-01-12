@@ -222,7 +222,7 @@ class ThreeDModelList(
 
     def as_write(self) -> ThreeDModelWriteList:
         """Returns this ThreedModelList in a writing version."""
-        return ThreeDModelWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
+        return ThreeDModelWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
 
 
 class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite"], ABC):
@@ -477,7 +477,7 @@ class ThreeDModelRevisionList(
     def as_write(self) -> ThreeDModelRevisionWriteList:
         """Returns this ThreedModelRevisionList in a writing version."""
         return ThreeDModelRevisionWriteList(
-            [item.as_write() for item in self.data], cognite_client=self._cognite_client
+            [item.as_write() for item in self.data], cognite_client=self._get_cognite_client()
         )
 
 
@@ -631,4 +631,6 @@ class ThreeDAssetMappingList(WriteableCogniteResourceList[ThreeDAssetMappingWrit
 
     def as_write(self) -> ThreeDAssetMappingWriteList:
         """Returns this ThreedAssetMappingList in a writing version."""
-        return ThreeDAssetMappingWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
+        return ThreeDAssetMappingWriteList(
+            [item.as_write() for item in self.data], cognite_client=self._get_cognite_client()
+        )

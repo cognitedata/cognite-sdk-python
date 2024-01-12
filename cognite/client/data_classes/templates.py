@@ -649,7 +649,7 @@ class GraphQlResponse(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> GraphQlResponse:
         return cls(
             data=resource.get("data"),
-            errors=[GraphQlError._load(error) for error in resource.get("errors", [])],
+            errors=[GraphQlError._load(error) for error in resource.get("errors", [])] or None,
             cognite_client=cognite_client,
         )
 

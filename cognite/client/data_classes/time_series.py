@@ -403,7 +403,7 @@ class TimeSeriesList(WriteableCogniteResourceList[TimeSeriesWrite, TimeSeries], 
     _RESOURCE = TimeSeries
 
     def as_write(self) -> TimeSeriesWriteList:
-        return TimeSeriesWriteList([ts.as_write() for ts in self.data], cognite_client=self._cognite_client)
+        return TimeSeriesWriteList([ts.as_write() for ts in self.data], cognite_client=self._get_cognite_client())
 
 
 class TimeSeriesProperty(EnumProperty):

@@ -63,6 +63,14 @@ class TestRetryTracker:
             rt.read += 1
             assert 0 <= rt.get_backoff_time() <= DEFAULT_CONFIG.max_backoff_seconds
 
+    def test_is_auto_retryable(self):
+        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt.config.max_retries_status = 1
+
+        # 409 is not in the list of status codes to retry, but we set is_auto_retryable=True, which should override it
+        assert rt.should_retry(409, is_auto_retryable=True) is True
+        assert rt.should_retry(409, is_auto_retryable=False) is False
+
 
 def raise_exception_wrapped_as_in_requests_lib(exc: Exception):
     try:

@@ -671,7 +671,7 @@ class TransformationList(WriteableCogniteResourceList[TransformationWrite, Trans
 
     def as_write(self) -> TransformationWriteList:
         return TransformationWriteList(
-            [transformation.as_write() for transformation in self.data], cognite_client=self._cognite_client
+            [transformation.as_write() for transformation in self.data], cognite_client=self._get_cognite_client()
         )
 
 
