@@ -245,4 +245,4 @@ class DataSetList(WriteableCogniteResourceList[DataSetWrite, DataSet], IdTransfo
     _RESOURCE = DataSet
 
     def as_write(self) -> DataSetWriteList:
-        return DataSetWriteList([ds.as_write() for ds in self.data], cognite_client=self._cognite_client)
+        return DataSetWriteList([ds.as_write() for ds in self.data], cognite_client=self._get_cognite_client())

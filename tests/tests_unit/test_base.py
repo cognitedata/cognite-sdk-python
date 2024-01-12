@@ -25,7 +25,10 @@ from cognite.client.data_classes._base import (
     CogniteResponse,
     CogniteUpdate,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import EdgeListWithCursor, NodeListWithCursor
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
@@ -165,6 +168,63 @@ class TestCogniteObject:
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_object_subclass",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(CogniteObject)
+        ],
+    )
+    def test_dump_load_only_required(
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
+    ):
+        instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass, skip_defaulted_args=True)
+
+        dumped = instance.dump()
+        loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_writable_cls",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(WriteableCogniteResource)
+        ],
+    )
+    def test_writable_as_write(
+        self, cognite_writable_cls: type[WriteableCogniteResource], cognite_mock_client_placeholder
+    ):
+        instance_generator = FakeCogniteResourceGenerator(seed=54, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_writable_cls)
+
+        write_format = instance.as_write()
+        assert isinstance(write_format, CogniteResource)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "writable_list",
+        [
+            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
+            for class_ in all_concrete_subclasses(WriteableCogniteResourceList)
+            if class_ not in [EdgeListWithCursor, NodeListWithCursor]
+        ],
+    )
+    def test_writable_list_as_write(
+        self, writable_list: type[WriteableCogniteResourceList], cognite_mock_client_placeholder
+    ):
+        resource_cls = writable_list._RESOURCE
+        instance_generator = FakeCogniteResourceGenerator(seed=54, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(resource_cls)
+        # Setting the cognite_client to None as the `as_write` should not fail if the client is not set.
+        instance_list = writable_list([instance], cognite_client=None)
+
+        write_format = instance_list.as_write()
+        assert isinstance(write_format, CogniteResourceList)
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
