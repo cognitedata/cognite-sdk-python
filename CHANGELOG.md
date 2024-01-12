@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.3] - 2024-01-12
+### Added
+- `View.as_property_ref` and `Container.as_property_ref` to make it easier to create property references
+  (used to only be available on `ViewId` and `ContainerId`).
+
 ## [7.13.2] - 2024-01-11
 ### Fixed
 * When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
