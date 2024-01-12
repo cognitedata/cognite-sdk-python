@@ -248,12 +248,10 @@ class ViewsAPI(APIClient):
                 ...     ContainerId,
                 ...     DirectRelationReference,
                 ...     MappedPropertyApply,
-                ...     ViewApply,
-                ...     ViewId,
-                >>> )
-                >>> from cognite.client.data_classes.data_modeling.views import (
                 ...     MultiEdgeConnectionApply,
-                >>> )
+                ...     ViewApply,
+                ...     ViewId
+                ... )
                 >>> c = CogniteClient()
                 >>> movie_view = ViewApply(
                 ...     space="imdb",
@@ -274,8 +272,8 @@ class ViewsAPI(APIClient):
                 ...             name="actors",
                 ...             direction="outwards",
                 ...         ),
-                ...     },
-                >>> )
+                ...     }
+                ... )
                 >>> actor_view = ViewApply(
                 ...     space="imdb",
                 ...     external_id="Actor",
@@ -295,9 +293,9 @@ class ViewsAPI(APIClient):
                 ...             name="movies",
                 ...             direction="inwards",
                 ...         ),
-                ...     },
-                >>> )
-                >>> c.data_modeling.views.apply([movie_view, actor_view])
+                ...     }
+                ... )
+                >>> res = c.data_modeling.views.apply([movie_view, actor_view])
         """
         return self._create_multiple(
             list_cls=ViewList,
