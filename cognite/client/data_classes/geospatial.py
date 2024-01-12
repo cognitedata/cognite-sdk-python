@@ -152,7 +152,7 @@ class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType
 
     def as_write(self) -> FeatureTypeWriteList:
         return FeatureTypeWriteList(
-            [feature_type.as_write() for feature_type in self], cognite_client=self._cognite_client
+            [feature_type.as_write() for feature_type in self], cognite_client=self._get_cognite_client()
         )
 
 
@@ -429,7 +429,7 @@ class FeatureList(FeatureListCore[Feature]):
     _RESOURCE = Feature
 
     def as_write(self) -> FeatureWriteList:
-        return FeatureWriteList([feature.as_write() for feature in self], cognite_client=self._cognite_client)
+        return FeatureWriteList([feature.as_write() for feature in self], cognite_client=self._get_cognite_client())
 
 
 def nan_to_none(column_value: Any) -> Any:
@@ -573,7 +573,7 @@ class CoordinateReferenceSystemList(
     def as_write(self) -> CoordinateReferenceSystemWriteList:
         return CoordinateReferenceSystemWriteList(
             [coordinate_reference_system.as_write() for coordinate_reference_system in self],
-            cognite_client=self._cognite_client,
+            cognite_client=self._get_cognite_client(),
         )
 
 

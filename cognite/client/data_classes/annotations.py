@@ -371,4 +371,4 @@ class AnnotationList(WriteableCogniteResourceList[AnnotationWrite, Annotation]):
 
     def as_write(self) -> AnnotationWriteList:
         """Returns this AnnotationList in its writing version."""
-        return AnnotationWriteList([ann.as_write() for ann in self.data], cognite_client=self._cognite_client)
+        return AnnotationWriteList([ann.as_write() for ann in self.data], cognite_client=self._get_cognite_client())

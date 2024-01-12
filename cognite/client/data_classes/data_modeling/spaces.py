@@ -142,7 +142,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         """
         return SpaceApplyList(
             resources=[item.as_apply() for item in self],
-            cognite_client=self._cognite_client,
+            cognite_client=self._get_cognite_client(),
         )
 
     def as_write(self) -> SpaceApplyList:
