@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.5] - 2024-01-11
+### Fixed
+* Type hints for all `.update` and `.upsert` methods accept Write classes in addition to Read and Update classes.
+* Missing overloading of the `.update` methods on `client.three_d.models.update`, `client.transformations.update`,
+  `client.transformations.schedules.update`, `client.relationships.update`, and `client.data_sets.update`.
+
 ## [7.13.4] - 2024-01-11
 ### Fixed
 * When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
