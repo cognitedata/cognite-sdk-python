@@ -8,7 +8,7 @@ import pytest
 from pytest import MonkeyPatch
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, Event, EventFilter, EventList, aggregations, filters
+from cognite.client.data_classes import Asset, AssetWrite, Event, EventFilter, EventList, aggregations, filters
 from cognite.client.data_classes.events import EventProperty
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
@@ -332,6 +332,22 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=existing_event.external_id, ignore_unknown_ids=True)
 
+    def test_upsert_write_class_not_existing(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        new_asset = AssetWrite(
+            external_id="test_upsert_write_class_not_existing:new_asset",
+            name="test_upsert_write_class_not_existing",
+        )
+
+        # Act
+        try:
+            updated = cognite_client.assets.upsert(new_asset, mode="replace")
+
+            # Assert
+            assert updated.name == new_asset.name
+        finally:
+            cognite_client.assets.delete(external_id=new_asset.external_id, ignore_unknown_ids=True)
+
 
 @pytest.fixture(scope="session")
 def event_list(cognite_client: CogniteClient) -> EventList:
@@ -430,3 +446,37 @@ class TestAPIClientDelete:
         res = cognite_client.events.delete(external_id=[])
 
         assert res is None
+
+
+@pytest.fixture()
+def new_asset(cognite_client: CogniteClient) -> Asset:
+    new_asset = AssetWrite(
+        external_id="test_api_client:new_asset:fixture",
+        name="test_asset",
+        description="test_asset",
+        metadata={"test": "test"},
+        source="test",
+    )
+    created = cognite_client.assets.create(new_asset)
+    yield created
+    cognite_client.assets.delete(external_id=new_asset.external_id, ignore_unknown_ids=True)
+
+
+class TestAPIClientUpdate:
+    def test_update_write_class(self, new_asset: Asset, cognite_client: CogniteClient) -> None:
+        changed = new_asset.as_write()
+        changed.description = "changed"
+
+        res = cognite_client.assets.update(changed)
+
+        assert isinstance(res, Asset)
+        assert res.description == "changed"
+
+    def test_update_read_class(self, new_asset: Asset, cognite_client: CogniteClient) -> None:
+        changed = new_asset
+        changed.description = "changed"
+
+        res = cognite_client.assets.update(changed)
+
+        assert isinstance(res, Asset)
+        assert res.description == "changed"
