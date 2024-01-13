@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.5] - 2024-01-13
+### Fixed
+* When calling `to_pandas` with `expand_properties=True` on an instance with no properties, the SDK will ignore the properties and return a dataframe with the other instance data.
+
 ## [7.13.4] - 2024-01-11
 ### Fixed
 * When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
