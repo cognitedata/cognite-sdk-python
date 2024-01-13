@@ -311,13 +311,25 @@ class TransformationsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    @overload
+    def update(self, item: Transformation | TransformationWrite | TransformationUpdate) -> Transformation:
+        ...
+
+    @overload
+    def update(self, item: Sequence[Transformation | TransformationWrite | TransformationUpdate]) -> TransformationList:
+        ...
+
     def update(
-        self, item: Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]
+        self,
+        item: Transformation
+        | TransformationWrite
+        | TransformationUpdate
+        | Sequence[Transformation | TransformationWrite | TransformationUpdate],
     ) -> Transformation | TransformationList:
         """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
 
         Args:
-            item (Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]): Transformation(s) to update
+            item (Transformation | TransformationWrite | TransformationUpdate | Sequence[Transformation | TransformationWrite | TransformationUpdate]): Transformation(s) to update
 
         Returns:
             Transformation | TransformationList: Updated transformation(s)

@@ -195,16 +195,29 @@ class TransformationSchedulesAPI(APIClient):
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
+    @overload
+    def update(
+        self, item: TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate
+    ) -> TransformationSchedule:
+        ...
+
+    @overload
+    def update(
+        self, item: Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]
+    ) -> TransformationScheduleList:
+        ...
+
     def update(
         self,
         item: TransformationSchedule
+        | TransformationScheduleWrite
         | TransformationScheduleUpdate
-        | Sequence[TransformationSchedule | TransformationScheduleUpdate],
+        | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate],
     ) -> TransformationSchedule | TransformationScheduleList:
         """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
 
         Args:
-            item (TransformationSchedule | TransformationScheduleUpdate | Sequence[TransformationSchedule | TransformationScheduleUpdate]): Transformation schedule(s) to update
+            item (TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]): Transformation schedule(s) to update
 
         Returns:
             TransformationSchedule | TransformationScheduleList: Updated transformation schedule(s)

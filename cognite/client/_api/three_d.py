@@ -17,6 +17,7 @@ from cognite.client.data_classes import (
     ThreeDModelRevisionUpdate,
     ThreeDModelRevisionWrite,
     ThreeDModelUpdate,
+    ThreeDModelWrite,
     ThreeDNode,
     ThreeDNodeList,
 )
@@ -165,13 +166,25 @@ class ThreeDModelsAPI(APIClient):
             item_processed = [{"name": n, "dataSetId": data_set_id, "metadata": metadata} for n in name]
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
 
+    @overload
+    def update(self, item: ThreeDModel | ThreeDModelWrite) -> ThreeDModel:
+        ...
+
+    @overload
+    def update(self, item: Sequence[ThreeDModel | ThreeDModelWrite]) -> ThreeDModelList:
+        ...
+
     def update(
-        self, item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]
+        self,
+        item: ThreeDModel
+        | ThreeDModelWrite
+        | ThreeDModelUpdate
+        | Sequence[ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate],
     ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
         Args:
-            item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
+            item (ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate]): ThreeDModel(s) to update
 
         Returns:
             ThreeDModel | ThreeDModelList: Updated ThreeDModel(s)
