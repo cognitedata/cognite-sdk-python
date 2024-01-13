@@ -176,13 +176,19 @@ class TestInstancesToPandas:
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
     ) -> None:
         raw = node_dumped if inst_cls is Node else edge_dumped
+        raw_no_properties = raw.copy()
+        raw_no_properties["properties"] = {}
         not_expanded = inst_cls._load(raw).to_pandas(expand_properties=False)
         expanded = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=True)
         expanded_with_prefix = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=False)
+        expanded_with_empty_properties = inst_cls._load(raw_no_properties).to_pandas(
+            expand_properties=True, remove_property_prefix=True
+        )
 
         assert "properties" in not_expanded.index
         assert "properties" not in expanded.index
         assert "properties" not in expanded_with_prefix.index
+        assert "properties" not in expanded_with_empty_properties.index
 
         assert raw["properties"] == not_expanded.loc["properties"].item()
 
