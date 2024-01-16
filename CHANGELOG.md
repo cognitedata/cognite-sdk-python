@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.13.5] - 2024-01-16
 ### Added
-- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from data_modeling.dataclasses.
+- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`. 
 
 ## [7.13.4] - 2024-01-11
 ### Fixed
