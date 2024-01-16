@@ -239,6 +239,63 @@ class ViewsAPI(APIClient):
                 ...    )
                 ... ]
                 >>> res = c.data_modeling.views.apply(views)
+
+
+            Create views with edge relations::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ContainerId,
+                ...     DirectRelationReference,
+                ...     MappedPropertyApply,
+                ...     MultiEdgeConnectionApply,
+                ...     ViewApply,
+                ...     ViewId
+                ... )
+                >>> c = CogniteClient()
+                >>> movie_view = ViewApply(
+                ...     space="imdb",
+                ...     external_id="Movie",
+                ...     version="1",
+                ...     name="Movie",
+                ...     properties={
+                ...         "name": MappedPropertyApply(
+                ...             container=ContainerId("imdb", "Movie"),
+                ...             name="name",
+                ...             container_property_identifier="name",
+                ...         ),
+                ...         "actors": MultiEdgeConnectionApply(
+                ...             type=DirectRelationReference(
+                ...                 space="imdb", external_id="Movie.actors"
+                ...             ),
+                ...             source=ViewId("imdb", "Actor", "1"),
+                ...             name="actors",
+                ...             direction="outwards",
+                ...         ),
+                ...     }
+                ... )
+                >>> actor_view = ViewApply(
+                ...     space="imdb",
+                ...     external_id="Actor",
+                ...     version="1",
+                ...     name="Actor",
+                ...     properties={
+                ...         "name": MappedPropertyApply(
+                ...             container=ContainerId("imdb", "Actor"),
+                ...             name="name",
+                ...             container_property_identifier="name",
+                ...         ),
+                ...         "movies": MultiEdgeConnectionApply(
+                ...             type=DirectRelationReference(
+                ...                 space="imdb", external_id="Movie.actors"
+                ...             ),
+                ...             source=ViewId("imdb", "Movie", "1"),
+                ...             name="movies",
+                ...             direction="inwards",
+                ...         ),
+                ...     }
+                ... )
+                >>> res = c.data_modeling.views.apply([movie_view, actor_view])
         """
         return self._create_multiple(
             list_cls=ViewList,
