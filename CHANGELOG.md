@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.13.5] - 2024-01-13
+<<<<<<< HEAD
+## [7.13.6] - 2024-01-17
 ### Fixed
 * When calling `to_pandas` with `expand_properties=True` on an instance with no properties, the SDK will ignore the properties and return a dataframe with the other instance data.
+
+## [7.13.5] - 2024-01-16
+### Added
+- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`. 
 
 ## [7.13.4] - 2024-01-11
 ### Fixed
