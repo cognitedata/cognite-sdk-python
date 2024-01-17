@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+import re
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
@@ -9,8 +10,11 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling._validation import (
+    validate_data_modeling_identifier,
+)
 from cognite.client.data_classes.data_modeling.core import WritableDataModelingResource
+from cognite.client.utils._semantics import get_uri
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -33,6 +37,10 @@ class SpaceCore(WritableDataModelingResource["SpaceApply"], ABC):
     def as_id(self) -> str:
         return self.space
 
+    @property
+    def uri(self) -> str | None:
+        return get_uri(self.description) if self.description else None
+
 
 class SpaceApply(SpaceCore):
     """A workspace for data models and instances. This is the write version
@@ -43,12 +51,16 @@ class SpaceApply(SpaceCore):
         name (str | None): Human readable name for the space.
     """
 
-    def __init__(self, space: str, description: str | None = None, name: str | None = None) -> None:
+    def __init__(
+        self, space: str, description: str | None = None, name: str | None = None
+    ) -> None:
         validate_data_modeling_identifier(space)
         super().__init__(space, description, name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> Self:
         return cls(
             space=resource["space"],
             description=resource.get("description"),
@@ -97,7 +109,9 @@ class Space(SpaceCore):
         return self.as_apply()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> Self:
         return cls(
             space=resource["space"],
             is_global=resource["isGlobal"],
