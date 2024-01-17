@@ -511,7 +511,7 @@ class FunctionSchedulesList(WriteableCogniteResourceList[FunctionScheduleWrite, 
 
     def as_write(self) -> FunctionScheduleWriteList:
         """Returns a writeable version of this function schedule."""
-        return FunctionScheduleWriteList([f.as_write() for f in self.data], cognite_client=self._cognite_client)
+        return FunctionScheduleWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
 
 
 class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransformerMixin):
@@ -523,7 +523,7 @@ class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTran
 
     def as_write(self) -> FunctionWriteList:
         """Returns a writeable version of this function."""
-        return FunctionWriteList([f.as_write() for f in self.data], cognite_client=self._cognite_client)
+        return FunctionWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
 
 
 class FunctionCall(CogniteResource):

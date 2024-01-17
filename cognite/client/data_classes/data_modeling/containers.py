@@ -67,6 +67,9 @@ class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
     def as_id(self) -> ContainerId:
         return ContainerId(self.space, self.external_id)
 
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
+        return self.as_id().as_property_ref(property)
+
 
 class ContainerApply(ContainerCore):
     """Represent the physical storage of data. This is the write format of the container

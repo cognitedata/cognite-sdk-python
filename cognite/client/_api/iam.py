@@ -256,7 +256,7 @@ class GroupsAPI(APIClient):
                 >>> res = c.iam.groups.list()
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList.load(res.json()["items"])
+        return GroupList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     @overload
     def create(self, group: Group | GroupWrite) -> Group:

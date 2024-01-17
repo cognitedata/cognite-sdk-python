@@ -575,40 +575,49 @@ class VisionExtractPredictions(VisionResource):
         return cls(
             text_predictions=[
                 TextRegion._load(text_prediction) for text_prediction in resource.get("textPredictions", [])
-            ],
+            ]
+            or None,
             asset_tag_predictions=[
                 AssetLink._load(asset_tag_prediction)
                 for asset_tag_prediction in resource.get("assetTagPredictions", [])
-            ],
+            ]
+            or None,
             industrial_object_predictions=[
                 ObjectDetection._load(industrial_object_prediction)
                 for industrial_object_prediction in resource.get("industrialObjectPredictions", [])
-            ],
+            ]
+            or None,
             people_predictions=[
                 ObjectDetection._load(people_prediction) for people_prediction in resource.get("peoplePredictions", [])
-            ],
+            ]
+            or None,
             personal_protective_equipment_predictions=[
                 ObjectDetection._load(personal_protective_equipment_prediction)
                 for personal_protective_equipment_prediction in resource.get(
                     "personalProtectiveEquipmentPredictions", []
                 )
-            ],
+            ]
+            or None,
             digital_gauge_predictions=[
                 ObjectDetection._load(digital_gauge_prediction)
                 for digital_gauge_prediction in resource.get("digitalGaugePredictions", [])
-            ],
+            ]
+            or None,
             dial_gauge_predictions=[
                 KeypointCollectionWithObjectDetection._load(dial_gauge_prediction)
                 for dial_gauge_prediction in resource.get("dialGaugePredictions", [])
-            ],
+            ]
+            or None,
             level_gauge_predictions=[
                 KeypointCollectionWithObjectDetection._load(level_gauge_prediction)
                 for level_gauge_prediction in resource.get("levelGaugePredictions", [])
-            ],
+            ]
+            or None,
             valve_predictions=[
                 KeypointCollectionWithObjectDetection._load(valve_prediction)
                 for valve_prediction in resource.get("valvePredictions", [])
-            ],
+            ]
+            or None,
         )
 
 
