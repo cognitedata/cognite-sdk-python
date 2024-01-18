@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.6] - 2024-01-18
+### Added
+- Helper method `as_tuple` to `NodeId` and `EdgeId`. 
+
 ## [7.13.5] - 2024-01-16
 ### Added
 - EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`. 
