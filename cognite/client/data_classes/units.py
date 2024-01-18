@@ -53,7 +53,9 @@ class UnitID(CogniteResource):
         self.name = name
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> Self:
         return cls(
             unit_external_id=resource["unitExternalId"],
             name=resource["name"],
@@ -97,7 +99,10 @@ class Unit(CogniteResource):
         self.quantity = quantity
         self.conversion = conversion
         self.source = source
-        self.source_reference = source_reference
+        if source_reference:
+            self.source_reference = source_reference.replace("https", "http")
+        else:
+            self.source_reference = source_reference
 
     def as_unit_id(self) -> UnitID:
         """Returns the UnitID of this unit."""
@@ -154,7 +159,10 @@ class UnitSystem(CogniteResource):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"name": self.name, "quantities": [quantity.dump(camel_case) for quantity in self.quantities]}
+        return {
+            "name": self.name,
+            "quantities": [quantity.dump(camel_case) for quantity in self.quantities],
+        }
 
 
 class UnitSystemList(CogniteResourceList[UnitSystem]):
