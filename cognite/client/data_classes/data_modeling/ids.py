@@ -108,6 +108,9 @@ class InstanceId:
     def instance_type(self) -> Literal["node", "edge"]:
         return self._instance_type
 
+    def as_tuple(self) -> tuple[str, str]:
+        return self.space, self.external_id
+
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 

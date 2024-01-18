@@ -17,10 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-<<<<<<< HEAD
-## [7.13.6] - 2024-01-17
+## [7.13.7] - 2024-01-18
 ### Fixed
-* When calling `to_pandas` with `expand_properties=True` on an instance with no properties, the SDK will ignore the properties and return a dataframe with the other instance data.
+* When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will no longer raise ValueError, but drop the empty properties row/column.
+
+## [7.13.6] - 2024-01-18
+### Added
+- Helper method `as_tuple` to `NodeId` and `EdgeId`. 
 
 ## [7.13.5] - 2024-01-16
 ### Added
