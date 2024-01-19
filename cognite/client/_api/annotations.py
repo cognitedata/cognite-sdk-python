@@ -105,20 +105,24 @@ class AnnotationsAPI(APIClient):
         return annotation_update.dump()
 
     @overload
-    def update(self, item: Annotation | AnnotationUpdate) -> Annotation:
+    def update(self, item: Annotation | AnnotationWrite | AnnotationUpdate) -> Annotation:
         ...
 
     @overload
-    def update(self, item: Sequence[Annotation | AnnotationUpdate]) -> AnnotationList:
+    def update(self, item: Sequence[Annotation | AnnotationWrite | AnnotationUpdate]) -> AnnotationList:
         ...
 
     def update(
-        self, item: Annotation | AnnotationUpdate | Sequence[Annotation | AnnotationUpdate]
+        self,
+        item: Annotation
+        | AnnotationWrite
+        | AnnotationUpdate
+        | Sequence[Annotation | AnnotationWrite | AnnotationUpdate],
     ) -> Annotation | AnnotationList:
         """`Update annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_
 
         Args:
-            item (Annotation | AnnotationUpdate | Sequence[Annotation | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
+            item (Annotation | AnnotationWrite | AnnotationUpdate | Sequence[Annotation | AnnotationWrite | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
 
         Returns:
             Annotation | AnnotationList: No description."""
