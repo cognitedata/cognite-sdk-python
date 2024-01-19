@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -270,7 +271,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-        asset_external_ids (Sequence[str] | None): Only include files that reference these specific asset external IDs.
+        asset_external_ids (SequenceNotStr[str] | None): Only include files that reference these specific asset external IDs.
         data_set_ids (Sequence[dict[str, Any]] | None): Only include files that belong to these datasets.
         labels (LabelFilter | None): Return only the files matching the specified label(s).
         geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
@@ -292,7 +293,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         data_set_ids: Sequence[dict[str, Any]] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,

@@ -64,6 +64,7 @@ from cognite.client.utils._validation import (
     process_asset_subtree_ids,
     process_data_set_ids,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from concurrent.futures import Future, ThreadPoolExecutor
@@ -105,12 +106,12 @@ class AssetsAPI(APIClient):
         chunk_size: int | None = None,
         name: str | None = None,
         parent_ids: Sequence[int] | None = None,
-        parent_external_ids: Sequence[str] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         metadata: dict[str, str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         source: str | None = None,
@@ -130,12 +131,12 @@ class AssetsAPI(APIClient):
             chunk_size (int | None): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str | None): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-            parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
+            parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the assets matching the specified label.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this asset
@@ -221,14 +222,14 @@ class AssetsAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
         """`Retrieve multiple assets by id. <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -682,7 +683,7 @@ class AssetsAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         recursive: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None:
@@ -690,7 +691,7 @@ class AssetsAPI(APIClient):
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
             recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
@@ -995,11 +996,11 @@ class AssetsAPI(APIClient):
         self,
         name: str | None = None,
         parent_ids: Sequence[int] | None = None,
-        parent_external_ids: Sequence[str] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         metadata: dict[str, str] | None = None,
@@ -1017,11 +1018,11 @@ class AssetsAPI(APIClient):
         Args:
             name (str | None): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-            parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
+            parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the assets matching the specified label filter.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
