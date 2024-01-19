@@ -384,7 +384,8 @@ class RawRowsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RowWrite
                 >>> c = CogniteClient()
-                >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}), RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
+                >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
+                ...         RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
                 >>> c.raw.rows.insert("db1", "table1", rows)
         """
         chunks = self._process_row_input(row)

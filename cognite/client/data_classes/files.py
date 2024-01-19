@@ -60,8 +60,11 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
         source_modified_time: int | None = None,
         security_categories: Sequence[int] | None = None,
     ) -> None:
-        if geo_location is not None and not isinstance(geo_location, GeoLocation):
-            raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
+        if geo_location is not None:
+            if isinstance(geo_location, dict):
+                geo_location = GeoLocation.load(geo_location)
+            if not isinstance(geo_location, GeoLocation):
+                raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
         self.name = name
         self.directory = directory
