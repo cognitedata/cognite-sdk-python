@@ -425,7 +425,7 @@ class InstancesAPI(APIClient):
         throttle_seconds: float = 1,
     ) -> SubscriptionContext:
         """Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
-        in a background thread, and only invokes the callback when there are actual changes to the result set(s).
+        in a background thread.
 
         We do not support chaining result sets when subscribing to a query.
 
