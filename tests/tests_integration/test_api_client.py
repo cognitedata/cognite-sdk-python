@@ -2,6 +2,7 @@
 This file contains integration tests for the logic in the generic API client. However, since we cannot instantiate a
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
+import platform
 from unittest.mock import patch
 
 import pytest
@@ -335,7 +336,8 @@ class TestAPIClientUpsert:
     def test_upsert_write_class_not_existing(self, cognite_client: CogniteClient) -> None:
         # Arrange
         new_asset = AssetWrite(
-            external_id="test_upsert_write_class_not_existing:new_asset",
+            # Platform to avoid linux/windows false positive when running tests in parallel
+            external_id=f"test_upsert_write_class_not_existing:new_asset_{platform.system()}",
             name="test_upsert_write_class_not_existing",
         )
 
@@ -451,7 +453,8 @@ class TestAPIClientDelete:
 @pytest.fixture()
 def new_asset(cognite_client: CogniteClient) -> Asset:
     new_asset = AssetWrite(
-        external_id="test_api_client:new_asset:fixture",
+        # Platform to avoid linux/windows false positive when running tests in parallel
+        external_id=f"test_api_client:new_asset:fixture_{platform.system()}",
         name="test_asset",
         description="test_asset",
         metadata={"test": "test"},
