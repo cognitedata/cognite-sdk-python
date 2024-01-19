@@ -298,7 +298,7 @@ class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionId
                 [WorkflowVersionIdentifier(entry["version"], entry["workflowExternalId"]) for entry in workflow_ids],
                 is_singleton=False,
             )
-        raise TypeError(f"WorkflowIdentifier must be of type str or SequenceNotStr[str]. Found {type(workflow_ids)}")
+        raise TypeError(f"WorkflowIdentifier must be of type str or Sequence[str]. Found {type(workflow_ids)}")
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
