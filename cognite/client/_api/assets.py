@@ -709,11 +709,11 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Asset | AssetUpdate]) -> AssetList:
+    def update(self, item: Sequence[Asset | AssetWrite | AssetUpdate]) -> AssetList:
         ...
 
     @overload
-    def update(self, item: Asset | AssetUpdate) -> Asset:
+    def update(self, item: Asset | AssetWrite | AssetUpdate) -> Asset:
         ...
 
     def update(
