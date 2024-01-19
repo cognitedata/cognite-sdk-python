@@ -190,11 +190,21 @@ class DataSetsAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=CountAggregate)
 
-    def update(self, item: DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]) -> DataSet | DataSetList:
+    @overload
+    def update(self, item: DataSet | DataSetWrite | DataSetUpdate) -> DataSet:
+        ...
+
+    @overload
+    def update(self, item: Sequence[DataSet | DataSetWrite | DataSetUpdate]) -> DataSetList:
+        ...
+
+    def update(
+        self, item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]
+    ) -> DataSet | DataSetList:
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
         Args:
-            item (DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]): Data set(s) to update
+            item (DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]): Data set(s) to update
 
         Returns:
             DataSet | DataSetList: Updated data set(s)

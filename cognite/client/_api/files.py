@@ -278,21 +278,25 @@ class FilesAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     @overload
-    def update(self, item: FileMetadata | FileMetadataUpdate) -> FileMetadata:
+    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata:
         ...
 
     @overload
-    def update(self, item: Sequence[FileMetadata | FileMetadataUpdate]) -> FileMetadataList:
+    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList:
         ...
 
     def update(
-        self, item: FileMetadata | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataUpdate]
+        self,
+        item: FileMetadata
+        | FileMetadataWrite
+        | FileMetadataUpdate
+        | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
     ) -> FileMetadata | FileMetadataList:
         """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (FileMetadata | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataUpdate]): file(s) to update.
+            item (FileMetadata | FileMetadataWrite | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]): file(s) to update.
 
         Returns:
             FileMetadata | FileMetadataList: The updated files.

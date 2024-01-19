@@ -394,14 +394,26 @@ class RelationshipsAPI(APIClient):
             input_resource_cls=RelationshipWrite,
         )
 
+    @overload
+    def update(self, item: Relationship | RelationshipWrite | RelationshipUpdate) -> Relationship:
+        ...
+
+    @overload
+    def update(self, item: Sequence[Relationship | RelationshipWrite | RelationshipUpdate]) -> RelationshipList:
+        ...
+
     def update(
-        self, item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]
+        self,
+        item: Relationship
+        | RelationshipWrite
+        | RelationshipUpdate
+        | Sequence[Relationship | RelationshipWrite | RelationshipUpdate],
     ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]): Relationship(s) to update
+            item (Relationship | RelationshipWrite | RelationshipUpdate | Sequence[Relationship | RelationshipWrite | RelationshipUpdate]): Relationship(s) to update
 
         Returns:
             Relationship | RelationshipList: Updated relationship(s)
@@ -447,15 +459,21 @@ class RelationshipsAPI(APIClient):
         )
 
     @overload
-    def upsert(self, item: Sequence[Relationship], mode: Literal["patch", "replace"] = "patch") -> RelationshipList:
+    def upsert(
+        self, item: Sequence[Relationship | RelationshipWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> RelationshipList:
         ...
 
     @overload
-    def upsert(self, item: Relationship, mode: Literal["patch", "replace"] = "patch") -> Relationship:
+    def upsert(
+        self, item: Relationship | RelationshipWrite, mode: Literal["patch", "replace"] = "patch"
+    ) -> Relationship:
         ...
 
     def upsert(
-        self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"] = "patch"
+        self,
+        item: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite],
+        mode: Literal["patch", "replace"] = "patch",
     ) -> Relationship | RelationshipList:
         """Upsert relationships, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -464,7 +482,7 @@ class RelationshipsAPI(APIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Relationship | Sequence[Relationship]): Relationship or list of relationships to upsert.
+            item (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to upsert.
             mode (Literal["patch", "replace"]): Whether to patch or replace in the case the relationships are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:

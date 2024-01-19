@@ -537,20 +537,21 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence | SequenceUpdate) -> Sequence:
+    def update(self, item: Sequence | SequenceWrite | SequenceUpdate) -> Sequence:
         ...
 
     @overload
-    def update(self, item: typing.Sequence[Sequence | SequenceUpdate]) -> SequenceList:
+    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]) -> SequenceList:
         ...
 
     def update(
-        self, item: Sequence | SequenceUpdate | typing.Sequence[Sequence | SequenceUpdate]
+        self,
+        item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
     ) -> Sequence | SequenceList:
         """`Update one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/updateSequences>`_
 
         Args:
-            item (Sequence | SequenceUpdate | typing.Sequence[Sequence | SequenceUpdate]): Sequences to update
+            item (Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]): Sequences to update
 
         Returns:
             Sequence | SequenceList: Updated sequences.
@@ -634,15 +635,19 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def upsert(self, item: typing.Sequence[Sequence], mode: Literal["patch", "replace"] = "patch") -> SequenceList:
+    def upsert(
+        self, item: typing.Sequence[Sequence | SequenceWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> SequenceList:
         ...
 
     @overload
-    def upsert(self, item: Sequence, mode: Literal["patch", "replace"] = "patch") -> Sequence:
+    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence:
         ...
 
     def upsert(
-        self, item: Sequence | typing.Sequence[Sequence], mode: Literal["patch", "replace"] = "patch"
+        self,
+        item: Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite],
+        mode: Literal["patch", "replace"] = "patch",
     ) -> Sequence | SequenceList:
         """Upsert sequences, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -651,7 +656,7 @@ class SequencesAPI(APIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Sequence | typing.Sequence[Sequence]): Sequence or list of sequences to upsert.
+            item (Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite]): Sequence or list of sequences to upsert.
             mode (Literal["patch", "replace"]): Whether to patch or replace in the case the sequences are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:

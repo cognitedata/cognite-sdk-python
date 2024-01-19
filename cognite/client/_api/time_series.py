@@ -532,20 +532,24 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[TimeSeries | TimeSeriesUpdate]) -> TimeSeriesList:
+    def update(self, item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]) -> TimeSeriesList:
         ...
 
     @overload
-    def update(self, item: TimeSeries | TimeSeriesUpdate) -> TimeSeries:
+    def update(self, item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate) -> TimeSeries:
         ...
 
     def update(
-        self, item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]
+        self,
+        item: TimeSeries
+        | TimeSeriesWrite
+        | TimeSeriesUpdate
+        | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
     ) -> TimeSeries | TimeSeriesList:
         """`Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
 
         Args:
-            item (TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]): Time series to update
+            item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
 
         Returns:
             TimeSeries | TimeSeriesList: Updated time series.
@@ -577,15 +581,19 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
+    def upsert(
+        self, item: Sequence[TimeSeries | TimeSeriesWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> TimeSeriesList:
         ...
 
     @overload
-    def upsert(self, item: TimeSeries, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
+    def upsert(self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
         ...
 
     def upsert(
-        self, item: TimeSeries | Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch"
+        self,
+        item: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite],
+        mode: Literal["patch", "replace"] = "patch",
     ) -> TimeSeries | TimeSeriesList:
         """Upsert time series, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -594,7 +602,7 @@ class TimeSeriesAPI(APIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
+            item (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite]): TimeSeries or list of TimeSeries to upsert.
             mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:

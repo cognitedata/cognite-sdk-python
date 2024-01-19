@@ -200,21 +200,28 @@ class ExtractionPipelinesAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(id, external_id), wrap_ids=True, extra_body_fields={})
 
     @overload
-    def update(self, item: ExtractionPipeline | ExtractionPipelineUpdate) -> ExtractionPipeline:
+    def update(
+        self, item: ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate
+    ) -> ExtractionPipeline:
         ...
 
     @overload
-    def update(self, item: Sequence[ExtractionPipeline | ExtractionPipelineUpdate]) -> ExtractionPipelineList:
+    def update(
+        self, item: Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate]
+    ) -> ExtractionPipelineList:
         ...
 
     def update(
         self,
-        item: ExtractionPipeline | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineUpdate],
+        item: ExtractionPipeline
+        | ExtractionPipelineWrite
+        | ExtractionPipelineUpdate
+        | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate],
     ) -> ExtractionPipeline | ExtractionPipelineList:
         """`Update one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/updateExtPipes>`_
 
         Args:
-            item (ExtractionPipeline | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineUpdate]): Extraction pipeline(s) to update
+            item (ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate]): Extraction pipeline(s) to update
 
         Returns:
             ExtractionPipeline | ExtractionPipelineList: Updated extraction pipeline(s)

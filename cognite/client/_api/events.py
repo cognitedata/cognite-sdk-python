@@ -512,18 +512,20 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Event | EventUpdate]) -> EventList:
+    def update(self, item: Sequence[Event | EventWrite | EventUpdate]) -> EventList:
         ...
 
     @overload
-    def update(self, item: Event | EventUpdate) -> Event:
+    def update(self, item: Event | EventWrite | EventUpdate) -> Event:
         ...
 
-    def update(self, item: Event | EventUpdate | Sequence[Event | EventUpdate]) -> Event | EventList:
+    def update(
+        self, item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]
+    ) -> Event | EventList:
         """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
 
         Args:
-            item (Event | EventUpdate | Sequence[Event | EventUpdate]): Event(s) to update
+            item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
 
         Returns:
             Event | EventList: Updated event(s)
@@ -576,14 +578,16 @@ class EventsAPI(APIClient):
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
 
     @overload
-    def upsert(self, item: Sequence[Event], mode: Literal["patch", "replace"] = "patch") -> EventList:
+    def upsert(self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch") -> EventList:
         ...
 
     @overload
-    def upsert(self, item: Event, mode: Literal["patch", "replace"] = "patch") -> Event:
+    def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event:
         ...
 
-    def upsert(self, item: Event | Sequence[Event], mode: Literal["patch", "replace"] = "patch") -> Event | EventList:
+    def upsert(
+        self, item: Event | EventWrite | Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> Event | EventList:
         """Upsert events, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
@@ -591,7 +595,7 @@ class EventsAPI(APIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Event | Sequence[Event]): Event or list of events to upsert.
+            item (Event | EventWrite | Sequence[Event | EventWrite]): Event or list of events to upsert.
             mode (Literal["patch", "replace"]): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
