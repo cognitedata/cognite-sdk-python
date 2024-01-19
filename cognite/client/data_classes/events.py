@@ -380,7 +380,7 @@ class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMi
     _RESOURCE = Event
 
     def as_write(self) -> EventWriteList:
-        return EventWriteList([event.as_write() for event in self.data], cognite_client=self._cognite_client)
+        return EventWriteList([event.as_write() for event in self.data], cognite_client=self._get_cognite_client())
 
 
 class EventProperty(EnumProperty):

@@ -532,7 +532,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         self._retrieve_chunk_size = 100
 
     def as_write(self) -> AssetWriteList:
-        return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._cognite_client)
+        return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
     def time_series(self) -> TimeSeriesList:
         """Retrieve all time series related to these assets.

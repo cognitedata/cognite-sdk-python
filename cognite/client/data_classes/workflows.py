@@ -979,7 +979,7 @@ class WorkflowExecution(CogniteResource):
         return cls(
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
-            version=resource["version"],
+            version=resource.get("version"),
             status=cast(
                 Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
                 to_snake_case(resource["status"]),

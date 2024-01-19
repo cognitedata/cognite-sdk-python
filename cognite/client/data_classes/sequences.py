@@ -595,7 +595,7 @@ class SequenceList(WriteableCogniteResourceList[SequenceWrite, Sequence], IdTran
 
     def as_write(self) -> SequenceWriteList:
         """Returns a writeable version of this sequence list."""
-        return SequenceWriteList([item.as_write() for item in self], cognite_client=self._cognite_client)
+        return SequenceWriteList([item.as_write() for item in self], cognite_client=self._get_cognite_client())
 
 
 RowValues: TypeAlias = Union[int, str, float, None]

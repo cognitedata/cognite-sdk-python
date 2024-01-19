@@ -17,9 +17,24 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.13.3] - 2024-01-11
-### Changed
-- Type hints `Sequence[str]` are now replaced with `SequenceNotStr[str]`.
+## [7.13.6] - 2024-01-18
+### Added
+- Helper method `as_tuple` to `NodeId` and `EdgeId`. 
+
+## [7.13.5] - 2024-01-16
+### Added
+- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`. 
+
+## [7.13.4] - 2024-01-11
+### Fixed
+* When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+* When calling `Datapoints.load` not having a `isString` would raise a `KeyError` even though it is optional. This is now fixed.
+* Most `CogniteResourceList.as_write()` would raise a `CogniteMissingClientError` when called from a class with missing cognite_client. This is now fixed.
+
+## [7.13.3] - 2024-01-12
+### Added
+- `View.as_property_ref` and `Container.as_property_ref` to make it easier to create property references
+  (used to only be available on `ViewId` and `ContainerId`).
 
 ## [7.13.2] - 2024-01-11
 ### Fixed

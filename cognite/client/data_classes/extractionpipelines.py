@@ -371,7 +371,7 @@ class ExtractionPipelineList(
     _RESOURCE = ExtractionPipeline
 
     def as_write(self) -> ExtractionPipelineWriteList:
-        return ExtractionPipelineWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+        return ExtractionPipelineWriteList([x.as_write() for x in self.data], cognite_client=self._get_cognite_client())
 
 
 class ExtractionPipelineRunCore(WriteableCogniteResource["ExtractionPipelineRunWrite"], ABC):
@@ -522,7 +522,9 @@ class ExtractionPipelineRunList(WriteableCogniteResourceList[ExtractionPipelineR
     _RESOURCE = ExtractionPipelineRun
 
     def as_write(self) -> ExtractionPipelineRunWriteList:
-        return ExtractionPipelineRunWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+        return ExtractionPipelineRunWriteList(
+            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class StringFilter(CogniteFilter):
@@ -692,4 +694,6 @@ class ExtractionPipelineConfigList(
     _RESOURCE = ExtractionPipelineConfig
 
     def as_write(self) -> ExtractionPipelineConfigWriteList:
-        return ExtractionPipelineConfigWriteList([x.as_write() for x in self.data], cognite_client=self._cognite_client)
+        return ExtractionPipelineConfigWriteList(
+            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
+        )

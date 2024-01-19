@@ -462,4 +462,4 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
 
     def as_write(self) -> FileMetadataWriteList:
         """Returns this FileMetadataList in its writing format."""
-        return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._cognite_client)
+        return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())

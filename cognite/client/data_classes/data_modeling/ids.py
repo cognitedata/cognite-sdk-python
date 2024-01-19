@@ -108,6 +108,9 @@ class InstanceId:
     def instance_type(self) -> Literal["node", "edge"]:
         return self._instance_type
 
+    def as_tuple(self) -> tuple[str, str]:
+        return self.space, self.external_id
+
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
@@ -129,7 +132,7 @@ class ContainerId(DataModelingId):
     def as_source_identifier(self) -> str:
         return self.external_id
 
-    def as_property_ref(self, property: str) -> tuple[str, ...]:
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
         return (self.space, self.as_source_identifier(), property)
 
 
@@ -140,7 +143,7 @@ class ViewId(VersionedDataModelingId):
     def as_source_identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
 
-    def as_property_ref(self, property: str) -> tuple[str, ...]:
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
         return (self.space, self.as_source_identifier(), property)
 
 

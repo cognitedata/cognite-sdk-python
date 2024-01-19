@@ -616,7 +616,7 @@ class Datapoints(CogniteResource):
         instance = cls(
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
-            is_string=dps_object["isString"],
+            is_string=dps_object.get("isString"),
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
