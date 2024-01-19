@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.13.7] - 2024-01-19
+### Fixed
+* Type hints for all `.update` and `.upsert` methods accept Write classes in addition to Read and Update classes.
+* Missing overloading of the `.update` methods on `client.three_d.models.update`, `client.transformations.update`,
+  `client.transformations.schedules.update`, `client.relationships.update`, and `client.data_sets.update`.
+
 ## [7.13.6] - 2024-01-18
 ### Added
 - Helper method `as_tuple` to `NodeId` and `EdgeId`. 
