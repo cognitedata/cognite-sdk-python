@@ -72,7 +72,7 @@ class TestProcessIdentifiers:
         with pytest.raises(TypeError, match=exp_match):
             fn("97", "a")
 
-        exp_match = rf"^{name}_external_ids must be of type str or Sequence\[str\]\. Found <class 'int'>$"
+        exp_match = rf"^{name}_external_ids must be of type str or SequenceNotStr\[str\]\. Found <class 'int'>$"
         with pytest.raises(TypeError, match=exp_match):
             fn(97, ord("a"))
 

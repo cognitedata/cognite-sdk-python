@@ -86,9 +86,9 @@ class SequencesAPI(APIClient):
         metadata: dict[str, str] | None = None,
         asset_ids: typing.Sequence[int] | None = None,
         asset_subtree_ids: int | typing.Sequence[int] | None = None,
-        asset_subtree_external_ids: str | typing.Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | typing.Sequence[int] | None = None,
-        data_set_external_ids: str | typing.Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
@@ -104,9 +104,9 @@ class SequencesAPI(APIClient):
             metadata (dict[str, str] | None): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (typing.Sequence[int] | None): Filter out sequences that are not linked to any of these assets.
             asset_subtree_ids (int | typing.Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | typing.Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             data_set_ids (int | typing.Sequence[int] | None): Return only sequences in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | typing.Sequence[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to return all items.
@@ -176,14 +176,14 @@ class SequencesAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: typing.Sequence[int] | None = None,
-        external_ids: typing.Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> SequenceList:
         """`Retrieve multiple sequences by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
             ids (typing.Sequence[int] | None): IDs
-            external_ids (typing.Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -512,14 +512,14 @@ class SequencesAPI(APIClient):
     def delete(
         self,
         id: int | typing.Sequence[int] | None = None,
-        external_id: str | typing.Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_
 
         Args:
             id (int | typing.Sequence[int] | None): Id or list of ids
-            external_id (str | typing.Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
@@ -790,9 +790,9 @@ class SequencesAPI(APIClient):
         metadata: dict[str, str] | None = None,
         asset_ids: typing.Sequence[int] | None = None,
         asset_subtree_ids: int | typing.Sequence[int] | None = None,
-        asset_subtree_external_ids: str | typing.Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | typing.Sequence[int] | None = None,
-        data_set_external_ids: str | typing.Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -807,9 +807,9 @@ class SequencesAPI(APIClient):
             metadata (dict[str, str] | None): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (typing.Sequence[int] | None): Filter out sequences that are not linked to any of these assets.
             asset_subtree_ids (int | typing.Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | typing.Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             data_set_ids (int | typing.Sequence[int] | None): Return only sequences in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | typing.Sequence[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

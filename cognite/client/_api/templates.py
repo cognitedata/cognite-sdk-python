@@ -24,6 +24,7 @@ from cognite.client.data_classes.templates import (
 )
 from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -155,11 +156,13 @@ class TemplateGroupsAPI(APIClient):
             return res[0]
         return res
 
-    def retrieve_multiple(self, external_ids: Sequence[str], ignore_unknown_ids: bool = False) -> TemplateGroupList:
+    def retrieve_multiple(
+        self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> TemplateGroupList:
         """`Retrieve multiple template groups by external id.`
 
         Args:
-            external_ids (Sequence[str]): External IDs
+            external_ids (SequenceNotStr[str]): External IDs
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -181,13 +184,15 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ, owners: Sequence[str] | None = None) -> TemplateGroupList:
+    def list(
+        self, limit: int | None = DEFAULT_LIMIT_READ, owners: SequenceNotStr[str] | None = None
+    ) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
             limit (int | None): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            owners (Sequence[str] | None): Include template groups that have any of these values in their `owner` field.
+            owners (SequenceNotStr[str] | None): Include template groups that have any of these values in their `owner` field.
 
         Returns:
             TemplateGroupList: List of requested template groups
@@ -213,11 +218,11 @@ class TemplateGroupsAPI(APIClient):
             sort=None,
         )
 
-    def delete(self, external_ids: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template groups.`
 
         Args:
-            external_ids (str | Sequence[str]): External ID or list of external ids
+            external_ids (str | SequenceNotStr[str]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Examples:
@@ -476,14 +481,14 @@ class TemplateInstancesAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, external_id: str, version: int, external_ids: Sequence[str], ignore_unknown_ids: bool = False
+        self, external_id: str, version: int, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> TemplateInstanceList:
         """`Retrieve multiple template instances by external id.`
 
         Args:
             external_id (str): The template group to retrieve instances from.
             version (int): The version of the template group.
-            external_ids (Sequence[str]): External IDs of the instances.
+            external_ids (SequenceNotStr[str]): External IDs of the instances.
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -513,7 +518,7 @@ class TemplateInstancesAPI(APIClient):
         version: int,
         limit: int | None = DEFAULT_LIMIT_READ,
         data_set_ids: Sequence[int] | None = None,
-        template_names: Sequence[str] | None = None,
+        template_names: SequenceNotStr[str] | None = None,
     ) -> TemplateInstanceList:
         """`Lists instances in a template group.`
         Up to 1000 template instances can be retrieved in one operation.
@@ -523,7 +528,7 @@ class TemplateInstancesAPI(APIClient):
             version (int): The version of the template group.
             limit (int | None): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             data_set_ids (Sequence[int] | None): (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
-            template_names (Sequence[str] | None): (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
+            template_names (SequenceNotStr[str] | None): (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
 
         Returns:
             TemplateInstanceList: List of requested template instances
@@ -552,14 +557,14 @@ class TemplateInstancesAPI(APIClient):
         )
 
     def delete(
-        self, external_id: str, version: int, external_ids: Sequence[str], ignore_unknown_ids: bool = False
+        self, external_id: str, version: int, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> None:
         """`Delete one or more template instances.`
 
         Args:
             external_id (str): External ID of the template group.
             version (int): The version of the template group.
-            external_ids (Sequence[str]): The external ids of the template instances to delete
+            external_ids (SequenceNotStr[str]): The external ids of the template instances to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Examples:
@@ -730,7 +735,7 @@ class TemplateViewsAPI(APIClient):
         self,
         external_id: str,
         version: int,
-        view_external_id: Sequence[str] | str,
+        view_external_id: SequenceNotStr[str] | str,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more views.`
@@ -738,7 +743,7 @@ class TemplateViewsAPI(APIClient):
         Args:
             external_id (str): External ID of the template group.
             version (int): The version of the template group.
-            view_external_id (Sequence[str] | str): The external ids of the views to delete
+            view_external_id (SequenceNotStr[str] | str): The external ids of the views to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Examples:

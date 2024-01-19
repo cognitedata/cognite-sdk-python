@@ -16,6 +16,7 @@ from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas
@@ -93,11 +94,11 @@ class RawDatabasesAPI(APIClient):
             items = [{"name": n} for n in name]
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: str | Sequence[str], recursive: bool = False) -> None:
+    def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
-            name (str | Sequence[str]): A db name or list of db names to delete.
+            name (str | SequenceNotStr[str]): A db name or list of db names to delete.
             recursive (bool): Recursively delete all tables in the database(s).
 
         Examples:
@@ -223,12 +224,12 @@ class RawTablesAPI(APIClient):
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: str | Sequence[str]) -> None:
+    def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
         """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
 
         Args:
             db_name (str): Database to delete tables from.
-            name (str | Sequence[str]): A table name or list of table names to delete.
+            name (str | SequenceNotStr[str]): A table name or list of table names to delete.
 
         Examples:
 
@@ -447,13 +448,13 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: str | Sequence[str]) -> None:
+    def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
         """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            key (str | Sequence[str]): The key(s) of the row(s) to delete.
+            key (str | SequenceNotStr[str]): The key(s) of the row(s) to delete.
 
         Examples:
 
