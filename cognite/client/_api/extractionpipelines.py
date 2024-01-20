@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -28,6 +28,7 @@ from cognite.client.data_classes.extractionpipelines import (
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -78,14 +79,14 @@ class ExtractionPipelinesAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> ExtractionPipelineList:
         """`Retrieve multiple extraction pipelines by ids and external ids. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/byidsExtPipes>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -179,12 +180,14 @@ class ExtractionPipelinesAPI(APIClient):
             input_resource_cls=ExtractionPipelineWrite,
         )
 
-    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
+    def delete(
+        self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
+    ) -> None:
         """`Delete one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/deleteExtPipes>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
 
         Examples:
 
@@ -247,7 +250,7 @@ class ExtractionPipelineRunsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        statuses: RunStatus | Sequence[RunStatus] | Sequence[str] | None = None,
+        statuses: RunStatus | Sequence[RunStatus] | SequenceNotStr[str] | None = None,
         message_substring: str | None = None,
         created_time: dict[str, Any] | TimestampRange | str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -256,7 +259,7 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (RunStatus | Sequence[RunStatus] | Sequence[str] | None): One or more among "success" / "failure" / "seen".
+            statuses (RunStatus | Sequence[RunStatus] | SequenceNotStr[str] | None): One or more among "success" / "failure" / "seen".
             message_substring (str | None): Failure message part.
             created_time (dict[str, Any] | TimestampRange | str | None): Range between two timestamps. Possible keys are `min` and `max`, with values given as timestamps in ms.
                 If a string is passed, it is assumed to be the minimum value.
@@ -297,7 +300,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         if statuses is not None or message_substring is not None or created_time is not None:
             filter = ExtractionPipelineRunFilter(
                 external_id=external_id,
-                statuses=[statuses] if isinstance(statuses, str) else statuses,
+                statuses=cast(Union[SequenceNotStr[str], None], [statuses] if isinstance(statuses, str) else statuses),
                 message=StringFilter(substring=message_substring),
                 created_time=created_time,
             ).dump(camel_case=True)

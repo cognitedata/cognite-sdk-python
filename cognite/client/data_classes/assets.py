@@ -54,6 +54,7 @@ from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._graph import find_all_cycles_with_elements
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import DrawTables, convert_dict_to_case, shorten
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas
@@ -597,7 +598,7 @@ class AssetFilter(CogniteFilter):
     Args:
         name (str | None): The name of the asset.
         parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-        parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
+        parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
         asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (Sequence[dict[str, Any]] | None): No description.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
@@ -614,7 +615,7 @@ class AssetFilter(CogniteFilter):
         self,
         name: str | None = None,
         parent_ids: Sequence[int] | None = None,
-        parent_external_ids: Sequence[str] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
         data_set_ids: Sequence[dict[str, Any]] | None = None,
         metadata: dict[str, str] | None = None,

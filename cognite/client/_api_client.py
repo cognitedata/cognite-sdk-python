@@ -64,6 +64,7 @@ from cognite.client.utils._identifier import (
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 from cognite.client.utils._validation import assert_type, verify_limit
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -399,7 +400,7 @@ class APIClient:
         limit: int | None = None,
         chunk_size: int | None = None,
         filter: dict[str, Any] | None = None,
-        sort: Sequence[str | dict[str, Any]] | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
         partitions: int | None = None,
         headers: dict[str, Any] | None = None,
@@ -491,7 +492,7 @@ class APIClient:
         filter: dict | None = None,
         other_params: dict | None = None,
         partitions: int | None = None,
-        sort: Sequence[str | dict[str, Any]] | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         headers: dict | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
@@ -595,8 +596,8 @@ class APIClient:
         resource_path: str | None = None,
         filter: CogniteFilter | dict | None = None,
         aggregate: str | None = None,
-        fields: Sequence[str] | None = None,
-        keys: Sequence[str] | None = None,
+        fields: SequenceNotStr[str] | None = None,
+        keys: SequenceNotStr[str] | None = None,
         headers: dict | None = None,
     ) -> list[T]:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
