@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, Literal, Sequence
 
 from cognite.client.data_classes._base import (
     CogniteObject,
-    CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    T_CogniteUpdate,
     WriteableCogniteResource,
 )
 from cognite.client.data_classes.user_profiles import UserProfilesConfiguration
@@ -283,48 +283,202 @@ class Project(ProjectCore):
         return output
 
 
+# Move into _base?
+class _CogniteNestedUpdate(Generic[T_CogniteUpdate]):
+    def __init__(self, parent_object: T_CogniteUpdate, name: str) -> None:
+        self._parent_object = parent_object
+        self._name = name
+
+    def _set(self, value: CogniteObject | None) -> T_CogniteUpdate:
+        if self._name not in self._parent_object._update_object:
+            self._parent_object._update_object[self._name] = {}
+        update_object = self._parent_object._update_object[self._name]
+        if "modify" in update_object:
+            raise RuntimeError("Cannot set and modify the same property")
+        if value is None:
+            update_object["setNull"] = True
+        else:
+            update_object["set"] = value.dump(camel_case=True)
+        return self._parent_object
+
+
+class _CogniteNestedUpdateProperty(Generic[T_CogniteUpdate]):
+    def __init__(self, parent_object: T_CogniteUpdate, parent_name: str, name: str) -> None:
+        self._parent_object = parent_object
+        self._parent_name = parent_name
+        self._name = name
+
+    @property
+    def _update_object(self) -> dict[str, Any]:
+        if self._parent_name not in self._parent_object._update_object:
+            self._parent_object._update_object[self._parent_name] = {}
+        update_object = self._parent_object._update_object[self._parent_name]
+        if "set" in update_object:
+            raise RuntimeError("Cannot set and modify the same property")
+        if "modify" not in update_object:
+            update_object["modify"] = {}
+        if self._name in update_object["modify"]:
+            raise RuntimeError(f"Cannot modify {self._name} twice")
+        return update_object
+
+
+class _CogniteNestedPrimitiveUpdate(_CogniteNestedUpdateProperty[T_CogniteUpdate]):
+    def _set(self, value: None | str | int | bool) -> T_CogniteUpdate:
+        update_object = self._update_object
+        if self._parent_name == "userProfilesConfiguration" and self._name == "enabled":
+            # Bug in Spec?
+            update_object["modify"][self._name] = value
+        elif value is None:
+            update_object["modify"][self._name] = {"setNull": True}
+        else:
+            update_object["modify"][self._name] = {"set": value}
+        return self._parent_object
+
+
+class _CogniteNestedListUpdate(_CogniteNestedUpdateProperty[T_CogniteUpdate]):
+    def _update_modify_object(
+        self, values: CogniteObject | Sequence[CogniteObject], word: Literal["set", "add", "remove"]
+    ) -> T_CogniteUpdate:
+        update_object = self._update_object
+        value_list = [values] if isinstance(values, CogniteObject) else values
+        if update_object["modify"].get(self._name) is not None:
+            raise RuntimeError(f"Cannot {word} and modify the same property twice")
+        update_object["modify"][self._name] = {word: [value.dump(camel_case=True) for value in value_list]}
+        return self._parent_object
+
+    def _set(self, values: CogniteObject | Sequence[CogniteObject]) -> T_CogniteUpdate:
+        return self._update_modify_object(values, "set")
+
+    def _add(self, values: CogniteObject | Sequence[CogniteObject]) -> T_CogniteUpdate:
+        return self._update_modify_object(values, "add")
+
+    def _remove(self, values: CogniteObject | Sequence[CogniteObject]) -> T_CogniteUpdate:
+        return self._update_modify_object(values, "remove")
+
+
 class ProjectUpdate(CogniteUpdate):
     """Changes applied to a Project.
 
     Args:
-        project: The Project to be updated.
+        project (str): The Project to be updated.
     """
 
-    class _PrimitiveProjectUpdate(CognitePrimitiveUpdate):
+    def __init__(self, project: str) -> None:
+        super().__init__(None, None)
+        self._project = project
+
+    class _PrimitiveProjectUpdate(CognitePrimitiveUpdate["ProjectUpdate"]):
         def set(self, value: str) -> ProjectUpdate:
             return self._set(value)
 
-    class _OIDCProjectUpdate(CogniteObjectUpdate):
+    class _NestedPrimitiveUpdateNullable(_CogniteNestedPrimitiveUpdate["ProjectUpdate"]):
+        def set(self, value: str | bool | int | None) -> ProjectUpdate:
+            return self._set(value)
+
+    class _NestedPrimitiveUpdate(_CogniteNestedPrimitiveUpdate["ProjectUpdate"]):
+        def set(self, value: str | bool | int) -> ProjectUpdate:
+            return self._set(value)
+
+    class _NestedListUpdate(_CogniteNestedListUpdate["ProjectUpdate"]):
+        def set(self, values: Claim | Sequence[Claim]) -> ProjectUpdate:
+            return self._set(values)
+
+        def add(self, values: Claim | Sequence[Claim]) -> ProjectUpdate:
+            return self._add(values)
+
+        def remove(self, values: Claim | Sequence[Claim]) -> ProjectUpdate:
+            return self._remove(values)
+
+    class _NestedOIDCConfiguration(_CogniteNestedUpdate["ProjectUpdate"]):
+        class _OIDCConfigurationUpdate:
+            def __init__(self, parent_object: ProjectUpdate, name: str) -> None:
+                self._parent_object = parent_object
+                self._name = name
+
+            @property
+            def jwks_url(self) -> ProjectUpdate._NestedPrimitiveUpdate:
+                return ProjectUpdate._NestedPrimitiveUpdate(self._parent_object, self._name, "jwksUrl")
+
+            @property
+            def token_url(self) -> ProjectUpdate._NestedPrimitiveUpdateNullable:
+                return ProjectUpdate._NestedPrimitiveUpdateNullable(self._parent_object, self._name, "tokenUrl")
+
+            @property
+            def issuer(self) -> ProjectUpdate._NestedPrimitiveUpdate:
+                return ProjectUpdate._NestedPrimitiveUpdate(self._parent_object, self._name, "issuer")
+
+            @property
+            def audience(self) -> ProjectUpdate._NestedPrimitiveUpdate:
+                return ProjectUpdate._NestedPrimitiveUpdate(self._parent_object, self._name, "audience")
+
+            @property
+            def skew_ms(self) -> ProjectUpdate._NestedPrimitiveUpdateNullable:
+                return ProjectUpdate._NestedPrimitiveUpdateNullable(self._parent_object, self._name, "skewMs")
+
+            @property
+            def access_claims(self) -> ProjectUpdate._NestedListUpdate:
+                return ProjectUpdate._NestedListUpdate(self._parent_object, self._name, "accessClaims")
+
+            @property
+            def scope_claims(self) -> ProjectUpdate._NestedListUpdate:
+                return ProjectUpdate._NestedListUpdate(self._parent_object, self._name, "scopeClaims")
+
+            @property
+            def log_claims(self) -> ProjectUpdate._NestedListUpdate:
+                return ProjectUpdate._NestedListUpdate(self._parent_object, self._name, "logClaims")
+
+            @property
+            def is_group_callback_enabled(self) -> ProjectUpdate._NestedPrimitiveUpdateNullable:
+                return ProjectUpdate._NestedPrimitiveUpdateNullable(
+                    self._parent_object, self._name, "isGroupCallbackEnabled"
+                )
+
+            @property
+            def identity_provider_scope(self) -> ProjectUpdate._NestedPrimitiveUpdateNullable:
+                return ProjectUpdate._NestedPrimitiveUpdateNullable(
+                    self._parent_object, self._name, "identityProviderScope"
+                )
+
         def set(self, value: OIDCConfiguration | None) -> ProjectUpdate:
-            return self._set((value and value.dump()) or {})
+            return self._set(value)
 
-        def modify(self) -> ProjectUpdate:
-            raise NotImplementedError
+        @property
+        def modify(self) -> _OIDCConfigurationUpdate:
+            return self._OIDCConfigurationUpdate(self._parent_object, self._name)
 
-    class _UserProfileProjectUpdate(CogniteObjectUpdate):
+    class _NestedUserProfilesConfiguration(_CogniteNestedUpdate["ProjectUpdate"]):
+        class _UserProfilesConfigurationUpdate:
+            def __init__(self, parent_object: ProjectUpdate, name: str) -> None:
+                self._parent_object = parent_object
+                self._name = name
+
+            @property
+            def enabled(self) -> ProjectUpdate._NestedPrimitiveUpdateNullable:
+                return ProjectUpdate._NestedPrimitiveUpdateNullable(self._parent_object, self._name, "enabled")
+
         def set(self, value: UserProfilesConfiguration) -> ProjectUpdate:
-            return self._set(value.dump())
+            return self._set(value)
 
-        def modify(self) -> ProjectUpdate:
-            raise NotImplementedError
-
-    @property
-    def project(self) -> ProjectUpdate._PrimitiveProjectUpdate:
-        return ProjectUpdate._PrimitiveProjectUpdate(self, "project")
+        @property
+        def modify(self) -> _UserProfilesConfigurationUpdate:
+            return self._UserProfilesConfigurationUpdate(self._parent_object, self._name)
 
     @property
-    def oidc_configuration(self) -> ProjectUpdate._OIDCProjectUpdate:
-        return ProjectUpdate._OIDCProjectUpdate(self, "oidcConfiguration")
+    def name(self) -> _PrimitiveProjectUpdate:
+        return ProjectUpdate._PrimitiveProjectUpdate(self, "name")
 
     @property
-    def user_profiles_configuration(self) -> ProjectUpdate._UserProfileProjectUpdate:
-        return ProjectUpdate._UserProfileProjectUpdate(self, "userProfilesConfiguration")
+    def oidc_configuration(self) -> _NestedOIDCConfiguration:
+        return ProjectUpdate._NestedOIDCConfiguration(self, "oidcConfiguration")
+
+    @property
+    def user_profiles_configuration(self) -> _NestedUserProfilesConfiguration:
+        return ProjectUpdate._NestedUserProfilesConfiguration(self, "userProfilesConfiguration")
 
     @classmethod
     def _get_update_properties(cls) -> list[PropertySpec]:
         return [
-            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
-            PropertySpec("project", is_nullable=False),
+            PropertySpec("name", is_nullable=False),
             PropertySpec("oidc_configuration", is_nullable=True),
             PropertySpec("user_profiles_configuration", is_nullable=False),
         ]

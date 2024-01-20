@@ -287,7 +287,7 @@ from cognite.client.data_classes.transformations.schema import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
-from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
+from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList, UserProfilesConfiguration
 from cognite.client.data_classes.workflows import (
     CancelExecution,
     CDFTaskOutput,
@@ -542,6 +542,7 @@ __all__ = [
     "CoordinateReferenceSystem",
     "UserProfile",
     "UserProfileList",
+    "UserProfilesConfiguration",
     "CancelExecution",
     "WorkflowUpsert",
     "WorkflowExecution",
