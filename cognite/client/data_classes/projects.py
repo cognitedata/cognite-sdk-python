@@ -27,6 +27,10 @@ class Claim(CogniteObject):
     def __init__(self, claim_name: str) -> None:
         self.claim_name = claim_name
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Claim:
+        return cls(claim_name=resource["claimName"])
+
 
 class OIDCConfiguration(CogniteObject):
     """OIDC configuration for a project.

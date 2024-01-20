@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, overload
 
 from typing_extensions import TypeAlias
 
+from cognite.client._api.projects import ProjectsAPI
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -89,6 +90,7 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
 class IAMAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.projects = ProjectsAPI(config, api_version, cognite_client)
         self.groups = GroupsAPI(config, api_version, cognite_client)
         self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
         self.sessions = SessionsAPI(config, api_version, cognite_client)
