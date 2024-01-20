@@ -151,7 +151,17 @@ from cognite.client.data_classes.labels import (
     LabelDefinitionWrite,
     LabelFilter,
 )
-from cognite.client.data_classes.projects import Claim, OIDCConfiguration, Project, ProjectUpdate, ProjectWrite
+from cognite.client.data_classes.projects import (
+    Claim,
+    OIDCConfiguration,
+    Project,
+    ProjectList,
+    ProjectUpdate,
+    ProjectURLName,
+    ProjectURLNameList,
+    ProjectWrite,
+    ProjectWriteList,
+)
 from cognite.client.data_classes.raw import (
     Database,
     DatabaseList,
@@ -561,6 +571,10 @@ __all__ = [
     "Project",
     "ProjectUpdate",
     "ProjectWrite",
+    "ProjectURLName",
+    "ProjectURLNameList",
+    "ProjectWriteList",
+    "ProjectList",
     "OIDCConfiguration",
     "Claim",
 ]

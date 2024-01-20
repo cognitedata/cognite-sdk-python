@@ -8,8 +8,10 @@ from cognite.client.data_classes._base import (
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
+    CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    WriteableCogniteResource,
 )
 from cognite.client.data_classes.user_profiles import UserProfilesConfiguration
 
@@ -110,7 +112,24 @@ class OIDCConfiguration(CogniteObject):
         return output
 
 
-class ProjectCore(CogniteResource, ABC):
+class ProjectURLName(CogniteResource):
+    """A project URL name is a unique identifier for a project.
+
+    Args:
+        url_name (str): The URL name of the project. This is used as part of the request path in API calls.
+            Valid URL names contain between 3 and 32 characters, and may only contain English letters, digits and hyphens,
+            must contain at least one letter and may not start or end with a hyphen.
+    """
+
+    def __init__(self, url_name: str) -> None:
+        self.url_name = url_name
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ProjectURLName:
+        return cls(url_name=resource["urlName"])
+
+
+class ProjectCore(WriteableCogniteResource["ProjectWrite"], ABC):
     """Projects are used to isolate data in CDF rom each other. All objects in CDF belong to a single project,
     and objects in different projects are isolated from each other.
 
@@ -167,6 +186,10 @@ class ProjectWrite(ProjectCore):
         # user_profile_configuration is not in ProjectCore as it
         # is required for the Read format but not the Write format.
         self.user_profiles_configuration = user_profiles_configuration
+
+    def as_write(self) -> ProjectWrite:
+        """Returns this instance which is a Project Write"""
+        return self
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ProjectWrite:
@@ -229,6 +252,10 @@ class Project(ProjectCore):
         # user_profile_configuration is not in ProjectCore as it
         # is required for the Read format but not the Write format.
         self.user_profiles_configuration = user_profiles_configuration
+
+    def as_write(self) -> ProjectWrite:
+        """Returns this instance which is a Project Write"""
+        raise NotImplementedError("Project cannot be used as a ProjectWrite")
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Project:
@@ -301,3 +328,15 @@ class ProjectUpdate(CogniteUpdate):
             PropertySpec("oidc_configuration", is_nullable=True),
             PropertySpec("user_profiles_configuration", is_nullable=False),
         ]
+
+
+class ProjectURLNameList(CogniteResourceList[ProjectURLName]):
+    _RESOURCE = ProjectURLName
+
+
+class ProjectList(CogniteResourceList[Project]):
+    _RESOURCE = Project
+
+
+class ProjectWriteList(CogniteResourceList[ProjectWrite]):
+    _RESOURCE = ProjectWrite
