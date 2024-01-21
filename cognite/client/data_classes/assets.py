@@ -313,10 +313,10 @@ class Asset(AssetCore):
         asset_ids = self._prepare_asset_ids("files", kwargs)
         return self._cognite_client.files.list(asset_ids=asset_ids, **kwargs)
 
-    def _prepare_asset_ids(self, resource: str, kwargs: Any) -> list[int]:
+    def _prepare_asset_ids(self, resource: str, user_kwargs: dict[str, Any]) -> list[int]:
         if self.id is None:
             raise ValueError(f"Unable to fetch related {resource}, asset is missing id")
-        return [self.id, *kwargs.pop("asset_ids", [])]
+        return [self.id, *user_kwargs.pop("asset_ids", [])]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -588,20 +588,21 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         self,
         resource_list_class: type[T_CogniteResourceList],
         resource_api: Any,
-        kwargs: Any,
+        user_kwargs: dict[str, Any],
         chunk_size: int = 100,
     ) -> T_CogniteResourceList:
         seen: set[int] = set()
         add_to_seen = seen.add
         lock = threading.Lock()
-        kwargs.pop("sort", None), kwargs.pop("partitions", None), kwargs.pop("limit", None)
+
+        ids = [a.id for a in self.data] + user_kwargs.pop("asset_ids", [])
+        user_kwargs.pop("sort", None), user_kwargs.pop("partitions", None), user_kwargs.pop("limit", None)
 
         def retrieve_and_deduplicate(asset_ids: list[int]) -> list[T_CogniteResource]:
-            res = resource_api.list(asset_ids=asset_ids, **kwargs, limit=None)
+            res = resource_api.list(asset_ids=asset_ids, **user_kwargs, limit=None)
             with lock:
                 return [r for r in res if not (r.id in seen or add_to_seen(r.id))]
 
-        ids = [a.id for a in self.data] + kwargs.pop("asset_ids", [])
         tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(set(ids), chunk_size)]
         res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
         return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
