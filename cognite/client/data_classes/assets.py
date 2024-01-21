@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
     Dict,
     List,
     Literal,
@@ -534,67 +533,76 @@ class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin
 class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
-        super().__init__(resources, cognite_client)
-        self._retrieve_chunk_size = 100
-
     def as_write(self) -> AssetWriteList:
         return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
-    def time_series(self) -> TimeSeriesList:
+    def time_series(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'partitions' and 'limit' can not be used.
         Returns:
             TimeSeriesList: All time series related to the assets in this AssetList.
         """
         from cognite.client.data_classes import TimeSeriesList
 
-        return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series)
+        return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series, kwargs)
 
-    def sequences(self) -> SequenceList:
+    def sequences(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'limit' can not be used.
         Returns:
             SequenceList: All sequences related to the assets in this AssetList.
         """
         from cognite.client.data_classes import SequenceList
 
-        return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences)
+        return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences, kwargs)
 
-    def events(self) -> EventList:
+    def events(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'sort', 'partitions' and 'limit' can not be used.
         Returns:
             EventList: All events related to the assets in this AssetList.
         """
         from cognite.client.data_classes import EventList
 
-        return self._retrieve_related_resources(EventList, self._cognite_client.events)
+        return self._retrieve_related_resources(EventList, self._cognite_client.events, kwargs, chunk_size=5000)
 
-    def files(self) -> FileMetadataList:
+    def files(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'limit' can not be used.
         Returns:
             FileMetadataList: Metadata about all files related to the assets in this AssetList.
         """
         from cognite.client.data_classes import FileMetadataList
 
-        return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files)
+        return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files, kwargs)
 
     def _retrieve_related_resources(
-        self, resource_list_class: type[T_CogniteResourceList], resource_api: Any
+        self,
+        resource_list_class: type[T_CogniteResourceList],
+        resource_api: Any,
+        kwargs: Any,
+        chunk_size: int = 100,
     ) -> T_CogniteResourceList:
         seen: set[int] = set()
         add_to_seen = seen.add
         lock = threading.Lock()
+        kwargs.pop("sort", None), kwargs.pop("partitions", None), kwargs.pop("limit", None)
 
         def retrieve_and_deduplicate(asset_ids: list[int]) -> list[T_CogniteResource]:
-            res = resource_api.list(asset_ids=asset_ids, limit=-1)
+            res = resource_api.list(asset_ids=asset_ids, **kwargs, limit=None)
             with lock:
                 return [r for r in res if not (r.id in seen or add_to_seen(r.id))]
 
-        ids = [a.id for a in self.data]
-        tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(ids, self._retrieve_chunk_size)]
+        ids = [a.id for a in self.data] + kwargs.pop("asset_ids", [])
+        tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(set(ids), chunk_size)]
         res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
         return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
 
