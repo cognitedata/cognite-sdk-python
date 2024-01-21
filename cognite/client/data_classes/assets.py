@@ -253,7 +253,8 @@ class Asset(AssetCore):
         Returns:
             AssetList: The requested assets
         """
-        assert self.id is not None
+        if self.id is None:
+            raise ValueError("Unable to fetch child assets: id is missing")
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
     def subtree(self, depth: int | None = None) -> AssetList:
@@ -265,52 +266,58 @@ class Asset(AssetCore):
         Returns:
             AssetList: The requested assets sorted topologically.
         """
-        assert self.id is not None
+        if self.id is None:
+            raise ValueError("Unable to fetch asset subtree: id is missing")
         return self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
     def time_series(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to time_series/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list.
         Returns:
             TimeSeriesList: All time series related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("time series", kwargs)
+        return self._cognite_client.time_series.list(asset_ids=asset_ids, **kwargs)
 
     def sequences(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to sequences/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to sequences/list.
         Returns:
             SequenceList: All sequences related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("sequences", kwargs)
+        return self._cognite_client.sequences.list(asset_ids=asset_ids, **kwargs)
 
     def events(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to events/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to events/list.
         Returns:
             EventList: All events related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("events", kwargs)
+        return self._cognite_client.events.list(asset_ids=asset_ids, **kwargs)
 
     def files(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to files/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to files/list.
         Returns:
             FileMetadataList: Metadata about all files related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("files", kwargs)
+        return self._cognite_client.files.list(asset_ids=asset_ids, **kwargs)
+
+    def _prepare_asset_ids(self, resource: str, kwargs: Any) -> list[int]:
+        if self.id is None:
+            raise ValueError(f"Unable to fetch related {resource}, asset is missing id")
+        return [self.id, *kwargs.pop("asset_ids", [])]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
