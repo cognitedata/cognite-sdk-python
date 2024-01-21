@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.14.0] - 2024-01-22
 ### Changed
-- Helper methods to get related resources on `Asset` class now accepts `asset_ids` as part of keyword arguments.
+- Helper methods to get related resources on `Asset` class now accept `asset_ids` as part of keyword arguments.
 ### Added
 - Helper methods to get related resources on `AssetList` class now accept keyword arguments that are passed on to
   the list endpoint (for server-side filtering).
