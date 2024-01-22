@@ -8,6 +8,7 @@ from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
 
 
+# TODO: This class-scoped client causes side-effects between tests...
 @pytest.fixture(scope="class")
 def cognite_client():
     cnf = ClientConfig(client_name="any", project="dummy", credentials=Token("bla"))

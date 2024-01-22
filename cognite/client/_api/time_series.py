@@ -751,9 +751,7 @@ class TimeSeriesAPI(APIClient):
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
-        """`List over time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
-
-        Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
+        """`List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
         Args:
             name (str | None): Name of the time series. Often referred to as tag.
@@ -791,14 +789,14 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for ts in c.time_series:
-                ...     ts # do something with the time_series
+                ...     ts # do something with the time series
 
             Iterate over chunks of time series to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for ts_list in c.time_series(chunk_size=2500):
-                ...     ts_list # do something with the time_series
+                ...     ts_list # do something with the time series
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)

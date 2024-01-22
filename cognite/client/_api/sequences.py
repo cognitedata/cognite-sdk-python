@@ -797,9 +797,7 @@ class SequencesAPI(APIClient):
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
-        """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
-
-        Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
+        """`List sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 
         Args:
             name (str | None): Filter out sequences that do not have this *exact* name.
@@ -830,7 +828,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for seq in c.sequences:
-                ...     seq # do something with the sequences
+                ...     seq # do something with the sequence
 
             Iterate over chunks of sequences to reduce memory load::
 
