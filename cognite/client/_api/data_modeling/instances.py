@@ -163,7 +163,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Node]:
@@ -176,7 +176,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge]:
@@ -189,7 +189,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[NodeList]:
@@ -202,7 +202,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[EdgeList]:
@@ -214,7 +214,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | list[View] | View | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | list[View] | View | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
@@ -226,7 +226,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId] | ViewId | list[View] | View | None): Views to retrieve properties from.
+            sources (list[ViewIdentifier] | ViewIdentifier | list[View] | View | None): Views to retrieve properties from.
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 
