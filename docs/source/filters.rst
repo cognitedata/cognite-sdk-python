@@ -6,9 +6,9 @@ queries for filtering data. Each filter class represents a specific filtering cr
 allowing users to tailor their queries to their specific needs. 
 
 The filter can be used on any container property. These can be references directly as 
-``(mySpace, myName/myVersion, property)``,
+``('space', 'view_external_id/view_version', 'property')``,
 but it is usually more convenient to use the ``as_property_ref`` method on the View or ViewID objects as:
-``myView.as_property_ref(property)``.
+``myView.as_property_ref('property')``.
 
 Below is an overview of the
 available filters:

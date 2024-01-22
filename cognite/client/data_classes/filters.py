@@ -259,11 +259,16 @@ class And(CompoundFilter):
 
     Example:
 
-        Combine an In and an Equals filter::
+        Combine an In and an Equals filter:
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import And, Equals, In
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = And(Equals(myView.as_property_ref("property1"), 42), In(myView.as_property_ref("property2"), ["a", "b", "c"]))
+            >>> filter = And(Equals(('space', 'view_external_id/view_version', 'some_property'), 42), In(('space', 'view_external_id/view_version', 'another_property'), ["a", "b", "c"]))
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import And, Equals, In
+            >>> filter = And(Equals(myView.as_property_ref("some_property"), 42), In(myView.as_property_ref("another_property"), ["a", "b", "c"]))
     """
 
     _filter_name = "and"
@@ -281,8 +286,12 @@ class Or(CompoundFilter):
         Combine an In and an Equals filter::
 
             >>> from cognite.client.data_classes.filters import Or, Equals, In
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = Or(Equals(myView.as_property_ref("property1"), 42), In(myView.as_property_ref("property2"), ["a", "b", "c"]))
+            >>> filter = Or(Equals(('space', 'view_external_id/view_version', 'some_property'), 42), In(('space', 'view_external_id/view_version', 'another_property'), ["a", "b", "c"]))
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import Or, Equals, In
+            >>> filter = Or(Equals(myView.as_property_ref("some_property"), 42), In(myView.as_property_ref("another_property"), ["a", "b", "c"]))
     """
 
     _filter_name = "or"
@@ -298,10 +307,15 @@ class Not(CompoundFilter):
     Example:
 
         Negate an Equals filter:
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import Equals, Not
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = Not(Equals(myView.as_property_ref("property1"), 42))
+            >>> filter = Not(Equals(('space', 'view_external_id/view_version', 'some_property'), 42))
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import Equals, Not
+            >>> filter = Not(myView.as_property_ref("some_property"), 42)
     """
 
     _filter_name = "not"
@@ -415,10 +429,15 @@ class Range(FilterWithProperty):
     Example:
 
         Retrieve all instances with a property value greater than 42:
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import Range
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = Range(myView.as_property_ref("property1"), gt=42)
+            >>> filter = Range(('space', 'view_external_id/view_version', 'some_property'), gt=42)
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import Range
+            >>> filter = Range(myView.as_property_ref("some_property"), gt=42)
     """
 
     _filter_name = "range"
@@ -467,10 +486,16 @@ class Overlaps(Filter):
     Example:
 
         Retrieve all instances with a range overlapping with the range (42, 100):
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import Overlaps
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = Overlaps(myView.as_property_ref("startProperty"), myView.as_property_ref("endProperty"), gt=42, lt=100)
+            >>> filter = Overlaps(('space', 'view_external_id/view_version', 'some_start_property'), 
+                    ('space', 'view_external_id/view_version', 'some_end_property'), gt=42, lt=100)
+
+        Using property on View:
+                
+            >>> from cognite.client.data_classes.filters import Overlaps
+            >>> filter = Overlaps(myView.as_property_ref("some_start_property"), myView.as_property_ref("some_end_property"), gt=42, lt=100)
     """
 
     _filter_name = "overlaps"
@@ -519,10 +544,16 @@ class Equals(FilterWithPropertyAndValue):
     Example:
 
         Filter than can be used to retrieve items where the property value equals 42:
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import Equals
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = Equals(myView.as_property_ref("property"), 42)
+            >>> filter = Equals(('space', 'view_external_id/view_version', 'some_property'), 42)
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import Equals
+            >>> filter = Equals(myView.as_property_ref("some_property"), 42)
+
     """
 
     _filter_name = "equals"
@@ -536,13 +567,22 @@ class In(FilterWithPropertyAndValueList):
         property (PropertyReference): The property to filter on.
         values (FilterValueList): The values to filter on.
 
+    When comparing two arrays, `in` and `containsAny` behave the same way. But `in` also allows you filter on a primitive property. i.e:
+        [1,2,3] in [3,4,5] => true
+        1 in [1,2,3] => true
+
     Example:
 
         Filter than can be used to retrieve items where the property value equals 42 or 43 (or both):
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import In
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = In(myView.as_property_ref("property"), [42, 43])
+            >>> filter = In(('space', 'view_external_id/view_version', 'some_property'), [42, 43])
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import In
+            >>> filter = In(myView.as_property_ref("some_property"), [42, 43])
     """
 
     _filter_name = "in"
@@ -558,10 +598,15 @@ class Exists(FilterWithProperty):
     Example:
 
         Filter than can be used to retrieve items where the property value is set:
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import Exists
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = Exists(myView.as_property_ref("property"))
+            >>> filter = Exists(('space', 'view_external_id/view_version', 'some_property'))
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import Exists
+            >>> filter = Exists(myView.as_property_ref("some_property"))
     """
 
     _filter_name = "exists"
@@ -578,10 +623,15 @@ class Prefix(FilterWithPropertyAndValue):
     Example:
 
         Filter than can be used to retrieve items where the property value starts with "somePrefix":
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import Prefix
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = Prefix(myView.as_property_ref("property"), "somePrefix")
+            >>> filter = Prefix(('space', 'view_external_id/view_version', 'some_property'), "somePrefix")
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import Prefix
+            >>> filter = Prefix(myView.as_property_ref("some_property"), "somePrefix")
     """
 
     _filter_name = "prefix"
@@ -595,13 +645,22 @@ class ContainsAny(FilterWithPropertyAndValueList):
         property (PropertyReference): The property to filter on.
         values (FilterValueList): The value to filter on.
 
+    When comparing two arrays, `in` and `containsAny` behave the same way. But `containsAny` does not allow you filter on a primitive property. i.e:
+        [1,2,3] in [3,4,5] => true
+        1 in [1,2,3] => ERROR
+
     Example:
 
         Filter than can be used to retrieve items where the property value contains either 42 or 43:
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import ContainsAny
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = ContainsAny(myView.as_property_ref("property"), [42, 43])
+            >>> filter = ContainsAny(('space', 'view_external_id/view_version', 'some_property'), [42, 43])
+
+        Using property on View:
+
+            >>> from cognite.client.data_classes.filters import ContainsAny
+            >>> filter = ContainsAny(myView.as_property_ref("some_property"), [42, 43])
     """
 
     _filter_name = "containsAny"
@@ -618,10 +677,17 @@ class ContainsAll(FilterWithPropertyAndValueList):
     Example:
 
         Filter than can be used to retrieve items where the property value contains both 42 and 43:
+        Generic example:
 
             >>> from cognite.client.data_classes.filters import ContainsAll
-            >>> myView = client.data_modeling.views.retrieve(ids=("space", "external_id", "version"))
-            >>> filter = ContainsAll(myView.as_property_ref("property"), [42, 43])
+            >>> filter = ContainsAll(('space', 'view_external_id/view_version', 'some_property'), [42, 43])
+
+        Using property on View:
+        
+            >>> from cognite.client.data_classes.filters import ContainsAll
+            >>> filter = ContainsAll(myView.as_property_ref("some_property"), [42, 43])
+
+        
     """
 
     _filter_name = "containsAll"
