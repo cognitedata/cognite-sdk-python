@@ -7,6 +7,7 @@ import numbers
 import platform
 import warnings
 from decimal import Decimal
+from threading import Thread
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -149,17 +150,22 @@ def get_user_agent() -> str:
     return f"{sdk_version} {python_version} {operating_system}"
 
 
+# Wrap in a cache to ensure we only ever run the version check once.
+@functools.lru_cache(1)
 def _check_client_has_newest_major_version() -> None:
-    version = get_current_sdk_version()
-    newest_version = get_newest_version_in_major_release("cognite-sdk", version)
-    if newest_version != version:
-        warnings.warn(
-            f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
-            "To suppress this warning, either upgrade or do the following:\n"
-            ">>> from cognite.client.config import global_config\n"
-            ">>> global_config.disable_pypi_version_check = True",
-            stacklevel=3,
-        )
+    def run() -> None:
+        version = get_current_sdk_version()
+        newest_version = get_newest_version_in_major_release("cognite-sdk", version)
+        if newest_version != version:
+            warnings.warn(
+                f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
+                "To suppress this warning, either upgrade or do the following:\n"
+                ">>> from cognite.client.config import global_config\n"
+                ">>> global_config.disable_pypi_version_check = True",
+                stacklevel=3,
+            )
+
+    Thread(target=run, daemon=True).start()
 
 
 @overload
