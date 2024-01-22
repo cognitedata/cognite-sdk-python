@@ -178,7 +178,7 @@ def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
 
 
 @overload
-def split_into_chunks(collection: list, chunk_size: int) -> list[list]:
+def split_into_chunks(collection: set | list, chunk_size: int) -> list[list]:
     ...
 
 
@@ -187,7 +187,10 @@ def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]:
     ...
 
 
-def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list] | list[dict]:
+def split_into_chunks(collection: set | list | dict, chunk_size: int) -> list[list] | list[dict]:
+    if isinstance(collection, set):
+        collection = list(collection)
+
     if isinstance(collection, list):
         return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
 
@@ -217,6 +220,12 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
     seen: set[THashable] = set()
     add = seen.add  # skip future attr lookups for perf
     return {x for x in seq if x in seen or add(x)}
+
+
+def remove_duplicates_keep_order(seq: Sequence[THashable]) -> list[THashable]:
+    seen: set[THashable] = set()
+    add = seen.add
+    return [x for x in seq if x not in seen and not add(x)]
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:

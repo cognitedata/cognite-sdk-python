@@ -16,6 +16,7 @@ from cognite.client.utils._auxiliary import (
     handle_deprecated_camel_case_argument,
     interpolate_and_url_encode,
     json_dump_default,
+    remove_duplicates_keep_order,
     split_into_chunks,
     split_into_n_parts,
 )
@@ -140,6 +141,19 @@ class TestSplitIntoChunks:
         assert len(actual_output) == len(expected_output)
         for element in expected_output:
             assert element in actual_output
+
+
+class TestRemoveDuplicatesKeepOrder:
+    @pytest.mark.parametrize(
+        "inp, expected",
+        (
+            ([], []),
+            ((1, 1, 2, 1), [1, 2]),
+            ("abccba", ["a", "b", "c"]),
+        ),
+    )
+    def test_no_duplicates_asdffdsa(self, inp, expected):
+        assert expected == remove_duplicates_keep_order(inp)
 
 
 class TestFindDuplicates:
