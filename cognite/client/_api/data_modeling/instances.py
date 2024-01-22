@@ -1094,7 +1094,7 @@ class InstancesAPI(APIClient):
             List instances and sort by some property:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import InstanceSort
+                >>> from cognite.client.data_classes.data_modeling import View, InstanceSort
                 >>> c = CogniteClient()
                 >>> myView = View("mySpace", "myView", "v1")
                 >>> property_sort = InstanceSort(property=myView.as_property_ref("some_property"), direction="descending", nulls_first=True)
