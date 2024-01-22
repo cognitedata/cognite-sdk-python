@@ -552,7 +552,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         """Retrieve all sequences related to these assets.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'limit' can not be used.
+            **kwargs (Any): All extra keyword arguments are passed to sequences/list. Note: 'limit' can not be used.
         Returns:
             SequenceList: All sequences related to the assets in this AssetList.
         """
@@ -564,7 +564,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         """Retrieve all events related to these assets.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'sort', 'partitions' and 'limit' can not be used.
+            **kwargs (Any): All extra keyword arguments are passed to events/list. Note: 'sort', 'partitions' and 'limit' can not be used.
         Returns:
             EventList: All events related to the assets in this AssetList.
         """
@@ -576,7 +576,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         """Retrieve all files metadata related to these assets.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'limit' can not be used.
+            **kwargs (Any): All extra keyword arguments are passed to files/list. Note: 'limit' can not be used.
         Returns:
             FileMetadataList: Metadata about all files related to the assets in this AssetList.
         """
