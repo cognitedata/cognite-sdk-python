@@ -489,11 +489,11 @@ class Overlaps(Filter):
         Generic example:
 
             >>> from cognite.client.data_classes.filters import Overlaps
-            >>> filter = Overlaps(('space', 'view_external_id/view_version', 'some_start_property'), 
+            >>> filter = Overlaps(('space', 'view_external_id/view_version', 'some_start_property'),
                     ('space', 'view_external_id/view_version', 'some_end_property'), gt=42, lt=100)
 
         Using property on View:
-                
+
             >>> from cognite.client.data_classes.filters import Overlaps
             >>> filter = Overlaps(myView.as_property_ref("some_start_property"), myView.as_property_ref("some_end_property"), gt=42, lt=100)
     """
@@ -683,11 +683,11 @@ class ContainsAll(FilterWithPropertyAndValueList):
             >>> filter = ContainsAll(('space', 'view_external_id/view_version', 'some_property'), [42, 43])
 
         Using property on View:
-        
+
             >>> from cognite.client.data_classes.filters import ContainsAll
             >>> filter = ContainsAll(myView.as_property_ref("some_property"), [42, 43])
 
-        
+
     """
 
     _filter_name = "containsAll"
