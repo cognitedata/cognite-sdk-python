@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.15.0] - 2024-01-22
+### Improved
+- Only run pypi version check once, despite instantiating multiple clients. And make it async too.
+
 ## [7.14.0] - 2024-01-22
 ### Changed
 - Helper methods to get related resources on `Asset` class now accept `asset_ids` as part of keyword arguments.
