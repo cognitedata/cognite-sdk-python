@@ -48,7 +48,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteAssetHierarchyError
-from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._auxiliary import remove_duplicates_keep_order, split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._graph import find_all_cycles_with_elements
 from cognite.client.utils._importing import local_import
@@ -316,7 +316,7 @@ class Asset(AssetCore):
     def _prepare_asset_ids(self, resource: str, user_kwargs: dict[str, Any]) -> list[int]:
         if self.id is None:
             raise ValueError(f"Unable to fetch related {resource}, asset is missing id")
-        return [self.id, *user_kwargs.pop("asset_ids", [])]
+        return remove_duplicates_keep_order([self.id, *user_kwargs.pop("asset_ids", [])])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -595,7 +595,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         add_to_seen = seen.add
         lock = threading.Lock()
 
-        ids = [a.id for a in self.data] + user_kwargs.pop("asset_ids", [])
+        ids = remove_duplicates_keep_order([a.id for a in self.data] + user_kwargs.pop("asset_ids", []))
         user_kwargs.pop("sort", None), user_kwargs.pop("partitions", None), user_kwargs.pop("limit", None)
 
         def retrieve_and_deduplicate(asset_ids: list[int]) -> list[T_CogniteResource]:
