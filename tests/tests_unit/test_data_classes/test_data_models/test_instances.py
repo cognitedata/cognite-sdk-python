@@ -190,6 +190,18 @@ class TestInstancesToPandas:
             assert v == expanded.loc[k].item()
             assert v == expanded_with_prefix.loc[f"my-space.my-view/v8.{k}"].item()
 
+    @pytest.mark.parametrize("inst_cls", (Node, Edge))
+    def test_expand_properties_empty_properties(
+        self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
+    ) -> None:
+        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw["properties"] = {}
+        expanded_with_empty_properties = inst_cls._load(raw).to_pandas(
+            expand_properties=True, remove_property_prefix=True
+        )
+
+        assert "properties" not in expanded_with_empty_properties.index
+
     @pytest.mark.parametrize("inst_cls", (NodeList, EdgeList))
     def test_expand_properties__list_class(
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
@@ -210,3 +222,15 @@ class TestInstancesToPandas:
         for k, v in raw["properties"]["my-space"]["my-view/v8"].items():
             assert v == expanded.loc[0, k]
             assert v == expanded_with_prefix.loc[0, f"my-space.my-view/v8.{k}"]
+
+    @pytest.mark.parametrize("inst_cls", (NodeList, EdgeList))
+    def test_expand_properties__list_class_empty_properties(
+        self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
+    ) -> None:
+        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw["properties"] = {}
+        expanded_with_empty_properties = inst_cls._load([raw, raw]).to_pandas(
+            expand_properties=True, remove_property_prefix=True
+        )
+
+        assert "properties" not in expanded_with_empty_properties.columns

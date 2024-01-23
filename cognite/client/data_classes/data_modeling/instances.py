@@ -334,7 +334,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         pd = local_import("pandas")
         col = df.squeeze()
         prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
-        if remove_property_prefix:
+        if remove_property_prefix and not prop_df.empty:
             # We only do/allow this if we have a single source:
             view_id, *extra = self.properties.keys()
             if not extra:

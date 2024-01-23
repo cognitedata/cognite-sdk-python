@@ -113,7 +113,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList, Generic[T_WriteCla
             return df
 
         prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
-        if remove_property_prefix:
+        if remove_property_prefix and not prop_df.empty:
             # We only do/allow this if we have a single source:
             view_id, *extra = set(vid for item in self for vid in item.properties)
             if not extra:
