@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -137,14 +138,14 @@ class DataSetsAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> DataSetList:
         """`Retrieve multiple data sets by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -189,11 +190,21 @@ class DataSetsAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=CountAggregate)
 
-    def update(self, item: DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]) -> DataSet | DataSetList:
+    @overload
+    def update(self, item: DataSet | DataSetWrite | DataSetUpdate) -> DataSet:
+        ...
+
+    @overload
+    def update(self, item: Sequence[DataSet | DataSetWrite | DataSetUpdate]) -> DataSetList:
+        ...
+
+    def update(
+        self, item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]
+    ) -> DataSet | DataSetList:
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
         Args:
-            item (DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]): Data set(s) to update
+            item (DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]): Data set(s) to update
 
         Returns:
             DataSet | DataSetList: Updated data set(s)

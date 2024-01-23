@@ -17,23 +17,44 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.13.7] - 2024-01-18
+## [7.15.1] - 2024-01-23
 ### Fixed
 * When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will no longer raise ValueError, but drop the empty properties row/column.
 
+## [7.15.0] - 2024-01-22
+### Improved
+- Only run pypi version check once, despite instantiating multiple clients. And make it async too.
+
+## [7.14.0] - 2024-01-22
+### Changed
+- Helper methods to get related resources on `Asset` class now accept `asset_ids` as part of keyword arguments.
+### Added
+- Helper methods to get related resources on `AssetList` class now accept keyword arguments that are passed on to
+  the list endpoint (for server-side filtering).
+
+## [7.13.8] - 2024-01-19
+### Fixed
+- `FilesAPI.upload` when using `geo_location` (serialize error).
+
+## [7.13.7] - 2024-01-19
+### Fixed
+- Type hints for all `.update` and `.upsert` methods accept Write classes in addition to Read and Update classes.
+- Missing overloading of the `.update` methods on `client.three_d.models.update`, `client.transformations.update`,
+  `client.transformations.schedules.update`, `client.relationships.update`, and `client.data_sets.update`.
+
 ## [7.13.6] - 2024-01-18
 ### Added
-- Helper method `as_tuple` to `NodeId` and `EdgeId`. 
+- Helper method `as_tuple` to `NodeId` and `EdgeId`.
 
 ## [7.13.5] - 2024-01-16
 ### Added
-- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`. 
+- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`.
 
 ## [7.13.4] - 2024-01-11
 ### Fixed
-* When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
-* When calling `Datapoints.load` not having a `isString` would raise a `KeyError` even though it is optional. This is now fixed.
-* Most `CogniteResourceList.as_write()` would raise a `CogniteMissingClientError` when called from a class with missing cognite_client. This is now fixed.
+- When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+- When calling `Datapoints.load` not having a `isString` would raise a `KeyError` even though it is optional. This is now fixed.
+- Most `CogniteResourceList.as_write()` would raise a `CogniteMissingClientError` when called from a class with missing cognite_client. This is now fixed.
 
 ## [7.13.3] - 2024-01-12
 ### Added
@@ -42,7 +63,7 @@ Changes are grouped as follows
 
 ## [7.13.2] - 2024-01-11
 ### Fixed
-* When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+- When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
 
 ## [7.13.1] - 2024-01-10
 ### Improved

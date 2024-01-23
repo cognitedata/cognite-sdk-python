@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
     Dict,
     List,
     Literal,
@@ -49,11 +48,12 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteAssetHierarchyError
-from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._auxiliary import remove_duplicates_keep_order, split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._graph import find_all_cycles_with_elements
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import DrawTables, convert_dict_to_case, shorten
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas
@@ -252,7 +252,8 @@ class Asset(AssetCore):
         Returns:
             AssetList: The requested assets
         """
-        assert self.id is not None
+        if self.id is None:
+            raise ValueError("Unable to fetch child assets: id is missing")
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
     def subtree(self, depth: int | None = None) -> AssetList:
@@ -264,52 +265,58 @@ class Asset(AssetCore):
         Returns:
             AssetList: The requested assets sorted topologically.
         """
-        assert self.id is not None
+        if self.id is None:
+            raise ValueError("Unable to fetch asset subtree: id is missing")
         return self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
     def time_series(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to time_series/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list.
         Returns:
             TimeSeriesList: All time series related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("time series", kwargs)
+        return self._cognite_client.time_series.list(asset_ids=asset_ids, **kwargs)
 
     def sequences(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to sequences/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to sequences/list.
         Returns:
             SequenceList: All sequences related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("sequences", kwargs)
+        return self._cognite_client.sequences.list(asset_ids=asset_ids, **kwargs)
 
     def events(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to events/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to events/list.
         Returns:
             EventList: All events related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("events", kwargs)
+        return self._cognite_client.events.list(asset_ids=asset_ids, **kwargs)
 
     def files(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to files/list. NB: 'asset_ids' can't be used.
+            **kwargs (Any): All extra keyword arguments are passed to files/list.
         Returns:
             FileMetadataList: Metadata about all files related to this asset.
         """
-        assert self.id is not None
-        return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
+        asset_ids = self._prepare_asset_ids("files", kwargs)
+        return self._cognite_client.files.list(asset_ids=asset_ids, **kwargs)
+
+    def _prepare_asset_ids(self, resource: str, user_kwargs: dict[str, Any]) -> list[int]:
+        if self.id is None:
+            raise ValueError(f"Unable to fetch related {resource}, asset is missing id")
+        return remove_duplicates_keep_order([self.id, *user_kwargs.pop("asset_ids", [])])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -526,67 +533,77 @@ class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin
 class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
-        super().__init__(resources, cognite_client)
-        self._retrieve_chunk_size = 100
-
     def as_write(self) -> AssetWriteList:
         return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
-    def time_series(self) -> TimeSeriesList:
+    def time_series(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'partitions' and 'limit' can not be used.
         Returns:
             TimeSeriesList: All time series related to the assets in this AssetList.
         """
         from cognite.client.data_classes import TimeSeriesList
 
-        return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series)
+        return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series, kwargs)
 
-    def sequences(self) -> SequenceList:
+    def sequences(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to sequences/list. Note: 'limit' can not be used.
         Returns:
             SequenceList: All sequences related to the assets in this AssetList.
         """
         from cognite.client.data_classes import SequenceList
 
-        return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences)
+        return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences, kwargs)
 
-    def events(self) -> EventList:
+    def events(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to events/list. Note: 'sort', 'partitions' and 'limit' can not be used.
         Returns:
             EventList: All events related to the assets in this AssetList.
         """
         from cognite.client.data_classes import EventList
 
-        return self._retrieve_related_resources(EventList, self._cognite_client.events)
+        return self._retrieve_related_resources(EventList, self._cognite_client.events, kwargs, chunk_size=5000)
 
-    def files(self) -> FileMetadataList:
+    def files(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to these assets.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to files/list. Note: 'limit' can not be used.
         Returns:
             FileMetadataList: Metadata about all files related to the assets in this AssetList.
         """
         from cognite.client.data_classes import FileMetadataList
 
-        return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files)
+        return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files, kwargs)
 
     def _retrieve_related_resources(
-        self, resource_list_class: type[T_CogniteResourceList], resource_api: Any
+        self,
+        resource_list_class: type[T_CogniteResourceList],
+        resource_api: Any,
+        user_kwargs: dict[str, Any],
+        chunk_size: int = 100,
     ) -> T_CogniteResourceList:
         seen: set[int] = set()
         add_to_seen = seen.add
         lock = threading.Lock()
 
+        ids = remove_duplicates_keep_order([a.id for a in self.data] + user_kwargs.pop("asset_ids", []))
+        user_kwargs.pop("sort", None), user_kwargs.pop("partitions", None), user_kwargs.pop("limit", None)
+
         def retrieve_and_deduplicate(asset_ids: list[int]) -> list[T_CogniteResource]:
-            res = resource_api.list(asset_ids=asset_ids, limit=-1)
+            res = resource_api.list(asset_ids=asset_ids, **user_kwargs, limit=None)
             with lock:
                 return [r for r in res if not (r.id in seen or add_to_seen(r.id))]
 
-        ids = [a.id for a in self.data]
-        tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(ids, self._retrieve_chunk_size)]
+        tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(set(ids), chunk_size)]
         res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
         return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
 
@@ -597,7 +614,7 @@ class AssetFilter(CogniteFilter):
     Args:
         name (str | None): The name of the asset.
         parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-        parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
+        parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
         asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (Sequence[dict[str, Any]] | None): No description.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
@@ -614,7 +631,7 @@ class AssetFilter(CogniteFilter):
         self,
         name: str | None = None,
         parent_ids: Sequence[int] | None = None,
-        parent_external_ids: Sequence[str] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
         data_set_ids: Sequence[dict[str, Any]] | None = None,
         metadata: dict[str, str] | None = None,
@@ -663,7 +680,7 @@ class AssetHierarchy:
     any asset providing a parent link by ID instead of external ID, are assumed valid.
 
     Args:
-        assets (Sequence[Asset]): Sequence of assets to be inspected for validity.
+        assets (Sequence[Asset | AssetWrite]): Sequence of assets to be inspected for validity.
         ignore_orphans (bool): If true, orphan assets are assumed valid and won't raise.
 
     Examples:
@@ -701,14 +718,14 @@ class AssetHierarchy:
         ...     report = file_like.getvalue()
     """
 
-    def __init__(self, assets: Sequence[Asset], ignore_orphans: bool = False) -> None:
+    def __init__(self, assets: Sequence[Asset | AssetWrite], ignore_orphans: bool = False) -> None:
         self._assets = assets
-        self._roots: list[Asset] | None = None
-        self._orphans: list[Asset] | None = None
+        self._roots: list[Asset | AssetWrite] | None = None
+        self._orphans: list[Asset | AssetWrite] | None = None
         self._ignore_orphans = ignore_orphans
-        self._invalid: list[Asset] | None = None
-        self._unsure_parents: list[Asset] | None = None
-        self._duplicates: dict[str, list[Asset]] | None = None
+        self._invalid: list[Asset | AssetWrite] | None = None
+        self._unsure_parents: list[Asset | AssetWrite] | None = None
+        self._duplicates: dict[str, list[Asset | AssetWrite]] | None = None
         self._cycles: list[list[str]] | None = None
 
         self.__validation_has_run = False
@@ -752,7 +769,7 @@ class AssetHierarchy:
         return AssetList(self._unsure_parents)
 
     @property
-    def duplicates(self) -> dict[str, list[Asset]]:
+    def duplicates(self) -> dict[str, list[Asset | AssetWrite]]:
         if self._duplicates is None:
             raise RuntimeError("Unable to list duplicate assets before validation has run")
         # NB: Do not return AssetList (as it does not handle duplicates well):
@@ -792,7 +809,7 @@ class AssetHierarchy:
     def validate_and_report(self, output_file: Path | None = None) -> AssetHierarchy:
         return self.validate(verbose=True, output_file=output_file, on_error="ignore")
 
-    def groupby_parent_xid(self) -> dict[str | None, list[Asset]]:
+    def groupby_parent_xid(self) -> dict[str | None, list[Asset | AssetWrite]]:
         """Returns a mapping from parent external ID to a list of its direct children.
 
         Note:
@@ -802,14 +819,14 @@ class AssetHierarchy:
             The same is true for all assets linking its parent by ID.
 
         Returns:
-            dict[str | None, list[Asset]]: No description."""
+            dict[str | None, list[Asset | AssetWrite]]: No description."""
         self.is_valid(on_error="raise")
 
         # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,
         # and can't simply hash it because of the possibility of collisions. Further, the empty string is a valid
         # external ID leaving no other choice than to prepend all strings with ' ' before comparison:
 
-        def parent_sort_fn(asset: Asset) -> str:
+        def parent_sort_fn(asset: Asset | AssetWrite) -> str:
             # All assets using 'parent_id' will be grouped together with the root assets:
             if (pxid := asset.parent_external_id) is None:
                 return ""
@@ -833,11 +850,11 @@ class AssetHierarchy:
         )
         return mapping
 
-    def count_subtree(self, mapping: dict[str | None, list[Asset]]) -> dict[str, int]:
+    def count_subtree(self, mapping: dict[str | None, list[Asset | AssetWrite]]) -> dict[str, int]:
         """Returns a mapping from asset external ID to the size of its subtree (children and children of children etc.).
 
         Args:
-            mapping (dict[str | None, list[Asset]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+            mapping (dict[str | None, list[Asset | AssetWrite]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
 
         Returns:
             dict[str, int]: Lookup from external ID to descendant count.
@@ -872,12 +889,23 @@ class AssetHierarchy:
             self._invalid or self._unsure_parents or self._duplicates or (self._orphans and not self._ignore_orphans)
         )
 
-    def _inspect_attributes(self) -> tuple[list[Asset], list[Asset], list[Asset], list[Asset], dict[str, list[Asset]]]:
+    def _inspect_attributes(
+        self,
+    ) -> tuple[
+        list[Asset | AssetWrite],
+        list[Asset | AssetWrite],
+        list[Asset | AssetWrite],
+        list[Asset | AssetWrite],
+        dict[str, list[Asset | AssetWrite]],
+    ]:
         invalid, orphans, roots, unsure_parents, duplicates = [], [], [], [], defaultdict(list)
         xid_count = Counter(a.external_id for a in self._assets)
 
         for asset in self._assets:
-            id_, xid, name = asset.id, asset.external_id, asset.name
+            if isinstance(asset, AssetWrite):
+                id_, xid, name = None, asset.external_id, asset.name
+            else:
+                id_, xid, name = asset.id, asset.external_id, asset.name
             if xid is None or name is None or len(name) < 1 or id_ is not None:
                 invalid.append(asset)
                 continue  # Don't report invalid as part of any other group
@@ -972,7 +1000,7 @@ class AssetHierarchy:
                 DrawTables.XLINE.join(DrawTables.HLINE * 20 for _ in columns),
             )
 
-        def print_table(lst: list[Asset], columns: list[str]) -> None:
+        def print_table(lst: list[Asset | AssetWrite], columns: list[str]) -> None:
             for entry in lst:
                 cols = (f"{shorten(getattr(entry, col)):<20}" for col in columns)
                 print_fn(DrawTables.VLINE.join(cols))

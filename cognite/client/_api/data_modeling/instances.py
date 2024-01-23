@@ -163,7 +163,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Node]:
@@ -176,7 +176,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge]:
@@ -189,7 +189,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[NodeList]:
@@ -202,7 +202,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[EdgeList]:
@@ -214,7 +214,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | list[View] | View | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | list[View] | View | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
@@ -226,7 +226,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId] | ViewId | list[View] | View | None): Views to retrieve properties from.
+            sources (list[ViewIdentifier] | ViewIdentifier | list[View] | View | None): Views to retrieve properties from.
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 
@@ -858,7 +858,7 @@ class InstancesAPI(APIClient):
         histograms: Histogram,
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
+        properties: SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue:
@@ -871,7 +871,7 @@ class InstancesAPI(APIClient):
         histograms: Sequence[Histogram],
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
+        properties: SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]:
@@ -883,7 +883,7 @@ class InstancesAPI(APIClient):
         histograms: Histogram | Sequence[Histogram],
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
+        properties: SequenceNotStr[str] | None = None,
         filter: Filter | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
@@ -894,7 +894,7 @@ class InstancesAPI(APIClient):
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
-            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 

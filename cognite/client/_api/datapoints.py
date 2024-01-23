@@ -70,6 +70,7 @@ from cognite.client.utils._time import (
     validate_timezone,
 )
 from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
@@ -562,7 +563,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -586,7 +587,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -769,7 +770,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -786,7 +787,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -872,7 +873,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -893,7 +894,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -1004,7 +1005,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         start: datetime,
         end: datetime,
         aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
@@ -1041,7 +1042,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (int | Sequence[int] | None): ID or list of IDs.
-            external_id (str | Sequence[str] | None): External ID or list of External IDs.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -1594,7 +1595,7 @@ class RetrieveLatestDpsFetcher:
         self.dps_client = dps_client
 
         parsed_ids = cast(Union[None, int, Sequence[int]], self._parse_user_input(id, "id"))
-        parsed_xids = cast(Union[None, str, Sequence[str]], self._parse_user_input(external_id, "external_id"))
+        parsed_xids = cast(Union[None, str, SequenceNotStr[str]], self._parse_user_input(external_id, "external_id"))
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
 
@@ -1638,7 +1639,7 @@ class RetrieveLatestDpsFetcher:
         return user_input
 
     def _prepare_requests(
-        self, parsed_ids: None | int | Sequence[int], parsed_xids: None | str | Sequence[str]
+        self, parsed_ids: None | int | Sequence[int], parsed_xids: None | str | SequenceNotStr[str]
     ) -> list[dict]:
         all_ids, all_xids = [], []
         if parsed_ids is not None:

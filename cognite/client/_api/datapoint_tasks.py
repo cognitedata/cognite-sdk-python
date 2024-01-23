@@ -46,6 +46,7 @@ from cognite.client.utils._time import (
     time_ago_to_ms,
     timestamp_to_ms,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
@@ -79,7 +80,7 @@ DatapointsRaw = Union[DatapointsNum, DatapointsStr]
 
 RawDatapointValue = Union[float, str]
 DatapointsId = Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]
-DatapointsExternalId = Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]
+DatapointsExternalId = Union[None, str, Dict[str, Any], SequenceNotStr[Union[str, Dict[str, Any]]]]
 
 
 class CustomDatapointsQuery(TypedDict, total=False):

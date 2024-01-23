@@ -80,28 +80,28 @@ class TestAssetList:
         cognite_client.events.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.events()
-        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.events.list.call_count == 1
 
     def test_get_time_series(self, cognite_client):
         cognite_client.time_series.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.time_series()
-        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.time_series.list.call_count == 1
 
     def test_get_sequences(self, cognite_client):
         cognite_client.sequences.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.sequences()
-        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.sequences.list.call_count == 1
 
     def test_get_files(self, cognite_client):
         cognite_client.files.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.files()
-        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.files.list.call_count == 1
 
     @pytest.mark.parametrize(
@@ -118,12 +118,19 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_method = getattr(cognite_client, method)
+        mock_method = mock.Mock()
+        setattr(cognite_client, method, mock_method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
 
         assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=cognite_client)
-        assets._retrieve_chunk_size = 1
+        assets._actual_method = assets._retrieve_related_resources
+
+        def override_chunk_size(*a, **kw):
+            kw["chunk_size"] = 1
+            return assets._actual_method(*a, **kw)
+
+        assets._retrieve_related_resources = override_chunk_size
 
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]

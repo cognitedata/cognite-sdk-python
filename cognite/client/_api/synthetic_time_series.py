@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import timestamp_to_ms
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import sympy
@@ -26,7 +27,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     def query(
         self,
-        expressions: str | sympy.Expr | Sequence[str | sympy.Expr],
+        expressions: str | sympy.Expr | SequenceNotStr[str | sympy.Expr],
         start: int | str | datetime,
         end: int | str | datetime,
         limit: int | None = None,
@@ -37,7 +38,7 @@ class SyntheticDatapointsAPI(APIClient):
         """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
         Args:
-            expressions (str | sympy.Expr | Sequence[str | sympy.Expr]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
+            expressions (str | sympy.Expr | SequenceNotStr[str | sympy.Expr]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
             start (int | str | datetime): Inclusive start.
             end (int | str | datetime): Exclusive end
             limit (int | None): Number of datapoints per expression to retrieve.
@@ -71,9 +72,7 @@ class SyntheticDatapointsAPI(APIClient):
             limit = cast(int, float("inf"))
 
         tasks = []
-        expressions_to_iterate = (
-            expressions if (isinstance(expressions, Sequence) and not isinstance(expressions, str)) else [expressions]
-        )
+        expressions_to_iterate = expressions if isinstance(expressions, SequenceNotStr) else [expressions]
 
         for exp in expressions_to_iterate:
             expression, short_expression = self._build_expression(exp, variables, aggregate, granularity)

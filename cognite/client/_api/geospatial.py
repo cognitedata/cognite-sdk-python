@@ -29,6 +29,7 @@ from cognite.client.data_classes.geospatial import (
 )
 from cognite.client.exceptions import CogniteConnectionError
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class GeospatialAPI(APIClient):
@@ -98,12 +99,12 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureTypeWrite,
         )
 
-    def delete_feature_types(self, external_id: str | Sequence[str], recursive: bool = False) -> None:
+    def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more feature type`
         <https://developer.cognite.com/api#tag/Geospatial/operation/GeospatialDeleteFeatureTypes>
 
         Args:
-            external_id (str | Sequence[str]): External ID or list of external ids
+            external_id (str | SequenceNotStr[str]): External ID or list of external ids
             recursive (bool): if `true` the features will also be dropped
 
         Examples:
@@ -317,13 +318,15 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureWrite,
         )
 
-    def delete_features(self, feature_type_external_id: str, external_id: str | Sequence[str] | None = None) -> None:
+    def delete_features(
+        self, feature_type_external_id: str, external_id: str | SequenceNotStr[str] | None = None
+    ) -> None:
         """`Delete one or more feature`
         <https://developer.cognite.com/api#tag/Geospatial/operation/deleteFeatures>
 
         Args:
             feature_type_external_id (str): No description.
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
 
         Examples:
 
@@ -728,7 +731,7 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
-        group_by: Sequence[str] | None = None,
+        group_by: SequenceNotStr[str] | None = None,
         order_by: Sequence[OrderSpec] | None = None,
         output: dict[str, Any] | None = None,
     ) -> FeatureAggregateList:
@@ -738,7 +741,7 @@ class GeospatialAPI(APIClient):
         Args:
             feature_type_external_id (str): the feature type to filter features from
             filter (dict[str, Any] | None): the search filter
-            group_by (Sequence[str] | None): list of properties to group by with
+            group_by (SequenceNotStr[str] | None): list of properties to group by with
             order_by (Sequence[OrderSpec] | None): the order specification
             output (dict[str, Any] | None): the aggregate output
 

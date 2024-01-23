@@ -19,6 +19,7 @@ from cognite.client.data_classes.transformations import (
 )
 from cognite.client.data_classes.transformations.common import NonceCredentials
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -150,14 +151,14 @@ class TransformationsAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
-            external_id (str | Sequence[str] | None): External ID or list of external ids.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Example:
@@ -282,14 +283,14 @@ class TransformationsAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationList:
         """`Retrieve multiple transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
             ids (Sequence[int] | None): List of ids to retrieve.
-            external_ids (Sequence[str] | None): List of external ids to retrieve.
+            external_ids (SequenceNotStr[str] | None): List of external ids to retrieve.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -311,13 +312,25 @@ class TransformationsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    @overload
+    def update(self, item: Transformation | TransformationWrite | TransformationUpdate) -> Transformation:
+        ...
+
+    @overload
+    def update(self, item: Sequence[Transformation | TransformationWrite | TransformationUpdate]) -> TransformationList:
+        ...
+
     def update(
-        self, item: Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]
+        self,
+        item: Transformation
+        | TransformationWrite
+        | TransformationUpdate
+        | Sequence[Transformation | TransformationWrite | TransformationUpdate],
     ) -> Transformation | TransformationList:
         """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
 
         Args:
-            item (Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]): Transformation(s) to update
+            item (Transformation | TransformationWrite | TransformationUpdate | Sequence[Transformation | TransformationWrite | TransformationUpdate]): Transformation(s) to update
 
         Returns:
             Transformation | TransformationList: Updated transformation(s)

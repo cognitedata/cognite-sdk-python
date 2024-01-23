@@ -17,6 +17,7 @@ from cognite.client.data_classes import (
     ThreeDModelRevisionUpdate,
     ThreeDModelRevisionWrite,
     ThreeDModelUpdate,
+    ThreeDModelWrite,
     ThreeDNode,
     ThreeDNodeList,
 )
@@ -24,6 +25,7 @@ from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_in
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -136,12 +138,12 @@ class ThreeDModelsAPI(APIClient):
         )
 
     def create(
-        self, name: str | Sequence[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
+        self, name: str | SequenceNotStr[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
     ) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
-            name (str | Sequence[str]): The name of the 3d model(s) to create.
+            name (str | SequenceNotStr[str]): The name of the 3d model(s) to create.
             data_set_id (int | None): The id of the dataset this 3D model belongs to.
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
                 Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -165,13 +167,25 @@ class ThreeDModelsAPI(APIClient):
             item_processed = [{"name": n, "dataSetId": data_set_id, "metadata": metadata} for n in name]
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
 
+    @overload
+    def update(self, item: ThreeDModel | ThreeDModelWrite) -> ThreeDModel:
+        ...
+
+    @overload
+    def update(self, item: Sequence[ThreeDModel | ThreeDModelWrite]) -> ThreeDModelList:
+        ...
+
     def update(
-        self, item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]
+        self,
+        item: ThreeDModel
+        | ThreeDModelWrite
+        | ThreeDModelUpdate
+        | Sequence[ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate],
     ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
         Args:
-            item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
+            item (ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate]): ThreeDModel(s) to update
 
         Returns:
             ThreeDModel | ThreeDModelList: Updated ThreeDModel(s)
@@ -478,7 +492,7 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        properties: dict[str, dict[str, Sequence[str]]] | None = None,
+        properties: dict[str, dict[str, SequenceNotStr[str]]] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
     ) -> ThreeDNodeList:
@@ -487,7 +501,7 @@ class ThreeDRevisionsAPI(APIClient):
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            properties (dict[str, dict[str, Sequence[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the category+property combination with a value that is contained within the corresponding list in the filter.
+            properties (dict[str, dict[str, SequenceNotStr[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the category+property combination with a value that is contained within the corresponding list in the filter.
             limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
 

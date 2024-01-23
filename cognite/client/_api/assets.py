@@ -64,6 +64,7 @@ from cognite.client.utils._validation import (
     process_asset_subtree_ids,
     process_data_set_ids,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from concurrent.futures import Future, ThreadPoolExecutor
@@ -105,12 +106,12 @@ class AssetsAPI(APIClient):
         chunk_size: int | None = None,
         name: str | None = None,
         parent_ids: Sequence[int] | None = None,
-        parent_external_ids: Sequence[str] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         metadata: dict[str, str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         source: str | None = None,
@@ -130,12 +131,12 @@ class AssetsAPI(APIClient):
             chunk_size (int | None): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str | None): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-            parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
+            parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the assets matching the specified label.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this asset
@@ -221,14 +222,14 @@ class AssetsAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
         """`Retrieve multiple assets by id. <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -549,7 +550,7 @@ class AssetsAPI(APIClient):
 
     def create_hierarchy(
         self,
-        assets: Sequence[Asset] | AssetHierarchy,
+        assets: Sequence[Asset | AssetWrite] | AssetHierarchy,
         *,
         upsert: bool = False,
         upsert_mode: Literal["patch", "replace"] = "patch",
@@ -562,7 +563,7 @@ class AssetsAPI(APIClient):
         assets, so you may pass zero, one or many (same goes for the non-root assets).
 
         Args:
-            assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
+            assets (Sequence[Asset | AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
             upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
             upsert_mode (Literal["patch", "replace"]): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
@@ -682,7 +683,7 @@ class AssetsAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         recursive: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None:
@@ -690,7 +691,7 @@ class AssetsAPI(APIClient):
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
             recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
@@ -709,19 +710,21 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Asset | AssetUpdate]) -> AssetList:
+    def update(self, item: Sequence[Asset | AssetWrite | AssetUpdate]) -> AssetList:
         ...
 
     @overload
-    def update(self, item: Asset | AssetUpdate) -> Asset:
+    def update(self, item: Asset | AssetWrite | AssetUpdate) -> Asset:
         ...
 
-    def update(self, item: Asset | AssetUpdate | Sequence[Asset | AssetUpdate]) -> Asset | AssetList:
+    def update(
+        self, item: Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]
+    ) -> Asset | AssetList:
         """`Update one or more assets <https://developer.cognite.com/api#tag/Assets/operation/updateAssets>`_
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
         Args:
-            item (Asset | AssetUpdate | Sequence[Asset | AssetUpdate]): Asset(s) to update
+            item (Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]): Asset(s) to update
 
         Returns:
             Asset | AssetList: Updated asset(s)
@@ -777,14 +780,16 @@ class AssetsAPI(APIClient):
         return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
     @overload
-    def upsert(self, item: Sequence[Asset], mode: Literal["patch", "replace"] = "patch") -> AssetList:
+    def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList:
         ...
 
     @overload
-    def upsert(self, item: Asset, mode: Literal["patch", "replace"] = "patch") -> Asset:
+    def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset:
         ...
 
-    def upsert(self, item: Asset | Sequence[Asset], mode: Literal["patch", "replace"] = "patch") -> Asset | AssetList:
+    def upsert(
+        self, item: Asset | AssetWrite | Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> Asset | AssetList:
         """Upsert assets, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
@@ -792,10 +797,8 @@ class AssetsAPI(APIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Asset | Sequence[Asset]): Asset or list of assets to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If
-                you set 'patch', the call will only update fields with non-null values (default).
-                Setting 'replace' will unset any fields that are not specified.
+            item (Asset | AssetWrite | Sequence[Asset | AssetWrite]): Asset or list of assets to upsert.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Asset | AssetList: The upserted asset(s).
@@ -993,11 +996,11 @@ class AssetsAPI(APIClient):
         self,
         name: str | None = None,
         parent_ids: Sequence[int] | None = None,
-        parent_external_ids: Sequence[str] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         metadata: dict[str, str] | None = None,
@@ -1015,11 +1018,11 @@ class AssetsAPI(APIClient):
         Args:
             name (str | None): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-            parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
+            parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the assets matching the specified label filter.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.

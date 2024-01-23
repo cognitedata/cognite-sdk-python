@@ -16,9 +16,10 @@ from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    import pandas
+    import pandas as pd
 
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
@@ -93,11 +94,11 @@ class RawDatabasesAPI(APIClient):
             items = [{"name": n} for n in name]
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: str | Sequence[str], recursive: bool = False) -> None:
+    def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
-            name (str | Sequence[str]): A db name or list of db names to delete.
+            name (str | SequenceNotStr[str]): A db name or list of db names to delete.
             recursive (bool): Recursively delete all tables in the database(s).
 
         Examples:
@@ -223,12 +224,12 @@ class RawTablesAPI(APIClient):
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: str | Sequence[str]) -> None:
+    def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
         """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
 
         Args:
             db_name (str): Database to delete tables from.
-            name (str | Sequence[str]): A table name or list of table names to delete.
+            name (str | SequenceNotStr[str]): A table name or list of table names to delete.
 
         Examples:
 
@@ -383,7 +384,8 @@ class RawRowsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RowWrite
                 >>> c = CogniteClient()
-                >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}), RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
+                >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
+                ...         RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
                 >>> c.raw.rows.insert("db1", "table1", rows)
         """
         chunks = self._process_row_input(row)
@@ -401,15 +403,17 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
-    def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any, ensure_parent: bool = False) -> None:
+    def insert_dataframe(
+        self, db_name: str, table_name: str, dataframe: pd.DataFrame, ensure_parent: bool = False
+    ) -> None:
         """`Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
 
-        Use index as rowkeys.
+        Uses index for row keys.
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            dataframe (Any): The dataframe to insert. Index will be used as rowkeys.
+            dataframe (pd.DataFrame): The dataframe to insert. Index will be used as row keys.
             ensure_parent (bool): Create database/table if they don't already exist.
 
         Examples:
@@ -423,8 +427,9 @@ class RawRowsAPI(APIClient):
                 >>> df = pd.DataFrame(data={"a": 1, "b": 2}, index=["r1", "r2", "r3"])
                 >>> res = c.raw.rows.insert_dataframe("db1", "table1", df)
         """
-        df_dict = dataframe.to_dict(orient="index")
-        rows = [RowWrite(key=key, columns=cols) for key, cols in df_dict.items()]
+        if not dataframe.index.is_unique:
+            raise ValueError("Dataframe index is not unique (used for the row keys)")
+        rows = dataframe.to_dict(orient="index")
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     def _process_row_input(self, row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict) -> list[list[dict]]:
@@ -447,13 +452,13 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: str | Sequence[str]) -> None:
+    def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
         """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            key (str | Sequence[str]): The key(s) of the row(s) to delete.
+            key (str | SequenceNotStr[str]): The key(s) of the row(s) to delete.
 
         Examples:
 
@@ -526,7 +531,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> pandas.DataFrame:
+    ) -> pd.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
         Rowkeys are used as the index.
@@ -540,7 +545,7 @@ class RawRowsAPI(APIClient):
             limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            pandas.DataFrame: The requested rows in a pandas dataframe.
+            pd.DataFrame: The requested rows in a pandas dataframe.
 
         Examples:
 
