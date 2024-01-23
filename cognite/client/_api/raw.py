@@ -19,7 +19,7 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    import pandas
+    import pandas as pd
 
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
@@ -403,15 +403,17 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
-    def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any, ensure_parent: bool = False) -> None:
+    def insert_dataframe(
+        self, db_name: str, table_name: str, dataframe: pd.DataFrame, ensure_parent: bool = False
+    ) -> None:
         """`Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
 
-        Use index as rowkeys.
+        Uses index for row keys.
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            dataframe (Any): The dataframe to insert. Index will be used as rowkeys.
+            dataframe (pd.DataFrame): The dataframe to insert. Index will be used as row keys.
             ensure_parent (bool): Create database/table if they don't already exist.
 
         Examples:
@@ -425,8 +427,9 @@ class RawRowsAPI(APIClient):
                 >>> df = pd.DataFrame(data={"a": 1, "b": 2}, index=["r1", "r2", "r3"])
                 >>> res = c.raw.rows.insert_dataframe("db1", "table1", df)
         """
-        df_dict = dataframe.to_dict(orient="index")
-        rows = [RowWrite(key=key, columns=cols) for key, cols in df_dict.items()]
+        if not dataframe.index.is_unique:
+            raise ValueError("Dataframe index is not unique (used for the row keys)")
+        rows = dataframe.to_dict(orient="index")
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     def _process_row_input(self, row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict) -> list[list[dict]]:
@@ -528,7 +531,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> pandas.DataFrame:
+    ) -> pd.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
         Rowkeys are used as the index.
@@ -542,7 +545,7 @@ class RawRowsAPI(APIClient):
             limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            pandas.DataFrame: The requested rows in a pandas dataframe.
+            pd.DataFrame: The requested rows in a pandas dataframe.
 
         Examples:
 

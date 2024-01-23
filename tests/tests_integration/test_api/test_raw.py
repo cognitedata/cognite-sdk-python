@@ -122,3 +122,12 @@ class TestRawRowsAPI:
 
         pd.testing.assert_frame_equal(df.sort_index(), retrieved_df.sort_index())
         assert retrieved_df.to_dict() == data
+
+    @pytest.mark.dsl
+    def test_insert_dataframe__index_has_duplicates(self, cognite_client):
+        import pandas as pd
+
+        df = pd.DataFrame({"aa": range(4), "bb": "value"}, index=list("abca"))
+
+        with pytest.raises(ValueError, match="^Dataframe index is not unique"):
+            cognite_client.raw.rows.insert_dataframe("db", "table", df)
