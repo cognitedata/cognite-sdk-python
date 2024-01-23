@@ -429,8 +429,7 @@ class RawRowsAPI(APIClient):
         """
         if not dataframe.index.is_unique:
             raise ValueError("Dataframe index is not unique (used for the row keys)")
-        df_dict = dataframe.to_dict(orient="index")
-        rows = [RowWrite(key=key, columns=cols) for key, cols in df_dict.items()]
+        rows = dataframe.to_dict(orient="index")
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     def _process_row_input(self, row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict) -> list[list[dict]]:
