@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence, cast
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     ClientCredentials,
     Function,
@@ -594,15 +594,10 @@ def _check_imports(root_path: str, module_path: str) -> None:
         args=(queue, root_path, module_path),
         daemon=True,
     )
-    try:
-        validator.start()
-    except OSError:
-        # Handle Pyodide/WASM exception: 'OSError: [Errno 52] Function not implemented'
-        _run_import_check_backup(root_path, module_path)
-    else:
-        validator.join()
-        if (error := queue.get_nowait()) is not None:
-            raise error
+    validator.start()
+    validator.join()
+    if (error := queue.get_nowait()) is not None:
+        raise error
 
 
 def validate_function_folder(root_path: str, function_path: str, skip_folder_validation: bool) -> None:
@@ -620,7 +615,12 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
 
     if not skip_folder_validation:
         module_path = ".".join(Path(function_path).with_suffix("").parts)
-        _check_imports(root_path, module_path)
+        if not _RUNNING_IN_BROWSER:
+            # We do an actual import to verify the files (this is done in a separate process)
+            _check_imports(root_path, module_path)
+        else:
+            # Backup method for Pyodide/WASM envs: 'multiprocessing' not available due to browser limitations (ModuleNotFoundError)
+            _run_import_check_backup(root_path, module_path)
 
 
 def _validate_function_handle(handle_obj: Callable | ast.FunctionDef) -> None:
