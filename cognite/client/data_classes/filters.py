@@ -654,21 +654,16 @@ class Search(FilterWithPropertyAndValue):
 # ######################################################### #
 
 
-class SpaceFilter:
-    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node"):
-        self._instance_type = instance_type
-        self._spaces = [space] if isinstance(space, str) else list(space)
+class SpaceFilter(FilterWithPropertyAndValueList):
+    _filter_name = In._filter_name
 
-    def dump(self, camel_case_property: bool = False) -> dict[str, list[str]]:
-        return In((self._instance_type, "space"), self._spaces).dump(camel_case_property=camel_case_property)
+    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node"):
+        space_list = [space] if isinstance(space, str) else list(space)
+        super().__init__(property=(instance_type, "space"), values=space_list)
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> NoReturn:
-        raise NotImplementedError("Custom filters can not be loaded")
+        raise NotImplementedError("Custom filter 'SpaceFilter' can not be loaded")
 
-    def _involved_filter_types(self) -> set[type[In]]:
+    def _involved_filter_types(self) -> set[type[Filter]]:
         return {In}
-
-
-# Custom filters can not be loaded via Filter.load, but they still need to pass isinstance checks:
-Filter.register(SpaceFilter)
