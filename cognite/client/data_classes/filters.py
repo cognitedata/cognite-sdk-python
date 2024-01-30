@@ -659,7 +659,7 @@ class SpaceFilter(FilterWithPropertyAndValueList):
 
     def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node"):
         space_list = [space] if isinstance(space, str) else list(space)
-        super().__init__(property=(instance_type, "space"), values=space_list)
+        super().__init__(property=[instance_type, "space"], values=space_list)
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> NoReturn:

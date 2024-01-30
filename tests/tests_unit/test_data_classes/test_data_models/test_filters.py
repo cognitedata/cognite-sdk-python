@@ -213,7 +213,7 @@ class TestSpaceFilter:
         self, inst_type: Literal["node", "edge"], space: str | list[str], expected_spaces: list[str]
     ) -> None:
         space_filter = f.SpaceFilter(space, inst_type)
-        expected = {"in": {"property": (inst_type, "space"), "values": expected_spaces}}
+        expected = {"in": {"property": [inst_type, "space"], "values": expected_spaces}}
         assert expected == space_filter.dump()
 
     def test_space_filter_passes_isinstance_checks(self) -> None:
