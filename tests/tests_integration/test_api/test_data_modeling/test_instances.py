@@ -121,10 +121,18 @@ class TestInstancesAPI:
 
         assert all(cast(int, person.properties[view_id]["birthYear"]) < 1950 for person in person_nodes)
 
-    def test_list_space_filtering(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+    @pytest.mark.parametrize("space_exists", (True, False))
+    def test_list_space_filtering(
+        self, cognite_client: CogniteClient, integration_test_space: Space, space_exists: bool
+    ) -> None:
         space = integration_test_space.space
+        if not space_exists:
+            space += "doesntexist" * 2
         nodes = cognite_client.data_modeling.instances.list(space=space, instance_type="node", limit=None)
-        assert len(nodes) > 0
+        if space_exists:
+            assert len(nodes) > 0
+        else:
+            assert len(nodes) == 0
         assert all(node.space == space for node in nodes)
 
     def test_list_spaces_filtering(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
