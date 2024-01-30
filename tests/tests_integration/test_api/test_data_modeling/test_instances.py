@@ -121,6 +121,33 @@ class TestInstancesAPI:
 
         assert all(cast(int, person.properties[view_id]["birthYear"]) < 1950 for person in person_nodes)
 
+    def test_list_space_filtering(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+        space = integration_test_space.space
+        nodes = cognite_client.data_modeling.instances.list(space=space, instance_type="node", limit=None)
+        assert len(nodes) > 0
+        assert all(node.space == space for node in nodes)
+
+    def test_list_spaces_filtering(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+        space = integration_test_space.space
+        nodes = cognite_client.data_modeling.instances.list(
+            space=["foo-doesnt-exists", space, "bar-doesnt-exists"], instance_type="node", limit=None
+        )
+        assert len(nodes) > 0
+        assert all(node.space == space for node in nodes)
+
+    def test_list_space_and_person_filtering(
+        self, cognite_client: CogniteClient, person_view: View, integration_test_space: Space
+    ) -> None:
+        space = integration_test_space.space
+        view_id = person_view.as_id()
+        born_before_1950 = filters.Range(person_view.as_property_ref("birthYear"), lt=1950)
+        person_nodes = cognite_client.data_modeling.instances.list(
+            instance_type="node", sources=view_id, space=space, filter=born_before_1950, limit=None
+        )
+        assert len(person_nodes) > 0
+        assert all(node.space == space for node in person_nodes)
+        assert all(cast(int, person.properties[view_id]["birthYear"]) < 1950 for person in person_nodes)
+
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
         new_node = NodeApply(
