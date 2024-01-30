@@ -21,6 +21,7 @@ Changes are grouped as follows
 ### Added
 - When listing instances, a new `space` parameter has been added; you may pass either a single space identifier (or a list of several).
   Note that this is just for convenience, using `filter` still works (and is necessary for more complex queries).
+- New convenience filter, `SpaceFilter`, which makes filtering on space simpler.
 
 ## [7.15.1] - 2024-01-23
 ### Fixed
