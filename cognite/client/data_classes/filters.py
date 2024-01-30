@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Mapping, Sequence, Tuple, Union, cast, final
+from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequence, Tuple, Union, cast, final
 
 from typing_extensions import TypeAlias
 
@@ -302,9 +302,6 @@ class Not(CompoundFilter):
     """
 
     _filter_name = "not"
-
-    def __init__(self, filter: Filter) -> None:
-        super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return self._filters[0].dump(camel_case_property)
@@ -650,3 +647,23 @@ class InAssetSubtree(FilterWithPropertyAndValue):
 @final
 class Search(FilterWithPropertyAndValue):
     _filter_name = "search"
+
+
+# ######################################################### #
+# Custom filters below (custom meaning 'no API equivalent') #
+# ######################################################### #
+
+
+class SpaceFilter(FilterWithPropertyAndValueList):
+    _filter_name = In._filter_name
+
+    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node"):
+        space_list = [space] if isinstance(space, str) else list(space)
+        super().__init__(property=[instance_type, "space"], values=space_list)
+
+    @classmethod
+    def load(cls, filter_: dict[str, Any]) -> NoReturn:
+        raise NotImplementedError("Custom filter 'SpaceFilter' can not be loaded")
+
+    def _involved_filter_types(self) -> set[type[Filter]]:
+        return {In}
