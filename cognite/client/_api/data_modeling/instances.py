@@ -1043,6 +1043,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -1055,6 +1056,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -1066,6 +1068,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -1076,6 +1079,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
+            space (str | Sequence[str] | None): Only return instances in the given space (or list of spaces).
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
@@ -1091,21 +1095,28 @@ class InstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> instance_list = c.data_modeling.instances.list(limit=5)
 
+            List some instances in the space 'my-space':
+
+                >>> instance_list = c.data_modeling.instances.list(space="my-space")
+
             Iterate over instances:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> for instance in c.data_modeling.instances:
                 ...     instance # do something with the instance
 
             Iterate over chunks of instances to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
         self._validate_filter(filter)
+        if space is not None:
+            space_filter = filters.In((instance_type, "space"), [space] if isinstance(space, str) else list(space))
+            if filter is None:
+                filter = space_filter
+            else:
+                filter = filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)
+
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
