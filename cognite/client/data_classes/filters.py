@@ -337,7 +337,7 @@ class Nested(Filter):
         filter (Filter): The filter to apply.
 
     Example:
-    Assume you have two Views, viewA and viewB. viewA has a direct relation to viewB called "viewBID", 
+    Assume you have two Views, viewA and viewB. viewA has a direct relation to viewB called "viewBID",
     and we want to filter the nodes on viewA based on the property "viewBProperty" on viewB.
 
         A filter using a tuple property reference:
@@ -355,7 +355,7 @@ class Nested(Filter):
             ...     scope=viewA.as_property_ref("viewBID"),
             ...     filter=Equals(viewB.as_property_ref("viewBProperty"), 42)
             ... )
-            
+
     """
 
     _filter_name = "nested"
@@ -403,7 +403,7 @@ class HasData(Filter):
             >>> filter = HasData(containers=[("somespace", "container_external_id")])
 
         Filter on having data in a specific view using ViewId:
-            
+
             >>> from cognite.client.data_classes.filters import HasData
             >>> filter = HasData(views=[ViewId(space="somespace", external_id="view_external_id", version="view_version")])
     """
