@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.16.0] - 2024-01-30
+### Added
+- When listing instances, a new `space` parameter has been added; you may pass either a single space identifier (or a list of several).
+  Note that this is just for convenience, using `filter` still works (and is necessary for more complex queries).
+
 ## [7.15.1] - 2024-01-23
 ### Fixed
-* When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will no longer raise ValueError, but drop the empty properties row/column.
+- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will no longer raise ValueError, but drop the empty properties row/column.
 
 ## [7.15.0] - 2024-01-22
 ### Improved
