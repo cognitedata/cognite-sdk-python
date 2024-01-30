@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Mapping, Sequence, Tuple, Union, cast, final
+from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequence, Tuple, Union, cast, final
 
 from typing_extensions import TypeAlias
 
@@ -302,9 +302,6 @@ class Not(CompoundFilter):
     """
 
     _filter_name = "not"
-
-    def __init__(self, filter: Filter) -> None:
-        super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return self._filters[0].dump(camel_case_property)
@@ -650,3 +647,28 @@ class InAssetSubtree(FilterWithPropertyAndValue):
 @final
 class Search(FilterWithPropertyAndValue):
     _filter_name = "search"
+
+
+# ######################################################### #
+# Custom filters below (custom meaning 'no API equivalent') #
+# ######################################################### #
+
+
+class SpaceFilter:
+    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node"):
+        self._instance_type = instance_type
+        self._spaces = [space] if isinstance(space, str) else list(space)
+
+    def dump(self, camel_case_property: bool = False) -> dict[str, list[str]]:
+        return In((self._instance_type, "space"), self._spaces).dump(camel_case_property=camel_case_property)
+
+    @classmethod
+    def load(cls, filter_: dict[str, Any]) -> NoReturn:
+        raise NotImplementedError("Custom filters can not be loaded")
+
+    def _involved_filter_types(self) -> set[type[In]]:
+        return {In}
+
+
+# Custom filters can not be loaded via Filter.load, but they still need to pass isinstance checks:
+Filter.register(SpaceFilter)
