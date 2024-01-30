@@ -1172,7 +1172,7 @@ class InstancesAPI(APIClient):
         if space is None:
             return filter
 
-        space_filter = filters.In((instance_type, "space"), [space] if isinstance(space, str) else list(space))
+        space_filter = filters.SpaceFilter(space, instance_type)
         if filter is None:
             return space_filter
         return filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)
