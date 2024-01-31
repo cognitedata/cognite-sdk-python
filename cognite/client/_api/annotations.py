@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Literal, Sequence, overload
+from typing import Any, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -9,6 +9,7 @@ from cognite.client.data_classes import Annotation, AnnotationFilter, Annotation
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.annotations import AnnotationCore, AnnotationReverseLookupFilter, AnnotationWrite
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import assert_type
@@ -187,8 +188,11 @@ class AnnotationsAPI(APIClient):
     def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
+        Note:
+            Passing a filter with both 'annotated_resource_type' and 'annotated_resource_ids' is always required.
+
         Args:
-            filter (AnnotationFilter | dict): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
+            filter (AnnotationFilter | dict): Return annotations with parameter values that match what is specified.
             limit (int | None): Maximum number of annotations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -210,7 +214,24 @@ class AnnotationsAPI(APIClient):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
             filter = convert_all_keys_to_camel_case(filter)
-        if "annotatedResourceIds" in filter:
-            filter["annotatedResourceIds"] = list(map(convert_all_keys_to_camel_case, filter["annotatedResourceIds"]))
 
-        return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
+        if "annotatedResourceIds" not in filter or "annotatedResourceType" not in filter:
+            raise ValueError("Both 'annotated_resource_type' and 'annotated_resource_ids' are required in filter!")
+        res_ids = list(map(convert_all_keys_to_camel_case, filter.pop("annotatedResourceIds")))
+
+        remaining_limit = limit
+        is_finite_limit = not is_unlimited(limit)
+
+        all_annots = AnnotationList([], cognite_client=self._cognite_client)
+        for id_chunk in split_into_chunks(res_ids, 1000):
+            filter["annotatedResourceIds"] = id_chunk
+            chunk_result = self._list(
+                list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=remaining_limit, filter=filter
+            )
+            all_annots.extend(chunk_result)
+
+            if is_finite_limit:
+                remaining_limit = cast(int, limit) - len(all_annots)
+                if remaining_limit == 0:
+                    break
+        return all_annots
