@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.17.0] - 2024-02-01
+### Fixed
+- Calls to `AnnotationsAPI.[list|retrieve|retrieve_multiple]` are now retried automatically.
+### Improved
+- Calls to `AnnotationsAPI.list` with more than 1000 `annotated_resource_ids` are now batched automatically for the user.
+  Previously these would raise an API error.
+
 ## [7.16.0] - 2024-01-30
 ### Added
 - When listing instances (and when using `search`, `aggregate` and `histogram`), a new `space` parameter has been added;
