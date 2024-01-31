@@ -1249,6 +1249,8 @@ class TestRetryableEndpoints:
                     (method, "https://api.cognitedata.com/api/v1/projects/bla", True)
                     for method in {"GET", "PUT", "PATCH"}
                 ),
+                #### Annotations
+                ("POST", "https://api.c.com/api/v1/projects/bla/annotations/list", True),
                 #### Files
                 ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
                 #### Timeseries
