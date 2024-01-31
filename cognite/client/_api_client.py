@@ -93,6 +93,7 @@ class APIClient:
             "/sessions/revoke",
             "/models/.*",
             "/units/.*",
+            "/annotations/(list|byids)",
         )
     )
 
@@ -271,9 +272,7 @@ class APIClient:
     @classmethod
     @functools.lru_cache(64)
     def _url_is_retryable(cls, url: str) -> bool:
-        valid_url_pattern = (
-            r"^(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-        )
+        valid_url_pattern = r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
         match = re.match(valid_url_pattern, url)
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
