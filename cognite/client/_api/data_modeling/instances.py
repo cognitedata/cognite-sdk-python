@@ -446,7 +446,7 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Subscrie to a given query and print the changed data:
+            Subscribe to a given query and print the changed data:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import Query, QueryResult, NodeResultSetExpression, Select, SourceSelector
