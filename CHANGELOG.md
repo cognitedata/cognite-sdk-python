@@ -17,9 +17,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.17.0] - 2024-02-01
+## [7.18.0] - 2024-02-01
 ### Added
 - Support for `target_unit` and `target_unit_system` in synthetic time series.
+
+## [7.17.0] - 2024-02-01
+### Fixed
+- Calls to `AnnotationsAPI.[list|retrieve|retrieve_multiple|reverse_lookup]` are now retried automatically.
+- Calls to `AnnotationsAPI.reverse_lookup` now also accept the standard values (`-1, inf`) to indicate 'no limit'.
+### Improved
+- Calls to `AnnotationsAPI.list` with more than 1000 `annotated_resource_ids` are now batched automatically for the user.
+  Previously these would raise an API error.
 
 ## [7.16.0] - 2024-01-30
 ### Added
