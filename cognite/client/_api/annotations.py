@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Literal, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -10,13 +10,24 @@ from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.annotations import AnnotationCore, AnnotationReverseLookupFilter, AnnotationWrite
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import assert_type
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._reverse_lookup_warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="beta", feature_name="Annotation reverse lookup"
+        )
 
     @overload
     def create(self, annotations: Annotation | AnnotationWrite) -> Annotation:
@@ -183,8 +194,8 @@ class AnnotationsAPI(APIClient):
                 >>> flt = AnnotationReverseLookupFilter(annotated_resource_type="file")
                 >>> res = client.annotations.reverse_lookup(flt, limit=100)
         """
+        self._reverse_lookup_warning.warn()
         assert_type(filter, "filter", types=[AnnotationReverseLookupFilter], allow_none=False)
-        assert_type(limit, "limit", [int, type(None)], allow_none=True)
 
         return self._list(
             list_cls=ResourceReferenceList,
@@ -193,6 +204,7 @@ class AnnotationsAPI(APIClient):
             limit=limit,
             filter=filter.dump(camel_case=True),
             url_path=self._RESOURCE_PATH + "/reverselookup",
+            api_subversion="beta",
         )
 
     def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
