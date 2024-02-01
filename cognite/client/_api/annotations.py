@@ -172,6 +172,16 @@ class AnnotationsAPI(APIClient):
 
         Returns:
             ResourceReferenceList: List of resource references
+
+        Examples:
+
+            Retrieve the first 100 ids of annotated resources mathing the 'file' resource type:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AnnotationReverseLookupFilter
+                >>> client = CogniteClient()
+                >>> flt = AnnotationReverseLookupFilter(annotated_resource_type="file")
+                >>> res = client.annotations.reverse_lookup(flt, limit=100)
         """
         assert_type(filter, "filter", types=[AnnotationReverseLookupFilter], allow_none=False)
         assert_type(limit, "limit", [int, type(None)], allow_none=True)
