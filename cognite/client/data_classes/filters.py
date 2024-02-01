@@ -761,6 +761,20 @@ class Search(FilterWithPropertyAndValue):
 
 
 class SpaceFilter(FilterWithPropertyAndValueList):
+    """Filters results based on the space.
+
+    Args:
+        space (str | Sequence[str]): The space to filter on.
+        instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
+
+    Example:
+
+        Filter than can be used to retrieve items where the space is either "space1" or "space2":
+
+            >>> from cognite.client.data_classes.filters import SpaceFilter
+            >>> filter = SpaceFilter(space=["space1", "space2"])
+
+    """    
     _filter_name = In._filter_name
 
     def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node"):
