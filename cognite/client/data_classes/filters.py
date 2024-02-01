@@ -774,10 +774,11 @@ class SpaceFilter(FilterWithPropertyAndValueList):
             >>> from cognite.client.data_classes.filters import SpaceFilter
             >>> filter = SpaceFilter(space=["space1", "space2"])
 
-    """    
+    """
+
     _filter_name = In._filter_name
 
-    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node"):
+    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node") -> None:
         space_list = [space] if isinstance(space, str) else list(space)
         super().__init__(property=[instance_type, "space"], values=space_list)
 
