@@ -337,14 +337,25 @@ class Nested(Filter):
         filter (Filter): The filter to apply.
 
     Example:
+    Assume you have two Views, viewA and viewB. viewA has a direct relation to viewB called "viewBID", 
+    and we want to filter the nodes on viewA based on the property "viewBProperty" on viewB.
 
-        Filter on a related node's property:
+        A filter using a tuple property reference:
 
             >>> from cognite.client.data_classes.filters import Nested, Equals
             >>> filter = Nested(
-            ...     ("somespace", "somecontainer", "related"),
-            ...     Equals(("somespace", "somecontainer", "someProperty"), 42)
+            ...     scope=('space', 'viewA_external_id/view_version', 'viewBID'),
+            ...     filter=Equals(('space', 'viewB_external_id/view_version', 'viewBProperty'), 42)
             ... )
+
+        Composing a property reference using the View:as_property_ref method:
+
+            >>> from cognite.client.data_classes.filters import Nested, Equals
+            >>> filter = Nested(
+            ...     scope=viewA.as_property_ref("viewBID"),
+            ...     filter=Equals(viewB.as_property_ref("viewBProperty"), 42)
+            ... )
+            
     """
 
     _filter_name = "nested"
@@ -379,16 +390,22 @@ class MatchAll(Filter):
 class HasData(Filter):
     """Return only instances that have data in the provided containers/views.
 
+
     Args:
         containers (Sequence[tuple[str, str] | ContainerId] | None): Containers to check for data.
         views (Sequence[tuple[str, str, str] | ViewId] | None): Views to check for data.
 
     Example:
 
-        Filter on having data in a specific container:
+        Filter on having data in a specific container using tuple reference:
 
             >>> from cognite.client.data_classes.filters import HasData
-            >>> filter = HasData(containers=[("somespace", "somecontainer")])
+            >>> filter = HasData(containers=[("somespace", "container_external_id")])
+
+        Filter on having data in a specific view using ViewId:
+            
+            >>> from cognite.client.data_classes.filters import HasData
+            >>> filter = HasData(views=[ViewId(space="somespace", external_id="view_external_id", version="view_version")])
     """
 
     _filter_name = "hasData"
