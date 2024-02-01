@@ -171,6 +171,14 @@ The `GeoJSONWithin` filter checks if one geometric shape is within another.
 
 Data Modeling-Specific Filters
 ------------------------------
+SpaceFilter
+^^^^^^^^^^^^^^
+The `SpaceFilter` filters instances from one or more specific space(s).
+
+.. autoclass:: cognite.client.data_classes.filters.SpaceFilter
+    :members:
+    :member-order: bysource
+
 HasData
 ^^^^^^^
 The `HasData` filter checks if an instance has data for a given property.
