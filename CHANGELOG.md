@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.17.0] - 2024-02-01
+### Added
+- Support for `target_unit` and `target_unit_system` in synthetic time series.
+
 ## [7.16.0] - 2024-01-30
 ### Added
 - When listing instances (and when using `search`, `aggregate` and `histogram`), a new `space` parameter has been added;
