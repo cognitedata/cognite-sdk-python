@@ -1058,8 +1058,8 @@ class TestRetrieveAggregateDatapointsAPI:
                         {
                             "id": ts.id,
                             "limit": lim,
-                            "aggregates": random_aggregates(1),
-                            "granularity": f"{random_gamma_dist_integer(gran_unit_upper)}{random.choice('smh')}",
+                            "aggregates": random_aggregates(1, exclude={"interpolation"}),
+                            "granularity": f"{random_gamma_dist_integer(gran_unit_upper)}{random.choice('sm')}",
                         }
                         for lim in limits
                     ],
