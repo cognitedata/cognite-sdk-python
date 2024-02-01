@@ -93,7 +93,7 @@ class APIClient:
             "/sessions/revoke",
             "/models/.*",
             "/units/.*",
-            "/annotations/(list|byids)",
+            "/annotations/(list|byids|reverselookup)",
         )
     )
 

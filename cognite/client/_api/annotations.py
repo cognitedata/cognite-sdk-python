@@ -168,7 +168,7 @@ class AnnotationsAPI(APIClient):
 
         Args:
             filter (AnnotationReverseLookupFilter): Filter to apply
-            limit (int | None): Maximum number of results to return. Defaults to None.
+            limit (int | None): Maximum number of results to return. Defaults to None (all).
 
         Returns:
             ResourceReferenceList: List of resource references

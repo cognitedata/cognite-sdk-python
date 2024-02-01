@@ -1254,6 +1254,7 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/suggest", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/reverselookup", True),
                 #### Files
                 ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
                 #### Timeseries
