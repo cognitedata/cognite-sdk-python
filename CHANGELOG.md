@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.17.1] - 2024-02-02
+### Fixed
+- An (extreme) edge case where an empty, unneccesary API request for datapoints would be sent leading to a `CogniteAPIError`.
+
 ## [7.17.0] - 2024-02-01
 ### Fixed
 - Calls to `AnnotationsAPI.[list|retrieve|retrieve_multiple|reverse_lookup]` are now retried automatically.
