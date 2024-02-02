@@ -1115,12 +1115,6 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            List instances and limit to 5:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> instance_list = c.data_modeling.instances.list(limit=5)
-
             List instances and sort by some property:
 
                 >>> from cognite.client import CogniteClient
@@ -1129,7 +1123,15 @@ class InstancesAPI(APIClient):
                 >>> property_sort = InstanceSort(property=('space', 'view_external_id/view_version', 'some_property'), direction="descending", nulls_first=True)
                 >>> instance_list = c.data_modeling.instances.list(sort=property_sort)
 
-            Iterate over instances:
+            List instances and limit to 5:
+
+                >>> instance_list = c.data_modeling.instances.list(limit=5)
+
+            List some instances in the space 'my-space':
+
+                >>> instance_list = c.data_modeling.instances.list(space="my-space")
+
+            Iterate over instances (note: returns nodes):
 
                 >>> for instance in c.data_modeling.instances:
                 ...     instance # do something with the instance
