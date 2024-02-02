@@ -77,7 +77,10 @@ def apis_that_should_not_have_post_retry_rule():
 
 
 @pytest.mark.parametrize(
-    "api", set(api._RESOURCE_PATH.split("/")[1] for api in all_subclasses(APIClient) if hasattr(api, "_RESOURCE_PATH"))
+    "api",
+    sorted(  # why sorted? xdist needs order to be consistent between test workers
+        set(api._RESOURCE_PATH.split("/")[1] for api in all_subclasses(APIClient) if hasattr(api, "_RESOURCE_PATH"))
+    ),
 )
 def test_all_base_api_paths_have_retry_or_specifically_no_set(
     api, apis_with_post_method_retry_set, apis_that_should_not_have_post_retry_rule
