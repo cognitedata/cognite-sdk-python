@@ -211,16 +211,20 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
 
 
 @pytest.fixture(scope="module", autouse=True)
-def make_dps_tests_reproducible(testrun_uid):
+def make_dps_tests_reproducible(testrun_uid, request):
     # To avoid the `xdist` error "different tests were collected between...", we must make sure all parallel test-runners
     # generate the same tests (randomized test data) so we must set a fixed seed... but we also want different random
     # test data over time (...thats the whole point), so we set seed based on a unique run ID created by pytest-xdist:
-    print(  # noqa: T201
-        f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints test failed - and you weren't "
-        "the cause, please create a new (GitHub) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
-    )
     with rng_context(testrun_uid):  # Internal state of `random` will be reset after exiting contextmanager
         yield
+
+    # To make this show up in the logs, it must be run here as part of teardown (post-yield):
+    if request.session.testsfailed:
+        print(  # noqa: T201
+            f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints "
+            "test failed - and you weren't the cause, please create a new (GitHub) issue: "
+            "https://github.com/cognitedata/cognite-sdk-python/issues"
+        )
 
 
 # We also have some test data that depend on random input:
