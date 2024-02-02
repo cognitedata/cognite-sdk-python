@@ -20,6 +20,7 @@ Changes are grouped as follows
 ## [7.17.1] - 2024-02-02
 ### Fixed
 - An (extreme) edge case where an empty, unneccesary API request for datapoints would be sent leading to a `CogniteAPIError`.
+- Certain granularity inputs (when using the `DatapointsAPI`) no longer causes a `ValueError` to be raised with confusing/wrong wording.
 
 ## [7.17.0] - 2024-02-01
 ### Fixed
