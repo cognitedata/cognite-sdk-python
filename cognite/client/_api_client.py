@@ -94,6 +94,9 @@ class APIClient:
             "/models/.*",
             "/units/.*",
             "/annotations/(list|byids|reverselookup)",
+            "/functions/(list|byids|status)",
+            "/functions/schedules/(list|byids)",
+            r"/functions/\d+/calls/(list|byids)",
         )
     )
 

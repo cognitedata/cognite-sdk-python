@@ -204,7 +204,6 @@ class FunctionsAPI(APIClient):
         else:
             raise OSError("Could not retrieve file from files API")
 
-        url = "/functions"
         function: dict[str, Any] = {
             "name": name,
             "description": description,
@@ -229,7 +228,7 @@ class FunctionsAPI(APIClient):
         if index_url:
             function["indexUrl"] = index_url
 
-        res = self._post(url, json={"items": [function]})
+        res = self._post(self._RESOURCE_PATH, json={"items": [function]})
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(

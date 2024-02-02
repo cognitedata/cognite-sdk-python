@@ -17,9 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.18.1] - 2024-02-02
+### Fixed
+- Calls to `FunctionsAPI.[list|retrieve|retrieve_multiple|activate]` are now retried automatically.
+- Calls to `FunctionCallsAPI.[list|retrieve]` are now retried automatically.
+- Calls to `FunctionSchedulesAPI.[list|retrieve]` are now retried automatically.
+
 ## [7.19.0] - 2024-02-12
 ### Added
-- Helper methods to `View`, `ViewApply`, `ViewList` and `ViewApplyList` `referenced_containers` which returns the 
+- Helper methods to `View`, `ViewApply`, `ViewList` and `ViewApplyList` `referenced_containers` which returns the
   containers referenced by in the view(s).
 
 ## [7.18.0] - 2024-02-08

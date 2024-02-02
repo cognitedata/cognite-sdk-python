@@ -87,6 +87,7 @@ def test_all_base_api_paths_have_retry_or_specifically_no_set(
     # Does this new API have POST methods that should be retried automatically?
     # if yes -> look up 'APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS' and add a regex for the url path
     # if no  -> add the url base path to the "okey-without-list" above: 'apis_that_should_not_have_post_retry_rule'
+    # ...but always(!): add tests to TestRetryableEndpoints!
     has_retry = api in apis_with_post_method_retry_set
     no_retry_needed = api in apis_that_should_not_have_post_retry_rule
     assert has_retry or no_retry_needed

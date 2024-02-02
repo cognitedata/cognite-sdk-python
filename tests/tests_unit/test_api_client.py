@@ -1255,6 +1255,17 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/byids", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/reverselookup", True),
+                ### Functions
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/status", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/delete", False),
+                ### Function calls
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/call", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/calls/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/xyz/calls/byids", False),
+                ### Function schedules
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/delete", False),
                 #### Files
                 ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
                 #### Timeseries
