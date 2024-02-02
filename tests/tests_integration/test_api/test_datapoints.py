@@ -951,15 +951,39 @@ class TestRetrieveAggregateDatapointsAPI:
                 pd.testing.assert_frame_equal(dps1.to_pandas(), dps2.to_pandas())
 
     @pytest.mark.parametrize(
-        "max_workers, ts_idx, granularity, exp_len, start, end, exlude_step_interp",
+        "max_workers, ts_idx, granularity, exp_len, start, end, exclude_aggregate",
         (
-            (1, 105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), False),
-            (1, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
-            (8, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
-            (2, 107, "1s", 4, ts_to_ms("1969-12-31 23:59:58.123"), ts_to_ms("2049-01-01 00:00:01.500"), True),
-            (5, 113, "11h", 32_288, ts_to_ms("1960-01-02 03:04:05.060"), ts_to_ms("2000-07-08 09:10:11.121"), True),
-            (3, 115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), False),
-            (20, 115, "12h", 5_000, ts_to_ms("1990-01-01"), ts_to_ms("2013-09-09 00:00:00.001"), True),
+            (1, 105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), {}),
+            (1, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), {}),
+            (8, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), {}),
+            (
+                2,
+                107,
+                "1s",
+                4,
+                ts_to_ms("1969-12-31 23:59:58.123"),
+                ts_to_ms("2049-01-01 00:00:01.500"),
+                {"interpolation", "step_interpolation"},
+            ),
+            (
+                5,
+                113,
+                "11h",
+                32_288,
+                ts_to_ms("1960-01-02 03:04:05.060"),
+                ts_to_ms("2000-07-08 09:10:11.121"),
+                {"interpolation"},
+            ),
+            (3, 115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), {}),
+            (
+                20,
+                115,
+                "12h",
+                5_000,
+                ts_to_ms("1990-01-01"),
+                ts_to_ms("2013-09-09 00:00:00.001"),
+                {"step_interpolation"},
+            ),
         ),
     )
     def test_eager_fetcher_unlimited(
@@ -970,12 +994,11 @@ class TestRetrieveAggregateDatapointsAPI:
         exp_len,
         start,
         end,
-        exlude_step_interp,
+        exclude_aggregate,
         retrieve_endpoints,
         all_test_time_series,
         cognite_client,
     ):
-        exclude = {"step_interpolation"} if exlude_step_interp else set()
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for endpoint in retrieve_endpoints:
                 res = endpoint(
@@ -983,7 +1006,7 @@ class TestRetrieveAggregateDatapointsAPI:
                     start=start,
                     end=end,
                     granularity=granularity,
-                    aggregates=random_aggregates(exclude=exclude),
+                    aggregates=random_aggregates(exclude=exclude_aggregate),
                     limit=None,
                 )
                 assert len(res) == exp_len
