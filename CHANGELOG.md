@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.18.0] - 2024-02-02
+### Added
+- Helper methods to `View`, `ViewApply`, `ViewList` and `ViewApplyList` `referenced_containers` which returns the 
+  containers referenced by in the view(s).
+
 ## [7.17.1] - 2024-02-02
 ### Fixed
 - An (extreme) edge case where an empty, unnecessary API request for datapoints would be sent leading to a `CogniteAPIError`.
