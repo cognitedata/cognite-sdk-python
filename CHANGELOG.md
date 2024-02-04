@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.17.2] - 2024-02-04
+### Fixed
+- Uploading files will now accept Labels as part of file Metadata.
+This has not been possible after v 7.0.0.
+
 ## [7.17.1] - 2024-02-02
 ### Fixed
 - An (extreme) edge case where an empty, unnecessary API request for datapoints would be sent leading to a `CogniteAPIError`.
