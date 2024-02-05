@@ -190,6 +190,8 @@ class Label(CogniteObject):
             elif isinstance(label, dict):
                 if "externalId" in label:
                     return Label(label["externalId"])
+                if "external_id" in label:
+                    return Label(label["external_id"])
             raise ValueError(f"Could not parse label: {label}")
 
         if labels is None:
