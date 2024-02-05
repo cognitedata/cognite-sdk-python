@@ -21,6 +21,7 @@ from cognite.client.data_classes.data_modeling import (
 )
 from cognite.client.data_classes.data_modeling.containers import BTreeIndex, UniquenessConstraint
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -56,7 +57,7 @@ class TestContainersAPI:
         # Arrange
         new_container = ContainerApply(
             space=integration_test_space.space,
-            external_id="IntegrationTestContainer",
+            external_id="IntegrationTestContainer" + random_string(5),
             properties={
                 "name": ContainerProperty(
                     type=Text(),

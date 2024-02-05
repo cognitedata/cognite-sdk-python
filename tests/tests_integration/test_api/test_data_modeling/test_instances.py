@@ -42,6 +42,7 @@ from cognite.client.data_classes.data_modeling.query import (
     SourceSelector,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -160,7 +161,7 @@ class TestInstancesAPI:
         # Arrange
         new_node = NodeApply(
             space=person_view.space,
-            external_id="person:arnold_schwarzenegger",
+            external_id="person:arnold_schwarzenegger" + random_string(5),
             sources=[
                 NodeOrEdgeData(
                     person_view.as_id(),

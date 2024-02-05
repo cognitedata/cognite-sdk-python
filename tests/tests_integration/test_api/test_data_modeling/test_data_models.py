@@ -19,6 +19,7 @@ from cognite.client.data_classes.data_modeling import (
     ViewId,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -55,7 +56,7 @@ class TestDataModelsAPI:
         # Arrange
         new_view = ViewApply(
             space=integration_test_space.space,
-            external_id="IntegrationTestViewDataModel",
+            external_id="IntegrationTestViewDataModel" + random_string(5),
             version="v1",
             description="Integration test, should not persist",
             name="View of create and delete data model",
