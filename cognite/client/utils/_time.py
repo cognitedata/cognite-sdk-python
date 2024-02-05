@@ -110,19 +110,18 @@ def time_string_to_ms(pattern: str, string: str, unit_in_ms: dict[str, int]) -> 
     return None
 
 
-def granularity_to_ms(granularity: str) -> int:
-    ms = time_string_to_ms(r"(\d+)({})", granularity, UNIT_IN_MS_WITHOUT_WEEK)
+def granularity_to_ms(granularity: str, as_unit: bool = False) -> int:
+    ms = time_string_to_ms(
+        r"(\d+)({})",
+        re.sub(r"^\d+", "1", granularity) if as_unit else granularity,
+        UNIT_IN_MS_WITHOUT_WEEK,
+    )
     if ms is None:
         raise ValueError(
             f"Invalid granularity format: `{granularity}`. Must be on format <integer>(s|m|h|d). "
             "E.g. '5m', '3h' or '1d'."
         )
     return ms
-
-
-def granularity_unit_to_ms(granularity: str) -> int:
-    granularity = re.sub(r"^\d+", "1", granularity)
-    return granularity_to_ms(granularity)
 
 
 def time_ago_to_ms(time_ago_string: str) -> int:
@@ -215,7 +214,7 @@ def convert_and_isoformat_time_attrs(item: dict | list[dict]) -> dict | list[dic
 
 def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> tuple[int, int]:
     # Note the API always aligns `start` with 1s, 1m, 1h or 1d (even when given e.g. 73h)
-    if remainder := start % granularity_unit_to_ms(granularity):
+    if remainder := start % granularity_to_ms(granularity, as_unit=True):
         # Floor `start` when not exactly at boundary
         start -= remainder
     gms = granularity_to_ms(granularity)

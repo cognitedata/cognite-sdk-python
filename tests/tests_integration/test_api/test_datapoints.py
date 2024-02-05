@@ -211,16 +211,20 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
 
 
 @pytest.fixture(scope="module", autouse=True)
-def make_dps_tests_reproducible(testrun_uid):
+def make_dps_tests_reproducible(testrun_uid, request):
     # To avoid the `xdist` error "different tests were collected between...", we must make sure all parallel test-runners
     # generate the same tests (randomized test data) so we must set a fixed seed... but we also want different random
     # test data over time (...thats the whole point), so we set seed based on a unique run ID created by pytest-xdist:
-    print(  # noqa: T201
-        f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints test failed - and you weren't "
-        "the cause, please create a new (GitHub) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
-    )
     with rng_context(testrun_uid):  # Internal state of `random` will be reset after exiting contextmanager
         yield
+
+    # To make this show up in the logs, it must be run here as part of teardown (post-yield):
+    if request.session.testsfailed:
+        print(  # noqa: T201
+            f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints "
+            "test failed - and you weren't the cause, please create a new (GitHub) issue: "
+            "https://github.com/cognitedata/cognite-sdk-python/issues"
+        )
 
 
 # We also have some test data that depend on random input:
@@ -951,15 +955,39 @@ class TestRetrieveAggregateDatapointsAPI:
                 pd.testing.assert_frame_equal(dps1.to_pandas(), dps2.to_pandas())
 
     @pytest.mark.parametrize(
-        "max_workers, ts_idx, granularity, exp_len, start, end, exlude_step_interp",
+        "max_workers, ts_idx, granularity, exp_len, start, end, exclude_aggregate",
         (
-            (1, 105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), False),
-            (1, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
-            (8, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
-            (2, 107, "1s", 4, ts_to_ms("1969-12-31 23:59:58.123"), ts_to_ms("2049-01-01 00:00:01.500"), True),
-            (5, 113, "11h", 32_288, ts_to_ms("1960-01-02 03:04:05.060"), ts_to_ms("2000-07-08 09:10:11.121"), True),
-            (3, 115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), False),
-            (20, 115, "12h", 5_000, ts_to_ms("1990-01-01"), ts_to_ms("2013-09-09 00:00:00.001"), True),
+            (1, 105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), {}),
+            (1, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), {}),
+            (8, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), {}),
+            (
+                2,
+                107,
+                "1s",
+                4,
+                ts_to_ms("1969-12-31 23:59:58.123"),
+                ts_to_ms("2049-01-01 00:00:01.500"),
+                {"interpolation", "step_interpolation"},
+            ),
+            (
+                5,
+                113,
+                "11h",
+                32_288,
+                ts_to_ms("1960-01-02 03:04:05.060"),
+                ts_to_ms("2000-07-08 09:10:11.121"),
+                {"interpolation"},
+            ),
+            (3, 115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), {}),
+            (
+                20,
+                115,
+                "12h",
+                5_000,
+                ts_to_ms("1990-01-01"),
+                ts_to_ms("2013-09-09 00:00:00.001"),
+                {"step_interpolation"},
+            ),
         ),
     )
     def test_eager_fetcher_unlimited(
@@ -970,12 +998,11 @@ class TestRetrieveAggregateDatapointsAPI:
         exp_len,
         start,
         end,
-        exlude_step_interp,
+        exclude_aggregate,
         retrieve_endpoints,
         all_test_time_series,
         cognite_client,
     ):
-        exclude = {"step_interpolation"} if exlude_step_interp else set()
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for endpoint in retrieve_endpoints:
                 res = endpoint(
@@ -983,7 +1010,7 @@ class TestRetrieveAggregateDatapointsAPI:
                     start=start,
                     end=end,
                     granularity=granularity,
-                    aggregates=random_aggregates(exclude=exclude),
+                    aggregates=random_aggregates(exclude=exclude_aggregate),
                     limit=None,
                 )
                 assert len(res) == exp_len
@@ -1058,8 +1085,8 @@ class TestRetrieveAggregateDatapointsAPI:
                         {
                             "id": ts.id,
                             "limit": lim,
-                            "aggregates": random_aggregates(1),
-                            "granularity": f"{random_gamma_dist_integer(gran_unit_upper)}{random.choice('smh')}",
+                            "aggregates": random_aggregates(1, exclude={"interpolation"}),
+                            "granularity": f"{random_gamma_dist_integer(gran_unit_upper)}{random.choice('sm')}",
                         }
                         for lim in limits
                     ],

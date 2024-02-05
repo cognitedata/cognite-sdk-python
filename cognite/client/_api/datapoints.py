@@ -174,18 +174,17 @@ class DpsFetchStrategy(ABC):
             cognite_client=self.dps_client._cognite_client,
         )
 
-    def _make_dps_request_using_protobuf(self, payload: DatapointsPayload) -> bytes:
-        return self.dps_client._do_request(
-            json=payload,
-            method="POST",
-            url_path=f"{self.dps_client._RESOURCE_PATH}/list",
-            accept="application/protobuf",
-            timeout=self.dps_client._config.timeout,
-            api_subversion=self.api_subversion,
-        ).content
-
     def _request_datapoints(self, payload: DatapointsPayload) -> Sequence[DataPointListItem]:
-        (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(payload))
+        (res := DataPointListResponse()).MergeFromString(
+            self.dps_client._do_request(
+                json=payload,
+                method="POST",
+                url_path=f"{self.dps_client._RESOURCE_PATH}/list",
+                accept="application/protobuf",
+                timeout=self.dps_client._config.timeout,
+                api_subversion=self.api_subversion,
+            ).content
+        )
         return res.items
 
     @staticmethod
@@ -373,6 +372,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         n_queries = max(self.max_workers, math.ceil(self.n_queries / self.dps_client._FETCH_TS_LIMIT))
         splitter: Callable[[list[_T]], Iterator[list[_T]]] = functools.partial(split_into_n_parts, n=n_queries)
         for query_chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
+            if not any(query_chunks):
+                break  # Not all workers needed (at least for now)
             # Agg and raw limits are independent in the query, so we max out on both:
             items = []
             for queries, max_lim in zip(query_chunks, (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW)):

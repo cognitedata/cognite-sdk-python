@@ -20,7 +20,6 @@ from cognite.client.utils._time import (
     convert_and_isoformat_time_attrs,
     datetime_to_ms,
     granularity_to_ms,
-    granularity_unit_to_ms,
     import_zoneinfo,
     ms_to_datetime,
     pandas_date_range_tz,
@@ -188,8 +187,6 @@ class TestGranularityToMs:
         with pytest.raises(ValueError, match=granularity):
             granularity_to_ms(granularity)
 
-
-class TestGranularityUnitToMs:
     @pytest.mark.parametrize(
         "granularity, expected_ms",
         [
@@ -203,13 +200,13 @@ class TestGranularityUnitToMs:
             ("13d", 1 * 24 * 60 * 60 * 1000),
         ],
     )
-    def test_to_ms(self, granularity, expected_ms):
-        assert granularity_unit_to_ms(granularity) == expected_ms
+    def test_to_ms_as_unit(self, granularity, expected_ms):
+        assert granularity_to_ms(granularity, as_unit=True) == expected_ms
 
     @pytest.mark.parametrize("granularity", ["2w", "-3h", "13m-ago", "13", "bla"])
-    def test_to_ms_invalid(self, granularity):
-        with pytest.raises(ValueError, match="format"):
-            granularity_unit_to_ms(granularity)
+    def test_to_ms_as_unit_invalid(self, granularity):
+        with pytest.raises(ValueError, match=rf"Invalid granularity format: `{granularity}`"):
+            granularity_to_ms(granularity, as_unit=True)
 
 
 class TestObjectTimeConversion:
