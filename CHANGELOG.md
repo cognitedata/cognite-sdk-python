@@ -24,9 +24,8 @@ Changes are grouped as follows
 
 ## [7.17.2] - 2024-02-04
 ### Fixed
-- Uploading files now accepts Labels again as part of file metadata.
-This addresses a bug introduced in v7, which caused a `ValueError` to be raised. uploading files with labels.
-This has not been possible after v 7.0.0.
+- Uploading files now accepts Labels again as part of file metadata. This addresses a bug introduced in v7, which caused
+  a `ValueError` to be raised.
 
 ## [7.17.1] - 2024-02-02
 ### Fixed
