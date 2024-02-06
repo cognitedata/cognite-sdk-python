@@ -17,11 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.17.3] - 2024-02-06
+### Fixed
+- Creating a Cognite Function from a directory with `skip_folder_validation=False` no longer raises `ModuleNotFoundError`
+  for Pyodide (WASM) users.
+
 ## [7.17.2] - 2024-02-04
 ### Fixed
-- Uploading files now accepts Labels again as part of file metadata. 
-This addresses a bug introduced in v7, which caused a `ValueError` to be raised. uploading files with labels.
-This has not been possible after v 7.0.0.
+- Uploading files now accepts Labels again as part of file metadata. This addresses a bug introduced in v7, which caused
+  a `ValueError` to be raised.
 
 ## [7.17.1] - 2024-02-02
 ### Fixed
@@ -45,7 +49,8 @@ This has not been possible after v 7.0.0.
 
 ## [7.15.1] - 2024-01-23
 ### Fixed
-- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will no longer raise ValueError, but drop the empty properties row/column.
+- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will
+  no longer raise ValueError, but drop the empty properties row/column.
 
 ## [7.15.0] - 2024-01-22
 ### Improved

@@ -175,7 +175,7 @@ class TestInstancesToPandas:
     def test_expand_properties(
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
     ) -> None:
-        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw = {Node: node_dumped, Edge: edge_dumped}[inst_cls]
         not_expanded = inst_cls._load(raw).to_pandas(expand_properties=False)
         expanded = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=True)
         expanded_with_prefix = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=False)
@@ -194,7 +194,7 @@ class TestInstancesToPandas:
     def test_expand_properties_empty_properties(
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
     ) -> None:
-        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw = {Node: node_dumped, Edge: edge_dumped}[inst_cls]
         raw["properties"] = {}
         expanded_with_empty_properties = inst_cls._load(raw).to_pandas(
             expand_properties=True, remove_property_prefix=True
@@ -206,7 +206,7 @@ class TestInstancesToPandas:
     def test_expand_properties__list_class(
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
     ) -> None:
-        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw = {NodeList: node_dumped, EdgeList: edge_dumped}[inst_cls]
         not_expanded = inst_cls._load([raw, raw]).to_pandas(expand_properties=False)
         expanded = inst_cls._load([raw, raw]).to_pandas(expand_properties=True, remove_property_prefix=True)
         expanded_with_prefix = inst_cls._load([raw, raw]).to_pandas(
@@ -227,7 +227,7 @@ class TestInstancesToPandas:
     def test_expand_properties__list_class_empty_properties(
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
     ) -> None:
-        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw = {NodeList: node_dumped, EdgeList: edge_dumped}[inst_cls]
         raw["properties"] = {}
         expanded_with_empty_properties = inst_cls._load([raw, raw]).to_pandas(
             expand_properties=True, remove_property_prefix=True
