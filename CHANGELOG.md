@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.17.4] - 2024-02-07
+### Added
+- Allow using container property reference in `NodeResultSetExpression.through` in addition to view property reference
+
 ## [7.17.2] - 2024-02-04
 ### Fixed
 - Uploading files now accepts Labels again as part of file metadata. 
