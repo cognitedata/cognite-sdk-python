@@ -10,6 +10,7 @@ from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, Event
 from cognite.client.data_classes.events import EventProperty, SortableEventProperty
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import timestamp_to_ms
+from cognite.client.utils._text import random_string
 from tests.utils import set_request_limit
 
 
@@ -143,16 +144,15 @@ class TestEventsAPI:
         assert cognite_client.events.retrieve(id=a.id) is None
 
     def test_upsert_2_events_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert2_one_preexisting:new",
+            external_id="test_upsert2_one_preexisting:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
         preexisting = Event(
-            external_id="test_upsert2_one_preexisting:preexisting",
+            external_id="test_upsert2_one_preexisting:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
@@ -165,10 +165,8 @@ class TestEventsAPI:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
 
-            # Act
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
-            # Assert
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
