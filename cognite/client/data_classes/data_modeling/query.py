@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject
-from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
     EdgeListWithCursor,
@@ -176,11 +176,7 @@ class ResultSetExpression(CogniteObject, ABC):
                 "direction": query_node.get("direction"),
             }
             if (through := query_node.get("through")) is not None:
-                node["through"] = [
-                    through["view"]["space"],
-                    through["view"]["externalId"] + "/" + through["view"]["version"],
-                    through["identifier"],
-                ]
+                node["through"] = PropertyId.load(through)
             return cast(Self, NodeResultSetExpression(sort=sort, limit=resource.get("limit"), **node))
         elif "edges" in resource:
             query_edge = resource["edges"]
@@ -215,8 +211,9 @@ class NodeResultSetExpression(ResultSetExpression):
         filter (Filter | None): Filter the result set based on this filter.
         sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         limit (int | None): Limit the result set to this number of instances.
-        through (list[str] | tuple[str, str, str] | None): Chain your result-expression through this view.
-            The tuple must be on the form (space, view/version, property).
+        through (list[str] | tuple[str, str, str] | PropertyId | None): Chain your result-expression through this
+            container or view. The property must be a reference to a direct relation property. `from_` must be defined.
+            The tuple must be on the form (space, container, property) or (space, view/version, property).
         direction (Literal["outwards", "inwards"]): The direction to use when traversing direct relations.
             Only applicable when through is specified.
         chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
@@ -233,12 +230,29 @@ class NodeResultSetExpression(ResultSetExpression):
         filter: Filter | None = None,
         sort: list[InstanceSort] | None = None,
         limit: int | None = None,
-        through: list[str] | tuple[str, str, str] | None = None,
+        through: list[str] | tuple[str, str, str] | PropertyId | None = None,
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
     ) -> None:
         super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
-        self.through = through
+        self.through: PropertyId | None = self._init_through(through)
+
+    def _init_through(self, through: list[str] | tuple[str, str, str] | PropertyId | None) -> PropertyId | None:
+        if isinstance(through, PropertyId):
+            return through
+        if isinstance(through, (list, tuple)):
+            if len(through) != 3:
+                raise ValueError(
+                    f"`through` must be on the form (space, container, property) or (space, view/version, property), was {self.through}"
+                )
+            # set source to ViewId if '/' in through[1] , else set it to ContainerId
+            source: ViewId | ContainerId = (
+                ViewId(space=through[0], external_id=through[1].split("/")[0], version=through[1].split("/")[1])
+                if "/" in through[1]
+                else ContainerId(space=through[0], external_id=through[1])
+            )
+            return PropertyId(source=source, property=through[2])
+        return None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"nodes": {}}
@@ -248,17 +262,7 @@ class NodeResultSetExpression(ResultSetExpression):
         if self.filter:
             nodes["filter"] = self.filter.dump()
         if self.through:
-            if len(self.through) != 3:
-                raise ValueError(f"`through` must be on the form (space, view/version, property), was {self.through}")
-            nodes["through"] = {
-                "view": {
-                    "type": "view",
-                    "space": self.through[0],
-                    "externalId": self.through[1].split("/")[0],
-                    "version": self.through[1].split("/")[1],
-                },
-                "identifier": self.through[2],
-            }
+            nodes["through"] = self.through.dump(camel_case=camel_case)
         if self.chain_to:
             nodes["chainTo" if camel_case else "chain_to"] = self.chain_to
         if self.direction:

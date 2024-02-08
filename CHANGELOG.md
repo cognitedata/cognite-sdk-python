@@ -21,6 +21,25 @@ Changes are grouped as follows
 ### Added
 - Support for `target_unit` and `target_unit_system` in synthetic time series.
 
+## [7.17.4] - 2024-02-07
+### Added
+- Allow using container property reference in `NodeResultSetExpression.through` in addition to view property reference
+
+## [7.17.3] - 2024-02-06
+### Fixed
+- Creating a Cognite Function from a directory with `skip_folder_validation=False` no longer raises `ModuleNotFoundError`
+  for Pyodide (WASM) users.
+
+## [7.17.2] - 2024-02-04
+### Fixed
+- Uploading files now accepts Labels again as part of file metadata. This addresses a bug introduced in v7, which caused
+  a `ValueError` to be raised.
+
+## [7.17.1] - 2024-02-02
+### Fixed
+- An (extreme) edge case where an empty, unnecessary API request for datapoints would be sent leading to a `CogniteAPIError`.
+- Certain granularity inputs (when using the `DatapointsAPI`) no longer cause a `ValueError` to be raised with confusing/wrong wording.
+
 ## [7.17.0] - 2024-02-01
 ### Fixed
 - Calls to `AnnotationsAPI.[list|retrieve|retrieve_multiple|reverse_lookup]` are now retried automatically.
@@ -38,7 +57,8 @@ Changes are grouped as follows
 
 ## [7.15.1] - 2024-01-23
 ### Fixed
-- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will no longer raise ValueError, but drop the empty properties row/column.
+- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will
+  no longer raise ValueError, but drop the empty properties row/column.
 
 ## [7.15.0] - 2024-01-22
 ### Improved
