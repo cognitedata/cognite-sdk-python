@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.18.0] - 2024-02-08
+### Added
+- Support for `target_unit` and `target_unit_system` in synthetic time series.
+
 ## [7.17.4] - 2024-02-07
 ### Added
 - Allow using container property reference in `NodeResultSetExpression.through` in addition to view property reference

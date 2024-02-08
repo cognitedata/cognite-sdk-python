@@ -4,9 +4,15 @@ package com.cognite.v1.timeseries.proto;
 
 option java_multiple_files = true;
 
+message Status {
+    int64 code = 1;
+    string symbol = 2;
+}
+
 message NumericDatapoint {
     int64 timestamp = 1;
     double value = 2;
+    Status status = 3;
 }
 
 message NumericDatapoints {
