@@ -1647,17 +1647,17 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.23.3"
+version = "0.23.5a0"
 description = "Pytest support for asyncio"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-asyncio-0.23.3.tar.gz", hash = "sha256:af313ce900a62fbe2b1aed18e37ad757f1ef9940c6b6a88e2954de38d6b1fb9f"},
-    {file = "pytest_asyncio-0.23.3-py3-none-any.whl", hash = "sha256:37a9d912e8338ee7b4a3e917381d1c95bfc8682048cb0fbc35baba316ec1faba"},
+    {file = "pytest-asyncio-0.23.5a0.tar.gz", hash = "sha256:ea37983dbf4391f569183e97fb1c4c2899a3349818f1b338ca91aaa149983cc7"},
+    {file = "pytest_asyncio-0.23.5a0-py3-none-any.whl", hash = "sha256:987c3eb0a847268a884a0d26ad0e57e885647e647792f2accc80e01842ed1b68"},
 ]
 
 [package.dependencies]
-pytest = ">=7.0.0"
+pytest = ">=7.0.0,<9"
 
 [package.extras]
 docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1.0)"]
@@ -2479,4 +2479,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "ed5ea869e4e8ca929baa155635a2aacd42a5d806b195bc8518a92bae3da2a1d9"
+content-hash = "98cef6919d30d189312767261ddc623b86d3e6ba181aaac22fa06363c948b515"
