@@ -14,7 +14,7 @@ license = "Apache-2.0"
 
 packages = [{ include="cognite", from="." }]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # let scripts use print statements
 "scripts/*" = ["T201"]
 
