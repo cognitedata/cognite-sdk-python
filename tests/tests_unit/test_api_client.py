@@ -1266,6 +1266,31 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/delete", False),
+                ### 3D models
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/delete", False),
+                ### 3D model revisions
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/34/nodes/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/ab/nodes/list", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byids", True),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byXids",
+                    False,
+                ),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/cd/nodes/byids",
+                    False,
+                ),
+                ### 3D asset mappings
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings", False),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings/list",
+                    True,
+                ),
                 #### Files
                 ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
                 #### Timeseries
