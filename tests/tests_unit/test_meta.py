@@ -68,7 +68,6 @@ def apis_that_should_not_have_post_retry_rule():
             "extpipes",
             "geospatial",
             "groups",
-            "profiles",
             "securitycategories",
             "templategroups",
             "transformations",
