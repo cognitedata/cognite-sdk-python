@@ -79,25 +79,28 @@ T = TypeVar("T")
 
 class APIClient:
     _RESOURCE_PATH: str
+    # TODO: When Cognite Experimental SDK is deprecated, remove frozenset in favour of re.compile:
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
-        rf"^{path}(\?.*)?$"
-        for path in (
-            "/(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
-            "/files/downloadlink",
-            "/timeseries/data(/(list|latest|delete))?",
-            "/timeseries/synthetic/query",
-            "/sequences/data(/(list|delete))?",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows/delete",
-            "/context/entitymatching/(byids|list|jobs)",
-            "/sessions/revoke",
-            "/models/.*",
-            "/units/.*",
-            "/annotations/(list|byids|reverselookup)",
-            "/functions/(list|byids|status)",
-            "/functions/schedules/(list|byids)",
-            r"/functions/\d+/calls/(list|byids)",
-        )
+        [
+            r"|".join(
+                rf"^/{path}(\?.*)?$"
+                for path in (
+                    "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
+                    "files/downloadlink",
+                    "timeseries/data(/(list|latest|delete))?",
+                    "timeseries/synthetic/query",
+                    "sequences/data(/(list|delete))?",
+                    "raw/dbs/[^/]+/tables/[^/]+/rows",
+                    "raw/dbs/[^/]+/tables/[^/]+/rows/delete",
+                    "context/entitymatching/(byids|list|jobs)",
+                    "sessions/revoke",
+                    "models/.*",
+                    "units/.*",
+                    "annotations/(list|byids|reverselookup)",
+                    r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
+                )
+            )
+        ]
     )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
