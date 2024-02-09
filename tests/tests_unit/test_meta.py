@@ -47,9 +47,12 @@ def test_ensure_all_to_pandas_methods_use_snake_case(cls):
 @pytest.fixture(scope="session")
 def apis_with_post_method_retry_set():
     all_paths = set()
-    for api in APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
-        base_path = api.split("/")[1]
-        if base_path[0] == "(":
+    (single_regex,) = APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS
+    for api in filter(None, single_regex.split("^/")):
+        base_path = api.split("/")[0]
+        if base_path[0] == "]":
+            continue
+        elif base_path[0] == "(":
             all_paths.update(base_path[1:-1].split("|"))
         else:
             all_paths.add(base_path)
