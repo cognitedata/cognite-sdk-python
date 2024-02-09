@@ -62,7 +62,6 @@ def apis_that_should_not_have_post_retry_rule():
     #       retry for specific POST methods:
     return set(
         [
-            "documents",
             "extpipes",
             "geospatial",
             "groups",

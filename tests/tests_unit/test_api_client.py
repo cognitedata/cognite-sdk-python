@@ -1266,6 +1266,11 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/delete", False),
+                ### Documents
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/aggregate", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/search", True),
                 ### 3D models
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/delete", False),

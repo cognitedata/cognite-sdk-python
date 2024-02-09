@@ -99,6 +99,7 @@ class APIClient:
                     "annotations/(list|byids|reverselookup)",
                     r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
                     r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
+                    "documents/(aggregate|list|search)",
                 )
             )
         ]
