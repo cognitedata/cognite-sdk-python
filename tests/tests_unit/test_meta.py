@@ -61,15 +61,12 @@ def apis_with_post_method_retry_set():
 
 @pytest.fixture(scope="session")
 def apis_that_should_not_have_post_retry_rule():
-    # TODO: List of APIs below should probably be way shorter, a lot of these should likely have
-    #       retry for specific POST methods:
     return set(
         [
-            "extpipes",
             "groups",  # ☑️
             "securitycategories",  # ☑️
             "templategroups",  # Won't do: deprecated API
-            "workflows",
+            "workflows",  # TODO later: Beta -> GA
         ]
     )
 

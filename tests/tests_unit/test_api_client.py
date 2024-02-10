@@ -1276,6 +1276,16 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/search", True),
                 # Transformations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/update", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config/revert", False),
+                # Transformations
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/filter", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/byids", True),
