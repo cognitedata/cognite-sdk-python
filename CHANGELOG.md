@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.19.0] - 2024-02-02
+## [7.19.1] - 2024-02-12
 ### Fixed
 - Calls to ... are now retried automatically:
     * Functions API: `list`, `retrieve`, `retrieve_multiple`, `activate`
@@ -30,10 +30,10 @@ Changes are grouped as follows
     * TransformationSchedules API: `retrieve`, `retrieve_multiple`
     * Geospatial API:  `list_feature_types`, `retrieve_feature_types`, `retrieve_features`, `list_features`,
       `search_features`, `stream_features`, `aggregate_features`, `get_coordinate_reference_systems`, `get_raster`, `compute`,
-    * UserProfilesAPI: `retrieve`, `search`
-    * DocumentsAPI: `search`, `list`, `__call__`, `aggregate_count`, `aggregate_cardinality_values`, `aggregate_cardinality_properties`,
+    * UserProfiles API: `retrieve`, `search`
+    * Documents API: `search`, `list`, `__call__`, `aggregate_count`, `aggregate_cardinality_values`, `aggregate_cardinality_properties`,
       `aggregate_unique_values`, `aggregate_unique_properties`
-    * ThreeDRevisionsAPI: `filter_nodes`
+    * ThreeDRevisions API: `filter_nodes`
 
 ## [7.19.0] - 2024-02-12
 ### Added
