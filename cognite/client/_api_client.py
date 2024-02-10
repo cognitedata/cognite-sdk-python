@@ -87,11 +87,9 @@ class APIClient:
                 for path in (
                     "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
                     "files/downloadlink",
-                    "timeseries/data(/(list|latest|delete))?",
-                    "timeseries/synthetic/query",
+                    "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
                     "sequences/data(/(list|delete))?",
-                    "raw/dbs/[^/]+/tables/[^/]+/rows",
-                    "raw/dbs/[^/]+/tables/[^/]+/rows/delete",
+                    "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
                     "context/entitymatching/(byids|list|jobs)",
                     "sessions/revoke",
                     "models/.*",
@@ -103,6 +101,7 @@ class APIClient:
                     "profiles/(byids|search)",
                     "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
                     "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
+                    "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
                 )
             )
         ]

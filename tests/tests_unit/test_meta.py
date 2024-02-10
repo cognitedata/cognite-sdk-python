@@ -66,10 +66,9 @@ def apis_that_should_not_have_post_retry_rule():
     return set(
         [
             "extpipes",
-            "groups",
-            "securitycategories",
-            "templategroups",
-            "transformations",
+            "groups",  # ☑️
+            "securitycategories",  # ☑️
+            "templategroups",  # Won't do: deprecated API
             "workflows",
         ]
     )
