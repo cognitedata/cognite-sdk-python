@@ -101,6 +101,8 @@ class APIClient:
                     r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
                     "documents/(aggregate|list|search)",
                     "profiles/(byids|search)",
+                    "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
+                    "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
                 )
             )
         ]

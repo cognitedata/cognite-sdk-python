@@ -1300,6 +1300,30 @@ class TestRetryableEndpoints:
                     "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings/list",
                     True,
                 ),
+                #### Geospatial
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/compute", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/crs", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/crs/byids", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/list", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/update", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/delete", False),
+                *[
+                    (
+                        "POST",
+                        f"https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/abc_123/features/{endpoint}",
+                        True,
+                    )
+                    for endpoint in ("aggregate", "list", "byids", "search-streaming", "search")
+                ],
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/delete", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/update", False),
+                (
+                    "POST",
+                    "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/b_2/rasters/c_3",
+                    True,
+                ),
                 #### Files
                 ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
                 #### Timeseries
