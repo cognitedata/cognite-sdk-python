@@ -9,7 +9,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from datetime import datetime, timedelta
+from datetime import datetime
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -59,10 +59,7 @@ from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
-    _unit_in_days,
     align_large_granularity,
-    get_granularity_multiplier_and_unit,
-    in_timedelta,
     pandas_date_range_tz,
     timestamp_to_ms,
     to_fixed_utc_intervals,
@@ -558,7 +555,6 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
-        self._GRANULARITY_HOURS_LIMIT = 100_000
 
     def retrieve(
         self,
@@ -1091,6 +1087,7 @@ class DatapointsAPI(APIClient):
                 ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("America/New_York")),
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("America/New_York")))
         """
+
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
 
         if not exactly_one_is_not_none(id, external_id):
@@ -1104,7 +1101,7 @@ class DatapointsAPI(APIClient):
 
         tz = validate_timezone(start, end)
         if aggregates is None and granularity is None:
-            # Raw Data only need to convert the timezone
+            # For raw data, we only need to convert the timezone:
             return (
                 self.retrieve_dataframe(
                     id=id,
@@ -1125,14 +1122,7 @@ class DatapointsAPI(APIClient):
                 .tz_localize("utc")
                 .tz_convert(str(tz))
             )
-
         assert isinstance(granularity, str)  # mypy
-
-        if in_timedelta(granularity) / timedelta(hours=1) > self._GRANULARITY_HOURS_LIMIT:
-            multiplier, unit = get_granularity_multiplier_and_unit(granularity)
-            days = _unit_in_days(unit)
-            limit = math.floor(timedelta(hours=self._GRANULARITY_HOURS_LIMIT) / timedelta(days=days))
-            raise ValueError(f"Granularity above the maximum limit, {limit} {unit}s.")
 
         identifiers = IdentifierSequence.load(id, external_id)
         if not identifiers.are_unique():
@@ -1140,12 +1130,10 @@ class DatapointsAPI(APIClient):
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
         intervals = to_fixed_utc_intervals(start, end, granularity)
-
         queries = [
             {**ident_dct, "aggregates": aggregates, **interval}
             for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
         ]
-
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
@@ -1154,6 +1142,7 @@ class DatapointsAPI(APIClient):
             **{identifiers[0].name(): queries},  # type: ignore [arg-type]
         )
         assert isinstance(arrays, DatapointsArrayList)  # mypy
+
         arrays.concat_duplicate_ids()
         for arr in arrays:
             # In case 'include_granularity_name' is used, we don't want '2quarters' to show up as '4343h':
@@ -1163,12 +1152,10 @@ class DatapointsAPI(APIClient):
             .tz_localize("utc")
             .tz_convert(str(tz))
         )
-
         if uniform_index:
             freq = to_pandas_freq(granularity, start)
             start, end = align_large_granularity(start, end, granularity)
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
-
         return df
 
     def retrieve_latest(
