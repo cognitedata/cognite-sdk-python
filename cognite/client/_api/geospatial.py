@@ -50,10 +50,6 @@ class GeospatialAPI(APIClient):
             + f"/{encoded_feature_external_id}/rasters/{encoded_raster_property_name}"
         )
 
-    @staticmethod
-    def _compute_path() -> str:
-        return f"{GeospatialAPI._RESOURCE_PATH}/compute"
-
     @overload
     def create_feature_types(self, feature_type: FeatureType | FeatureTypeWrite) -> FeatureType:
         ...
@@ -1099,11 +1095,9 @@ class GeospatialAPI(APIClient):
                 >>> compute_function = GeospatialGeometryTransformComputeFunction(GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=23031)
                 >>> compute_result = c.geospatial.compute(output = {"output": compute_function})
         """
-        url_path = self._compute_path()
-
         res = self._do_request(
             "POST",
-            url_path,
+            f"{GeospatialAPI._RESOURCE_PATH}/compute",
             timeout=self._config.timeout,
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
