@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.19.2] - 2024-02-13
+### Fixed
+- Addressed `FutureWarning` coming from pandas dependency (granularity to pandas frequency translation of sec/min/hour and 'year start')
+- Fixed `granularity` setting in `DatapointsAPI.retrieve_dataframe_in_tz` showing up as number of hours instead of e.g. week or year.
+
 ## [7.19.1] - 2024-02-12
 ### Fixed
 - Calls to ... are now retried automatically:
