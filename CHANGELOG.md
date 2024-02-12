@@ -17,10 +17,28 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.18.0] - 2024-02-02
+## [7.19.0] - 2024-02-12
 ### Added
 - Helper methods to `View`, `ViewApply`, `ViewList` and `ViewApplyList` `referenced_containers` which returns the 
   containers referenced by in the view(s).
+
+## [7.18.0] - 2024-02-08
+### Added
+- Support for `target_unit` and `target_unit_system` in synthetic time series.
+
+## [7.17.4] - 2024-02-07
+### Added
+- Allow using container property reference in `NodeResultSetExpression.through` in addition to view property reference
+
+## [7.17.3] - 2024-02-06
+### Fixed
+- Creating a Cognite Function from a directory with `skip_folder_validation=False` no longer raises `ModuleNotFoundError`
+  for Pyodide (WASM) users.
+
+## [7.17.2] - 2024-02-04
+### Fixed
+- Uploading files now accepts Labels again as part of file metadata. This addresses a bug introduced in v7, which caused
+  a `ValueError` to be raised.
 
 ## [7.17.1] - 2024-02-02
 ### Fixed
@@ -44,7 +62,8 @@ Changes are grouped as follows
 
 ## [7.15.1] - 2024-01-23
 ### Fixed
-- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will no longer raise ValueError, but drop the empty properties row/column.
+- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will
+  no longer raise ValueError, but drop the empty properties row/column.
 
 ## [7.15.0] - 2024-01-22
 ### Improved
