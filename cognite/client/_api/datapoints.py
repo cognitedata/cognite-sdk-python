@@ -1160,6 +1160,9 @@ class DatapointsAPI(APIClient):
         )
         assert isinstance(arrays, DatapointsArrayList)  # mypy
         arrays.concat_duplicate_ids()
+        for arr in arrays:
+            # In case 'include_granularity_name' is used, we don't want '2quarters' to show up as '4343h':
+            arr.granularity = granularity
         df = (
             arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
             .tz_localize("utc")
