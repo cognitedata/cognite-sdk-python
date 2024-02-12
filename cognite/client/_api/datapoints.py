@@ -995,7 +995,7 @@ class DatapointsAPI(APIClient):
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
-        freq = cast(str, granularity).replace("m", "T")
+        freq = cast(str, granularity).replace("m", "min")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
     def retrieve_dataframe_in_tz(

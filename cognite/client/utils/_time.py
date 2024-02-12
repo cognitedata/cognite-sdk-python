@@ -643,10 +643,10 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
 
 
 _STANDARD_GRANULARITY_TO_PANDAS_LOOKUP: dict[str, str] = {
-    "s": "S",
-    "m": "T",
-    "h": "H",
-    "d": "D",
+    "s": "s",
+    "m": "min",
+    "h": "h",
+    "d": "d",
     "w": "W-MON",
     "month": "MS",
     "quarter": "QS",
