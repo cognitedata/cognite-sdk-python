@@ -133,6 +133,18 @@ class ViewApply(ViewCore):
         """Returns this ViewApply instance."""
         return self
 
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for prop in (self.properties or {}).values():
+            if isinstance(prop, MappedPropertyApply):
+                referenced_containers.add(prop.container)
+        return referenced_containers
+
 
 class View(ViewCore):
     """A group of properties. Read only version.
@@ -249,6 +261,18 @@ class View(ViewCore):
     def as_write(self) -> ViewApply:
         return self.as_apply()
 
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for prop in self.properties.values():
+            if isinstance(prop, MappedProperty):
+                referenced_containers.add(prop.container)
+        return referenced_containers
+
 
 class ViewApplyList(CogniteResourceList[ViewApply]):
     _RESOURCE = ViewApply
@@ -260,6 +284,17 @@ class ViewApplyList(CogniteResourceList[ViewApply]):
             list[ViewId]: The list of ViewIds
         """
         return [v.as_id() for v in self]
+
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for view in self:
+            referenced_containers.update(view.referenced_containers())
+        return referenced_containers
 
 
 class ViewList(WriteableCogniteResourceList[ViewApply, View]):
@@ -283,6 +318,17 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
 
     def as_write(self) -> ViewApplyList:
         return self.as_apply()
+
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for view in self:
+            referenced_containers.update(view.referenced_containers())
+        return referenced_containers
 
 
 class ViewFilter(CogniteFilter):
