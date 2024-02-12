@@ -46,7 +46,7 @@ class TransformationJobsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> transformation_jobs_list = c.transformations.jobs.list(transformation_id = 1)
+                >>> transformation_jobs_list = c.transformations.jobs.list(transformation_id=1)
         """
 
         filter = TransformationJobFilter(

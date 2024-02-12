@@ -191,7 +191,7 @@ class TransformationsAPI(APIClient):
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationList:
-        """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformations>`_
+        """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/filterTransformations>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
@@ -544,5 +544,4 @@ class TransformationsAPI(APIClient):
 
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
         result = TransformationPreviewResult.load(response.json(), cognite_client=self._cognite_client)
-
         return result

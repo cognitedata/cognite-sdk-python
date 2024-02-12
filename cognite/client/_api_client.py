@@ -79,22 +79,33 @@ T = TypeVar("T")
 
 class APIClient:
     _RESOURCE_PATH: str
+    # TODO: When Cognite Experimental SDK is deprecated, remove frozenset in favour of re.compile:
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
-        rf"^{path}(\?.*)?$"
-        for path in (
-            "/(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
-            "/files/downloadlink",
-            "/timeseries/data(/(list|latest|delete))?",
-            "/timeseries/synthetic/query",
-            "/sequences/data(/(list|delete))?",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows/delete",
-            "/context/entitymatching/(byids|list|jobs)",
-            "/sessions/revoke",
-            "/models/.*",
-            "/units/.*",
-            "/annotations/(list|byids|reverselookup)",
-        )
+        [
+            r"|".join(
+                rf"^/{path}(\?.*)?$"
+                for path in (
+                    "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
+                    "files/downloadlink",
+                    "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
+                    "sequences/data(/(list|delete))?",
+                    "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
+                    "context/entitymatching/(byids|list|jobs)",
+                    "sessions/revoke",
+                    "models/.*",
+                    "units/.*",
+                    "annotations/(list|byids|reverselookup)",
+                    r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
+                    r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
+                    "documents/(aggregate|list|search)",
+                    "profiles/(byids|search)",
+                    "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
+                    "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
+                    "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
+                    "extpipes/(list|byids|runs/list)",
+                )
+            )
+        ]
     )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
