@@ -1120,7 +1120,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import InstanceSort
                 >>> c = CogniteClient()
-                >>> property_sort = InstanceSort(property=('space', 'view_external_id/view_version', 'some_property'), direction="descending", nulls_first=True)
+                >>> property_sort = InstanceSort(property=('space', 'view_xid/view_version', 'some_property'), direction="descending", nulls_first=True)
                 >>> instance_list = c.data_modeling.instances.list(sort=property_sort)
 
             List instances and limit to 5:
