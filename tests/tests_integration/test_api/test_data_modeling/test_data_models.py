@@ -23,9 +23,11 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
-@pytest.mark.usefixtures("integration_test_space", "movie_model", "empty_model")
 def cdf_data_models(
     cognite_client: CogniteClient,
+    integration_test_space: Space,
+    movie_model: DataModel[View],
+    empty_model: DataModel[ViewId],
 ) -> DataModelList[ViewId]:
     # The movie model and empty fixture are used to ensure that
     # there are at least two data models in the test environment.

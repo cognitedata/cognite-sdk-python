@@ -11,8 +11,7 @@ from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="session")
-@pytest.mark.usefixtures("integration_test_space")
-def cdf_spaces(cognite_client: CogniteClient) -> SpaceList:
+def cdf_spaces(cognite_client: CogniteClient, integration_test_space: Space) -> SpaceList:
     # The integration test space is created in the fixture integration_test_space.
     # This ensures that at least one space exists in CDF.
     spaces = cognite_client.data_modeling.spaces.list(limit=-1)
