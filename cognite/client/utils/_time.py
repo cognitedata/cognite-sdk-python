@@ -456,7 +456,6 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
     return [*(start + delta_ms * i for i in range(n_splits)), end]
 
 
-# First four use one letter to be consistent with CDF API.
 _GRANULARITY_UNIT_LOOKUP: dict[str, str] = {
     "s": "s",
     "sec": "s",

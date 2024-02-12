@@ -1015,7 +1015,7 @@ class DatapointsAPI(APIClient):
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
-        """Get datapoints directly in a pandas dataframe in the same time zone as ``start``- and ``end``.
+        """Get datapoints directly in a pandas dataframe in the same time zone as ``start`` and ``end``.
 
         This is a convenience method extending the Time Series API capabilities to make timezone-aware datapoints
         fetching easy with daylight saving time (DST) transitions taken care of automatically. It builds on top
@@ -1033,7 +1033,7 @@ class DatapointsAPI(APIClient):
             except for month, to avoid confusion with minutes.
 
         Warning:
-            The datapoints queries to are translated into several sub-queries using a multiple of hours. This means that
+            The datapoints queries are translated into several sub-queries using a multiple of hours. This means that
             time zones that are not a whole hour offset from UTC are not supported. The same is true for time zones that
             observe DST with an offset from standard time that is not a multiple of 1 hour.
 
@@ -1087,7 +1087,6 @@ class DatapointsAPI(APIClient):
                 ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("America/New_York")),
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("America/New_York")))
         """
-
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
 
         if not exactly_one_is_not_none(id, external_id):
