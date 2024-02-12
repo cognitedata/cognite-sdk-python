@@ -623,7 +623,7 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
 def to_pandas_freq(granularity: str, start: datetime) -> str:
     multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
 
-    unit = {"s": "S", "m": "T", "h": "H", "d": "D", "w": "W-MON", "month": "MS", "quarter": "QS", "year": "AS"}.get(
+    unit = {"s": "S", "m": "T", "h": "H", "d": "D", "w": "W-MON", "month": "MS", "quarter": "QS", "year": "YS"}.get(
         unit, unit
     )
     if unit == "QS":

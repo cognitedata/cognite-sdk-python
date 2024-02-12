@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.18.1] - 2024-02-12
+### Fixed
+- Addressed `FutureWarning` coming from pandas dependency (granularity to pandas frequency translation of 'year start')
+
 ## [7.19.1] - 2024-02-12
 ### Fixed
 - Calls to ... are now retried automatically:
