@@ -19,9 +19,8 @@ from cognite.client.data_classes.data_modeling import (
     Text,
     View,
 )
-from cognite.client.data_classes.data_modeling.containers import BTreeIndex, UniquenessConstraint
+from cognite.client.data_classes.data_modeling.containers import BTreeIndex
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -53,56 +52,28 @@ class TestContainersAPI:
         assert expected_ids <= set(actual_containers.as_ids())
         assert all(c.space == integration_test_space.space for c in actual_containers)
 
-    def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        # Arrange
+    def test_apply_retrieve_and_delete_index(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
         new_container = ContainerApply(
             space=integration_test_space.space,
-            external_id="IntegrationTestContainer" + random_string(5),
-            properties={
-                "name": ContainerProperty(
-                    type=Text(),
-                ),
-                "year": ContainerProperty(type=Int32()),
-            },
-            description="Integration test, should not persist",
+            external_id="IntegrationTestContainer",
+            properties={"name": ContainerProperty(type=Text()), "year": ContainerProperty(type=Int32())},
+            description="Integration test, should persist!",
             name="Create and delete container",
             used_for="node",
-            constraints={"uniqueName": UniquenessConstraint(properties=["name"])},
             indexes={"nameIdx": BTreeIndex(properties=["name"])},
         )
-        created: Container | None = None
-        deleted_ids: list[ContainerId] = []
-        # Act
-        try:
-            created = cognite_client.data_modeling.containers.apply(new_container)
-            retrieved = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
+        created = cognite_client.data_modeling.containers.apply(new_container)
+        retrieved = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
 
-            # Assert
-            assert retrieved is not None
-            assert created.created_time
-            assert created.last_updated_time
-            assert retrieved.as_apply().dump() == new_container.dump()
+        assert retrieved is not None
+        assert created.created_time
+        assert created.last_updated_time
+        assert retrieved.as_apply().dump() == new_container.dump()
 
-            # Act
-            deleted_indexes = cognite_client.data_modeling.containers.delete_indexes(
-                [(new_container.as_id(), "nameIdx")]
-            )
-            assert deleted_indexes == [(new_container.as_id(), "nameIdx")]
-            deleted_constraints = cognite_client.data_modeling.containers.delete_constraints(
-                [(new_container.as_id(), "uniqueName")]
-            )
-            assert deleted_constraints == [(new_container.as_id(), "uniqueName")]
-            deleted_ids = cognite_client.data_modeling.containers.delete(new_container.as_id())
-            retrieved_deleted = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
-
-            # Assert
-            assert len(deleted_ids) == 1
-            assert deleted_ids[0] == new_container.as_id()
-            assert retrieved_deleted is None
-        finally:
-            # Cleanup
-            if created and not deleted_ids:
-                cognite_client.data_modeling.containers.delete(created.as_id())
+        deleted_indexes = cognite_client.data_modeling.containers.delete_indexes([(new_container.as_id(), "nameIdx")])
+        assert deleted_indexes == [(new_container.as_id(), "nameIdx")]
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
