@@ -47,7 +47,7 @@ sympy = ["sympy"]
 functions = ["pip"]
 yaml = ["PyYAML"]
 pyodide = ["pyodide-http"]  # keep pyodide related dependencies outside of 'all'
-all = ["pandas", "geopandas", "shapely", "sympy", "pip", "backports-zoneinfo", "PyYAML"]
+all = ["numpy", "pandas", "geopandas", "shapely", "sympy", "pip", "backports-zoneinfo", "PyYAML"]
 
 [tool.poetry.group.dev.dependencies]
 docutils = "==0.15.2"
