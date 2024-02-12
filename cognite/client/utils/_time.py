@@ -407,6 +407,15 @@ class YearAligner(DateTimeAligner):
         return date.replace(year=date.year + units)
 
 
+_ALIGNER_OPTIONS: dict[str, type[DateTimeAligner]] = {
+    "d": DayAligner,
+    "w": WeekAligner,
+    "month": MonthAligner,
+    "quarter": QuarterAligner,
+    "year": YearAligner,
+}
+
+
 def align_large_granularity(start: datetime, end: datetime, granularity: str) -> tuple[datetime, datetime]:
     """
     Aligns the granularity by flooring the start wrt to the granularity unit, and ceiling the end.
@@ -421,17 +430,10 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
         tuple[datetime, datetime]: start and end aligned with granularity
     """
     multiplier, unit = get_granularity_multiplier_and_unit(granularity)
-    # Can be replaced by a single dispatch pattern, but kept more explicit for readability.
     try:
-        aligner = {
-            "d": DayAligner,
-            "w": WeekAligner,
-            "month": MonthAligner,
-            "quarter": QuarterAligner,
-            "year": YearAligner,
-        }[unit]
-    except KeyError as e:
-        raise ValueError(f"Unit {unit} is not supported.") from e
+        aligner = _ALIGNER_OPTIONS[unit]
+    except KeyError:
+        raise ValueError(f"Unit {unit} is not supported.") from None
     start = aligner.floor(start)
     end = aligner.ceil(end)
     unit_count = aligner.units_between(start, end)
@@ -454,51 +456,71 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
     return [*(start + delta_ms * i for i in range(n_splits)), end]
 
 
-def get_granularity_multiplier_and_unit(granularity: str, standardize: bool = True) -> tuple[int, str]:
-    if not granularity[0].isdigit():
-        granularity = f"1{granularity}"
-    _, number, unit = re.split(r"(\d+)", granularity)
-    if standardize:
-        unit = standardize_unit(unit)
-    return int(number), unit
+# First four use one letter to be consistent with CDF API.
+_GRANULARITY_UNIT_LOOKUP: dict[str, str] = {
+    "s": "s",
+    "sec": "s",
+    "second": "s",
+    "seconds": "s",
+    "t": "m",
+    "m": "m",
+    "min": "m",
+    "minute": "m",
+    "minutes": "m",
+    "h": "h",
+    "hour": "h",
+    "hours": "h",
+    "d": "d",
+    "day": "d",
+    "days": "d",
+    "w": "w",
+    "week": "w",
+    "weeks": "w",
+    "month": "month",
+    "months": "month",
+    "q": "quarter",
+    "quarter": "quarter",
+    "quarters": "quarter",
+    "y": "year",
+    "year": "year",
+    "years": "year",
+}
 
 
-def standardize_unit(unit: str) -> str:
-    unit = unit.lower()
-    # First three use one letter to be consistent with CDF API.
-    if unit in {"seconds", "second", "s"}:
-        return "s"
-    elif unit in {"minutes", "minute", "m", "min", "t"}:
-        return "m"
-    elif unit in {"hours", "hour", "h"}:
-        return "h"
-    elif unit in {"day", "days", "d"}:
-        return "d"
-    elif unit in {"weeks", "w", "week"}:
-        return "w"
-    elif unit in {"months", "month"}:
-        return "month"
-    elif unit in {"quarters", "quarter", "q"}:
-        return "quarter"
-    elif unit in {"year", "years", "y"}:
-        return "year"
-    raise ValueError(f"Not supported unit {unit}")
+def get_granularity_multiplier_and_unit(granularity: str) -> tuple[int, str]:
+    if granularity and granularity[0].isdigit():
+        _, number, unit = re.split(r"(\d+)", granularity)
+    else:
+        number, unit = 1, granularity
+    try:
+        return int(number), _GRANULARITY_UNIT_LOOKUP[unit.lower()]
+    except KeyError:
+        raise ValueError(f"Not supported granularity: {granularity}") from None
+
+
+def _check_max_granularity_limit(num: int, given_granularity: str) -> int:
+    if num > 100_000:
+        raise ValueError(
+            f"Granularity, {given_granularity!r}, is above the maximum limit of 100k hours equivalent (was {num})."
+        )
+    return num
 
 
 def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> list[dict[str, datetime | str]]:
-    multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
+    multiplier, unit = get_granularity_multiplier_and_unit(granularity)
     if unit in {"h", "m", "s"}:
         # UTC is always fixed for these intervals
         return [{"start": start, "end": end, "granularity": f"{multiplier}{unit}"}]
+
     start, end = align_large_granularity(start, end, granularity)
     if unit in VARIABLE_LENGTH_UNITS:
-        return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit)
+        return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit, granularity)
     else:  # unit in {"day", "week"}:
-        return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit)
+        return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit, granularity)
 
 
 def _to_fixed_utc_intervals_variable_unit_length(
-    start: datetime, end: datetime, multiplier: int, unit: str
+    start: datetime, end: datetime, multiplier: int, unit: str, granularity: str
 ) -> list[dict[str, datetime | str]]:
     freq = to_pandas_freq(f"{multiplier}{unit}", start)
     index = pandas_date_range_tz(start, end, freq)
@@ -507,25 +529,25 @@ def _to_fixed_utc_intervals_variable_unit_length(
         {
             "start": start.to_pydatetime().astimezone(utc),
             "end": end.to_pydatetime().astimezone(utc),
-            "granularity": f"{(end-start)/timedelta(hours=1):.0f}h",
+            "granularity": f"{_check_max_granularity_limit((end - start) // timedelta(hours=1), granularity)}h",
         }
         for start, end in zip(index[:-1], index[1:])
     ]
 
 
 def _to_fixed_utc_intervals_fixed_unit_length(
-    start: datetime, end: datetime, multiplier: int, unit: str
+    start: datetime, end: datetime, multiplier: int, unit: str, granularity: str
 ) -> list[dict[str, datetime | str]]:
     pd = local_import("pandas")
-    utc = get_utc_zoneinfo()
 
-    freq = multiplier * GRANULARITY_IN_HOURS[unit]
     index = pandas_date_range_tz(start, end, to_pandas_freq(f"{multiplier}{unit}", start))
     utc_offsets = pd.Series([t.utcoffset() for t in index], index=index)
     transition_raw = index[(utc_offsets != utc_offsets.shift(-1)) | (utc_offsets != utc_offsets.shift(1))]
 
-    hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     transitions = []
+    utc = get_utc_zoneinfo()
+    freq = multiplier * GRANULARITY_IN_HOURS[unit]
+    hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     for t_start, t_end in zip(transition_raw[:-1], transition_raw[1:]):
         if t_start.dst() == t_end.dst():
             dst_adjustment = 0
@@ -542,7 +564,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
             {
                 "start": t_start.to_pydatetime().astimezone(utc),
                 "end": t_end.to_pydatetime().astimezone(utc),
-                "granularity": f"{freq+dst_adjustment}h",
+                "granularity": f"{_check_max_granularity_limit(freq + dst_adjustment, granularity)}h",
             }
         )
     return transitions
@@ -620,61 +642,22 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
     raise ValueError("Only tz-aware pandas.Timestamp and datetime (must be using ZoneInfo) are supported.")
 
 
-def to_pandas_freq(granularity: str, start: datetime) -> str:
-    multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
+_STANDARD_GRANULARITY_TO_PANDAS_LOOKUP: dict[str, str] = {
+    "s": "S",
+    "m": "T",
+    "h": "H",
+    "d": "D",
+    "w": "W-MON",
+    "month": "MS",
+    "quarter": "QS",
+    "year": "YS",
+}
 
-    unit = {"s": "S", "m": "T", "h": "H", "d": "D", "w": "W-MON", "month": "MS", "quarter": "QS", "year": "YS"}.get(
-        unit, unit
-    )
+
+def to_pandas_freq(granularity: str, start: datetime) -> str:
+    multiplier, unit = get_granularity_multiplier_and_unit(granularity)
+    unit = _STANDARD_GRANULARITY_TO_PANDAS_LOOKUP.get(unit, unit)
     if unit == "QS":
         floored = QuarterAligner.floor(start)
-        unit += {
-            1: "-JAN",
-            4: "-APR",
-            7: "-JUL",
-            10: "-OCT",
-        }[floored.month]
-
+        unit += {1: "-JAN", 4: "-APR", 7: "-JUL", 10: "-OCT"}[floored.month]
     return f"{multiplier}{unit}"
-
-
-def _unit_in_days(unit: str, ceil: bool = True) -> float:
-    """
-    Converts the unit to days.
-
-    **Caveat** Should not be used for precise calculations, as month, quarter, and year
-    do not have a precise timespan in days. Instead, the ceil argument is used to select between
-    the maximum and minimum length of a year, quarter, and month.
-    """
-    if unit in {"w", "d", "h", "m", "s"}:
-        unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
-        arg = {unit: 1}
-        return timedelta(**arg) / timedelta(hours=1)
-
-    if unit == "month":
-        days = 31.0 if ceil else 28.0
-    elif unit == "quarter":
-        days = 92.0 if ceil else 91.0
-    else:  # years
-        days = 366.0 if ceil else 365.0
-    return days
-
-
-def in_timedelta(granularity: str, ceil: bool = True) -> timedelta:
-    """
-    Converts the granularity to a timedelta.
-
-    Args:
-        granularity (str): The granularity.
-        ceil (bool): In the case the unit is month, quarter or year. Ceil = True will use 31, 92, 366 days for these timespans, and if ceil is false 28, 91, 365
-
-    Returns:
-        timedelta: A timespan for the granularity
-    """
-    multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
-    if unit in {"w", "d", "h", "m", "s"}:
-        unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
-        arg = {unit: multiplier}
-        return timedelta(**arg)
-    days = _unit_in_days(unit, ceil)
-    return timedelta(days=multiplier * days)
