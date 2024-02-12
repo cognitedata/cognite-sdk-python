@@ -1082,7 +1082,7 @@ class DatapointsAPI(APIClient):
                 >>> # In Python >=3.9 you may import directly from `zoneinfo`
                 >>> from cognite.client.utils import ZoneInfo
                 >>> client = CogniteClient()
-                >>> df = client.time_series.data.retrieve_dataframe(
+                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates=["sum", "continuous_variance"],
                 ...     granularity="1quarter",
