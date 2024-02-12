@@ -17,9 +17,7 @@ from cognite.client.data_classes import (
     Geometry,
     GeometryFilter,
 )
-from cognite.client.data_classes import (
-    filters as flt,
-)
+from cognite.client.data_classes import filters as flt
 from cognite.client.data_classes.assets import AssetProperty
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
@@ -281,8 +279,9 @@ class TestAssetsAPI:
                 external_id=[new_asset.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
 
-    def test_filter_on_metadata_key(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        is_integration_test = flt.Prefix("external_id", "integration_test:")
+    def test_filter_on_metadata_key(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
         result = cognite_client.assets.filter(
@@ -291,8 +290,9 @@ class TestAssetsAPI:
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"
 
-    def test_filter_without_sort(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        is_integration_test = flt.Prefix("external_id", "integration_test:")
+    def test_filter_without_sort(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
         result = cognite_client.assets.filter(
