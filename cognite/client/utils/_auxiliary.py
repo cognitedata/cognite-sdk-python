@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 import functools
-import json
 import math
-import numbers
 import platform
 import warnings
-from decimal import Decimal
 from threading import Thread
 from typing import (
     TYPE_CHECKING,
@@ -20,6 +17,7 @@ from typing import (
 )
 from urllib.parse import quote
 
+from cognite.client.utils import _json
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -73,7 +71,7 @@ def load_yaml_or_json(resource: str) -> Any:
 
         return yaml.safe_load(resource)
     except ImportError:
-        return json.loads(resource)
+        return _json.loads(resource)
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
@@ -113,16 +111,6 @@ def handle_renamed_argument(
 def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: dict[str, Any]) -> T:
     new_arg_name = to_snake_case(old_arg_name)
     return handle_renamed_argument(new_arg, new_arg_name, old_arg_name, fn_name, kw_dct)
-
-
-def json_dump_default(x: Any) -> Any:
-    if isinstance(x, numbers.Integral):
-        return int(x)
-    if isinstance(x, (Decimal, numbers.Real)):
-        return float(x)
-    if hasattr(x, "__dict__"):
-        return x.__dict__
-    raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
