@@ -3,7 +3,16 @@ Filters
 
 The filter language provides a set of classes that can be used to construct complex
 queries for filtering data. Each filter class represents a specific filtering criterion,
-allowing users to tailor their queries to their specific needs. Below is an overview of the
+allowing users to tailor their queries to their specific needs. 
+
+The filter classes can be shared both by the classic CDF resources (like Assets, Time Series, Events, Files etc) and Data Modelling (Views and Instances).
+
+When filtering on Data Modelling, the filter can be used on any container property. These can be referenced directly with a tuple notation like: 
+``('space', 'view_external_id/view_version', 'property')``,
+or, which is usually more convenient, one can use the ``as_property_ref`` method on the View or ViewID object like:
+``myView.as_property_ref('property')``.
+
+Below is an overview of the
 available filters:
 
 Filter

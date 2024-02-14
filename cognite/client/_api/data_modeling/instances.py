@@ -1125,6 +1125,15 @@ class InstancesAPI(APIClient):
 
                 >>> instance_list = c.data_modeling.instances.list(space="my-space")
 
+            List instances and sort by some property:
+
+                >>> from cognite.client.data_classes.data_modeling import InstanceSort
+                >>> property_sort = InstanceSort(
+                ...     property=('space', 'view_xid/view_version', 'some_property'),
+                ...     direction="descending",
+                ...     nulls_first=True)
+                >>> instance_list = c.data_modeling.instances.list(sort=property_sort)
+
             Iterate over instances (note: returns nodes):
 
                 >>> for instance in c.data_modeling.instances:
