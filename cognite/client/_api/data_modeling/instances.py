@@ -1115,21 +1115,24 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            List instances and sort by some property:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import InstanceSort
-                >>> c = CogniteClient()
-                >>> property_sort = InstanceSort(property=('space', 'view_xid/view_version', 'some_property'), direction="descending", nulls_first=True)
-                >>> instance_list = c.data_modeling.instances.list(sort=property_sort)
-
             List instances and limit to 5:
 
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
                 >>> instance_list = c.data_modeling.instances.list(limit=5)
 
             List some instances in the space 'my-space':
 
                 >>> instance_list = c.data_modeling.instances.list(space="my-space")
+
+            List instances and sort by some property:
+
+                >>> from cognite.client.data_classes.data_modeling import InstanceSort
+                >>> property_sort = InstanceSort(
+                ...     property=('space', 'view_xid/view_version', 'some_property'),
+                ...     direction="descending",
+                ...     nulls_first=True)
+                >>> instance_list = c.data_modeling.instances.list(sort=property_sort)
 
             Iterate over instances (note: returns nodes):
 
