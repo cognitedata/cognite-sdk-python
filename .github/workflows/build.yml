@@ -26,6 +26,7 @@ jobs:
       - name: Linting and static code checks
         run: pre-commit run --all-files
 
+      # TODO: Consider moving to a meta test (or remove entirely)
       - name: Verify proto files
         env:
           TMPDIR: latest_proto

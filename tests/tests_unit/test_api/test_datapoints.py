@@ -774,7 +774,7 @@ class TestRetrieveDataPointsInTz:
                 },
                 "Europe/Oslo",
                 "Europe/Oslo",
-                "Granularity above the maximum limit, 11 years.",
+                r"^Granularity, '12years', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
                 id="Granularity above maximum aggregation limit in hours",
             ),
             pytest.param(
@@ -787,7 +787,7 @@ class TestRetrieveDataPointsInTz:
                 },
                 "Europe/Oslo",
                 "Europe/Oslo",
-                "Granularity above the maximum limit, 45 quarters.",
+                r"^Granularity, '48quarters', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
                 id="Granularity above maximum aggregation limit in quarters",
             ),
             pytest.param(
