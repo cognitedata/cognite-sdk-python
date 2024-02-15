@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import TypeAlias
@@ -648,6 +649,19 @@ class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
             str: new-line delimited log entries.
         """
         return "\n".join(entry._format(with_timestamps) for entry in self)
+
+    def _repr_html_(self) -> str:
+        html = [
+            '<table><tr><th style="text-align: left;">Timestamp, UTC</th>'
+            '<th style="text-align: left;">Message</th></tr>'
+        ]
+        for log in self:
+            ts = datetime.fromtimestamp(cast(int, log.timestamp) / 1000).isoformat(sep=" ", timespec="milliseconds")
+            html.append(
+                f"<tr><td style='text-align: left;'>{ts}</td><td style='text-align: left;'>{log.message}</td></tr>"
+            )
+        html.append("</table>")
+        return "".join(html)
 
 
 class FunctionsLimits(CogniteResponse):
