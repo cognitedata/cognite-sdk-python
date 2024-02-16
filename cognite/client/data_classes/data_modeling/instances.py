@@ -18,6 +18,7 @@ from typing import (
     Literal,
     Mapping,
     MutableMapping,
+    NoReturn,
     TypeVar,
     Union,
     ValuesView,
@@ -288,6 +289,50 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         self.created_time = created_time
         self.deleted_time = deleted_time
         self.properties: Properties = properties or Properties({})
+
+        if len(self.properties) == 1:
+            (self.__prop_lookup,) = self.properties.values()
+        else:
+            # For speed, we want this to fail (to avoid LBYL pattern):
+            self.__prop_lookup = None  # type: ignore [assignment]
+
+    def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
+        raise RuntimeError(
+            "Quick property access (get/set/del) is only possible on instances from a single source. "
+            f"Hint: You may use `instance.properties[view_id][{attr!r}]`"
+        ) from None
+
+    @overload
+    def get(self, attr: str) -> PropertyValue | None:
+        ...
+
+    @overload
+    def get(self, attr: str, default: _T) -> PropertyValue | _T:
+        ...
+
+    def get(self, attr: str, default: Any = None) -> Any:
+        try:
+            return self.__prop_lookup.get(attr, default)
+        except AttributeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __getitem__(self, attr: str) -> PropertyValue:
+        try:
+            return self.__prop_lookup[attr]
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __setitem__(self, attr: str, item: PropertyValue) -> None:
+        try:
+            self.__prop_lookup[attr] = item
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __delitem__(self, attr: str) -> None:
+        try:
+            del self.__prop_lookup[attr]
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
