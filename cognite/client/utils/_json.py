@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import numbers
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any
 
 __all__ = ["dumps", "loads"]
 
@@ -29,10 +29,15 @@ def dumps(
     obj: Any,
     indent: int | None = None,
     allow_nan: bool = True,
-    default: Callable[[Any], Any] = _default_json_encoder,
     sort_keys: bool = False,
 ) -> str:
-    return json.dumps(obj, default=default, indent=indent, allow_nan=allow_nan, sort_keys=sort_keys)
+    return json.dumps(
+        obj,
+        default=_default_json_encoder,
+        indent=indent,
+        allow_nan=allow_nan,
+        sort_keys=sort_keys,
+    )
 
 
 loads = json.loads
