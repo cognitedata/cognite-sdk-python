@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import operator as op
 import typing
 import warnings
@@ -20,6 +19,7 @@ from typing import (
 )
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates, no_op
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
@@ -279,7 +279,7 @@ class DatapointsArray(CogniteResource):
         return id(self) == id(other)
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(convert_timestamps=True), indent=4)
+        return _json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     @overload
     def __getitem__(self, item: int) -> Datapoint:
@@ -491,7 +491,7 @@ class Datapoints(CogniteResource):
     def __str__(self) -> str:
         item = self.dump()
         item["datapoints"] = convert_and_isoformat_time_attrs(item["datapoints"])
-        return json.dumps(item, indent=4)
+        return _json.dumps(item, indent=4)
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -765,7 +765,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         return super().get(id, external_id)
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(convert_timestamps=True), indent=4)
+        return _json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     def to_pandas(  # type: ignore [override]
         self,
@@ -847,7 +847,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         item = self.dump()
         for i in item:
             i["datapoints"] = convert_and_isoformat_time_attrs(i["datapoints"])
-        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
+        return _json.dumps(item, indent=4)
 
     def to_pandas(  # type: ignore [override]
         self,

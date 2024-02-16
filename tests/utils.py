@@ -6,7 +6,6 @@ import enum
 import gzip
 import importlib
 import inspect
-import json
 import math
 import os
 import random
@@ -43,6 +42,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowTaskParameters,
 )
 from cognite.client.testing import CogniteClientMock
+from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string
 
@@ -152,7 +152,7 @@ def tmp_set_envvar(envvar: str, value: str):
 
 
 def jsgz_load(s):
-    return json.loads(gzip.decompress(s).decode())
+    return _json.loads(gzip.decompress(s).decode())
 
 
 @contextmanager

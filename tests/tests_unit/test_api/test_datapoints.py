@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 import re
 from datetime import datetime, timezone
@@ -12,6 +11,7 @@ from cognite.client import CogniteClient
 from cognite.client._api.datapoints import DatapointsBin
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._time import granularity_to_ms, import_zoneinfo
 from tests.utils import jsgz_load
 
@@ -55,7 +55,7 @@ def mock_retrieve_latest(rsps, cognite_client):
                     "datapoints": [{"timestamp": before - 1, "value": random()}],
                 }
             )
-        return 200, {}, json.dumps({"items": items})
+        return 200, {}, _json.dumps({"items": items})
 
     rsps.add_callback(
         rsps.POST,

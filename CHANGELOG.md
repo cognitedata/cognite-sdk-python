@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.20.0] - 2024-02-13
+### Fixed
+- internal json encoder now understands CogniteObject and CogniteFilter objects, so that they are
+  correctly serialized when used in nested structures.
+
 ## [7.19.2] - 2024-02-13
 ### Fixed
 - Addressed `FutureWarning` coming from pandas dependency (granularity to pandas frequency translation of sec/min/hour and 'year start')

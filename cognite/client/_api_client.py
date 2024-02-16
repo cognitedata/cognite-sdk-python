@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import gzip
-import json as _json
 import logging
 import re
 import warnings
@@ -45,12 +44,12 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
     get_current_sdk_version,
     get_user_agent,
     interpolate_and_url_encode,
     is_unlimited,
-    json_dump_default,
     split_into_chunks,
     unpack_items_in_payload,
 )
@@ -202,7 +201,7 @@ class APIClient:
 
         if json_payload:
             try:
-                data = _json.dumps(json_payload, default=json_dump_default, allow_nan=False)
+                data = _json.dumps(json_payload, allow_nan=False)
             except ValueError as e:
                 # A lot of work to give a more human friendly error message when nans and infs are present:
                 msg = "Out of range float values are not JSON compliant"

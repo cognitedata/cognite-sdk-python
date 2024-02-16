@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -21,6 +20,7 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
@@ -627,7 +627,7 @@ class ThreeDAssetMappingAPI(APIClient):
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         flt: dict[str, str | int | None] = {"nodeId": node_id, "assetId": asset_id}
         if intersects_bounding_box:
-            flt["intersectsBoundingBox"] = json.dumps(intersects_bounding_box.dump(camel_case=True))
+            flt["intersectsBoundingBox"] = _json.dumps(intersects_bounding_box)
         return self._list(
             list_cls=ThreeDAssetMappingList,
             resource_cls=ThreeDAssetMapping,

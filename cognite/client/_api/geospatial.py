@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import numbers
 import urllib.parse
 from typing import Any, Iterator, Sequence, cast, overload
@@ -28,6 +27,7 @@ from cognite.client.data_classes.geospatial import (
     RasterMetadata,
 )
 from cognite.client.exceptions import CogniteConnectionError
+from cognite.client.utils import _json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -719,7 +719,7 @@ class GeospatialAPI(APIClient):
 
         try:
             for line in res.iter_lines():
-                yield Feature._load(json.loads(line))
+                yield Feature._load(_json.loads(line))
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing
 import warnings
 from abc import ABC
@@ -27,6 +26,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import at_least_one_is_not_none
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -664,7 +664,7 @@ class SequenceRows(CogniteResource):
         self.external_id = external_id
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), indent=4)
+        return _json.dumps(self, indent=4)
 
     def __len__(self) -> int:
         return len(self.rows)
@@ -841,7 +841,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
     _RESOURCE = SequenceRows
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), indent=4)
+        return _json.dumps(self, indent=4)
 
     @overload  # type: ignore[override]
     def to_pandas(
