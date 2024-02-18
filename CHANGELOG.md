@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.20.1] - 2024-02-19
+### Fixed
+- `DMLApplyResult` no longer fails when converted to a string (representation).
+
 ## [7.20.0] - 2024-02-13
 ### Fixed
 - internal json encoder now understands CogniteObject and CogniteFilter objects, so that they are
