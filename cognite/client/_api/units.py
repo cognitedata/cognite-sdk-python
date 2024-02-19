@@ -53,14 +53,14 @@ class UnitAPI(APIClient):
             Retrive unit 'temperature:deg_c'::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.units.retrieve('temperature:deg_c')
+                >>> client = CogniteClient()
+                >>> res = client.units.retrieve('temperature:deg_c')
 
             Retrive units 'temperature:deg_c' and 'pressure:bar'::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.units.retrieve(['temperature:deg_c', 'pressure:bar'])
+                >>> client = CogniteClient()
+                >>> res = client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
 
         """
         identifier = IdentifierSequence.load(external_ids=external_id)
@@ -82,8 +82,8 @@ class UnitAPI(APIClient):
             List all supported unit in CDF::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.units.list()
+                >>> client = CogniteClient()
+                >>> res = client.units.list()
         """
         return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
 
@@ -102,8 +102,8 @@ class UnitSystemAPI(APIClient):
             List all supported unit systems in CDF::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.units.systems.list()
+                >>> client = CogniteClient()
+                >>> res = client.units.systems.list()
 
         """
         return self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)

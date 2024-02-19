@@ -83,14 +83,14 @@ class SpacesAPI(APIClient):
         Examples:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.spaces.retrieve(space='mySpace')
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.spaces.retrieve(space='mySpace')
 
             Get multiple spaces by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
         identifier = _load_space_identifier(spaces)
@@ -113,8 +113,8 @@ class SpacesAPI(APIClient):
             Delete spaces by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.spaces.delete(spaces=["mySpace", "myOtherSpace"])
+                >>> client = CogniteClient()
+                >>> client.data_modeling.spaces.delete(spaces=["mySpace", "myOtherSpace"])
         """
         deleted_spaces = cast(
             list,
@@ -146,21 +146,21 @@ class SpacesAPI(APIClient):
             List spaces and filter on max start time::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> space_list = c.data_modeling.spaces.list(limit=5)
+                >>> client = CogniteClient()
+                >>> space_list = client.data_modeling.spaces.list(limit=5)
 
             Iterate over spaces::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for space in c.data_modeling.spaces:
+                >>> client = CogniteClient()
+                >>> for space in client.data_modeling.spaces:
                 ...     space # do something with the space
 
             Iterate over chunks of spaces to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for space_list in c.data_modeling.spaces(chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for space_list in client.data_modeling.spaces(chunk_size=2500):
                 ...     space_list # do something with the spaces
         """
         return self._list(
@@ -194,10 +194,10 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import SpaceApply
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> spaces = [SpaceApply(space="mySpace", description="My first space", name="My Space"),
                 ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
-                >>> res = c.data_modeling.spaces.apply(spaces)
+                >>> res = client.data_modeling.spaces.apply(spaces)
         """
         return self._create_multiple(
             list_cls=SpaceList,

@@ -298,8 +298,8 @@ class InstancesAPI(APIClient):
             Retrieve instances by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve(
                 ...     nodes=("mySpace", "myNodeExternalId"),
                 ...     edges=("mySpace", "myEdgeExternalId"),
                 ...     sources=("mySpace", "myViewExternalId", "myViewVersion"))
@@ -308,8 +308,8 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, ViewId
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     ViewId("mySpace", "myViewExternalId", "myViewVersion"))
@@ -318,8 +318,8 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     sources=("myspace", "myView"))
@@ -391,24 +391,24 @@ class InstancesAPI(APIClient):
             Delete instances by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(nodes=("mySpace", "myNode"))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.instances.delete(nodes=("mySpace", "myNode"))
 
             Delete nodes and edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
 
             Delete all nodes from a NodeList
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> c = CogniteClient()
-                >>> my_view = c.data_modeling.views.retrieve('mySpace', 'myView')
-                >>> my_nodes = c.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
-                >>> c.data_modeling.instances.delete(nodes=my_nodes.as_ids())
+                >>> client = CogniteClient()
+                >>> my_view = client.data_modeling.views.retrieve('mySpace', 'myView')
+                >>> my_nodes = client.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
+                >>> client.data_modeling.instances.delete(nodes=my_nodes.as_ids())
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(
@@ -453,7 +453,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Range
                 >>>
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> def just_print_the_result(result: QueryResult) -> None:
                 ...     print(result)
                 ...
@@ -463,7 +463,7 @@ class InstancesAPI(APIClient):
                 ...     with_={"movies": NodeResultSetExpression(filter=filter)},
                 ...     select={"movies": Select([SourceSelector(view_id, ["releaseYear"])])}
                 ... )
-                >>> subscription_context = c.data_modeling.instances.subscribe(query, just_print_the_result)
+                >>> subscription_context = client.data_modeling.instances.subscribe(query, just_print_the_result)
                 >>> subscription_context.cancel()
         """
         for result_set_expression in query.with_.values():
@@ -577,9 +577,9 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> nodes = [NodeApply("mySpace", "myNodeId")]
-                >>> res = c.data_modeling.instances.apply(nodes)
+                >>> res = client.data_modeling.instances.apply(nodes)
 
             Create two nodes with data with a one-to-many edge
 
@@ -617,13 +617,13 @@ class InstancesAPI(APIClient):
                 ...     start_node=("actors", "arnold_schwarzenegger"),
                 ...     end_node=("movies", "Terminator"),
                 ... )
-                >>> res = c.data_modeling.instances.apply([actor, movie], [actor_to_movie])
+                >>> res = client.data_modeling.instances.apply([actor, movie], [actor_to_movie])
 
             Create new edge and automatically create end nodes.
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> actor_to_movie = EdgeApply(
                 ...     space="actors",
                 ...     external_id="relation:arnold_schwarzenegger:terminator",
@@ -631,7 +631,7 @@ class InstancesAPI(APIClient):
                 ...     start_node=("actors", "arnold_schwarzenegger"),
                 ...     end_node=("movies", "Terminator"),
                 ... )
-                >>> res = c.data_modeling.instances.apply(
+                >>> res = client.data_modeling.instances.apply(
                 ...     edges=actor_to_movie,
                 ...     auto_create_start_nodes=True,
                 ...     auto_create_end_nodes=True
@@ -720,17 +720,17 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"), query="Arnold", properties=["name"])
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"), query="Arnold", properties=["name"])
 
             Search for Quentin in the person view in the name property, but only born after 1970:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes import filters
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
-                >>> res = c.data_modeling.instances.search(
+                >>> res = client.data_modeling.instances.search(
                 ...     ViewId("mySpace", "PersonView", "v1"),
                 ...     query="Quentin",
                 ...     properties=["name"],
@@ -834,10 +834,10 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId, aggregations as aggs
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> avg_run_time = aggs.Avg("runTimeMinutes")
                 >>> view_id = ViewId("mySpace", "PersonView", "v1")
-                >>> res = c.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
+                >>> res = client.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
 
         """
         if instance_type not in ("node", "edge"):
@@ -932,10 +932,10 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import aggregations as aggs, ViewId
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> birth_by_decade = aggs.Histogram("birthYear", interval=10.0)
                 >>> view_id = ViewId("mySpace", "PersonView", "v1")
-                >>> res = c.data_modeling.instances.histogram(view_id, birth_by_decade)
+                >>> res = client.data_modeling.instances.histogram(view_id, birth_by_decade)
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
@@ -991,7 +991,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
@@ -1005,7 +1005,7 @@ class InstancesAPI(APIClient):
                 ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
                 ...     },
                 ... )
-                >>> res = c.data_modeling.instances.query(query)
+                >>> res = client.data_modeling.instances.query(query)
         """
         return self._query_or_sync(query, "query")
 
@@ -1029,7 +1029,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
@@ -1043,10 +1043,10 @@ class InstancesAPI(APIClient):
                 ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
                 ...     },
                 ... )
-                >>> res = c.data_modeling.instances.sync(query)
+                >>> res = client.data_modeling.instances.sync(query)
                 >>> # Added a new movie with actors released before 2000
                 >>> query.cursors = res.cursors
-                >>> res_new = c.data_modeling.instances.sync(query)
+                >>> res_new = client.data_modeling.instances.sync(query)
 
             In the last example, the res_new will only contain the actors that have been added with the new movie.
         """
@@ -1118,12 +1118,12 @@ class InstancesAPI(APIClient):
             List instances and limit to 5:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> instance_list = c.data_modeling.instances.list(limit=5)
+                >>> client = CogniteClient()
+                >>> instance_list = client.data_modeling.instances.list(limit=5)
 
             List some instances in the space 'my-space':
 
-                >>> instance_list = c.data_modeling.instances.list(space="my-space")
+                >>> instance_list = client.data_modeling.instances.list(space="my-space")
 
             List instances and sort by some property:
 
@@ -1132,16 +1132,16 @@ class InstancesAPI(APIClient):
                 ...     property=('space', 'view_xid/view_version', 'some_property'),
                 ...     direction="descending",
                 ...     nulls_first=True)
-                >>> instance_list = c.data_modeling.instances.list(sort=property_sort)
+                >>> instance_list = client.data_modeling.instances.list(sort=property_sort)
 
             Iterate over instances (note: returns nodes):
 
-                >>> for instance in c.data_modeling.instances:
+                >>> for instance in client.data_modeling.instances:
                 ...     instance # do something with the instance
 
             Iterate over chunks of instances to reduce memory load:
 
-                >>> for instance_list in c.data_modeling.instances(chunk_size=100):
+                >>> for instance_list in client.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
         self._validate_filter(filter)

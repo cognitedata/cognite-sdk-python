@@ -359,8 +359,8 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
 
                 >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> features = c.geospatial.search_features(...)
+                >>> client = CogniteClient()
+                >>> features = client.geospatial.search_features(...)
                 >>> gdf = features.to_geopandas(
                 ...     geometry="position",
                 ...     camel_case=False
@@ -398,13 +398,13 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
             Create features from a geopandas dataframe:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_feature_type = ... # some feature type with 'position' and 'temperature' properties
                 >>> my_geodataframe = ...  # some geodataframe with 'center_xy', 'temp' and 'id' columns
                 >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, geodataframe=my_geodataframe,
                 >>>     external_id_column="id", data_set_id_column="dataSetId",
                 >>>     property_column_mapping={'position': 'center_xy', 'temperature': 'temp'})
-                >>> created_features = c.geospatial.create_features(my_feature_type.external_id, feature_list)
+                >>> created_features = client.geospatial.create_features(my_feature_type.external_id, feature_list)
 
         """
         features = []

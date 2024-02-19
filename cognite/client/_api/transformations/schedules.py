@@ -61,9 +61,9 @@ class TransformationSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationScheduleWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> schedules = [TransformationScheduleWrite(id = 1, interval = "0 * * * *"), TransformationScheduleWrite(external_id="transformation2", interval = "5 * * * *"))]
-                >>> res = c.transformations.schedules.create(schedules)
+                >>> res = client.transformations.schedules.create(schedules)
         """
         assert_type(schedule, "schedule", [TransformationScheduleCore, Sequence])
 
@@ -89,14 +89,14 @@ class TransformationSchedulesAPI(APIClient):
             Get transformation schedule by transformation id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.schedules.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.transformations.schedules.retrieve(id=1)
 
             Get transformation schedule by transformation external id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.schedules.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.transformations.schedules.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -124,14 +124,14 @@ class TransformationSchedulesAPI(APIClient):
             Get transformation schedules by transformation ids:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.schedules.retrieve_multiple(ids=[1, 2, 3])
+                >>> client = CogniteClient()
+                >>> res = client.transformations.schedules.retrieve_multiple(ids=[1, 2, 3])
 
             Get transformation schedules by transformation external ids:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.schedules.retrieve_multiple(external_ids=["t1", "t2"])
+                >>> client = CogniteClient()
+                >>> res = client.transformations.schedules.retrieve_multiple(external_ids=["t1", "t2"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -156,8 +156,8 @@ class TransformationSchedulesAPI(APIClient):
             List schedules::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> schedules_list = c.transformations.schedules.list()
+                >>> client = CogniteClient()
+                >>> schedules_list = client.transformations.schedules.list()
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
 
@@ -187,8 +187,8 @@ class TransformationSchedulesAPI(APIClient):
             Delete schedules by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.transformations.schedules.delete(id=[1,2,3], external_id="3")
+                >>> client = CogniteClient()
+                >>> client.transformations.schedules.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -228,18 +228,18 @@ class TransformationSchedulesAPI(APIClient):
             Update a transformation schedule that you have fetched. This will perform a full update of the schedule::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> transformation_schedule = c.transformations.schedules.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> transformation_schedule = client.transformations.schedules.retrieve(id=1)
                 >>> transformation_schedule.is_paused = True
-                >>> res = c.transformations.schedules.update(transformation_schedule)
+                >>> res = client.transformations.schedules.update(transformation_schedule)
 
             Perform a partial update on a transformation schedule, updating the interval and unpausing it::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationScheduleUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
-                >>> res = c.transformations.schedules.update(my_update)
+                >>> res = client.transformations.schedules.update(my_update)
         """
         return self._update_multiple(
             list_cls=TransformationScheduleList,
