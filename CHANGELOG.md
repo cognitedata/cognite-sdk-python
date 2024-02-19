@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.21.0] - 2024-02-10
+### Added
+- Parameter `sort` to `client.documents.list.
+
 ## [7.20.1] - 2024-02-19
 ### Fixed
 - `DMLApplyResult` no longer fails when converted to a string (representation).
