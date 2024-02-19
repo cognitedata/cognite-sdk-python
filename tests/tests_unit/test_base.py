@@ -381,10 +381,10 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_use_method_which_requires_cognite_client__client_not_set(self):
         mr = MyResource()
@@ -610,10 +610,10 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_use_method_which_requires_cognite_client__client_not_set(self):
         mr = MyResourceList([])
@@ -791,10 +791,10 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_response_no_cogclient_ref(self):
         # CogniteResponse does not have a reference to the cognite client:
