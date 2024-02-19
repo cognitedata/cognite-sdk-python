@@ -755,17 +755,12 @@ class TestCogniteUpdate:
 
     @pytest.mark.parametrize("cognite_update_subclass", all_subclasses(CogniteUpdate))
     def test_correct_implementation_get_update_properties(self, cognite_update_subclass: CogniteUpdate):
-        # Arrange
         expected = sorted(
             key
             for key in cognite_update_subclass.__dict__
             if not key.startswith("_") and key not in {"columns", "dump"}
         )
-
-        # Act
         actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
-
-        # Assert
         assert expected == actual
 
 

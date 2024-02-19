@@ -109,14 +109,13 @@ class DataModelsAPI(APIClient):
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
 
         Returns:
-            DataModelList[ViewId] | DataModelList[View]: Requested data_model or None if it does not exist.
+            DataModelList[ViewId] | DataModelList[View]: Requested data model(s) or empty if none exist.
 
         Examples:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
-
         """
         identifier = _load_identifier(ids, "data_model")
         return self._retrieve_multiple(

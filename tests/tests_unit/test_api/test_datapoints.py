@@ -835,13 +835,11 @@ class TestRetrieveDataPointsInTz:
     def test_retrieve_data_points_in_tz_invalid_user_input(
         args: dict, expected_error_message: str, start_tz: str | None, end_tz: str | None, cognite_client: CogniteClient
     ):
-        # Arrange
         ZoneInfo = import_zoneinfo()
         if start_tz is not None:
             args["start"] = args["start"].astimezone(ZoneInfo(start_tz))
         if end_tz is not None:
             args["end"] = args["end"].astimezone(ZoneInfo(end_tz))
 
-        # Act and Assert
         with pytest.raises(ValueError, match=expected_error_message):
             cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)

@@ -233,8 +233,5 @@ cursors:
 class TestQuery:
     @pytest.mark.parametrize("raw_data, expected", list(query_load_yaml_data()))
     def test_load_yaml(self, raw_data: str, expected: q.Query) -> None:
-        # Act
         actual = q.Query.load_yaml(raw_data)
-
-        # Assert
         assert actual.dump(camel_case=True) == expected.dump(camel_case=True)
