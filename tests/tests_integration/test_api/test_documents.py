@@ -87,7 +87,7 @@ class TestDocumentsAPI:
         )
 
         assert len(documents) >= len(document_list)
-        assert sorted(doc.mime_type for doc in documents) == sorted(doc.mime_type for doc in document_list)
+        assert [doc.mime_type for doc in documents] == sorted(doc.mime_type for doc in document_list)
         exclude = set(_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE)
         retrieved_text = documents.get(id=text_file.id)
         assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
