@@ -689,6 +689,14 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> for document in client.documents:
                 ...    print(document.name)
+
+            List all documents in your CDF project sorted by mime/type in descending order:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import SortableDocumentProperty
+                >>> client = CogniteClient()
+                >>> documents = client.documents.list(sort=(SortableDocumentProperty.mime_type, "desc"))
+
         """
         self._validate_filter(filter)
         return self._list(
