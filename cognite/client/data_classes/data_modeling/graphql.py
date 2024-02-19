@@ -7,6 +7,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject
 from cognite.client.data_classes.data_modeling.ids import DataModelId
+from cognite.client.utils import _json
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -19,8 +20,11 @@ class DMLApplyResult(CogniteObject):
     version: str
     name: str | None
     description: str | None
-    created_time: int
-    last_updated_time: int
+    created_time: str
+    last_updated_time: str
+
+    def __str__(self) -> str:
+        return _json.dumps(self.dump(camel_case=False), indent=4)
 
     def as_id(self) -> DataModelId:
         return DataModelId(
