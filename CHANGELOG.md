@@ -17,6 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.22.0] - 2024-02-19
+### Added
+- Data point subscriptions reaches General Availability (GA).
+  - Use the new [Data point subscriptions](https://developer.cognite.com/dev/concepts/data_point_subscriptions/)
+    feature to configure a subscription to listen to changes in one or more
+    time series (in ingestion order).
+    The feature is intended to be used where data points consumers need to keep up to date with
+    changes to one or more time series without the need to read the entire time series again.
+
+
 ## [7.21.0] - 2024-02-10
 ### Added
 - Parameter `sort` to `client.documents.list.
@@ -248,7 +258,7 @@ Changes are grouped as follows
 
 ## [7.7.1] - 2023-12-20
 ### Fixed
-- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.  
+- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.
 - The `IAMAPI.compare_capabilities` fails with a `AttributeError: 'UnknownAcl' object has no attribute '_capability_name'`
   if the user has an unknwon ACL. This is now fixed by skipping comparison of unknown ACLs and issuing a warning.
 
