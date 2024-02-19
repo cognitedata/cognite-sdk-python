@@ -631,7 +631,7 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client.exceptions import CogniteAssetHierarchyError
                 >>> try:
-                ...     res = c.assets.create_hierarchy(assets)
+                ...     res = client.assets.create_hierarchy(assets)
                 ... except CogniteAssetHierarchyError as err:
                 ...     if err.invalid:
                 ...         ...  # do something
@@ -645,7 +645,7 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client.exceptions import CogniteAPIError
                 >>> try:
-                ...     c.assets.create_hierarchy(assets)
+                ...     client.assets.create_hierarchy(assets)
                 ... except CogniteAPIError as err:
                 ...     created = err.successful
                 ...     maybe_created = err.unknown
@@ -667,7 +667,7 @@ class AssetsAPI(APIClient):
                 >>> from pathlib import Path
                 >>> hierarchy = AssetHierarchy(assets)
                 >>> if hierarchy.is_valid():
-                ...     res = c.assets.create_hierarchy(hierarchy)
+                ...     res = client.assets.create_hierarchy(hierarchy)
                 ... else:
                 ...     hierarchy.validate_and_report(output_file=Path("report.txt"))
         """

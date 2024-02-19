@@ -535,7 +535,7 @@ class DocumentsAPI(APIClient):
                 >>> from pathlib import Path
                 >>> client = CogniteClient()
                 >>> with Path("my_file.txt").open("wb") as buffer:
-                ...     c.documents.retrieve_content_buffer(id=123, buffer=buffer)
+                ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
         with self._do_request(
             "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"

@@ -360,7 +360,7 @@ class TransformationsAPI(APIClient):
                 >>> new_nonce = NonceCredentials(
                 ...     session_id=new_session.id,
                 ...     nonce=new_session.nonce,
-                ...     cdf_project_name=c.config.project
+                ...     cdf_project_name=client.config.project
                 ... )
                 >>> for tr in to_update:
                 ...     tr.source_nonce = new_nonce
