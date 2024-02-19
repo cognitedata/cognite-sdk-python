@@ -167,16 +167,13 @@ class FunctionsAPI(APIClient):
 
             Create function with predefined function object named `handle` with dependencies::
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>>
                 >>> def handle(client, data):
                 >>>     """
                 >>>     [requirements]
                 >>>     numpy
                 >>>     [/requirements]
                 >>>     """
-                >>>     ...
+                >>>     pass
                 >>>
                 >>> function = client.functions.create(name="myfunction", function_handle=handle)
 

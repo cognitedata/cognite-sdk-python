@@ -41,7 +41,7 @@ Use one of the credential providers such as OAuthClientCredentials to authentica
     )
 
     global_config.default_client_config = cnf
-    c = CogniteClient()
+    client = CogniteClient()
 
 Examples for all OAuth credential providers can be found in the :ref:`credential_providers:Credential Providers` section.
 
@@ -61,7 +61,7 @@ You can also make your own credential provider:
       project="my-project",
       credentials=Token(token_provider)
     )
-    c = CogniteClient(cnf)
+    client = CogniteClient(cnf)
 
 Discover time series
 --------------------
@@ -73,8 +73,8 @@ the following code will return the first 25 time series resources.
 
     from cognite.client import CogniteClient
 
-    c = CogniteClient()
-    ts_list = c.time_series.list()
+    client = CogniteClient()
+    ts_list = client.time_series.list()
 
 List available spaces in your Data Modeling project
 ---------------------------------------------------
@@ -84,5 +84,5 @@ In the following example, we list all spaces in the project.
 
     from cognite.client import CogniteClient
 
-    c = CogniteClient()
-    spaces = c.data_modeling.spaces.list()
+    client = CogniteClient()
+    spaces = client.data_modeling.spaces.list()

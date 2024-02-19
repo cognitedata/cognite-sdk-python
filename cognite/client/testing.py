@@ -182,7 +182,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client():
-            >>>     c = CogniteClient()
+            >>>     client = CogniteClient()
             >>>     client.time_series.create(TimeSeries(external_id="blabla"))
 
         This example shows how to set the return value of a given method::
@@ -195,7 +195,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
             >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
-            >>>     c = CogniteClient()
+            >>>     client = CogniteClient()
             >>>     res = client.iam.token.inspect()
             >>>     assert "subject" == res.subject
 
@@ -207,7 +207,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
             >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
-            >>>     c = CogniteClient()
+            >>>     client = CogniteClient()
             >>>     try:
             >>>         res = client.iam.token.inspect()
             >>>     except CogniteAPIError as e:

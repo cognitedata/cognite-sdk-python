@@ -144,10 +144,10 @@ class CogniteAPIError(CogniteMultiException):
             from cognite.client import CogniteClient
             from cognite.client.exceptions import CogniteAPIError
 
-            c = CogniteClient()
+            client = CogniteClient()
 
             try:
-                c.iam.token.inspect()
+                client.iam.token.inspect()
             except CogniteAPIError as e:
                 if e.code == 401:
                     print("You are not authorized")
