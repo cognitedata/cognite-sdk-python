@@ -25,7 +25,7 @@ parser = DocTestParser()
 apis = collect_apis(client, {})
 
 snippets = {"language": "Python", "label": "Python SDK", "operations": defaultdict(str)}
-filter_out = ["from cognite.client import CogniteClient", "c = CogniteClient()", "client = CogniteClient()", ""]
+filter_out = ["from cognite.client import CogniteClient", "client = CogniteClient()", ""]
 
 duplicate_operations = {
     "listAssets": "getAssets",
@@ -47,11 +47,10 @@ for api_name, api in apis:
             for ex in [*parsed_lines, "<end>"]:
                 if isinstance(ex, Example):
                     if ex.source.strip() not in filter_out:
-                        current_snippet += re.sub(r"(= |in |^)c\.", "\\1client.", ex.source.rstrip()) + "\n"
-                elif ex != "":
-                    if current_snippet:
-                        endpoint_snippets.append(current_snippet)
-                        current_snippet = ""
+                        current_snippet += ex.source.rstrip() + "\n"
+                elif ex != "" and current_snippet:
+                    endpoint_snippets.append(current_snippet)
+                    current_snippet = ""
 
             code = "\n".join(endpoint_snippets)
             snippets["operations"][openapi_ident] += code
