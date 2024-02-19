@@ -1168,10 +1168,8 @@ class TestRetrieveAggregateDatapointsAPI:
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
 
         res = retrieve_method(external_id=timeseries.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
-
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(max=res.values)
-
         assert math.isclose(res.max[0], 212)
 
 
@@ -1319,10 +1317,7 @@ class TestRetrieveTimezoneDatapointsAPI:
 
     @staticmethod
     def test_retrieve_dataframe_in_tz_ambiguous_time(cognite_client, hourly_normal_dist):
-        # Arrange
         oslo = ZoneInfo("Europe/Oslo")
-
-        # Act
         df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=hourly_normal_dist.external_id,
             start=datetime(1901, 1, 1, tzinfo=oslo),
@@ -1330,7 +1325,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             aggregates="average",
             granularity="1month",
         )
-
         assert not df.empty
 
     @staticmethod
@@ -1357,7 +1351,6 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client: CogniteClient,
         all_test_time_series: TimeSeriesList,
     ):
-        # Arrange
         time_series = get_test_series(test_series_no, all_test_time_series)
         start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
         raw_df = cognite_client.time_series.data.retrieve_dataframe(
@@ -1372,11 +1365,8 @@ class TestRetrieveTimezoneDatapointsAPI:
             include_aggregate_name=False,
             include_granularity_name=False,
         )
-
-        # Act
         actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
 
-        # Assert
         # Pandas adds the correct frequency to the index, while the SDK does not when uniform is not True.
         # The last point is not compared as the raw data might be missing information to do the correct aggregate.
         pd.testing.assert_frame_equal(
@@ -1399,14 +1389,12 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client: CogniteClient,
         hourly_2023: pd.DataFrame,
     ):
-        # Arrange
         tz = ZoneInfo(tz_name)
         start = datetime(2023, 1, 1, tzinfo=tz)
         end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
         raw_df = hourly_2023.tz_convert(tz_name).loc[str(start) : str(end)].copy()
         expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity)
 
-        # Act
         actual_aggregate = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=list(raw_df.columns),
             aggregates=aggregation,
@@ -1415,8 +1403,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             end=end,
             include_aggregate_name=False,
         )
-
-        # Assert
         # When doing the aggregation in pandas frequency information is added to the
         # resulting dataframe which is not included when retrieving from CDF.
         # The last point is not compared as the raw data might be missing information to do the correct aggregate.
@@ -1437,7 +1423,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             granularity=granularity,
         )
         actual_df.columns = ["count"]
-
         pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
 
     @staticmethod
@@ -1463,7 +1448,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             granularity=granularity,
         )
         actual_df.columns = ["count"]
-
         pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
 
     @staticmethod
@@ -1490,7 +1474,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             uniform_index=True,
         )
         actual_df.columns = ["count"]
-
         pd.testing.assert_index_equal(actual_df.index, expected_index)
 
     @staticmethod
@@ -1504,7 +1487,6 @@ class TestRetrieveTimezoneDatapointsAPI:
     def test_retrieve_dataframe_in_tz_raw_data(
         test_series_no: str, start: str, end: str, tz_name: str, cognite_client, all_test_time_series
     ):
-        # Arrange
         timeseries = get_test_series(test_series_no, all_test_time_series)
         start, end = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
         tz = ZoneInfo(tz_name)
@@ -1514,13 +1496,9 @@ class TestRetrieveTimezoneDatapointsAPI:
             .tz_localize("utc")
             .tz_convert(tz_name)
         )
-
-        # Act
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=timeseries.external_id, start=start, end=end
         )
-
-        # Assert
         pd.testing.assert_frame_equal(actual_df, expected_df)
 
     @staticmethod
@@ -1533,7 +1511,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             columns=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
             dtype="Int64",
         )
-
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
             start=start,
@@ -1542,7 +1519,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             granularity="1day",
             include_aggregate_name=False,
         )
-
         pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)])
 
     @staticmethod
@@ -1556,7 +1532,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             columns=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
             dtype="Int64",
         )
-
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
             start=start,
@@ -1565,7 +1540,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             granularity="1year",
             include_aggregate_name=False,
         )
-
         pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)], check_freq=False)
 
     @staticmethod
@@ -1598,7 +1572,6 @@ class TestRetrieveTimezoneDatapointsAPI:
             aggregates=aggregates,
             granularity=granularity,
         )
-
         assert not df.empty
 
 
@@ -1836,7 +1809,6 @@ class TestRetrieveLatestDatapointsAPI:
         res = cognite_client.time_series.data.retrieve_latest(
             external_id=timeseries.external_id, before="now", **kwargs
         )
-
         assert math.isclose(res.value[0], 212)
         assert res.unit_external_id == "temperature:deg_f"
 
@@ -1855,7 +1827,6 @@ class TestRetrieveLatestDatapointsAPI:
         res = cognite_client.time_series.data.retrieve_latest(
             external_id=LatestDatapointQuery(external_id=timeseries.external_id, before="now", **kwargs)
         )
-
         assert math.isclose(res.value[0], 212)
         assert res.unit_external_id == "temperature:deg_f"
 
