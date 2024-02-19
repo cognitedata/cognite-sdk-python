@@ -30,8 +30,8 @@ class TransformationSchemaAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationDestination
-                >>> c = CogniteClient()
-                >>> columns = c.transformations.schema.retrieve(destination = TransformationDestination.assets())
+                >>> client = CogniteClient()
+                >>> columns = client.transformations.schema.retrieve(destination = TransformationDestination.assets())
         """
 
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))

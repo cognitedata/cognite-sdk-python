@@ -58,19 +58,19 @@ class SyntheticDatapointsAPI(APIClient):
             Request a synthetic time series query with direct syntax
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> dps = c.time_series.data.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
+                >>> client = CogniteClient()
+                >>> dps = client.time_series.data.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
 
             Use variables to re-use an expression:
 
                 >>> vars = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
-                >>> dps = c.time_series.data.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
+                >>> dps = client.time_series.data.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
 
             Use sympy to build complex expressions:
 
                 >>> from sympy import symbols, cos, sin
                 >>> a = symbols('a')
-                >>> dps = c.time_series.data.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m', target_unit='temperature:deg_c')
+                >>> dps = client.time_series.data.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m', target_unit='temperature:deg_c')
         """
         if limit is None or limit == -1:
             limit = cast(int, float("inf"))

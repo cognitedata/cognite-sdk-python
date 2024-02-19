@@ -169,8 +169,8 @@ class RelationshipsAPI(APIClient):
             Get relationship by external id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.relationships.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.relationships.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -199,8 +199,8 @@ class RelationshipsAPI(APIClient):
             Get relationships by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
+                >>> client = CogniteClient()
+                >>> res = client.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -258,14 +258,14 @@ class RelationshipsAPI(APIClient):
             List relationships::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> relationship_list = c.relationships.list(limit=5)
+                >>> client = CogniteClient()
+                >>> relationship_list = client.relationships.list(limit=5)
 
             Iterate over relationships::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for relationship in c.relationships:
+                >>> client = CogniteClient()
+                >>> for relationship in client.relationships:
                 ...     relationship # do something with the relationship
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -360,7 +360,7 @@ class RelationshipsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> flowrel1 = Relationship(
                 ...     external_id="flow_1",
                 ...     source_external_id="source_ext_id",
@@ -379,7 +379,7 @@ class RelationshipsAPI(APIClient):
                 ...     confidence=0.1,
                 ...     data_set_id=1234
                 ... )
-                >>> res = c.relationships.create([flowrel1,flowrel2])
+                >>> res = client.relationships.create([flowrel1,flowrel2])
         """
         assert_type(relationship, "relationship", [RelationshipCore, Sequence])
         if isinstance(relationship, Sequence):
@@ -422,37 +422,37 @@ class RelationshipsAPI(APIClient):
             Update a data set that you have fetched. This will perform a full update of the data set::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> rel = c.relationships.retrieve(external_id="flow1")
+                >>> client = CogniteClient()
+                >>> rel = client.relationships.retrieve(external_id="flow1")
                 >>> rel.confidence = 0.75
-                >>> res = c.relationships.update(rel)
+                >>> res = client.relationships.update(rel)
 
             Perform a partial update on a relationship, setting a source_external_id and a confidence::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").source_external_id.set("alternate_source").confidence.set(0.97)
-                >>> res1 = c.relationships.update(my_update)
+                >>> res1 = client.relationships.update(my_update)
                 >>> # Remove an already set optional field like so
                 >>> another_update = RelationshipUpdate(external_id="flow_1").confidence.set(None)
-                >>> res2 = c.relationships.update(another_update)
+                >>> res2 = client.relationships.update(another_update)
 
             Attach labels to a relationship::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.add(["PUMP", "VERIFIED"])
-                >>> res = c.relationships.update(my_update)
+                >>> res = client.relationships.update(my_update)
 
             Detach a single label from a relationship::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
-                >>> res = c.relationships.update(my_update)
+                >>> res = client.relationships.update(my_update)
         """
         return self._update_multiple(
             list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
@@ -494,11 +494,11 @@ class RelationshipsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
-                >>> c = CogniteClient()
-                >>> existing_relationship = c.relationships.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> existing_relationship = client.relationships.retrieve(id=1)
                 >>> existing_relationship.description = "New description"
                 >>> new_relationship = Relationship(external_id="new_relationship", source_external_id="new_source")
-                >>> res = c.relationships.upsert([existing_relationship, new_relationship], mode="replace")
+                >>> res = client.relationships.upsert([existing_relationship, new_relationship], mode="replace")
         """
         return self._upsert_multiple(
             item,
@@ -520,8 +520,8 @@ class RelationshipsAPI(APIClient):
             Delete relationships by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.relationships.delete(external_id=["a","b"])
+                >>> client = CogniteClient()
+                >>> client.relationships.delete(external_id=["a","b"])
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),

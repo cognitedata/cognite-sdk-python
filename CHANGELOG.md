@@ -2166,11 +2166,11 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
   ```python
   # using a single string
   my_update = AssetUpdate(id=1).labels.add("PUMP").labels.remove("VALVE")
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
 
   # using a list of strings
   my_update = AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
   ```
 
 ## [2.0.0] - 2020-07-21
@@ -2201,7 +2201,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 
   # attach/detach labels to/from assets
   my_update = AssetUpdate(id=1).labels.add(["PUMP"]).labels.remove(["VALVE"])
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
   ```
 
 ### Fixed

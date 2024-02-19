@@ -84,8 +84,8 @@ class RawDatabasesAPI(APIClient):
             Create a new database::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.raw.databases.create("db1")
+                >>> client = CogniteClient()
+                >>> res = client.raw.databases.create("db1")
         """
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
@@ -106,8 +106,8 @@ class RawDatabasesAPI(APIClient):
             Delete a list of databases::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.raw.databases.delete(["db1", "db2"])
+                >>> client = CogniteClient()
+                >>> client.raw.databases.delete(["db1", "db2"])
         """
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
@@ -137,21 +137,21 @@ class RawDatabasesAPI(APIClient):
             List the first 5 databases::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> db_list = c.raw.databases.list(limit=5)
+                >>> client = CogniteClient()
+                >>> db_list = client.raw.databases.list(limit=5)
 
             Iterate over databases::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for db in c.raw.databases:
+                >>> client = CogniteClient()
+                >>> for db in client.raw.databases:
                 ...     db # do something with the db
 
             Iterate over chunks of databases to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for db_list in c.raw.databases(chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for db_list in client.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
         return self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
@@ -208,8 +208,8 @@ class RawTablesAPI(APIClient):
             Create a new table in a database::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.raw.tables.create("db1", "table1")
+                >>> client = CogniteClient()
+                >>> res = client.raw.tables.create("db1", "table1")
         """
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
@@ -236,8 +236,8 @@ class RawTablesAPI(APIClient):
             Delete a list of tables::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.raw.tables.delete("db1", ["table1", "table2"])
+                >>> client = CogniteClient()
+                >>> res = client.raw.tables.delete("db1", ["table1", "table2"])
         """
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
@@ -287,21 +287,21 @@ class RawTablesAPI(APIClient):
             List the first 5 tables::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> table_list = c.raw.tables.list("db1", limit=5)
+                >>> client = CogniteClient()
+                >>> table_list = client.raw.tables.list("db1", limit=5)
 
             Iterate over tables::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for table in c.raw.tables(db_name="db1"):
+                >>> client = CogniteClient()
+                >>> for table in client.raw.tables(db_name="db1"):
                 ...     table # do something with the table
 
             Iterate over chunks of tables to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for table_list in c.raw.tables(db_name="db1", chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for table_list in client.raw.tables(db_name="db1", chunk_size=2500):
                 ...     table_list # do something with the tables
         """
         tb = self._list(
@@ -383,10 +383,10 @@ class RawRowsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RowWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
                 ...         RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
-                >>> c.raw.rows.insert("db1", "table1", rows)
+                >>> client.raw.rows.insert("db1", "table1", rows)
         """
         chunks = self._process_row_input(row)
 
@@ -423,9 +423,9 @@ class RawRowsAPI(APIClient):
                 >>> import pandas as pd
                 >>> from cognite.client import CogniteClient
                 >>>
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> df = pd.DataFrame(data={"a": 1, "b": 2}, index=["r1", "r2", "r3"])
-                >>> res = c.raw.rows.insert_dataframe("db1", "table1", df)
+                >>> res = client.raw.rows.insert_dataframe("db1", "table1", df)
         """
         if not dataframe.index.is_unique:
             raise ValueError("Dataframe index is not unique (used for the row keys)")
@@ -465,9 +465,9 @@ class RawRowsAPI(APIClient):
             Delete rows from table::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> keys_to_delete = ["k1", "k2", "k3"]
-                >>> c.raw.rows.delete("db1", "table1", keys_to_delete)
+                >>> client.raw.rows.delete("db1", "table1", keys_to_delete)
         """
         assert_type(key, "key", [str, Sequence])
         if isinstance(key, str):
@@ -504,8 +504,8 @@ class RawRowsAPI(APIClient):
             Retrieve a row with key 'k1' from table 't1' in database 'db1'::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> row = c.raw.rows.retrieve("db1", "t1", "k1")
+                >>> client = CogniteClient()
+                >>> row = client.raw.rows.retrieve("db1", "t1", "k1")
         """
         return self._retrieve(
             cls=Row,
@@ -552,8 +552,8 @@ class RawRowsAPI(APIClient):
             Get dataframe::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
+                >>> client = CogniteClient()
+                >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
         rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
@@ -588,21 +588,21 @@ class RawRowsAPI(APIClient):
             List rows::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> row_list = c.raw.rows.list("db1", "t1", limit=5)
+                >>> client = CogniteClient()
+                >>> row_list = client.raw.rows.list("db1", "t1", limit=5)
 
             Iterate over rows::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for row in c.raw.rows(db_name="db1", table_name="t1", columns=["col1","col2"]):
+                >>> client = CogniteClient()
+                >>> for row in client.raw.rows(db_name="db1", table_name="t1", columns=["col1","col2"]):
                 ...     row # do something with the row
 
             Iterate over chunks of rows to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for row_list in client.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
         if is_unlimited(limit):

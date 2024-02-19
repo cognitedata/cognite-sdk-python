@@ -159,14 +159,14 @@ class EventsAPI(APIClient):
             Get event by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.events.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.events.retrieve(id=1)
 
             Get event by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.events.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.events.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(list_cls=EventList, resource_cls=Event, identifiers=identifiers)
@@ -192,14 +192,14 @@ class EventsAPI(APIClient):
             Get events by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.events.retrieve_multiple(ids=[1, 2, 3])
+                >>> client = CogniteClient()
+                >>> res = client.events.retrieve_multiple(ids=[1, 2, 3])
 
             Get events by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.events.retrieve_multiple(external_ids=["abc", "def"])
+                >>> client = CogniteClient()
+                >>> res = client.events.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -220,8 +220,8 @@ class EventsAPI(APIClient):
             Aggregate events:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_type = c.events.aggregate(filter={"type": "failure"})
+                >>> client = CogniteClient()
+                >>> aggregate_type = client.events.aggregate(filter={"type": "failure"})
         """
         warnings.warn(
             "This method is deprecated. Use aggregate_count, aggregate_unique_values, aggregate_cardinality_values, aggregate_cardinality_properties, or aggregate_unique_properties instead.",
@@ -253,8 +253,8 @@ class EventsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
-            >>> c = CogniteClient()
-            >>> result = c.events.aggregate_unique_values(EventProperty.type)
+            >>> client = CogniteClient()
+            >>> result = client.events.aggregate_unique_values(EventProperty.type)
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project:
@@ -264,9 +264,9 @@ class EventsAPI(APIClient):
             >>> from cognite.client.data_classes.events import EventProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
+            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project, but exclude all types that start with
@@ -275,11 +275,11 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> from cognite.client.data_classes import aggregations
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> agg = aggregations
             >>> not_planned = agg.Not(agg.Prefix("planned"))
             >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
+            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
             >>> print(result.unique)
 
         """
@@ -314,17 +314,17 @@ class EventsAPI(APIClient):
             Count the number of events in your CDF project:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> count = c.events.aggregate_count()
+                >>> client = CogniteClient()
+                >>> count = client.events.aggregate_count()
 
             Count the number of workorder events in your CDF project:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.events import EventProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_workorder = filters.Equals(EventProperty.type, "workorder")
-                >>> workorder_count = c.events.aggregate_count(advanced_filter=is_workorder)
+                >>> workorder_count = client.events.aggregate_count(advanced_filter=is_workorder)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -357,17 +357,17 @@ class EventsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
-            >>> c = CogniteClient()
-            >>> type_count = c.events.aggregate_cardinality_values(EventProperty.type)
+            >>> client = CogniteClient()
+            >>> type_count = client.events.aggregate_cardinality_values(EventProperty.type)
 
         Count the number of types of events linked to asset 123 in your CDF project:
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.events import EventProperty
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> is_asset = filters.ContainsAny(EventProperty.asset_ids, 123)
-            >>> plain_text_author_count = c.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
+            >>> plain_text_author_count = client.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
 
         """
         self._validate_filter(advanced_filter)
@@ -404,8 +404,8 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
-                >>> c = CogniteClient()
-                >>> type_count = c.events.aggregate_cardinality_properties(EventProperty.metadata)
+                >>> client = CogniteClient()
+                >>> type_count = client.events.aggregate_cardinality_properties(EventProperty.metadata)
 
         """
         self._validate_filter(advanced_filter)
@@ -442,8 +442,8 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
-                >>> c = CogniteClient()
-                >>> result = c.events.aggregate_unique_properties(EventProperty.metadata)
+                >>> client = CogniteClient()
+                >>> result = client.events.aggregate_unique_properties(EventProperty.metadata)
                 >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
@@ -478,9 +478,9 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
-                >>> res = c.events.create(events)
+                >>> res = client.events.create(events)
         """
         return self._create_multiple(list_cls=EventList, resource_cls=Event, items=event, input_resource_cls=EventWrite)
 
@@ -502,8 +502,8 @@ class EventsAPI(APIClient):
             Delete events by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.events.delete(id=[1,2,3], external_id="3")
+                >>> client = CogniteClient()
+                >>> client.events.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -535,18 +535,18 @@ class EventsAPI(APIClient):
             Update an event that you have fetched. This will perform a full update of the event::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> event = c.events.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> event = client.events.retrieve(id=1)
                 >>> event.description = "New description"
-                >>> res = c.events.update(event)
+                >>> res = client.events.update(event)
 
             Perform a partial update on a event, updating the description and adding a new field to metadata::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
-                >>> res = c.events.update(my_update)
+                >>> res = client.events.update(my_update)
         """
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
@@ -572,8 +572,8 @@ class EventsAPI(APIClient):
             Search for events::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.events.search(description="some description")
+                >>> client = CogniteClient()
+                >>> res = client.events.search(description="some description")
         """
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
 
@@ -607,11 +607,11 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Event
-                >>> c = CogniteClient()
-                >>> existing_event = c.events.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> existing_event = client.events.retrieve(id=1)
                 >>> existing_event.description = "New description"
                 >>> new_event = Event(external_id="new_event", description="New event")
-                >>> res = c.events.upsert([existing_event, new_event], mode="replace")
+                >>> res = client.events.upsert([existing_event, new_event], mode="replace")
         """
         return self._upsert_multiple(
             item,
@@ -649,10 +649,10 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters as flt
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_workorder = flt.Prefix("external_id", "workorder")
                 >>> has_failure = flt.Search("description", "failure")
-                >>> res = c.events.filter(
+                >>> res = client.events.filter(
                 ...     filter=flt.And(is_workorder, has_failure), sort=("start_time", "desc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
@@ -664,10 +664,10 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_workorder = flt.Prefix(EventProperty.external_id, "workorder")
                 >>> has_failure = flt.Search(EventProperty.description, "failure")
-                >>> res = c.events.filter(
+                >>> res = client.events.filter(
                 ...     filter=flt.And(is_workorder, has_failure),
                 ...     sort=(SortableEventProperty.start_time, "desc"))
         """
@@ -738,21 +738,21 @@ class EventsAPI(APIClient):
             List events and filter on max start time::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> event_list = c.events.list(limit=5, start_time={"max": 1500000000})
+                >>> client = CogniteClient()
+                >>> event_list = client.events.list(limit=5, start_time={"max": 1500000000})
 
             Iterate over events::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for event in c.events:
+                >>> client = CogniteClient()
+                >>> for event in client.events:
                 ...     event # do something with the event
 
             Iterate over chunks of events to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for event_list in c.events(chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for event_list in client.events(chunk_size=2500):
                 ...     event_list # do something with the events
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
