@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 import pytest
 
@@ -37,6 +36,10 @@ def movie_containers(cognite_client: CogniteClient, movie_model: DataModel[View]
 
 
 class TestContainersAPI:
+    """Dev. note: We do not do the "create+delete pattern" in these tests as it has a bunch of
+    undesireable effects on the system (e.g. elasticsearch mapping explosion).
+    """
+
     def test_list(
         self, cognite_client: CogniteClient, movie_containers: ContainerList, integration_test_space: Space
     ) -> None:
@@ -110,37 +113,6 @@ class TestContainersAPI:
         assert error.value.code == 400
         assert "One or more spaces do not exist" in error.value.message
 
-    def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
-    ) -> None:
-        valid_container = ContainerApply(
-            space=integration_test_space.space,
-            external_id="IntegrationTestContainer",
-            properties={
-                "name": ContainerProperty(
-                    type=Text(),
-                ),
-            },
-            used_for="node",
-        )
-        invalid_container = ContainerApply(
-            space="nonExistingSpace",
-            external_id="myContainer",
-            properties={"name": ContainerProperty(type=Text())},
-            used_for="node",
-        )
-        monkeypatch.setattr(cognite_client.data_modeling.containers, "_CREATE_LIMIT", 1)
-        try:
-            with pytest.raises(CogniteAPIError) as error:
-                cognite_client.data_modeling.containers.apply([valid_container, invalid_container])
-
-            assert "One or more spaces do not exist" in error.value.message
-            assert error.value.code == 400
-            assert len(error.value.successful) == 1
-            assert len(error.value.failed) == 1
-        finally:
-            cognite_client.data_modeling.containers.delete(valid_container.as_id())
-
     def test_dump_json_serialize_load(self, movie_containers: ContainerList) -> None:
         container = movie_containers.get(external_id="Movie")
         assert container is not None, "Movie container is missing from test environment"
@@ -149,20 +121,3 @@ class TestContainersAPI:
         container_json = json.dumps(container_dump)
         container_loaded = Container.load(container_json)
         assert container == container_loaded
-
-    def test_load_and_create_only_required_fields(
-        self, cognite_client: CogniteClient, integration_test_space: Space
-    ) -> None:
-        external_id = "test_load_and_create_only_required_fields"
-        data = {
-            "externalId": external_id,
-            "space": integration_test_space.space,
-            "properties": {"name": {"type": {"type": "text"}}},
-            "indexes": {"nameIdx": {"properties": ["name"], "indexType": "btree"}},
-        }
-        container = ContainerApply.load(data)
-        try:
-            created = cognite_client.data_modeling.containers.apply(container)
-            assert created.external_id == external_id
-        finally:
-            cognite_client.data_modeling.containers.delete(container.as_id())
