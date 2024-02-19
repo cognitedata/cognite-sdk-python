@@ -103,15 +103,15 @@ class ContainersAPI(APIClient):
         Examples:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
 
             Fetch using the ContainerId::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ContainerId
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
         return self._retrieve_multiple(
@@ -133,8 +133,8 @@ class ContainersAPI(APIClient):
             Delete containers by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.containers.delete(("mySpace", "myContainer"))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.containers.delete(("mySpace", "myContainer"))
         """
         deleted_containers = cast(
             list,
@@ -159,8 +159,8 @@ class ContainersAPI(APIClient):
             Delete constraints by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.containers.delete_constraints(
+                >>> client = CogniteClient()
+                >>> client.data_modeling.containers.delete_constraints(
                 ...     [(ContainerId("mySpace", "myContainer"), "myConstraint")]
                 ... )
         """
@@ -178,8 +178,8 @@ class ContainersAPI(APIClient):
             Delete indexes by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.containers.delete_indexes(
+                >>> client = CogniteClient()
+                >>> client.data_modeling.containers.delete_indexes(
                 ...     [(ContainerId("mySpace", "myContainer"), "myIndex")]
                 ... )
         """
@@ -229,21 +229,21 @@ class ContainersAPI(APIClient):
             List containers and limit to 5:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> container_list = c.data_modeling.containers.list(limit=5)
+                >>> client = CogniteClient()
+                >>> container_list = client.data_modeling.containers.list(limit=5)
 
             Iterate over containers::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for container in c.data_modeling.containers:
+                >>> client = CogniteClient()
+                >>> for container in client.data_modeling.containers:
                 ...     container # do something with the container
 
             Iterate over chunks of containers to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for container_list in c.data_modeling.containers(chunk_size=10):
+                >>> client = CogniteClient()
+                >>> for container_list in client.data_modeling.containers(chunk_size=10):
                 ...     container_list # do something with the containers
         """
         filter = ContainerFilter(space, include_global)
@@ -279,10 +279,10 @@ class ContainersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ContainerApply, ContainerProperty, Text
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> container = [ContainerApply(space="mySpace", external_id="myContainer",
                 ...     properties={"name": ContainerProperty(type=Text(), name="name")})]
-                >>> res = c.data_modeling.containers.apply(container)
+                >>> res = client.data_modeling.containers.apply(container)
         """
         return self._create_multiple(
             list_cls=ContainerList,

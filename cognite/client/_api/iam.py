@@ -252,8 +252,8 @@ class GroupsAPI(APIClient):
             List groups::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.groups.list()
+                >>> client = CogniteClient()
+                >>> res = client.iam.groups.list()
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         return GroupList.load(res.json()["items"], cognite_client=self._cognite_client)
@@ -281,10 +281,10 @@ class GroupsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GroupWrite
                 >>> from cognite.client.data_classes.capabilities import GroupsAcl
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_capabilities = [GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All())]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
-                >>> res = c.iam.groups.create(my_group)
+                >>> res = client.iam.groups.create(my_group)
         """
         return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
 
@@ -299,8 +299,8 @@ class GroupsAPI(APIClient):
             Delete group::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.iam.groups.delete(1)
+                >>> client = CogniteClient()
+                >>> client.iam.groups.delete(1)
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
@@ -322,8 +322,8 @@ class SecurityCategoriesAPI(APIClient):
             List security categories::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.security_categories.list()
+                >>> client = CogniteClient()
+                >>> res = client.iam.security_categories.list()
         """
         return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
@@ -358,9 +358,9 @@ class SecurityCategoriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SecurityCategoryWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_category = SecurityCategoryWrite(name="My Category")
-                >>> res = c.iam.security_categories.create(my_category)
+                >>> res = client.iam.security_categories.create(my_category)
         """
         return self._create_multiple(
             list_cls=SecurityCategoryList,
@@ -380,8 +380,8 @@ class SecurityCategoriesAPI(APIClient):
             Delete security category::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.iam.security_categories.delete(1)
+                >>> client = CogniteClient()
+                >>> client.iam.security_categories.delete(1)
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
@@ -400,8 +400,8 @@ class TokenAPI(APIClient):
             Inspect token::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.token.inspect()
+                >>> client = CogniteClient()
+                >>> res = client.iam.token.inspect()
         """
         return TokenInspection.load(self._get("/api/v1/token/inspect").json(), self._cognite_client)
 

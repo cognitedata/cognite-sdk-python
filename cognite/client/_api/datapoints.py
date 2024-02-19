@@ -1185,27 +1185,27 @@ class DatapointsAPI(APIClient):
             be the first element::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.data.retrieve_latest(id=1)[0]
+                >>> client = CogniteClient()
+                >>> res = client.time_series.data.retrieve_latest(id=1)[0]
 
             You can also get the first datapoint before a specific time::
 
-                >>> res = c.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
             You can also retrieve the datapoint in a different unit or unit system::
 
-                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
-                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
-                >>> res = c.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
+                >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
             using external ids here, but either will work::
 
-                >>> res = c.time_series.data.retrieve_latest(external_id=["abc", "def"])
+                >>> res = client.time_series.data.retrieve_latest(external_id=["abc", "def"])
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
 
@@ -1218,7 +1218,7 @@ class DatapointsAPI(APIClient):
                 ...     LatestDatapointQuery(id=456, before="1w-ago"),
                 ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc)),
                 ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f")]
-                >>> res = c.time_series.data.retrieve_latest(
+                >>> res = client.time_series.data.retrieve_latest(
                 ...     id=id_queries,
                 ...     external_id=LatestDatapointQuery(
                 ...         external_id="abc", before="3h-ago", target_unit_system="Imperial")
@@ -1258,16 +1258,16 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> # With datetime objects:
                 >>> datapoints = [
                 ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
                 ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000),
                 ... ]
-                >>> c.time_series.data.insert(datapoints, id=1)
+                >>> client.time_series.data.insert(datapoints, id=1)
                 >>> # With ms since epoch:
                 >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
-                >>> c.time_series.data.insert(datapoints, id=2)
+                >>> client.time_series.data.insert(datapoints, id=2)
 
             Or they can be a list of dictionaries::
 
@@ -1275,15 +1275,15 @@ class DatapointsAPI(APIClient):
                 ...     {"timestamp": 150000000000, "value": 1000},
                 ...     {"timestamp": 160000000000, "value": 2000},
                 ... ]
-                >>> c.time_series.data.insert(datapoints, external_id="abcd")
+                >>> client.time_series.data.insert(datapoints, external_id="abcd")
 
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
             `external_id="foo"`::
 
-                >>> data = c.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
-                >>> c.time_series.data.insert(data, external_id="foo")
+                >>> data = client.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
+                >>> client.time_series.data.insert(data, external_id="foo")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
         dps_to_post: Sequence[dict[str, int | float | str | datetime]] | Sequence[
@@ -1357,8 +1357,8 @@ class DatapointsAPI(APIClient):
             Deleting the last week of data from a time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.time_series.data.delete_range(start="1w-ago", end="now", id=1)
+                >>> client = CogniteClient()
+                >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
         """
         start_ms = timestamp_to_ms(start)
         end_ms = timestamp_to_ms(end)
@@ -1380,10 +1380,10 @@ class DatapointsAPI(APIClient):
             Each element in the list ranges must be specify either id or external_id, and a range::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
                 ...           {"external_id": "abc", "start": "2d-ago", "end": "now"}]
-                >>> c.time_series.data.delete_ranges(ranges)
+                >>> client.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []
         for time_range in ranges:

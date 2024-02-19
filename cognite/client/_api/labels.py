@@ -77,21 +77,21 @@ class LabelsAPI(APIClient):
             List Labels and filter on name::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> label_list = c.labels.list(limit=5, name="Pump")
+                >>> client = CogniteClient()
+                >>> label_list = client.labels.list(limit=5, name="Pump")
 
             Iterate over label definitions::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for label in c.labels:
+                >>> client = CogniteClient()
+                >>> for label in client.labels:
                 ...     label # do something with the label definition
 
             Iterate over chunks of label definitions to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for label_list in c.labels(chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for label_list in client.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -131,9 +131,9 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
-                >>> res = c.labels.create(labels)
+                >>> res = client.labels.create(labels)
         """
         if isinstance(label, Sequence):
             if len(label) > 0 and not isinstance(label[0], LabelDefinitionCore):
@@ -154,7 +154,7 @@ class LabelsAPI(APIClient):
             Delete label definitions by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.labels.delete(external_id=["big_pump", "small_pump"])
+                >>> client = CogniteClient()
+                >>> client.labels.delete(external_id=["big_pump", "small_pump"])
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

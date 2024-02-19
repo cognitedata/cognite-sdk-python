@@ -50,9 +50,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> sub = DataPointSubscriptionWrite("mySubscription", partition_count=1, time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"], name="My subscription")
-                >>> created = c.time_series.subscriptions.create(sub)
+                >>> created = client.time_series.subscriptions.create(sub)
 
             Create a filter defined subscription for all numeric time series:
 
@@ -60,7 +60,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionFilterProperties
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> prop = DatapointSubscriptionFilterProperties.is_string
                 >>> numeric_timeseries = flt.Equals(prop, False)
                 >>> sub = DataPointSubscriptionWrite(
@@ -68,7 +68,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     partition_count=1,
                 ...     filter=numeric_timeseries,
                 ...     name="My subscription for Numeric time series")
-                >>> created = c.time_series.subscriptions.create(sub)
+                >>> created = client.time_series.subscriptions.create(sub)
         """
         self._warning.warn()
 
@@ -91,8 +91,8 @@ class DatapointsSubscriptionAPI(APIClient):
             Delete a subscription by external ID:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.time_series.subscriptions.delete("my_subscription")
+                >>> client = CogniteClient()
+                >>> client.time_series.subscriptions.delete("my_subscription")
         """
         self._warning.warn()
 
@@ -117,8 +117,8 @@ class DatapointsSubscriptionAPI(APIClient):
             Retrieve a subscription by external ID:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.subscriptions.retrieve("my_subscription")
+                >>> client = CogniteClient()
+                >>> res = client.time_series.subscriptions.retrieve("my_subscription")
         """
         self._warning.warn()
 
@@ -151,8 +151,8 @@ class DatapointsSubscriptionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
-                >>> c = CogniteClient()
-                >>> members = c.time_series.subscriptions.list_member_time_series("my_subscription")
+                >>> client = CogniteClient()
+                >>> members = client.time_series.subscriptions.list_member_time_series("my_subscription")
                 >>> timeseries_external_ids = members.as_external_ids()
         """
         self._warning.warn()
@@ -184,18 +184,18 @@ class DatapointsSubscriptionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> update = DataPointSubscriptionUpdate("my_subscription").name.set("My New Name")
-                >>> updated = c.time_series.subscriptions.update(update)
+                >>> updated = client.time_series.subscriptions.update(update)
 
 
             Add a time series to a preexisting subscription:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add(["MyNewTimeSeriesExternalId"])
-                >>> updated = c.time_series.subscriptions.update(update)
+                >>> updated = client.time_series.subscriptions.update(update)
         """
         self._warning.warn()
 
@@ -240,8 +240,8 @@ class DatapointsSubscriptionAPI(APIClient):
             Iterate over changes to subscription timeseries since the beginning until there is no more data:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for batch in c.time_series.subscriptions.iterate_data("my_subscription"):
+                >>> client = CogniteClient()
+                >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription"):
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
@@ -251,7 +251,7 @@ class DatapointsSubscriptionAPI(APIClient):
             Iterate continuously over all changes to the subscription newer than 3 days:
 
                 >>> import time
-                >>> for batch in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
+                >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
@@ -293,8 +293,8 @@ class DatapointsSubscriptionAPI(APIClient):
             List 5 subscriptions:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> subscriptions = c.time_series.subscriptions.list(limit=5)
+                >>> client = CogniteClient()
+                >>> subscriptions = client.time_series.subscriptions.list(limit=5)
 
         """
         self._warning.warn()

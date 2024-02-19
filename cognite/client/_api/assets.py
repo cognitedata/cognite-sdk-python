@@ -207,14 +207,14 @@ class AssetsAPI(APIClient):
             Get asset by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.assets.retrieve(id=1)
 
             Get asset by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.assets.retrieve(external_id="1")
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(list_cls=AssetList, resource_cls=Asset, identifiers=identifier)
@@ -240,14 +240,14 @@ class AssetsAPI(APIClient):
             Get assets by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.retrieve_multiple(ids=[1, 2, 3])
+                >>> client = CogniteClient()
+                >>> res = client.assets.retrieve_multiple(ids=[1, 2, 3])
 
             Get assets by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> client = CogniteClient()
+                >>> res = client.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -268,8 +268,8 @@ class AssetsAPI(APIClient):
             Aggregate assets:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
+                >>> client = CogniteClient()
+                >>> aggregate_by_prefix = client.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
         warnings.warn(
             f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
@@ -297,17 +297,17 @@ class AssetsAPI(APIClient):
         Count the number of assets in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> count = c.assets.aggregate_count()
+            >>> client = CogniteClient()
+            >>> count = client.assets.aggregate_count()
 
         Count the number of assets with the metadata key "timezone" in your CDF project:
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.filters import ContainsAny
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> has_timezone = ContainsAny(AssetProperty.metadata, "timezone")
-            >>> asset_count = c.assets.aggregate_count(advanced_filter=has_timezone)
+            >>> asset_count = client.assets.aggregate_count(advanced_filter=has_timezone)
 
         """
         self._validate_filter(advanced_filter)
@@ -341,17 +341,17 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
-                >>> c = CogniteClient()
-                >>> label_count = c.assets.aggregate_cardinality_values(AssetProperty.labels)
+                >>> client = CogniteClient()
+                >>> label_count = client.assets.aggregate_cardinality_values(AssetProperty.labels)
 
             Count the number of timezones (metadata key) for assets with the word "critical" in the description in your CDF project:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.filters import Search
                 >>> from cognite.client.data_classes.assets import AssetProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_critical = Search(AssetProperty.description, "critical")
-                >>> critical_assets = c.assets.aggregate_cardinality_values(
+                >>> critical_assets = client.assets.aggregate_cardinality_values(
                 ...     AssetProperty.metadata_key("timezone"),
                 ...     advanced_filter=is_critical)
         """
@@ -388,8 +388,8 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
-                >>> c = CogniteClient()
-                >>> key_count = c.assets.aggregate_cardinality_properties(AssetProperty.metadata)
+                >>> client = CogniteClient()
+                >>> key_count = client.assets.aggregate_cardinality_properties(AssetProperty.metadata)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -427,8 +427,8 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> c = CogniteClient()
-            >>> result = c.assets.aggregate_unique_values(AssetProperty.metadata_key("timezone"))
+            >>> client = CogniteClient()
+            >>> result = client.assets.aggregate_unique_values(AssetProperty.metadata_key("timezone"))
             >>> print(result.unique)
 
         Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
@@ -438,9 +438,9 @@ class AssetsAPI(APIClient):
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> created_after_2020 = flt.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
+            >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
         Get the different labels with count for assets updated after 2020-01-01 in your CDF project, but exclude all labels that
@@ -450,10 +450,10 @@ class AssetsAPI(APIClient):
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.data_classes import aggregations as aggs
             >>> from cognite.client.data_classes import filters as flt
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> not_test = aggs.Not(aggs.Prefix("test"))
             >>> created_after_2020 = flt.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
         """
@@ -494,8 +494,8 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
-                >>> c = CogniteClient()
-                >>> result = c.assets.aggregate_unique_properties(AssetProperty.metadata)
+                >>> client = CogniteClient()
+                >>> result = client.assets.aggregate_unique_properties(AssetProperty.metadata)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -532,17 +532,17 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> assets = [AssetWrite(name="asset1"), AssetWrite(name="asset2")]
-                >>> res = c.assets.create(assets)
+                >>> res = client.assets.create(assets)
 
             Create asset with label::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset, Label
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> asset = AssetWrite(name="my_pump", labels=[Label(external_id="PUMP")])
-                >>> res = c.assets.create(asset)
+                >>> res = client.assets.create(asset)
         """
         assert_type(asset, "asset", [AssetCore, Sequence])
 
@@ -606,16 +606,16 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> assets = [
                 ...     Asset(external_id="root", name="root"),
                 ...     Asset(external_id="child1", parent_external_id="root", name="child1"),
                 ...     Asset(external_id="child2", parent_external_id="root", name="child2")]
-                >>> res = c.assets.create_hierarchy(assets)
+                >>> res = client.assets.create_hierarchy(assets)
 
             Create an asset hierarchy, but run update for existing assets:
 
-                >>> res = c.assets.create_hierarchy(assets, upsert=True, upsert_mode="patch")
+                >>> res = client.assets.create_hierarchy(assets, upsert=True, upsert_mode="patch")
 
             Patch will only update the parameters you have defined on your assets. Note that specifically setting
             something to ``None`` is the same as not setting it. For ``metadata``, this will extend your existing
@@ -700,8 +700,8 @@ class AssetsAPI(APIClient):
             Delete assets by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.assets.delete(id=[1,2,3], external_id="3")
+                >>> client = CogniteClient()
+                >>> client.assets.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -734,48 +734,48 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
-                >>> res1 = c.assets.update(my_update)
+                >>> res1 = client.assets.update(my_update)
                 >>> # Remove an already set field like so
                 >>> another_update = AssetUpdate(id=1).description.set(None)
-                >>> res2 = c.assets.update(another_update)
+                >>> res2 = client.assets.update(another_update)
 
             Remove the metadata on an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).metadata.add({"key": "value"})
-                >>> res1 = c.assets.update(my_update)
+                >>> res1 = client.assets.update(my_update)
                 >>> another_update = AssetUpdate(id=1).metadata.set(None)
                 >>> # The same result can be achieved with:
                 >>> another_update2 = AssetUpdate(id=1).metadata.set({})
-                >>> res2 = c.assets.update(another_update)
+                >>> res2 = client.assets.update(another_update)
 
             Attach labels to an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
-                >>> res = c.assets.update(my_update)
+                >>> res = client.assets.update(my_update)
 
             Detach a single label from an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).labels.remove("PUMP")
-                >>> res = c.assets.update(my_update)
+                >>> res = client.assets.update(my_update)
 
             Replace all labels for an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).labels.set("PUMP")
-                >>> res = c.assets.update(my_update)
+                >>> res = client.assets.update(my_update)
         """
         return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
@@ -809,11 +809,11 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset
-                >>> c = CogniteClient()
-                >>> existing_asset = c.assets.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> existing_asset = client.assets.retrieve(id=1)
                 >>> existing_asset.description = "New description"
                 >>> new_asset = Asset(external_id="new_asset", description="New asset")
-                >>> res = c.assets.upsert([existing_asset, new_asset], mode="replace")
+                >>> res = client.assets.upsert([existing_asset, new_asset], mode="replace")
         """
         return self._upsert_multiple(
             item,
@@ -853,9 +853,9 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters as flt
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = c.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
+                >>> res = client.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -866,9 +866,9 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> in_timezone = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-                >>> res = c.assets.filter(
+                >>> res = client.assets.filter(
                 ...     filter=in_timezone,
                 ...     sort=(SortableAssetProperty.external_id, "asc"))
 
@@ -914,33 +914,33 @@ class AssetsAPI(APIClient):
             Search for assets by fuzzy search on name::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.search(name="some name")
+                >>> client = CogniteClient()
+                >>> res = client.assets.search(name="some name")
 
             Search for assets by exact search on name::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.search(filter={"name": "some name"})
+                >>> client = CogniteClient()
+                >>> res = client.assets.search(filter={"name": "some name"})
 
             Search for assets by improved multi-field fuzzy search::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.search(query="TAG 30 XV")
+                >>> client = CogniteClient()
+                >>> res = client.assets.search(query="TAG 30 XV")
 
             Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
+                >>> client = CogniteClient()
+                >>> res = client.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
 
             Search for an asset with an attached label:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP"])
-                >>> res = c.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
+                >>> res = client.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
         """
         return self._search(
             list_cls=AssetList,
@@ -1043,30 +1043,30 @@ class AssetsAPI(APIClient):
             List assets::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> asset_list = c.assets.list(limit=5)
+                >>> client = CogniteClient()
+                >>> asset_list = client.assets.list(limit=5)
 
             Iterate over assets::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for asset in c.assets:
+                >>> client = CogniteClient()
+                >>> for asset in client.assets:
                 ...     asset # do something with the asset
 
             Iterate over chunks of assets to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for asset_list in c.assets(chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for asset_list in client.assets(chunk_size=2500):
                 ...     asset_list # do something with the assets
 
             Filter assets based on labels::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelFilter
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
-                >>> asset_list = c.assets.list(labels=my_label_filter)
+                >>> asset_list = client.assets.list(labels=my_label_filter)
         """
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
