@@ -705,7 +705,7 @@ class DocumentsAPI(APIClient):
             method="POST",
             limit=limit,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
-            sort=[DocumentSort.load(sort).dump()] if sort else None,  # type: ignore[arg-type]
+            sort=[DocumentSort.load(sort).dump()] if sort else None,
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
