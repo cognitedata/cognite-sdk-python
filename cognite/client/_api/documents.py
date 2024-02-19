@@ -200,6 +200,7 @@ class DocumentsAPI(APIClient):
         self,
         chunk_size: int,
         filter: Filter | dict | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
     ) -> Iterator[DocumentList]:
@@ -210,6 +211,7 @@ class DocumentsAPI(APIClient):
         self,
         chunk_size: Literal[None] = None,
         filter: Filter | dict | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
     ) -> Iterator[DocumentList]:
@@ -219,6 +221,7 @@ class DocumentsAPI(APIClient):
         self,
         chunk_size: int | None = None,
         filter: Filter | dict | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
     ) -> Iterator[Document] | Iterator[DocumentList]:
@@ -229,6 +232,7 @@ class DocumentsAPI(APIClient):
         Args:
             chunk_size (int | None): Number of documents to return in each chunk. Defaults to yielding one document at a time.
             filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Default to return all items.
             partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
@@ -239,6 +243,7 @@ class DocumentsAPI(APIClient):
         return self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
+            sort=[DocumentSort.load(sort).dump()] if sort else None,
             method="POST",
             chunk_size=chunk_size,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
@@ -646,7 +651,12 @@ class DocumentsAPI(APIClient):
             )
         return DocumentList.load((item["item"] for item in results), cognite_client=self._cognite_client)
 
-    def list(self, filter: Filter | dict | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> DocumentList:
+    def list(
+        self,
+        filter: Filter | dict | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+    ) -> DocumentList:
         """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
 
         You can use filters to narrow down the list. Unlike the search method, list does not restrict the number
@@ -655,6 +665,7 @@ class DocumentsAPI(APIClient):
 
         Args:
             filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
 
         Returns:
@@ -686,6 +697,7 @@ class DocumentsAPI(APIClient):
             method="POST",
             limit=limit,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
+            sort=[DocumentSort.load(sort).dump()] if sort else None,  # type: ignore[arg-type]
         )
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
