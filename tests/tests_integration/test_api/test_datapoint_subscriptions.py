@@ -62,7 +62,7 @@ def time_series_external_ids(all_time_series_external_ids):
 @pytest.fixture(scope="session")
 def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
     external_id = "PYSDKDataPointSubscriptionTest"
-    sub = cognite_client.time_series.subscriptions.retrieve(external_id, ignore_unknown_ids=True)
+    sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub
     new_sub = DataPointSubscriptionWrite(
