@@ -39,9 +39,7 @@ from cognite.client.data_classes.data_modeling.core import (
     DataModelingSort,
     WritableDataModelingResource,
 )
-from cognite.client.data_classes.data_modeling.data_types import (
-    DirectRelationReference,
-)
+from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     EdgeId,
@@ -197,7 +195,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
             for view_id_str, properties in view_properties.items():
                 view_tuple = tuple(view_id_str.split("/", 1))
                 if len(view_tuple) != 2:
-                    raise ValueError("View id must be in the format <external_id>/<version>")
+                    raise ValueError(f"View id must be in the format <external_id>/<version>, not {view_id_str!r}")
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
         return cls(props)
@@ -346,13 +344,17 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
-    def __setitem__(self, attr: str, item: PropertyValue) -> None:
+    def __setitem__(self, attr: str, value: PropertyValue) -> None:
+        if attr in self._RESERVED_PROPERTIES:
+            raise RuntimeError(f"Can't set reserved attribute {attr!r}. Hint: You may use `instance.{attr} = value`")
         try:
-            self._prop_lookup[attr] = item
+            self._prop_lookup[attr] = value
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __delitem__(self, attr: str) -> None:
+        if attr in self._RESERVED_PROPERTIES:
+            raise RuntimeError(f"Can't delete reserved attribute {attr!r}. Hint: You may use `del instance.{attr}`")
         try:
             del self._prop_lookup[attr]
         except TypeError:
