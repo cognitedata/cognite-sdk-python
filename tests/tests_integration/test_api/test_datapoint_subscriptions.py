@@ -108,9 +108,7 @@ class TestDatapointSubscriptions:
             assert sorted(new_subscription.time_series_ids) == sorted(retrieved_time_series_external_ids)
 
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
-            retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(
-                new_subscription.external_id, ignore_unknown_ids=True
-            )
+            retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
             assert retrieved_deleted is None
 
     def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
