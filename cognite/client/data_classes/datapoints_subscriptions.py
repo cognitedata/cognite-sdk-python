@@ -291,7 +291,6 @@ class DatapointsUpdate:
                 {
                     "id": data["timeSeries"]["id"],
                     "externalId": data["timeSeries"].get("externalId"),
-                    "isString": isinstance(values[0]["value"], str),
                     "datapoints": values,
                 }
             )
