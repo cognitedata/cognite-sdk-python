@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+from typing import Any
+
 import pytest
 
 from cognite.client._api.data_modeling.instances import InstancesAPI
+from cognite.client.data_classes.data_modeling import Edge, Node
 from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client.data_classes.data_modeling.instances import Instance
 from tests.tests_unit.test_api.test_data_modeling.conftest import make_test_view
 
 SINGLE_SRC_DUMP = {"source": {"space": "a", "externalId": "b", "version": "c", "type": "view"}}
@@ -33,3 +39,67 @@ def test_instances_api_dump_instance_source(sources, expected):
     # ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
     # ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]
     assert expected == InstancesAPI._dump_instance_source(sources)
+
+
+@pytest.mark.parametrize(
+    "instance_type, resource",
+    (
+        (
+            Node,
+            {
+                "space": "space",
+                "externalId": "xid",
+                "version": 1,
+                "lastUpdatedTime": 2,
+                "createdTime": 3,
+            },
+        ),
+        (
+            Edge,
+            {
+                "space": "space",
+                "externalId": "xid",
+                "version": 4,
+                "lastUpdatedTime": 5,
+                "createdTime": 6,
+                "type": {"space": "foo-space", "externalId": "bar-xid"},
+                "startNode": {"space": "IntegrationTestSpace", "externalId": "person:quentin_tarantino"},
+                "endNode": {"space": "IntegrationTestSpace", "externalId": "director:quentin_tarantino"},
+            },
+        ),
+    ),
+)
+def test_instances__quick_property_access(instance_type: type[Instance], resource: dict[str, Any]):
+    # Note: 'property' in this test refers to an instance property, not a Python property
+    resource["properties"] = {"space": {"view/v8": {"prop1": 1, "prop2": "two", "3prop": [1, 2, 3]}}}
+    inst = instance_type.load(resource)
+
+    # Non-property should fail __getitem__ and __setitem__:
+    with pytest.raises(KeyError):
+        inst["space"]
+    with pytest.raises(RuntimeError):
+        inst["space"] = "more-space"
+
+    assert inst.space == "space"
+    inst.space = "more-space"
+    assert inst.space == "more-space"
+
+    # Property should work fine with both access/set/delete protocols:
+    assert inst.prop1 == 1
+    assert inst["prop1"] == 1
+
+    inst.prop1 = 5
+    assert inst["prop1"] == 5
+
+    inst["prop1"] = 1
+    assert inst.prop1 == 1
+
+    del inst.prop1
+    assert inst.get("prop1") is None
+    assert inst.get("prop1", "missing") == "missing"
+    with pytest.raises(KeyError):
+        inst["prop1"]
+    assert inst.prop2 == "two"
+    del inst["prop2"]
+    with pytest.raises(AttributeError):
+        inst.prop2
