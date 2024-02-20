@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+from collections import deque
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -12,7 +14,7 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._validation import assert_type
@@ -346,7 +348,7 @@ class RawRowsAPI(APIClient):
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
 
         Returns:
-            Iterator[Row] | Iterator[RowList]: No description.
+            Iterator[Row] | Iterator[RowList]: An iterator yielding the requested rows (or row).
         """
         return self._list_generator(
             list_cls=RowList,
@@ -361,6 +363,69 @@ class RawRowsAPI(APIClient):
                 "columns": self._make_columns_param(columns),
             },
         )
+
+    def iterate_rows(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int = 10_000,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[RowList]:
+        """Iterate over rows concurrently.
+
+        Fetches rows as they are iterated over, so you keep a limited number of rows in memory. This function is different from
+        `client.raw.rows(...)` in that it supports concurrent reads (higher throughput).
+
+        Args:
+            db_name (str): Name of the database
+            table_name (str): Name of the table to iterate over rows for
+            chunk_size (int): Number of rows to return in each chunk. Defaults to yielding 10000 rows at a time and can not be set lower than 1000.
+            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to `global_config.max_workers` (and will be capped at this value).
+                To prevent unexpected problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+
+        Yields:
+            RowList: The requested rows in chunks.
+        """
+        partitions = self._config.max_workers if partitions is None else min(partitions, self._config.max_workers)
+        pool = ConcurrencySettings.get_executor(max_workers=partitions)
+        cursors = self._get_parallel_cursors(
+            db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
+        )
+
+        def exhaust(iterator: Iterator, results: deque) -> None:
+            for res in iterator:
+                results.append(res)
+
+        read_iterators = [
+            self._list_generator(
+                list_cls=RowList,
+                resource_cls=Row,
+                resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                chunk_size=max(1000, chunk_size),
+                method="GET",
+                filter={"columns": self._make_columns_param(columns)},
+                limit=None,
+                initial_cursor=initial,
+            )
+            for initial in cursors
+        ]
+        results: deque[RowList] = deque()
+        futures = [pool.submit(exhaust, task, results) for task in read_iterators]
+        while not all(f.done() for f in futures):
+            while results:
+                yield results.popleft()
+            time.sleep(0.5)
+
+        for f in futures:
+            f.result()  # In case anything failed
+
+        yield from results
 
     def insert(
         self,
@@ -561,6 +626,23 @@ class RawRowsAPI(APIClient):
         cols = [r.columns for r in rows]
         return pd.DataFrame(cols, index=idx)
 
+    def _get_parallel_cursors(
+        self,
+        db_name: str,
+        table_name: str,
+        min_last_updated_time: int | None,
+        max_last_updated_time: int | None,
+        n_cursors: int,
+    ) -> list[str]:
+        return self._get(
+            url_path=interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
+            params={
+                "minLastUpdatedTime": min_last_updated_time,
+                "maxLastUpdatedTime": max_last_updated_time,
+                "numberOfCursors": n_cursors,
+            },
+        ).json()["items"]
+
     def list(
         self,
         db_name: str,
@@ -605,17 +687,11 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in client.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
+        cursors: list[str] | list[None] = [None]
         if is_unlimited(limit):
-            cursors = self._get(
-                url_path=interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
-                params={
-                    "minLastUpdatedTime": min_last_updated_time,
-                    "maxLastUpdatedTime": max_last_updated_time,
-                    "numberOfCursors": self._config.max_workers,
-                },
-            ).json()["items"]
-        else:
-            cursors = [None]
+            cursors = self._get_parallel_cursors(
+                db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=self._config.max_workers
+            )
         tasks = [
             dict(
                 list_cls=RowList,
@@ -634,5 +710,4 @@ class RawRowsAPI(APIClient):
         ]
         summary = execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks()
-
         return RowList(summary.joined_results())

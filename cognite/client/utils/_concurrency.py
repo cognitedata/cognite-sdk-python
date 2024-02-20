@@ -127,16 +127,26 @@ class TaskFuture(Protocol[T_Result]):
     def result(self) -> T_Result:
         ...
 
+    def done(self) -> bool:
+        ...
+
 
 class SyncFuture(TaskFuture[T_Result]):
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
         self._task = functools.partial(fn, *args, **kwargs)
-        self._result: T_Result | None = None
+        self._result: T_Result
+        self._has_run: bool = False
 
     def result(self) -> T_Result:
-        if self._result is None:
+        # We don't care about storing any possible exception; if anything happens, they will
+        # immediately be raised for the user anyway:
+        if not self._has_run:
+            self._has_run = True
             self._result = self._task()
         return self._result
+
+    def done(self) -> bool:
+        return self._has_run
 
 
 class MainThreadExecutor(TaskExecutor):
