@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Collection,
     Dict,
     ItemsView,
@@ -23,6 +24,7 @@ from typing import (
     Union,
     ValuesView,
     cast,
+    final,
     overload,
 )
 
@@ -259,6 +261,8 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
 
 
 class Instance(WritableInstanceCore[T_CogniteResource], ABC):
+    _RESERVED_PROPERTIES: ClassVar[frozenset[str]]
+
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -291,16 +295,36 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         self.properties: Properties = properties or Properties({})
 
         if len(self.properties) == 1:
-            (self.__prop_lookup,) = self.properties.values()
+            (self._prop_lookup,) = self.properties.values()
         else:
             # For speed, we want this to fail (to avoid LBYL pattern):
-            self.__prop_lookup = None  # type: ignore [assignment]
+            self._prop_lookup = None  # type: ignore [assignment]
 
     def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
         raise RuntimeError(
-            "Quick property access (get/set/del) is only possible on instances from a single source. "
+            "Quick property access is only possible on instances from a single source. "
             f"Hint: You may use `instance.properties[view_id][{attr!r}]`"
         ) from None
+
+    def __getattr__(self, attr: str) -> PropertyValue:
+        if attr in self._RESERVED_PROPERTIES:
+            return super().__getattr__(attr)  # type: ignore [misc]
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute or property {attr!r}") from None
+
+    def __setattr__(self, attr: str, value: PropertyValue) -> None:
+        if attr in self._RESERVED_PROPERTIES:
+            super().__setattr__(attr, value)
+        else:
+            self[attr] = value
+
+    def __delattr__(self, attr: str) -> None:
+        if attr in self._RESERVED_PROPERTIES:
+            super().__delattr__(attr)
+        else:
+            del self[attr]
 
     @overload
     def get(self, attr: str) -> PropertyValue | None:
@@ -312,25 +336,25 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
 
     def get(self, attr: str, default: Any = None) -> Any:
         try:
-            return self.__prop_lookup.get(attr, default)
+            return self._prop_lookup.get(attr, default)
         except AttributeError:
             self.__raise_if_non_singular_source(attr)
 
     def __getitem__(self, attr: str) -> PropertyValue:
         try:
-            return self.__prop_lookup[attr]
+            return self._prop_lookup[attr]
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __setitem__(self, attr: str, item: PropertyValue) -> None:
         try:
-            self.__prop_lookup[attr] = item
+            self._prop_lookup[attr] = item
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __delitem__(self, attr: str) -> None:
         try:
-            del self.__prop_lookup[attr]
+            del self._prop_lookup[attr]
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
@@ -529,7 +553,23 @@ class NodeApply(InstanceApply["NodeApply"]):
         return self
 
 
+@final
 class Node(Instance["NodeApply"]):
+    _RESERVED_PROPERTIES: ClassVar[frozenset[str]] = frozenset(
+        (
+            "_prop_lookup",
+            "space",
+            "external_id",
+            "version",
+            "last_updated_time",
+            "created_time",
+            "instance_type",
+            "deleted_time",
+            "properties",
+            "type",
+        )
+    )
+
     """A node. This is the read version of the node.
 
     Args:
@@ -709,7 +749,24 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         return self
 
 
+@final
 class Edge(Instance[EdgeApply]):
+    _RESERVED_PROPERTIES: ClassVar[frozenset[str]] = frozenset(
+        (
+            "_prop_lookup",
+            "space",
+            "external_id",
+            "version",
+            "last_updated_time",
+            "created_time",
+            "instance_type",
+            "deleted_time",
+            "properties",
+            "type",
+            "start_node",
+            "end_node",
+        )
+    )
     """An Edge. This is the read version of the edge.
 
     Args:
