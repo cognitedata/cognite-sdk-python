@@ -527,18 +527,18 @@ class TransformationTaskOutput(WorkflowTaskOutput):
     The transformation output is used to specify the output of a transformation task.
 
     Args:
-        job_id (int): The job id of the transformation job.
+        job_id (int | None): The job id of the transformation job.
     """
 
     task_type: ClassVar[str] = "transformation"
 
-    def __init__(self, job_id: int) -> None:
+    def __init__(self, job_id: int | None) -> None:
         self.job_id = job_id
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
         output = data["output"]
-        return cls(output["jobId"])
+        return cls(output.get("jobId"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {("jobId" if camel_case else "job_id"): self.job_id}

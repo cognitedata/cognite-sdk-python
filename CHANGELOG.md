@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.21.1] - 2024-02-20
+### Fixed
+- Data Workflows: mark parameter `jobId` as optional in `TransformationTaskOutput`, as it may not be populated in case of a failure.
+
 ## [7.21.0] - 2024-02-10
 ### Added
-- Parameter `sort` to `client.documents.list.
+- Parameter `sort` to `client.documents.list`.
 
 ## [7.20.1] - 2024-02-19
 ### Fixed
