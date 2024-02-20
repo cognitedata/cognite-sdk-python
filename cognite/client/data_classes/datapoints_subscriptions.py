@@ -289,9 +289,6 @@ class DatapointsUpdate:
         if (values := data["upserts"]) and ("value" in values[0]):
             datapoints["upserts"] = Datapoints._load(
                 {
-                    "id": data["timeSeries"]["id"],
-                    "externalId": data["timeSeries"].get("externalId"),
-                    "isString": isinstance(values[0]["value"], str),
                     "datapoints": values,
                 }
             )
