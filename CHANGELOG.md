@@ -23,7 +23,7 @@ Changes are grouped as follows
 
 ## [7.21.0] - 2024-02-10
 ### Added
-- Parameter `sort` to `client.documents.list.
+- Parameter `sort` to `client.documents.list`.
 
 ## [7.20.1] - 2024-02-19
 ### Fixed
