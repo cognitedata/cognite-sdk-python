@@ -62,7 +62,7 @@ def time_series_external_ids(all_time_series_external_ids):
 @pytest.fixture(scope="session")
 def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
     external_id = "PYSDKDataPointSubscriptionTest"
-    sub = cognite_client.time_series.subscriptions.retrieve(external_id, ignore_unknown_ids=True)
+    sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub
     new_sub = DataPointSubscriptionWrite(
@@ -108,9 +108,7 @@ class TestDatapointSubscriptions:
             assert sorted(new_subscription.time_series_ids) == sorted(retrieved_time_series_external_ids)
 
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
-            retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(
-                new_subscription.external_id, ignore_unknown_ids=True
-            )
+            retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
             assert retrieved_deleted is None
 
     def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):

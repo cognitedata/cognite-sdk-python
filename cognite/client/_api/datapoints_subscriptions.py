@@ -95,12 +95,11 @@ class DatapointsSubscriptionAPI(APIClient):
             wrap_ids=True,
         )
 
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> DatapointSubscription | None:
+    def retrieve(self, external_id: str) -> DatapointSubscription | None:
         """`Retrieve one subscription by external ID. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
             external_id (str): External ID of the subscription to retrieve.
-            ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             DatapointSubscription | None: The requested subscription.
@@ -118,7 +117,7 @@ class DatapointsSubscriptionAPI(APIClient):
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
             identifiers=IdentifierSequence.load(external_ids=[external_id]),
-            ignore_unknown_ids=ignore_unknown_ids,
+            ignore_unknown_ids=True,
         )
         if result:
             return result[0]
