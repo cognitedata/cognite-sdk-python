@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, overload
 
 from typing_extensions import Self, TypeAlias
 
@@ -22,8 +22,13 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.datapoints import Datapoint
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
+from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import (
+    notebook_display_with_fallback,
+)
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -277,38 +282,80 @@ class DataDeletion:
         return resource
 
 
-@dataclass
+class DatapointList:
+    def __init__(self, datapoints: Sequence[Datapoint]):
+        self._datapoints = datapoints
+
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
+        return [{"timestamp": dp.timestamp, "value": dp.value} for dp in self._datapoints]
+
+    def to_pandas(self):
+        pd = local_import("pandas")
+        df = pd.DataFrame(self.dump())
+        df = df.set_index("timestamp", drop=True)
+        df = df.rename(columns={"value": ""})
+        return df
+
+    @overload
+    def __getitem__(self, item: int) -> Datapoint:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Datapoints:
+        ...
+
+    def __getitem__(self, item: int | slice) -> Datapoint | DatapointList:
+        if isinstance(item, slice):
+            return DatapointList(self._datapoints[item])
+        else:
+            return self._datapoints[item]
+
+    def __iter__(self) -> Iterator[Datapoint]:
+        return iter(self._datapoints)
+
+    def __len__(self) -> int:
+        return len(self._datapoints)
+
+    def _repr_html_(self) -> str:
+        return notebook_display_with_fallback(self)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DatapointList):
+            return False
+        return self._datapoints == other._datapoints
+
+
+@dataclass(frozen=True)
 class DatapointsUpdate:
-    time_series: TimeSeriesID
-    upserts: Datapoints
-    deletes: list[DataDeletion]
+    id: int
+    external_id: str | None
+    upserts: DatapointList
+    deletes: Sequence[DataDeletion]
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> DatapointsUpdate:
-        datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
+        upserts = DatapointList(datapoints=[])
         if (values := data["upserts"]) and ("value" in values[0]):
-            datapoints["upserts"] = Datapoints._load(
-                {
-                    "id": data["timeSeries"]["id"],
-                    "externalId": data["timeSeries"].get("externalId"),
-                    "isString": isinstance(values[0]["value"], str),
-                    "datapoints": values,
-                }
-            )
+            upserts = DatapointList([Datapoint(timestamp=v["timestamp"], value=v["value"]) for v in values])
+        deletes = []
         if values := data["deletes"]:
-            datapoints["deletes"] = [DataDeletion.load(value) for value in values]
+            deletes = [DataDeletion.load(value) for value in values]
         return cls(
-            time_series=TimeSeriesID._load(data["timeSeries"], None),
-            **datapoints,
+            id=data["timeSeries"]["id"],
+            external_id=data["timeSeries"].get("externalId"),
+            upserts=upserts,
+            deletes=deletes,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        resource: dict[str, Any] = {("timeSeries" if camel_case else "time_series"): self.time_series.dump(camel_case)}
-        if self.upserts is not None:
-            resource["upserts"] = self.upserts.dump(camel_case)
-        if self.deletes is not None:
-            resource["deletes"] = [d.dump(camel_case) for d in self.deletes]
-        return resource
+        time_series = {"id": self.id}
+        if self.external_id is not None:
+            time_series["externalId" if camel_case else "external_id"] = self.external_id
+        return {
+            ("timeSeries" if camel_case else "time_series"): time_series,
+            "upserts": self.upserts.dump(),
+            "deletes": [x.dump(camel_case) for x in self.deletes],
+        }
 
 
 @dataclass
@@ -362,6 +409,16 @@ class DatapointSubscriptionBatch:
     subscription_changes: SubscriptionTimeSeriesUpdate
     has_next: bool
     cursor: str
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "updates": [x.dump(camel_case) for x in self.updates],
+            ("subscriptionChanges" if camel_case else "subscription_changes"): self.subscription_changes.dump(),
+            ("hasNext" if camel_case else "has_next"): self.has_next,
+        }
+        if self.cursor is not None:
+            output["cursor"] = self.cursor
+        return output
 
 
 @dataclass(frozen=True)
