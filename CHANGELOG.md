@@ -23,6 +23,11 @@ Changes are grouped as follows
 
 ## [7.23.0] - 2024-02-23
 ### Added
+- New method for `RawRowsAPI`: `iterate_rows()`. It combines the high-throughput speed of concurrent reads with the low memory
+  impact of a generator.
+
+## [7.23.0] - 2024-02-23
+### Added
 - Make properties on instances (`Node`, `Edge`) easier to work with, by implementing support for direct indexing (and a `.get` method).
   If the instances have properties from no source or multiple sources, an error is raised instead. Example usage: `instance["my_prop"]`
   (short-cut for: `instance.properties[ViewId("space", "ext.id", "version")]["my_prop"]`)
