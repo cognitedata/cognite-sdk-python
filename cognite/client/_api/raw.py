@@ -454,8 +454,8 @@ class RawRowsAPI(APIClient):
             You may also insert a dictionary directly:
 
                 >>> rows = {
-                ...     {"key-1": {"col1": 1, "col2": 2}},
-                ...     {"key-2": {"col1": 3, "col2": 4, "col3": "high five"}},
+                ...     "key-1": {"col1": 1, "col2": 2},
+                ...     "key-2": {"col1": 3, "col2": 4, "col3": "high five"},
                 ... }
                 >>> client.raw.rows.insert("db1", "table1", rows)
         """
@@ -691,8 +691,8 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in client.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list  # do something with the rows
 
-            Iterate through a massive table, using concurrency, to reduce memory load. Note: 'partitions' must be specified.
-            You can either pass a number, or simply use the default 'max_workers' already set in your configuration:
+            Iterate through a massive table, using concurrency, to reduce memory load. Note: ``partitions`` must be specified.
+            You can either pass a number, or simply use the default ``max_workers`` already set in your configuration:
 
                 >>> from cognite.client import global_config
                 >>> rows_iterator = client.raw.rows(
