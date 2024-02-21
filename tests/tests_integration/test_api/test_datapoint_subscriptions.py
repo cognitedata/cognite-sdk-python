@@ -167,7 +167,10 @@ class TestDatapointSubscriptions:
             partition_count=1,
         )
         with create_subscription_with_cleanup(cognite_client, new_subscription):
-            subscription_changes = cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id)
+            subscription_changes = cognite_client.time_series.subscriptions.iterate_data(
+                new_subscription.external_id,
+                poll_timeout=0,
+            )
             batch = next(subscription_changes)
 
             assert (
@@ -190,7 +193,10 @@ class TestDatapointSubscriptions:
             partition_count=1,
         )
         with create_subscription_with_cleanup(cognite_client, new_subscription):
-            subscription_changes = cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id)
+            subscription_changes = cognite_client.time_series.subscriptions.iterate_data(
+                new_subscription.external_id,
+                poll_timeout=0,
+            )
             batch = next(subscription_changes)
 
             assert batch.subscription_changes.added[0].external_id == first_ts
@@ -262,7 +268,9 @@ class TestDatapointSubscriptions:
             assert created.created_time
 
             for batch in cognite_client.time_series.subscriptions.iterate_data(
-                new_subscription.external_id, start="now"
+                new_subscription.external_id,
+                start="now",
+                poll_timeout=0,
             ):
                 assert len(batch.updates) == 0
                 assert len(batch.subscription_changes.added) == 0
@@ -274,7 +282,11 @@ class TestDatapointSubscriptions:
         self, cognite_client: CogniteClient, subscription: DatapointSubscription
     ):
         added_last_minute = 0
-        for batch in cognite_client.time_series.subscriptions.iterate_data(subscription.external_id, start="1m-ago"):
+        for batch in cognite_client.time_series.subscriptions.iterate_data(
+            subscription.external_id,
+            start="1m-ago",
+            poll_timeout=0,
+        ):
             added_last_minute += len(batch.subscription_changes.added)
             if not batch.has_next:
                 break
@@ -300,7 +312,10 @@ class TestDatapointSubscriptions:
             assert created.created_time
 
             initial_added_count = 0
-            for batch in cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id):
+            for batch in cognite_client.time_series.subscriptions.iterate_data(
+                new_subscription.external_id,
+                poll_timeout=0,
+            ):
                 initial_added_count += len(batch.subscription_changes.added)
                 if not batch.has_next:
                     break
@@ -321,7 +336,10 @@ class TestDatapointSubscriptions:
                 time.sleep(10)
 
                 updated_added_count = 0
-                for batch in cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id):
+                for batch in cognite_client.time_series.subscriptions.iterate_data(
+                    new_subscription.external_id,
+                    poll_timeout=0,
+                ):
                     updated_added_count += len(batch.subscription_changes.added)
                     if not batch.has_next:
                         break
