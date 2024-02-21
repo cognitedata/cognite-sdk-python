@@ -23,8 +23,10 @@ Changes are grouped as follows
 
 ## [7.23.0] - 2024-02-23
 ### Added
-- New method for `RawRowsAPI`: `iterate_rows()`. It combines the high-throughput speed of concurrent reads with the low memory
-  impact of a generator.
+- New parameter for `client.raw.rows(...)`: `partitions`. This enables greater throughput thorough concurrent reads when using
+  the generator method (while still keeping a low memory impact). For backwards compatibility, the default is _no concurrency_.
+- New parameter for `client.raw.rows.list(...)`: `partitions`. This method has always used `partitions=max_workers` under the hood
+  for non-finite calls, but now this can be overridden easily.
 
 ## [7.23.0] - 2024-02-23
 ### Added
