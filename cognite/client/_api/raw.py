@@ -377,7 +377,8 @@ class RawRowsAPI(APIClient):
         """Iterate over rows concurrently.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory. This function is different from
-        `client.raw.rows(...)` in that it supports concurrent reads (higher throughput).
+        ``client.raw.rows(...)`` in that it supports concurrent reads (higher throughput). Try to use a ``chunk_size`` that is a multiple
+        of 10000 for best performance.
 
         Args:
             db_name (str): Name of the database
@@ -397,11 +398,6 @@ class RawRowsAPI(APIClient):
         cursors = self._get_parallel_cursors(
             db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
         )
-
-        def exhaust(iterator: Iterator, results: deque) -> None:
-            for res in iterator:
-                results.append(res)
-
         read_iterators = [
             self._list_generator(
                 list_cls=RowList,
@@ -415,6 +411,11 @@ class RawRowsAPI(APIClient):
             )
             for initial in cursors
         ]
+
+        def exhaust(iterator: Iterator, results: deque[RowList]) -> None:
+            for res in iterator:
+                results.append(res)
+
         results: deque[RowList] = deque()
         futures = [pool.submit(exhaust, task, results) for task in read_iterators]
         while not all(f.done() for f in futures):
@@ -422,10 +423,10 @@ class RawRowsAPI(APIClient):
                 yield results.popleft()
             time.sleep(0.5)
 
+        yield from results
+
         for f in futures:
             f.result()  # In case anything failed
-
-        yield from results
 
     def insert(
         self,

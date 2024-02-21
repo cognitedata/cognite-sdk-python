@@ -145,8 +145,9 @@ class SyncFuture(TaskFuture[T_Result]):
             self._result = self._task()
         return self._result
 
-    def done(self) -> bool:
-        return self._has_run
+    def done(self) -> Literal[True]:
+        self.result()
+        return True
 
 
 class MainThreadExecutor(TaskExecutor):
