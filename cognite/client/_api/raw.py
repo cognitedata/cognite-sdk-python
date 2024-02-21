@@ -374,7 +374,7 @@ class RawRowsAPI(APIClient):
         columns: list[str] | None = None,
         partitions: int | None = None,
     ) -> Iterator[RowList]:
-        """Iterate over rows concurrently.
+        """Iterate over all rows using parallel reads.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory. This function is different from
         ``client.raw.rows(...)`` in that it supports concurrent reads (higher throughput). Try to use a ``chunk_size`` that is a multiple
@@ -392,6 +392,16 @@ class RawRowsAPI(APIClient):
 
         Yields:
             RowList: The requested rows in chunks.
+
+        Examples:
+
+            Iterate through all rows of a large table, while keeping a limited set of rows in memory,
+            using defaults for 'chunk_size' and 'partitions':
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> for rows in client.raw.rows.iterate_rows("db1", "tbl1"):
+                ...     pass  # do something with the rows
         """
         partitions = self._config.max_workers if partitions is None else min(partitions, self._config.max_workers)
         pool = ConcurrencySettings.get_executor(max_workers=partitions)
