@@ -333,6 +333,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
+        partitions: int | None = None,
     ) -> Iterator[Row] | Iterator[RowList]:
         """Iterate over rows.
 
@@ -341,81 +342,66 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
-            chunk_size (int | None): Number of rows to return in each chunk. Defaults to yielding one row a time.
+            chunk_size (int | None): Number of rows to return in each chunk. Defaults to yielding one row a time. Note: When used together with 'partitions'
+                the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
             limit (int | None): Maximum number of rows to return. Defaults to return all items.
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to 1 (i.e. _no concurrency_).
+                The setting is capped at ``global_config.max_workers`` and can not be used with a finite limit. To prevent unexpected
+                problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
-            Iterator[Row] | Iterator[RowList]: An iterator yielding the requested rows (or row).
+            Iterator[Row] | Iterator[RowList]: An iterator yielding the requested rows (or row) in chunks.
         """
-        return self._list_generator(
-            list_cls=RowList,
-            resource_cls=Row,
-            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+        if partitions is None:
+            return self._list_generator(
+                list_cls=RowList,
+                resource_cls=Row,
+                resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                chunk_size=chunk_size,
+                method="GET",
+                limit=limit,
+                filter={
+                    "minLastUpdatedTime": min_last_updated_time,
+                    "maxLastUpdatedTime": max_last_updated_time,
+                    "columns": self._make_columns_param(columns),
+                },
+            )
+        return self._list_generator_concurrent(
+            db_name=db_name,
+            table_name=table_name,
             chunk_size=chunk_size,
-            method="GET",
-            limit=limit,
-            filter={
-                "minLastUpdatedTime": min_last_updated_time,
-                "maxLastUpdatedTime": max_last_updated_time,
-                "columns": self._make_columns_param(columns),
-            },
+            min_last_updated_time=min_last_updated_time,
+            max_last_updated_time=max_last_updated_time,
+            columns=columns,
+            partitions=partitions,
         )
 
-    def iterate_rows(
+    def _list_generator_concurrent(
         self,
         db_name: str,
         table_name: str,
-        chunk_size: int = 10_000,
-        min_last_updated_time: int | None = None,
-        max_last_updated_time: int | None = None,
-        columns: list[str] | None = None,
-        partitions: int | None = None,
+        chunk_size: int | None,
+        min_last_updated_time: int | None,
+        max_last_updated_time: int | None,
+        columns: list[str] | None,
+        partitions: int,
     ) -> Iterator[RowList]:
-        """Iterate over all rows using parallel reads.
-
-        Fetches rows as they are iterated over, so you keep a limited number of rows in memory. This function is different from
-        ``client.raw.rows(...)`` in that it supports concurrent reads (higher throughput). Try to use a ``chunk_size`` that is a multiple
-        of 10000 for best performance.
-
-        Args:
-            db_name (str): Name of the database
-            table_name (str): Name of the table to iterate over rows for
-            chunk_size (int): Number of rows to return in each chunk. Defaults to yielding 10000 rows at a time and can not be set lower than 1000.
-            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
-            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
-            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to `global_config.max_workers` (and will be capped at this value).
-                To prevent unexpected problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
-
-        Yields:
-            RowList: The requested rows in chunks.
-
-        Examples:
-
-            Iterate through all rows of a large table, while keeping a limited set of rows in memory,
-            using defaults for 'chunk_size' and 'partitions':
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> for rows in client.raw.rows.iterate_rows("db1", "tbl1"):
-                ...     pass  # do something with the rows
-        """
-        partitions = self._config.max_workers if partitions is None else min(partitions, self._config.max_workers)
-        pool = ConcurrencySettings.get_executor(max_workers=partitions)
+        partitions = min(partitions, self._config.max_workers)
         cursors = self._get_parallel_cursors(
             db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
         )
+        chunk_size = max(1000, chunk_size or 10_000)
         read_iterators = [
             self._list_generator(
                 list_cls=RowList,
                 resource_cls=Row,
                 resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-                chunk_size=max(1000, chunk_size),
+                chunk_size=chunk_size,
                 method="GET",
-                filter={"columns": self._make_columns_param(columns)},
+                filter={"columns": self._make_columns_param(columns)},  # dont need X_last_updated_time
                 limit=None,
                 initial_cursor=initial,
             )
@@ -427,6 +413,7 @@ class RawRowsAPI(APIClient):
                 results.append(res)
 
         results: deque[RowList] = deque()
+        pool = ConcurrencySettings.get_executor(max_workers=self._config.max_workers)
         futures = [pool.submit(exhaust, task, results) for task in read_iterators]
         while not all(f.done() for f in futures):
             while results:
@@ -455,7 +442,7 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            Insert new rows into a table::
+            Insert new rows into a table:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RowWrite
@@ -463,16 +450,22 @@ class RawRowsAPI(APIClient):
                 >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
                 ...         RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
                 >>> client.raw.rows.insert("db1", "table1", rows)
-        """
-        chunks = self._process_row_input(row)
 
+            You may also insert a dictionary directly:
+
+                >>> rows = {
+                ...     {"key-1": {"col1": 1, "col2": 2}},
+                ...     {"key-2": {"col1": 3, "col2": 4, "col3": "high five"}},
+                ... }
+                >>> client.raw.rows.insert("db1", "table1", rows)
+        """
         tasks = [
             {
                 "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
                 "json": {"items": chunk},
                 "params": {"ensureParent": ensure_parent},
             }
-            for chunk in chunks
+            for chunk in self._process_row_input(row)
         ]
         summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
@@ -548,16 +541,13 @@ class RawRowsAPI(APIClient):
         assert_type(key, "key", [str, Sequence])
         if isinstance(key, str):
             key = [key]
-        items = [{"key": k} for k in key]
-        chunks = split_into_chunks(items, self._DELETE_LIMIT)
+        to_delete = [{"key": k} for k in key]
         tasks = [
-            (
-                {
-                    "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete",
-                    "json": {"items": chunk},
-                }
-            )
-            for chunk in chunks
+            {
+                "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete",
+                "json": {"items": chunk},
+            }
+            for chunk in split_into_chunks(to_delete, self._DELETE_LIMIT)
         ]
         summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
@@ -662,6 +652,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
     ) -> RowList:
         """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -672,39 +663,48 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to `global_config.max_workers` (and will be capped at this value).
+                To prevent unexpected problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
             RowList: The requested rows.
 
         Examples:
 
-            List rows::
+            List rows:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> row_list = client.raw.rows.list("db1", "t1", limit=5)
+                >>> row_list = client.raw.rows.list("db1", "tbl1", limit=5)
 
-            Iterate over rows::
+            Read the entire table efficiently by using concurrency:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
+                >>> row_list = client.raw.rows.list("db1", "tbl1", limit=None)
+
+            Iterate over rows to reduce memory load:
+
                 >>> for row in client.raw.rows(db_name="db1", table_name="t1", columns=["col1","col2"]):
-                ...     row # do something with the row
+                ...     row  # do something with the row
 
-            Iterate over chunks of rows to reduce memory load::
+            Iterate over chunks of rows to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for row_list in client.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
-                ...     row_list # do something with the rows
+                ...     row_list  # do something with the rows
+
+            Iterate through a massive table, using concurrency, to reduce memory load. Note: 'partitions' must be specified.
+            You can either pass a number, or simply use the default 'max_workers' already set in your configuration:
+
+                >>> from cognite.client import global_config
+                >>> rows_iterator = client.raw.rows(
+                ...     db_name="db1",
+                ...     table_name="t1",
+                ...     chunk_size=10_000,
+                ...     partitions=global_config.max_workers)
+                >>> for row_list in rows_iterator:
+                ...     row_list  # do something with the rows
         """
-        cursors: list[str] | list[None] = [None]
-        if is_unlimited(limit):
-            cursors = self._get_parallel_cursors(
-                db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=self._config.max_workers
-            )
-        tasks = [
-            dict(
+        if not is_unlimited(limit):
+            return self._list(
                 list_cls=RowList,
                 resource_cls=Row,
                 resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
@@ -715,9 +715,23 @@ class RawRowsAPI(APIClient):
                     "maxLastUpdatedTime": max_last_updated_time,
                 },
                 limit=limit,
-                initial_cursor=cursor,
             )
-            for cursor in cursors
+        # Parallel reads requires initial cursors:
+        partitions = self._config.max_workers if partitions is None else min(partitions, self._config.max_workers)
+        cursors = self._get_parallel_cursors(
+            db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
+        )
+        tasks = [
+            dict(
+                list_cls=RowList,
+                resource_cls=Row,
+                resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                method="GET",
+                filter={"columns": self._make_columns_param(columns)},
+                limit=None,
+                initial_cursor=initial_cursor,
+            )
+            for initial_cursor in cursors
         ]
         summary = execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks()
