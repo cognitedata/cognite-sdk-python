@@ -38,8 +38,7 @@ Changes are grouped as follows
 ### Added
 - Data point subscriptions reaches General Availability (GA).
   - Use the new [Data point subscriptions](https://developer.cognite.com/dev/concepts/data_point_subscriptions/)
-    feature to configure a subscription to listen to changes in one or more
-    time series (in ingestion order).
+    feature to configure a subscription to listen to changes in one or more time series (in ingestion order).
     The feature is intended to be used where data points consumers need to keep up to date with
     changes to one or more time series without the need to read the entire time series again.
 ### Changed

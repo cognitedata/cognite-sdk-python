@@ -355,7 +355,7 @@ class RawRowsAPI(APIClient):
         Returns:
             Iterator[Row] | Iterator[RowList]: An iterator yielding the requested rows (or row) in chunks.
         """
-        if partitions is None:
+        if partitions is None or not is_unlimited(limit):
             return self._list_generator(
                 list_cls=RowList,
                 resource_cls=Row,
