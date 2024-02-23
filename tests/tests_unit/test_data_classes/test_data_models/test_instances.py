@@ -15,7 +15,9 @@ from cognite.client.data_classes.data_modeling import (
     NodeId,
     NodeList,
     NodeOrEdgeData,
+    ViewId,
 )
+from cognite.client.data_classes.data_modeling.instances import Instance
 
 
 class TestEdgeApply:
@@ -167,6 +169,76 @@ def edge_dumped(node_dumped: dict[str, Any]) -> dict[str, Any]:
         "startNode": {"space": "spsp", "externalId": "xid2"},
         "endNode": {"space": "spspsp", "externalId": "xid3"},
     }
+
+
+@pytest.mark.parametrize("instance_type", (Node, Edge))
+def test_instances__quick_property_access_single_source(
+    instance_type: type[Instance],
+    node_dumped: dict[str, Any],
+    edge_dumped: dict[str, Any],
+) -> None:
+    # Note: 'property' in this test refers to an instance property, not a Python property
+    resource = {Node: node_dumped, Edge: edge_dumped}[instance_type]
+    resource["properties"] = {"space": {"view/v8": {"prop1": 1, "prop2": "two", "3prop": [1, 2, 3]}}}
+    inst = instance_type.load(resource)
+
+    # Non-property should fail __getitem__ and __delitem__:
+    with pytest.raises(KeyError):
+        inst["space"]
+    with pytest.raises(KeyError):
+        del inst["space"]
+    # ...but __setitem__ should work, Python mantra is "we are adults". Either way, the API will block all
+    # reserved ones, and we don't want to keep a duplicate list up-to-date:
+    inst["space"] = "more-space"
+    assert inst.space == "craft"  # ...ensure attribute not affected
+
+    # Any property should work fine with all access/set/delete:
+    assert inst.properties[ViewId("space", "view", "v8")]["prop1"] == 1
+    inst["prop1"] = 123
+    assert inst["prop1"] == 123
+    assert inst.properties[ViewId("space", "view", "v8")]["prop1"] == 123
+    del inst["prop1"]
+    assert "prop1" not in inst.properties[ViewId("space", "view", "v8")]
+
+    with pytest.raises(KeyError):
+        inst["prop1"]
+
+    assert inst.get("prop1") is None
+    assert inst.get("prop1", "missing") == "missing"
+
+
+@pytest.mark.parametrize("instance_type", (Node, Edge))
+def test_instances__quick_property_access_no_source(
+    instance_type: type[Instance],
+    node_dumped: dict[str, Any],
+    edge_dumped: dict[str, Any],
+) -> None:
+    # Note: 'property' in this test refers to an instance property, not a Python property
+    resource = {Node: node_dumped, Edge: edge_dumped}[instance_type]
+    resource["properties"] = {}
+    inst = instance_type.load(resource)
+
+    # Non-property should fail __[get/set/del]item__ because instance is not "single-sourced":
+    with pytest.raises(RuntimeError):
+        inst["space"]
+    with pytest.raises(RuntimeError):
+        inst["space"] = "more-space"
+    with pytest.raises(RuntimeError):
+        del inst["space"]
+
+    # ...same applies to properties. We have none so everything should fail:
+    with pytest.raises(RuntimeError):
+        inst["prop1"]  # get
+    with pytest.raises(RuntimeError):
+        inst["prop1"] = 1  # set
+    with pytest.raises(RuntimeError):
+        del inst["prop1"]  # del
+
+    # ...even 'get':
+    with pytest.raises(RuntimeError):
+        inst.get("prop1")
+    with pytest.raises(RuntimeError):
+        inst.get("prop1", "missing")
 
 
 @pytest.mark.dsl

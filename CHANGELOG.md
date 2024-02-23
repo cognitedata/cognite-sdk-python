@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.23.0] - 2024-02-23
+### Added
+- Make properties on instances (`Node`, `Edge`) easier to work with, by implementing support for direct indexing (and a `.get` method).
+  If the instances have properties from no source or multiple sources, an error is raised instead. Example usage: `instance["my_prop"]`
+  (short-cut for: `instance.properties[ViewId("space", "ext.id", "version")]["my_prop"]`)
+
 ## [7.22.0] - 2024-02-21
 ### Added
 - Data point subscriptions reaches General Availability (GA).
