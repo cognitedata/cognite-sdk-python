@@ -581,6 +581,11 @@ class TestInstancesAPI:
             assert retrieved.nodes
             assert abs(retrieved.nodes[0]["pressure"] - 1.1 * 1e5) < 1e-5
 
+            is_node = filters.Prefix(["node", "externalId"], node.external_id)
+            listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
+
+            assert listed
+            assert abs(listed[0]["pressure"] - 1.1 * 1e5) < 1e-5
         finally:
             cognite_client.data_modeling.instances.delete(node.as_id())
 

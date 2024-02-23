@@ -163,7 +163,13 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -177,7 +183,13 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -191,7 +203,13 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -205,7 +223,13 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -218,7 +242,13 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewIdentifier] | ViewIdentifier | list[View] | View | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -231,7 +261,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewIdentifier] | ViewIdentifier | list[View] | View | None): Views to retrieve properties from.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | SourceDef | Sequence[SourceDef] | None): Views to retrieve properties from.
             space (str | Sequence[str] | None): Only return instances in the given space (or list of spaces).
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
@@ -1083,7 +1113,13 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
-        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
@@ -1096,7 +1132,13 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["edge"],
         include_typing: bool = False,
-        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
@@ -1108,7 +1150,13 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
-        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
@@ -1119,7 +1167,7 @@ class InstancesAPI(APIClient):
         Args:
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | SourceDef | Sequence[SourceDef] | None): Views to retrieve properties from.
             space (str | Sequence[str] | None): Only return instances in the given space (or list of spaces).
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
