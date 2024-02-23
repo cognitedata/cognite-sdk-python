@@ -27,6 +27,8 @@ Changes are grouped as follows
   the generator method (while still keeping a low memory impact). For backwards compatibility, the default is _no concurrency_.
 - New parameter for `client.raw.rows.list(...)`: `partitions`. This method has always used `partitions=max_workers` under the hood
   for non-finite calls, but now this can be overridden easily.
+### Changed
+- Default configuration setting of `max_workers` has been changed from 10 to 5 (now matches the documentation).
 
 ## [7.23.0] - 2024-02-23
 ### Added

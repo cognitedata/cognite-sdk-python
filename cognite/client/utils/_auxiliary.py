@@ -38,6 +38,10 @@ def no_op(x: T) -> T:
     return x
 
 
+def is_finite(limit: Any) -> bool:
+    return isinstance(limit, int) and limit >= 0
+
+
 def is_unlimited(limit: float | int | None) -> bool:
     return limit in {None, -1, math.inf}
 

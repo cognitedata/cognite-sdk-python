@@ -10,6 +10,7 @@ from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Ro
 from cognite.client.data_classes.raw import RowCore
 from cognite.client.utils._auxiliary import (
     interpolate_and_url_encode,
+    is_finite,
     is_unlimited,
     split_into_chunks,
     unpack_items_in_payload,
@@ -355,7 +356,7 @@ class RawRowsAPI(APIClient):
         Returns:
             Iterator[Row] | Iterator[RowList]: An iterator yielding the requested rows (or row) in chunks.
         """
-        if partitions is None or not is_unlimited(limit):
+        if partitions is None or is_finite(limit):
             return self._list_generator(
                 list_cls=RowList,
                 resource_cls=Row,
