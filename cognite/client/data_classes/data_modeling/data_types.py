@@ -144,6 +144,18 @@ class UnitReference:
         )
 
 
+@dataclass(frozen=True)
+class UnitSystemReference:
+    unit_system_name: str
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"unitSystemName" if camel_case else "unit_system_name": self.unit_system_name}
+
+    @classmethod
+    def load(cls, data: dict) -> UnitSystemReference:
+        return cls(unit_system_name=data["unitSystemName"])
+
+
 @dataclass
 class ListablePropertyTypeWithUnit(ListablePropertyType, LoadablePropertyType, ABC):
     unit: UnitReference | None = None

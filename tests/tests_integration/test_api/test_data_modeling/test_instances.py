@@ -9,16 +9,20 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
+    ContainerApply,
+    ContainerProperty,
     DataModel,
     DirectRelationReference,
     Edge,
     EdgeApply,
     EdgeApplyResult,
     EdgeList,
+    Float64,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
     InstancesResult,
+    MappedPropertyApply,
     Node,
     NodeApply,
     NodeApplyResult,
@@ -28,12 +32,14 @@ from cognite.client.data_classes.data_modeling import (
     SingleHopConnectionDefinition,
     Space,
     View,
+    ViewApply,
     ViewId,
     ViewList,
     aggregations,
     filters,
     query,
 )
+from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.data_classes.data_modeling.query import (
     NodeResultSetExpression,
     Query,
@@ -41,6 +47,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
+from cognite.client.data_classes.data_modeling.views import PropertyReference, ViewUnitReference
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -73,6 +80,25 @@ def actor_view(movie_views: ViewList) -> View:
 @pytest.fixture()
 def movie_view(movie_views: ViewList) -> View:
     return cast(View, movie_views.get(external_id="Movie"))
+
+
+@pytest.fixture(scope="session")
+def unit_view(cognite_client: CogniteClient, integration_test_space: Space) -> View:
+    container = ContainerApply(
+        space=integration_test_space.space,
+        external_id="integration_test_unit_container",
+        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference("pressure:bar")))},
+    )
+    view = ViewApply(
+        space=integration_test_space.space,
+        external_id="integration_test_unit_view",
+        version="v1",
+        properties={
+            "pressure": MappedPropertyApply(container=container.as_id(), container_property_identifier="pressure")
+        },
+    )
+    _ = cognite_client.data_modeling.containers.apply(container)
+    return cognite_client.data_modeling.views.apply(view)
 
 
 class TestInstancesAPI:
@@ -529,6 +555,34 @@ class TestInstancesAPI:
         assert len(result["actors"]) > 0, "Add at least one actor that acted in the movies released before 2000"
         assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
         assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
+
+    def test_apply_retrieve_units(
+        self, cognite_client: CogniteClient, integration_test_space: Space, unit_view: View
+    ) -> None:
+        node = NodeApply(
+            space=integration_test_space.space,
+            external_id="nodewrite_units_test",
+            sources=[
+                NodeOrEdgeData(
+                    unit_view.as_id(),
+                    {"pressure": 1.1},
+                )
+            ],
+        )
+
+        source = ViewUnitReference.from_view_id(
+            unit_view.as_id(), [PropertyReference("pressure", UnitReference("pressure:pascal"))]
+        )
+
+        try:
+            created = cognite_client.data_modeling.instances.apply(node, replace=True)
+
+            retrieved = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), sources=[source])
+
+            assert abs(retrieved.nodes[0]["pressure"] - 1.1 * 1e5) < 1e-5
+
+        finally:
+            cognite_client.data_modeling.instances.delete(node.as_id())
 
 
 class TestInstancesSync:

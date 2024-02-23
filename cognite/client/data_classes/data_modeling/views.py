@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from typing_extensions import Self, TypeAlias
@@ -19,6 +19,8 @@ from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     DirectRelationReference,
     PropertyType,
+    UnitReference,
+    UnitSystemReference,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
@@ -863,3 +865,58 @@ class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
             output["connection_type"] = "multi_reverse_direct_relation"
 
         return output
+
+
+@dataclass
+class PropertyReference:
+    property: str
+    unit: UnitReference | UnitSystemReference
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"property": self.property, "unit": self.unit.dump(camel_case)}
+
+    @classmethod
+    def load(cls, data: dict) -> PropertyReference:
+        return cls(
+            property=data["property"],
+            unit=UnitReference.load(data["unit"])
+            if "externalId" in data["unit"]
+            else UnitSystemReference.load(data["unit"]),
+        )
+
+
+@dataclass(frozen=True)
+class ViewUnitReference(ViewId):
+    target_units: list[PropertyReference] = field(default_factory=list)
+
+    def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"source": super().dump(camel_case, include_type)}
+        if self.target_units:
+            output["targetUnits"] = [v.dump(camel_case) for v in self.target_units]
+        return output
+
+    @classmethod
+    def from_view_id(cls, view_id: ViewId, target_units: list[PropertyReference] | None = None) -> ViewUnitReference:
+        return cls(
+            space=view_id.space,
+            external_id=view_id.external_id,
+            version=view_id.version,
+            target_units=target_units or [],
+        )
+
+    @classmethod
+    def load(cls, data: dict | ViewUnitReference | tuple[str, str] | tuple[str, str, str]) -> ViewUnitReference:
+        if isinstance(data, dict):
+            if "source" in data:
+                view_id = ViewId.load(data["source"])
+            else:
+                view_id = ViewId.load(data)
+
+            return cls(
+                space=view_id.space,
+                external_id=view_id.external_id,
+                version=view_id.version,
+                target_units=[PropertyReference.load(v) for v in data.get("targetUnits", [])],
+            )
+        view_id = ViewId.load(data)
+        return cls(space=view_id.space, external_id=view_id.external_id, version=view_id.version)
