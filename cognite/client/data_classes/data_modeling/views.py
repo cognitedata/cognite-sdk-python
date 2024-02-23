@@ -895,10 +895,9 @@ class SourceDef(ViewId):
             "source": {
                 "space": self.space,
                 "externalId" if camel_case else "external_id": self.external_id,
+                "version": self.version,
             }
         }
-        if self.version:
-            output["source"]["version"] = self.version
         if include_type:
             output["source"]["type"] = "view"
         if self.target_units:

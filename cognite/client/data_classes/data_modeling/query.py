@@ -32,11 +32,10 @@ class SourceSelector(CogniteObject):
     target_units: list[PropertyUnitReference] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "source": self.source.dump(camel_case),
-            "properties": self.properties,
-            "targetUnits": [unit.dump(camel_case) for unit in self.target_units] if self.target_units else None,
-        }
+        output: dict[str, Any] = {"source": self.source.dump(camel_case), "properties": self.properties}
+        if self.target_units:
+            output["targetUnits"] = [unit.dump(camel_case) for unit in self.target_units]
+        return output
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:

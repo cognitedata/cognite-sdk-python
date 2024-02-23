@@ -171,6 +171,12 @@ class ListablePropertyTypeWithUnit(ListablePropertyType, LoadablePropertyType, A
             unit=unit,
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.unit:
+            output["unit"] = self.unit.dump(camel_case)
+        return output
+
 
 @dataclass
 class Float32(ListablePropertyTypeWithUnit):
