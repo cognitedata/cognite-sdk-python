@@ -41,36 +41,39 @@ def test_instances_api_dump_instance_source(sources, expected):
     assert expected == InstancesAPI._dump_instance_source(sources)
 
 
-@pytest.mark.parametrize(
-    "instance_type, resource",
-    (
-        (
-            Node,
-            {
-                "space": "space",
-                "externalId": "xid",
-                "version": 1,
-                "lastUpdatedTime": 2,
-                "createdTime": 3,
-            },
-        ),
-        (
-            Edge,
-            {
-                "space": "space",
-                "externalId": "xid",
-                "version": 4,
-                "lastUpdatedTime": 5,
-                "createdTime": 6,
-                "type": {"space": "foo-space", "externalId": "bar-xid"},
-                "startNode": {"space": "IntegrationTestSpace", "externalId": "person:quentin_tarantino"},
-                "endNode": {"space": "IntegrationTestSpace", "externalId": "director:quentin_tarantino"},
-            },
-        ),
-    ),
-)
-def test_instances__quick_property_access(instance_type: type[Instance], resource: dict[str, Any]):
+@pytest.fixture
+def empty_node_dump():
+    return {
+        "space": "space",
+        "externalId": "xid",
+        "version": 1,
+        "lastUpdatedTime": 2,
+        "createdTime": 3,
+    }
+
+
+@pytest.fixture
+def empty_edge_dump():
+    return {
+        "space": "space",
+        "externalId": "xid",
+        "version": 4,
+        "lastUpdatedTime": 5,
+        "createdTime": 6,
+        "type": {"space": "foo-space", "externalId": "bar-xid"},
+        "startNode": {"space": "the-space", "externalId": "the-xid"},
+        "endNode": {"space": "the-space", "externalId": "the-xid"},
+    }
+
+
+@pytest.mark.parametrize("instance_type", (Node, Edge))
+def test_instances__quick_property_access_single_source(
+    instance_type: type[Instance],
+    empty_node_dump: dict[str, Any],
+    empty_edge_dump: dict[str, Any],
+):
     # Note: 'property' in this test refers to an instance property, not a Python property
+    resource = {Node: empty_node_dump, Edge: empty_edge_dump}[instance_type]
     resource["properties"] = {"space": {"view/v8": {"prop1": 1, "prop2": "two", "3prop": [1, 2, 3]}}}
     inst = instance_type.load(resource)
 
@@ -80,6 +83,8 @@ def test_instances__quick_property_access(instance_type: type[Instance], resourc
     with pytest.raises(RuntimeError):
         inst["space"] = "more-space"
 
+    assert hasattr(inst, "id") is False
+    assert hasattr(inst, "space") is True
     assert inst.space == "space"
     inst.space = "more-space"
     assert inst.space == "more-space"
@@ -103,3 +108,47 @@ def test_instances__quick_property_access(instance_type: type[Instance], resourc
     del inst["prop2"]
     with pytest.raises(AttributeError):
         inst.prop2
+
+
+@pytest.mark.parametrize("instance_type", (Node, Edge))
+def test_instances__quick_property_access_no_source(
+    instance_type: type[Instance],
+    empty_node_dump: dict[str, Any],
+    empty_edge_dump: dict[str, Any],
+):
+    # Note: 'property' in this test refers to an instance property, not a Python property
+    resource = {Node: empty_node_dump, Edge: empty_edge_dump}[instance_type]
+    resource["properties"] = {}
+    inst = instance_type.load(resource)
+
+    # Non-property should fail __getitem__ and __setitem__:
+    with pytest.raises(RuntimeError):
+        inst["space"]
+    with pytest.raises(RuntimeError):
+        inst["space"] = "more-space"
+
+    assert hasattr(inst, "id") is False
+    assert hasattr(inst, "space") is True
+    assert inst.space == "space"
+    inst.space = "more-space"
+    assert inst.space == "more-space"
+
+    # No source, so no properties. Everything should fail:
+    with pytest.raises(AttributeError):
+        inst.prop1
+    with pytest.raises(RuntimeError):
+        inst["prop1"]
+
+    with pytest.raises(AttributeError):
+        inst.prop1 = 5
+    with pytest.raises(RuntimeError):
+        inst["prop1"] = 1
+
+    with pytest.raises(AttributeError):
+        del inst.prop1
+    with pytest.raises(RuntimeError):
+        del inst["prop1"]
+    with pytest.raises(RuntimeError):
+        inst.get("prop1")
+    with pytest.raises(RuntimeError):
+        inst.get("prop1", "missing")
