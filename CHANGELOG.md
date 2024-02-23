@@ -17,11 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.23.1] - 2024-02-23
-### Fixed
-- Add missing `partition` scope to `seismicAcl`.
-
-## [7.23.0] - 2024-02-23
+## [7.24.0] - 2024-02-24
 ### Added
 - New parameter for `client.raw.rows(...)`: `partitions`. This enables greater throughput thorough concurrent reads when using
   the generator method (while still keeping a low memory impact). For backwards compatibility, the default is _no concurrency_.
@@ -29,6 +25,10 @@ Changes are grouped as follows
   for non-finite calls, but now this can be overridden easily.
 ### Changed
 - Default configuration setting of `max_workers` has been changed from 10 to 5 (now matches the documentation).
+
+## [7.23.1] - 2024-02-23
+### Fixed
+- Add missing `partition` scope to `seismicAcl`.
 
 ## [7.23.0] - 2024-02-23
 ### Added
