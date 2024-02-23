@@ -154,12 +154,12 @@ class Float64(ListablePropertyTypeWithUnit):
 
 
 @dataclass
-class Int32(ListablePropertyTypeWithUnit):
+class Int32(ListablePropertyType):
     _type = "int32"
 
 
 @dataclass
-class Int64(ListablePropertyTypeWithUnit):
+class Int64(ListablePropertyType):
     _type = "int64"
 
 
