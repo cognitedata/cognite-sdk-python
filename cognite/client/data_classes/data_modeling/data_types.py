@@ -8,7 +8,7 @@ from typing import Any, ClassVar, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes.data_modeling.ids import ContainerId, NodeId
+from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
@@ -125,18 +125,35 @@ class Json(ListablePropertyType):
     _type = "json"
 
 
+@dataclass(frozen=True)
+class UnitReference:
+    external_id: str
+    source_unit: str | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = {"externalId" if camel_case else "external_id": self.external_id}
+        if self.source_unit:
+            output["sourceUnit" if camel_case else "source_unit"] = self.source_unit
+        return output
+
+    @classmethod
+    def load(cls, data: dict) -> UnitReference:
+        return cls(
+            external_id=data["externalId"],
+            source_unit=data.get("sourceUnit"),
+        )
+
+
 @dataclass
 class ListablePropertyTypeWithUnit(ListablePropertyType, LoadablePropertyType, ABC):
-    unit: NodeId | None = None
+    unit: UnitReference | None = None
 
     @classmethod
     def load(cls, data: dict) -> Self:
         data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
-        unit = None
+        unit: UnitReference | None = None
         if (unit_raw := data.get("unit")) and isinstance(unit_raw, dict):
-            unit = NodeId.load(unit_raw)
-        elif unit_raw:
-            unit = unit_raw
+            unit = UnitReference.load(unit_raw)
         return cls(
             is_list=data["is_list"],
             unit=unit,

@@ -12,6 +12,7 @@ from cognite.client.data_classes.data_modeling import (
     ContainerList,
     ContainerProperty,
     DataModel,
+    Float64,
     Int32,
     MappedProperty,
     Space,
@@ -19,6 +20,7 @@ from cognite.client.data_classes.data_modeling import (
     View,
 )
 from cognite.client.data_classes.data_modeling.containers import BTreeIndex
+from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -121,3 +123,26 @@ class TestContainersAPI:
         container_json = json.dumps(container_dump)
         container_loaded = Container.load(container_json)
         assert container == container_loaded
+
+    def test_create_container_with_unit_property(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
+        unit_container = ContainerApply(
+            space=integration_test_space.space,
+            external_id="test_container_with_unit",
+            properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
+            used_for="node",
+        )
+
+        try:
+            created = cognite_client.data_modeling.containers.apply(unit_container)
+
+            retrieved = cognite_client.data_modeling.containers.retrieve(created.as_id())
+
+            assert retrieved is not None
+            pressure_type = retrieved.properties["pressure"].type
+            assert isinstance(pressure_type, Float64)
+            assert pressure_type.unit is not None
+            assert pressure_type.unit.external_id == "pressure:bar"
+        finally:
+            cognite_client.data_modeling.containers.delete(unit_container.as_id())
