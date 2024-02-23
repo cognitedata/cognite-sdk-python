@@ -271,7 +271,7 @@ class InstancesAPI(APIClient):
         Fetches nodes as they are iterated over, so you keep a limited number of nodes in memory.
 
         Returns:
-            Iterator[Node]: yields Instances one by one.
+            Iterator[Node]: yields nodes one by one.
         """
         return self(None, "node")
 
@@ -721,7 +721,10 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"), query="Arnold", properties=["name"])
+                >>> res = client.data_modeling.instances.search(
+                ...     ViewId("mySpace", "PersonView", "v1"),
+                ...     query="Arnold",
+                ...     properties=["name"])
 
             Search for Quentin in the person view in the name property, but only born after 1970:
 
