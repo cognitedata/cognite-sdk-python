@@ -298,31 +298,36 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             # For speed, we want this to fail (to avoid LBYL pattern):
             self._prop_lookup = None  # type: ignore [assignment]
 
-    def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
-        raise RuntimeError(
-            "Quick property access is only possible on instances from a single source. "
-            f"Hint: You may use `instance.properties[view_id][{attr!r}]`"
-        ) from None
-
     def __getattr__(self, attr: str) -> PropertyValue:
-        if attr in self._RESERVED_PROPERTIES:
-            return super().__getattr__(attr)  # type: ignore [misc]
         try:
-            return self[attr]
-        except KeyError:
+            # Only called when attribute lookup fails, so we can skip straight to properties:
+            return self._prop_lookup[attr]
+        except (KeyError, TypeError):
             raise AttributeError(f"'{type(self).__name__}' object has no attribute or property {attr!r}") from None
 
     def __setattr__(self, attr: str, value: PropertyValue) -> None:
         if attr in self._RESERVED_PROPERTIES:
             super().__setattr__(attr, value)
         else:
-            self[attr] = value
+            try:
+                self._prop_lookup[attr] = value
+            except TypeError:
+                raise AttributeError(f"'{type(self).__name__}' object has no attribute or property {attr!r}") from None
 
     def __delattr__(self, attr: str) -> None:
         if attr in self._RESERVED_PROPERTIES:
             super().__delattr__(attr)
         else:
-            del self[attr]
+            try:
+                del self._prop_lookup[attr]
+            except (KeyError, TypeError):
+                raise AttributeError(f"'{type(self).__name__}' object has no attribute or property {attr!r}") from None
+
+    def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
+        raise RuntimeError(
+            "Quick property access is only possible on instances from a single source. "
+            f"Hint: You may use `instance.properties[view_id][{attr!r}]`"
+        ) from None
 
     @overload
     def get(self, attr: str) -> PropertyValue | None:
