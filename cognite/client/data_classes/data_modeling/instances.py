@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Collection,
     Dict,
     ItemsView,
@@ -259,7 +258,6 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
 
 
 class Instance(WritableInstanceCore[T_CogniteResource], ABC):
-    _RESERVED_PROPERTIES: ClassVar[frozenset[str]]
 
     """A node or edge. This is the read version of the instance.
 
@@ -298,36 +296,11 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             # For speed, we want this to fail (to avoid LBYL pattern):
             self._prop_lookup = None  # type: ignore [assignment]
 
-    def __getattr__(self, attr: str) -> PropertyValue:
-        try:
-            # Only called when attribute lookup fails, so we can skip straight to properties:
-            return self._prop_lookup[attr]
-        except (KeyError, TypeError):
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute or property {attr!r}") from None
-
-    def __setattr__(self, attr: str, value: PropertyValue) -> None:
-        if attr in self._RESERVED_PROPERTIES:
-            super().__setattr__(attr, value)
-        else:
-            try:
-                self._prop_lookup[attr] = value
-            except TypeError:
-                raise AttributeError(f"'{type(self).__name__}' object has no attribute or property {attr!r}") from None
-
-    def __delattr__(self, attr: str) -> None:
-        if attr in self._RESERVED_PROPERTIES:
-            super().__delattr__(attr)
-        else:
-            try:
-                del self._prop_lookup[attr]
-            except (KeyError, TypeError):
-                raise AttributeError(f"'{type(self).__name__}' object has no attribute or property {attr!r}") from None
-
     def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
-        raise RuntimeError(
-            "Quick property access is only possible on instances from a single source. "
-            f"Hint: You may use `instance.properties[view_id][{attr!r}]`"
-        ) from None
+        err_msg = "Quick property access is only possible on instances from a single source."
+        if len(self.properties) > 1:
+            err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
+        raise RuntimeError(err_msg) from None
 
     @overload
     def get(self, attr: str) -> PropertyValue | None:
@@ -350,16 +323,12 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             self.__raise_if_non_singular_source(attr)
 
     def __setitem__(self, attr: str, value: PropertyValue) -> None:
-        if attr in self._RESERVED_PROPERTIES:
-            raise RuntimeError(f"Can't set reserved attribute {attr!r}. Hint: You may use `instance.{attr} = value`")
         try:
             self._prop_lookup[attr] = value
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __delitem__(self, attr: str) -> None:
-        if attr in self._RESERVED_PROPERTIES:
-            raise RuntimeError(f"Can't delete reserved attribute {attr!r}. Hint: You may use `del instance.{attr}`")
         try:
             del self._prop_lookup[attr]
         except TypeError:
@@ -562,21 +531,6 @@ class NodeApply(InstanceApply["NodeApply"]):
 
 @final
 class Node(Instance["NodeApply"]):
-    _RESERVED_PROPERTIES: ClassVar[frozenset[str]] = frozenset(
-        (
-            "_prop_lookup",
-            "space",
-            "external_id",
-            "version",
-            "last_updated_time",
-            "created_time",
-            "instance_type",
-            "deleted_time",
-            "properties",
-            "type",
-        )
-    )
-
     """A node. This is the read version of the node.
 
     Args:
@@ -758,22 +712,6 @@ class EdgeApply(InstanceApply["EdgeApply"]):
 
 @final
 class Edge(Instance[EdgeApply]):
-    _RESERVED_PROPERTIES: ClassVar[frozenset[str]] = frozenset(
-        (
-            "_prop_lookup",
-            "space",
-            "external_id",
-            "version",
-            "last_updated_time",
-            "created_time",
-            "instance_type",
-            "deleted_time",
-            "properties",
-            "type",
-            "start_node",
-            "end_node",
-        )
-    )
     """An Edge. This is the read version of the edge.
 
     Args:
