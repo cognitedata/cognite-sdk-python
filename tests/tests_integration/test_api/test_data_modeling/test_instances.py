@@ -47,7 +47,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.views import PropertyReference, ViewUnitReference
+from cognite.client.data_classes.data_modeling.views import PropertyReference, SourceDef
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -570,15 +570,15 @@ class TestInstancesAPI:
             ],
         )
 
-        source = ViewUnitReference.from_view_id(
-            unit_view.as_id(), [PropertyReference("pressure", UnitReference("pressure:pascal"))]
+        source = SourceDef.from_view_id(
+            unit_view.as_id(), [PropertyReference("pressure", UnitReference("pressure:pa"))]
         )
 
         try:
             created = cognite_client.data_modeling.instances.apply(node, replace=True)
 
             retrieved = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), sources=[source])
-
+            assert retrieved.nodes
             assert abs(retrieved.nodes[0]["pressure"] - 1.1 * 1e5) < 1e-5
 
         finally:

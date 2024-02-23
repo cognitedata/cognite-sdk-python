@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
+from collections import UserList
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast
 
 from typing_extensions import Self, TypeAlias
 
@@ -22,7 +23,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     UnitReference,
     UnitSystemReference,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_snake_case
 
@@ -886,17 +887,26 @@ class PropertyReference:
 
 
 @dataclass(frozen=True)
-class ViewUnitReference(ViewId):
+class SourceDef(ViewId):
     target_units: list[PropertyReference] = field(default_factory=list)
 
     def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {"source": super().dump(camel_case, include_type)}
+        output: dict[str, Any] = {
+            "source": {
+                "space": self.space,
+                "externalId" if camel_case else "external_id": self.external_id,
+            }
+        }
+        if self.version:
+            output["source"]["version"] = self.version
+        if include_type:
+            output["source"]["type"] = "view"
         if self.target_units:
             output["targetUnits"] = [v.dump(camel_case) for v in self.target_units]
         return output
 
     @classmethod
-    def from_view_id(cls, view_id: ViewId, target_units: list[PropertyReference] | None = None) -> ViewUnitReference:
+    def from_view_id(cls, view_id: ViewId, target_units: list[PropertyReference] | None = None) -> SourceDef:
         return cls(
             space=view_id.space,
             external_id=view_id.external_id,
@@ -905,7 +915,7 @@ class ViewUnitReference(ViewId):
         )
 
     @classmethod
-    def load(cls, data: dict | ViewUnitReference | tuple[str, str] | tuple[str, str, str]) -> ViewUnitReference:
+    def load(cls, data: dict | SourceDef | tuple[str, str] | tuple[str, str, str] | ViewId | View) -> SourceDef:
         if isinstance(data, dict):
             if "source" in data:
                 view_id = ViewId.load(data["source"])
@@ -918,5 +928,27 @@ class ViewUnitReference(ViewId):
                 version=view_id.version,
                 target_units=[PropertyReference.load(v) for v in data.get("targetUnits", [])],
             )
-        view_id = ViewId.load(data)
+        elif isinstance(data, SourceDef):
+            return data
+
+        if isinstance(data, View):
+            view_id = data.as_id()
+        else:
+            view_id = ViewId.load(data)
         return cls(space=view_id.space, external_id=view_id.external_id, version=view_id.version)
+
+
+class SourceDefs(UserList):
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
+        return [v.dump(camel_case) for v in self]
+
+    @classmethod
+    def load(
+        cls, data: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | SourceDef | Sequence[SourceDef]
+    ) -> SourceDefs:
+        if isinstance(data, (View, SourceDef, ViewId)) or (
+            isinstance(data, tuple) and 2 <= len(data) <= 3 and all(isinstance(v, str) for v in data)
+        ):
+            data = [data]  # type: ignore[assignment]
+
+        return cls([SourceDef.load(v) for v in data])  # type: ignore[union-attr]

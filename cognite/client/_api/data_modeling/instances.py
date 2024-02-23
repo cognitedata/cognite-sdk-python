@@ -59,7 +59,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
 )
-from cognite.client.data_classes.data_modeling.views import View
+from cognite.client.data_classes.data_modeling.views import SourceDef, SourceDefs, View
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings
@@ -279,7 +279,13 @@ class InstancesAPI(APIClient):
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
-        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None = None,
         include_typing: bool = False,
     ) -> InstancesResult:
         """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
@@ -287,7 +293,7 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Retrieve properties from the listed - by reference - views.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | SourceDef | Sequence[SourceDef] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
@@ -523,7 +529,13 @@ class InstancesAPI(APIClient):
         *,
         include_typing: bool,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None,
-        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None,
+        sources: ViewIdentifier
+        | Sequence[ViewIdentifier]
+        | View
+        | Sequence[View]
+        | SourceDef
+        | Sequence[SourceDef]
+        | None,
         instance_type: Literal["node", "edge"] | None,
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
@@ -539,10 +551,10 @@ class InstancesAPI(APIClient):
         return other_params
 
     @staticmethod
-    def _dump_instance_source(sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]) -> list[dict]:
-        return [
-            {"source": ViewId.load(dct).dump(camel_case=True)} for dct in _load_identifier(sources, "view").as_dicts()
-        ]
+    def _dump_instance_source(
+        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | SourceDef | Sequence[SourceDef],
+    ) -> list[dict]:
+        return SourceDefs.load(sources).dump()
 
     @staticmethod
     def _dump_instance_sort(sort: InstanceSort | dict) -> dict:
