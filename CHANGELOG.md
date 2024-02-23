@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.24.0] - 2024-02-23
+### Added
+- In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,
+  listing, searching, aggregating, querying and syncing nodes/edges with a target unit or target unit system.
+
 ## [7.23.0] - 2024-02-23
 ### Added
 - Make properties on instances (`Node`, `Edge`) easier to work with, by implementing support for direct indexing (and a `.get` method).
