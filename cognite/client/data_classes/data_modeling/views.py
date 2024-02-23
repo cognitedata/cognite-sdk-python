@@ -869,7 +869,7 @@ class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
 
 
 @dataclass
-class PropertyReference:
+class PropertyUnitReference:
     property: str
     unit: UnitReference | UnitSystemReference
 
@@ -877,7 +877,7 @@ class PropertyReference:
         return {"property": self.property, "unit": self.unit.dump(camel_case)}
 
     @classmethod
-    def load(cls, data: dict) -> PropertyReference:
+    def load(cls, data: dict) -> PropertyUnitReference:
         return cls(
             property=data["property"],
             unit=UnitReference.load(data["unit"])
@@ -888,7 +888,7 @@ class PropertyReference:
 
 @dataclass(frozen=True)
 class SourceDef(ViewId):
-    target_units: list[PropertyReference] = field(default_factory=list)
+    target_units: list[PropertyUnitReference] = field(default_factory=list)
 
     def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -906,7 +906,7 @@ class SourceDef(ViewId):
         return output
 
     @classmethod
-    def from_view_id(cls, view_id: ViewId, target_units: list[PropertyReference] | None = None) -> SourceDef:
+    def from_view_id(cls, view_id: ViewId, target_units: list[PropertyUnitReference] | None = None) -> SourceDef:
         return cls(
             space=view_id.space,
             external_id=view_id.external_id,
@@ -926,7 +926,7 @@ class SourceDef(ViewId):
                 space=view_id.space,
                 external_id=view_id.external_id,
                 version=view_id.version,
-                target_units=[PropertyReference.load(v) for v in data.get("targetUnits", [])],
+                target_units=[PropertyUnitReference.load(v) for v in data.get("targetUnits", [])],
             )
         elif isinstance(data, SourceDef):
             return data

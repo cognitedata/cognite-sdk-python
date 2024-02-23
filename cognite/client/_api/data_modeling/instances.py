@@ -59,7 +59,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
 )
-from cognite.client.data_classes.data_modeling.views import SourceDef, SourceDefs, View
+from cognite.client.data_classes.data_modeling.views import PropertyUnitReference, SourceDef, SourceDefs, View
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings
@@ -713,6 +713,7 @@ class InstancesAPI(APIClient):
         query: str,
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -726,6 +727,7 @@ class InstancesAPI(APIClient):
         query: str,
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -738,6 +740,7 @@ class InstancesAPI(APIClient):
         query: str,
         instance_type: Literal["node", "edge"] = "node",
         properties: list[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -749,6 +752,7 @@ class InstancesAPI(APIClient):
             query (str): Query string that will be parsed and used for search.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            target_units (list[PropertyUnitReference] | None): Properties to convert to another unit. The API can only convert to another unit, if a unit has been defined as part of the type on the underlying container being queried.
             space (str | Sequence[str] | None): Restrict instance search to the given space (or list of spaces).
             filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
@@ -796,6 +800,8 @@ class InstancesAPI(APIClient):
             body["properties"] = properties
         if filter:
             body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
+        if target_units:
+            body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
         return list_cls.load(res.json()["items"], cognite_client=None)

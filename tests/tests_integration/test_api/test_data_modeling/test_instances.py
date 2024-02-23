@@ -47,7 +47,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.views import PropertyReference, SourceDef
+from cognite.client.data_classes.data_modeling.views import PropertyUnitReference, SourceDef
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -556,7 +556,7 @@ class TestInstancesAPI:
         assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
         assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
 
-    def test_apply_retrieve_units(
+    def test_apply_retrieve_list_search_aggregate_in_units(
         self, cognite_client: CogniteClient, integration_test_space: Space, unit_view: View
     ) -> None:
         node = NodeApply(
@@ -571,23 +571,29 @@ class TestInstancesAPI:
         )
 
         source = SourceDef.from_view_id(
-            unit_view.as_id(), [PropertyReference("pressure", UnitReference("pressure:pa"))]
+            unit_view.as_id(), [PropertyUnitReference("pressure", UnitReference("pressure:pa"))]
         )
 
-        try:
-            created = cognite_client.data_modeling.instances.apply(node, replace=True)
+        created = cognite_client.data_modeling.instances.apply(node, replace=True)
 
-            retrieved = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), sources=[source])
-            assert retrieved.nodes
-            assert abs(retrieved.nodes[0]["pressure"] - 1.1 * 1e5) < 1e-5
+        retrieved = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), sources=[source])
+        assert retrieved.nodes
+        assert abs(retrieved.nodes[0]["pressure"] - 1.1 * 1e5) < 1e-5
 
-            is_node = filters.Prefix(["node", "externalId"], node.external_id)
-            listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
+        is_node = filters.Prefix(["node", "externalId"], node.external_id)
+        listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
 
-            assert listed
-            assert abs(listed[0]["pressure"] - 1.1 * 1e5) < 1e-5
-        finally:
-            cognite_client.data_modeling.instances.delete(node.as_id())
+        assert listed
+        assert len(listed) == 1
+        assert abs(listed[0]["pressure"] - 1.1 * 1e5) < 1e-5
+
+        searched = cognite_client.data_modeling.instances.search(
+            view=unit_view.as_id(), query="", filter=is_node, target_units=source.target_units
+        )
+
+        assert searched
+        assert len(searched) == 1
+        assert abs(searched[0]["pressure"] - 1.1 * 1e5) < 1e-5
 
 
 class TestInstancesSync:
