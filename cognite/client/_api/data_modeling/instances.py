@@ -815,6 +815,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -830,6 +831,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -845,6 +847,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -859,6 +862,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -872,6 +876,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): The type of instance.
             query (str | None): Optional query string. The API will parse the query string, and use it to match the text properties on elements to use for the aggregate(s).
             properties (str | SequenceNotStr[str] | None): Optional list of properties you want to apply the query to. If you do not list any properties, you search through text fields by default.
+            target_units (list[PropertyUnitReference] | None): Properties to convert to another unit. The API can only convert to another unit, if a unit has been defined as part of the type on the underlying container being queried.
             space (str | Sequence[str] | None): Restrict instance aggregate query to the given space (or list of spaces).
             filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
@@ -912,6 +917,8 @@ class InstancesAPI(APIClient):
             body["query"] = query
         if properties:
             body["properties"] = [properties] if isinstance(properties, str) else properties
+        if target_units:
+            body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
         result_list = InstanceAggregationResultList.load(res.json()["items"], cognite_client=None)
@@ -931,6 +938,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: SequenceNotStr[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -945,6 +953,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: SequenceNotStr[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -958,6 +967,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: SequenceNotStr[str] | None = None,
+        target_units: list[PropertyUnitReference] | None = None,
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -970,6 +980,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
             properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            target_units (list[PropertyUnitReference] | None): Properties to convert to another unit. The API can only convert to another unit, if a unit has been defined as part of the type on the underlying container being queried.
             space (str | Sequence[str] | None): Restrict histogram query to instances in the given space (or list of spaces).
             filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
@@ -1015,6 +1026,8 @@ class InstancesAPI(APIClient):
             body["query"] = query
         if properties:
             body["properties"] = properties
+        if target_units:
+            body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
         if is_singleton:

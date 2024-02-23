@@ -595,6 +595,17 @@ class TestInstancesAPI:
         assert len(searched) == 1
         assert abs(searched[0]["pressure"] - 1.1 * 1e5) < 1e-5
 
+        aggregated = cognite_client.data_modeling.instances.aggregate(
+            view=unit_view.as_id(),
+            aggregates=[aggregations.Avg("pressure")],
+            target_units=source.target_units,
+            filter=is_node,
+        )
+
+        assert aggregated
+        assert len(aggregated) == 1
+        assert abs(aggregated[0].value - 1.1 * 1e5) < 1e-5
+
 
 class TestInstancesSync:
     def test_sync_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:
