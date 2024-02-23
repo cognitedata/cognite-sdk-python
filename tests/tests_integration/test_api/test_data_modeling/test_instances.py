@@ -606,6 +606,16 @@ class TestInstancesAPI:
         assert len(aggregated) == 1
         assert abs(aggregated[0].value - 1.1 * 1e5) < 1e-5
 
+        query = Query(
+            with_={"nodes": NodeResultSetExpression(filter=is_node, limit=1)},
+            select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], source.target_units)])},
+        )
+        queried = cognite_client.data_modeling.instances.query(query)
+
+        assert queried
+        assert len(queried["nodes"]) == 1
+        assert abs(queried["nodes"][0]["pressure"] - 1.1 * 1e5) < 1e-5
+
 
 class TestInstancesSync:
     def test_sync_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:

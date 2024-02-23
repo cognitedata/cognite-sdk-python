@@ -17,6 +17,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeListWithCursor,
     PropertyValue,
 )
+from cognite.client.data_classes.data_modeling.views import PropertyUnitReference
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._importing import local_import
 
@@ -28,11 +29,13 @@ if TYPE_CHECKING:
 class SourceSelector(CogniteObject):
     source: ViewId
     properties: list[str]
+    target_units: list[PropertyUnitReference] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case),
             "properties": self.properties,
+            "targetUnits": [unit.dump(camel_case) for unit in self.target_units] if self.target_units else None,
         }
 
     @classmethod
@@ -40,6 +43,7 @@ class SourceSelector(CogniteObject):
         return cls(
             source=ViewId.load(resource["source"]),
             properties=resource["properties"],
+            target_units=[PropertyUnitReference.load(unit) for unit in resource.get("targetUnits", [])] or None,
         )
 
 
@@ -52,9 +56,7 @@ class Select(CogniteObject):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.sources:
-            output["sources"] = [
-                {"source": source.source.dump(camel_case), "properties": source.properties} for source in self.sources
-            ]
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
         if self.sort:
             output["sort"] = [s.dump(camel_case) for s in self.sort]
         if self.limit:
