@@ -921,17 +921,17 @@ class SourceDef:
         return cls(source=view_id)
 
 
-class SourceDefs(UserList):
+class SourceDefList(UserList):
     def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
         return [v.dump(camel_case) for v in self]
 
     @classmethod
     def load(
-        cls, data: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | SourceDef | Sequence[SourceDef]
-    ) -> SourceDefs:
+        cls, data: ViewIdentifier | View | SourceDef | Sequence[ViewIdentifier | View | SourceDef]
+    ) -> SourceDefList:
         if isinstance(data, (View, SourceDef, ViewId)) or (
             isinstance(data, tuple) and 2 <= len(data) <= 3 and all(isinstance(v, str) for v in data)
         ):
             data = [data]  # type: ignore[assignment]
 
-        return cls([SourceDef.load(v) for v in data])  # type: ignore[union-attr]
+        return cls([SourceDef.load(v) for v in data])  # type: ignore[call-arg, arg-type]
