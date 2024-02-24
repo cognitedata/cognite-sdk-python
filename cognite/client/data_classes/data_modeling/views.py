@@ -887,31 +887,17 @@ class PropertyUnitReference:
 
 
 @dataclass(frozen=True)
-class SourceDef(ViewId):
+class SourceDef:
+    source: ViewId
     target_units: list[PropertyUnitReference] = field(default_factory=list)
 
     def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
-            "source": {
-                "space": self.space,
-                "externalId" if camel_case else "external_id": self.external_id,
-                "version": self.version,
-            }
+            "source": self.source.dump(camel_case, include_type=True),
         }
-        if include_type:
-            output["source"]["type"] = "view"
         if self.target_units:
             output["targetUnits"] = [v.dump(camel_case) for v in self.target_units]
         return output
-
-    @classmethod
-    def from_view_id(cls, view_id: ViewId, target_units: list[PropertyUnitReference] | None = None) -> SourceDef:
-        return cls(
-            space=view_id.space,
-            external_id=view_id.external_id,
-            version=view_id.version,
-            target_units=target_units or [],
-        )
 
     @classmethod
     def load(cls, data: dict | SourceDef | tuple[str, str] | tuple[str, str, str] | ViewId | View) -> SourceDef:
@@ -922,9 +908,7 @@ class SourceDef(ViewId):
                 view_id = ViewId.load(data)
 
             return cls(
-                space=view_id.space,
-                external_id=view_id.external_id,
-                version=view_id.version,
+                source=view_id,
                 target_units=[PropertyUnitReference.load(v) for v in data.get("targetUnits", [])],
             )
         elif isinstance(data, SourceDef):
@@ -934,7 +918,7 @@ class SourceDef(ViewId):
             view_id = data.as_id()
         else:
             view_id = ViewId.load(data)
-        return cls(space=view_id.space, external_id=view_id.external_id, version=view_id.version)
+        return cls(source=view_id)
 
 
 class SourceDefs(UserList):

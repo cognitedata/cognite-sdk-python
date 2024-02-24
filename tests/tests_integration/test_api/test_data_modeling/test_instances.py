@@ -570,9 +570,7 @@ class TestInstancesAPI:
             ],
         )
 
-        source = SourceDef.from_view_id(
-            unit_view.as_id(), [PropertyUnitReference("pressure", UnitReference("pressure:pa"))]
-        )
+        source = SourceDef(unit_view.as_id(), [PropertyUnitReference("pressure", UnitReference("pressure:pa"))])
 
         created = cognite_client.data_modeling.instances.apply(node, replace=True)
 
