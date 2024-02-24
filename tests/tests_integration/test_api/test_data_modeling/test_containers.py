@@ -37,6 +37,18 @@ def movie_containers(cognite_client: CogniteClient, movie_model: DataModel[View]
     return containers
 
 
+@pytest.fixture(scope="session")
+def unit_pressure_container(cognite_client: CogniteClient, integration_test_space: Space) -> Container:
+    unit_container = ContainerApply(
+        space=integration_test_space.space,
+        external_id="test_container_with_unit",
+        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
+        used_for="node",
+    )
+
+    return cognite_client.data_modeling.containers.apply(unit_container)
+
+
 class TestContainersAPI:
     """Dev. note: We do not do the "create+delete pattern" in these tests as it has a bunch of
     undesireable effects on the system (e.g. elasticsearch mapping explosion).
@@ -124,25 +136,13 @@ class TestContainersAPI:
         container_loaded = Container.load(container_json)
         assert container == container_loaded
 
-    def test_create_container_with_unit_property(
-        self, cognite_client: CogniteClient, integration_test_space: Space
+    def test_retrieve_container_with_unit_property(
+        self, cognite_client: CogniteClient, unit_pressure_container: Container
     ) -> None:
-        unit_container = ContainerApply(
-            space=integration_test_space.space,
-            external_id="test_container_with_unit",
-            properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
-            used_for="node",
-        )
+        retrieved = cognite_client.data_modeling.containers.retrieve(unit_pressure_container.as_id())
 
-        try:
-            created = cognite_client.data_modeling.containers.apply(unit_container)
-
-            retrieved = cognite_client.data_modeling.containers.retrieve(created.as_id())
-
-            assert retrieved is not None
-            pressure_type = retrieved.properties["pressure"].type
-            assert isinstance(pressure_type, Float64)
-            assert pressure_type.unit is not None
-            assert pressure_type.unit.external_id == "pressure:bar"
-        finally:
-            cognite_client.data_modeling.containers.delete(unit_container.as_id())
+        assert retrieved is not None
+        pressure_type = retrieved.properties["pressure"].type
+        assert isinstance(pressure_type, Float64)
+        assert pressure_type.unit is not None
+        assert pressure_type.unit.external_id == "pressure:bar"

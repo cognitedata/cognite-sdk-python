@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import time
 from typing import Any, ClassVar, cast
 
@@ -99,6 +100,24 @@ def unit_view(cognite_client: CogniteClient, integration_test_space: Space) -> V
     )
     _ = cognite_client.data_modeling.containers.apply(container)
     return cognite_client.data_modeling.views.apply(view)
+
+
+@pytest.fixture(scope="session")
+def node_with_1_1_pressure_in_bar(
+    cognite_client: CogniteClient, unit_view: View, integration_test_space: Space
+) -> NodeApply:
+    node = NodeApply(
+        space=integration_test_space.space,
+        external_id="pressure_1.1_bar_node",
+        sources=[
+            NodeOrEdgeData(
+                unit_view.as_id(),
+                {"pressure": 1.1},
+            )
+        ],
+    )
+    _ = cognite_client.data_modeling.instances.apply(node)
+    return node
 
 
 class TestInstancesAPI:
@@ -556,63 +575,72 @@ class TestInstancesAPI:
         assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
         assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
 
-    def test_apply_retrieve_list_search_aggregate_in_units(
-        self, cognite_client: CogniteClient, integration_test_space: Space, unit_view: View
+    def test_retrieve_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
-        node = NodeApply(
-            space=integration_test_space.space,
-            external_id="nodewrite_units_test",
-            sources=[
-                NodeOrEdgeData(
-                    unit_view.as_id(),
-                    {"pressure": 1.1},
-                )
-            ],
-        )
-
+        node = node_with_1_1_pressure_in_bar
         source = SourceDef(unit_view.as_id(), [PropertyUnitReference("pressure", UnitReference("pressure:pa"))])
 
-        created = cognite_client.data_modeling.instances.apply(node, replace=True)
-
-        retrieved = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), sources=[source])
+        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
         assert retrieved.nodes
-        assert abs(retrieved.nodes[0]["pressure"] - 1.1 * 1e5) < 1e-5
+        assert math.isclose(retrieved.nodes[0]["pressure"], 1.1 * 1e5)
 
-        is_node = filters.Prefix(["node", "externalId"], node.external_id)
+    def test_list_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        source = SourceDef(unit_view.as_id(), [PropertyUnitReference("pressure", UnitReference("pressure:pa"))])
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
         listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
 
         assert listed
         assert len(listed) == 1
-        assert abs(listed[0]["pressure"] - 1.1 * 1e5) < 1e-5
+        assert math.isclose(listed[0]["pressure"], 1.1 * 1e5)
+
+    def test_search_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        target_units = [PropertyUnitReference("pressure", UnitReference("pressure:pa"))]
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
 
         searched = cognite_client.data_modeling.instances.search(
-            view=unit_view.as_id(), query="", filter=is_node, target_units=source.target_units
+            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units
         )
 
         assert searched
         assert len(searched) == 1
-        assert abs(searched[0]["pressure"] - 1.1 * 1e5) < 1e-5
+        assert math.isclose(searched[0]["pressure"], 1.1 * 1e5)
+
+    def test_aggregate_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        target_units = [PropertyUnitReference("pressure", UnitReference("pressure:pa"))]
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
 
         aggregated = cognite_client.data_modeling.instances.aggregate(
             view=unit_view.as_id(),
             aggregates=[aggregations.Avg("pressure")],
-            target_units=source.target_units,
+            target_units=target_units,
             filter=is_node,
         )
 
         assert aggregated
         assert len(aggregated) == 1
-        assert abs(aggregated[0].value - 1.1 * 1e5) < 1e-5
+        assert math.isclose(aggregated[0].value, 1.1 * 1e5)
 
+    def test_query_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+        target_units = [PropertyUnitReference("pressure", UnitReference("pressure:pa"))]
         query = Query(
             with_={"nodes": NodeResultSetExpression(filter=is_node, limit=1)},
-            select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], source.target_units)])},
+            select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], target_units)])},
         )
         queried = cognite_client.data_modeling.instances.query(query)
 
         assert queried
         assert len(queried["nodes"]) == 1
-        assert abs(queried["nodes"][0]["pressure"] - 1.1 * 1e5) < 1e-5
+        assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
 
 
 class TestInstancesSync:
