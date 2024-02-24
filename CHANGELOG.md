@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.23.1] - 2024-02-23
+### Fixed
+- Add missing `partition` scope to `seismicAcl`.
+
 ## [7.23.0] - 2024-02-23
 ### Added
 - Make properties on instances (`Node`, `Edge`) easier to work with, by implementing support for direct indexing (and a `.get` method).

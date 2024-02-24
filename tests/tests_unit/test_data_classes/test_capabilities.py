@@ -96,6 +96,7 @@ def all_acls():
             }
         },
         {"seismicAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"seismicAcl": {"actions": ["WRITE"], "scope": {"partition": {"partitionIds": ["123", 456]}}}},
         {"sequencesAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"sequencesAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"sessionsAcl": {"actions": ["LIST", "CREATE", "DELETE"], "scope": {"all": {}}}},
