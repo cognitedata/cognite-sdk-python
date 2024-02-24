@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import threading
 import time
 from collections import deque
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
@@ -15,7 +17,7 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
+from cognite.client.utils._concurrency import ConcurrencySettings, TaskFuture, execute_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._validation import assert_type
@@ -343,20 +345,20 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
-            chunk_size (int | None): Number of rows to return in each chunk. Defaults to yielding one row a time. Note: When used together with 'partitions'
-                the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
-            limit (int | None): Maximum number of rows to return. Defaults to return all items.
+            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row a time.
+                Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
+            limit (int | None): Maximum number of rows to return. Can be used with partitions. Defaults to returning all items.
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to 1 (i.e. _no concurrency_).
-                The setting is capped at ``global_config.max_workers`` and can not be used with a finite limit. To prevent unexpected
+                The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected
                 problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
             Iterator[Row] | Iterator[RowList]: An iterator yielding the requested rows (or row) in chunks.
         """
-        if partitions is None or is_finite(limit):
+        if partitions is None:
             return self._list_generator(
                 list_cls=RowList,
                 resource_cls=Row,
@@ -374,6 +376,7 @@ class RawRowsAPI(APIClient):
             db_name=db_name,
             table_name=table_name,
             chunk_size=chunk_size,
+            limit=limit,
             min_last_updated_time=min_last_updated_time,
             max_last_updated_time=max_last_updated_time,
             columns=columns,
@@ -385,16 +388,24 @@ class RawRowsAPI(APIClient):
         db_name: str,
         table_name: str,
         chunk_size: int | None,
+        limit: int | None,
         min_last_updated_time: int | None,
         max_last_updated_time: int | None,
         columns: list[str] | None,
         partitions: int,
     ) -> Iterator[RowList]:
+        # We are a bit restrictive on partitioning - especially for "small" limits:
         partitions = min(partitions, self._config.max_workers)
+        if finite_limit := is_finite(limit):
+            partitions = min(partitions, self._config.max_workers, math.ceil(limit / 20_000))
+            if chunk_size is not None and limit < chunk_size:
+                raise ValueError(f"{chunk_size=} should be much smaller than {limit=}")
+
         cursors = self._get_parallel_cursors(
             db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
         )
         chunk_size = max(1000, chunk_size or 10_000)
+        column_string = self._make_columns_param(columns)
         read_iterators = [
             self._list_generator(
                 list_cls=RowList,
@@ -402,29 +413,60 @@ class RawRowsAPI(APIClient):
                 resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
                 chunk_size=chunk_size,
                 method="GET",
-                filter={"columns": self._make_columns_param(columns)},  # dont need X_last_updated_time
+                filter={"columns": column_string},  # we don't need X_last_updated_time
                 limit=None,
                 initial_cursor=initial,
             )
             for initial in cursors
         ]
 
-        def exhaust(iterator: Iterator, results: deque[RowList]) -> None:
+        def exhaust(iterator: Iterator, results: deque[RowList], quit_early: threading.Event) -> None:
+            a = 0
             for res in iterator:
+                a += 1
                 results.append(res)
+                if quit_early.is_set():
+                    return
 
-        results: deque[RowList] = deque()
+        quit_early = threading.Event()
+        results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
         pool = ConcurrencySettings.get_executor(max_workers=self._config.max_workers)
-        futures = [pool.submit(exhaust, task, results) for task in read_iterators]
+        futures = [pool.submit(exhaust, task, results, quit_early) for task in read_iterators]
+
+        if finite_limit:
+            yield from self._read_rows_limited(futures, results, cast(int, limit), quit_early)
+        else:
+            yield from self._read_rows_unlimited(futures, results)
+
+        for f in futures:
+            f.cancelled() or f.result()  # Visibility in case anything failed
+
+    def _read_rows_unlimited(self, futures: list[TaskFuture], results: deque[RowList]) -> Iterator[RowList]:
         while not all(f.done() for f in futures):
             while results:
                 yield results.popleft()
             time.sleep(0.5)
-
         yield from results
 
-        for f in futures:
-            f.result()  # In case anything failed
+    def _read_rows_limited(
+        self, futures: list[TaskFuture], results: deque[RowList], limit: int, quit_early: threading.Event
+    ) -> Iterator[RowList]:
+        n_total = 0
+        while True:
+            while results:
+                n_new = len(part := results.popleft())
+                if n_total + n_new < limit:
+                    n_total += n_new
+                    yield part
+                else:
+                    for f in futures:
+                        f.cancel()
+                    quit_early.set()
+                    yield part[: limit - n_total]
+                    return
+            time.sleep(0.5)
+            if all(f.done() for f in futures) and not results:
+                return
 
     def insert(
         self,
@@ -663,9 +705,11 @@ class RawRowsAPI(APIClient):
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to `global_config.max_workers` (and will be capped at this value).
-                To prevent unexpected problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+            limit (int | None): The number of rows to retrieve. Can be used with partitions. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used with a finite limit. When partitions
+                is not passed, it defaults to 1, i.e. no concurrency for a finite limit and `global_config.max_workers` for an unlimited query
+                (and will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
+                `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
             RowList: The requested rows.
@@ -693,47 +737,33 @@ class RawRowsAPI(APIClient):
                 ...     row_list  # do something with the rows
 
             Iterate through a massive table, using concurrency, to reduce memory load. Note: ``partitions`` must be specified.
-            You can either pass a number, or simply use the default ``max_workers`` already set in your configuration:
 
-                >>> from cognite.client import global_config
                 >>> rows_iterator = client.raw.rows(
-                ...     db_name="db1",
-                ...     table_name="t1",
-                ...     chunk_size=10_000,
-                ...     partitions=global_config.max_workers)
+                ...     db_name="db1", table_name="t1", chunk_size=10_000, partitions=5
+                ... )
                 >>> for row_list in rows_iterator:
                 ...     row_list  # do something with the rows
         """
-        if not is_unlimited(limit):
-            return self._list(
-                list_cls=RowList,
-                resource_cls=Row,
-                resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-                method="GET",
-                filter={
-                    "columns": self._make_columns_param(columns),
-                    "minLastUpdatedTime": min_last_updated_time,
-                    "maxLastUpdatedTime": max_last_updated_time,
-                },
-                limit=limit,
-            )
-        # Parallel reads requires initial cursors:
-        partitions = self._config.max_workers if partitions is None else min(partitions, self._config.max_workers)
-        cursors = self._get_parallel_cursors(
-            db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
+        chunk_size = None
+        if partitions is None:
+            if is_unlimited(limit):
+                # Before 'partitions' was introduced, existing logic was that 'limit=None' meant 'partitions=max_workers'.
+                partitions = self._config.max_workers
+            else:
+                chunk_size = limit  # We fetch serially, but don't want rows one-by-one
+
+        rows_iterator = self(
+            db_name=db_name,
+            table_name=table_name,
+            chunk_size=chunk_size,
+            limit=limit,
+            min_last_updated_time=min_last_updated_time,
+            max_last_updated_time=max_last_updated_time,
+            columns=columns,
+            partitions=partitions,
         )
-        tasks = [
-            dict(
-                list_cls=RowList,
-                resource_cls=Row,
-                resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-                method="GET",
-                filter={"columns": self._make_columns_param(columns)},
-                limit=None,
-                initial_cursor=initial_cursor,
-            )
-            for initial_cursor in cursors
-        ]
-        summary = execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
-        summary.raise_compound_exception_if_failed_tasks()
-        return RowList(summary.joined_results())
+
+        return RowList(
+            [row for row_list in cast(Iterator[RowList], rows_iterator) for row in row_list],
+            cognite_client=self._cognite_client,
+        )
