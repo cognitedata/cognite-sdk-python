@@ -127,50 +127,16 @@ class TaskFuture(Protocol[T_Result]):
     def result(self) -> T_Result:
         ...
 
-    def done(self) -> bool:
-        ...
-
-    def cancel(self) -> bool:
-        ...
-
-    def cancelled(self) -> bool:
-        ...
-
 
 class SyncFuture(TaskFuture[T_Result]):
-    """Best effort to follow: https://docs.python.org/3/library/concurrent.futures.html#future-objects
-
-    ...except: We don't care about storing any possible exception; if anything happens, they will immediately
-    be raised for the user anyway"""
-
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
         self._task = functools.partial(fn, *args, **kwargs)
-        self._result: T_Result
-        self._has_run: bool = False
-        self._cancelled: bool = False
+        self._result: T_Result | None = None
 
     def result(self) -> T_Result:
-        if self._cancelled:
-            raise CancelledError
-        if not self._has_run:
-            self._has_run = True
+        if self._result is None:
             self._result = self._task()
         return self._result
-
-    def done(self) -> Literal[True]:
-        if self._cancelled or self._has_run:
-            return True
-        self.result()
-        return True
-
-    def cancel(self) -> bool:
-        if self._has_run:
-            return False
-        self._cancelled = True
-        return True
-
-    def cancelled(self) -> bool:
-        return self._cancelled
 
 
 class MainThreadExecutor(TaskExecutor):
