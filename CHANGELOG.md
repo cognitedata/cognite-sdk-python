@@ -17,14 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.24.0] - 2024-02-24
+## [7.24.0] - 2024-02-25
 ### Added
 - New parameter for `client.raw.rows(...)`: `partitions`. This enables greater throughput thorough concurrent reads when using
   the generator method (while still keeping a low memory impact). For backwards compatibility, the default is _no concurrency_.
-- New parameter for `client.raw.rows.list(...)`: `partitions`. This method has always used `partitions=max_workers` under the hood
-  for non-finite calls, but now this can be overridden easily.
+  When specified, can be used together with a finite limit, as opposed to most (if not all) other resources/APIs.
+- New parameter for `client.raw.rows.list(...)`: `partitions`. For backwards compatibility, the default is _no concurrency_ when
+  a finite `limit` is given, and _"max" concurrency_ (`partitions=max_workers`) otherwise. Partitions can be used with finite limits.
+  With this change it is easy to set an appropriate level of concurrency without messing with the global client configuration.
 ### Changed
-- Default configuration setting of `max_workers` has been changed from 10 to 5 (now matches the documentation).
+- Default configuration setting of `max_workers` has been changed from 10 to 5 (to match the documentation).
 
 ## [7.23.1] - 2024-02-23
 ### Fixed

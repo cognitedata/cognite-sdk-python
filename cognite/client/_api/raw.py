@@ -351,12 +351,12 @@ class RawRowsAPI(APIClient):
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to 1 (i.e. _no concurrency_).
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency.
                 The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected
                 problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
-            Iterator[Row] | Iterator[RowList]: An iterator yielding the requested rows (or row) in chunks.
+            Iterator[Row] | Iterator[RowList]: An iterator yielding the requested row or rows.
         """
         if partitions is None:
             return self._list_generator(
@@ -399,7 +399,7 @@ class RawRowsAPI(APIClient):
         if finite_limit := is_finite(limit):
             partitions = min(partitions, self._config.max_workers, math.ceil(limit / 20_000))
             if chunk_size is not None and limit < chunk_size:
-                raise ValueError(f"{chunk_size=} should be much smaller than {limit=}")
+                raise ValueError(f"chunk_size ({chunk_size}) should be much smaller than limit ({limit})")
 
         cursors = self._get_parallel_cursors(
             db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
@@ -421,9 +421,7 @@ class RawRowsAPI(APIClient):
         ]
 
         def exhaust(iterator: Iterator, results: deque[RowList], quit_early: threading.Event) -> None:
-            a = 0
             for res in iterator:
-                a += 1
                 results.append(res)
                 if quit_early.is_set():
                     return
@@ -706,9 +704,9 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int | None): The number of rows to retrieve. Can be used with partitions. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used with a finite limit. When partitions
-                is not passed, it defaults to 1, i.e. no concurrency for a finite limit and `global_config.max_workers` for an unlimited query
-                (and will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
+                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and `global_config.max_workers` for an unlimited query
+                (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
                 `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
@@ -716,30 +714,33 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            List rows:
+            List a few rows:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> row_list = client.raw.rows.list("db1", "tbl1", limit=5)
 
-            Read the entire table efficiently by using concurrency:
+            Read an entire table efficiently by using concurrency (default behaviour when limit=None):
 
                 >>> row_list = client.raw.rows.list("db1", "tbl1", limit=None)
 
-            Iterate over rows to reduce memory load:
+            Iterate through all rows one-by-one to reduce memory load (no concurrency used):
 
-                >>> for row in client.raw.rows(db_name="db1", table_name="t1", columns=["col1","col2"]):
+                >>> for row in client.raw.rows("db1", "t1", columns=["col1","col2"]):
                 ...     row  # do something with the row
 
-            Iterate over chunks of rows to reduce memory load:
+            Iterate through all rows, one chunk at the time, to reduce memory load (no concurrency used):
 
-                >>> for row_list in client.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
+                >>> for row_list in client.raw.rows("db1", "t1", chunk_size=2500):
                 ...     row_list  # do something with the rows
 
-            Iterate through a massive table, using concurrency, to reduce memory load. Note: ``partitions`` must be specified.
+            Iterate through a massive table to reduce memory load while using concurrency for high throughput.
+            Note: ``partitions`` must be specified for concurrency to be used (this is different from `list()`
+            to keep backwards compatibility). Supplying a finite ``limit`` does not affect concurrency settings
+            (except for very small values).
 
                 >>> rows_iterator = client.raw.rows(
-                ...     db_name="db1", table_name="t1", chunk_size=10_000, partitions=5
+                ...     db_name="db1", table_name="t1", partitions=5, chunk_size=5000, limit=1_000_000
                 ... )
                 >>> for row_list in rows_iterator:
                 ...     row_list  # do something with the rows
@@ -762,7 +763,6 @@ class RawRowsAPI(APIClient):
             columns=columns,
             partitions=partitions,
         )
-
         return RowList(
             [row for row_list in cast(Iterator[RowList], rows_iterator) for row in row_list],
             cognite_client=self._cognite_client,
