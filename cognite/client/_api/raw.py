@@ -345,7 +345,7 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
-            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row a time.
+            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row at a time.
                 Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
             limit (int | None): Maximum number of rows to return. Can be used with partitions. Defaults to returning all items.
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
@@ -705,7 +705,7 @@ class RawRowsAPI(APIClient):
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int | None): The number of rows to retrieve. Can be used with partitions. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
-                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and `global_config.max_workers` for an unlimited query
+                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
                 (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
                 `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
@@ -720,7 +720,7 @@ class RawRowsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> row_list = client.raw.rows.list("db1", "tbl1", limit=5)
 
-            Read an entire table efficiently by using concurrency (default behaviour when limit=None):
+            Read an entire table efficiently by using concurrency (default behavior when ``limit=None``):
 
                 >>> row_list = client.raw.rows.list("db1", "tbl1", limit=None)
 
@@ -729,14 +729,14 @@ class RawRowsAPI(APIClient):
                 >>> for row in client.raw.rows("db1", "t1", columns=["col1","col2"]):
                 ...     row  # do something with the row
 
-            Iterate through all rows, one chunk at the time, to reduce memory load (no concurrency used):
+            Iterate through all rows, one chunk at a time, to reduce memory load (no concurrency used):
 
                 >>> for row_list in client.raw.rows("db1", "t1", chunk_size=2500):
                 ...     row_list  # do something with the rows
 
             Iterate through a massive table to reduce memory load while using concurrency for high throughput.
-            Note: ``partitions`` must be specified for concurrency to be used (this is different from `list()`
-            to keep backwards compatibility). Supplying a finite ``limit`` does not affect concurrency settings
+            Note: ``partitions`` must be specified for concurrency to be used (this is different from ``list()``
+            to keep backward compatibility). Supplying a finite ``limit`` does not affect concurrency settings
             (except for very small values).
 
                 >>> rows_iterator = client.raw.rows(

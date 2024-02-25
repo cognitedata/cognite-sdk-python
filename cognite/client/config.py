@@ -101,12 +101,10 @@ class ClientConfig:
 
     @property
     def max_workers(self) -> int:
-        # TODO: Remove max_workers from ClientConfig in next major version
         return global_config.max_workers
 
     @max_workers.setter
     def max_workers(self, value: int) -> None:
-        # TODO: Remove max_workers from ClientConfig in next major version
         global_config.max_workers = value
         warnings.warn(
             "Passing (or setting) max_workers to ClientConfig is deprecated. Please use global_config.max_workers instead",
