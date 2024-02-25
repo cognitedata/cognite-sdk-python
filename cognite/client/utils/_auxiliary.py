@@ -17,6 +17,8 @@ from typing import (
 )
 from urllib.parse import quote
 
+from typing_extensions import TypeGuard
+
 from cognite.client.utils import _json
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -36,6 +38,10 @@ THashable = TypeVar("THashable", bound=Hashable)
 
 def no_op(x: T) -> T:
     return x
+
+
+def is_finite(limit: Any) -> TypeGuard[int]:
+    return isinstance(limit, int) and limit >= 0
 
 
 def is_unlimited(limit: float | int | None) -> bool:
