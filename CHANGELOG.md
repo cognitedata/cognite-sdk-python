@@ -17,10 +17,25 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.24.0] - 2024-02-23
+## [7.25.0] - 2024-02-23
 ### Added
 - In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,
   listing, searching, aggregating, querying and syncing nodes/edges with a target unit or target unit system.
+
+## [7.24.1] - 2024-02-25
+### Fixed
+- [Pyodide/WASM only] The iteration method for raw rows now yields rows _while running_ (instead of waiting for tasks to finish first).
+
+## [7.24.0] - 2024-02-25
+### Added
+- New parameter for `client.raw.rows(...)`: `partitions`. This enables greater throughput thorough concurrent reads when using
+  the generator method (while still keeping a low memory impact). For backwards compatibility, the default is _no concurrency_.
+  When specified, can be used together with a finite limit, as opposed to most (if not all) other resources/APIs.
+- New parameter for `client.raw.rows.list(...)`: `partitions`. For backwards compatibility, the default is _no concurrency_ when
+  a finite `limit` is given, and _"max" concurrency_ (`partitions=max_workers`) otherwise. Partitions can be used with finite limits.
+  With this change it is easy to set an appropriate level of concurrency without messing with the global client configuration.
+### Changed
+- Default configuration setting of `max_workers` has been changed from 10 to 5 (to match the documentation).
 
 ## [7.23.1] - 2024-02-23
 ### Fixed
@@ -36,8 +51,7 @@ Changes are grouped as follows
 ### Added
 - Data point subscriptions reaches General Availability (GA).
   - Use the new [Data point subscriptions](https://developer.cognite.com/dev/concepts/data_point_subscriptions/)
-    feature to configure a subscription to listen to changes in one or more
-    time series (in ingestion order).
+    feature to configure a subscription to listen to changes in one or more time series (in ingestion order).
     The feature is intended to be used where data points consumers need to keep up to date with
     changes to one or more time series without the need to read the entire time series again.
 ### Changed

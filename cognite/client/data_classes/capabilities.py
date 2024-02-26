@@ -789,7 +789,7 @@ class SecurityCategoriesAcl(Capability):
 class SeismicAcl(Capability):
     _capability_name = "seismicAcl"
     actions: Sequence[Action]
-    scope: AllScope
+    scope: AllScope | PartitionScope
 
     class Action(Capability.Action):
         Read = "READ"

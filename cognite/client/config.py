@@ -41,7 +41,7 @@ class GlobalConfig:
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
         self.proxies: dict[str, str] | None = {}
-        self.max_workers: int = 10
+        self.max_workers: int = 5
 
 
 global_config = GlobalConfig()
@@ -84,11 +84,7 @@ class ClientConfig:
         self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
         if max_workers is not None:
             # TODO: Remove max_workers from ClientConfig in next major version
-            warnings.warn(
-                "Passing max_workers to ClientConfig is deprecated. Please use global_config.max_workers instead",
-                DeprecationWarning,
-            )
-        self.max_workers = max_workers if max_workers is not None else global_config.max_workers
+            self.max_workers = max_workers  # Will trigger a deprecation warning
         self.headers = headers or {}
         self.timeout = timeout or 30
         self.file_transfer_timeout = file_transfer_timeout or 600
@@ -102,6 +98,18 @@ class ClientConfig:
 
                 _check_client_has_newest_major_version()
         self._validate_config()
+
+    @property
+    def max_workers(self) -> int:
+        return global_config.max_workers
+
+    @max_workers.setter
+    def max_workers(self, value: int) -> None:
+        global_config.max_workers = value
+        warnings.warn(
+            "Passing (or setting) max_workers to ClientConfig is deprecated. Please use global_config.max_workers instead",
+            DeprecationWarning,
+        )
 
     @property
     def debug(self) -> bool:
@@ -125,7 +133,7 @@ class ClientConfig:
             raise ValueError(f"Invalid value for ClientConfig.base_url: <{self.base_url}>")
 
     def __str__(self) -> str:
-        return pprint.pformat(self.__dict__, indent=4)
+        return pprint.pformat({"max_workers": self.max_workers, **self.__dict__}, indent=4)
 
     def _repr_html_(self) -> str:
         return str(self)
