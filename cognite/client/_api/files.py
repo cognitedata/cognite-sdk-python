@@ -36,6 +36,7 @@ from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class FilesAPI(APIClient):
@@ -48,11 +49,11 @@ class FilesAPI(APIClient):
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         source: str | None = None,
@@ -76,11 +77,11 @@ class FilesAPI(APIClient):
             mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-            asset_external_ids (Sequence[str] | None): No description.
+            asset_external_ids (SequenceNotStr[str] | None): No description.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the files matching the specified label(s).
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this event.
@@ -157,9 +158,9 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> file_metadata = FileMetadataWrite(name="MyFile")
-                >>> res = c.files.create(file_metadata)
+                >>> res = client.files.create(file_metadata)
 
         """
         if isinstance(file_metadata, FileMetadata):
@@ -187,14 +188,14 @@ class FilesAPI(APIClient):
             Get file metadata by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.files.retrieve(id=1)
 
             Get file metadata by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.files.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
@@ -202,14 +203,14 @@ class FilesAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -220,14 +221,14 @@ class FilesAPI(APIClient):
             Get file metadatas by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.retrieve_multiple(ids=[1, 2, 3])
+                >>> client = CogniteClient()
+                >>> res = client.files.retrieve_multiple(ids=[1, 2, 3])
 
             Get file_metadatas by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.retrieve_multiple(external_ids=["abc", "def"])
+                >>> client = CogniteClient()
+                >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -251,45 +252,51 @@ class FilesAPI(APIClient):
             List files metadata and filter on external id prefix::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_uploaded = c.files.aggregate(filter={"uploaded": True})
+                >>> client = CogniteClient()
+                >>> aggregate_uploaded = client.files.aggregate(filter={"uploaded": True})
         """
 
         return self._aggregate(filter=filter, cls=CountAggregate)
 
-    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
+    def delete(
+        self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
+    ) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): str or list of str
+            external_id (str | SequenceNotStr[str] | None): str or list of str
 
         Examples:
 
             Delete files by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.files.delete(id=[1,2,3], external_id="3")
+                >>> client = CogniteClient()
+                >>> client.files.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     @overload
-    def update(self, item: FileMetadata | FileMetadataUpdate) -> FileMetadata:
+    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata:
         ...
 
     @overload
-    def update(self, item: Sequence[FileMetadata | FileMetadataUpdate]) -> FileMetadataList:
+    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList:
         ...
 
     def update(
-        self, item: FileMetadata | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataUpdate]
+        self,
+        item: FileMetadata
+        | FileMetadataWrite
+        | FileMetadataUpdate
+        | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
     ) -> FileMetadata | FileMetadataList:
         """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (FileMetadata | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataUpdate]): file(s) to update.
+            item (FileMetadata | FileMetadataWrite | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]): file(s) to update.
 
         Returns:
             FileMetadata | FileMetadataList: The updated files.
@@ -299,34 +306,34 @@ class FilesAPI(APIClient):
             Update file metadata that you have fetched. This will perform a full update of the file metadata::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> file_metadata = c.files.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> file_metadata = client.files.retrieve(id=1)
                 >>> file_metadata.description = "New description"
-                >>> res = c.files.update(file_metadata)
+                >>> res = client.files.update(file_metadata)
 
             Perform a partial update on file metadata, updating the source and adding a new field to metadata::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
-                >>> res = c.files.update(my_update)
+                >>> res = client.files.update(my_update)
 
             Attach labels to a files::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
-                >>> res = c.files.update(my_update)
+                >>> res = client.files.update(my_update)
 
             Detach a single label from a file::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
-                >>> res = c.files.update(my_update)
+                >>> res = client.files.update(my_update)
         """
         return self._update_multiple(
             list_cls=FileMetadataList,
@@ -358,15 +365,15 @@ class FilesAPI(APIClient):
             Search for a file::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.search(name="some name")
+                >>> client = CogniteClient()
+                >>> res = client.files.search(name="some name")
 
             Search for an asset with an attached label:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
-                >>> res = c.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
+                >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
         return self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
@@ -417,35 +424,35 @@ class FilesAPI(APIClient):
             Upload a file in a given path::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.upload("/path/to/file", name="my_file")
+                >>> client = CogniteClient()
+                >>> res = client.files.upload("/path/to/file", name="my_file")
 
             If name is omitted, this method will use the name of the file
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.upload("/path/to/file")
+                >>> client = CogniteClient()
+                >>> res = client.files.upload("/path/to/file")
 
             You can also upload all files in a directory by setting path to the path of a directory::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.upload("/path/to/my/directory")
+                >>> client = CogniteClient()
+                >>> res = client.files.upload("/path/to/my/directory")
 
             Upload a file with a label::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Label
-                >>> c = CogniteClient()
-                >>> res = c.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
+                >>> client = CogniteClient()
+                >>> res = client.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
 
             Upload a file with a geo_location::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
-                >>> res = c.files.upload("/path/to/file", geo_location=GeoLocation(type="Feature", geometry=geometry))
+                >>> res = client.files.upload("/path/to/file", geo_location=GeoLocation(type="Feature", geometry=geometry))
 
         """
         file_metadata = FileMetadata(
@@ -545,8 +552,8 @@ class FilesAPI(APIClient):
             Upload a file from memory::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
+                >>> client = CogniteClient()
+                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
         """
         if isinstance(content, str):
             content = content.encode("utf-8")
@@ -594,14 +601,14 @@ class FilesAPI(APIClient):
     def retrieve_download_urls(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         extended_expiration: bool = False,
     ) -> dict[int | str, str]:
         """Get download links by id or external id
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
-            external_id (str | Sequence[str] | None): External id or list of external ids.
+            external_id (str | SequenceNotStr[str] | None): External id or list of external ids.
             extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
@@ -653,7 +660,7 @@ class FilesAPI(APIClient):
         self,
         directory: str | Path,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
@@ -673,7 +680,7 @@ class FilesAPI(APIClient):
         Args:
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
             keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
                 creating subdirectories as needed below the given directory.
             resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
@@ -683,12 +690,12 @@ class FilesAPI(APIClient):
             Download files by id and external id into directory 'my_directory'::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
+                >>> client = CogniteClient()
+                >>> client.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
 
             Download files by id to the current directory::
 
-                >>> c.files.download(directory=".", id=[1,2,3])
+                >>> client.files.download(directory=".", id=[1,2,3])
         """
         directory = Path(directory)
         if not directory.is_dir():
@@ -821,8 +828,8 @@ class FilesAPI(APIClient):
 
             Download a file by id:
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
+                >>> client = CogniteClient()
+                >>> client.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
         """
         if isinstance(path, str):
             path = Path(path)
@@ -844,8 +851,8 @@ class FilesAPI(APIClient):
             Download a file's content into memory::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> file_content = c.files.download_bytes(id=1)
+                >>> client = CogniteClient()
+                >>> file_content = client.files.download_bytes(id=1)
 
         Returns:
             bytes: No description."""
@@ -863,11 +870,11 @@ class FilesAPI(APIClient):
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
         source: str | None = None,
@@ -888,11 +895,11 @@ class FilesAPI(APIClient):
             mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-            asset_external_ids (Sequence[str] | None): No description.
+            asset_external_ids (SequenceNotStr[str] | None): No description.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the files matching the specified label filter(s).
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this event.
@@ -914,38 +921,38 @@ class FilesAPI(APIClient):
             List files metadata and filter on external id prefix::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> file_list = c.files.list(limit=5, external_id_prefix="prefix")
+                >>> client = CogniteClient()
+                >>> file_list = client.files.list(limit=5, external_id_prefix="prefix")
 
             Iterate over files metadata::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for file_metadata in c.files:
+                >>> client = CogniteClient()
+                >>> for file_metadata in client.files:
                 ...     file_metadata # do something with the file metadata
 
             Iterate over chunks of files metadata to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for file_list in c.files(chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for file_list in client.files(chunk_size=2500):
                 ...     file_list # do something with the files
 
             Filter files based on labels::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelFilter
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
-                >>> file_list = c.files.list(labels=my_label_filter)
+                >>> file_list = client.files.list(labels=my_label_filter)
 
             Filter files based on geoLocation::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
-                >>> file_list = c.files.list(geo_location=my_geo_location_filter)
+                >>> file_list = client.files.list(geo_location=my_geo_location_filter)
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
@@ -34,6 +33,7 @@ from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
+from cognite.client.utils import _json
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
 
 
@@ -164,7 +164,7 @@ class TestCogniteObject:
         instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
-        json_serialised = json.dumps(dumped)
+        json_serialised = _json.dumps(dumped)
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
@@ -340,8 +340,8 @@ class TestCogniteResource:
         assert MyResource(1, "s") != MyResource(2, "t")
 
     def test_str_repr(self):
-        assert json.dumps({"var_a": 1}, indent=4) == str(MyResource(1))
-        assert json.dumps({"var_a": 1.0}, indent=4) == str(MyResource(Decimal(1)))
+        assert _json.dumps({"var_a": 1}, indent=4) == str(MyResource(1))
+        assert _json.dumps({"var_a": 1.0}, indent=4) == str(MyResource(Decimal(1)))
 
     @pytest.mark.dsl
     def test_to_pandas(self):
@@ -381,10 +381,10 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_use_method_which_requires_cognite_client__client_not_set(self):
         mr = MyResource()
@@ -405,7 +405,7 @@ class TestCogniteResource:
         ).create_instance(cognite_resource_subclass)
 
         dumped = instance.dump(camel_case=True)
-        json_serialised = json.dumps(dumped)
+        json_serialised = _json.dumps(dumped)
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
@@ -597,8 +597,8 @@ class TestCogniteResourceList:
         assert MyResource(id=2, external_id="2") == resource_list.get(id=2)
 
     def test_str_repr(self):
-        assert json.dumps([{"var_a": 1}], indent=4) == str(MyResourceList([MyResource(1)]))
-        assert json.dumps([{"var_a": 1.0}], indent=4) == str(MyResourceList([MyResource(Decimal(1))]))
+        assert _json.dumps([{"var_a": 1}], indent=4) == str(MyResourceList([MyResource(1)]))
+        assert _json.dumps([{"var_a": 1.0}], indent=4) == str(MyResourceList([MyResource(Decimal(1))]))
 
     def test_get_item_by_external_id(self):
         resource_list = MyResourceList([MyResource(id=1, external_id="1"), MyResource(id=2, external_id="2")])
@@ -610,10 +610,10 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_use_method_which_requires_cognite_client__client_not_set(self):
         mr = MyResourceList([])
@@ -663,11 +663,11 @@ class TestCogniteFilter:
         assert MyFilter() == MyFilter()
 
     def test_str(self):
-        assert json.dumps({"var_a": 1}, indent=4) == str(MyFilter(1))
-        assert json.dumps({"var_a": 1.0}, indent=4) == str(MyFilter(Decimal(1)))
+        assert _json.dumps({"var_a": 1}, indent=4) == str(MyFilter(1))
+        assert _json.dumps({"var_a": 1.0}, indent=4) == str(MyFilter(Decimal(1)))
 
     def test_repr(self):
-        assert json.dumps({"var_a": 1}, indent=4) == repr(MyFilter(1))
+        assert _json.dumps({"var_a": 1}, indent=4) == repr(MyFilter(1))
 
 
 class TestCogniteUpdate:
@@ -688,9 +688,9 @@ class TestCogniteUpdate:
         assert MyUpdate(1) != MyUpdate(1).string.set("1")
 
     def test_str(self):
-        assert json.dumps(MyUpdate(1).dump(), indent=4) == str(MyUpdate(1))
-        assert json.dumps(MyUpdate(1.0).dump(), indent=4) == str(MyUpdate(Decimal(1)))
-        assert json.dumps(MyUpdate(1).string.set("1").dump(), indent=4) == str(MyUpdate(1).string.set("1"))
+        assert _json.dumps(MyUpdate(1).dump(), indent=4) == str(MyUpdate(1))
+        assert _json.dumps(MyUpdate(1.0).dump(), indent=4) == str(MyUpdate(Decimal(1)))
+        assert _json.dumps(MyUpdate(1).string.set("1").dump(), indent=4) == str(MyUpdate(1).string.set("1"))
 
     def test_set_string(self):
         assert {"id": 1, "update": {"string": {"set": "bla"}}} == MyUpdate(1).string.set("bla").dump()
@@ -755,17 +755,12 @@ class TestCogniteUpdate:
 
     @pytest.mark.parametrize("cognite_update_subclass", all_subclasses(CogniteUpdate))
     def test_correct_implementation_get_update_properties(self, cognite_update_subclass: CogniteUpdate):
-        # Arrange
         expected = sorted(
             key
             for key in cognite_update_subclass.__dict__
             if not key.startswith("_") and key not in {"columns", "dump"}
         )
-
-        # Act
         actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
-
-        # Assert
         assert expected == actual
 
 
@@ -782,13 +777,13 @@ class TestCogniteResponse:
         assert {} == MyResponse().dump()
 
     def test_str(self):
-        assert json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == str(MyResponse(1))
-        assert json.dumps(MyResponse(1.0).dump(camel_case=False), indent=4, sort_keys=True) == str(
+        assert _json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == str(MyResponse(1))
+        assert _json.dumps(MyResponse(1.0).dump(camel_case=False), indent=4, sort_keys=True) == str(
             MyResponse(Decimal(1))
         )
 
     def test_repr(self):
-        assert json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == repr(MyResponse(1))
+        assert _json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == repr(MyResponse(1))
 
     def test_eq(self):
         assert MyResponse(1) == MyResponse(1)
@@ -796,10 +791,10 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_response_no_cogclient_ref(self):
         # CogniteResponse does not have a reference to the cognite client:

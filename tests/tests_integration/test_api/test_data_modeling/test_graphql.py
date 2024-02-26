@@ -53,7 +53,6 @@ class TestDataModelingGraphQLAPI:
         assert err2.hint == "Please publish a new data model version."
 
     def test_apply_dm_raise_top_level_error(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        # Arrange
         # Invalid as it is a missing version, which will raise an exception
         invalid_data_model_id = DataModelId(integration_test_space.space, "raiseTopLevelError")
 
@@ -61,7 +60,6 @@ class TestDataModelingGraphQLAPI:
             cognite_client.data_modeling.graphql.apply_dml(
                 invalid_data_model_id, "type ScenarioInstance { start: Timestamp }"
             )
-
         exception_message = str(exc.value)
         assert "version" in exception_message
         assert "invalid value" in exception_message
@@ -136,6 +134,5 @@ class TestDataModelingGraphQLAPI:
                 }
             }
         """
-
         with pytest.raises(CogniteGraphQLError, match="Field 'i_dont_exist' in type 'Thing' is undefined"):
             cognite_client.data_modeling.graphql.query(data_model_for_query_test.as_id(), query)

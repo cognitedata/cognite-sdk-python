@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import operator as op
 import typing
 import warnings
@@ -20,6 +19,7 @@ from typing import (
 )
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates, no_op
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
@@ -34,6 +34,7 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 from cognite.client.utils._time import convert_and_isoformat_time_attrs
+from cognite.client.utils.useful_types import SequenceNotStr
 
 Aggregate = Literal[
     "average",
@@ -278,7 +279,7 @@ class DatapointsArray(CogniteResource):
         return id(self) == id(other)
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(convert_timestamps=True), indent=4)
+        return _json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     @overload
     def __getitem__(self, item: int) -> Datapoint:
@@ -427,7 +428,7 @@ class Datapoints(CogniteResource):
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Sequence[str] | Sequence[float] | None): The data values. Can be string or numeric
+        value (SequenceNotStr[str] | Sequence[float] | None): The data values. Can be string or numeric
         average (list[float] | None): The integral average values in the aggregate period
         max (list[float] | None): The maximum values in the aggregate period
         min (list[float] | None): The minimum values in the aggregate period
@@ -451,7 +452,7 @@ class Datapoints(CogniteResource):
         unit_external_id: str | None = None,
         granularity: str | None = None,
         timestamp: Sequence[int] | None = None,
-        value: Sequence[str] | Sequence[float] | None = None,
+        value: SequenceNotStr[str] | Sequence[float] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
         min: list[float] | None = None,
@@ -490,7 +491,7 @@ class Datapoints(CogniteResource):
     def __str__(self) -> str:
         item = self.dump()
         item["datapoints"] = convert_and_isoformat_time_attrs(item["datapoints"])
-        return json.dumps(item, indent=4)
+        return _json.dumps(item, indent=4)
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -764,7 +765,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         return super().get(id, external_id)
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(convert_timestamps=True), indent=4)
+        return _json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     def to_pandas(  # type: ignore [override]
         self,
@@ -846,7 +847,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         item = self.dump()
         for i in item:
             i["datapoints"] = convert_and_isoformat_time_attrs(i["datapoints"])
-        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
+        return _json.dumps(item, indent=4)
 
     def to_pandas(  # type: ignore [override]
         self,

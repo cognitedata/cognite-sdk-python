@@ -14,6 +14,7 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.utils._auxiliary import convert_true_match, is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
@@ -61,13 +62,13 @@ class EntityMatchingAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
+        self, ids: Sequence[int] | None = None, external_ids: SequenceNotStr[str] | None = None
     ) -> EntityMatchingModelList:
         """`Retrieve models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
             ids (Sequence[int] | None): ids of the model to retrieve.
-            external_ids (Sequence[str] | None): external ids of the model to retrieve.
+            external_ids (SequenceNotStr[str] | None): external ids of the model to retrieve.
 
         Returns:
             EntityMatchingModelList: Models requested.
@@ -160,7 +161,9 @@ class EntityMatchingAPI(APIClient):
             self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 
-    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
+    def delete(
+        self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
+    ) -> None:
         """`Delete models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingDelete>`_
 
         https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingDelete
@@ -168,7 +171,7 @@ class EntityMatchingAPI(APIClient):
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
         Examples:
             >>> from cognite.client import CogniteClient
             >>> client = CogniteClient()

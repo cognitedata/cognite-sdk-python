@@ -19,6 +19,7 @@ from cognite.client.data_classes.transformations import (
 )
 from cognite.client.data_classes.transformations.common import NonceCredentials
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -70,7 +71,7 @@ class TransformationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationWrite, TransformationDestination
                 >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> transformations = [
                 >>>     TransformationWrite(
                 >>>         external_id="transformation1",
@@ -120,7 +121,7 @@ class TransformationsAPI(APIClient):
                 >>>          destination=TransformationDestination.instances(data_model,"InstanceSpace")
                 >>>      ),
                 >>> ]
-                >>> res = c.transformations.create(transformations)
+                >>> res = client.transformations.create(transformations)
 
         """
         if isinstance(transformation, Sequence):
@@ -150,14 +151,14 @@ class TransformationsAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
-            external_id (str | Sequence[str] | None): External ID or list of external ids.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Example:
@@ -165,8 +166,8 @@ class TransformationsAPI(APIClient):
             Delete transformations by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.transformations.delete(id=[1,2,3], external_id="function3")
+                >>> client = CogniteClient()
+                >>> client.transformations.delete(id=[1,2,3], external_id="function3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -190,7 +191,7 @@ class TransformationsAPI(APIClient):
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationList:
-        """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformations>`_
+        """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/filterTransformations>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
@@ -215,8 +216,8 @@ class TransformationsAPI(APIClient):
             List transformations::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> transformations_list = c.transformations.list()
+                >>> client = CogniteClient()
+                >>> transformations_list = client.transformations.list()
         """
         ds_ids: list[dict[str, Any]] | None = None
         if data_set_ids and data_set_external_ids:
@@ -263,14 +264,14 @@ class TransformationsAPI(APIClient):
             Get transformation by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.transformations.retrieve(id=1)
 
             Get transformation by external id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.transformations.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -282,14 +283,14 @@ class TransformationsAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationList:
         """`Retrieve multiple transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
             ids (Sequence[int] | None): List of ids to retrieve.
-            external_ids (Sequence[str] | None): List of external ids to retrieve.
+            external_ids (SequenceNotStr[str] | None): List of external ids to retrieve.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -300,8 +301,8 @@ class TransformationsAPI(APIClient):
             Get multiple transformations:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
+                >>> client = CogniteClient()
+                >>> res = client.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -311,13 +312,25 @@ class TransformationsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    @overload
+    def update(self, item: Transformation | TransformationWrite | TransformationUpdate) -> Transformation:
+        ...
+
+    @overload
+    def update(self, item: Sequence[Transformation | TransformationWrite | TransformationUpdate]) -> TransformationList:
+        ...
+
     def update(
-        self, item: Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]
+        self,
+        item: Transformation
+        | TransformationWrite
+        | TransformationUpdate
+        | Sequence[Transformation | TransformationWrite | TransformationUpdate],
     ) -> Transformation | TransformationList:
         """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
 
         Args:
-            item (Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]): Transformation(s) to update
+            item (Transformation | TransformationWrite | TransformationUpdate | Sequence[Transformation | TransformationWrite | TransformationUpdate]): Transformation(s) to update
 
         Returns:
             Transformation | TransformationList: Updated transformation(s)
@@ -327,32 +340,32 @@ class TransformationsAPI(APIClient):
             Update a transformation that you have fetched. This will perform a full update of the transformation::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> transformation = c.transformations.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> transformation = client.transformations.retrieve(id=1)
                 >>> transformation.query = "SELECT * FROM _cdf.assets"
-                >>> res = c.transformations.update(transformation)
+                >>> res = client.transformations.update(transformation)
 
             Perform a partial update on a transformation, updating the query and making it private::
 
                 >>> from cognite.client.data_classes import TransformationUpdate
-                >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
-                >>> res = c.transformations.update(my_update)
+                >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_publiclient.set(False)
+                >>> res = client.transformations.update(my_update)
 
             Update the session used for reading (source) and writing (destination) when authenticating for all
             transformations in a given data set:
 
                 >>> from cognite.client.data_classes import NonceCredentials
-                >>> to_update = c.transformations.list(data_set_external_ids=["foo"])
-                >>> new_session = c.iam.sessions.create()
+                >>> to_update = client.transformations.list(data_set_external_ids=["foo"])
+                >>> new_session = client.iam.sessions.create()
                 >>> new_nonce = NonceCredentials(
                 ...     session_id=new_session.id,
                 ...     nonce=new_session.nonce,
-                ...     cdf_project_name=c.config.project
+                ...     cdf_project_name=client.config.project
                 ... )
                 >>> for tr in to_update:
                 ...     tr.source_nonce = new_nonce
                 ...     tr.destination_nonce = new_nonce
-                >>> res = c.transformations.update(to_update)
+                >>> res = client.transformations.update(to_update)
         """
         if isinstance(item, Sequence):
             item = list(item)
@@ -399,16 +412,16 @@ class TransformationsAPI(APIClient):
             Run transformation to completion by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
-                >>> res = c.transformations.run(transformation_id = 1)
+                >>> res = client.transformations.run(transformation_id = 1)
 
             Start running transformation by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
-                >>> res = c.transformations.run(transformation_id = 1, wait = False)
+                >>> res = client.transformations.run(transformation_id = 1, wait = False)
         """
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
@@ -445,10 +458,10 @@ class TransformationsAPI(APIClient):
                 >>> import asyncio
                 >>> from cognite.client import CogniteClient
                 >>>
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
                 >>> async def run_transformation():
-                >>>     res = await c.transformations.run_async(id = 1)
+                >>>     res = await client.transformations.run_async(id = 1)
                 >>>
                 >>> loop = asyncio.get_event_loop()
                 >>> loop.run_until_complete(run_transformation())
@@ -473,9 +486,9 @@ class TransformationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationJobStatus
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
-                >>> res = c.transformations.run(id = 1, timeout = 60.0)
+                >>> res = client.transformations.run(id = 1, timeout = 60.0)
                 >>> if res.status == TransformationJobStatus.RUNNING:
                 >>>     res.cancel()
         """
@@ -510,16 +523,16 @@ class TransformationsAPI(APIClient):
             Preview transformation results as schema and list of rows:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
-                >>> query_result = c.transformations.preview(query="select * from _cdf.assets")
+                >>> query_result = client.transformations.preview(query="select * from _cdf.assets")
 
             Preview transformation results as pandas dataframe:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
-                >>> df = c.transformations.preview(query="select * from _cdf.assets").to_pandas()
+                >>> df = client.transformations.preview(query="select * from _cdf.assets").to_pandas()
         """
         request_body = {
             "query": query,
@@ -531,5 +544,4 @@ class TransformationsAPI(APIClient):
 
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
         result = TransformationPreviewResult.load(response.json(), cognite_client=self._cognite_client)
-
         return result

@@ -117,7 +117,7 @@ class TestSequencesAPI:
         except CogniteNotFoundError:
             failed = True
 
-        assert failed ^ ignore_unknown_ids
+        assert failed ^ ignore_unknown_ids  # xor
 
     def test_call(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.sequences, 10):
@@ -206,11 +206,10 @@ class TestSequencesAPI:
 
     def test_get_new(self, cognite_client, new_seq):
         cognite_client.sequences.retrieve(id=new_seq.id)
-        # assert ["DOUBLE"] == res.column_value_types # soon to change
+        # assert ["DOUBLE"] == res.column_value_types # soon to change (TODO?)
         assert len(new_seq.columns) == 3
 
     def test_upsert_2_sequence_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_sequence = Sequence(
             external_id="test_upsert_2_sequence_one_preexisting:new",
             name="my new sequence",
@@ -228,10 +227,8 @@ class TestSequencesAPI:
             created_existing = cognite_client.sequences.create(preexisting)
             assert created_existing.id is not None
 
-            # Act
             res = cognite_client.sequences.upsert([new_sequence, preexisting_update], mode="replace")
 
-            # Assert
             assert len(res) == 2
             assert new_sequence.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
@@ -243,32 +240,24 @@ class TestSequencesAPI:
             )
 
     def test_filter_equals(self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset) -> None:
-        # Arrange
         f = filters
         is_integration_test = f.Prefix(SequenceProperty.external_id, "integration_test:")
         is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
 
-        # Act
         result = cognite_client.sequences.filter(
             f.And(is_integration_test, is_asset), sort=SortableSequenceProperty.created_time
         )
-
-        # Assert
         assert len(result) == 1, "Expected only one sequence in subtree"
         assert result[0].external_id == sequence_list[0].external_id
 
     def test_filter_without_sort(
         self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset
     ) -> None:
-        # Arrange
         f = filters
         is_integration_test = f.Prefix(SequenceProperty.external_id, "integration_test:")
         is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
 
-        # Act
         result = cognite_client.sequences.filter(f.And(is_integration_test, is_asset), sort=None)
-
-        # Assert
         assert len(result) == 1
         assert result[0].external_id == sequence_list[0].external_id
 
@@ -277,7 +266,6 @@ class TestSequencesAPI:
         is_integration_test = f.Prefix("externalId", "integration_test:")
 
         count = cognite_client.sequences.aggregate_count(advanced_filter=is_integration_test)
-
         assert count >= len(sequence_list)
 
     def test_aggregate_asset_id_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
@@ -296,7 +284,6 @@ class TestSequencesAPI:
         count = cognite_client.sequences.aggregate_cardinality_properties(
             SequenceProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert count >= len({k for s in sequence_list for k in s.metadata.keys()})
 
     def test_aggregate_metadata_key_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
@@ -306,7 +293,6 @@ class TestSequencesAPI:
         count = cognite_client.sequences.aggregate_cardinality_values(
             SequenceProperty.metadata_key("unit"), advanced_filter=is_integration_test
         )
-
         assert count >= len({s.metadata["unit"] for s in sequence_list if "unit" in s.metadata})
 
     def test_aggregate_unique_asset_ids(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
@@ -316,7 +302,6 @@ class TestSequencesAPI:
         result = cognite_client.sequences.aggregate_unique_values(
             SequenceProperty.asset_id, advanced_filter=is_integration_test
         )
-
         assert result
         assert {int(item) for item in result.unique} >= {s.asset_id for s in sequence_list if s.asset_id is not None}
 
@@ -327,7 +312,6 @@ class TestSequencesAPI:
         result = cognite_client.sequences.aggregate_unique_properties(
             SequenceProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in sequence_list for key in a.metadata or []

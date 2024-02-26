@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client._api.data_modeling.instances import InstancesAPI

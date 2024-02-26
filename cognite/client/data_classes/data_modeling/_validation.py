@@ -20,7 +20,7 @@ RESERVED_EXTERNAL_IDS = frozenset(
         "PageInfo",
         "File",
         "Sequence",
-        "TimeSerie",
+        "TimeSeries",
     }
 )
 RESERVED_SPACE_IDS = frozenset({"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"})

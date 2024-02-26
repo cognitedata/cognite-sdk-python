@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Iterable
@@ -28,7 +27,8 @@ from typing import (
 from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, load_yaml_or_json
+from cognite.client.utils import _json
+from cognite.client.utils._auxiliary import fast_dict_load, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -59,7 +59,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 class CogniteResponse:
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -124,7 +124,7 @@ class CogniteObject:
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -290,7 +290,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
     def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
@@ -423,7 +423,7 @@ class CogniteUpdate:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=json_dump_default, indent=4)
+        return _json.dumps(self.dump(), indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -574,13 +574,13 @@ class CogniteLabelUpdate(Generic[T_CogniteUpdate]):
         return external_ids if isinstance(external_ids, list) else [external_ids]
 
 
-class CogniteFilter:
+class CogniteFilter(ABC):
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -707,7 +707,7 @@ class CogniteSort:
         self.nulls = nulls
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(camel_case=False), default=json_dump_default, indent=4)
+        return _json.dumps(self.dump(camel_case=False), indent=4)
 
     def __repr__(self) -> str:
         return str(self)

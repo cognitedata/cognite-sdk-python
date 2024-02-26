@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import gzip
-import json as _json
 import logging
 import re
 import warnings
@@ -45,12 +44,12 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
     get_current_sdk_version,
     get_user_agent,
     interpolate_and_url_encode,
     is_unlimited,
-    json_dump_default,
     split_into_chunks,
     unpack_items_in_payload,
 )
@@ -64,6 +63,7 @@ from cognite.client.utils._identifier import (
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 from cognite.client.utils._validation import assert_type, verify_limit
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -78,21 +78,33 @@ T = TypeVar("T")
 
 class APIClient:
     _RESOURCE_PATH: str
+    # TODO: When Cognite Experimental SDK is deprecated, remove frozenset in favour of re.compile:
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
-        rf"^{path}(\?.*)?$"
-        for path in (
-            "/(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
-            "/files/downloadlink",
-            "/timeseries/data(/(list|latest|delete))?",
-            "/timeseries/synthetic/query",
-            "/sequences/data(/(list|delete))?",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows/delete",
-            "/context/entitymatching/(byids|list|jobs)",
-            "/sessions/revoke",
-            "/models/.*",
-            "/units/.*",
-        )
+        [
+            r"|".join(
+                rf"^/{path}(\?.*)?$"
+                for path in (
+                    "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
+                    "files/downloadlink",
+                    "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
+                    "sequences/data(/(list|delete))?",
+                    "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
+                    "context/entitymatching/(byids|list|jobs)",
+                    "sessions/revoke",
+                    "models/.*",
+                    "units/.*",
+                    "annotations/(list|byids|reverselookup)",
+                    r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
+                    r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
+                    "documents/(aggregate|list|search)",
+                    "profiles/(byids|search)",
+                    "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
+                    "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
+                    "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
+                    "extpipes/(list|byids|runs/list)",
+                )
+            )
+        ]
     )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
@@ -189,7 +201,7 @@ class APIClient:
 
         if json_payload:
             try:
-                data = _json.dumps(json_payload, default=json_dump_default, allow_nan=False)
+                data = _json.dumps(json_payload, allow_nan=False)
             except ValueError as e:
                 # A lot of work to give a more human friendly error message when nans and infs are present:
                 msg = "Out of range float values are not JSON compliant"
@@ -270,9 +282,7 @@ class APIClient:
     @classmethod
     @functools.lru_cache(64)
     def _url_is_retryable(cls, url: str) -> bool:
-        valid_url_pattern = (
-            r"^(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-        )
+        valid_url_pattern = r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
         match = re.match(valid_url_pattern, url)
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
@@ -399,7 +409,7 @@ class APIClient:
         limit: int | None = None,
         chunk_size: int | None = None,
         filter: dict[str, Any] | None = None,
-        sort: Sequence[str | dict[str, Any]] | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
         partitions: int | None = None,
         headers: dict[str, Any] | None = None,
@@ -491,7 +501,7 @@ class APIClient:
         filter: dict | None = None,
         other_params: dict | None = None,
         partitions: int | None = None,
-        sort: Sequence[str | dict[str, Any]] | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         headers: dict | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
@@ -595,8 +605,8 @@ class APIClient:
         resource_path: str | None = None,
         filter: CogniteFilter | dict | None = None,
         aggregate: str | None = None,
-        fields: Sequence[str] | None = None,
-        keys: Sequence[str] | None = None,
+        fields: SequenceNotStr[str] | None = None,
+        keys: SequenceNotStr[str] | None = None,
         headers: dict | None = None,
     ) -> list[T]:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)

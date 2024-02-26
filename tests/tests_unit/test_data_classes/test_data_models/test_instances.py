@@ -15,7 +15,9 @@ from cognite.client.data_classes.data_modeling import (
     NodeId,
     NodeList,
     NodeOrEdgeData,
+    ViewId,
 )
+from cognite.client.data_classes.data_modeling.instances import Instance
 
 
 class TestEdgeApply:
@@ -169,13 +171,83 @@ def edge_dumped(node_dumped: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+@pytest.mark.parametrize("instance_type", (Node, Edge))
+def test_instances__quick_property_access_single_source(
+    instance_type: type[Instance],
+    node_dumped: dict[str, Any],
+    edge_dumped: dict[str, Any],
+) -> None:
+    # Note: 'property' in this test refers to an instance property, not a Python property
+    resource = {Node: node_dumped, Edge: edge_dumped}[instance_type]
+    resource["properties"] = {"space": {"view/v8": {"prop1": 1, "prop2": "two", "3prop": [1, 2, 3]}}}
+    inst = instance_type.load(resource)
+
+    # Non-property should fail __getitem__ and __delitem__:
+    with pytest.raises(KeyError):
+        inst["space"]
+    with pytest.raises(KeyError):
+        del inst["space"]
+    # ...but __setitem__ should work, Python mantra is "we are adults". Either way, the API will block all
+    # reserved ones, and we don't want to keep a duplicate list up-to-date:
+    inst["space"] = "more-space"
+    assert inst.space == "craft"  # ...ensure attribute not affected
+
+    # Any property should work fine with all access/set/delete:
+    assert inst.properties[ViewId("space", "view", "v8")]["prop1"] == 1
+    inst["prop1"] = 123
+    assert inst["prop1"] == 123
+    assert inst.properties[ViewId("space", "view", "v8")]["prop1"] == 123
+    del inst["prop1"]
+    assert "prop1" not in inst.properties[ViewId("space", "view", "v8")]
+
+    with pytest.raises(KeyError):
+        inst["prop1"]
+
+    assert inst.get("prop1") is None
+    assert inst.get("prop1", "missing") == "missing"
+
+
+@pytest.mark.parametrize("instance_type", (Node, Edge))
+def test_instances__quick_property_access_no_source(
+    instance_type: type[Instance],
+    node_dumped: dict[str, Any],
+    edge_dumped: dict[str, Any],
+) -> None:
+    # Note: 'property' in this test refers to an instance property, not a Python property
+    resource = {Node: node_dumped, Edge: edge_dumped}[instance_type]
+    resource["properties"] = {}
+    inst = instance_type.load(resource)
+
+    # Non-property should fail __[get/set/del]item__ because instance is not "single-sourced":
+    with pytest.raises(RuntimeError):
+        inst["space"]
+    with pytest.raises(RuntimeError):
+        inst["space"] = "more-space"
+    with pytest.raises(RuntimeError):
+        del inst["space"]
+
+    # ...same applies to properties. We have none so everything should fail:
+    with pytest.raises(RuntimeError):
+        inst["prop1"]  # get
+    with pytest.raises(RuntimeError):
+        inst["prop1"] = 1  # set
+    with pytest.raises(RuntimeError):
+        del inst["prop1"]  # del
+
+    # ...even 'get':
+    with pytest.raises(RuntimeError):
+        inst.get("prop1")
+    with pytest.raises(RuntimeError):
+        inst.get("prop1", "missing")
+
+
 @pytest.mark.dsl
 class TestInstancesToPandas:
     @pytest.mark.parametrize("inst_cls", (Node, Edge))
     def test_expand_properties(
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
     ) -> None:
-        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw = {Node: node_dumped, Edge: edge_dumped}[inst_cls]
         not_expanded = inst_cls._load(raw).to_pandas(expand_properties=False)
         expanded = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=True)
         expanded_with_prefix = inst_cls._load(raw).to_pandas(expand_properties=True, remove_property_prefix=False)
@@ -190,11 +262,23 @@ class TestInstancesToPandas:
             assert v == expanded.loc[k].item()
             assert v == expanded_with_prefix.loc[f"my-space.my-view/v8.{k}"].item()
 
+    @pytest.mark.parametrize("inst_cls", (Node, Edge))
+    def test_expand_properties_empty_properties(
+        self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[Node] | type[Edge]
+    ) -> None:
+        raw = {Node: node_dumped, Edge: edge_dumped}[inst_cls]
+        raw["properties"] = {}
+        expanded_with_empty_properties = inst_cls._load(raw).to_pandas(
+            expand_properties=True, remove_property_prefix=True
+        )
+
+        assert "properties" not in expanded_with_empty_properties.index
+
     @pytest.mark.parametrize("inst_cls", (NodeList, EdgeList))
     def test_expand_properties__list_class(
         self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
     ) -> None:
-        raw = node_dumped if inst_cls is Node else edge_dumped
+        raw = {NodeList: node_dumped, EdgeList: edge_dumped}[inst_cls]
         not_expanded = inst_cls._load([raw, raw]).to_pandas(expand_properties=False)
         expanded = inst_cls._load([raw, raw]).to_pandas(expand_properties=True, remove_property_prefix=True)
         expanded_with_prefix = inst_cls._load([raw, raw]).to_pandas(
@@ -210,3 +294,15 @@ class TestInstancesToPandas:
         for k, v in raw["properties"]["my-space"]["my-view/v8"].items():
             assert v == expanded.loc[0, k]
             assert v == expanded_with_prefix.loc[0, f"my-space.my-view/v8.{k}"]
+
+    @pytest.mark.parametrize("inst_cls", (NodeList, EdgeList))
+    def test_expand_properties__list_class_empty_properties(
+        self, node_dumped: dict[str, Any], edge_dumped: dict[str, Any], inst_cls: type[NodeList] | type[EdgeList]
+    ) -> None:
+        raw = {NodeList: node_dumped, EdgeList: edge_dumped}[inst_cls]
+        raw["properties"] = {}
+        expanded_with_empty_properties = inst_cls._load([raw, raw]).to_pandas(
+            expand_properties=True, remove_property_prefix=True
+        )
+
+        assert "properties" not in expanded_with_empty_properties.columns

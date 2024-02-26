@@ -62,13 +62,13 @@ class TestCogniteClient:
             CogniteClient(ClientConfig(client_name="", project=None, credentials=Token("bla")))
 
     def test_project_is_correct(self, client_config_w_token_factory):
-        c = CogniteClient(client_config_w_token_factory)
-        assert c.config.project == "test-project"
+        client = CogniteClient(client_config_w_token_factory)
+        assert client.config.project == "test-project"
 
     def test_default_client_config_set(self, client_config_w_token_factory) -> None:
         global_config.default_client_config = client_config_w_token_factory
-        c = CogniteClient()
-        assert c.config == client_config_w_token_factory
+        client = CogniteClient()
+        assert client.config == client_config_w_token_factory
         global_config.default_client_config = None
 
     def test_default_client_config_not_set(self) -> None:
@@ -83,33 +83,33 @@ class TestCogniteClient:
         log.propagate = False
 
     def test_api_version_present_in_header(self, rsps, client_config_w_token_factory, mock_token_inspect):
-        c = CogniteClient(client_config_w_token_factory)
-        c.iam.token.inspect()
-        assert rsps.calls[0].request.headers["cdf-version"] == c.config.api_subversion
+        client = CogniteClient(client_config_w_token_factory)
+        client.iam.token.inspect()
+        assert rsps.calls[0].request.headers["cdf-version"] == client.config.api_subversion
 
     def test_beta_header_for_beta_client(self, rsps, client_config_w_token_factory, mock_token_inspect):
         from cognite.client.beta import CogniteClient as BetaClient
 
-        c = BetaClient(client_config_w_token_factory)
-        c.iam.token.inspect()
+        client = BetaClient(client_config_w_token_factory)
+        client.iam.token.inspect()
         assert rsps.calls[0].request.headers["cdf-version"] == "beta"
 
     def test_verify_ssl_enabled_by_default(self, rsps, client_config_w_token_factory, mock_token_inspect):
-        c = CogniteClient(client_config_w_token_factory)
-        c.iam.token.inspect()
+        client = CogniteClient(client_config_w_token_factory)
+        client.iam.token.inspect()
 
         assert rsps.calls[0][0].req_kwargs["verify"] is True
-        assert c._api_client._http_client_with_retry.session.verify is True
-        assert c._api_client._http_client.session.verify is True
+        assert client._api_client._http_client_with_retry.session.verify is True
+        assert client._api_client._http_client.session.verify is True
 
 
 class TestInstantiateWithClient:
     @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])
     def test_instantiate_resources_with_cognite_client(self, cls, client_config_w_token_factory):
-        c = CogniteClient(client_config_w_token_factory)
-        assert cls(cognite_client=c)._cognite_client == c
+        client = CogniteClient(client_config_w_token_factory)
+        assert cls(cognite_client=client)._cognite_client == client
 
     @pytest.mark.parametrize("cls", [AssetList, Event, FileMetadataList, TimeSeriesList])
     def test_instantiate_resource_lists_with_cognite_client(self, cls, client_config_w_token_factory):
-        c = CogniteClient(client_config_w_token_factory)
-        assert cls([], cognite_client=c)._cognite_client == c
+        client = CogniteClient(client_config_w_token_factory)
+        assert cls([], cognite_client=client)._cognite_client == client

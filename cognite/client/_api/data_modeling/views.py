@@ -110,8 +110,8 @@ class ViewsAPI(APIClient):
         Examples:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
 
         """
         identifier = _load_identifier(ids, "view")
@@ -139,8 +139,8 @@ class ViewsAPI(APIClient):
             Delete views by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
         """
         deleted_views = cast(
             list,
@@ -178,21 +178,21 @@ class ViewsAPI(APIClient):
             List 5 views::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> view_list = c.data_modeling.views.list(limit=5)
+                >>> client = CogniteClient()
+                >>> view_list = client.data_modeling.views.list(limit=5)
 
             Iterate over views::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for view in c.data_modeling.views:
+                >>> client = CogniteClient()
+                >>> for view in client.data_modeling.views:
                 ...     view # do something with the view
 
             Iterate over chunks of views to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for view_list in c.data_modeling.views(chunk_size=10):
+                >>> client = CogniteClient()
+                >>> for view_list in client.data_modeling.views(chunk_size=10):
                 ...     view_list # do something with the views
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
@@ -224,7 +224,7 @@ class ViewsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> views = [
                 ...     ViewApply(
                 ...         space="mySpace",
@@ -238,7 +238,7 @@ class ViewsAPI(APIClient):
                 ...         }
                 ...    )
                 ... ]
-                >>> res = c.data_modeling.views.apply(views)
+                >>> res = client.data_modeling.views.apply(views)
 
 
             Create views with edge relations::
@@ -252,7 +252,7 @@ class ViewsAPI(APIClient):
                 ...     ViewApply,
                 ...     ViewId
                 ... )
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> movie_view = ViewApply(
                 ...     space="imdb",
                 ...     external_id="Movie",
@@ -295,7 +295,7 @@ class ViewsAPI(APIClient):
                 ...         ),
                 ...     }
                 ... )
-                >>> res = c.data_modeling.views.apply([movie_view, actor_view])
+                >>> res = client.data_modeling.views.apply([movie_view, actor_view])
         """
         return self._create_multiple(
             list_cls=ViewList,

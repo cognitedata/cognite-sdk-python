@@ -6,7 +6,6 @@ import enum
 import gzip
 import importlib
 import inspect
-import json
 import math
 import os
 import random
@@ -43,6 +42,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowTaskParameters,
 )
 from cognite.client.testing import CogniteClientMock
+from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string
 
@@ -152,7 +152,7 @@ def tmp_set_envvar(envvar: str, value: str):
 
 
 def jsgz_load(s):
-    return json.loads(gzip.decompress(s).decode())
+    return _json.loads(gzip.decompress(s).decode())
 
 
 @contextmanager
@@ -534,6 +534,7 @@ class FakeCogniteResourceGenerator:
     ) -> Any:
         if annotation.endswith(" | None"):
             annotation = annotation[:-7]
+        annotation = annotation.replace("SequenceNotStr", "Sequence")
         try:
             return eval(annotation, resource_module_vars, local_vars)
         except TypeError:
@@ -580,6 +581,8 @@ class FakeCogniteResourceGenerator:
         elif annotation.startswith("typing.Sequence[") and annotation.endswith("]"):
             # This is used in the Sequence data class file to avoid name collision
             return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("Sequence[") and annotation.endswith("]"):
+            return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
         raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod

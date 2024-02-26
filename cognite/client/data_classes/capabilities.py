@@ -390,6 +390,18 @@ class SpaceIDScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class PartitionScope(Capability.Scope):
+    _scope_name = "partition"
+    partition_ids: list[int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "partition_ids", [int(i) for i in self.partition_ids])
+
+    def as_tuples(self) -> set[tuple]:
+        return {(self._scope_name, i) for i in self.partition_ids}
+
+
+@dataclass(frozen=True)
 class LegacySpaceScope(Capability.Scope):
     _scope_name = "spaceScope"
     external_ids: list[str]
@@ -777,7 +789,7 @@ class SecurityCategoriesAcl(Capability):
 class SeismicAcl(Capability):
     _capability_name = "seismicAcl"
     actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
+    scope: AllScope | PartitionScope
 
     class Action(Capability.Action):
         Read = "READ"
@@ -785,6 +797,7 @@ class SeismicAcl(Capability):
 
     class Scope:
         All = AllScope
+        Partition = PartitionScope
 
 
 @dataclass

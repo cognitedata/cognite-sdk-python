@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 import re
 from datetime import datetime, timezone
@@ -12,6 +11,7 @@ from cognite.client import CogniteClient
 from cognite.client._api.datapoints import DatapointsBin
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._time import granularity_to_ms, import_zoneinfo
 from tests.utils import jsgz_load
 
@@ -55,7 +55,7 @@ def mock_retrieve_latest(rsps, cognite_client):
                     "datapoints": [{"timestamp": before - 1, "value": random()}],
                 }
             )
-        return 200, {}, json.dumps({"items": items})
+        return 200, {}, _json.dumps({"items": items})
 
     rsps.add_callback(
         rsps.POST,
@@ -774,7 +774,7 @@ class TestRetrieveDataPointsInTz:
                 },
                 "Europe/Oslo",
                 "Europe/Oslo",
-                "Granularity above the maximum limit, 11 years.",
+                r"^Granularity, '12years', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
                 id="Granularity above maximum aggregation limit in hours",
             ),
             pytest.param(
@@ -787,7 +787,7 @@ class TestRetrieveDataPointsInTz:
                 },
                 "Europe/Oslo",
                 "Europe/Oslo",
-                "Granularity above the maximum limit, 45 quarters.",
+                r"^Granularity, '48quarters', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
                 id="Granularity above maximum aggregation limit in quarters",
             ),
             pytest.param(
@@ -835,13 +835,11 @@ class TestRetrieveDataPointsInTz:
     def test_retrieve_data_points_in_tz_invalid_user_input(
         args: dict, expected_error_message: str, start_tz: str | None, end_tz: str | None, cognite_client: CogniteClient
     ):
-        # Arrange
         ZoneInfo = import_zoneinfo()
         if start_tz is not None:
             args["start"] = args["start"].astimezone(ZoneInfo(start_tz))
         if end_tz is not None:
             args["end"] = args["end"].astimezone(ZoneInfo(end_tz))
 
-        # Act and Assert
         with pytest.raises(ValueError, match=expected_error_message):
             cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)

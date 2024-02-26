@@ -429,6 +429,13 @@ class TestFilesAPI:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         cognite_client.files.upload(path, external_id="blabla", name="bla", data_set_id=42)
 
+    def test_upload_with_label(self, cognite_client, mock_file_upload_response):
+        """
+        Uploading a file with a label gave a `ValueError: Could not parse label: {'external_id': 'foo-bar'}` from v7.0.0
+        """
+        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
+        cognite_client.files.upload(path, name="bla", labels=[Label("PUMP")])
+
     def test_upload_no_name(self, cognite_client, mock_file_upload_response):
         dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(dir, "file_for_test_upload_1.txt")

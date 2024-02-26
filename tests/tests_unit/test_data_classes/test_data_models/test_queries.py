@@ -14,7 +14,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
             "filter": {"equals": {"property": ["node", "externalId"], "value": {"parameter": "airplaneExternalId"}}},
             "from": "bla",
             "through": {
-                "view": {"type": "view", "space": "some", "externalId": "extid", "version": "v1"},
+                "source": {"type": "view", "space": "some", "externalId": "extid", "version": "v1"},
                 "identifier": "bla",
             },
             "chainTo": "destination",
@@ -28,7 +28,28 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
         from_="bla",
         through=["some", "extid/v1", "bla"],
     )
-    yield pytest.param(raw, loaded_node, id="Documentation Example")
+    yield pytest.param(raw, loaded_node, id="NTE with through view reference")
+
+    raw = {
+        "nodes": {
+            "filter": {"equals": {"property": ["node", "externalId"], "value": {"parameter": "airplaneExternalId"}}},
+            "from": "bla",
+            "through": {
+                "source": {"type": "container", "space": "some", "externalId": "extid"},
+                "identifier": "bla",
+            },
+            "chainTo": "destination",
+            "direction": "outwards",
+        },
+        "limit": 1,
+    }
+    loaded_node = q.NodeResultSetExpression(
+        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}),
+        limit=1,
+        from_="bla",
+        through=["some", "extid", "bla"],
+    )
+    yield pytest.param(raw, loaded_node, id="NTE with through container reference")
 
     raw = {
         "nodes": {
@@ -212,8 +233,5 @@ cursors:
 class TestQuery:
     @pytest.mark.parametrize("raw_data, expected", list(query_load_yaml_data()))
     def test_load_yaml(self, raw_data: str, expected: q.Query) -> None:
-        # Act
         actual = q.Query.load_yaml(raw_data)
-
-        # Assert
         assert actual.dump(camel_case=True) == expected.dump(camel_case=True)

@@ -13,6 +13,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.labels import LabelDefinitionCore
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_data_set_ids
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class LabelsAPI(APIClient):
@@ -35,7 +36,7 @@ class LabelsAPI(APIClient):
         limit: int | None = None,
         chunk_size: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> Iterator[LabelDefinition] | Iterator[LabelDefinitionList]:
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -56,7 +57,7 @@ class LabelsAPI(APIClient):
         name: str | None = None,
         external_id_prefix: str | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> LabelDefinitionList:
         """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
@@ -65,7 +66,7 @@ class LabelsAPI(APIClient):
             name (str | None): returns the label definitions matching that name
             external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
             data_set_ids (int | Sequence[int] | None): return only labels in the data sets with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): return only labels in the data sets with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): return only labels in the data sets with this external id / these external ids.
             limit (int | None): Maximum number of label definitions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -76,21 +77,21 @@ class LabelsAPI(APIClient):
             List Labels and filter on name::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> label_list = c.labels.list(limit=5, name="Pump")
+                >>> client = CogniteClient()
+                >>> label_list = client.labels.list(limit=5, name="Pump")
 
             Iterate over label definitions::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for label in c.labels:
+                >>> client = CogniteClient()
+                >>> for label in client.labels:
                 ...     label # do something with the label definition
 
             Iterate over chunks of label definitions to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for label_list in c.labels(chunk_size=2500):
+                >>> client = CogniteClient()
+                >>> for label_list in client.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -130,9 +131,9 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
-                >>> res = c.labels.create(labels)
+                >>> res = client.labels.create(labels)
         """
         if isinstance(label, Sequence):
             if len(label) > 0 and not isinstance(label[0], LabelDefinitionCore):
@@ -142,18 +143,18 @@ class LabelsAPI(APIClient):
 
         return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
-    def delete(self, external_id: str | Sequence[str] | None = None) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
 
         Args:
-            external_id (str | Sequence[str] | None): One or more label external ids
+            external_id (str | SequenceNotStr[str] | None): One or more label external ids
 
         Examples:
 
             Delete label definitions by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.labels.delete(external_id=["big_pump", "small_pump"])
+                >>> client = CogniteClient()
+                >>> client.labels.delete(external_id=["big_pump", "small_pump"])
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

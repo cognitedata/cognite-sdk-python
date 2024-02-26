@@ -4,7 +4,9 @@ import random
 import re
 import string
 from functools import lru_cache
-from typing import Any, Iterator, Sequence
+from typing import Any, Iterator
+
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class DrawTables:
@@ -30,7 +32,7 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
+def iterable_to_case(seq: SequenceNotStr[str], camel_case: bool) -> Iterator[str]:
     if camel_case:
         yield from map(to_camel_case, seq)
     else:

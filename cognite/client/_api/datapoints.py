@@ -9,7 +9,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from datetime import datetime, timedelta
+from datetime import datetime
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -59,10 +59,7 @@ from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
 from cognite.client.utils._time import (
-    _unit_in_days,
     align_large_granularity,
-    get_granularity_multiplier_and_unit,
-    in_timedelta,
     pandas_date_range_tz,
     timestamp_to_ms,
     to_fixed_utc_intervals,
@@ -70,6 +67,7 @@ from cognite.client.utils._time import (
     validate_timezone,
 )
 from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
@@ -173,18 +171,17 @@ class DpsFetchStrategy(ABC):
             cognite_client=self.dps_client._cognite_client,
         )
 
-    def _make_dps_request_using_protobuf(self, payload: DatapointsPayload) -> bytes:
-        return self.dps_client._do_request(
-            json=payload,
-            method="POST",
-            url_path=f"{self.dps_client._RESOURCE_PATH}/list",
-            accept="application/protobuf",
-            timeout=self.dps_client._config.timeout,
-            api_subversion=self.api_subversion,
-        ).content
-
     def _request_datapoints(self, payload: DatapointsPayload) -> Sequence[DataPointListItem]:
-        (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(payload))
+        (res := DataPointListResponse()).MergeFromString(
+            self.dps_client._do_request(
+                json=payload,
+                method="POST",
+                url_path=f"{self.dps_client._RESOURCE_PATH}/list",
+                accept="application/protobuf",
+                timeout=self.dps_client._config.timeout,
+                api_subversion=self.api_subversion,
+            ).content
+        )
         return res.items
 
     @staticmethod
@@ -372,6 +369,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         n_queries = max(self.max_workers, math.ceil(self.n_queries / self.dps_client._FETCH_TS_LIMIT))
         splitter: Callable[[list[_T]], Iterator[list[_T]]] = functools.partial(split_into_n_parts, n=n_queries)
         for query_chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
+            if not any(query_chunks):
+                break  # Not all workers needed (at least for now)
             # Agg and raw limits are independent in the query, so we max out on both:
             items = []
             for queries, max_lim in zip(query_chunks, (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW)):
@@ -556,13 +555,12 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
-        self._GRANULARITY_HOURS_LIMIT = 100_000
 
     def retrieve(
         self,
         *,
         id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -586,7 +584,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -769,7 +767,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -786,7 +784,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -872,7 +870,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -893,7 +891,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -997,14 +995,14 @@ class DatapointsAPI(APIClient):
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
-        freq = cast(str, granularity).replace("m", "T")
+        freq = cast(str, granularity).replace("m", "min")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
     def retrieve_dataframe_in_tz(
         self,
         *,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         start: datetime,
         end: datetime,
         aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
@@ -1017,31 +1015,33 @@ class DatapointsAPI(APIClient):
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
-        """Get datapoints directly in a pandas dataframe in the same time zone as start and end.
+        """Get datapoints directly in a pandas dataframe in the same time zone as ``start`` and ``end``.
 
-        Note:
-            This is a convenience method. It builds on top of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
-            It enables you to get correct aggregates in your local time zone with daily, weekly, monthly, quarterly, and yearly
-            aggregates with automatic handling for daylight saving time (DST) transitions. If your time zone observes DST,
-            and your query crosses at least one DST-boundary, granularities like "3 days" or "1 week", that used to represent
-            fixed durations, no longer do so. To understand why, let's illustrate with an example: A typical time zone
-            (above the equator) that observes DST will skip one hour ahead during spring, leading to a day that is only
-            23 hours long, and oppositely in the fall, turning back the clock one hour, yielding a 25-hour-long day.
+        This is a convenience method extending the Time Series API capabilities to make timezone-aware datapoints
+        fetching easy with daylight saving time (DST) transitions taken care of automatically. It builds on top
+        of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
 
-        In short, this method works as follows:
-            1. Get the time zone from start and end (must be equal).
-            2. Split the time range from start to end into intervals based on DST boundaries.
-            3. Create a query for each interval and pass all to the retrieve_arrays method.
-            4. Stack the resulting arrays into a single column in the resulting DataFrame.
+        Tip:
+            The additional granularity settings are: **week(s)**, **month(s)**, **quarter(s)** and **year(s)**. You may
+            pass any of the following (using 'week' as example): ``1week``, ``2weeks`` or ``3w``. The existing
+            granularity specifiers are also available: **second(s)**, **minute(s)**, **hour(s)** and **day(s)**.
+
+            Keep in mind that only the longer granularities at your disposal, *day and longer*, are adjusted for DST,
+            and thus represent a non-fixed duration in time (e.g. a day can have 23, 24 or 25 hours).
+
+            All the granularities support a one-letter version: ``s``, ``m``, ``h``, ``d``, ``w``, ``q``, and ``y``,
+            except for month, to avoid confusion with minutes.
 
         Warning:
-            The queries to ``retrieve_arrays`` are translated to a multiple of hours. This means that time zones that
-            are not a whole hour offset from UTC are not supported (yet). The same is true for time zones that observe
-            DST with an offset from standard time that is not a multiple of 1 hour.
+            The datapoints queries are translated into several sub-queries using a multiple of hours. This means that
+            time zones that are not a whole hour offset from UTC are not supported. The same is true for time zones that
+            observe DST with an offset from standard time that is not a multiple of 1 hour.
+
+            It also sets an upper limit on the maximum granularity setting (around 11 years).
 
         Args:
             id (int | Sequence[int] | None): ID or list of IDs.
-            external_id (str | Sequence[str] | None): External ID or list of External IDs.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -1074,25 +1074,18 @@ class DatapointsAPI(APIClient):
                 ...     column_names="id")
 
             Get a pandas dataframe with the sum and continuous variance of the time series with external id "foo" and "bar",
-            for each quarter from 2020 to 2022 returned in the time zone of Oslo, Norway:
+            for each quarter from 2020 to 2022 in the time zone of New York, United States:
 
                 >>> from cognite.client import CogniteClient
                 >>> # In Python >=3.9 you may import directly from `zoneinfo`
                 >>> from cognite.client.utils import ZoneInfo
                 >>> client = CogniteClient()
-                >>> df = client.time_series.data.retrieve_dataframe(
+                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates=["sum", "continuous_variance"],
                 ...     granularity="1quarter",
-                ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
-                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")))
-
-        Tip:
-            You can also use shorter granularities such as second(s), minute(s), hour(s), which do not require
-            any special handling of DST. The longer granularities at your disposal, which are adjusted for DST, are:
-            day(s), week(s), month(s), quarter(s) and year(s). All the granularities support a one-letter version
-            ``s``, ``m``, ``h``, ``d``, ``w``, ``q``, and ``y``, except for month, to avoid confusion with minutes.
-            Furthermore, the granularity is expected to be given as a lowercase.
+                ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("America/New_York")),
+                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("America/New_York")))
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
 
@@ -1107,7 +1100,7 @@ class DatapointsAPI(APIClient):
 
         tz = validate_timezone(start, end)
         if aggregates is None and granularity is None:
-            # Raw Data only need to convert the timezone
+            # For raw data, we only need to convert the timezone:
             return (
                 self.retrieve_dataframe(
                     id=id,
@@ -1128,14 +1121,7 @@ class DatapointsAPI(APIClient):
                 .tz_localize("utc")
                 .tz_convert(str(tz))
             )
-
         assert isinstance(granularity, str)  # mypy
-
-        if in_timedelta(granularity) / timedelta(hours=1) > self._GRANULARITY_HOURS_LIMIT:
-            multiplier, unit = get_granularity_multiplier_and_unit(granularity)
-            days = _unit_in_days(unit)
-            limit = math.floor(timedelta(hours=self._GRANULARITY_HOURS_LIMIT) / timedelta(days=days))
-            raise ValueError(f"Granularity above the maximum limit, {limit} {unit}s.")
 
         identifiers = IdentifierSequence.load(id, external_id)
         if not identifiers.are_unique():
@@ -1143,12 +1129,10 @@ class DatapointsAPI(APIClient):
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
         intervals = to_fixed_utc_intervals(start, end, granularity)
-
         queries = [
             {**ident_dct, "aggregates": aggregates, **interval}
             for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
         ]
-
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
@@ -1157,18 +1141,20 @@ class DatapointsAPI(APIClient):
             **{identifiers[0].name(): queries},  # type: ignore [arg-type]
         )
         assert isinstance(arrays, DatapointsArrayList)  # mypy
+
         arrays.concat_duplicate_ids()
+        for arr in arrays:
+            # In case 'include_granularity_name' is used, we don't want '2quarters' to show up as '4343h':
+            arr.granularity = granularity
         df = (
             arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
             .tz_localize("utc")
             .tz_convert(str(tz))
         )
-
         if uniform_index:
             freq = to_pandas_freq(granularity, start)
             start, end = align_large_granularity(start, end, granularity)
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
-
         return df
 
     def retrieve_latest(
@@ -1199,27 +1185,27 @@ class DatapointsAPI(APIClient):
             be the first element::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.data.retrieve_latest(id=1)[0]
+                >>> client = CogniteClient()
+                >>> res = client.time_series.data.retrieve_latest(id=1)[0]
 
             You can also get the first datapoint before a specific time::
 
-                >>> res = c.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
             You can also retrieve the datapoint in a different unit or unit system::
 
-                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
-                >>> res = c.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
-                >>> res = c.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
+                >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
             using external ids here, but either will work::
 
-                >>> res = c.time_series.data.retrieve_latest(external_id=["abc", "def"])
+                >>> res = client.time_series.data.retrieve_latest(external_id=["abc", "def"])
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
 
@@ -1232,7 +1218,7 @@ class DatapointsAPI(APIClient):
                 ...     LatestDatapointQuery(id=456, before="1w-ago"),
                 ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc)),
                 ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f")]
-                >>> res = c.time_series.data.retrieve_latest(
+                >>> res = client.time_series.data.retrieve_latest(
                 ...     id=id_queries,
                 ...     external_id=LatestDatapointQuery(
                 ...         external_id="abc", before="3h-ago", target_unit_system="Imperial")
@@ -1272,16 +1258,16 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> # With datetime objects:
                 >>> datapoints = [
                 ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
                 ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000),
                 ... ]
-                >>> c.time_series.data.insert(datapoints, id=1)
+                >>> client.time_series.data.insert(datapoints, id=1)
                 >>> # With ms since epoch:
                 >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
-                >>> c.time_series.data.insert(datapoints, id=2)
+                >>> client.time_series.data.insert(datapoints, id=2)
 
             Or they can be a list of dictionaries::
 
@@ -1289,15 +1275,15 @@ class DatapointsAPI(APIClient):
                 ...     {"timestamp": 150000000000, "value": 1000},
                 ...     {"timestamp": 160000000000, "value": 2000},
                 ... ]
-                >>> c.time_series.data.insert(datapoints, external_id="abcd")
+                >>> client.time_series.data.insert(datapoints, external_id="abcd")
 
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
             `external_id="foo"`::
 
-                >>> data = c.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
-                >>> c.time_series.data.insert(data, external_id="foo")
+                >>> data = client.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
+                >>> client.time_series.data.insert(data, external_id="foo")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
         dps_to_post: Sequence[dict[str, int | float | str | datetime]] | Sequence[
@@ -1371,8 +1357,8 @@ class DatapointsAPI(APIClient):
             Deleting the last week of data from a time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.time_series.data.delete_range(start="1w-ago", end="now", id=1)
+                >>> client = CogniteClient()
+                >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
         """
         start_ms = timestamp_to_ms(start)
         end_ms = timestamp_to_ms(end)
@@ -1394,10 +1380,10 @@ class DatapointsAPI(APIClient):
             Each element in the list ranges must be specify either id or external_id, and a range::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
                 ...           {"external_id": "abc", "start": "2d-ago", "end": "now"}]
-                >>> c.time_series.data.delete_ranges(ranges)
+                >>> client.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []
         for time_range in ranges:
@@ -1594,7 +1580,7 @@ class RetrieveLatestDpsFetcher:
         self.dps_client = dps_client
 
         parsed_ids = cast(Union[None, int, Sequence[int]], self._parse_user_input(id, "id"))
-        parsed_xids = cast(Union[None, str, Sequence[str]], self._parse_user_input(external_id, "external_id"))
+        parsed_xids = cast(Union[None, str, SequenceNotStr[str]], self._parse_user_input(external_id, "external_id"))
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
 
@@ -1638,7 +1624,7 @@ class RetrieveLatestDpsFetcher:
         return user_input
 
     def _prepare_requests(
-        self, parsed_ids: None | int | Sequence[int], parsed_xids: None | str | Sequence[str]
+        self, parsed_ids: None | int | Sequence[int], parsed_xids: None | str | SequenceNotStr[str]
     ) -> list[dict]:
         all_ids, all_xids = [], []
         if parsed_ids is not None:

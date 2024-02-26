@@ -26,6 +26,7 @@ from cognite.client.data_classes.time_series import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -75,11 +76,11 @@ class TimeSeriesAPI(APIClient):
         is_string: bool | None = None,
         is_step: bool | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         metadata: dict[str, Any] | None = None,
         external_id_prefix: str | None = None,
         created_time: dict[str, Any] | None = None,
@@ -100,11 +101,11 @@ class TimeSeriesAPI(APIClient):
             is_string (bool | None): Whether the time series is an string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
-            asset_external_ids (Sequence[str] | None): List time series related to these assets.
+            asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -170,14 +171,14 @@ class TimeSeriesAPI(APIClient):
             Get time series by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.time_series.retrieve(id=1)
 
             Get time series by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.time_series.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
 
@@ -190,14 +191,14 @@ class TimeSeriesAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -208,14 +209,14 @@ class TimeSeriesAPI(APIClient):
             Get time series by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve_multiple(ids=[1, 2, 3])
+                >>> client = CogniteClient()
+                >>> res = client.time_series.retrieve_multiple(ids=[1, 2, 3])
 
             Get time series by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve_multiple(external_ids=["abc", "def"])
+                >>> client = CogniteClient()
+                >>> res = client.time_series.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -239,8 +240,8 @@ class TimeSeriesAPI(APIClient):
             List time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.aggregate(filter={"unit": "kpa"})
+                >>> client = CogniteClient()
+                >>> res = client.time_series.aggregate(filter={"unit": "kpa"})
         """
         warnings.warn(
             "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
@@ -266,17 +267,17 @@ class TimeSeriesAPI(APIClient):
         Count the number of time series in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> count = c.time_series.aggregate_count()
+            >>> client = CogniteClient()
+            >>> count = client.time_series.aggregate_count()
 
         Count the number of numeric time series in your CDF project:
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> is_numeric = filters.Equals(TimeSeriesProperty.is_string, False)
-            >>> count = c.time_series.aggregate_count(advanced_filter=is_numeric)
+            >>> count = client.time_series.aggregate_count(advanced_filter=is_numeric)
 
         """
         self._validate_filter(advanced_filter)
@@ -309,8 +310,8 @@ class TimeSeriesAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-            >>> c = CogniteClient()
-            >>> unit_count = c.time_series.aggregate_cardinality_values(TimeSeriesProperty.unit)
+            >>> client = CogniteClient()
+            >>> unit_count = client.time_series.aggregate_cardinality_values(TimeSeriesProperty.unit)
 
         Count the number of timezones (metadata key) for time series with the word "critical" in the description
         in your CDF project, but exclude timezones from america:
@@ -318,10 +319,10 @@ class TimeSeriesAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import filters, aggregations as aggs
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-            >>> c = CogniteClient()
+            >>> client = CogniteClient()
             >>> not_america = aggs.Not(aggs.Prefix("america"))
             >>> is_critical = filters.Search(TimeSeriesProperty.description, "critical")
-            >>> timezone_count = c.time_series.aggregate_cardinality_values(
+            >>> timezone_count = client.time_series.aggregate_cardinality_values(
             ...     TimeSeriesProperty.metadata_key("timezone"),
             ...     advanced_filter=is_critical,
             ...     aggregate_filter=not_america)
@@ -359,8 +360,8 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-                >>> c = CogniteClient()
-                >>> key_count = c.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
+                >>> client = CogniteClient()
+                >>> key_count = client.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -395,8 +396,8 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-                >>> c = CogniteClient()
-                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.metadata_key("timezone"))
+                >>> client = CogniteClient()
+                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata_key("timezone"))
                 >>> print(result.unique)
 
             Get the different units with count used for time series created after 2020-01-01 in your CDF project:
@@ -406,9 +407,9 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> from datetime import datetime
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> created_after_2020 = filters.Range(TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
+                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
                 >>> print(result.unique)
 
             Get the different units with count for time series updated after 2020-01-01 in your CDF project, but exclude all units that
@@ -417,10 +418,10 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> from cognite.client.data_classes import aggregations as aggs, filters
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> not_test = aggs.Not(aggs.Prefix("test"))
                 >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
+                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
                 >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
@@ -456,8 +457,8 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-                >>> c = CogniteClient()
-                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
+                >>> client = CogniteClient()
+                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -493,8 +494,8 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesWrite
-                >>> c = CogniteClient()
-                >>> ts = c.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
+                >>> client = CogniteClient()
+                >>> ts = client.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
         """
         return self._create_multiple(
             list_cls=TimeSeriesList,
@@ -506,14 +507,14 @@ class TimeSeriesAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
@@ -521,8 +522,8 @@ class TimeSeriesAPI(APIClient):
             Delete time series by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.time_series.delete(id=[1,2,3], external_id="3")
+                >>> client = CogniteClient()
+                >>> client.time_series.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -531,20 +532,24 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[TimeSeries | TimeSeriesUpdate]) -> TimeSeriesList:
+    def update(self, item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]) -> TimeSeriesList:
         ...
 
     @overload
-    def update(self, item: TimeSeries | TimeSeriesUpdate) -> TimeSeries:
+    def update(self, item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate) -> TimeSeries:
         ...
 
     def update(
-        self, item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]
+        self,
+        item: TimeSeries
+        | TimeSeriesWrite
+        | TimeSeriesUpdate
+        | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
     ) -> TimeSeries | TimeSeriesList:
         """`Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
 
         Args:
-            item (TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]): Time series to update
+            item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
 
         Returns:
             TimeSeries | TimeSeriesList: Updated time series.
@@ -554,18 +559,18 @@ class TimeSeriesAPI(APIClient):
             Update a time series that you have fetched. This will perform a full update of the time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.time_series.retrieve(id=1)
                 >>> res.description = "New description"
-                >>> res = c.time_series.update(res)
+                >>> res = client.time_series.update(res)
 
             Perform a partial update on a time series, updating the description and adding a new field to metadata::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesUpdate
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
-                >>> res = c.time_series.update(my_update)
+                >>> res = client.time_series.update(my_update)
         """
 
         return self._update_multiple(
@@ -576,15 +581,19 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
+    def upsert(
+        self, item: Sequence[TimeSeries | TimeSeriesWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> TimeSeriesList:
         ...
 
     @overload
-    def upsert(self, item: TimeSeries, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
+    def upsert(self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
         ...
 
     def upsert(
-        self, item: TimeSeries | Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch"
+        self,
+        item: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite],
+        mode: Literal["patch", "replace"] = "patch",
     ) -> TimeSeries | TimeSeriesList:
         """Upsert time series, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -593,7 +602,7 @@ class TimeSeriesAPI(APIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
+            item (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite]): TimeSeries or list of TimeSeries to upsert.
             mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
@@ -605,11 +614,11 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeries
-                >>> c = CogniteClient()
-                >>> existing_time_series = c.time_series.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> existing_time_series = client.time_series.retrieve(id=1)
                 >>> existing_time_series.description = "New description"
                 >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
-                >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
+                >>> res = client.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
 
         return self._upsert_multiple(
@@ -647,14 +656,14 @@ class TimeSeriesAPI(APIClient):
             Search for a time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.search(name="some name")
+                >>> client = CogniteClient()
+                >>> res = client.time_series.search(name="some name")
 
             Search for all time series connected to asset with id 123::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.search(filter={"asset_ids":[123]})
+                >>> client = CogniteClient()
+                >>> res = client.time_series.search(filter={"asset_ids":[123]})
         """
 
         return self._search(
@@ -690,9 +699,9 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.filters import Equals
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_numeric = Equals("is_string", False)
-                >>> res = c.time_series.filter(filter=is_numeric, sort="external_id")
+                >>> res = client.time_series.filter(filter=is_numeric, sort="external_id")
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -703,9 +712,9 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.filters import Equals
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_numeric = Equals(TimeSeriesProperty.is_string, False)
-                >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
+                >>> res = client.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
         self._validate_filter(filter)
 
@@ -730,11 +739,11 @@ class TimeSeriesAPI(APIClient):
         is_string: bool | None = None,
         is_step: bool | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
         data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
         metadata: dict[str, Any] | None = None,
         external_id_prefix: str | None = None,
         created_time: dict[str, Any] | None = None,
@@ -742,9 +751,7 @@ class TimeSeriesAPI(APIClient):
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
-        """`List over time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
-
-        Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
+        """`List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
         Args:
             name (str | None): Name of the time series. Often referred to as tag.
@@ -754,11 +761,11 @@ class TimeSeriesAPI(APIClient):
             is_string (bool | None): Whether the time series is an string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
-            asset_external_ids (Sequence[str] | None): List time series related to these assets.
+            asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
             asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset external id or list of asset subtree external ids to filter on.
             data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -774,22 +781,22 @@ class TimeSeriesAPI(APIClient):
             List time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.list(limit=5)
+                >>> client = CogniteClient()
+                >>> res = client.time_series.list(limit=5)
 
             Iterate over time series::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for ts in c.time_series:
-                ...     ts # do something with the time_series
+                >>> client = CogniteClient()
+                >>> for ts in client.time_series:
+                ...     ts # do something with the time series
 
             Iterate over chunks of time series to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for ts_list in c.time_series(chunk_size=2500):
-                ...     ts_list # do something with the time_series
+                >>> client = CogniteClient()
+                >>> for ts_list in client.time_series(chunk_size=2500):
+                ...     ts_list # do something with the time series
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)

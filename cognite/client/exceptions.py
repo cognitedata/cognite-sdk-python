@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import reprlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import no_op
 
 if TYPE_CHECKING:
@@ -144,10 +144,10 @@ class CogniteAPIError(CogniteMultiException):
             from cognite.client import CogniteClient
             from cognite.client.exceptions import CogniteAPIError
 
-            c = CogniteClient()
+            client = CogniteClient()
 
             try:
-                c.iam.token.inspect()
+                client.iam.token.inspect()
             except CogniteAPIError as e:
                 if e.code == 401:
                     print("You are not authorized")
@@ -188,7 +188,7 @@ class CogniteAPIError(CogniteMultiException):
             msg += f"\nDuplicated: {self._truncate_elements(self.duplicated)}"
         msg += self._get_multi_exception_summary()
         if self.extra:
-            pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
+            pretty_extra = _json.dumps(self.extra, indent=4, sort_keys=True)
             msg += f"\nAdditional error info: {pretty_extra}"
         return msg
 

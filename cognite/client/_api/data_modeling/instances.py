@@ -163,7 +163,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Node]:
@@ -176,7 +177,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge]:
@@ -189,7 +191,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[NodeList]:
@@ -202,7 +205,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | None = None,
+        space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[EdgeList]:
@@ -214,7 +218,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | list[View] | View | None = None,
+        sources: list[ViewIdentifier] | ViewIdentifier | list[View] | View | None = None,
+        space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
@@ -226,7 +231,8 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId] | ViewId | list[View] | View | None): Views to retrieve properties from.
+            sources (list[ViewIdentifier] | ViewIdentifier | list[View] | View | None): Views to retrieve properties from.
+            space (str | Sequence[str] | None): Only return instances in the given space (or list of spaces).
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 
@@ -234,6 +240,7 @@ class InstancesAPI(APIClient):
             Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
         self._validate_filter(filter)
+        filter = self._merge_space_into_filter(instance_type, space, filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -260,11 +267,11 @@ class InstancesAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[Node]:
-        """Iterate over instances
-        Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
+        """Iterate over instances (nodes only)
+        Fetches nodes as they are iterated over, so you keep a limited number of nodes in memory.
 
         Returns:
-            Iterator[Node]: yields Instances one by one.
+            Iterator[Node]: yields nodes one by one.
         """
         return self(None, "node")
 
@@ -291,8 +298,8 @@ class InstancesAPI(APIClient):
             Retrieve instances by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve(
                 ...     nodes=("mySpace", "myNodeExternalId"),
                 ...     edges=("mySpace", "myEdgeExternalId"),
                 ...     sources=("mySpace", "myViewExternalId", "myViewVersion"))
@@ -301,8 +308,8 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, ViewId
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     ViewId("mySpace", "myViewExternalId", "myViewVersion"))
@@ -311,8 +318,8 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     sources=("myspace", "myView"))
@@ -384,24 +391,24 @@ class InstancesAPI(APIClient):
             Delete instances by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(nodes=("mySpace", "myNode"))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.instances.delete(nodes=("mySpace", "myNode"))
 
             Delete nodes and edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
 
             Delete all nodes from a NodeList
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> c = CogniteClient()
-                >>> my_view = c.data_modeling.views.retrieve('mySpace', 'myView')
-                >>> my_nodes = c.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
-                >>> c.data_modeling.instances.delete(nodes=my_nodes.as_ids())
+                >>> client = CogniteClient()
+                >>> my_view = client.data_modeling.views.retrieve('mySpace', 'myView')
+                >>> my_nodes = client.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
+                >>> client.data_modeling.instances.delete(nodes=my_nodes.as_ids())
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(
@@ -439,14 +446,14 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Subscrie to a given query and print the changed data:
+            Subscribe to a given query and print the changed data:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import Query, QueryResult, NodeResultSetExpression, Select, SourceSelector
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Range
                 >>>
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> def just_print_the_result(result: QueryResult) -> None:
                 ...     print(result)
                 ...
@@ -456,7 +463,7 @@ class InstancesAPI(APIClient):
                 ...     with_={"movies": NodeResultSetExpression(filter=filter)},
                 ...     select={"movies": Select([SourceSelector(view_id, ["releaseYear"])])}
                 ... )
-                >>> subscription_context = c.data_modeling.instances.subscribe(query, just_print_the_result)
+                >>> subscription_context = client.data_modeling.instances.subscribe(query, just_print_the_result)
                 >>> subscription_context.cancel()
         """
         for result_set_expression in query.with_.values():
@@ -570,9 +577,9 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> nodes = [NodeApply("mySpace", "myNodeId")]
-                >>> res = c.data_modeling.instances.apply(nodes)
+                >>> res = client.data_modeling.instances.apply(nodes)
 
             Create two nodes with data with a one-to-many edge
 
@@ -610,13 +617,13 @@ class InstancesAPI(APIClient):
                 ...     start_node=("actors", "arnold_schwarzenegger"),
                 ...     end_node=("movies", "Terminator"),
                 ... )
-                >>> res = c.data_modeling.instances.apply([actor, movie], [actor_to_movie])
+                >>> res = client.data_modeling.instances.apply([actor, movie], [actor_to_movie])
 
             Create new edge and automatically create end nodes.
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> actor_to_movie = EdgeApply(
                 ...     space="actors",
                 ...     external_id="relation:arnold_schwarzenegger:terminator",
@@ -624,7 +631,7 @@ class InstancesAPI(APIClient):
                 ...     start_node=("actors", "arnold_schwarzenegger"),
                 ...     end_node=("movies", "Terminator"),
                 ... )
-                >>> res = c.data_modeling.instances.apply(
+                >>> res = client.data_modeling.instances.apply(
                 ...     edges=actor_to_movie,
                 ...     auto_create_start_nodes=True,
                 ...     auto_create_end_nodes=True
@@ -664,6 +671,7 @@ class InstancesAPI(APIClient):
         query: str,
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
+        space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList:
@@ -676,6 +684,7 @@ class InstancesAPI(APIClient):
         query: str,
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
+        space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> EdgeList:
@@ -687,6 +696,7 @@ class InstancesAPI(APIClient):
         query: str,
         instance_type: Literal["node", "edge"] = "node",
         properties: list[str] | None = None,
+        space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList | EdgeList:
@@ -697,6 +707,7 @@ class InstancesAPI(APIClient):
             query (str): Query string that will be parsed and used for search.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            space (str | Sequence[str] | None): Restrict instance search to the given space (or list of spaces).
             filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 
@@ -709,21 +720,28 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"), query="Arnold", properties=["name"])
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.search(
+                ...     ViewId("mySpace", "PersonView", "v1"),
+                ...     query="Arnold",
+                ...     properties=["name"])
 
-            Search for Quentin in the person view in the name property, but only born before 1970:
+            Search for Quentin in the person view in the name property, but only born after 1970:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes import filters
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
-                >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"),
-                ... query="Quentin", properties=["name"], filter=born_after_1970)
+                >>> res = client.data_modeling.instances.search(
+                ...     ViewId("mySpace", "PersonView", "v1"),
+                ...     query="Quentin",
+                ...     properties=["name"],
+                ...     filter=born_after_1970)
 
         """
         self._validate_filter(filter)
+        filter = self._merge_space_into_filter(instance_type, space, filter)
         if instance_type == "node":
             list_cls: type[NodeList] | type[EdgeList] = NodeList
         elif instance_type == "edge":
@@ -749,7 +767,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
-        filter: Filter | None = None,
+        space: str | Sequence[str] | None = None,
+        filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue:
         ...
@@ -763,7 +782,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
-        filter: Filter | None = None,
+        space: str | Sequence[str] | None = None,
+        filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[AggregatedNumberedValue]:
         ...
@@ -777,7 +797,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
-        filter: Filter | None = None,
+        space: str | Sequence[str] | None = None,
+        filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList:
         ...
@@ -790,7 +811,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
         properties: str | SequenceNotStr[str] | None = None,
-        filter: Filter | None = None,
+        space: str | Sequence[str] | None = None,
+        filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
@@ -799,10 +821,11 @@ class InstancesAPI(APIClient):
             view (ViewId): View to aggregate over.
             aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]): The properties to aggregate over.
             group_by (str | SequenceNotStr[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            query (str | None): Query string that will be parsed and used for search.
-            properties (str | SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
-            filter (Filter | None): Advanced filtering of instances.
+            instance_type (Literal["node", "edge"]): The type of instance.
+            query (str | None): Optional query string. The API will parse the query string, and use it to match the text properties on elements to use for the aggregate(s).
+            properties (str | SequenceNotStr[str] | None): Optional list of properties you want to apply the query to. If you do not list any properties, you search through text fields by default.
+            space (str | Sequence[str] | None): Restrict instance aggregate query to the given space (or list of spaces).
+            filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
@@ -814,16 +837,17 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId, aggregations as aggs
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> avg_run_time = aggs.Avg("runTimeMinutes")
                 >>> view_id = ViewId("mySpace", "PersonView", "v1")
-                >>> res = c.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
+                >>> res = client.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
 
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
 
         self._validate_filter(filter)
+        filter = self._merge_space_into_filter(instance_type, space, filter)
         body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         is_single = isinstance(aggregates, (dict, MetricAggregation))
         aggregate_seq: Sequence[MetricAggregation | dict] = (
@@ -858,8 +882,9 @@ class InstancesAPI(APIClient):
         histograms: Histogram,
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
-        filter: Filter | None = None,
+        properties: SequenceNotStr[str] | None = None,
+        space: str | Sequence[str] | None = None,
+        filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue:
         ...
@@ -871,8 +896,9 @@ class InstancesAPI(APIClient):
         histograms: Sequence[Histogram],
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
-        filter: Filter | None = None,
+        properties: SequenceNotStr[str] | None = None,
+        space: str | Sequence[str] | None = None,
+        filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]:
         ...
@@ -883,8 +909,9 @@ class InstancesAPI(APIClient):
         histograms: Histogram | Sequence[Histogram],
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        properties: Sequence[str] | None = None,
-        filter: Filter | None = None,
+        properties: SequenceNotStr[str] | None = None,
+        space: str | Sequence[str] | None = None,
+        filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
@@ -894,8 +921,9 @@ class InstancesAPI(APIClient):
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
-            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
-            filter (Filter | None): Advanced filtering of instances.
+            properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            space (str | Sequence[str] | None): Restrict histogram query to instances in the given space (or list of spaces).
+            filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
@@ -907,15 +935,16 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import aggregations as aggs, ViewId
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> birth_by_decade = aggs.Histogram("birthYear", interval=10.0)
                 >>> view_id = ViewId("mySpace", "PersonView", "v1")
-                >>> res = c.data_modeling.instances.histogram(view_id, birth_by_decade)
+                >>> res = client.data_modeling.instances.histogram(view_id, birth_by_decade)
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
 
         self._validate_filter(filter)
+        filter = self._merge_space_into_filter(instance_type, space, filter)
         body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
         if isinstance(histograms, Sequence):
@@ -965,7 +994,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
@@ -979,7 +1008,7 @@ class InstancesAPI(APIClient):
                 ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
                 ...     },
                 ... )
-                >>> res = c.data_modeling.instances.query(query)
+                >>> res = client.data_modeling.instances.query(query)
         """
         return self._query_or_sync(query, "query")
 
@@ -1003,7 +1032,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
@@ -1017,10 +1046,10 @@ class InstancesAPI(APIClient):
                 ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
                 ...     },
                 ... )
-                >>> res = c.data_modeling.instances.sync(query)
+                >>> res = client.data_modeling.instances.sync(query)
                 >>> # Added a new movie with actors released before 2000
                 >>> query.cursors = res.cursors
-                >>> res_new = c.data_modeling.instances.sync(query)
+                >>> res_new = client.data_modeling.instances.sync(query)
 
             In the last example, the res_new will only contain the actors that have been added with the new movie.
         """
@@ -1043,6 +1072,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -1055,6 +1085,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -1066,6 +1097,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
+        space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -1076,6 +1108,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
+            space (str | Sequence[str] | None): Only return instances in the given space (or list of spaces).
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
@@ -1088,24 +1121,35 @@ class InstancesAPI(APIClient):
             List instances and limit to 5:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> instance_list = c.data_modeling.instances.list(limit=5)
+                >>> client = CogniteClient()
+                >>> instance_list = client.data_modeling.instances.list(limit=5)
 
-            Iterate over instances:
+            List some instances in the space 'my-space':
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for instance in c.data_modeling.instances:
+                >>> instance_list = client.data_modeling.instances.list(space="my-space")
+
+            List instances and sort by some property:
+
+                >>> from cognite.client.data_classes.data_modeling import InstanceSort
+                >>> property_sort = InstanceSort(
+                ...     property=('space', 'view_xid/view_version', 'some_property'),
+                ...     direction="descending",
+                ...     nulls_first=True)
+                >>> instance_list = client.data_modeling.instances.list(sort=property_sort)
+
+            Iterate over instances (note: returns nodes):
+
+                >>> for instance in client.data_modeling.instances:
                 ...     instance # do something with the instance
 
             Iterate over chunks of instances to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for instance_list in c.data_modeling.instances(chunk_size=100):
+                >>> for instance_list in client.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
         self._validate_filter(filter)
+        filter = self._merge_space_into_filter(instance_type, space, filter)
+
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -1132,3 +1176,15 @@ class InstancesAPI(APIClient):
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)
+
+    @staticmethod
+    def _merge_space_into_filter(
+        instance_type: Literal["node", "edge"], space: str | Sequence[str] | None, filter: Filter | dict | None
+    ) -> Filter | dict | None:
+        if space is None:
+            return filter
+
+        space_filter = filters.SpaceFilter(space, instance_type)
+        if filter is None:
+            return space_filter
+        return filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)

@@ -17,15 +17,167 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.24.2] - 2024-02-25
+### Fixed
+- [Pyodide/WASM only] The list method for raw rows now works for non-finite queries (got broken in `7.24.1`).
+
+## [7.24.1] - 2024-02-25
+### Fixed
+- [Pyodide/WASM only] The iteration method for raw rows now yields rows _while running_ (instead of waiting for tasks to finish first).
+
+## [7.24.0] - 2024-02-25
+### Added
+- New parameter for `client.raw.rows(...)`: `partitions`. This enables greater throughput thorough concurrent reads when using
+  the generator method (while still keeping a low memory impact). For backwards compatibility, the default is _no concurrency_.
+  When specified, can be used together with a finite limit, as opposed to most (if not all) other resources/APIs.
+- New parameter for `client.raw.rows.list(...)`: `partitions`. For backwards compatibility, the default is _no concurrency_ when
+  a finite `limit` is given, and _"max" concurrency_ (`partitions=max_workers`) otherwise. Partitions can be used with finite limits.
+  With this change it is easy to set an appropriate level of concurrency without messing with the global client configuration.
+### Changed
+- Default configuration setting of `max_workers` has been changed from 10 to 5 (to match the documentation).
+
+## [7.23.1] - 2024-02-23
+### Fixed
+- Add missing `partition` scope to `seismicAcl`.
+
+## [7.23.0] - 2024-02-23
+### Added
+- Make properties on instances (`Node`, `Edge`) easier to work with, by implementing support for direct indexing (and a `.get` method).
+  If the instances have properties from no source or multiple sources, an error is raised instead. Example usage: `instance["my_prop"]`
+  (short-cut for: `instance.properties[ViewId("space", "ext.id", "version")]["my_prop"]`)
+
+## [7.22.0] - 2024-02-21
+### Added
+- Data point subscriptions reaches General Availability (GA).
+  - Use the new [Data point subscriptions](https://developer.cognite.com/dev/concepts/data_point_subscriptions/)
+    feature to configure a subscription to listen to changes in one or more time series (in ingestion order).
+    The feature is intended to be used where data points consumers need to keep up to date with
+    changes to one or more time series without the need to read the entire time series again.
+### Changed
+- Removed the `ignore_unknown_ids` flag from `client.time_series.subscriptions.retrieve()` to stay consistent with other resource types.
+
+## [7.21.1] - 2024-02-20
+### Fixed
+- Data Workflows: mark parameter `jobId` as optional in `TransformationTaskOutput`, as it may not be populated in case of a failure.
+
+## [7.21.0] - 2024-02-10
+### Added
+- Parameter `sort` to `client.documents.list`.
+
+## [7.20.1] - 2024-02-19
+### Fixed
+- `DMLApplyResult` no longer fails when converted to a string (representation).
+
+## [7.20.0] - 2024-02-13
+### Fixed
+- internal json encoder now understands CogniteObject and CogniteFilter objects, so that they are
+  correctly serialized when used in nested structures.
+
+## [7.19.2] - 2024-02-13
+### Fixed
+- Addressed `FutureWarning` coming from pandas dependency (granularity to pandas frequency translation of sec/min/hour and 'year start')
+- Fixed `granularity` setting in `DatapointsAPI.retrieve_dataframe_in_tz` showing up as number of hours instead of e.g. week or year.
+
+## [7.19.1] - 2024-02-12
+### Fixed
+- Calls to ... are now retried automatically:
+    * Functions API: `list`, `retrieve`, `retrieve_multiple`, `activate`
+    * FunctionCalls API: `list`, `retrieve`
+    * FunctionSchedules API: `list`, `retrieve`
+    * ExtractionPipelines API: `retrieve_multiple`
+    * ExtractionPipelineRuns API: `list`
+    * Transformations API: `list`, `retrieve`, `retrieve_multiple`, `preview`
+    * TransformationJobs API: `retrieve`, `retrieve_multiple`
+    * TransformationSchedules API: `retrieve`, `retrieve_multiple`
+    * Geospatial API:  `list_feature_types`, `retrieve_feature_types`, `retrieve_features`, `list_features`,
+      `search_features`, `stream_features`, `aggregate_features`, `get_coordinate_reference_systems`, `get_raster`, `compute`,
+    * UserProfiles API: `retrieve`, `search`
+    * Documents API: `search`, `list`, `__call__`, `aggregate_count`, `aggregate_cardinality_values`, `aggregate_cardinality_properties`,
+      `aggregate_unique_values`, `aggregate_unique_properties`
+    * ThreeDRevisions API: `filter_nodes`
+
+## [7.19.0] - 2024-02-12
+### Added
+- Helper methods to `View`, `ViewApply`, `ViewList` and `ViewApplyList` `referenced_containers` which returns the
+  containers referenced by in the view(s).
+
+## [7.18.0] - 2024-02-08
+### Added
+- Support for `target_unit` and `target_unit_system` in synthetic time series.
+
+## [7.17.4] - 2024-02-07
+### Added
+- Allow using container property reference in `NodeResultSetExpression.through` in addition to view property reference
+
+## [7.17.3] - 2024-02-06
+### Fixed
+- Creating a Cognite Function from a directory with `skip_folder_validation=False` no longer raises `ModuleNotFoundError`
+  for Pyodide (WASM) users.
+
+## [7.17.2] - 2024-02-04
+### Fixed
+- Uploading files now accepts Labels again as part of file metadata. This addresses a bug introduced in v7, which caused
+  a `ValueError` to be raised.
+
+## [7.17.1] - 2024-02-02
+### Fixed
+- An (extreme) edge case where an empty, unnecessary API request for datapoints would be sent leading to a `CogniteAPIError`.
+- Certain granularity inputs (when using the `DatapointsAPI`) no longer cause a `ValueError` to be raised with confusing/wrong wording.
+
+## [7.17.0] - 2024-02-01
+### Fixed
+- Calls to `AnnotationsAPI.[list|retrieve|retrieve_multiple|reverse_lookup]` are now retried automatically.
+- Calls to `AnnotationsAPI.reverse_lookup` now also accept the standard values (`-1, inf`) to indicate 'no limit'.
+### Improved
+- Calls to `AnnotationsAPI.list` with more than 1000 `annotated_resource_ids` are now batched automatically for the user.
+  Previously these would raise an API error.
+
+## [7.16.0] - 2024-01-30
+### Added
+- When listing instances (and when using `search`, `aggregate` and `histogram`), a new `space` parameter has been added;
+  you may pass either a single space identifier (or a list of several). Note that this is just for convenience, using
+  `filter` still works (and is necessary for more complex queries).
+- New convenience filter, `SpaceFilter`, makes filtering on space simpler.
+
+## [7.15.1] - 2024-01-23
+### Fixed
+- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will
+  no longer raise ValueError, but drop the empty properties row/column.
+
+## [7.15.0] - 2024-01-22
+### Improved
+- Only run pypi version check once, despite instantiating multiple clients. And make it async too.
+
+## [7.14.0] - 2024-01-22
+### Changed
+- Helper methods to get related resources on `Asset` class now accept `asset_ids` as part of keyword arguments.
+### Added
+- Helper methods to get related resources on `AssetList` class now accept keyword arguments that are passed on to
+  the list endpoint (for server-side filtering).
+
+## [7.13.8] - 2024-01-19
+### Fixed
+- `FilesAPI.upload` when using `geo_location` (serialize error).
+
+## [7.13.7] - 2024-01-19
+### Fixed
+- Type hints for all `.update` and `.upsert` methods accept Write classes in addition to Read and Update classes.
+- Missing overloading of the `.update` methods on `client.three_d.models.update`, `client.transformations.update`,
+  `client.transformations.schedules.update`, `client.relationships.update`, and `client.data_sets.update`.
+
+## [7.13.6] - 2024-01-18
+### Added
+- Helper method `as_tuple` to `NodeId` and `EdgeId`.
+
 ## [7.13.5] - 2024-01-16
 ### Added
-- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`. 
+- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`.
 
 ## [7.13.4] - 2024-01-11
 ### Fixed
-* When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
-* When calling `Datapoints.load` not having a `isString` would raise a `KeyError` even though it is optional. This is now fixed.
-* Most `CogniteResourceList.as_write()` would raise a `CogniteMissingClientError` when called from a class with missing cognite_client. This is now fixed.
+- When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+- When calling `Datapoints.load` not having a `isString` would raise a `KeyError` even though it is optional. This is now fixed.
+- Most `CogniteResourceList.as_write()` would raise a `CogniteMissingClientError` when called from a class with missing cognite_client. This is now fixed.
 
 ## [7.13.3] - 2024-01-12
 ### Added
@@ -34,7 +186,7 @@ Changes are grouped as follows
 
 ## [7.13.2] - 2024-01-11
 ### Fixed
-* When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+- When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
 
 ## [7.13.1] - 2024-01-10
 ### Improved
@@ -139,7 +291,7 @@ Changes are grouped as follows
 
 ## [7.7.1] - 2023-12-20
 ### Fixed
-- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.  
+- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.
 - The `IAMAPI.compare_capabilities` fails with a `AttributeError: 'UnknownAcl' object has no attribute '_capability_name'`
   if the user has an unknwon ACL. This is now fixed by skipping comparison of unknown ACLs and issuing a warning.
 
@@ -2061,11 +2213,11 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
   ```python
   # using a single string
   my_update = AssetUpdate(id=1).labels.add("PUMP").labels.remove("VALVE")
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
 
   # using a list of strings
   my_update = AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
   ```
 
 ## [2.0.0] - 2020-07-21
@@ -2096,7 +2248,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 
   # attach/detach labels to/from assets
   my_update = AssetUpdate(id=1).labels.add(["PUMP"]).labels.remove(["VALVE"])
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
   ```
 
 ### Fixed

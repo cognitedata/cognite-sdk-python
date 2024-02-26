@@ -19,12 +19,15 @@ from cognite.client.data_classes.data_modeling import (
     ViewId,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
-@pytest.mark.usefixtures("integration_test_space", "movie_model", "empty_model")
 def cdf_data_models(
     cognite_client: CogniteClient,
+    integration_test_space: Space,
+    movie_model: DataModel[View],
+    empty_model: DataModel[ViewId],
 ) -> DataModelList[ViewId]:
     # The movie model and empty fixture are used to ensure that
     # there are at least two data models in the test environment.
@@ -37,25 +40,21 @@ class TestDataModelsAPI:
     def test_list(
         self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId], integration_test_space: Space
     ) -> None:
-        # Arrange
         expected_data_models = DataModelList[ViewId](
             [m for m in cdf_data_models if m.space == integration_test_space.space]
         )
         expected_ids = set(expected_data_models.as_ids())
 
-        # Act
         actual_data_models = cognite_client.data_modeling.data_models.list(space=integration_test_space.space, limit=-1)
 
-        # Assert
         assert expected_ids, "The test environment is missing data models"
         assert expected_ids <= set(actual_data_models.as_ids())
         assert all(v.space == integration_test_space.space for v in actual_data_models)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        # Arrange
         new_view = ViewApply(
             space=integration_test_space.space,
-            external_id="IntegrationTestViewDataModel",
+            external_id="IntegrationTestViewDataModel" + random_string(5),
             version="v1",
             description="Integration test, should not persist",
             name="View of create and delete data model",
@@ -83,12 +82,10 @@ class TestDataModelsAPI:
         deleted_models: list[DataModelId] = []
         deleted_view_ids: list[ViewId] = []
         try:
-            # Act
             created = cognite_client.data_modeling.data_models.apply(new_data_model)
             retrieved_models = cognite_client.data_modeling.data_models.retrieve(new_data_model.as_id())
             retrieved = retrieved_models.latest_version()
 
-            # Assert
             assert created.created_time
             assert created.last_updated_time
             created_dump = created.as_apply().dump()
@@ -99,19 +96,16 @@ class TestDataModelsAPI:
             assert created_dump == new_model_dump
             assert created.dump() == retrieved.dump()
 
-            # Act
             deleted_models = cognite_client.data_modeling.data_models.delete(new_data_model.as_id())
             deleted_view_ids = cognite_client.data_modeling.views.delete(new_view.as_id())
             retrieved_deleted = cognite_client.data_modeling.data_models.retrieve(new_data_model.as_id())
 
-            # Assert
             assert len(deleted_models) == 1
             assert deleted_models[0] == new_data_model.as_id()
             assert len(deleted_view_ids) == 1
             assert deleted_view_ids[0] == new_view.as_id()
             assert not retrieved_deleted
         finally:
-            # Cleanup
             if created and not deleted_models:
                 cognite_client.data_modeling.data_models.delete(created.as_id())
             if created_view and not deleted_view_ids:
@@ -119,53 +113,37 @@ class TestDataModelsAPI:
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
-        assert (
-            cognite_client.data_modeling.data_models.delete(
-                DataModelId(space=space, external_id="DoesNotExists", version="v0")
-            )
-            == []
+        res = cognite_client.data_modeling.data_models.delete(
+            DataModelId(space=space, external_id="DoesNotExists", version="v0")
         )
+        assert res == []
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId]) -> None:
-        # Arrange
         ids = cdf_data_models.as_ids()
-
-        # Act
         retrieved = cognite_client.data_modeling.data_models.retrieve(ids)
-
-        # Assert
         assert retrieved.as_ids() == ids
 
     def test_retrieve_with_inline_views(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
-        # Act
         retrieved = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=True)
 
-        # Assert
         assert len(retrieved) == 1
         assert all(isinstance(v, View) for v in retrieved[0].views)
 
     def test_retrieve_without_inline_views(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
-        # Act
         retrieved = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=False)
 
-        # Assert
         assert len(retrieved) == 1
         assert all(isinstance(v, ViewId) for v in retrieved[0].views)
 
     def test_retrieve_multiple_with_missing(
         self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId]
     ) -> None:
-        # Arrange
         ids_without_missing = cdf_data_models.as_ids()
         ids_with_missing = [
             *ids_without_missing,
             DataModelId("myNonExistingSpace", "myImaginaryDataModel", "v0"),
         ]
-
-        # Act
         retrieved = cognite_client.data_modeling.data_models.retrieve(ids_with_missing)
-
-        # Assert
         assert retrieved.as_ids() == ids_without_missing
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient) -> None:
@@ -178,12 +156,9 @@ class TestDataModelsAPI:
             assert isinstance(containers, DataModelList)
 
     def test_list_expand_inline_views(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        # Act
         data_models = cognite_client.data_modeling.data_models.list(
             space=integration_test_space.space, limit=10, inline_views=True
         )
-
-        # Assert
         for m in data_models:
             assert m.views is not None
             assert all([isinstance(v, View) for v in m.views])
@@ -197,15 +172,12 @@ class TestDataModelsAPI:
                     version="v1",
                 )
             )
-
-        # Assert
         assert error.value.code == 400
         assert "One or more spaces do not exist" in error.value.message
 
     def test_apply_failed_and_successful_task(
         self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
     ) -> None:
-        # Arrange
         valid_data_model = DataModelApply(
             space=integration_test_space.space,
             external_id="IntegrationTestDataModel1",
@@ -219,25 +191,19 @@ class TestDataModelsAPI:
         monkeypatch.setattr(cognite_client.data_modeling.data_models, "_CREATE_LIMIT", 1)
 
         try:
-            # Act
             with pytest.raises(CogniteAPIError) as error:
                 cognite_client.data_modeling.data_models.apply([valid_data_model, invalid_data_model])
 
-            # Assert
             assert "One or more spaces do not exist" in error.value.message
             assert error.value.code == 400
             assert len(error.value.successful) == 1
             assert len(error.value.failed) == 1
-
         finally:
-            # Cleanup
             cognite_client.data_modeling.data_models.delete(valid_data_model.as_id())
 
     def test_dump_json_serialize_load(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
-        # Act
         model_dumped = movie_model.dump(camel_case=True)
         model_json = json.dumps(model_dumped)
         model_loaded: DataModel = DataModel.load(model_json)
 
-        # Assert
         assert model_loaded.dump() == movie_model.dump()

@@ -18,10 +18,12 @@ from typing import (
     Literal,
     Mapping,
     MutableMapping,
+    NoReturn,
     TypeVar,
     Union,
     ValuesView,
     cast,
+    final,
     overload,
 )
 
@@ -36,9 +38,7 @@ from cognite.client.data_classes.data_modeling.core import (
     DataModelingSort,
     WritableDataModelingResource,
 )
-from cognite.client.data_classes.data_modeling.data_types import (
-    DirectRelationReference,
-)
+from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     EdgeId,
@@ -194,7 +194,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
             for view_id_str, properties in view_properties.items():
                 view_tuple = tuple(view_id_str.split("/", 1))
                 if len(view_tuple) != 2:
-                    raise ValueError("View id must be in the format <external_id>/<version>")
+                    raise ValueError(f"View id must be in the format <external_id>/<version>, not {view_id_str!r}")
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
         return cls(props)
@@ -258,6 +258,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
 
 
 class Instance(WritableInstanceCore[T_CogniteResource], ABC):
+
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -288,6 +289,50 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         self.created_time = created_time
         self.deleted_time = deleted_time
         self.properties: Properties = properties or Properties({})
+
+        if len(self.properties) == 1:
+            (self._prop_lookup,) = self.properties.values()
+        else:
+            # For speed, we want this to fail (to avoid LBYL pattern):
+            self._prop_lookup = None  # type: ignore [assignment]
+
+    def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
+        err_msg = "Quick property access is only possible on instances from a single source."
+        if len(self.properties) > 1:
+            err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
+        raise RuntimeError(err_msg) from None
+
+    @overload
+    def get(self, attr: str) -> PropertyValue | None:
+        ...
+
+    @overload
+    def get(self, attr: str, default: _T) -> PropertyValue | _T:
+        ...
+
+    def get(self, attr: str, default: Any = None) -> Any:
+        try:
+            return self._prop_lookup.get(attr, default)
+        except AttributeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __getitem__(self, attr: str) -> PropertyValue:
+        try:
+            return self._prop_lookup[attr]
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __setitem__(self, attr: str, value: PropertyValue) -> None:
+        try:
+            self._prop_lookup[attr] = value
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __delitem__(self, attr: str) -> None:
+        try:
+            del self._prop_lookup[attr]
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
@@ -334,7 +379,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         pd = local_import("pandas")
         col = df.squeeze()
         prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
-        if remove_property_prefix:
+        if remove_property_prefix and not prop_df.empty:
             # We only do/allow this if we have a single source:
             view_id, *extra = self.properties.keys()
             if not extra:
@@ -484,6 +529,7 @@ class NodeApply(InstanceApply["NodeApply"]):
         return self
 
 
+@final
 class Node(Instance["NodeApply"]):
     """A node. This is the read version of the node.
 
@@ -664,6 +710,7 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         return self
 
 
+@final
 class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 

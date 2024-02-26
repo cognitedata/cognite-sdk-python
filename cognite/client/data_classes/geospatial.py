@@ -4,7 +4,10 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, List, TypeVar, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
@@ -12,7 +15,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     import geopandas
@@ -156,29 +159,51 @@ class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType
         )
 
 
-class PropertyAndSearchSpec:
+@dataclasses.dataclass
+class PropertyAndSearchSpec(CogniteObject):
     """A representation of a feature type property and search spec."""
 
-    def __init__(
-        self,
-        properties: dict[str, Any] | list[str] | None = None,
-        search_spec: dict[str, Any] | list[str] | None = None,
-    ) -> None:
-        self.properties = properties
-        self.search_spec = search_spec
+    properties: dict[str, Any] | list[str] | None = None
+    search_spec: dict[str, Any] | list[str] | None = None
 
 
 @dataclasses.dataclass
-class Patches:
+class Patches(CogniteObject):
     add: dict[str, Any] | None = None
     remove: list[str] | None = None
 
 
 @dataclasses.dataclass
-class FeatureTypePatch:
+class FeatureTypePatch(CogniteObject):
     external_id: str | None = None
     property_patches: Patches | None = None
     search_spec_patches: Patches | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item = {
+            "external_id": self.external_id,
+            "property_patches": self.property_patches.dump(camel_case=camel_case) if self.property_patches else None,
+            "search_spec_patches": self.search_spec_patches.dump(camel_case=camel_case)
+            if self.search_spec_patches
+            else None,
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        property_patches = (
+            Patches.load(resource["propertyPatches"], cognite_client=cognite_client)
+            if resource.get("propertyPatches") is not None
+            else None
+        )
+        search_spec_patches = (
+            Patches.load(resource["searchSpecPatches"], cognite_client=cognite_client)
+            if resource.get("searchSpecPatches") is not None
+            else None
+        )
+        return cls(resource.get("externalId"), property_patches, search_spec_patches)
 
 
 class FeatureCore(WriteableCogniteResource["FeatureWrite"], ABC):
@@ -334,8 +359,8 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
 
                 >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> features = c.geospatial.search_features(...)
+                >>> client = CogniteClient()
+                >>> features = client.geospatial.search_features(...)
                 >>> gdf = features.to_geopandas(
                 ...     geometry="position",
                 ...     camel_case=False
@@ -373,13 +398,13 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
             Create features from a geopandas dataframe:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> my_feature_type = ... # some feature type with 'position' and 'temperature' properties
                 >>> my_geodataframe = ...  # some geodataframe with 'center_xy', 'temp' and 'id' columns
                 >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, geodataframe=my_geodataframe,
                 >>>     external_id_column="id", data_set_id_column="dataSetId",
                 >>>     property_column_mapping={'position': 'center_xy', 'temperature': 'temp'})
-                >>> created_features = c.geospatial.create_features(my_feature_type.external_id, feature_list)
+                >>> created_features = client.geospatial.create_features(my_feature_type.external_id, feature_list)
 
         """
         features = []

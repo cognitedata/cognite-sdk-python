@@ -38,8 +38,8 @@ class UserProfilesAPI(APIClient):
             Get your own user profile:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.me()
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.me()
         """
         return UserProfile.load(self._get(self._RESOURCE_PATH + "/me").json())
 
@@ -70,12 +70,12 @@ class UserProfilesAPI(APIClient):
             Get a single user profile:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.retrieve("foo")
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.retrieve("foo")
 
             Get multiple user profiles:
 
-                >>> res = c.iam.user_profiles.retrieve(["bar", "baz"])
+                >>> res = client.iam.user_profiles.retrieve(["bar", "baz"])
         """
         identifiers = UserIdentifierSequence.load(user_identifier)
         profiles = self._retrieve_multiple(
@@ -105,8 +105,8 @@ class UserProfilesAPI(APIClient):
             Search for users with first (or second...) name starting with "Alex":
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.search(name="Alex")
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.search(name="Alex")
         """
         return self._search(
             list_cls=UserProfileList,
@@ -131,8 +131,8 @@ class UserProfilesAPI(APIClient):
             List all user profiles:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.list(limit=None)
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.list(limit=None)
         """
         return self._list(
             "GET",

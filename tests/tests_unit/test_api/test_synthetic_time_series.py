@@ -112,6 +112,18 @@ class TestSyntheticQuery:
         assert ("(1/ts{externalId:'a'})", "(1/a)") == cognite_client.time_series.data.synthetic._build_expression(
             1 / symbols("a"), {"a": "a"}
         )
+        assert (
+            "ts{externalId:'x',targetUnit:'temperature:deg_c'}",
+            "a",
+        ) == cognite_client.time_series.data.synthetic._build_expression(
+            symbols("a"), {"a": "x"}, target_unit="temperature:deg_c"
+        )
+        assert (
+            "ts{externalId:'x',targetUnitSystem:'Imperial'}",
+            "a",
+        ) == cognite_client.time_series.data.synthetic._build_expression(
+            symbols("a"), {"a": "x"}, target_unit_system="Imperial"
+        )
 
     @pytest.mark.dsl
     def test_expression_builder_variables_missing(self, cognite_client):

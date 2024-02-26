@@ -34,9 +34,9 @@ class TransformationNotificationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationNotification
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> notifications = [TransformationNotification(transformation_id = 1, destination="my@email.com"), TransformationNotification(transformation_external_id="transformation2", destination="other@email.com"))]
-                >>> res = c.transformations.notifications.create(notifications)
+                >>> res = client.transformations.notifications.create(notifications)
         """
         assert_type(notification, "notification", [TransformationNotificationCore, Sequence])
         return self._create_multiple(
@@ -69,14 +69,14 @@ class TransformationNotificationsAPI(APIClient):
             List all notifications::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> notifications_list = c.transformations.notifications.list()
+                >>> client = CogniteClient()
+                >>> notifications_list = client.transformations.notifications.list()
 
             List all notifications by transformation id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> notifications_list = c.transformations.notifications.list(transformation_id = 1)
+                >>> client = CogniteClient()
+                >>> notifications_list = client.transformations.notifications.list(transformation_id = 1)
         """
         filter = TransformationNotificationFilter(
             transformation_id=transformation_id,
@@ -103,7 +103,7 @@ class TransformationNotificationsAPI(APIClient):
             Delete schedules by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.transformations.notifications.delete(id=[1,2,3])
+                >>> client = CogniteClient()
+                >>> client.transformations.notifications.delete(id=[1,2,3])
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

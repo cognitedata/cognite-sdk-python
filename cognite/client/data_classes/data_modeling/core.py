@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import warnings
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Generic, Literal
@@ -17,7 +16,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
     basic_instance_dump,
 )
-from cognite.client.utils._auxiliary import json_dump_default
+from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
@@ -113,7 +112,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList, Generic[T_WriteCla
             return df
 
         prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
-        if remove_property_prefix:
+        if remove_property_prefix and not prop_df.empty:
             # We only do/allow this if we have a single source:
             view_id, *extra = set(vid for item in self for vid in item.properties)
             if not extra:
@@ -142,7 +141,7 @@ class DataModelingSort(CogniteObject):
         return type(other) is type(self) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=json_dump_default, indent=4)
+        return _json.dumps(self, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
