@@ -17,10 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.25.0] - 2024-02-23
+## [7.25.0] - 2024-02-26
 ### Added
 - In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,
   listing, searching, aggregating, querying and syncing nodes/edges with a target unit or target unit system.
+
+## [7.24.2] - 2024-02-25
+### Fixed
+- [Pyodide/WASM only] The list method for raw rows now works for non-finite queries (got broken in `7.24.1`).
 
 ## [7.24.1] - 2024-02-25
 ### Fixed
