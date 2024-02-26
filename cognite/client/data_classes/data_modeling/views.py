@@ -869,7 +869,7 @@ class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
 
 
 @dataclass
-class PropertyUnitReference:
+class PropertyUnit:
     property: str
     unit: UnitReference | UnitSystemReference
 
@@ -877,7 +877,7 @@ class PropertyUnitReference:
         return {"property": self.property, "unit": self.unit.dump(camel_case)}
 
     @classmethod
-    def load(cls, data: dict) -> PropertyUnitReference:
+    def load(cls, data: dict) -> PropertyUnit:
         return cls(
             property=data["property"],
             unit=UnitReference.load(data["unit"])
@@ -889,7 +889,7 @@ class PropertyUnitReference:
 @dataclass(frozen=True)
 class SourceDef:
     source: ViewId
-    target_units: list[PropertyUnitReference] = field(default_factory=list)
+    target_units: list[PropertyUnit] = field(default_factory=list)
 
     def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -909,7 +909,7 @@ class SourceDef:
 
             return cls(
                 source=view_id,
-                target_units=[PropertyUnitReference.load(v) for v in data.get("targetUnits", [])],
+                target_units=[PropertyUnit.load(v) for v in data.get("targetUnits", [])],
             )
         elif isinstance(data, SourceDef):
             return data
