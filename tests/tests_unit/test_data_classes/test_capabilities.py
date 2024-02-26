@@ -135,7 +135,7 @@ def unknown_cap_with_extra_key():
 class TestCapabilities:
     @pytest.mark.parametrize("access_control", list(all_acls()))
     def test_loads_to_known(self, access_control):
-        cap = Capability.load(access_control)
+        cap = Capability.load(access_control, allow_unknown=False)
 
         assert not isinstance(cap, UnknownAcl)
         assert not isinstance(cap.scope, UnknownScope)

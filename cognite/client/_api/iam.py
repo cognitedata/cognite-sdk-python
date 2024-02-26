@@ -256,7 +256,9 @@ class GroupsAPI(APIClient):
                 >>> res = client.iam.groups.list()
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList.load(res.json()["items"], cognite_client=self._cognite_client)
+        # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
+        # not raise whenever new Acls/actions/scopes are added to the API. So we specifically allow the 'unknown':
+        return GroupList._load(res.json()["items"], cognite_client=self._cognite_client, allow_unknown=True)
 
     @overload
     def create(self, group: Group | GroupWrite) -> Group:
@@ -403,7 +405,8 @@ class TokenAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.iam.token.inspect()
         """
-        return TokenInspection.load(self._get("/api/v1/token/inspect").json(), self._cognite_client)
+        # To not raise whenever new Acls/actions/scopes are added to the API, we specifically allow the unknown:
+        return TokenInspection.load(self._get("/api/v1/token/inspect").json(), self._cognite_client, allow_unknown=True)
 
 
 class SessionsAPI(APIClient):
