@@ -1039,6 +1039,7 @@ class DataModelInstancesAcl(Capability):
     class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
+        Write_Properties = "WRITE_PROPERTIES"
 
     class Scope:
         All = AllScope
