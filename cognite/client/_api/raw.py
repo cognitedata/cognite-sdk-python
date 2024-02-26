@@ -7,7 +7,7 @@ from collections import deque
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, Table, TableList
 from cognite.client.data_classes.raw import RowCore
 from cognite.client.utils._auxiliary import (
@@ -17,13 +17,15 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import ConcurrencySettings, TaskFuture, execute_tasks
+from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
+    from concurrent.futures import Future
+
     import pandas as pd
 
     from cognite.client import CogniteClient
@@ -358,7 +360,7 @@ class RawRowsAPI(APIClient):
         Returns:
             Iterator[Row] | Iterator[RowList]: An iterator yielding the requested row or rows.
         """
-        if partitions is None:
+        if partitions is None or _RUNNING_IN_BROWSER:
             return self._list_generator(
                 list_cls=RowList,
                 resource_cls=Row,
@@ -428,7 +430,7 @@ class RawRowsAPI(APIClient):
 
         quit_early = threading.Event()
         results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
-        pool = ConcurrencySettings.get_executor(max_workers=self._config.max_workers)
+        pool = ConcurrencySettings.get_thread_pool_executor_or_raise(max_workers=self._config.max_workers)
         futures = [pool.submit(exhaust, task, results, quit_early) for task in read_iterators]
 
         if finite_limit:
@@ -439,7 +441,7 @@ class RawRowsAPI(APIClient):
         for f in futures:
             f.cancelled() or f.result()  # Visibility in case anything failed
 
-    def _read_rows_unlimited(self, futures: list[TaskFuture], results: deque[RowList]) -> Iterator[RowList]:
+    def _read_rows_unlimited(self, futures: list[Future], results: deque[RowList]) -> Iterator[RowList]:
         while not all(f.done() for f in futures):
             while results:
                 yield results.popleft()
@@ -447,7 +449,7 @@ class RawRowsAPI(APIClient):
         yield from results
 
     def _read_rows_limited(
-        self, futures: list[TaskFuture], results: deque[RowList], limit: int, quit_early: threading.Event
+        self, futures: list[Future], results: deque[RowList], limit: int, quit_early: threading.Event
     ) -> Iterator[RowList]:
         n_total = 0
         while True:

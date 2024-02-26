@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
 )
 
+from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
@@ -127,50 +128,16 @@ class TaskFuture(Protocol[T_Result]):
     def result(self) -> T_Result:
         ...
 
-    def done(self) -> bool:
-        ...
-
-    def cancel(self) -> bool:
-        ...
-
-    def cancelled(self) -> bool:
-        ...
-
 
 class SyncFuture(TaskFuture[T_Result]):
-    """Best effort to follow: https://docs.python.org/3/library/concurrent.futures.html#future-objects
-
-    ...except: We don't care about storing any possible exception; if anything happens, they will immediately
-    be raised for the user anyway"""
-
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
         self._task = functools.partial(fn, *args, **kwargs)
-        self._result: T_Result
-        self._has_run: bool = False
-        self._cancelled: bool = False
+        self._result: T_Result | None = None
 
     def result(self) -> T_Result:
-        if self._cancelled:
-            raise CancelledError
-        if not self._has_run:
-            self._has_run = True
+        if self._result is None:
             self._result = self._task()
         return self._result
-
-    def done(self) -> Literal[True]:
-        if self._cancelled or self._has_run:
-            return True
-        self.result()
-        return True
-
-    def cancel(self) -> bool:
-        if self._has_run:
-            return False
-        self._cancelled = True
-        return True
-
-    def cancelled(self) -> bool:
-        return self._cancelled
 
 
 class MainThreadExecutor(TaskExecutor):
@@ -203,18 +170,18 @@ class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
 
     @classmethod
-    def use_threadpool(cls) -> bool:
+    def uses_threadpool(cls) -> bool:
         return cls.executor_type == "threadpool"
 
     @classmethod
-    def use_mainthread(cls) -> bool:
+    def uses_mainthread(cls) -> bool:
         return cls.executor_type == "mainthread"
 
     @classmethod
     def get_executor(cls, max_workers: int) -> TaskExecutor:
-        if cls.use_threadpool():
+        if cls.uses_threadpool():
             return cls.get_thread_pool_executor(max_workers)
-        elif cls.use_mainthread():
+        elif cls.uses_mainthread():
             return cls.get_mainthread_executor()
         raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
 
@@ -224,7 +191,7 @@ class ConcurrencySettings:
 
     @classmethod
     def get_thread_pool_executor(cls, max_workers: int) -> ThreadPoolExecutor:
-        assert cls.use_threadpool(), "use get_executor instead"
+        assert cls.uses_threadpool(), "use get_executor instead"
         global _THREAD_POOL_EXECUTOR_SINGLETON
 
         if max_workers < 1:
@@ -237,6 +204,17 @@ class ConcurrencySettings:
         return executor
 
     @classmethod
+    def get_thread_pool_executor_or_raise(cls, max_workers: int) -> ThreadPoolExecutor:
+        if cls.uses_threadpool():
+            return cls.get_thread_pool_executor(max_workers)
+
+        if _RUNNING_IN_BROWSER:
+            raise RuntimeError("The method you tried to use is not available in Pyodide/WASM")
+        raise RuntimeError(
+            "The method you tried to use requires a version of Python with a working implementation of threads."
+        )
+
+    @classmethod
     def get_data_modeling_executor(cls) -> ThreadPoolExecutor:
         """
         The data modeling backend has different concurrency limits compared with the rest of CDF.
@@ -245,7 +223,7 @@ class ConcurrencySettings:
         Returns:
             ThreadPoolExecutor: The data modeling executor.
         """
-        if cls.use_mainthread():
+        if cls.uses_mainthread():
             return cls.get_mainthread_executor()  # type: ignore [return-value]
 
         global _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
@@ -300,7 +278,7 @@ def execute_tasks(
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
     be changed using ConcurrencySettings.executor_type.
     """
-    if ConcurrencySettings.use_mainthread() or isinstance(executor, MainThreadExecutor):
+    if ConcurrencySettings.uses_mainthread() or isinstance(executor, MainThreadExecutor):
         return execute_tasks_serially(func, tasks, fail_fast)
 
     executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)

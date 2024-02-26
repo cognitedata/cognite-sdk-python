@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.24.1] - 2024-02-25
+### Fixed
+- [Pyodide/WASM only] The iteration method for raw rows now yields rows _while running_ (instead of waiting for tasks to finish first).
+
 ## [7.24.0] - 2024-02-25
 ### Added
 - New parameter for `client.raw.rows(...)`: `partitions`. This enables greater throughput thorough concurrent reads when using
