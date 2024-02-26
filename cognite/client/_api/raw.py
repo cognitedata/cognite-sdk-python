@@ -748,7 +748,9 @@ class RawRowsAPI(APIClient):
                 ...     row_list  # do something with the rows
         """
         chunk_size = None
-        if partitions is None:
+        if _RUNNING_IN_BROWSER:
+            chunk_size = 10_000
+        elif partitions is None:
             if is_unlimited(limit):
                 # Before 'partitions' was introduced, existing logic was that 'limit=None' meant 'partitions=max_workers'.
                 partitions = self._config.max_workers
