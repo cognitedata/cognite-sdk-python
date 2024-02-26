@@ -932,6 +932,6 @@ class SourceDefList(UserList):
         if isinstance(data, (View, SourceDef, ViewId)) or (
             isinstance(data, tuple) and 2 <= len(data) <= 3 and all(isinstance(v, str) for v in data)
         ):
-            data = [data]  # type: ignore[assignment]
+            data = [data]
 
-        return cls([SourceDef.load(v) for v in data])  # type: ignore[call-arg, arg-type]
+        return cls([SourceDef.load(v) for v in data])  # type: ignore[arg-type]
