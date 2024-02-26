@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast
 
 from typing_extensions import Self, TypeAlias
@@ -869,7 +869,7 @@ class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
 
 
 @dataclass
-class PropertyUnit:
+class PropertyUnit(CogniteObject):
     property: str
     unit: UnitReference | UnitSystemReference
 
@@ -877,30 +877,41 @@ class PropertyUnit:
         return {"property": self.property, "unit": self.unit.dump(camel_case)}
 
     @classmethod
-    def load(cls, data: dict) -> PropertyUnit:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> PropertyUnit:
         return cls(
-            property=data["property"],
-            unit=UnitReference.load(data["unit"])
-            if "externalId" in data["unit"]
-            else UnitSystemReference.load(data["unit"]),
+            property=resource["property"],
+            unit=UnitReference.load(resource["unit"])
+            if "externalId" in resource["unit"]
+            else UnitSystemReference.load(resource["unit"]),
         )
 
 
-@dataclass(frozen=True)
-class SourceDef:
-    source: ViewId
-    target_units: list[PropertyUnit] = field(default_factory=list)
+class SourceCore(CogniteObject):
+    def __init__(self, source: ViewId, target_units: list[PropertyUnit] | None = None) -> None:
+        self.source = source
+        self.target_units = target_units
 
-    def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {
-            "source": self.source.dump(camel_case, include_type=True),
-        }
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"source": self.source.dump(camel_case)}
         if self.target_units:
             output["targetUnits"] = [v.dump(camel_case) for v in self.target_units]
         return output
 
     @classmethod
-    def load(cls, data: dict | SourceDef | tuple[str, str] | tuple[str, str, str] | ViewId | View) -> SourceDef:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            source=ViewId.load(resource["source"]),
+            target_units=[PropertyUnit.load(v) for v in resource.get("targetUnits", [])] or None,
+        )
+
+
+class SourceDef(SourceCore):
+    @classmethod
+    def _load(
+        cls,
+        data: dict | SourceDef | tuple[str, str] | tuple[str, str, str] | ViewId | View,
+        cognite_client: CogniteClient | None = None,
+    ) -> SourceDef:
         if isinstance(data, dict):
             if "source" in data:
                 view_id = ViewId.load(data["source"])
@@ -934,4 +945,4 @@ class SourceDefList(UserList):
         ):
             data = [data]
 
-        return cls([SourceDef.load(v) for v in data])  # type: ignore[arg-type]
+        return cls([SourceDef._load(v) for v in data])  # type: ignore[arg-type]
