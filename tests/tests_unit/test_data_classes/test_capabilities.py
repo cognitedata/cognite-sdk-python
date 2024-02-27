@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 import cognite.client.data_classes.capabilities as capabilities_module  # F401
+from cognite.client.data_classes import Group, GroupList
 from cognite.client.data_classes.capabilities import (
     AllProjectsScope,
     AllScope,
@@ -145,8 +146,7 @@ class TestCapabilities:
 
         assert not isinstance(cap, UnknownAcl)
         assert not isinstance(cap.scope, UnknownScope)
-        for action in cap.actions:
-            assert action is not UnknownAcl.Action.Unknown
+        assert all(isinstance(action, Capability.Action) for action in cap.actions)
 
     @pytest.mark.parametrize(
         "raw",
@@ -213,10 +213,10 @@ class TestCapabilities:
         "raw", [{"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}]
     )
     def test_load_dump_unknown(self, raw: dict[str, Any]) -> None:
-        capability = Capability.load(raw)
+        capability = Capability.load(raw, allow_unknown=True)
         assert isinstance(capability, UnknownAcl)
         assert isinstance(capability.scope, UnknownScope)
-        assert all(action is UnknownAcl.Action.Unknown for action in capability.actions)
+        assert all(isinstance(action, Capability.Action) for action in capability.actions)
         assert capability.raw_data == raw
         assert capability.dump(camel_case=True) == raw
 
@@ -244,6 +244,8 @@ class TestCapabilities:
     def test_load__action_does_not_exist(self, acl_cls_name: str, bad_action: str, dumped: dict[str, Any]) -> None:
         with pytest.raises(ValueError, match=rf"^'{bad_action}' is not a valid {acl_cls_name} Action$"):
             Capability.load(dumped)
+
+        assert Capability.load(dumped, allow_unknown=True)
 
     def test_create_capability_forget_initializing_scope(self):
         # Ensure these do not raise. All other scopes require arguments and so will
@@ -277,10 +279,7 @@ class TestCapabilities:
 
 @pytest.fixture
 def proj_cap_allprojects_dct():
-    return {
-        "labelsAcl": {"actions": ["READ"], "scope": {"all": {}}},
-        "projectScope": {"allProjects": {}},
-    }
+    return {"labelsAcl": {"actions": ["READ"], "scope": {"all": {}}}, "projectScope": {"allProjects": {}}}
 
 
 @pytest.fixture
@@ -308,6 +307,76 @@ def proj_capabs_list(project_name):
             ),
         ]
     )
+
+
+@pytest.fixture
+def unknown_acls_items():
+    return [
+        # Unknown capability:
+        {"funkyAssetsAcl": {"actions": ["READ"], "scope": {"all": {}}}},
+        # Unknown action:
+        {"assetsAcl": {"actions": ["READ", "UN-KN-OWN"], "scope": {"all": {}}}},
+        # Unknown scope:
+        {"assetsAcl": {"actions": ["READ"], "scope": {"astronautSpace": {"name": ["buzz"]}}}},
+        # Unknown -everything-:
+        {"funkyAssetsAcl": {"actions": ["UN-KN-OWN"], "scope": {"astronautSpace": {"name": ["buzz"]}}}},
+    ]
+
+
+@pytest.fixture
+def mock_groups_resp(rsps, cognite_client, unknown_acls_items):
+    response_body = {
+        "items": [
+            {
+                "name": "my name",
+                "id": 123,
+                "source_id": "something-uuid-like",
+                "capabilities": [unknown],
+            }
+            for unknown in unknown_acls_items
+        ]
+    }
+    url_pattern = cognite_client.iam.groups._get_base_url_with_base_path() + "/groups?all=False"
+    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
+@pytest.fixture
+def mock_token_inspect_resp(rsps, cognite_client, unknown_acls_items):
+    response_body = {
+        "subject": "a49ba849-c0d7-abcd-dcba-8a1f0366aaaf",
+        "projects": [{"projectUrlName": "my-sandbox", "groups": [229705, 863871]}],
+        "capabilities": [{"projectScope": {"projects": ["my-sandbox"]}, **unknown} for unknown in unknown_acls_items],
+    }
+    url_pattern = cognite_client.iam.token._get_base_url_with_base_path() + "/api/v1/token/inspect"
+    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
+class TestCogniteClientDoesntRaiseOnUnknownAcls:
+    def test_groups_list(self, cognite_client, mock_groups_resp, unknown_acls_items):
+        groups = cognite_client.iam.groups.list()
+
+        expected = [
+            [{"funkyAssetsAcl": {"actions": ["READ"], "scope": {"all": {}}}}],
+            [{"assetsAcl": {"actions": ["READ", "UN-KN-OWN"], "scope": {"all": {}}}}],
+            [{"assetsAcl": {"actions": ["READ"], "scope": {"astronautSpace": {"name": ["buzz"]}}}}],
+            [{"funkyAssetsAcl": {"actions": ["UN-KN-OWN"], "scope": {"astronautSpace": {"name": ["buzz"]}}}}],
+        ]
+        assert expected == [g["capabilities"] for g in groups.dump()]
+
+        # Ensure that the capabilities that did -not- raise from groups/list, would raise for a normal user:
+        with pytest.raises(ValueError, match="^Could not instantiate UnknownAcl due to: 'funkyAssetsAcl"):
+            GroupList.load(groups.dump(camel_case=True))
+
+        # ...and ensure each individual (acl/action/scope) raises:
+        for unknown_acl in unknown_acls_items:
+            with pytest.raises(ValueError, match="^Could not instantiate|is not a valid AssetsAcl Action$"):
+                Group.load({"name": "me", "id": 123, "source_id": "huh", "capabilities": [unknown_acl]})
+
+    def test_token_inspect(self, cognite_client, mock_token_inspect_resp):
+        # Mostly a repeat of test_groups_list, ensuring token/inspect won't ever raise
+        assert cognite_client.iam.token.inspect()
 
 
 class TestProjectCapabilityList:
@@ -401,13 +470,10 @@ class TestIAMCompareCapabilities:
             assert RawAcl([RawAcl.Action.Write], RawAcl.Scope.Table({"db1": ["t1"]})) in missing
 
     def test_unknown_existing_capability(self, cognite_client):
-        desired = [
-            Capability.load({"datasetsAcl": {"actions": ["READ"], "scope": {"all": {}}}}),
-        ]
+        desired = [Capability.load({"datasetsAcl": {"actions": ["READ"], "scope": {"all": {}}}})]
         unknown = Capability.load(
             {"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}
         )
-
         missing = cognite_client.iam.compare_capabilities(unknown, desired)
         assert missing == desired
 
@@ -454,8 +520,7 @@ def test_idscopes_camel_case():
 @pytest.mark.parametrize("capability", Capability.__subclasses__())
 def test_show_example_usage(capability):
     if capability is UnknownAcl:
-        with pytest.raises(NotImplementedError):
-            capability.show_example_usage()
+        assert not capability.show_example_usage()
     elif capability is capabilities_module.LegacyCapability:
         pytest.skip("LegacyCapability is abstract")
     else:
