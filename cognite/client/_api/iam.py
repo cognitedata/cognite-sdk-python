@@ -289,7 +289,7 @@ class GroupsAPI(APIClient):
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
                 >>> my_capabilities = [
-                ...     AssetsAcl([AssetsAcl.Action.List], AssetsAcl.Scope.All()),
+                ...     AssetsAcl([AssetsAcl.Action.Read], AssetsAcl.Scope.All()),
                 ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
