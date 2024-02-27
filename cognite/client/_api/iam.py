@@ -249,11 +249,15 @@ class GroupsAPI(APIClient):
 
         Example:
 
-            List groups::
+            List your own groups:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.iam.groups.list()
+
+            List all groups:
+
+                >>> res = client.iam.groups.list(all=True)
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
@@ -282,9 +286,11 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GroupWrite
-                >>> from cognite.client.data_classes.capabilities import GroupsAcl
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
-                >>> my_capabilities = [GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All())]
+                >>> my_capabilities = [
+                ...     AssetsAcl([AssetsAcl.Action.List], AssetsAcl.Scope.All()),
+                ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
         """
