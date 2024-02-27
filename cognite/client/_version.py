@@ -1,4 +1,4 @@
 from __future__ import annotations
 
-__version__ = "7.18.0"
+__version__ = "7.24.3"
 __api_subversion__ = "20230101"

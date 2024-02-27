@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.18.0] - 2024-02-08
+## [7.24.3] - 2024-02-27
 ### Fixed
 - Fix handling of GeometryCollection objects in the Documents API.
 
