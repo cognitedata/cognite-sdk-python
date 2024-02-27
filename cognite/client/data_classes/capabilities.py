@@ -41,7 +41,7 @@ class Capability(ABC):
         try:
             # There are so many things that may fail validation; non-enum passed, not iterable etc.
             # We always want to show the example usage to the user.
-            if not self.allow_unknown:  # type: ignore [attr-defined]
+            if not self.allow_unknown:
                 self._validate()
         except Exception as err:
             raise ValueError(
@@ -158,7 +158,7 @@ class Capability(ABC):
                 capability_cls(
                     actions=[capability_cls.Action.load(act, allow_unknown) for act in resource[name]["actions"]],
                     scope=Capability.Scope.load(resource[name]["scope"]),
-                    allow_unknown=allow_unknown,  # type: ignore [call-arg]
+                    allow_unknown=allow_unknown,
                 ),
             )
         elif not known_acls and len(resource) == 1:
