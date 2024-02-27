@@ -199,7 +199,7 @@ class TestCogniteObject:
     def test_writable_as_write(
         self, cognite_writable_cls: type[WriteableCogniteResource], cognite_mock_client_placeholder
     ):
-        instance_generator = FakeCogniteResourceGenerator(seed=54, cognite_client=cognite_mock_client_placeholder)
+        instance_generator = FakeCogniteResourceGenerator(seed=69_1337, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_writable_cls)
 
         write_format = instance.as_write()
@@ -218,7 +218,7 @@ class TestCogniteObject:
         self, writable_list: type[WriteableCogniteResourceList], cognite_mock_client_placeholder
     ):
         resource_cls = writable_list._RESOURCE
-        instance_generator = FakeCogniteResourceGenerator(seed=54, cognite_client=cognite_mock_client_placeholder)
+        instance_generator = FakeCogniteResourceGenerator(seed=53, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(resource_cls)
         # Setting the cognite_client to None as the `as_write` should not fail if the client is not set.
         instance_list = writable_list([instance], cognite_client=None)
@@ -284,7 +284,7 @@ class TestCogniteObject:
     )
     def test_yaml_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
-            seed=66, cognite_client=cognite_mock_client_placeholder
+            seed=65, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
@@ -420,7 +420,7 @@ class TestCogniteResource:
     )
     def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
-            seed=66, cognite_client=cognite_mock_client_placeholder
+            seed=64, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
 
         yaml_serialised = instance.dump_yaml()
