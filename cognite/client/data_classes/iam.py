@@ -289,9 +289,19 @@ class ProjectSpec(CogniteResponse):
         self.url_name = url_name
         self.groups = groups
 
+    @property
+    def project_url_name(self) -> str:
+        return self.url_name
+
     @classmethod
     def load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, str | list[int]]:
+        return {
+            "projectUrlName" if camel_case else "project_url_name": self.url_name,
+            "groups": self.groups,
+        }
 
 
 class TokenInspection(CogniteResponse):
