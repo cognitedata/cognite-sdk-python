@@ -88,9 +88,8 @@ class Capability(ABC):
                 return cls(action)
             except ValueError:
                 if allow_unknown:
-                    name = action.title()
-                    Action = enum.Enum("Action", {name: action}, type=Capability.Action)  # type: ignore [misc]
-                    return Action[name]  # type: ignore [return-value]
+                    Action = enum.Enum("Action", {action.title(): action}, type=Capability.Action)  # type: ignore [misc]
+                    return Action(action)  # type: ignore [return-value]
                 raise
 
     @dataclass(frozen=True)
