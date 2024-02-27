@@ -293,7 +293,7 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
         for proj_cap in self:
             cap = proj_cap.capability
             if isinstance(cap, UnknownAcl):
-                warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
+                warnings.warn(f"Unknown capability {cap.capability_name!r} will be ignored in comparison")
                 continue
             if isinstance(cap, LegacyCapability):
                 # Legacy capabilities are no longer in use, so they are safe to skip.

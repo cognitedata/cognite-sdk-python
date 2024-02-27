@@ -357,21 +357,16 @@ class TestCogniteClientDoesntRaiseOnUnknownAcls:
     def test_groups_list(self, cognite_client, mock_groups_resp, unknown_acls_items):
         groups = cognite_client.iam.groups.list()
 
-        expected = [
-            [{"funkyAssetsAcl": {"actions": ["READ"], "scope": {"all": {}}}}],
-            [{"assetsAcl": {"actions": ["READ", "UN-KN-OWN"], "scope": {"all": {}}}}],
-            [{"assetsAcl": {"actions": ["READ"], "scope": {"astronautSpace": {"name": ["buzz"]}}}}],
-            [{"funkyAssetsAcl": {"actions": ["UN-KN-OWN"], "scope": {"astronautSpace": {"name": ["buzz"]}}}}],
-        ]
+        expected = [[unknown_acl] for unknown_acl in unknown_acls_items]
         assert expected == [g["capabilities"] for g in groups.dump()]
 
         # Ensure that the capabilities that did -not- raise from groups/list, would raise for a normal user:
-        with pytest.raises(ValueError, match="^Could not instantiate UnknownAcl due to: 'funkyAssetsAcl"):
+        with pytest.raises(ValueError, match="^'READ' is not a valid Action"):
             GroupList.load(groups.dump(camel_case=True))
 
         # ...and ensure each individual (acl/action/scope) raises:
         for unknown_acl in unknown_acls_items:
-            with pytest.raises(ValueError, match="^Could not instantiate|is not a valid AssetsAcl Action$"):
+            with pytest.raises(ValueError, match="is not a valid |^Could not instantiate "):
                 Group.load({"name": "me", "id": 123, "source_id": "huh", "capabilities": [unknown_acl]})
 
     def test_token_inspect(self, cognite_client, mock_token_inspect_resp):
@@ -472,7 +467,8 @@ class TestIAMCompareCapabilities:
     def test_unknown_existing_capability(self, cognite_client):
         desired = [Capability.load({"datasetsAcl": {"actions": ["READ"], "scope": {"all": {}}}})]
         unknown = Capability.load(
-            {"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}
+            {"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}},
+            allow_unknown=True,
         )
         missing = cognite_client.iam.compare_capabilities(unknown, desired)
         assert missing == desired
