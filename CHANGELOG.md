@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.24.3] - 2024-02-27
+### Fixed
+- Fix handling of GeometryCollection objects in the Documents API.
+
 ## [7.24.2] - 2024-02-25
 ### Fixed
 - [Pyodide/WASM only] The list method for raw rows now works for non-finite queries (got broken in `7.24.1`).
