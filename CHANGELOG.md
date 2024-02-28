@@ -17,7 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.24.3] - 2024-02-27
+## [7.24.4] - 2024-02-28
+### Fixed
+- Unknown ACLs, actions or scopes no longer causes `IAMAPI.[groups.list(...), token.inspect()]` to raise.
+### Added
+- New action for `DataModelInstancesAcl` added: `Write_Properties`.
+
+## [7.24.3] - 2024-02-28
 ### Fixed
 - Fix handling of GeometryCollection objects in the Documents API.
 
