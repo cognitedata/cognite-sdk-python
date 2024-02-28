@@ -75,7 +75,7 @@ class Query(CogniteObject):
 
     Args:
         with_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
-        select (dict[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
+        select (dict[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with_ dictionary. The select expressions define which properties to include in the result set.
         parameters (dict[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These are for pagination purposes, for example, in the sync endpoint.
     """
