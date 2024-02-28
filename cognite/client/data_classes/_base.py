@@ -146,8 +146,8 @@ class CogniteObject:
         yaml = local_import("yaml")
         return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
-    @classmethod
     @final
+    @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         if isinstance(resource, dict):
@@ -373,8 +373,8 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
 
-    @classmethod
     @final
+    @classmethod
     def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or iterable of dict."""
         if isinstance(resource, str):

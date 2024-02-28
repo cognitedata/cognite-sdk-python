@@ -249,14 +249,20 @@ class GroupsAPI(APIClient):
 
         Example:
 
-            List groups::
+            List your own groups:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.iam.groups.list()
+
+            List all groups:
+
+                >>> res = client.iam.groups.list(all=True)
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList.load(res.json()["items"], cognite_client=self._cognite_client)
+        # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
+        # not raise whenever new Acls/actions/scopes are added to the API. So we specifically allow the 'unknown':
+        return GroupList._load(res.json()["items"], cognite_client=self._cognite_client, allow_unknown=True)
 
     @overload
     def create(self, group: Group | GroupWrite) -> Group:
@@ -280,9 +286,11 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GroupWrite
-                >>> from cognite.client.data_classes.capabilities import GroupsAcl
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
-                >>> my_capabilities = [GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All())]
+                >>> my_capabilities = [
+                ...     AssetsAcl([AssetsAcl.Action.Read], AssetsAcl.Scope.All()),
+                ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
         """
@@ -403,7 +411,8 @@ class TokenAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.iam.token.inspect()
         """
-        return TokenInspection.load(self._get("/api/v1/token/inspect").json(), self._cognite_client)
+        # To not raise whenever new Acls/actions/scopes are added to the API, we specifically allow the unknown:
+        return TokenInspection.load(self._get("/api/v1/token/inspect").json(), self._cognite_client, allow_unknown=True)
 
 
 class SessionsAPI(APIClient):
