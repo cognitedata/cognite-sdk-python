@@ -535,6 +535,10 @@ class InstancesAPI(APIClient):
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
             other_params["sources"] = [source.dump() for source in SourceSelector._load_list(sources)]
+            if with_properties := [s["viewId"] for s in other_params["sources"] if "properties" in s]:
+                raise ValueError(
+                    f"Properties are not supported in this context. Got in source argument for view IDs {with_properties}"
+                )
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
                 other_params["sort"] = [cls._dump_instance_sort(sort)]
