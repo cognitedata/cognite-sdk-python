@@ -49,6 +49,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
+from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -445,6 +446,17 @@ class TestInstancesAPI:
             view_id, query="Quentin", properties=["name"], filter=born_after_2000
         )
         assert len(search_result) == 0
+
+    def test_search_with_sort(self, cognite_client: CogniteClient, person_view: View) -> None:
+        search = lambda direction: cognite_client.data_modeling.instances.search(
+            person_view.as_id(),
+            query="",
+            filter=Prefix(["node", "externalId"], "person:j"),
+            sort=InstanceSort(["node", "externalId"], direction=direction),
+        )
+        expected_result_asc = ["person:jamie_foxx", "person:joel_coen", "person:john_travolta"]
+        assert [node.external_id for node in search("ascending")] == expected_result_asc
+        assert [node.external_id for node in search("descending")] == list(reversed(expected_result_asc))
 
     def test_aggregate_histogram_across_nodes(self, cognite_client: CogniteClient, person_view: View) -> None:
         view_id = person_view.as_id()
