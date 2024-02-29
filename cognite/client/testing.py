@@ -31,6 +31,7 @@ from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, Functi
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
+from cognite.client._api.projects import ProjectsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -112,6 +113,7 @@ class CogniteClientMock(MagicMock):
         self.geospatial = MagicMock(spec_set=GeospatialAPI)
 
         self.iam = MagicMock(spec=IAMAPI)
+        self.iam.projects = MagicMock(spec_set=ProjectsAPI)
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)

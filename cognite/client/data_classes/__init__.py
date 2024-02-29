@@ -152,6 +152,17 @@ from cognite.client.data_classes.labels import (
     LabelDefinitionWrite,
     LabelFilter,
 )
+from cognite.client.data_classes.projects import (
+    Claim,
+    OIDCConfiguration,
+    Project,
+    ProjectList,
+    ProjectUpdate,
+    ProjectURLName,
+    ProjectURLNameList,
+    ProjectWrite,
+    ProjectWriteList,
+)
 from cognite.client.data_classes.raw import (
     Database,
     DatabaseList,
@@ -277,7 +288,7 @@ from cognite.client.data_classes.transformations.schema import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
-from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
+from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList, UserProfilesConfiguration
 from cognite.client.data_classes.workflows import (
     CancelExecution,
     CDFTaskOutput,
@@ -533,6 +544,7 @@ __all__ = [
     "CoordinateReferenceSystem",
     "UserProfile",
     "UserProfileList",
+    "UserProfilesConfiguration",
     "CancelExecution",
     "WorkflowUpsert",
     "WorkflowExecution",
@@ -559,4 +571,13 @@ __all__ = [
     "WorkflowTask",
     "WorkflowUpsertList",
     "WorkflowVersionUpsertList",
+    "Project",
+    "ProjectUpdate",
+    "ProjectWrite",
+    "ProjectURLName",
+    "ProjectURLNameList",
+    "ProjectWriteList",
+    "ProjectList",
+    "OIDCConfiguration",
+    "Claim",
 ]

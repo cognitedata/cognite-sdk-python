@@ -16,6 +16,25 @@ Inspect the token currently used by the client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.TokenAPI.inspect
 
+Projects
+^^^^^^^^^
+Create projects
+~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.projects.ProjectsAPI.create
+
+List projects
+~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.projects.ProjectsAPI.list
+
+Retrieve project
+~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.projects.ProjectsAPI.retrieve
+
+Update project
+~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.projects.ProjectsAPI.update
+
+
 Groups
 ^^^^^^
 List groups
@@ -91,6 +110,10 @@ Search for user profiles
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam
+    :members:
+    :show-inheritance:
+
+.. automodule:: cognite.client.data_classes.projects
     :members:
     :show-inheritance:
 

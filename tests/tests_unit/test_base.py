@@ -11,7 +11,7 @@ import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
-from cognite.client.data_classes import Feature, FeatureAggregate
+from cognite.client.data_classes import Feature, FeatureAggregate, Project
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -194,6 +194,8 @@ class TestCogniteObject:
         [
             pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
             for class_ in all_concrete_subclasses(WriteableCogniteResource)
+            # Project does not support as_write
+            if class_ is not Project
         ],
     )
     def test_writable_as_write(
