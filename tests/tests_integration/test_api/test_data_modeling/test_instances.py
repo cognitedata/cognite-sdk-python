@@ -48,7 +48,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.views import PropertyUnit, SourceDef
+from cognite.client.data_classes.data_modeling.views import PropertyUnit
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -579,7 +579,9 @@ class TestInstancesAPI:
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
         node = node_with_1_1_pressure_in_bar
-        source = SourceDef(unit_view.as_id(), [PropertyUnit("pressure", UnitReference("pressure:pa"))])
+        source = SourceSelector(
+            unit_view.as_id(), target_units=[PropertyUnit("pressure", UnitReference("pressure:pa"))]
+        )
 
         retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
         assert retrieved.nodes
@@ -588,7 +590,9 @@ class TestInstancesAPI:
     def test_list_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
-        source = SourceDef(unit_view.as_id(), [PropertyUnit("pressure", UnitReference("pressure:pa"))])
+        source = SourceSelector(
+            unit_view.as_id(), target_units=[PropertyUnit("pressure", UnitReference("pressure:pa"))]
+        )
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
         listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
 

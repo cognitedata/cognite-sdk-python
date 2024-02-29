@@ -14,6 +14,7 @@ from typing import (
     List,
     Literal,
     Sequence,
+    Tuple,
     Union,
     cast,
     overload,
@@ -36,7 +37,6 @@ from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
     ViewId,
-    ViewIdentifier,
     _load_identifier,
 )
 from cognite.client.data_classes.data_modeling.instances import (
@@ -60,8 +60,9 @@ from cognite.client.data_classes.data_modeling.instances import (
 from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
+    SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.views import PropertyUnit, SourceDef, SourceDefList, View
+from cognite.client.data_classes.data_modeling.views import PropertyUnit, View
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings
@@ -94,7 +95,8 @@ _DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
 
 logger = logging.getLogger(__name__)
 
-Source: TypeAlias = Union[SourceDef, View, ViewIdentifier]
+
+Source: TypeAlias = Union[SourceSelector, View, ViewId, Tuple[str, str], Tuple[str, str, str]]
 
 
 class _NodeOrEdgeList(CogniteResourceList):
@@ -532,7 +534,7 @@ class InstancesAPI(APIClient):
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
-            other_params["sources"] = SourceDefList.load(sources).dump()
+            other_params["sources"] = [source.dump() for source in SourceSelector._load_list(sources)]
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
                 other_params["sort"] = [cls._dump_instance_sort(sort)]
