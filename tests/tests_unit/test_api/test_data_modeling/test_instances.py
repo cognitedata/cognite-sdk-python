@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client.data_classes.data_modeling.ids import ViewId
-from cognite.client.data_classes.data_modeling.views import SourceDefList
+from cognite.client.data_classes.data_modeling.query import SourceSelector
 from tests.tests_unit.test_api.test_data_modeling.conftest import make_test_view
 
 SINGLE_SRC_DUMP = {"source": {"space": "a", "externalId": "b", "version": "c", "type": "view"}}
@@ -35,4 +35,4 @@ class TestSourceDef:
         # We need to support:
         # ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
         # ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]
-        assert expected == SourceDefList.load(sources).dump()
+        assert expected == [source.dump() for source in SourceSelector._load_list(sources)]

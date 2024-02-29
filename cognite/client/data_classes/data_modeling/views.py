@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from collections import UserList
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from typing_extensions import Self, TypeAlias
 
@@ -23,7 +22,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     UnitReference,
     UnitSystemReference,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_snake_case
 
@@ -884,65 +883,3 @@ class PropertyUnit(CogniteObject):
             if "externalId" in resource["unit"]
             else UnitSystemReference.load(resource["unit"]),
         )
-
-
-class SourceCore(CogniteObject):
-    def __init__(self, source: ViewId, target_units: list[PropertyUnit] | None = None) -> None:
-        self.source = source
-        self.target_units = target_units
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {"source": self.source.dump(camel_case)}
-        if self.target_units:
-            output["targetUnits"] = [v.dump(camel_case) for v in self.target_units]
-        return output
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            source=ViewId.load(resource["source"]),
-            target_units=[PropertyUnit.load(v) for v in resource.get("targetUnits", [])] or None,
-        )
-
-
-class SourceDef(SourceCore):
-    @classmethod
-    def _load(
-        cls,
-        data: dict | SourceDef | tuple[str, str] | tuple[str, str, str] | ViewId | View,
-        cognite_client: CogniteClient | None = None,
-    ) -> SourceDef:
-        if isinstance(data, dict):
-            if "source" in data:
-                view_id = ViewId.load(data["source"])
-            else:
-                view_id = ViewId.load(data)
-
-            return cls(
-                source=view_id,
-                target_units=[PropertyUnit.load(v) for v in data.get("targetUnits", [])],
-            )
-        elif isinstance(data, SourceDef):
-            return data
-
-        if isinstance(data, View):
-            view_id = data.as_id()
-        else:
-            view_id = ViewId.load(data)
-        return cls(source=view_id)
-
-
-class SourceDefList(UserList):
-    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
-        return [v.dump(camel_case) for v in self]
-
-    @classmethod
-    def load(
-        cls, data: ViewIdentifier | View | SourceDef | Sequence[ViewIdentifier | View | SourceDef]
-    ) -> SourceDefList:
-        if isinstance(data, (View, SourceDef, ViewId)) or (
-            isinstance(data, tuple) and 2 <= len(data) <= 3 and all(isinstance(v, str) for v in data)
-        ):
-            data = [data]
-
-        return cls([SourceDef._load(v) for v in data])  # type: ignore[arg-type]
