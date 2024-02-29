@@ -868,7 +868,7 @@ class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
 
 
 @dataclass
-class PropertyUnit(CogniteObject):
+class TargetUnit(CogniteObject):
     property: str
     unit: UnitReference | UnitSystemReference
 
@@ -876,7 +876,7 @@ class PropertyUnit(CogniteObject):
         return {"property": self.property, "unit": self.unit.dump(camel_case)}
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> PropertyUnit:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TargetUnit:
         return cls(
             property=resource["property"],
             unit=UnitReference.load(resource["unit"])

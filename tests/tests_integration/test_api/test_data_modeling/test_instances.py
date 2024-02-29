@@ -48,7 +48,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.views import PropertyUnit
+from cognite.client.data_classes.data_modeling.views import TargetUnit
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -579,9 +579,7 @@ class TestInstancesAPI:
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
         node = node_with_1_1_pressure_in_bar
-        source = SourceSelector(
-            unit_view.as_id(), target_units=[PropertyUnit("pressure", UnitReference("pressure:pa"))]
-        )
+        source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
 
         retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
         assert retrieved.nodes
@@ -590,9 +588,7 @@ class TestInstancesAPI:
     def test_list_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
-        source = SourceSelector(
-            unit_view.as_id(), target_units=[PropertyUnit("pressure", UnitReference("pressure:pa"))]
-        )
+        source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
         listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
 
@@ -603,7 +599,7 @@ class TestInstancesAPI:
     def test_search_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
-        target_units = [PropertyUnit("pressure", UnitReference("pressure:pa"))]
+        target_units = [TargetUnit("pressure", UnitReference("pressure:pa"))]
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
 
         searched = cognite_client.data_modeling.instances.search(
@@ -617,7 +613,7 @@ class TestInstancesAPI:
     def test_aggregate_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
-        target_units = [PropertyUnit("pressure", UnitReference("pressure:pa"))]
+        target_units = [TargetUnit("pressure", UnitReference("pressure:pa"))]
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
 
         aggregated = cognite_client.data_modeling.instances.aggregate(
@@ -635,7 +631,7 @@ class TestInstancesAPI:
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
-        target_units = [PropertyUnit("pressure", UnitReference("pressure:pa"))]
+        target_units = [TargetUnit("pressure", UnitReference("pressure:pa"))]
         query = Query(
             with_={"nodes": NodeResultSetExpression(filter=is_node, limit=1)},
             select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], target_units)])},

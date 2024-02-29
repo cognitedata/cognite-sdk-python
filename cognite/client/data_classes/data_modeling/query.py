@@ -17,7 +17,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeListWithCursor,
     PropertyValue,
 )
-from cognite.client.data_classes.data_modeling.views import PropertyUnit, View
+from cognite.client.data_classes.data_modeling.views import TargetUnit, View
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._importing import local_import
 
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 class SourceSelector(CogniteObject):
     source: ViewId
     properties: list[str] | None = None
-    target_units: list[PropertyUnit] | None = None
+    target_units: list[TargetUnit] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"source": self.source.dump(camel_case)}
@@ -58,7 +58,7 @@ class SourceSelector(CogniteObject):
             return cls(
                 source=view_id,
                 properties=resource.get("properties"),
-                target_units=[PropertyUnit.load(unit) for unit in resource.get("targetUnits", [])] or None,
+                target_units=[TargetUnit.load(unit) for unit in resource.get("targetUnits", [])] or None,
             )
 
         if isinstance(resource, View):
