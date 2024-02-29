@@ -56,13 +56,14 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResultList,
     NodeList,
     SubscriptionContext,
+    TargetUnit,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.views import TargetUnit, View
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings

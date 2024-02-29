@@ -19,8 +19,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     DirectRelationReference,
     PropertyType,
-    UnitReference,
-    UnitSystemReference,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
@@ -865,21 +863,3 @@ class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
             output["connection_type"] = "multi_reverse_direct_relation"
 
         return output
-
-
-@dataclass
-class TargetUnit(CogniteObject):
-    property: str
-    unit: UnitReference | UnitSystemReference
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"property": self.property, "unit": self.unit.dump(camel_case)}
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TargetUnit:
-        return cls(
-            property=resource["property"],
-            unit=UnitReference.load(resource["unit"])
-            if "externalId" in resource["unit"]
-            else UnitSystemReference.load(resource["unit"]),
-        )

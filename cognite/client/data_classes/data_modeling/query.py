@@ -16,8 +16,9 @@ from cognite.client.data_classes.data_modeling.instances import (
     Node,
     NodeListWithCursor,
     PropertyValue,
+    TargetUnit,
 )
-from cognite.client.data_classes.data_modeling.views import TargetUnit, View
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._importing import local_import
 

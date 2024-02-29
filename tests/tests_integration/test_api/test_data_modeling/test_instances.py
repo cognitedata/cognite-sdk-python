@@ -41,6 +41,7 @@ from cognite.client.data_classes.data_modeling import (
     query,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.instances import TargetUnit
 from cognite.client.data_classes.data_modeling.query import (
     NodeResultSetExpression,
     Query,
@@ -48,7 +49,6 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.views import TargetUnit
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
