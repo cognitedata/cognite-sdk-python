@@ -961,7 +961,7 @@ class InstanceSort(DataModelingSort):
         self,
         property: list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
-        nulls_first: bool = False,
+        nulls_first: bool | None = None,
     ) -> None:
         super().__init__(property, direction, nulls_first)
 

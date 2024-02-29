@@ -674,6 +674,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList:
         ...
 
@@ -687,6 +688,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList:
         ...
 
@@ -699,6 +701,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList | EdgeList:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -710,6 +713,7 @@ class InstancesAPI(APIClient):
             space (str | Sequence[str] | None): Restrict instance search to the given space (or list of spaces).
             filter (Filter | dict | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
+            sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
 
         Returns:
             NodeList | EdgeList: Search result with matching nodes or edges.
@@ -754,6 +758,13 @@ class InstancesAPI(APIClient):
             body["properties"] = properties
         if filter:
             body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
+        if sort:
+            sorts = sort if isinstance(sort, Sequence) else [sort]
+            for sort_spec in sorts:
+                nulls_first = sort_spec.get("nullsFirst") if isinstance(sort_spec, dict) else sort_spec.nulls_first
+                if nulls_first is not None:
+                    raise ValueError("nulls_first argument is not supported when sorting on instance search")
+            body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
         return list_cls.load(res.json()["items"], cognite_client=None)

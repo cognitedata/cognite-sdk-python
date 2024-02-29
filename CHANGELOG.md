@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.25.0] - 2024-02-29
+### Added
+- Support for sorting on `client.data_modeling.instances.search`
+
 ## [7.24.4] - 2024-02-28
 ### Fixed
 - Unknown ACLs, actions or scopes no longer causes `IAMAPI.[groups.list(...), token.inspect()]` to raise.
