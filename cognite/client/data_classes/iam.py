@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Iterable, cast
 
 from typing_extensions import Self
 
@@ -52,7 +52,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
-            capabilities=[Capability.load(c) for c in resource.get("capabilities", [])] or None,
+            capabilities=[Capability.load(c, allow_unknown=False) for c in resource.get("capabilities", [])] or None,
             metadata=resource.get("metadata"),
         )
 
@@ -109,11 +109,11 @@ class Group(GroupCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Group:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Group:
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
-            capabilities=[Capability.load(c) for c in resource.get("capabilities", [])] or None,
+            capabilities=[Capability.load(c, allow_unknown) for c in resource.get("capabilities", [])] or None,
             id=resource.get("id"),
             is_deleted=resource.get("isDeleted"),
             deleted_time=resource.get("deletedTime"),
@@ -174,6 +174,18 @@ class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
 
 class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformerMixin, InternalIdTransformerMixin):
     _RESOURCE = Group
+
+    @classmethod
+    def _load(
+        cls,
+        resource_list: Iterable[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
+        allow_unknown: bool = False,
+    ) -> Self:
+        return cls(
+            [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> GroupWriteList:
         """Returns a writing version of this group list."""
@@ -277,9 +289,19 @@ class ProjectSpec(CogniteResponse):
         self.url_name = url_name
         self.groups = groups
 
+    @property
+    def project_url_name(self) -> str:
+        return self.url_name
+
     @classmethod
     def load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, str | list[int]]:
+        return {
+            "projectUrlName" if camel_case else "project_url_name": self.url_name,
+            "groups": self.groups,
+        }
 
 
 class TokenInspection(CogniteResponse):
@@ -297,11 +319,13 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def load(cls, api_response: dict[str, Any], cognite_client: CogniteClient | None = None) -> TokenInspection:
+    def load(
+        cls, api_response: dict[str, Any], cognite_client: CogniteClient | None = None, allow_unknown: bool = False
+    ) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec.load(p) for p in api_response["projects"]],
-            capabilities=ProjectCapabilityList.load(api_response["capabilities"], cognite_client),
+            capabilities=ProjectCapabilityList._load(api_response["capabilities"], cognite_client, allow_unknown),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

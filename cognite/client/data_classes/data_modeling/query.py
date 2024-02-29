@@ -105,7 +105,7 @@ class Select(CogniteObject):
 
 
 class Query(CogniteObject):
-    """Query allows you to do advanced queries on the data model.
+    r"""Query allows you to do advanced queries on the data model.
 
     Args:
         with_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.

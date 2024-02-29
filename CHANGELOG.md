@@ -22,6 +22,16 @@ Changes are grouped as follows
 - In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,
   listing, searching, aggregating, querying and syncing nodes/edges with a target unit or target unit system.
 
+## [7.24.4] - 2024-02-28
+### Fixed
+- Unknown ACLs, actions or scopes no longer causes `IAMAPI.[groups.list(...), token.inspect()]` to raise.
+### Added
+- New action for `DataModelInstancesAcl` added: `Write_Properties`.
+
+## [7.24.3] - 2024-02-28
+### Fixed
+- Fix handling of GeometryCollection objects in the Documents API.
+
 ## [7.24.2] - 2024-02-25
 ### Fixed
 - [Pyodide/WASM only] The list method for raw rows now works for non-finite queries (got broken in `7.24.1`).
