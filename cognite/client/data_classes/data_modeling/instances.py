@@ -29,7 +29,7 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, T_CogniteResource
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
@@ -38,7 +38,11 @@ from cognite.client.data_classes.data_modeling.core import (
     DataModelingSort,
     WritableDataModelingResource,
 )
-from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
+from cognite.client.data_classes.data_modeling.data_types import (
+    DirectRelationReference,
+    UnitReference,
+    UnitSystemReference,
+)
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     EdgeId,
@@ -1024,3 +1028,21 @@ class SubscriptionContext:
 
     def is_alive(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
+
+
+@dataclass
+class TargetUnit(CogniteObject):
+    property: str
+    unit: UnitReference | UnitSystemReference
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"property": self.property, "unit": self.unit.dump(camel_case)}
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TargetUnit:
+        return cls(
+            property=resource["property"],
+            unit=UnitReference.load(resource["unit"])
+            if "externalId" in resource["unit"]
+            else UnitSystemReference.load(resource["unit"]),
+        )

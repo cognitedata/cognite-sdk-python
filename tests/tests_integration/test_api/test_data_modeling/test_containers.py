@@ -12,6 +12,7 @@ from cognite.client.data_classes.data_modeling import (
     ContainerList,
     ContainerProperty,
     DataModel,
+    Float64,
     Int32,
     MappedProperty,
     Space,
@@ -19,6 +20,7 @@ from cognite.client.data_classes.data_modeling import (
     View,
 )
 from cognite.client.data_classes.data_modeling.containers import BTreeIndex
+from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -33,6 +35,18 @@ def movie_containers(cognite_client: CogniteClient, movie_model: DataModel[View]
     containers = cognite_client.data_modeling.containers.retrieve(list(container_ids))
     assert len(containers) == len(container_ids), "The movie model is missing containers"
     return containers
+
+
+@pytest.fixture(scope="session")
+def unit_pressure_container(cognite_client: CogniteClient, integration_test_space: Space) -> Container:
+    unit_container = ContainerApply(
+        space=integration_test_space.space,
+        external_id="test_container_with_unit",
+        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
+        used_for="node",
+    )
+
+    return cognite_client.data_modeling.containers.apply(unit_container)
 
 
 class TestContainersAPI:
@@ -121,3 +135,14 @@ class TestContainersAPI:
         container_json = json.dumps(container_dump)
         container_loaded = Container.load(container_json)
         assert container == container_loaded
+
+    def test_retrieve_container_with_unit_property(
+        self, cognite_client: CogniteClient, unit_pressure_container: Container
+    ) -> None:
+        retrieved = cognite_client.data_modeling.containers.retrieve(unit_pressure_container.as_id())
+
+        assert retrieved is not None
+        pressure_type = retrieved.properties["pressure"].type
+        assert isinstance(pressure_type, Float64)
+        assert pressure_type.unit is not None
+        assert pressure_type.unit.external_id == "pressure:bar"

@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.26.0] - 2024-02-29
+### Added
+- In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,
+  listing, searching, aggregating, querying and syncing nodes/edges with a target unit or target unit system.
+
 ## [7.25.0] - 2024-02-29
 ### Added
 - Support for sorting on `client.data_modeling.instances.search`

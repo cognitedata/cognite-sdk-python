@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 import math
 import numbers
 import re
@@ -404,6 +405,9 @@ class YearAligner(DateTimeAligner):
 
     @classmethod
     def add_units(cls, date: datetime, units: int) -> datetime:
+        if date.month == 2 and date.day == 29 and not calendar.isleap(date.year + units):
+            # Avoid raising ValueError for invalid date
+            date = date.replace(day=28)
         return date.replace(year=date.year + units)
 
 
