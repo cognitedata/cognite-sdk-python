@@ -112,8 +112,6 @@ class DocumentPreviewAPI(APIClient):
     def download_document_as_pdf_bytes(self, id: int) -> bytes:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
-        Only the 100 first pages will be included.
-
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
@@ -135,8 +133,6 @@ class DocumentPreviewAPI(APIClient):
 
     def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
-
-        Only the 100 first pages will be included.
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
