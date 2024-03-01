@@ -64,7 +64,9 @@ def new_file_with_label(cognite_client):
     label_external_id = uuid.uuid4().hex[0:20]
     label = cognite_client.labels.create(LabelDefinition(external_id=label_external_id, name="mandatory"))
     file = cognite_client.files.upload_bytes(
-        content="blabla", name="myspecialfile", labels=[Label(external_id=label_external_id)]
+        content="blabla",
+        name="myspecialfile",
+        labels=[Label(external_id=label_external_id)],
     )
     await_file_upload(cognite_client, file.id)
     yield file, label.external_id
@@ -209,8 +211,41 @@ class TestFilesAPI:
         external_id = "test_upload_bytes_with_nordic_characters"
 
         _ = cognite_client.files.upload_bytes(
-            content=content, name="nordic_chars.txt", external_id=external_id, overwrite=True
+            content=content,
+            name="nordic_chars.txt",
+            external_id=external_id,
+            overwrite=True,
         )
 
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert retrieved_content == content.encode("utf-8")
+
+    def test_upload_multipart(self, cognite_client: CogniteClient) -> None:
+        # Min file chunk size is 5MiB
+        content_1 = "abcde" * 1_200_000
+        content_2 = "fghij"
+
+        external_id = "test_upload_multipart"
+
+        cognite_client.config.file_transfer_timeout = 10
+
+        (
+            file_metadata,
+            upload_urls,
+            upload_id,
+        ) = cognite_client.files.begin_multipart_upload(
+            name="test_multipart.txt",
+            parts=2,
+            external_id=external_id,
+            overwrite=True,
+        )
+
+        assert len(upload_urls) == 2
+
+        cognite_client.files.upload_multipart_part(upload_urls[0], content_1, file_metadata.mime_type)
+        cognite_client.files.upload_multipart_part(upload_urls[1], content_2, file_metadata.mime_type)
+
+        cognite_client.files.complete_multipart_upload(file_metadata.id, upload_id)
+
+        retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
+        assert len(retrieved_content) == 6000005

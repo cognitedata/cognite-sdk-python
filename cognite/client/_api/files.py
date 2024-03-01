@@ -598,6 +598,91 @@ class FilesAPI(APIClient):
 
         return FileMetadata._load(returned_file_metadata)
 
+    def begin_multipart_upload(
+        self,
+        name: str,
+        parts: int,
+        external_id: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
+        overwrite: bool = False,
+    ) -> tuple[FileMetadata, list[str], str]:
+        file_metadata = FileMetadata(
+            name=name,
+            external_id=external_id,
+            source=source,
+            mime_type=mime_type,
+            metadata=metadata,
+            directory=directory,
+            asset_ids=asset_ids,
+            data_set_id=data_set_id,
+            labels=labels,
+            geo_location=geo_location,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            security_categories=security_categories,
+        )
+        try:
+            res = self._post(
+                url_path=self._RESOURCE_PATH + "/initmultipartupload",
+                json=file_metadata.dump(camel_case=True),
+                params={"overwrite": overwrite, "parts": parts},
+            )
+        except CogniteAPIError as e:
+            if e.code == 403 and "insufficient access rights" in e.message:
+                dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
+                msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+            raise
+
+        returned_file_metadata = res.json()
+        upload_urls = returned_file_metadata["uploadUrls"]
+        upload_id = returned_file_metadata["uploadId"]
+
+        # Temp workaround for bug in API
+        if returned_file_metadata.get("geoLocation", None) == {}:
+            del returned_file_metadata["geoLocation"]
+
+        return (FileMetadata._load(returned_file_metadata), upload_urls, upload_id)
+
+    def upload_multipart_part(
+        self,
+        upload_url: str,
+        content: str | bytes | TextIO | BinaryIO,
+        mime_type: str | None = None,
+    ) -> None:
+        if isinstance(content, str):
+            content = content.encode("utf-8")
+
+        headers = {"Content-Type": mime_type}
+        upload_response = self._http_client_with_retry.request(
+            "PUT",
+            upload_url,
+            data=content,
+            timeout=self._config.file_transfer_timeout,
+            headers=headers,
+        )
+        if not upload_response.ok:
+            raise CogniteFileUploadError(
+                message=upload_response.text,
+                code=upload_response.status_code,
+            )
+
+    def complete_multipart_upload(self, file_id: int, upload_id: str) -> None:
+        self._post(
+            self._RESOURCE_PATH + "/completemultipartupload",
+            json={"id": file_id, "uploadId": upload_id},
+        )
+
     def retrieve_download_urls(
         self,
         id: int | Sequence[int] | None = None,
