@@ -108,7 +108,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         with self.__token_refresh_lock:
             if self.__should_refresh_token(self.__access_token, self.__access_token_expires_at):
                 self.__access_token, time_until_expiry = self._refresh_access_token()
-                # Azure gives 'expires_at' directly, but but it's not a part of the RFC:
+                # Azure gives 'expires_at' directly, but it's not a part of the RFC:
                 self.__access_token_expires_at = time.time() + time_until_expiry
 
         return "Authorization", f"Bearer {self.__access_token}"
