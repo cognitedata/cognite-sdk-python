@@ -661,9 +661,9 @@ class FilesAPI(APIClient):
                 >>>     upload_id,
                 >>> ) = cognite.client.files.begin_multipart_upload("my_file.txt", parts=2)
                 >>> # Note that the minimum chunk size is 5 MiB.
-                >>> cognite_client.files.upload_multipart_part(upload_urls[0], "hello" * 1_200_000)
-                >>> cognite_client.files.upload_multipart_part(upload_urls[1], " world")
-                >>> cognite_client.files.complete_multipart_upload(file_metadata.id, upload_id)
+                >>> client.files.upload_multipart_part(upload_urls[0], "hello" * 1_200_000)
+                >>> client.files.upload_multipart_part(upload_urls[1], " world")
+                >>> client.files.complete_multipart_upload(file_metadata.id, upload_id)
         """
         file_metadata = FileMetadata(
             name=name,
