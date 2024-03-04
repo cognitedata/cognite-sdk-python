@@ -616,6 +616,55 @@ class FilesAPI(APIClient):
         security_categories: Sequence[int] | None = None,
         overwrite: bool = False,
     ) -> tuple[FileMetadata, list[str], str]:
+        """Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
+        Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
+        must be greater than 5MiB.
+
+        The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
+        the parts are stored in the correct order by uploading each chunk to the correct upload URL.
+
+        After calling this, call `upload_multipart_part` for each chunk, then `complete_multipart_upload`
+        with the returned `uploadId`.
+
+        Args:
+            name (str): Name of the file.
+            parts (int): The number of parts to upload, must be between 1 and 250.
+            external_id (str | None): The external ID provided by the client. Must be unique within the project.
+            source (str | None): The source of the file.
+            mime_type (str | None): File type. E.g. text/plain, application/pdf,...
+            metadata (dict[str, str] | None): Customizable extra data about the file. String key -> String value.
+            directory (str | None): The directory to be associated with this file. Must be an absolute, unix-style path.
+            asset_ids (Sequence[int] | None): No description.
+            data_set_id (int | None): Id of the data set.
+            labels (Sequence[Label] | None): A list of the labels associated with this resource item.
+            geo_location (GeoLocation | None): The geographic metadata of the file.
+            source_created_time (int | None): The timestamp for when the file was originally created in the source system.
+            source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
+            security_categories (Sequence[int] | None): Security categories to attach to this file.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
+
+        Returns:
+            FileMetadata: FileMetadata corresponding to the created file.
+            list[str]: List of upload URLs, in order.
+            str: Upload ID, this must be passed to `complete_multipart_upload` to assemble the file once all chunks
+            are uploaded.
+
+        Examples:
+
+            Upload binary data in two chunks
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> (
+                >>>     file_metadata,
+                >>>     upload_urls,
+                >>>     upload_id,
+                >>> ) = cognite.client.files.begin_multipart_upload("my_file.txt", parts=2)
+                >>> # Note that the minimum chunk size is 5 MiB.
+                >>> cognite_client.files.upload_multipart_part(upload_urls[0], "hello" * 1_200_000)
+                >>> cognite_client.files.upload_multipart_part(upload_urls[1], " world")
+                >>> cognite_client.files.complete_multipart_upload(file_metadata.id, upload_id)
+        """
         file_metadata = FileMetadata(
             name=name,
             external_id=external_id,
@@ -660,6 +709,15 @@ class FilesAPI(APIClient):
         content: str | bytes | TextIO | BinaryIO,
         mime_type: str | None = None,
     ) -> None:
+        """Upload part of a file to an upload URL returned from `begin_multipart_upload`.
+        Note that if `content` does not somehow expose its length, this method may not work
+        on Azure. See `requests.utils.super_len`.
+
+        Args:
+            upload_url (str): URL to upload file chunk to.
+            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            mime_type (str | None): Optional mime type for the `Content-Type` header.
+        """
         if isinstance(content, str):
             content = content.encode("utf-8")
 
@@ -678,6 +736,12 @@ class FilesAPI(APIClient):
             )
 
     def complete_multipart_upload(self, file_id: int, upload_id: str) -> None:
+        """Complete a multipart upload. Once this returns the file can be downloaded.
+
+        Args:
+            file_id (int): ID of the file being uploaded.
+            upload_id (str): Upload ID returned from `begin_multipart_upload`
+        """
         self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": file_id, "uploadId": upload_id},
