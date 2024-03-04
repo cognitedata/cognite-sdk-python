@@ -1019,8 +1019,8 @@ class AssetsAPI(APIClient):
             name (str | None): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
             parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_ids (int | Sequence[int] | None): return a list of assets that are in a subtree rooted at any of these assetIds.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of assets that are in a subtree rooted at any of these assetExternalIds.
             data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the assets matching the specified label filter.
