@@ -25,6 +25,7 @@ from cognite.client.data_classes import (
     FileMetadataList,
     FileMetadataUpdate,
     FileMetadataWrite,
+    FileMultipartUploadInit,
     GeoLocation,
     GeoLocationFilter,
     Label,
@@ -615,7 +616,7 @@ class FilesAPI(APIClient):
         source_modified_time: int | None = None,
         security_categories: Sequence[int] | None = None,
         overwrite: bool = False,
-    ) -> tuple[FileMetadata, list[str], str]:
+    ) -> FileMultipartUploadInit:
         """Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
@@ -644,7 +645,7 @@ class FilesAPI(APIClient):
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            tuple[FileMetadata, list[str], str]: FileMetadata corresponding to the created file. list[str]: List of upload URLs, in order. str: Upload ID, this must be passed to `complete_multipart_upload` to assemble the file once all chunks are uploaded.
+            FileMultipartUploadInit: Object containing metadata about the created file, and information needed to upload the file content.
 
         Examples:
 
@@ -653,13 +654,10 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.files.begin_multipart_upload("my_file.txt", parts=2)
-                >>> file_metadata = res[0]
-                >>> upload_urls = res[1]
-                >>> upload_id = res[2]
                 >>> # Note that the minimum chunk size is 5 MiB.
-                >>> client.files.upload_multipart_part(upload_urls[0], "hello" * 1_200_000)
-                >>> client.files.upload_multipart_part(upload_urls[1], " world")
-                >>> client.files.complete_multipart_upload(file_metadata.id, upload_id)
+                >>> client.files.upload_multipart_part(res.upload_urls[0], "hello" * 1_200_000)
+                >>> client.files.upload_multipart_part(res.upload_urls[1], " world")
+                >>> client.files.complete_multipart_upload(res.file_metadata.id, res.upload_id)
         """
         file_metadata = FileMetadata(
             name=name,
@@ -697,7 +695,7 @@ class FilesAPI(APIClient):
         if returned_file_metadata.get("geoLocation", None) == {}:
             del returned_file_metadata["geoLocation"]
 
-        return (FileMetadata._load(returned_file_metadata), upload_urls, upload_id)
+        return FileMultipartUploadInit(FileMetadata._load(returned_file_metadata), upload_urls, upload_id)
 
     def upload_multipart_part(
         self,

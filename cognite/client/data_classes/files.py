@@ -466,3 +466,18 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
     def as_write(self) -> FileMetadataWriteList:
         """Returns this FileMetadataList in its writing format."""
         return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+
+
+class FileMultipartUploadInit:
+    """Result of a call to `begin_multipart_upload`
+
+    Args:
+        file_metadata (FileMetadata): The created file in CDF.
+        upload_urls (list[str]): List of upload URLs for the file upload.
+        upload_id (str): ID of the multipart upload, needed to complete the upload.
+    """
+
+    def __init__(self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str) -> None:
+        self.file_metadata = file_metadata
+        self.upload_urls = upload_urls
+        self.upload_id = upload_id
