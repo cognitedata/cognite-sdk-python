@@ -644,10 +644,7 @@ class FilesAPI(APIClient):
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            FileMetadata: FileMetadata corresponding to the created file.
-            list[str]: List of upload URLs, in order.
-            str: Upload ID, this must be passed to `complete_multipart_upload` to assemble the file once all chunks
-            are uploaded.
+            tuple[FileMetadata, list[str], str]: FileMetadata corresponding to the created file. list[str]: List of upload URLs, in order. str: Upload ID, this must be passed to `complete_multipart_upload` to assemble the file once all chunks are uploaded.
 
         Examples:
 
@@ -655,11 +652,10 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> (
-                >>>     file_metadata,
-                >>>     upload_urls,
-                >>>     upload_id,
-                >>> ) = cognite.client.files.begin_multipart_upload("my_file.txt", parts=2)
+                >>> res = client.files.begin_multipart_upload("my_file.txt", parts=2)
+                >>> file_metadata = res[0]
+                >>> upload_urls = res[1]
+                >>> upload_id = res[2]
                 >>> # Note that the minimum chunk size is 5 MiB.
                 >>> client.files.upload_multipart_part(upload_urls[0], "hello" * 1_200_000)
                 >>> client.files.upload_multipart_part(upload_urls[1], " world")
