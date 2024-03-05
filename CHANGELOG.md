@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.26.2] - 2024-03-05
+### Fixed
+- Fixed a regression from 7.26.1 in the logic for when to refresh token.
+
 ## [7.26.1] - 2024-03-05
 ### Fixed
 - The `CredentialProvider` class for client credentials, `OAuthClientCredentials`, was switched from using the non-standard
