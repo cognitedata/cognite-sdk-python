@@ -691,10 +691,6 @@ class FilesAPI(APIClient):
         upload_urls = returned_file_metadata["uploadUrls"]
         upload_id = returned_file_metadata["uploadId"]
 
-        # Temp workaround for bug in API
-        if returned_file_metadata.get("geoLocation", None) == {}:
-            del returned_file_metadata["geoLocation"]
-
         return FileMultipartUploadInit(FileMetadata._load(returned_file_metadata), upload_urls, upload_id)
 
     def upload_multipart_part(
