@@ -87,7 +87,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         raise NotImplementedError
 
     def __should_refresh_token(self, token: str | None, expires_at: float | None) -> bool:
-        return token is None or expires_at is None or expires_at > time.time() + self.token_expiry_leeway_seconds
+        return token is None or expires_at is None or expires_at < time.time() + self.token_expiry_leeway_seconds
 
     @staticmethod
     def _verify_credentials(credentials: dict[str, Any]) -> None:
