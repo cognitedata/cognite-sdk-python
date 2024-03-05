@@ -104,12 +104,10 @@ class LabelsAPI(APIClient):
         )
 
     @overload
-    def create(self, label: LabelDefinition | LabelDefinitionWrite) -> LabelDefinition:
-        ...
+    def create(self, label: LabelDefinition | LabelDefinitionWrite) -> LabelDefinition: ...
 
     @overload
-    def create(self, label: Sequence[LabelDefinition | LabelDefinitionWrite]) -> LabelDefinitionList:
-        ...
+    def create(self, label: Sequence[LabelDefinition | LabelDefinitionWrite]) -> LabelDefinitionList: ...
 
     def create(
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]

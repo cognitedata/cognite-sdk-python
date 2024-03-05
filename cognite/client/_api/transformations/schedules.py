@@ -31,14 +31,12 @@ class TransformationSchedulesAPI(APIClient):
         self._UPDATE_LIMIT = 5
 
     @overload
-    def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule:
-        ...
+    def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule: ...
 
     @overload
     def create(
         self, schedule: Sequence[TransformationSchedule] | Sequence[TransformationScheduleWrite]
-    ) -> TransformationScheduleList:
-        ...
+    ) -> TransformationScheduleList: ...
 
     def create(
         self,
@@ -199,14 +197,12 @@ class TransformationSchedulesAPI(APIClient):
     @overload
     def update(
         self, item: TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate
-    ) -> TransformationSchedule:
-        ...
+    ) -> TransformationSchedule: ...
 
     @overload
     def update(
         self, item: Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]
-    ) -> TransformationScheduleList:
-        ...
+    ) -> TransformationScheduleList: ...
 
     def update(
         self,

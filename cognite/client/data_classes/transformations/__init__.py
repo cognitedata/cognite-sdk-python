@@ -677,8 +677,7 @@ class TransformationList(WriteableCogniteResourceList[TransformationWrite, Trans
 
 class TagsFilter:
     @abstractmethod
-    def dump(self) -> dict[str, Any]:
-        ...
+    def dump(self) -> dict[str, Any]: ...
 
 
 class ContainsAny(TagsFilter):

@@ -21,6 +21,15 @@ Changes are grouped as follows
 ### Added
 - Added support for multipart file uploads.
 
+## [7.26.2] - 2024-03-05
+### Fixed
+- Fixed a regression from 7.26.1 in the logic for when to refresh token.
+
+## [7.26.1] - 2024-03-05
+### Fixed
+- The `CredentialProvider` class for client credentials, `OAuthClientCredentials`, was switched from using the non-standard
+  field `expires_at` to `expires_in` that's part of the OAuth 2.0 standard (RFC 6749).
+
 ## [7.26.0] - 2024-02-29
 ### Added
 - In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,

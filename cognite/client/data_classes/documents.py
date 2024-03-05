@@ -339,8 +339,7 @@ class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
     _RESOURCE = DocumentHighlight
 
 
-class DocumentUniqueResult(UniqueResult):
-    ...
+class DocumentUniqueResult(UniqueResult): ...
 
 
 class SortableSourceFileProperty(EnumProperty):

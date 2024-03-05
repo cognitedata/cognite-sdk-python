@@ -77,8 +77,7 @@ class Aggregation(ABC):
 
 
 @dataclass
-class MetricAggregation(Aggregation):
-    ...
+class MetricAggregation(Aggregation): ...
 
 
 @final
@@ -239,12 +238,10 @@ class Buckets(UserList):
         return super().__iter__()
 
     @overload
-    def __getitem__(self, item: SupportsIndex) -> Bucket:
-        ...
+    def __getitem__(self, item: SupportsIndex) -> Bucket: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Buckets:
-        ...
+    def __getitem__(self, item: slice) -> Buckets: ...
 
     def __getitem__(self, item: SupportsIndex | slice) -> Bucket | Buckets:
         value = self.data[item]

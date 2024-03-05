@@ -323,8 +323,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResource | None:
-        ...
+    ) -> T_CogniteResource | None: ...
 
     @overload
     def _retrieve_multiple(
@@ -339,8 +338,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList:
-        ...
+    ) -> T_CogniteResourceList: ...
 
     def _retrieve_multiple(
         self,
@@ -644,8 +642,7 @@ class APIClient:
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
-    ) -> int:
-        ...
+    ) -> int: ...
 
     @overload
     def _advanced_aggregate(
@@ -663,8 +660,7 @@ class APIClient:
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
-    ) -> UniqueResultList:
-        ...
+    ) -> UniqueResultList: ...
 
     def _advanced_aggregate(
         self,
@@ -765,8 +761,7 @@ class APIClient:
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList:
-        ...
+    ) -> T_CogniteResourceList: ...
 
     @overload
     def _create_multiple(
@@ -782,8 +777,7 @@ class APIClient:
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_WritableCogniteResource:
-        ...
+    ) -> T_WritableCogniteResource: ...
 
     def _create_multiple(
         self,
@@ -901,8 +895,7 @@ class APIClient:
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
-    ) -> T_CogniteResource:
-        ...
+    ) -> T_CogniteResource: ...
 
     @overload
     def _update_multiple(
@@ -916,8 +909,7 @@ class APIClient:
         headers: dict | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList:
-        ...
+    ) -> T_CogniteResourceList: ...
 
     def _update_multiple(
         self,

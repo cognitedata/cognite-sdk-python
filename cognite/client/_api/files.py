@@ -279,12 +279,10 @@ class FilesAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     @overload
-    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata:
-        ...
+    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata: ...
 
     @overload
-    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList:
-        ...
+    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList: ...
 
     def update(
         self,

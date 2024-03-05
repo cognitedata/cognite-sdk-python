@@ -1286,9 +1286,10 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
-        dps_to_post: Sequence[dict[str, int | float | str | datetime]] | Sequence[
-            tuple[int | float | datetime, int | float | str]
-        ]
+        dps_to_post: (
+            Sequence[dict[str, int | float | str | datetime]]
+            | Sequence[tuple[int | float | datetime, int | float | str]]
+        )
         if isinstance(datapoints, (Datapoints, DatapointsArray)):
             dps_to_post = DatapointsPoster._extract_raw_data_from_dps_container(datapoints)
         else:

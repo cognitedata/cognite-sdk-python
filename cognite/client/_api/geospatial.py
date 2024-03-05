@@ -51,12 +51,12 @@ class GeospatialAPI(APIClient):
         )
 
     @overload
-    def create_feature_types(self, feature_type: FeatureType | FeatureTypeWrite) -> FeatureType:
-        ...
+    def create_feature_types(self, feature_type: FeatureType | FeatureTypeWrite) -> FeatureType: ...
 
     @overload
-    def create_feature_types(self, feature_type: Sequence[FeatureType] | Sequence[FeatureTypeWrite]) -> FeatureTypeList:
-        ...
+    def create_feature_types(
+        self, feature_type: Sequence[FeatureType] | Sequence[FeatureTypeWrite]
+    ) -> FeatureTypeList: ...
 
     def create_feature_types(
         self, feature_type: FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]
@@ -143,12 +143,10 @@ class GeospatialAPI(APIClient):
         )
 
     @overload
-    def retrieve_feature_types(self, external_id: str) -> FeatureType:
-        ...
+    def retrieve_feature_types(self, external_id: str) -> FeatureType: ...
 
     @overload
-    def retrieve_feature_types(self, external_id: list[str]) -> FeatureTypeList:
-        ...
+    def retrieve_feature_types(self, external_id: list[str]) -> FeatureTypeList: ...
 
     def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
         """`Retrieve feature types`
@@ -239,8 +237,7 @@ class GeospatialAPI(APIClient):
         feature: Feature | FeatureWrite,
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
-    ) -> Feature:
-        ...
+    ) -> Feature: ...
 
     @overload
     def create_features(
@@ -249,8 +246,7 @@ class GeospatialAPI(APIClient):
         feature: Sequence[Feature] | Sequence[FeatureWrite] | FeatureList | FeatureWriteList,
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
-    ) -> FeatureList:
-        ...
+    ) -> FeatureList: ...
 
     def create_features(
         self,
@@ -346,8 +342,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         external_id: str,
         properties: dict[str, Any] | None = None,
-    ) -> Feature:
-        ...
+    ) -> Feature: ...
 
     @overload
     def retrieve_features(
@@ -355,8 +350,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         external_id: list[str],
         properties: dict[str, Any] | None = None,
-    ) -> FeatureList:
-        ...
+    ) -> FeatureList: ...
 
     def retrieve_features(
         self,

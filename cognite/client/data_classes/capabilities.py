@@ -230,8 +230,7 @@ class ProjectScope(ABC):
 
 
 @dataclass(frozen=True)
-class AllProjectsScope(ProjectScope):
-    ...
+class AllProjectsScope(ProjectScope): ...
 
 
 @dataclass(frozen=True)

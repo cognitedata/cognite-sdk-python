@@ -45,12 +45,12 @@ class TransformationsAPI(APIClient):
         self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
 
     @overload
-    def create(self, transformation: Transformation | TransformationWrite) -> Transformation:
-        ...
+    def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...
 
     @overload
-    def create(self, transformation: Sequence[Transformation] | Sequence[TransformationWrite]) -> TransformationList:
-        ...
+    def create(
+        self, transformation: Sequence[Transformation] | Sequence[TransformationWrite]
+    ) -> TransformationList: ...
 
     def create(
         self,
@@ -313,12 +313,12 @@ class TransformationsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Transformation | TransformationWrite | TransformationUpdate) -> Transformation:
-        ...
+    def update(self, item: Transformation | TransformationWrite | TransformationUpdate) -> Transformation: ...
 
     @overload
-    def update(self, item: Sequence[Transformation | TransformationWrite | TransformationUpdate]) -> TransformationList:
-        ...
+    def update(
+        self, item: Sequence[Transformation | TransformationWrite | TransformationUpdate]
+    ) -> TransformationList: ...
 
     def update(
         self,

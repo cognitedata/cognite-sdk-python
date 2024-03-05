@@ -395,9 +395,9 @@ class _DatapointSubscriptionBatchWithPartitions:
             ("hasNext" if camel_case else "has_next"): self.has_next,
         }
         if self.subscription_changes is not None:
-            resource[
-                ("subscriptionChanges" if camel_case else "subscription_changes")
-            ] = self.subscription_changes.dump(camel_case)
+            resource[("subscriptionChanges" if camel_case else "subscription_changes")] = (
+                self.subscription_changes.dump(camel_case)
+            )
         return resource
 
 

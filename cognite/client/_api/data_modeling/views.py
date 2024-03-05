@@ -26,8 +26,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[View]:
-        ...
+    ) -> Iterator[View]: ...
 
     @overload
     def __call__(
@@ -38,8 +37,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[ViewList]:
-        ...
+    ) -> Iterator[ViewList]: ...
 
     def __call__(
         self,
@@ -202,12 +200,10 @@ class ViewsAPI(APIClient):
         )
 
     @overload
-    def apply(self, view: Sequence[ViewApply]) -> ViewList:
-        ...
+    def apply(self, view: Sequence[ViewApply]) -> ViewList: ...
 
     @overload
-    def apply(self, view: ViewApply) -> View:
-        ...
+    def apply(self, view: ViewApply) -> View: ...
 
     def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
