@@ -15,7 +15,7 @@ from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
 
-_TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 15  # Do not change without also updating all the docstrings using it
+_TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
 
 
 class CredentialProvider(Protocol):
@@ -83,13 +83,11 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
 
     @abstractmethod
     def _refresh_access_token(self) -> tuple[str, float]:
-        """This method should return the access_token and expiry time"""
+        """This method should return the access_token and time until expiration (expire_in)"""
         raise NotImplementedError
 
     def __should_refresh_token(self, token: str | None, expires_at: float | None) -> bool:
-        no_token = token is None
-        token_is_expired = expires_at is None or time.time() > expires_at - self.token_expiry_leeway_seconds
-        return no_token or token_is_expired
+        return token is None or expires_at is None or expires_at > time.time() + self.token_expiry_leeway_seconds
 
     @staticmethod
     def _verify_credentials(credentials: dict[str, Any]) -> None:
@@ -155,7 +153,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         client_id (str): Your application's client id.
         scopes (list[str]): A list of scopes.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
 
     Examples:
 
@@ -236,7 +234,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         scopes (list[str]): A list of scopes.
         redirect_port (int): Redirect port defaults to 53000.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
 
     Examples:
 
@@ -325,7 +323,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             tenant_id (str): The Azure tenant id
             client_id (str): Your application's client id.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
-            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
             **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
@@ -348,7 +346,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
         scopes (list[str]): A list of scopes.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
         **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
     Examples:
@@ -431,13 +429,15 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         from cognite.client.config import global_config
 
         try:
-            token_result = self.__oauth.fetch_token(
+            credentials = self.__oauth.fetch_token(
                 token_url=self.__token_url,
                 verify=not global_config.disable_ssl,
                 client_secret=self.__client_secret,
                 **self.__token_custom_args,
             )
-            return token_result["access_token"], token_result["expires_at"]
+            # Azure gives 'expires_at' directly, but it's not a part of the RFC:
+            return credentials["access_token"], time.time() + credentials["expires_in"]
+
         except OAuth2Error as oauth_err:
             raise CogniteAuthError(
                 f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
@@ -466,7 +466,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             client_id (str): Your application's client id.
             client_secret (str): Your application's client secret.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
-            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
             **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
@@ -491,7 +491,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         cert_thumbprint (str): Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
         certificate (str): Your private certificate, typically read from a .pem file
         scopes (list[str]): A list of scopes.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
 
     Examples:
 
