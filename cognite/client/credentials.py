@@ -107,10 +107,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         # TODO: Consider instead having a background thread periodically refresh the token to avoid this blocking.
         with self.__token_refresh_lock:
             if self.__should_refresh_token(self.__access_token, self.__access_token_expires_at):
-                self.__access_token, time_until_expiry = self._refresh_access_token()
-                # Azure gives 'expires_at' directly, but it's not a part of the RFC:
-                self.__access_token_expires_at = time.time() + time_until_expiry
-
+                self.__access_token, self.__access_token_expires_at = self._refresh_access_token()
         return "Authorization", f"Bearer {self.__access_token}"
 
 
@@ -223,7 +220,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             credentials = self.__app.acquire_token_by_device_flow(flow=device_flow)
 
         self._verify_credentials(credentials)
-        return credentials["access_token"], credentials["expires_in"]
+        return credentials["access_token"], time.time() + credentials["expires_in"]
 
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
@@ -303,7 +300,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
 
         self._verify_credentials(credentials)
-        return credentials["access_token"], credentials["expires_in"]
+        return credentials["access_token"], time.time() + credentials["expires_in"]
 
     @classmethod
     def default_for_azure_ad(
@@ -432,13 +429,14 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         from cognite.client.config import global_config
 
         try:
-            token_result = self.__oauth.fetch_token(
+            credentials = self.__oauth.fetch_token(
                 token_url=self.__token_url,
                 verify=not global_config.disable_ssl,
                 client_secret=self.__client_secret,
                 **self.__token_custom_args,
             )
-            return token_result["access_token"], token_result["expires_in"]
+            # Azure gives 'expires_at' directly, but it's not a part of the RFC:
+            return credentials["access_token"], time.time() + credentials["expires_in"]
 
         except OAuth2Error as oauth_err:
             raise CogniteAuthError(
@@ -554,4 +552,4 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         credentials = self.__app.acquire_token_for_client(scopes=self.__scopes)
 
         self._verify_credentials(credentials)
-        return credentials["access_token"], credentials["expires_in"]
+        return credentials["access_token"], time.time() + credentials["expires_in"]
