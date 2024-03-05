@@ -34,7 +34,7 @@ class SourceSelector(CogniteObject):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"source": self.source.dump(camel_case)}
-        if self.properties:
+        if self.properties is not None:
             output["properties"] = self.properties
         if self.target_units:
             output["targetUnits" if camel_case else "target_units"] = [
