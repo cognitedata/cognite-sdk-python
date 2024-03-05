@@ -174,8 +174,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
-    ) -> Iterator[Node]:
-        ...
+    ) -> Iterator[Node]: ...
 
     @overload
     def __call__(
@@ -188,8 +187,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
-    ) -> Iterator[Edge]:
-        ...
+    ) -> Iterator[Edge]: ...
 
     @overload
     def __call__(
@@ -202,8 +200,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
-    ) -> Iterator[NodeList]:
-        ...
+    ) -> Iterator[NodeList]: ...
 
     @overload
     def __call__(
@@ -216,8 +213,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
-    ) -> Iterator[EdgeList]:
-        ...
+    ) -> Iterator[EdgeList]: ...
 
     def __call__(
         self,
@@ -681,8 +677,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> NodeList:
-        ...
+    ) -> NodeList: ...
 
     @overload
     def search(
@@ -696,8 +691,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> EdgeList:
-        ...
+    ) -> EdgeList: ...
 
     def search(
         self,
@@ -793,8 +787,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> AggregatedNumberedValue:
-        ...
+    ) -> AggregatedNumberedValue: ...
 
     @overload
     def aggregate(
@@ -809,8 +802,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> list[AggregatedNumberedValue]:
-        ...
+    ) -> list[AggregatedNumberedValue]: ...
 
     @overload
     def aggregate(
@@ -825,8 +817,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> InstanceAggregationResultList:
-        ...
+    ) -> InstanceAggregationResultList: ...
 
     def aggregate(
         self,
@@ -916,8 +907,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> HistogramValue:
-        ...
+    ) -> HistogramValue: ...
 
     @overload
     def histogram(
@@ -931,8 +921,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> list[HistogramValue]:
-        ...
+    ) -> list[HistogramValue]: ...
 
     def histogram(
         self,
@@ -1111,8 +1100,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
-    ) -> NodeList:
-        ...
+    ) -> NodeList: ...
 
     @overload
     def list(
@@ -1124,8 +1112,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
-    ) -> EdgeList:
-        ...
+    ) -> EdgeList: ...
 
     def list(
         self,

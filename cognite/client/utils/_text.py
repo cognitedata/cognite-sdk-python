@@ -10,10 +10,10 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class DrawTables:
-    HLINE = "\N{box drawings light horizontal}"
-    VLINE = "\N{box drawings light vertical}"
-    XLINE = "\N{box drawings light vertical and horizontal}"
-    TOPLINE = "\N{box drawings light down and horizontal}"
+    HLINE = "\N{BOX DRAWINGS LIGHT HORIZONTAL}"
+    VLINE = "\N{BOX DRAWINGS LIGHT VERTICAL}"
+    XLINE = "\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}"
+    TOPLINE = "\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}"
 
 
 def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:

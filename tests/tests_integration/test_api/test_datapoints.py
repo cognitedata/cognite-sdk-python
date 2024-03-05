@@ -4,6 +4,7 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
       credentials to the `CogniteClient` for the Python SDK integration test CDF project:
 >>> python scripts/create_ts_for_integration_tests.py
 """
+
 from __future__ import annotations
 
 import itertools

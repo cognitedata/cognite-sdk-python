@@ -467,12 +467,10 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def create(self, sequence: Sequence | SequenceWrite) -> Sequence:
-        ...
+    def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
 
     @overload
-    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList:
-        ...
+    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
 
     def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
@@ -537,12 +535,10 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence | SequenceWrite | SequenceUpdate) -> Sequence:
-        ...
+    def update(self, item: Sequence | SequenceWrite | SequenceUpdate) -> Sequence: ...
 
     @overload
-    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]) -> SequenceList:
-        ...
+    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]) -> SequenceList: ...
 
     def update(
         self,
@@ -637,12 +633,10 @@ class SequencesAPI(APIClient):
     @overload
     def upsert(
         self, item: typing.Sequence[Sequence | SequenceWrite], mode: Literal["patch", "replace"] = "patch"
-    ) -> SequenceList:
-        ...
+    ) -> SequenceList: ...
 
     @overload
-    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence:
-        ...
+    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
 
     def upsert(
         self,
@@ -1028,8 +1022,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRows:
-        ...
+    ) -> SequenceRows: ...
 
     @overload
     def retrieve(
@@ -1040,8 +1033,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRowsList:
-        ...
+    ) -> SequenceRowsList: ...
 
     @overload
     def retrieve(
@@ -1052,8 +1044,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRows:
-        ...
+    ) -> SequenceRows: ...
 
     @overload
     def retrieve(
@@ -1064,8 +1055,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRowsList:
-        ...
+    ) -> SequenceRowsList: ...
 
     def retrieve(
         self,

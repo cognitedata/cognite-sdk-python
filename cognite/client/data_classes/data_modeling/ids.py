@@ -181,18 +181,15 @@ class DataModelId(VersionedDataModelingId):
 
 class IdLike(Protocol):
     @property
-    def space(self) -> str:
-        ...
+    def space(self) -> str: ...
 
     @property
-    def external_id(self) -> str:
-        ...
+    def external_id(self) -> str: ...
 
 
 class VersionedIdLike(IdLike, Protocol):
     @property
-    def version(self) -> str | None:
-        ...
+    def version(self) -> str | None: ...
 
 
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]

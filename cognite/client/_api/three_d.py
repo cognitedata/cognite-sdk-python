@@ -168,12 +168,10 @@ class ThreeDModelsAPI(APIClient):
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
 
     @overload
-    def update(self, item: ThreeDModel | ThreeDModelWrite) -> ThreeDModel:
-        ...
+    def update(self, item: ThreeDModel | ThreeDModelWrite) -> ThreeDModel: ...
 
     @overload
-    def update(self, item: Sequence[ThreeDModel | ThreeDModelWrite]) -> ThreeDModelList:
-        ...
+    def update(self, item: Sequence[ThreeDModel | ThreeDModelWrite]) -> ThreeDModelList: ...
 
     def update(
         self,
@@ -284,14 +282,14 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     @overload
-    def create(self, model_id: int, revision: ThreeDModelRevision | ThreeDModelRevisionWrite) -> ThreeDModelRevision:
-        ...
+    def create(
+        self, model_id: int, revision: ThreeDModelRevision | ThreeDModelRevisionWrite
+    ) -> ThreeDModelRevision: ...
 
     @overload
     def create(
         self, model_id: int, revision: Sequence[ThreeDModelRevision] | Sequence[ThreeDModelRevisionWrite]
-    ) -> ThreeDModelRevisionList:
-        ...
+    ) -> ThreeDModelRevisionList: ...
 
     def create(
         self,
@@ -640,8 +638,7 @@ class ThreeDAssetMappingAPI(APIClient):
     @overload
     def create(
         self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | ThreeDAssetMappingWrite
-    ) -> ThreeDAssetMapping:
-        ...
+    ) -> ThreeDAssetMapping: ...
 
     @overload
     def create(
@@ -649,8 +646,7 @@ class ThreeDAssetMappingAPI(APIClient):
         model_id: int,
         revision_id: int,
         asset_mapping: Sequence[ThreeDAssetMapping] | Sequence[ThreeDAssetMappingWrite],
-    ) -> ThreeDAssetMappingList:
-        ...
+    ) -> ThreeDAssetMappingList: ...
 
     def create(
         self,

@@ -427,13 +427,11 @@ class _SingleTSQueryBase:
 
     @property
     @abstractmethod
-    def is_raw_query(self) -> bool:
-        ...
+    def is_raw_query(self) -> bool: ...
 
     @property
     @abstractmethod
-    def task_orchestrator(self) -> type[BaseTaskOrchestrator]:
-        ...
+    def task_orchestrator(self) -> type[BaseTaskOrchestrator]: ...
 
     @abstractmethod
     def to_payload_item(self) -> DatapointsPayloadItem:
@@ -639,12 +637,10 @@ class BaseDpsFetchSubtask:
             self.static_kwargs["targetUnitSystem"] = target_unit_system
 
     @abstractmethod
-    def get_next_payload_item(self) -> DatapointsPayloadItem:
-        ...
+    def get_next_payload_item(self) -> DatapointsPayloadItem: ...
 
     @abstractmethod
-    def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
-        ...
+    def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None: ...
 
 
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
@@ -910,21 +906,17 @@ class BaseTaskOrchestrator(ABC):
         ...
 
     @abstractmethod
-    def _get_result(self) -> Datapoints | DatapointsArray:
-        ...
+    def _get_result(self) -> Datapoints | DatapointsArray: ...
 
     @abstractmethod
-    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
-        ...
+    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]: ...
 
     @property
     @abstractmethod
-    def offset_next(self) -> int:
-        ...
+    def offset_next(self) -> int: ...
 
     @abstractmethod
-    def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsAny) -> None:
-        ...
+    def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsAny) -> None: ...
 
 
 class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
@@ -1044,8 +1036,7 @@ class SerialLimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, SerialTaskOrches
 
 class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
     @abstractmethod
-    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
-        ...
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int: ...
 
     def get_remaining_limit(self) -> float:
         return math.inf

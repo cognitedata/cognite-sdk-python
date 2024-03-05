@@ -44,12 +44,10 @@ class UserProfilesAPI(APIClient):
         return UserProfile.load(self._get(self._RESOURCE_PATH + "/me").json())
 
     @overload
-    def retrieve(self, user_identifier: str) -> UserProfile | None:
-        ...
+    def retrieve(self, user_identifier: str) -> UserProfile | None: ...
 
     @overload
-    def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList:
-        ...
+    def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList: ...
 
     def retrieve(self, user_identifier: str | SequenceNotStr[str]) -> UserProfile | UserProfileList | None:
         """`Retrieve user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/operation/getUserProfilesByIds>`_
