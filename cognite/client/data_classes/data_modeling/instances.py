@@ -232,14 +232,12 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         return view_id in self.data
 
     @overload
-    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None:
-        ...
+    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None: ...
 
     @overload
     def get(
         self, view: ViewIdentifier, default: MutableMapping[PropertyIdentifier, PropertyValue] | _T
-    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T:
-        ...
+    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T: ...
 
     def get(
         self,
@@ -262,7 +260,6 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
 
 
 class Instance(WritableInstanceCore[T_CogniteResource], ABC):
-
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -307,12 +304,10 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         raise RuntimeError(err_msg) from None
 
     @overload
-    def get(self, attr: str) -> PropertyValue | None:
-        ...
+    def get(self, attr: str) -> PropertyValue | None: ...
 
     @overload
-    def get(self, attr: str, default: _T) -> PropertyValue | _T:
-        ...
+    def get(self, attr: str, default: _T) -> PropertyValue | _T: ...
 
     def get(self, attr: str, default: Any = None) -> Any:
         try:

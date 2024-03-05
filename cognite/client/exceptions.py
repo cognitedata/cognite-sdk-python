@@ -294,8 +294,7 @@ class CogniteMissingClientError(CogniteException):
         )
 
 
-class CogniteAuthError(CogniteException):
-    ...
+class CogniteAuthError(CogniteException): ...
 
 
 class CogniteAssetHierarchyError(CogniteException):
@@ -347,8 +346,7 @@ class ModelFailedException(Exception):
         return f"{self.typename} {self.id} failed with error '{self.error_message}'"
 
 
-class CogniteAuthorizationError(CogniteAPIError):
-    ...
+class CogniteAuthorizationError(CogniteAPIError): ...
 
 
 if _RUNNING_IN_BROWSER:

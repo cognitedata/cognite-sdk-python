@@ -192,8 +192,7 @@ class ResultSetExpression(CogniteObject, ABC):
         self.chain_to = chain_to
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        ...
+    def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:

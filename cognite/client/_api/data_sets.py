@@ -76,12 +76,10 @@ class DataSetsAPI(APIClient):
         return cast(Iterator[DataSet], self())
 
     @overload
-    def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList:
-        ...
+    def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList: ...
 
     @overload
-    def create(self, data_set: DataSet | DataSetWrite) -> DataSet:
-        ...
+    def create(self, data_set: DataSet | DataSetWrite) -> DataSet: ...
 
     def create(
         self, data_set: DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]
@@ -191,12 +189,10 @@ class DataSetsAPI(APIClient):
         return self._aggregate(filter=filter, cls=CountAggregate)
 
     @overload
-    def update(self, item: DataSet | DataSetWrite | DataSetUpdate) -> DataSet:
-        ...
+    def update(self, item: DataSet | DataSetWrite | DataSetUpdate) -> DataSet: ...
 
     @overload
-    def update(self, item: Sequence[DataSet | DataSetWrite | DataSetUpdate]) -> DataSetList:
-        ...
+    def update(self, item: Sequence[DataSet | DataSetWrite | DataSetUpdate]) -> DataSetList: ...
 
     def update(
         self, item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]

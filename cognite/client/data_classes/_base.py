@@ -273,12 +273,10 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return super().__iter__()
 
     @overload
-    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource:
-        ...
+    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource: ...
 
     @overload
-    def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList:
-        ...
+    def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList: ...
 
     def __getitem__(
         self: T_CogniteResourceList, item: SupportsIndex | slice
@@ -767,30 +765,25 @@ T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 class HasExternalId(Protocol):
     @property
-    def external_id(self) -> str | None:
-        ...
+    def external_id(self) -> str | None: ...
 
 
 class HasName(Protocol):
     @property
-    def name(self) -> str | None:
-        ...
+    def name(self) -> str | None: ...
 
 
 class HasInternalId(Protocol):
     @property
-    def id(self) -> int | None:
-        ...
+    def id(self) -> int | None: ...
 
 
 class HasExternalAndInternalId(Protocol):
     @property
-    def external_id(self) -> str | None:
-        ...
+    def external_id(self) -> str | None: ...
 
     @property
-    def id(self) -> int | None:
-        ...
+    def id(self) -> int | None: ...
 
 
 class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):

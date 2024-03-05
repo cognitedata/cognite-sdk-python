@@ -196,13 +196,11 @@ def _convert_and_isoformat_time_attrs_in_dict(item: dict) -> dict:
 
 
 @overload
-def convert_and_isoformat_time_attrs(item: dict) -> dict:
-    ...
+def convert_and_isoformat_time_attrs(item: dict) -> dict: ...
 
 
 @overload
-def convert_and_isoformat_time_attrs(item: list[dict]) -> list[dict]:
-    ...
+def convert_and_isoformat_time_attrs(item: list[dict]) -> list[dict]: ...
 
 
 def convert_and_isoformat_time_attrs(item: dict | list[dict]) -> dict | list[dict]:
@@ -232,23 +230,19 @@ class DateTimeAligner(ABC):
 
     @classmethod
     @abstractmethod
-    def ceil(cls, date: datetime) -> datetime:
-        ...
+    def ceil(cls, date: datetime) -> datetime: ...
 
     @classmethod
     @abstractmethod
-    def floor(cls, date: datetime) -> datetime:
-        ...
+    def floor(cls, date: datetime) -> datetime: ...
 
     @classmethod
     @abstractmethod
-    def units_between(cls, start: datetime, end: datetime) -> int:
-        ...
+    def units_between(cls, start: datetime, end: datetime) -> int: ...
 
     @classmethod
     @abstractmethod
-    def add_units(cls, date: datetime, units: int) -> datetime:
-        ...
+    def add_units(cls, date: datetime, units: int) -> datetime: ...
 
 
 class DayAligner(DateTimeAligner):

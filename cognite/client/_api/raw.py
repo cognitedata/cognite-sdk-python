@@ -70,12 +70,10 @@ class RawDatabasesAPI(APIClient):
         return cast(Iterator[Database], self())
 
     @overload
-    def create(self, name: str) -> Database:
-        ...
+    def create(self, name: str) -> Database: ...
 
     @overload
-    def create(self, name: list[str]) -> DatabaseList:
-        ...
+    def create(self, name: list[str]) -> DatabaseList: ...
 
     def create(self, name: str | list[str]) -> Database | DatabaseList:
         """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
@@ -193,12 +191,10 @@ class RawTablesAPI(APIClient):
         return self._set_db_name_on_tables_generator(table_iterator, db_name)
 
     @overload
-    def create(self, db_name: str, name: str) -> Table:
-        ...
+    def create(self, db_name: str, name: str) -> Table: ...
 
     @overload
-    def create(self, db_name: str, name: list[str]) -> TableList:
-        ...
+    def create(self, db_name: str, name: list[str]) -> TableList: ...
 
     def create(self, db_name: str, name: str | list[str]) -> Table | TableList:
         """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_

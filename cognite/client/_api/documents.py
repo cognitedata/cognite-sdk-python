@@ -199,8 +199,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]:
-        ...
+    ) -> Iterator[DocumentList]: ...
 
     @overload
     def __call__(
@@ -210,8 +209,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]:
-        ...
+    ) -> Iterator[DocumentList]: ...
 
     def __call__(
         self,
@@ -553,8 +551,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> DocumentList:
-        ...
+    ) -> DocumentList: ...
 
     @overload
     def search(
@@ -564,8 +561,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> DocumentHighlightList:
-        ...
+    ) -> DocumentHighlightList: ...
 
     def search(
         self,

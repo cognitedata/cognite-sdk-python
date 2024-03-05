@@ -22,11 +22,9 @@ T_ID = TypeVar("T_ID", int, str)
 
 
 class IdentifierCore(Protocol):
-    def as_dict(self, camel_case: bool = True) -> dict:
-        ...
+    def as_dict(self, camel_case: bool = True) -> dict: ...
 
-    def as_primitive(self) -> str | int:
-        ...
+    def as_primitive(self) -> str | int: ...
 
 
 class Identifier(Generic[T_ID]):
@@ -132,12 +130,10 @@ class DataModelingIdentifier:
         raise AttributeError(f"Not supported for {type(self).__name__} implementation")
 
 
-class ExternalId(Identifier[str]):
-    ...
+class ExternalId(Identifier[str]): ...
 
 
-class InternalId(Identifier[int]):
-    ...
+class InternalId(Identifier[int]): ...
 
 
 T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
@@ -204,13 +200,11 @@ T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierS
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @overload
     @classmethod
-    def of(cls, *ids: list[int | str]) -> IdentifierSequence:
-        ...
+    def of(cls, *ids: list[int | str]) -> IdentifierSequence: ...
 
     @overload
     @classmethod
-    def of(cls, *ids: int | str) -> IdentifierSequence:
-        ...
+    def of(cls, *ids: int | str) -> IdentifierSequence: ...
 
     @classmethod
     def of(cls, *ids: int | str | Sequence[int | str]) -> IdentifierSequence:
@@ -256,12 +250,10 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
 
 
-class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]):
-    ...
+class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]): ...
 
 
-class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
-    ...
+class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]): ...
 
 
 class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):

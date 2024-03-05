@@ -30,8 +30,7 @@ class ContainersAPI(APIClient):
         space: str | None = None,
         include_global: bool = False,
         limit: int | None = None,
-    ) -> Iterator[Container]:
-        ...
+    ) -> Iterator[Container]: ...
 
     @overload
     def __call__(
@@ -40,8 +39,7 @@ class ContainersAPI(APIClient):
         space: str | None = None,
         include_global: bool = False,
         limit: int | None = None,
-    ) -> Iterator[ContainerList]:
-        ...
+    ) -> Iterator[ContainerList]: ...
 
     def __call__(
         self,
@@ -84,12 +82,10 @@ class ContainersAPI(APIClient):
         return self()
 
     @overload
-    def retrieve(self, ids: ContainerIdentifier) -> Container | None:
-        ...
+    def retrieve(self, ids: ContainerIdentifier) -> Container | None: ...
 
     @overload
-    def retrieve(self, ids: Sequence[ContainerIdentifier]) -> ContainerList:
-        ...
+    def retrieve(self, ids: Sequence[ContainerIdentifier]) -> ContainerList: ...
 
     def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
         """`Retrieve one or more container by id(s). <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_
@@ -257,12 +253,10 @@ class ContainersAPI(APIClient):
         )
 
     @overload
-    def apply(self, container: Sequence[ContainerApply]) -> ContainerList:
-        ...
+    def apply(self, container: Sequence[ContainerApply]) -> ContainerList: ...
 
     @overload
-    def apply(self, container: ContainerApply) -> Container:
-        ...
+    def apply(self, container: ContainerApply) -> Container: ...
 
     def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
         """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_

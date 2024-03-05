@@ -163,13 +163,11 @@ def _check_client_has_newest_major_version() -> None:
 
 
 @overload
-def split_into_n_parts(seq: list[T], *, n: int) -> Iterator[list[T]]:
-    ...
+def split_into_n_parts(seq: list[T], *, n: int) -> Iterator[list[T]]: ...
 
 
 @overload
-def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
-    ...
+def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]: ...
 
 
 def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
@@ -178,13 +176,11 @@ def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
 
 
 @overload
-def split_into_chunks(collection: set | list, chunk_size: int) -> list[list]:
-    ...
+def split_into_chunks(collection: set | list, chunk_size: int) -> list[list]: ...
 
 
 @overload
-def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]:
-    ...
+def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]: ...
 
 
 def split_into_chunks(collection: set | list | dict, chunk_size: int) -> list[list] | list[dict]:
