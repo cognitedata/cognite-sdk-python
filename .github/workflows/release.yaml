@@ -106,9 +106,9 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: twine upload --verbose dist/* || echo 'Version exists'
 
-      # TODO: Make this work again
-      # - name: Push code snippets to service-contracts
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: sh ./scripts/deploy_code_snippets.sh || echo 'PR failed. There is probably
-      #     nothing to commit'
+      - name: Push code snippets to service-contracts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/generate_code_snippets.py > python-sdk-examples.json
+          ./scripts/deploy_code_snippets.sh || echo 'PR failed. There is probably nothing to commit'
