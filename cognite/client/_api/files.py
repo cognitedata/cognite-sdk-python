@@ -78,8 +78,8 @@ class FilesAPI(APIClient):
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
             asset_external_ids (SequenceNotStr[str] | None): No description.
-            asset_subtree_ids (int | Sequence[int] | None): return a list of assets that are in a subtree rooted at any of these assetIds.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of assets that are in a subtree rooted at any of these assetExternalIds.
+            asset_subtree_ids (int | Sequence[int] | None): return a list of files that are in a subtree rooted at any of these assetIds.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of files that are in a subtree rooted at any of these assetExternalIds.
             data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the files matching the specified label(s).
@@ -896,8 +896,8 @@ class FilesAPI(APIClient):
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
             asset_external_ids (SequenceNotStr[str] | None): No description.
-            asset_subtree_ids (int | Sequence[int] | None): return a list of assets that are in a subtree rooted at any of these assetIds.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of assets that are in a subtree rooted at any of these assetExternalIds.
+            asset_subtree_ids (int | Sequence[int] | None): return a list of files that are in a subtree rooted at any of these assetIds.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of files that are in a subtree rooted at any of these assetExternalIds.
             data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the files matching the specified label filter(s).

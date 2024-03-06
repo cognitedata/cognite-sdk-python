@@ -89,8 +89,8 @@ class EventsAPI(APIClient):
             metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
             asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (int | Sequence[int] | None): return a list of assets that are in a subtree rooted at any of these assetIds.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of assets that are in a subtree rooted at any of these assetExternalIds.
+            asset_subtree_ids (int | Sequence[int] | None): return a list of events that are in a subtree rooted at any of these assetIds.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of events that are in a subtree rooted at any of these assetExternalIds.
             data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
             source (str | None): The source of this event.
@@ -718,8 +718,8 @@ class EventsAPI(APIClient):
             metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
             asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (int | Sequence[int] | None): return a list of assets that are in a subtree rooted at any of these assetIds.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of assets that are in a subtree rooted at any of these assetExternalIds.
+            asset_subtree_ids (int | Sequence[int] | None): return a list of events that are in a subtree rooted at any of these assetIds.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Return a list of events that are in a subtree rooted at any of these assetExternalIds.
             data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
             source (str | None): The source of this event.
