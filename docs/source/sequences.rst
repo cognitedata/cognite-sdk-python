@@ -67,9 +67,17 @@ Upsert sequences
 
 Rows
 ----
-Retrieve data
+Retrieve rows
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
+
+Retrieve rows in a pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
+
+Retrieve last row
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_last_row
 
 Insert rows into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
