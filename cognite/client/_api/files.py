@@ -654,9 +654,9 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> with client.files.begin_multipart_upload("my_file.txt", parts=2) as session:
-                >>>     # Note that the minimum chunk size is 5 MiB.
-                >>>     session.upload_part(0, "hello" * 1_200_000)
-                >>>     session.upload_part(1, " world")
+                ...     # Note that the minimum chunk size is 5 MiB.
+                ...     session.upload_part(0, "hello" * 1_200_000)
+                ...     session.upload_part(1, " world")
         """
         file_metadata = FileMetadata(
             name=name,
