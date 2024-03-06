@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.27.1] - 2024-03-08
+### Improved
+- When iterating raw rows concurrently, a max queue size for pending results have been added to keep a stable low
+  bounded memory usage profile (for when the caller's code isn't processing fast enough to keep up). Worth noting
+  that this has no effect on the total retrieval time.
+
 ## [7.27.0] - 2024-03-04
 ### Added
 - Added support for multipart file uploads using the `client.files.multipart_upload_session` method.
