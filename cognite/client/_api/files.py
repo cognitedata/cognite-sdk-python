@@ -25,7 +25,7 @@ from cognite.client.data_classes import (
     FileMetadataList,
     FileMetadataUpdate,
     FileMetadataWrite,
-    FileMultipartUploadInit,
+    FileMultipartUploadSession,
     GeoLocation,
     GeoLocationFilter,
     Label,
@@ -614,7 +614,7 @@ class FilesAPI(APIClient):
         source_modified_time: int | None = None,
         security_categories: Sequence[int] | None = None,
         overwrite: bool = False,
-    ) -> FileMultipartUploadInit:
+    ) -> FileMultipartUploadSession:
         """Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
@@ -643,7 +643,7 @@ class FilesAPI(APIClient):
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            FileMultipartUploadInit: Object containing metadata about the created file, and information needed to upload the file content.
+            FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content.
 
         Examples:
 
@@ -651,11 +651,11 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.files.begin_multipart_upload("my_file.txt", parts=2)
+                >>> session = client.files.begin_multipart_upload("my_file.txt", parts=2)
                 >>> # Note that the minimum chunk size is 5 MiB.
-                >>> client.files.upload_multipart_part(res.upload_urls[0], "hello" * 1_200_000)
-                >>> client.files.upload_multipart_part(res.upload_urls[1], " world")
-                >>> client.files.complete_multipart_upload(res.file_metadata.id, res.upload_id)
+                >>> client.files.upload_multipart_part(session.upload_urls[0], "hello" * 1_200_000)
+                >>> client.files.upload_multipart_part(session.upload_urls[1], " world")
+                >>> client.files.complete_multipart_upload(session)
         """
         file_metadata = FileMetadata(
             name=name,
@@ -689,7 +689,7 @@ class FilesAPI(APIClient):
         upload_urls = returned_file_metadata["uploadUrls"]
         upload_id = returned_file_metadata["uploadId"]
 
-        return FileMultipartUploadInit(FileMetadata._load(returned_file_metadata), upload_urls, upload_id)
+        return FileMultipartUploadSession(FileMetadata._load(returned_file_metadata), upload_urls, upload_id)
 
     def upload_multipart_part(
         self,
@@ -723,16 +723,15 @@ class FilesAPI(APIClient):
                 code=upload_response.status_code,
             )
 
-    def complete_multipart_upload(self, file_id: int, upload_id: str) -> None:
+    def complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
         """Complete a multipart upload. Once this returns the file can be downloaded.
 
         Args:
-            file_id (int): ID of the file being uploaded.
-            upload_id (str): Upload ID returned from `begin_multipart_upload`
+            session (FileMultipartUploadSession): Multipart upload session returned from
         """
         self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
-            json={"id": file_id, "uploadId": upload_id},
+            json={"id": session.file_metadata.id, "uploadId": session.upload_id},
         )
 
     def retrieve_download_urls(

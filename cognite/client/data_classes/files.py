@@ -468,7 +468,7 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
         return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
 
 
-class FileMultipartUploadInit:
+class FileMultipartUploadSession:
     """Result of a call to `begin_multipart_upload`
 
     Args:

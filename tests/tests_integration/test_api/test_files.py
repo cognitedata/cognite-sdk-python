@@ -229,19 +229,19 @@ class TestFilesAPI:
 
         cognite_client.config.file_transfer_timeout = 10
 
-        result = cognite_client.files.begin_multipart_upload(
+        session = cognite_client.files.begin_multipart_upload(
             name="test_multipart.txt",
             parts=2,
             external_id=external_id,
             overwrite=True,
         )
 
-        assert len(result.upload_urls) == 2
+        assert len(session.upload_urls) == 2
 
-        cognite_client.files.upload_multipart_part(result.upload_urls[0], content_1, result.file_metadata.mime_type)
-        cognite_client.files.upload_multipart_part(result.upload_urls[1], content_2, result.file_metadata.mime_type)
+        cognite_client.files.upload_multipart_part(session.upload_urls[0], content_1, session.file_metadata.mime_type)
+        cognite_client.files.upload_multipart_part(session.upload_urls[1], content_2, session.file_metadata.mime_type)
 
-        cognite_client.files.complete_multipart_upload(result.file_metadata.id, result.upload_id)
+        cognite_client.files.complete_multipart_upload(session)
 
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert len(retrieved_content) == 6000005

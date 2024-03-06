@@ -95,7 +95,7 @@ from cognite.client.data_classes.files import (
     FileMetadataUpdate,
     FileMetadataWrite,
     FileMetadataWriteList,
-    FileMultipartUploadInit,
+    FileMultipartUploadSession,
 )
 from cognite.client.data_classes.functions import (
     Function,
@@ -373,7 +373,7 @@ __all__ = [
     "FileMetadataList",
     "FileMetadataWriteList",
     "FileMetadataUpdate",
-    "FileMultipartUploadInit",
+    "FileMultipartUploadSession",
     "SourceFile",
     "Document",
     "DocumentList",
