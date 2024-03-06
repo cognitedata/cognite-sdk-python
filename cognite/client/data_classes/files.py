@@ -471,7 +471,7 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
 
 
 class FileMultipartUploadSession:
-    """Result of a call to `begin_multipart_upload`
+    """Result of a call to `multipart_upload_session`
 
     Args:
         file_metadata (FileMetadata): The created file in CDF.
@@ -496,7 +496,7 @@ class FileMultipartUploadSession:
         on Azure. See `requests.utils.super_len`.
 
         Args:
-            part_no (int): Which part number this is, must be between 0 and `parts` given to `begin_multipart_upload`
+            part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
             content (str | bytes | TextIO | BinaryIO): The content to upload.
         """
         if part_no < 0 or part_no > len(self._uploaded_urls):

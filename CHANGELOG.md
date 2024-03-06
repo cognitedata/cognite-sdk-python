@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.27.0] - 2024-03-04
 ### Added
-- Added support for multipart file uploads.
+- Added support for multipart file uploads using the `client.files.multipart_upload_session` method.
 
 ## [7.26.2] - 2024-03-05
 ### Fixed

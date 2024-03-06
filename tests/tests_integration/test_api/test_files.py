@@ -227,7 +227,7 @@ class TestFilesAPI:
 
         external_id = "test_upload_multipart"
 
-        with cognite_client.files.begin_multipart_upload(
+        with cognite_client.files.multipart_upload_session(
             name="test_multipart.txt",
             parts=2,
             external_id=external_id,

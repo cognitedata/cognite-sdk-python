@@ -597,7 +597,7 @@ class FilesAPI(APIClient):
 
         return FileMetadata._load(returned_file_metadata)
 
-    def begin_multipart_upload(
+    def multipart_upload_session(
         self,
         name: str,
         parts: int,
@@ -653,7 +653,7 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> with client.files.begin_multipart_upload("my_file.txt", parts=2) as session:
+                >>> with client.files.multipart_upload_session("my_file.txt", parts=2) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
@@ -700,7 +700,7 @@ class FilesAPI(APIClient):
         content: str | bytes | TextIO | BinaryIO,
         mime_type: str | None = None,
     ) -> None:
-        """Upload part of a file to an upload URL returned from `begin_multipart_upload`.
+        """Upload part of a file to an upload URL returned from `multipart_upload_session`.
         Note that if `content` does not somehow expose its length, this method may not work
         on Azure. See `requests.utils.super_len`.
 
