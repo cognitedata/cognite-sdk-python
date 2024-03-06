@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Sequence, TypeVar, cast
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, BinaryIO, Sequence, TextIO, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -19,6 +20,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
+from cognite.client.exceptions import CogniteFileUploadError
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -475,9 +477,52 @@ class FileMultipartUploadSession:
         file_metadata (FileMetadata): The created file in CDF.
         upload_urls (list[str]): List of upload URLs for the file upload.
         upload_id (str): ID of the multipart upload, needed to complete the upload.
+        cognite_client (CogniteClient): Cognite client to use for completing the upload.
     """
 
-    def __init__(self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str) -> None:
+    def __init__(
+        self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str, cognite_client: CogniteClient
+    ) -> None:
         self.file_metadata = file_metadata
-        self.upload_urls = upload_urls
-        self.upload_id = upload_id
+        self._upload_urls = upload_urls
+        self._upload_id = upload_id
+        self._uploaded_urls = [False for _ in upload_urls]
+        self._in_context = False
+        self._cognite_client = cognite_client
+
+    def upload_part(self, part_no: int, content: str | bytes | TextIO | BinaryIO) -> None:
+        """Upload part of a file.
+        Note that if `content` does not somehow expose its length, this method may not work
+        on Azure. See `requests.utils.super_len`.
+
+        Args:
+            part_no (int): Which part number this is, must be between 0 and `parts` given to `begin_multipart_upload`
+            content (str | bytes | TextIO | BinaryIO): The content to upload.
+        """
+        if part_no < 0 or part_no > len(self._uploaded_urls):
+            raise ValueError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
+        if self._uploaded_urls[part_no]:
+            raise CogniteFileUploadError(message="Attempted to upload an already uploaded part", code=400)
+        self._cognite_client.files._upload_multipart_part(
+            self._upload_urls[part_no], content, self.file_metadata.mime_type
+        )
+        self._uploaded_urls[part_no] = True
+
+    def __enter__(self) -> FileMultipartUploadSession:
+        self.in_context = True
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> bool:
+        self.in_context = False
+        # If we failed, do not call complete
+        if exc_type is not None:
+            return False
+
+        if not all(self._uploaded_urls):
+            raise CogniteFileUploadError(message="Did not upload all parts of file during multipart upload", code=400)
+
+        self._cognite_client.files._complete_multipart_upload(self)
+
+        return True

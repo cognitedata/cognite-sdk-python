@@ -643,7 +643,9 @@ class FilesAPI(APIClient):
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content.
+            FileMultipartUploadSession: Object containing metadata about the created file,
+            and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once
+            all parts are uploaded.
 
         Examples:
 
@@ -651,11 +653,10 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> session = client.files.begin_multipart_upload("my_file.txt", parts=2)
-                >>> # Note that the minimum chunk size is 5 MiB.
-                >>> client.files.upload_multipart_part(session.upload_urls[0], "hello" * 1_200_000)
-                >>> client.files.upload_multipart_part(session.upload_urls[1], " world")
-                >>> client.files.complete_multipart_upload(session)
+                >>> with client.files.begin_multipart_upload("my_file.txt", parts=2) as session:
+                >>>     # Note that the minimum chunk size is 5 MiB.
+                >>>     session.upload_part(0, "hello" * 1_200_000)
+                >>>     session.upload_part(1, " world")
         """
         file_metadata = FileMetadata(
             name=name,
@@ -689,9 +690,11 @@ class FilesAPI(APIClient):
         upload_urls = returned_file_metadata["uploadUrls"]
         upload_id = returned_file_metadata["uploadId"]
 
-        return FileMultipartUploadSession(FileMetadata._load(returned_file_metadata), upload_urls, upload_id)
+        return FileMultipartUploadSession(
+            FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
+        )
 
-    def upload_multipart_part(
+    def _upload_multipart_part(
         self,
         upload_url: str,
         content: str | bytes | TextIO | BinaryIO,
@@ -723,7 +726,7 @@ class FilesAPI(APIClient):
                 code=upload_response.status_code,
             )
 
-    def complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
+    def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
         """Complete a multipart upload. Once this returns the file can be downloaded.
 
         Args:
@@ -731,7 +734,7 @@ class FilesAPI(APIClient):
         """
         self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
-            json={"id": session.file_metadata.id, "uploadId": session.upload_id},
+            json={"id": session.file_metadata.id, "uploadId": session._upload_id},
         )
 
     def retrieve_download_urls(

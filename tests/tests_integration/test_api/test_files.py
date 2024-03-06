@@ -227,21 +227,22 @@ class TestFilesAPI:
 
         external_id = "test_upload_multipart"
 
-        cognite_client.config.file_transfer_timeout = 10
-
-        session = cognite_client.files.begin_multipart_upload(
+        with cognite_client.files.begin_multipart_upload(
             name="test_multipart.txt",
             parts=2,
             external_id=external_id,
             overwrite=True,
-        )
+        ) as session:
+            session.upload_part(0, content_1)
+            session.upload_part(1, content_2)
 
-        assert len(session.upload_urls) == 2
-
-        cognite_client.files.upload_multipart_part(session.upload_urls[0], content_1, session.file_metadata.mime_type)
-        cognite_client.files.upload_multipart_part(session.upload_urls[1], content_2, session.file_metadata.mime_type)
-
-        cognite_client.files.complete_multipart_upload(session)
+        for _ in range(10):
+            file = cognite_client.files.retrieve(session.file_metadata.id)
+            if file.uploaded:
+                break
+            time.sleep(1)
 
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert len(retrieved_content) == 6000005
+
+        cognite_client.files.delete(session.file_metadata.id)

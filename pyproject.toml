@@ -14,6 +14,9 @@ license = "Apache-2.0"
 
 packages = [{ include="cognite", from="." }]
 
+[tool.ruff]
+line-length = 120
+
 [tool.ruff.lint.per-file-ignores]
 # let scripts use print statements
 "scripts/*" = ["T201"]
