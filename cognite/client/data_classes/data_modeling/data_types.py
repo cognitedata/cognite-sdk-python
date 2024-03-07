@@ -85,8 +85,7 @@ class PropertyType(ABC):
 class LoadablePropertyType(ABC):
     @classmethod
     @abstractmethod
-    def load(cls, data: dict) -> Self:
-        ...
+    def load(cls, data: dict) -> Self: ...
 
 
 @dataclass
@@ -101,8 +100,7 @@ class Text(ListablePropertyType):
 
 
 @dataclass
-class Primitive(ListablePropertyType, ABC):
-    ...
+class Primitive(ListablePropertyType, ABC): ...
 
 
 @dataclass
@@ -199,8 +197,7 @@ class Int64(ListablePropertyType):
 
 
 @dataclass
-class CDFExternalIdReference(ListablePropertyType, ABC):
-    ...
+class CDFExternalIdReference(ListablePropertyType, ABC): ...
 
 
 @dataclass

@@ -27,8 +27,7 @@ class DataModelsAPI(APIClient):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[DataModel]:
-        ...
+    ) -> Iterator[DataModel]: ...
 
     @overload
     def __call__(
@@ -39,8 +38,7 @@ class DataModelsAPI(APIClient):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[DataModelList]:
-        ...
+    ) -> Iterator[DataModelList]: ...
 
     def __call__(
         self,
@@ -90,14 +88,12 @@ class DataModelsAPI(APIClient):
     @overload
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[True]
-    ) -> DataModelList[View]:
-        ...
+    ) -> DataModelList[View]: ...
 
     @overload
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[False] = False
-    ) -> DataModelList[ViewId]:
-        ...
+    ) -> DataModelList[ViewId]: ...
 
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
@@ -160,8 +156,7 @@ class DataModelsAPI(APIClient):
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> DataModelList[View]:
-        ...
+    ) -> DataModelList[View]: ...
 
     @overload
     def list(
@@ -171,8 +166,7 @@ class DataModelsAPI(APIClient):
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> DataModelList[ViewId]:
-        ...
+    ) -> DataModelList[ViewId]: ...
 
     def list(
         self,
@@ -227,12 +221,10 @@ class DataModelsAPI(APIClient):
         )
 
     @overload
-    def apply(self, data_model: Sequence[DataModelApply]) -> DataModelList:
-        ...
+    def apply(self, data_model: Sequence[DataModelApply]) -> DataModelList: ...
 
     @overload
-    def apply(self, data_model: DataModelApply) -> DataModel:
-        ...
+    def apply(self, data_model: DataModelApply) -> DataModel: ...
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
         """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_

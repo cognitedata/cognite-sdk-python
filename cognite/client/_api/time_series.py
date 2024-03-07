@@ -470,12 +470,10 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def create(self, time_series: Sequence[TimeSeries] | Sequence[TimeSeriesWrite]) -> TimeSeriesList:
-        ...
+    def create(self, time_series: Sequence[TimeSeries] | Sequence[TimeSeriesWrite]) -> TimeSeriesList: ...
 
     @overload
-    def create(self, time_series: TimeSeries | TimeSeriesWrite) -> TimeSeries:
-        ...
+    def create(self, time_series: TimeSeries | TimeSeriesWrite) -> TimeSeries: ...
 
     def create(
         self, time_series: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]
@@ -532,12 +530,10 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]) -> TimeSeriesList:
-        ...
+    def update(self, item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]) -> TimeSeriesList: ...
 
     @overload
-    def update(self, item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate) -> TimeSeries:
-        ...
+    def update(self, item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate) -> TimeSeries: ...
 
     def update(
         self,
@@ -583,12 +579,10 @@ class TimeSeriesAPI(APIClient):
     @overload
     def upsert(
         self, item: Sequence[TimeSeries | TimeSeriesWrite], mode: Literal["patch", "replace"] = "patch"
-    ) -> TimeSeriesList:
-        ...
+    ) -> TimeSeriesList: ...
 
     @overload
-    def upsert(self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
-        ...
+    def upsert(self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch") -> TimeSeries: ...
 
     def upsert(
         self,

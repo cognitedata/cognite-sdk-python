@@ -456,12 +456,10 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList:
-        ...
+    def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList: ...
 
     @overload
-    def create(self, event: Event | EventWrite) -> Event:
-        ...
+    def create(self, event: Event | EventWrite) -> Event: ...
 
     def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """`Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
@@ -512,12 +510,10 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Event | EventWrite | EventUpdate]) -> EventList:
-        ...
+    def update(self, item: Sequence[Event | EventWrite | EventUpdate]) -> EventList: ...
 
     @overload
-    def update(self, item: Event | EventWrite | EventUpdate) -> Event:
-        ...
+    def update(self, item: Event | EventWrite | EventUpdate) -> Event: ...
 
     def update(
         self, item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]
@@ -578,12 +574,10 @@ class EventsAPI(APIClient):
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
 
     @overload
-    def upsert(self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch") -> EventList:
-        ...
+    def upsert(self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch") -> EventList: ...
 
     @overload
-    def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event:
-        ...
+    def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event: ...
 
     def upsert(
         self, item: Event | EventWrite | Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"

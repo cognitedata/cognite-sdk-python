@@ -507,12 +507,10 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def create(self, asset: Sequence[Asset] | Sequence[AssetWrite]) -> AssetList:
-        ...
+    def create(self, asset: Sequence[Asset] | Sequence[AssetWrite]) -> AssetList: ...
 
     @overload
-    def create(self, asset: Asset | AssetWrite) -> Asset:
-        ...
+    def create(self, asset: Asset | AssetWrite) -> Asset: ...
 
     def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """`Create one or more assets. <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_
@@ -710,12 +708,10 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Asset | AssetWrite | AssetUpdate]) -> AssetList:
-        ...
+    def update(self, item: Sequence[Asset | AssetWrite | AssetUpdate]) -> AssetList: ...
 
     @overload
-    def update(self, item: Asset | AssetWrite | AssetUpdate) -> Asset:
-        ...
+    def update(self, item: Asset | AssetWrite | AssetUpdate) -> Asset: ...
 
     def update(
         self, item: Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]
@@ -780,12 +776,10 @@ class AssetsAPI(APIClient):
         return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
     @overload
-    def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList:
-        ...
+    def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList: ...
 
     @overload
-    def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset:
-        ...
+    def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset: ...
 
     def upsert(
         self, item: Asset | AssetWrite | Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch"

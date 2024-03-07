@@ -179,12 +179,10 @@ class Table(TableCore):
         return TableWrite(name=self.name)
 
     @overload
-    def rows(self, key: str, limit: int | None = None) -> Row | None:
-        ...
+    def rows(self, key: str, limit: int | None = None) -> Row | None: ...
 
     @overload
-    def rows(self, key: None = None, limit: int | None = None) -> RowList:
-        ...
+    def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
 
     def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
         """Get the rows in this table.

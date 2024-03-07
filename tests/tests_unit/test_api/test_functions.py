@@ -1,7 +1,6 @@
 import io
 import operator as op
 import os
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
@@ -323,7 +322,7 @@ def cognite_client_with_client_credentials_flow(rsps):
         rsps.POST,
         "https://bla",
         status=200,
-        json={"access_token": "abc", "expires_at": datetime.now().timestamp() + 1000},
+        json={"access_token": "abc", "expires_in": 1000},
     )
     return CogniteClient(
         ClientConfig(

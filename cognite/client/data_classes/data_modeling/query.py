@@ -34,7 +34,7 @@ class SourceSelector(CogniteObject):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"source": self.source.dump(camel_case)}
-        if self.properties:
+        if self.properties is not None:
             output["properties"] = self.properties
         if self.target_units:
             output["targetUnits" if camel_case else "target_units"] = [
@@ -192,8 +192,7 @@ class ResultSetExpression(CogniteObject, ABC):
         self.chain_to = chain_to
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        ...
+    def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:

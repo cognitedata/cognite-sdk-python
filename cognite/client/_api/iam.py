@@ -265,12 +265,10 @@ class GroupsAPI(APIClient):
         return GroupList._load(res.json()["items"], cognite_client=self._cognite_client, allow_unknown=True)
 
     @overload
-    def create(self, group: Group | GroupWrite) -> Group:
-        ...
+    def create(self, group: Group | GroupWrite) -> Group: ...
 
     @overload
-    def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList:
-        ...
+    def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
 
     def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
@@ -336,14 +334,12 @@ class SecurityCategoriesAPI(APIClient):
         return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
     @overload
-    def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory:
-        ...
+    def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
 
     @overload
     def create(
         self, security_category: Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]
-    ) -> SecurityCategoryList:
-        ...
+    ) -> SecurityCategoryList: ...
 
     def create(
         self,

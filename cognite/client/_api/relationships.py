@@ -332,12 +332,10 @@ class RelationshipsAPI(APIClient):
         )
 
     @overload
-    def create(self, relationship: Relationship | RelationshipWrite) -> Relationship:
-        ...
+    def create(self, relationship: Relationship | RelationshipWrite) -> Relationship: ...
 
     @overload
-    def create(self, relationship: Sequence[Relationship | RelationshipWrite]) -> RelationshipList:
-        ...
+    def create(self, relationship: Sequence[Relationship | RelationshipWrite]) -> RelationshipList: ...
 
     def create(
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
@@ -395,12 +393,10 @@ class RelationshipsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Relationship | RelationshipWrite | RelationshipUpdate) -> Relationship:
-        ...
+    def update(self, item: Relationship | RelationshipWrite | RelationshipUpdate) -> Relationship: ...
 
     @overload
-    def update(self, item: Sequence[Relationship | RelationshipWrite | RelationshipUpdate]) -> RelationshipList:
-        ...
+    def update(self, item: Sequence[Relationship | RelationshipWrite | RelationshipUpdate]) -> RelationshipList: ...
 
     def update(
         self,
@@ -461,14 +457,12 @@ class RelationshipsAPI(APIClient):
     @overload
     def upsert(
         self, item: Sequence[Relationship | RelationshipWrite], mode: Literal["patch", "replace"] = "patch"
-    ) -> RelationshipList:
-        ...
+    ) -> RelationshipList: ...
 
     @overload
     def upsert(
         self, item: Relationship | RelationshipWrite, mode: Literal["patch", "replace"] = "patch"
-    ) -> Relationship:
-        ...
+    ) -> Relationship: ...
 
     def upsert(
         self,

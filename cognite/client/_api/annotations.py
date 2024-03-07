@@ -30,12 +30,10 @@ class AnnotationsAPI(APIClient):
         )
 
     @overload
-    def create(self, annotations: Annotation | AnnotationWrite) -> Annotation:
-        ...
+    def create(self, annotations: Annotation | AnnotationWrite) -> Annotation: ...
 
     @overload
-    def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList:
-        ...
+    def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList: ...
 
     def create(
         self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
@@ -59,12 +57,10 @@ class AnnotationsAPI(APIClient):
         )
 
     @overload
-    def suggest(self, annotations: Annotation) -> Annotation:
-        ...
+    def suggest(self, annotations: Annotation) -> Annotation: ...
 
     @overload
-    def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList:
-        ...
+    def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList: ...
 
     def suggest(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
         """`Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
@@ -117,12 +113,10 @@ class AnnotationsAPI(APIClient):
         return annotation_update.dump()
 
     @overload
-    def update(self, item: Annotation | AnnotationWrite | AnnotationUpdate) -> Annotation:
-        ...
+    def update(self, item: Annotation | AnnotationWrite | AnnotationUpdate) -> Annotation: ...
 
     @overload
-    def update(self, item: Sequence[Annotation | AnnotationWrite | AnnotationUpdate]) -> AnnotationList:
-        ...
+    def update(self, item: Sequence[Annotation | AnnotationWrite | AnnotationUpdate]) -> AnnotationList: ...
 
     def update(
         self,

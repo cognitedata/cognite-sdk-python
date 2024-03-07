@@ -185,8 +185,7 @@ class Filter(ABC):
             raise ValueError(f"Unknown filter type: {filter_name}")
 
     @abstractmethod
-    def _filter_body(self, camel_case_property: bool) -> list | dict:
-        ...
+    def _filter_body(self, camel_case_property: bool) -> list | dict: ...
 
     def _involved_filter_types(self) -> set[type[Filter]]:
         output = {type(self)}

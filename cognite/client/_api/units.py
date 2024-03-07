@@ -29,12 +29,10 @@ class UnitAPI(APIClient):
         self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit:
-        ...
+    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList:
-        ...
+    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
 
     def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False

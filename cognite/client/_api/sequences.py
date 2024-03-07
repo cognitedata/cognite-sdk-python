@@ -467,12 +467,10 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def create(self, sequence: Sequence | SequenceWrite) -> Sequence:
-        ...
+    def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
 
     @overload
-    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList:
-        ...
+    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
 
     def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
@@ -537,12 +535,10 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence | SequenceWrite | SequenceUpdate) -> Sequence:
-        ...
+    def update(self, item: Sequence | SequenceWrite | SequenceUpdate) -> Sequence: ...
 
     @overload
-    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]) -> SequenceList:
-        ...
+    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]) -> SequenceList: ...
 
     def update(
         self,
@@ -637,12 +633,10 @@ class SequencesAPI(APIClient):
     @overload
     def upsert(
         self, item: typing.Sequence[Sequence | SequenceWrite], mode: Literal["patch", "replace"] = "patch"
-    ) -> SequenceList:
-        ...
+    ) -> SequenceList: ...
 
     @overload
-    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence:
-        ...
+    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
 
     def upsert(
         self,
@@ -1028,8 +1022,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRows:
-        ...
+    ) -> SequenceRows: ...
 
     @overload
     def retrieve(
@@ -1040,8 +1033,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRowsList:
-        ...
+    ) -> SequenceRowsList: ...
 
     @overload
     def retrieve(
@@ -1052,8 +1044,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRows:
-        ...
+    ) -> SequenceRows: ...
 
     @overload
     def retrieve(
@@ -1064,8 +1055,7 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-    ) -> SequenceRowsList:
-        ...
+    ) -> SequenceRowsList: ...
 
     def retrieve(
         self,
@@ -1174,6 +1164,7 @@ class SequencesDataAPI(APIClient):
         limit: int | None = None,
     ) -> pandas.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
+
         Args:
             start (int): (inclusive) row number to start from.
             end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
@@ -1182,8 +1173,10 @@ class SequencesDataAPI(APIClient):
             column_names (str | None):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
             id (int | None): Id of sequence
             limit (int | None): Maximum number of rows to return per sequence.
+
         Returns:
-            pandas.DataFrame: pandas.DataFrame
+            pandas.DataFrame: The requested sequence data in a pandas DataFrame
+
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

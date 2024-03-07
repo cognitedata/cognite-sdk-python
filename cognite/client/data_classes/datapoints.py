@@ -282,12 +282,10 @@ class DatapointsArray(CogniteResource):
         return _json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     @overload
-    def __getitem__(self, item: int) -> Datapoint:
-        ...
+    def __getitem__(self, item: int) -> Datapoint: ...
 
     @overload
-    def __getitem__(self, item: slice) -> DatapointsArray:
-        ...
+    def __getitem__(self, item: slice) -> DatapointsArray: ...
 
     def __getitem__(self, item: int | slice) -> Datapoint | DatapointsArray:
         if isinstance(item, slice):
@@ -505,12 +503,10 @@ class Datapoints(CogniteResource):
         )
 
     @overload
-    def __getitem__(self, item: int) -> Datapoint:
-        ...
+    def __getitem__(self, item: int) -> Datapoint: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Datapoints:
-        ...
+    def __getitem__(self, item: slice) -> Datapoints: ...
 
     def __getitem__(self, item: int | slice) -> Datapoint | Datapoints:
         if isinstance(item, slice):

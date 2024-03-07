@@ -670,12 +670,10 @@ class SequenceRows(CogniteResource):
         return len(self.rows)
 
     @overload
-    def __getitem__(self, item: int) -> list[RowValues]:
-        ...
+    def __getitem__(self, item: int) -> list[RowValues]: ...
 
     @overload
-    def __getitem__(self, item: slice) -> NoReturn:
-        ...
+    def __getitem__(self, item: slice) -> NoReturn: ...
 
     def __getitem__(self, item: int | slice) -> list[RowValues]:
         if isinstance(item, slice):
@@ -849,8 +847,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["id", "external_id"] = "external_id",
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: Literal[True] = True,
-    ) -> pandas.DataFrame:
-        ...
+    ) -> pandas.DataFrame: ...
 
     @overload
     def to_pandas(
@@ -858,8 +855,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["external_id"] = "external_id",
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: Literal[False] = False,
-    ) -> dict[str, pandas.DataFrame]:
-        ...
+    ) -> dict[str, pandas.DataFrame]: ...
 
     @overload
     def to_pandas(
@@ -867,8 +863,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["id"],
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: Literal[False] = False,
-    ) -> dict[int, pandas.DataFrame]:
-        ...
+    ) -> dict[int, pandas.DataFrame]: ...
 
     def to_pandas(
         self,

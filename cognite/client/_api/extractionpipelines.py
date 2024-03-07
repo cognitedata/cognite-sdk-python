@@ -135,14 +135,12 @@ class ExtractionPipelinesAPI(APIClient):
         return self._list(list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, method="GET", limit=limit)
 
     @overload
-    def create(self, extraction_pipeline: ExtractionPipeline | ExtractionPipelineWrite) -> ExtractionPipeline:
-        ...
+    def create(self, extraction_pipeline: ExtractionPipeline | ExtractionPipelineWrite) -> ExtractionPipeline: ...
 
     @overload
     def create(
         self, extraction_pipeline: Sequence[ExtractionPipeline] | Sequence[ExtractionPipelineWrite]
-    ) -> ExtractionPipelineList:
-        ...
+    ) -> ExtractionPipelineList: ...
 
     def create(
         self,
@@ -202,14 +200,12 @@ class ExtractionPipelinesAPI(APIClient):
     @overload
     def update(
         self, item: ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate
-    ) -> ExtractionPipeline:
-        ...
+    ) -> ExtractionPipeline: ...
 
     @overload
     def update(
         self, item: Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate]
-    ) -> ExtractionPipelineList:
-        ...
+    ) -> ExtractionPipelineList: ...
 
     def update(
         self,
@@ -321,14 +317,12 @@ class ExtractionPipelineRunsAPI(APIClient):
         return res
 
     @overload
-    def create(self, run: ExtractionPipelineRun | ExtractionPipelineRunWrite) -> ExtractionPipelineRun:
-        ...
+    def create(self, run: ExtractionPipelineRun | ExtractionPipelineRunWrite) -> ExtractionPipelineRun: ...
 
     @overload
     def create(
         self, run: Sequence[ExtractionPipelineRun] | Sequence[ExtractionPipelineRunWrite]
-    ) -> ExtractionPipelineRunList:
-        ...
+    ) -> ExtractionPipelineRunList: ...
 
     def create(
         self,
