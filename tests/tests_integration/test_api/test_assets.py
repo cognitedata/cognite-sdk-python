@@ -285,7 +285,9 @@ class TestAssetsAPI:
         in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
         result = cognite_client.assets.list(
-            advanced_filter=flt.And(is_integration_test, in_europe), sort=("external_id", "asc"), aggregated_properties=["child_count"]
+            advanced_filter=flt.And(is_integration_test, in_europe),
+            sort=("external_id", "asc"),
+            aggregated_properties=["child_count"],
         )
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"
