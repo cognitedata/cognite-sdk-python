@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.27.2] - 2024-03-08
+### Added
+- Retry 429s on graphql endpoints
+
 ## [7.27.1] - 2024-03-08
 ### Improved
 - When iterating raw rows concurrently, a max queue size for pending results have been added to keep a stable low
