@@ -219,7 +219,7 @@ class EventFilter(CogniteFilter):
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
         asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of equipment that this event relates to.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (Sequence[dict[str, Any]] | None): Only include events that belong to these datasets.
         source (str | None): The source of this event.
         type (str | None): Type of the event, e.g 'failure'.

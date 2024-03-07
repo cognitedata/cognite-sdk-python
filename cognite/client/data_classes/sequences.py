@@ -412,7 +412,7 @@ class SequenceFilter(CogniteFilter):
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         metadata (dict[str, Any] | None): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (typing.Sequence[int] | None): Return only sequences linked to one of the specified assets.
-        asset_subtree_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         data_set_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that belong to these datasets.

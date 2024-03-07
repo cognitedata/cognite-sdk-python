@@ -259,7 +259,7 @@ class TimeSeriesFilter(CogniteFilter):
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (Sequence[int] | None): Only include time series that reference these specific asset IDs.
         asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this time series relates to.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include time series that are related to an asset in a subtree rooted at any of these asset IDs or external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (Sequence[dict[str, Any]] | None): No description.
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.

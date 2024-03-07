@@ -278,7 +278,7 @@ class FileMetadataFilter(CogniteFilter):
         data_set_ids (Sequence[dict[str, Any]] | None): Only include files that belong to these datasets.
         labels (LabelFilter | None): Return only the files matching the specified label(s).
         geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include files that have a related asset in a subtree rooted at any of these asset IDs or external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         source (str | None): The source of this event.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.

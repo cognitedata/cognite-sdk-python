@@ -615,7 +615,7 @@ class AssetFilter(CogniteFilter):
         name (str | None): The name of the asset.
         parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
         parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include assets in subtrees rooted at the specified asset IDs and external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (Sequence[dict[str, Any]] | None): No description.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): The source of the asset.
