@@ -10,10 +10,9 @@ build:
   jobs:
     post_create_environment:
       - pip install poetry
-      - poetry config virtualenvs.create false
     post_install:
       # Dependencies like sphinx/-theme are in the 'dev' dependency group
-      - poetry install --with dev
+      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --with dev
 
 sphinx:
   configuration: docs/source/conf.py
