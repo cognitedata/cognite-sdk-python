@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.27.0] - 2024-03-04
+### Added
+- Added support for multipart file uploads using the `client.files.multipart_upload_session` method.
+
 ## [7.26.2] - 2024-03-05
 ### Fixed
 - Fixed a regression from 7.26.1 in the logic for when to refresh token.
