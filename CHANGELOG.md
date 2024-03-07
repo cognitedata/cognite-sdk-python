@@ -17,11 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.27.0] - 2024-03-07
+## [7.28.0] - 2024-03-07
 ### Added
 - Added support for advanced filter query in the `assets.list()` method. Now you are able to use advanced filter (like in `assets.filter()`) at the same time as the simple filter properties allowing for more complex requests.
 ### Deprecated
 - Added a deprecation warning on the `assets.filter()` method as it its functionality is fully replicated in the `assets.list()` method.
+
+## [7.27.0] - 2024-03-04
+### Added
+- Added support for multipart file uploads using the `client.files.multipart_upload_session` method.
 
 ## [7.26.2] - 2024-03-05
 ### Fixed
