@@ -102,8 +102,8 @@ class TimeSeriesAPI(APIClient):
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
             asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
-            asset_subtree_ids (int | Sequence[int] | None): Only includes time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only includes time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_ids (int | Sequence[int] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
@@ -762,8 +762,8 @@ class TimeSeriesAPI(APIClient):
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
             asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
-            asset_subtree_ids (int | Sequence[int] | None): Only includes time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only includes time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_ids (int | Sequence[int] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
