@@ -18,6 +18,8 @@ class TestListAndIterSignatures:
                     "data_set_external_ids",
                     "aggregated_properties",
                     "partitions",
+                    "advanced_filter",
+                    "sort",
                 ],
             ),
             (
@@ -47,7 +49,8 @@ class TestListAndIterSignatures:
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):
         iter_parameters = dict(inspect.signature(api.__call__).parameters)
         for name in {*ignore, "chunk_size", "limit"}:
-            del iter_parameters[name]
+            if name in iter_parameters:
+                del iter_parameters[name]
 
         list_parameters = dict(inspect.signature(api.list).parameters)
         for name in [*ignore, "limit"]:
