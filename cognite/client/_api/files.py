@@ -526,6 +526,8 @@ class FilesAPI(APIClient):
 
         You can also pass a file handle to content.
 
+        Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_session`.
+
         Args:
             content (str | bytes | TextIO | BinaryIO): The content to upload.
             name (str): Name of the file.
@@ -622,8 +624,8 @@ class FilesAPI(APIClient):
         The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
-        After calling this, call `upload_multipart_part` for each chunk, then `complete_multipart_upload`
-        with the returned `uploadId`.
+        This returns a context object you must enter (using the `with` keyword), then call `upload_part` on
+        for each part before exiting.
 
         Args:
             name (str): Name of the file.

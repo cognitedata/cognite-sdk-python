@@ -32,8 +32,8 @@ Upload a string or bytes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.upload_bytes
 
-Upload a file larger than 5GiB in multiple parts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Upload a file in multiple parts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.multipart_upload_session
 
 Retrieve download urls
