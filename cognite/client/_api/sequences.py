@@ -1164,6 +1164,7 @@ class SequencesDataAPI(APIClient):
         limit: int | None = None,
     ) -> pandas.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
+
         Args:
             start (int): (inclusive) row number to start from.
             end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
@@ -1172,8 +1173,10 @@ class SequencesDataAPI(APIClient):
             column_names (str | None):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
             id (int | None): Id of sequence
             limit (int | None): Maximum number of rows to return per sequence.
+
         Returns:
-            pandas.DataFrame: pandas.DataFrame
+            pandas.DataFrame: The requested sequence data in a pandas DataFrame
+
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
