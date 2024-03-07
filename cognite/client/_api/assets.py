@@ -867,6 +867,10 @@ class AssetsAPI(APIClient):
                 ...     sort=(SortableAssetProperty.external_id, "asc"))
 
         """
+        warnings.warn(
+            "This method is deprecated. Use the list method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
         agg_props = self._process_aggregated_props(aggregated_properties)
         return self._list(
@@ -1006,6 +1010,8 @@ class AssetsAPI(APIClient):
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -1028,6 +1034,8 @@ class AssetsAPI(APIClient):
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
             limit (int | None): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. It applies to basic fields as well as metadata.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
 
         Returns:
             AssetList: List of requested assets
@@ -1061,6 +1069,42 @@ class AssetsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
                 >>> asset_list = client.assets.list(labels=my_label_filter)
+
+            Using advanced filter, find all assets that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters as flt
+                >>> client = CogniteClient()
+                >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = client.assets.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
+                >>> client = CogniteClient()
+                >>> in_timezone = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+                >>> res = client.assets.list(
+                ...     advanced_filter=in_timezone,
+                ...     sort=(SortableAssetProperty.external_id, "asc"))
+
+            Combine filter and advanced filter:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> not_instrument_lvl5 = filters.And(
+                ...    filters.ContainsAny(("labels"), ["Level5"]),
+                ...    filters.Not(filters.ContainsAny(("labels"), ["Instrument"]))
+                ... )
+                >>> res = client.assets.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+
         """
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
@@ -1081,12 +1125,22 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
+
+        prep_sort = None
+        if advanced_filter is not None:
+            self._validate_filter(advanced_filter)
+            prep_sort = prepare_filter_sort(sort, AssetSort)
+
+        agg_props = self._process_aggregated_props(aggregated_properties)
+
         return self._list(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
             limit=limit,
             filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
             other_params=agg_props,
             partitions=partitions,
         )
