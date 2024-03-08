@@ -387,7 +387,8 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> res = client.extraction_pipelines.config.retrieve("extId")
         """
         response = self._get(
-            "/extpipes/config", params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision}
+            self._RESOURCE_PATH,
+            params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision},
         )
         return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
 
@@ -408,7 +409,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.config.list("extId")
         """
-        response = self._get("/extpipes/config/revisions", params={"externalId": external_id})
+        response = self._get(f"{self._RESOURCE_PATH}/revisions", params={"externalId": external_id})
         return ExtractionPipelineConfigRevisionList.load(response.json()["items"], cognite_client=self._cognite_client)
 
     def create(self, config: ExtractionPipelineConfig | ExtractionPipelineConfigWrite) -> ExtractionPipelineConfig:
@@ -431,7 +432,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         """
         if isinstance(config, ExtractionPipelineConfig):
             config = config.as_write()
-        response = self._post("/extpipes/config", json=config.dump(camel_case=True))
+        response = self._post(self._RESOURCE_PATH, json=config.dump(camel_case=True))
         return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
 
     def revert(self, external_id: str, revision: int) -> ExtractionPipelineConfig:
@@ -452,5 +453,5 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.config.revert("extId", 5)
         """
-        response = self._post("/extpipes/config/revert", json={"externalId": external_id, "revision": revision})
+        response = self._post(f"{self._RESOURCE_PATH}/revert", json={"externalId": external_id, "revision": revision})
         return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
