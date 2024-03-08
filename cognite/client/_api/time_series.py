@@ -710,6 +710,10 @@ class TimeSeriesAPI(APIClient):
                 >>> is_numeric = Equals(TimeSeriesProperty.is_string, False)
                 >>> res = client.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
+        warnings.warn(
+            "This method is deprecated. Use the list method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
 
         return self._list(
@@ -744,6 +748,8 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: dict[str, Any] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> TimeSeriesList:
         """`List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
@@ -764,8 +770,10 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
+            partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed. Note, when using partitions sort is not supported. Since partitions are done independently of sorting, there would be no guarantee of the sort order between elements from different partitions.
             limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. It applies to basic fields as well as metadata.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order. Note, when using sort, partitions is not supported. See the note on partitions for more information.
 
         Returns:
             TimeSeriesList: The requested time series.
@@ -812,11 +820,20 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
 
+        prep_sort = None
+        if sort is not None:
+            prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
+
+        if advanced_filter is not None:
+            self._validate_filter(advanced_filter)
+
         return self._list(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
             filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
             limit=limit,
             partitions=partitions,
         )
