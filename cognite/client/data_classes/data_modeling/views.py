@@ -361,7 +361,7 @@ class ViewProperty(CogniteObject, ABC):
             return cast(Self, ConnectionDefinition.load(resource))
         elif "direction" in resource:
             warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
                 "This will be required in the next major version",
                 DeprecationWarning,
             )
@@ -381,7 +381,7 @@ class ViewPropertyApply(CogniteObject, ABC):
             return cast(Self, ConnectionDefinitionApply.load(resource))
         elif "direction" in resource:
             warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
                 "This will be required in the next major version",
                 DeprecationWarning,
             )
