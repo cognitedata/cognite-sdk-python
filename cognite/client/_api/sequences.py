@@ -762,6 +762,10 @@ class SequencesAPI(APIClient):
                 ...     sort=SortableSequenceProperty.created_time)
 
         """
+        warnings.warn(
+            "This method is deprecated. Use the list method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
 
         return self._list(
@@ -790,6 +794,9 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> SequenceList:
         """`List sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 
@@ -805,6 +812,9 @@ class SequencesAPI(APIClient):
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve sequences in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions. Note, when using partitions sort is not supported. Since partitions are done independently of sorting, there would be no guarantee of the sort order between elements from different partitions.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. It applies to basic fields as well as metadata.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order. Note, when using sort, partitions is not supported. See the note on partitions for more information.
 
         Returns:
             SequenceList: The requested sequences.
@@ -844,7 +854,24 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
-        return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
+
+        prep_sort = None
+        if sort is not None:
+            prep_sort = prepare_filter_sort(sort, SequenceSort)
+
+        if advanced_filter is not None:
+            self._validate_filter(advanced_filter)
+
+        return self._list(
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            method="POST",
+            filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
+            limit=limit,
+            partitions=partitions,
+        )
 
 
 class SequencesDataAPI(APIClient):
