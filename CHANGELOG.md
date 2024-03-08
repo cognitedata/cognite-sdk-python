@@ -19,9 +19,9 @@ Changes are grouped as follows
 
 ## [7.28.0] - 2024-03-07
 ### Added
-- Added support for advanced filter query in the `assets.list()` method. Now you are able to use advanced filter (like in `assets.filter()`) at the same time as the simple filter properties allowing for more complex requests.
+- Added support for advanced filter query in the `list()` (and `__call__()`) method of `assets`, `events`, `sequences`, and `time_series` APIs. Now you are able to use advanced filter (like in `filter()`) at the same time as the simple filter properties allowing for more complex requests. Additionally, added `sort` and `partitions` params to `list()` and `__call__()` methods of all the APIs that were missing either.
 ### Deprecated
-- Added a deprecation warning on the `assets.filter()` method as it its functionality is fully replicated in the `assets.list()` method.
+- Added a deprecation warning on the `filter()` method of `assets`, `events`, `sequences`, and `time_series` APIs as its functionality is fully replicated in the `list()` method.
 
 ## [7.27.0] - 2024-03-04
 ### Added
