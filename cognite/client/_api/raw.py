@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import random
 import threading
 import time
 from collections import deque
@@ -355,6 +356,10 @@ class RawRowsAPI(APIClient):
 
         Returns:
             Iterator[Row] | Iterator[RowList]: An iterator yielding the requested row or rows.
+
+        Note:
+            When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
+            by halting retrival speed when the callers code can't keep up.
         """
         if partitions is None or _RUNNING_IN_BROWSER:
             return self._list_generator(
@@ -418,16 +423,24 @@ class RawRowsAPI(APIClient):
             for initial in cursors
         ]
 
-        def exhaust(iterator: Iterator, results: deque[RowList], quit_early: threading.Event) -> None:
+        def exhaust(iterator: Iterator) -> None:
             for res in iterator:
                 results.append(res)
                 if quit_early.is_set():
                     return
+                # User code might be processing slower than the rate of row-fetching, and we want this
+                # iteration-based method to have a upper-bounded memory impact, so we keep a max queue
+                # size of unprocessed row-chunks:
+                while len(results) >= partitions:
+                    # Sleep randomly per thread to avoid sending all new fetch requests at the same time
+                    time.sleep(random.uniform(0, partitions))
+                    if quit_early.is_set():
+                        return
 
         quit_early = threading.Event()
         results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
         pool = ConcurrencySettings.get_thread_pool_executor_or_raise(max_workers=self._config.max_workers)
-        futures = [pool.submit(exhaust, task, results, quit_early) for task in read_iterators]
+        futures = [pool.submit(exhaust, task) for task in read_iterators]
 
         if finite_limit:
             yield from self._read_rows_limited(futures, results, cast(int, limit), quit_early)
@@ -441,7 +454,6 @@ class RawRowsAPI(APIClient):
         while not all(f.done() for f in futures):
             while results:
                 yield results.popleft()
-            time.sleep(0.5)
         yield from results
 
     def _read_rows_limited(
@@ -460,7 +472,6 @@ class RawRowsAPI(APIClient):
                     quit_early.set()
                     yield part[: limit - n_total]
                     return
-            time.sleep(0.5)
             if all(f.done() for f in futures) and not results:
                 return
 
