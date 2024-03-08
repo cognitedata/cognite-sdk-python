@@ -665,6 +665,10 @@ class EventsAPI(APIClient):
                 ...     filter=flt.And(is_workorder, has_failure),
                 ...     sort=(SortableEventProperty.start_time, "desc"))
         """
+        warnings.warn(
+            "This method is deprecated. Use the list method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
 
         return self._list(
@@ -697,9 +701,10 @@ class EventsAPI(APIClient):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
-        sort: SequenceNotStr[str] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        advanced_filter: Filter | dict | None = None,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -768,12 +773,21 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
+
+        prep_sort = None
+        if sort is not None:
+            prep_sort = prepare_filter_sort(sort, EventSort)
+
+        if advanced_filter is not None:
+            self._validate_filter(advanced_filter)
+
         return self._list(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
             limit=limit,
             filter=filter,
+            advanced_filter=advanced_filter,
             partitions=partitions,
-            sort=sort,
+            sort=prep_sort,
         )

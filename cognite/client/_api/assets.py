@@ -1127,9 +1127,11 @@ class AssetsAPI(APIClient):
         ).dump(camel_case=True)
 
         prep_sort = None
+        if sort is not None:
+            prep_sort = prepare_filter_sort(sort, AssetSort)
+
         if advanced_filter is not None:
             self._validate_filter(advanced_filter)
-            prep_sort = prepare_filter_sort(sort, AssetSort)
 
         return self._list(
             list_cls=AssetList,
