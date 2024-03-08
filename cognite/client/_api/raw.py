@@ -454,7 +454,6 @@ class RawRowsAPI(APIClient):
         while not all(f.done() for f in futures):
             while results:
                 yield results.popleft()
-            time.sleep(0.001)
         yield from results
 
     def _read_rows_limited(
@@ -473,7 +472,6 @@ class RawRowsAPI(APIClient):
                     quit_early.set()
                     yield part[: limit - n_total]
                     return
-            time.sleep(0.001)
             if all(f.done() for f in futures) and not results:
                 return
 
