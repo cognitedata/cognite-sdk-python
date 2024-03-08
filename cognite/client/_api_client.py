@@ -92,6 +92,7 @@ class APIClient:
                     "context/entitymatching/(byids|list|jobs)",
                     "sessions/revoke",
                     "models/.*",
+                    ".*/graphql",
                     "units/.*",
                     "annotations/(list|byids|reverselookup)",
                     r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",

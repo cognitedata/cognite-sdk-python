@@ -1375,6 +1375,13 @@ class TestRetryableEndpoints:
                     ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/instances/{endpoint}", True)
                     for endpoint in ("list", "byids", "delete", "aggregate", "search")
                 ),
+                # Retry all data modeling graphql endpoints
+                ("POST", "https://api.cognitedata.com/api/v1/projects/any/dml/graphql", True),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/any/userapis/spaces/bla/datamodels/bla/versions/v1/graphql",
+                    True,
+                ),
                 # Retry for RAW on rows but not on dbs or tables as only the rows endpoints are idempotent
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
