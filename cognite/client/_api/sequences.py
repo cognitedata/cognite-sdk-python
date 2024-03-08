@@ -857,6 +857,42 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> for seq_list in client.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
+
+            Using advanced filter, find all sequences that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters as flt
+                >>> client = CogniteClient()
+                >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = client.sequences.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
+                >>> client = CogniteClient()
+                >>> in_timezone = flt.Prefix(SequenceProperty.metadata_key("timezone"), "Europe")
+                >>> res = client.sequences.list(
+                ...     advanced_filter=in_timezone,
+                ...     sort=(SortableSequenceProperty.external_id, "asc"))
+
+            Combine filter and advanced filter:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> not_instrument_lvl5 = filters.And(
+                ...    filters.ContainsAny(("labels"), ["Level5"]),
+                ...    filters.Not(filters.ContainsAny(("labels"), ["Instrument"]))
+                ... )
+                >>> res = client.sequences.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
