@@ -740,7 +740,7 @@ class CogniteSort:
             )
         elif isinstance(data, str) and (prop_order := data.split(":", 1))[-1] in ("asc", "desc"):
             # Syntax "<fieldname>:asc|desc" is depreacted but handled for compatibility
-            return cls(property=prop_order[0], order=prop_order[1])
+            return cls(property=prop_order[0], order=cast(Literal["asc", "desc"], prop_order[1]))
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)
         else:

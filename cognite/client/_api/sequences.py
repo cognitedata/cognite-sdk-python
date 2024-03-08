@@ -92,6 +92,9 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[Sequence] | Iterator[SequenceList]:
         """Iterate over sequences
 
@@ -110,6 +113,9 @@ class SequencesAPI(APIClient):
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to return all items.
+            partitions (int | None): No description.
+            advanced_filter (Filter | dict | None): No description.
+            sort (SortSpec | list[SortSpec] | None): No description.
 
         Returns:
             Iterator[Sequence] | Iterator[SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
@@ -127,13 +133,24 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
+
+        prep_sort = None
+        if sort is not None:
+            prep_sort = prepare_filter_sort(sort, SequenceSort)
+
+        if advanced_filter is not None:
+            self._validate_filter(advanced_filter)
+
         return self._list_generator(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
+            advanced_filter=advanced_filter,
             limit=limit,
+            sort=prep_sort,
+            partitions=partitions,
         )
 
     def __iter__(self) -> Iterator[Sequence]:

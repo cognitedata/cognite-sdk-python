@@ -87,6 +87,8 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
         """Iterate over time series
 
@@ -112,6 +114,8 @@ class TimeSeriesAPI(APIClient):
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Maximum number of time series to return. Defaults to return all items.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
+            advanced_filter (Filter | dict | None): No description.
+            sort (SortSpec | list[SortSpec] | None): No description.
 
         Returns:
             Iterator[TimeSeries] | Iterator[TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
@@ -136,14 +140,23 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         )
 
+        prep_sort = None
+        if sort is not None:
+            prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
+
+        if advanced_filter is not None:
+            self._validate_filter(advanced_filter)
+
         return self._list_generator(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
             chunk_size=chunk_size,
             filter=filter.dump(camel_case=True),
+            advanced_filter=advanced_filter,
             limit=limit,
             partitions=partitions,
+            sort=prep_sort,
         )
 
     def __iter__(self) -> Iterator[TimeSeries]:

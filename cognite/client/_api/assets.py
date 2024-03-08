@@ -122,6 +122,8 @@ class AssetsAPI(APIClient):
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[Asset] | Iterator[AssetList]:
         """Iterate over assets
 
@@ -147,6 +149,8 @@ class AssetsAPI(APIClient):
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of assets to return. Defaults to return all items.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            advanced_filter (Filter | dict | None): No description.
+            sort (SortSpec | list[SortSpec] | None): No description.
 
         Returns:
             Iterator[Asset] | Iterator[AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
@@ -171,12 +175,21 @@ class AssetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
 
+        prep_sort = None
+        if sort is not None:
+            prep_sort = prepare_filter_sort(sort, AssetSort)
+
+        if advanced_filter is not None:
+            self._validate_filter(advanced_filter)
+
         return self._list_generator(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
             limit=limit,
             partitions=partitions,
             other_params=agg_props,
