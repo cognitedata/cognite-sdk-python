@@ -96,7 +96,9 @@ class TestListAndIterSignatures:
         ignore_params = {"chunk_size"}
         iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
         list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}
-        assert ignore_params.issuperset(iter_parameters.symmetric_difference(list_parameters))
+        assert ignore_params.issuperset(iter_parameters.symmetric_difference(list_parameters)), signature_error_msg(
+            iter_parameters, list_parameters, ignore_params
+        )
 
 
 def signature_error_msg(expected, actual, ignore=None):
