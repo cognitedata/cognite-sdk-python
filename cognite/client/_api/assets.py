@@ -1131,8 +1131,6 @@ class AssetsAPI(APIClient):
             self._validate_filter(advanced_filter)
             prep_sort = prepare_filter_sort(sort, AssetSort)
 
-        agg_props = self._process_aggregated_props(aggregated_properties)
-
         return self._list(
             list_cls=AssetList,
             resource_cls=Asset,
