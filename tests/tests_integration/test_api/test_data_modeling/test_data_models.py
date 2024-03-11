@@ -29,11 +29,7 @@ def cdf_data_models(
     movie_model: DataModel[View],
     empty_model: DataModel[ViewId],
 ) -> DataModelList[ViewId]:
-    # The movie model and empty fixture are used to ensure that
-    # there are at least two data models in the test environment.
-    data_models = cognite_client.data_modeling.data_models.list(limit=-1)
-    assert len(data_models) >= 2, "Please add at least two data models to the test environment"
-    return data_models
+    return DataModelList[ViewId]([movie_model, empty_model])
 
 
 class TestDataModelsAPI:

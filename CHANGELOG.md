@@ -17,11 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.28.0] - 2024-03-07
+## [7.28.0] - 2024-03-11
 ### Added
 - Added support for advanced filter query in the `list()` (and `__call__()`) method of `assets`, `events`, `sequences`, and `time_series` APIs. Now you are able to use advanced filter (like in `filter()`) at the same time as the simple filter properties allowing for more complex requests. Additionally, added `sort` and `partitions` params to `list()` and `__call__()` methods of all the APIs that were missing either.
 ### Deprecated
 - Added a deprecation warning on the `filter()` method of `assets`, `events`, `sequences`, and `time_series` APIs as its functionality is fully replicated in the `list()` method.
+
+## [7.27.2] - 2024-03-08
+### Added
+- Retry 429s on graphql endpoints
+
+## [7.27.1] - 2024-03-08
+### Improved
+- When iterating raw rows concurrently, a max queue size for pending results have been added to keep a stable low
+  bounded memory usage profile (for when the caller's code isn't processing fast enough to keep up). Worth noting
+  that this has no effect on the total retrieval time.
 
 ## [7.27.0] - 2024-03-04
 ### Added
