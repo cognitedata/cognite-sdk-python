@@ -115,7 +115,7 @@ class TimeSeriesAPI(APIClient):
             limit (int | None): Maximum number of time series to return. Defaults to return all items.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
             advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. It applies to basic fields as well as metadata.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order. Note, when using sort, partitions is not supported. See the note on partitions for more information.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order. Note, sort is ignored when partitions > 1 is used, since partitions are processed independently of each other. See the note on partitions for more information.
 
         Returns:
             Iterator[TimeSeries] | Iterator[TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
@@ -782,7 +782,7 @@ class TimeSeriesAPI(APIClient):
             partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed. Note, when using partitions sort is not supported. Since partitions are done independently of sorting, there would be no guarantee of the sort order between elements from different partitions.
             limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
             advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. It applies to basic fields as well as metadata.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order. Note, when using sort, partitions is not supported. See the note on partitions for more information.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order. Note, sort is ignored when partitions > 1 is used, since partitions are processed independently of each other. See the note on partitions for more information.
 
         Returns:
             TimeSeriesList: The requested time series.
