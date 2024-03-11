@@ -1109,8 +1109,8 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny(("labels"), ["Level5"]),
-                ...    filters.Not(filters.ContainsAny(("labels"), ["Instrument"]))
+                ...    filters.ContainsAny("labels", ["Level5"]),
+                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
                 ... )
                 >>> res = client.assets.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
 
