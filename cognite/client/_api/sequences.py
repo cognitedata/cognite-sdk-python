@@ -134,12 +134,8 @@ class SequencesAPI(APIClient):
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
 
-        prep_sort = None
-        if sort is not None:
-            prep_sort = prepare_filter_sort(sort, SequenceSort)
-
-        if advanced_filter is not None:
-            self._validate_filter(advanced_filter)
+        prep_sort = prepare_filter_sort(sort, SequenceSort)
+        self._validate_filter(advanced_filter)
 
         return self._list_generator(
             list_cls=SequenceList,
@@ -908,12 +904,8 @@ class SequencesAPI(APIClient):
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
 
-        prep_sort = None
-        if sort is not None:
-            prep_sort = prepare_filter_sort(sort, SequenceSort)
-
-        if advanced_filter is not None:
-            self._validate_filter(advanced_filter)
+        prep_sort = prepare_filter_sort(sort, SequenceSort)
+        self._validate_filter(advanced_filter)
 
         return self._list(
             list_cls=SequenceList,

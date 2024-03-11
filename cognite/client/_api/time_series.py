@@ -140,12 +140,8 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         )
 
-        prep_sort = None
-        if sort is not None:
-            prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
-
-        if advanced_filter is not None:
-            self._validate_filter(advanced_filter)
+        prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
+        self._validate_filter(advanced_filter)
 
         return self._list_generator(
             list_cls=TimeSeriesList,
@@ -868,12 +864,8 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
 
-        prep_sort = None
-        if sort is not None:
-            prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
-
-        if advanced_filter is not None:
-            self._validate_filter(advanced_filter)
+        prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
+        self._validate_filter(advanced_filter)
 
         return self._list(
             list_cls=TimeSeriesList,

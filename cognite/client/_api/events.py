@@ -126,11 +126,8 @@ class EventsAPI(APIClient):
             subtype=subtype,
         ).dump(camel_case=True)
 
-        prep_sort = None
-        if sort is not None:
-            prep_sort = prepare_filter_sort(sort, EventSort)
-        if advanced_filter is not None:
-            self._validate_filter(advanced_filter)
+        prep_sort = prepare_filter_sort(sort, EventSort)
+        self._validate_filter(advanced_filter)
 
         return self._list_generator(
             list_cls=EventList,
@@ -821,11 +818,8 @@ class EventsAPI(APIClient):
             subtype=subtype,
         ).dump(camel_case=True)
 
-        prep_sort = None
-        if sort is not None:
-            prep_sort = prepare_filter_sort(sort, EventSort)
-        if advanced_filter is not None:
-            self._validate_filter(advanced_filter)
+        prep_sort = prepare_filter_sort(sort, EventSort)
+        self._validate_filter(advanced_filter)
 
         return self._list(
             list_cls=EventList,
