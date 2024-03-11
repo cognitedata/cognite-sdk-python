@@ -720,7 +720,7 @@ class TimeSeriesAPI(APIClient):
                 >>> res = client.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
         warnings.warn(
-            "This method is deprecated. Use the list method with advanced_filter parameter instead.",
+            f"{self.__class__.__name__}.filter() method is deprecated and may be removed in the next major version of the SDK. Use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
             DeprecationWarning,
         )
         self._validate_filter(filter)
