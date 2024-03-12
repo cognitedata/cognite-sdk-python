@@ -232,7 +232,7 @@ class InstancesAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
-            instance_type (Literal['node', 'edge']): Whether to query for nodes or edges.
+            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
