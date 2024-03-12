@@ -503,9 +503,7 @@ class FileMultipartUploadSession:
             raise ValueError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
         if self._uploaded_urls[part_no]:
             raise CogniteFileUploadError(message="Attempted to upload an already uploaded part", code=400)
-        self._cognite_client.files._upload_multipart_part(
-            self._upload_urls[part_no], content, self.file_metadata.mime_type
-        )
+        self._cognite_client.files._upload_multipart_part(self._upload_urls[part_no], content)
         self._uploaded_urls[part_no] = True
 
     def __enter__(self) -> FileMultipartUploadSession:
