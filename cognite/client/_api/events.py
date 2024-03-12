@@ -649,12 +649,12 @@ class EventsAPI(APIClient):
             and sort by start time descending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
-                >>> is_workorder = flt.Prefix("external_id", "workorder")
-                >>> has_failure = flt.Search("description", "failure")
+                >>> is_workorder = filters.Prefix("external_id", "workorder")
+                >>> has_failure = filters.Search("description", "failure")
                 >>> res = client.events.filter(
-                ...     filter=flt.And(is_workorder, has_failure), sort=("start_time", "desc"))
+                ...     filter=filters.And(is_workorder, has_failure), sort=("start_time", "desc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -663,13 +663,13 @@ class EventsAPI(APIClient):
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> client = CogniteClient()
-                >>> is_workorder = flt.Prefix(EventProperty.external_id, "workorder")
-                >>> has_failure = flt.Search(EventProperty.description, "failure")
+                >>> is_workorder = filters.Prefix(EventProperty.external_id, "workorder")
+                >>> has_failure = filters.Search(EventProperty.description, "failure")
                 >>> res = client.events.filter(
-                ...     filter=flt.And(is_workorder, has_failure),
+                ...     filter=filters.And(is_workorder, has_failure),
                 ...     sort=(SortableEventProperty.start_time, "desc"))
         """
         warnings.warn(
@@ -732,13 +732,20 @@ class EventsAPI(APIClient):
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            sort (SortSpec | list[SortSpec] | None): Sort by array of selected fields. Default sort order is asc when omitted.  Note, sort is ignored when partitions > 1 is used, since partitions are processed independently of each other. See the note on partitions for more information.
-            partitions (int | None): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions. Note, when using partitions sort is not supported. Since partitions are done independently of sorting, there would be no guarantee of the sort order between elements from different partitions.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. It applies to basic fields as well as metadata.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
 
         Returns:
             EventList: List of requested events
+
+        .. note::
+            When using `partitions`, there are few considerations to keep in mind:
+            - `limit` has to be set to `None` (or `-1`).
+            - API rejects requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+            - Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
+
 
         Examples:
 
@@ -766,9 +773,9 @@ class EventsAPI(APIClient):
             and sort by external id ascending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
-                >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
                 >>> res = client.events.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
@@ -778,10 +785,10 @@ class EventsAPI(APIClient):
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` Enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> client = CogniteClient()
-                >>> in_timezone = flt.Prefix(EventProperty.metadata_key("timezone"), "Europe")
+                >>> in_timezone = filters.Prefix(EventProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.events.list(
                 ...     advanced_filter=in_timezone,
                 ...     sort=(SortableEventProperty.external_id, "asc"))

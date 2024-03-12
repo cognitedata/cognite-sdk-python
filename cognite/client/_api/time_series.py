@@ -779,13 +779,19 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed. Note, when using partitions sort is not supported. Since partitions are done independently of sorting, there would be no guarantee of the sort order between elements from different partitions.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. It applies to basic fields as well as metadata.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order. Note, sort is ignored when partitions > 1 is used, since partitions are processed independently of each other. See the note on partitions for more information.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             TimeSeriesList: The requested time series.
+
+        .. note::
+            When using `partitions`, there are few considerations to keep in mind:
+            - `limit` has to be set to `None` (or `-1`).
+            - API rejects requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+            - Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
 
         Examples:
 
@@ -813,9 +819,9 @@ class TimeSeriesAPI(APIClient):
             and sort by external id ascending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
-                >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
                 >>> res = client.time_series.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
@@ -825,10 +831,10 @@ class TimeSeriesAPI(APIClient):
             for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` Enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
                 >>> client = CogniteClient()
-                >>> in_timezone = flt.Prefix(TimeSeriesProperty.metadata_key("timezone"), "Europe")
+                >>> in_timezone = filters.Prefix(TimeSeriesProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.time_series.list(
                 ...     advanced_filter=in_timezone,
                 ...     sort=(SortableTimeSeriesProperty.external_id, "asc"))
