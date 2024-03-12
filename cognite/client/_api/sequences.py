@@ -834,9 +834,9 @@ class SequencesAPI(APIClient):
 
         .. note::
             When using `partitions`, there are few considerations to keep in mind:
-            - `limit` has to be set to `None` (or `-1`).
-            - API rejects requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
-            - Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
+                * `limit` has to be set to `None` (or `-1`).
+                * API rejects requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+                * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
 
 
         Examples:
