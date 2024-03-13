@@ -92,6 +92,9 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[Sequence] | Iterator[SequenceList]:
         """Iterate over sequences
 
@@ -110,6 +113,9 @@ class SequencesAPI(APIClient):
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to return all items.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             Iterator[Sequence] | Iterator[SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
@@ -127,13 +133,20 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
+
+        prep_sort = prepare_filter_sort(sort, SequenceSort)
+        self._validate_filter(advanced_filter)
+
         return self._list_generator(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
+            advanced_filter=advanced_filter,
             limit=limit,
+            sort=prep_sort,
+            partitions=partitions,
         )
 
     def __iter__(self) -> Iterator[Sequence]:
@@ -739,11 +752,11 @@ class SequencesAPI(APIClient):
             return them sorted by created time:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
-                >>> asset_filter = flt.Equals("asset_id", 123)
-                >>> is_efficiency = flt.Equals(["metadata", "type"], "efficiency")
-                >>> res = client.time_series.filter(filter=flt.And(asset_filter, is_efficiency), sort="created_time")
+                >>> asset_filter = filters.Equals("asset_id", 123)
+                >>> is_efficiency = filters.Equals(["metadata", "type"], "efficiency")
+                >>> res = client.time_series.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -752,16 +765,20 @@ class SequencesAPI(APIClient):
             for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
                 >>> client = CogniteClient()
-                >>> asset_filter = flt.Equals(SequenceProperty.asset_id, 123)
-                >>> is_efficiency = flt.Equals(SequenceProperty.metadata_key("type"), "efficiency")
+                >>> asset_filter = filters.Equals(SequenceProperty.asset_id, 123)
+                >>> is_efficiency = filters.Equals(SequenceProperty.metadata_key("type"), "efficiency")
                 >>> res = client.time_series.filter(
-                ...     filter=flt.And(asset_filter, is_efficiency),
+                ...     filter=filters.And(asset_filter, is_efficiency),
                 ...     sort=SortableSequenceProperty.created_time)
 
         """
+        warnings.warn(
+            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
 
         return self._list(
@@ -790,6 +807,9 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> SequenceList:
         """`List sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 
@@ -805,9 +825,19 @@ class SequencesAPI(APIClient):
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             SequenceList: The requested sequences.
+
+        .. note::
+            When using `partitions`, there are few considerations to keep in mind:
+                * `limit` has to be set to `None` (or `-1`).
+                * API may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+                * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
+
 
         Examples:
 
@@ -830,6 +860,42 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> for seq_list in client.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
+
+            Using advanced filter, find all sequences that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = client.sequences.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(SequenceProperty.metadata_key("timezone"), "Europe")
+                >>> res = client.sequences.list(
+                ...     advanced_filter=in_timezone,
+                ...     sort=(SortableSequenceProperty.external_id, "asc"))
+
+            Combine filter and advanced filter:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> not_instrument_lvl5 = filters.And(
+                ...    filters.ContainsAny("labels", ["Level5"]),
+                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ... )
+                >>> res = client.sequences.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -844,7 +910,20 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
-        return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
+
+        prep_sort = prepare_filter_sort(sort, SequenceSort)
+        self._validate_filter(advanced_filter)
+
+        return self._list(
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            method="POST",
+            filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
+            limit=limit,
+            partitions=partitions,
+        )
 
 
 class SequencesDataAPI(APIClient):

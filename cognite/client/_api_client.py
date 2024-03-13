@@ -518,6 +518,7 @@ class APIClient:
                 list_cls=list_cls,
                 resource_path=resource_path,
                 filter=filter,
+                advanced_filter=advanced_filter,
                 other_params=other_params,
                 headers=headers,
             )
