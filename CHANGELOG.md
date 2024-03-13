@@ -17,9 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.27.3] - 2024-03-13
+## [7.28.1] - 2024-03-13
 ### Fixed
  - Fixed issue causing multipart file upload to fail when mime-type was set.
+
+## [7.28.0] - 2024-03-13
+### Added
+- Added support for advanced filter query in the `list()` (and `__call__()`) method of `assets`, `events`, `sequences`,
+  and `time_series` APIs. Now you are able to use advanced filter (like in `filter()`) at the same time as the simple
+  filter properties, allowing for more complex requests.
+- Added missing `sort` parameter to `list()` and `__call__()` methods for `AssetsAPI`.
+- Added missing `sort` parameter to `list()` and `__call__()` methods for `TimeSeriesAPI`.
+- Added missing `sort` and `partitions` parameters to `list()` and `__call__()` methods for `SequencesAPI`.
+### Deprecated
+- Added a deprecation warning on the `filter()` method of `assets`, `events`, `sequences`, and `time_series` APIs as
+  its functionality is fully covered by the `list()` method.
 
 ## [7.27.2] - 2024-03-08
 ### Added
