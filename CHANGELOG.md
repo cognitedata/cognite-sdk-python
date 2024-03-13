@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.28.1] - 2024-03-13
+### Fixed
+ - Fixed issue causing multipart file upload to fail when mime-type was set.
+
 ## [7.28.0] - 2024-03-13
 ### Added
 - Added support for advanced filter query in the `list()` (and `__call__()`) method of `assets`, `events`, `sequences`,

@@ -229,6 +229,7 @@ class TestFilesAPI:
 
         with cognite_client.files.multipart_upload_session(
             name="test_multipart.txt",
+            mime_type="text/plain",
             parts=2,
             external_id=external_id,
             overwrite=True,

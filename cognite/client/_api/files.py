@@ -696,12 +696,7 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    def _upload_multipart_part(
-        self,
-        upload_url: str,
-        content: str | bytes | TextIO | BinaryIO,
-        mime_type: str | None = None,
-    ) -> None:
+    def _upload_multipart_part(self, upload_url: str, content: str | bytes | TextIO | BinaryIO) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
         Note that if `content` does not somehow expose its length, this method may not work
         on Azure. See `requests.utils.super_len`.
@@ -709,18 +704,16 @@ class FilesAPI(APIClient):
         Args:
             upload_url (str): URL to upload file chunk to.
             content (str | bytes | TextIO | BinaryIO): The content to upload.
-            mime_type (str | None): Optional mime type for the `Content-Type` header.
         """
         if isinstance(content, str):
             content = content.encode("utf-8")
 
-        headers = {"Content-Type": mime_type}
         upload_response = self._http_client_with_retry.request(
             "PUT",
             upload_url,
             data=content,
             timeout=self._config.file_transfer_timeout,
-            headers=headers,
+            headers=None,
         )
         if not upload_response.ok:
             raise CogniteFileUploadError(
