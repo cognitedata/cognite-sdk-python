@@ -196,6 +196,18 @@ class TestEventsAPI:
         assert len(result) == 1, "Expected only one event to match the filter"
         assert result[0].external_id == "integration_test:event1_lorem_ipsum"
 
+    def test_list_with_advanced_filter(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
+
+        result = cognite_client.events.list(
+            external_id_prefix="integration_test:",
+            advanced_filter=has_lorem_ipsum,
+            sort=SortableEventProperty.external_id,
+        )
+        assert len(result) == 1, "Expected only one event to match the filter"
+        assert result[0].external_id == "integration_test:event1_lorem_ipsum"
+
     def test_aggregate_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         f = filters
         is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")

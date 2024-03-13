@@ -285,7 +285,9 @@ class TestAssetsAPI:
         in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
         result = cognite_client.assets.filter(
-            flt.And(is_integration_test, in_europe), sort=("external_id", "asc"), aggregated_properties=["child_count"]
+            filter=flt.And(is_integration_test, in_europe),
+            sort=("external_id", "asc"),
+            aggregated_properties=["child_count"],
         )
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"
@@ -296,7 +298,19 @@ class TestAssetsAPI:
         in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
         result = cognite_client.assets.filter(
-            flt.And(is_integration_test, in_europe), aggregated_properties=["child_count"], sort=None
+            filter=flt.And(is_integration_test, in_europe), aggregated_properties=["child_count"], sort=None
+        )
+        assert len(result) == 1, "Expected only one asset to match the filter"
+        assert result[0].external_id == "integration_test:asset2"
+
+    def test_list_with_advanced_filter(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ):
+        adv_filter = flt.And(is_integration_test, flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe"))
+        result = cognite_client.assets.list(
+            external_id_prefix="integration_test:",
+            advanced_filter=adv_filter,
+            sort=("external_id", "asc"),
         )
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"

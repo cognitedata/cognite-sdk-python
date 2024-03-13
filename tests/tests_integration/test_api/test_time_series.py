@@ -209,6 +209,15 @@ class TestTimeSeriesAPI:
         )
         assert result, "There should be at least one numeric time series"
 
+    def test_list_with_advanced_filter(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
+        f = filters
+        is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
+
+        result = cognite_client.time_series.list(
+            external_id_prefix="PYSDK integration", advanced_filter=is_numeric, sort=TimeSeriesProperty.external_id
+        )
+        assert result, "There should be at least one numeric time series"
+
     def test_filter_without_sort(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
         f = filters
         is_integration_test = f.Prefix(TimeSeriesProperty.external_id, "PYSDK integration test")

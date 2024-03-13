@@ -87,6 +87,8 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
         """Iterate over time series
 
@@ -111,7 +113,9 @@ class TimeSeriesAPI(APIClient):
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Maximum number of time series to return. Defaults to return all items.
-            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             Iterator[TimeSeries] | Iterator[TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
@@ -136,14 +140,19 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         )
 
+        prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
+        self._validate_filter(advanced_filter)
+
         return self._list_generator(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
             chunk_size=chunk_size,
             filter=filter.dump(camel_case=True),
+            advanced_filter=advanced_filter,
             limit=limit,
             partitions=partitions,
+            sort=prep_sort,
         )
 
     def __iter__(self) -> Iterator[TimeSeries]:
@@ -710,6 +719,10 @@ class TimeSeriesAPI(APIClient):
                 >>> is_numeric = Equals(TimeSeriesProperty.is_string, False)
                 >>> res = client.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
+        warnings.warn(
+            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
 
         return self._list(
@@ -744,6 +757,8 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: dict[str, Any] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> TimeSeriesList:
         """`List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
@@ -764,11 +779,19 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             TimeSeriesList: The requested time series.
+
+        .. note::
+            When using `partitions`, there are few considerations to keep in mind:
+                * `limit` has to be set to `None` (or `-1`).
+                * API may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+                * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
 
         Examples:
 
@@ -791,6 +814,41 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> for ts_list in client.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time series
+
+            Using advanced filter, find all time series that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = client.time_series.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(TimeSeriesProperty.metadata_key("timezone"), "Europe")
+                >>> res = client.time_series.list(
+                ...     advanced_filter=in_timezone,
+                ...     sort=(SortableTimeSeriesProperty.external_id, "asc"))
+
+            Combine filter and advanced filter:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> not_instrument_lvl5 = filters.And(
+                ...    filters.ContainsAny("labels", ["Level5"]),
+                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ... )
+                >>> res = client.time_series.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -812,11 +870,16 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
 
+        prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
+        self._validate_filter(advanced_filter)
+
         return self._list(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
             filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
             limit=limit,
             partitions=partitions,
         )
