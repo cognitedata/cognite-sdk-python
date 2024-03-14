@@ -16,6 +16,7 @@ from cognite.client.utils._concurrency import ConcurrencySettings
 
 class ViewsAPI(APIClient):
     _RESOURCE_PATH = "/models/views"
+    _LIST_LIMIT = 100
 
     @overload
     def __call__(
