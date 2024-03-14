@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.28.2] - 2024-03-14
+### Fixed
+ - Retrieving more than 100 containers, views, data models, or spaces would raise a
+   `CogniteAPIError`. This is now fixed.
+
 ## [7.28.1] - 2024-03-13
 ### Fixed
  - Fixed issue causing multipart file upload to fail when mime-type was set.
