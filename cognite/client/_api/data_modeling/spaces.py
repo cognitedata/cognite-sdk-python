@@ -12,6 +12,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class SpacesAPI(APIClient):
     _RESOURCE_PATH = "/models/spaces"
+    _LIST_LIMIT = 100
 
     @overload
     def __call__(

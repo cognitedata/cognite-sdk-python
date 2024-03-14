@@ -17,6 +17,7 @@ from cognite.client.utils._concurrency import ConcurrencySettings
 
 class DataModelsAPI(APIClient):
     _RESOURCE_PATH = "/models/datamodels"
+    _LIST_LIMIT = 100
 
     @overload
     def __call__(
