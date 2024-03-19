@@ -59,7 +59,7 @@ def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T
     else:
         from copy import copy
 
-        def as_completed(fs: Iterable[Future[_T]], timeout: float | None = None) -> Iterator[Future[_T]]:
+        def as_completed(fs: Iterable[Future[_T]], timeout: float | None = None) -> Iterator[Future[_T]]:  # type: ignore [misc]
             return iter(copy(fs))
 
     return as_completed
