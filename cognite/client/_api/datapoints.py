@@ -1228,10 +1228,10 @@ class DatapointsAPI(APIClient):
         )
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
-            return DatapointsList.load(res, cognite_client=self._cognite_client)
+            return DatapointsList._load(res, cognite_client=self._cognite_client)
         elif not res and ignore_unknown_ids:
             return None
-        return Datapoints.load(res[0], cognite_client=self._cognite_client)
+        return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,

@@ -390,7 +390,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
             self._RESOURCE_PATH,
             params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision},
         )
-        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
+        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
 
     def list(self, external_id: str) -> ExtractionPipelineConfigRevisionList:
         """`Retrieve all configuration revisions from an extraction pipeline <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/listExtPipeConfigRevisions>`
@@ -410,7 +410,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> res = client.extraction_pipelines.config.list("extId")
         """
         response = self._get(f"{self._RESOURCE_PATH}/revisions", params={"externalId": external_id})
-        return ExtractionPipelineConfigRevisionList.load(response.json()["items"], cognite_client=self._cognite_client)
+        return ExtractionPipelineConfigRevisionList._load(response.json()["items"], cognite_client=self._cognite_client)
 
     def create(self, config: ExtractionPipelineConfig | ExtractionPipelineConfigWrite) -> ExtractionPipelineConfig:
         """`Create a new configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/createExtPipeConfig>`
@@ -433,7 +433,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         if isinstance(config, ExtractionPipelineConfig):
             config = config.as_write()
         response = self._post(self._RESOURCE_PATH, json=config.dump(camel_case=True))
-        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
+        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
 
     def revert(self, external_id: str, revision: int) -> ExtractionPipelineConfig:
         """`Revert to a previous configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/revertExtPipeConfigRevision>`
@@ -454,4 +454,4 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> res = client.extraction_pipelines.config.revert("extId", 5)
         """
         response = self._post(f"{self._RESOURCE_PATH}/revert", json={"externalId": external_id, "revision": revision})
-        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
+        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)

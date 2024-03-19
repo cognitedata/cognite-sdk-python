@@ -410,7 +410,7 @@ class DiagramConvertItem(CogniteResource):
     @property
     def pages(self) -> DiagramConvertPageList:
         assert self.results is not None
-        return DiagramConvertPageList.load(self.results, cognite_client=self._cognite_client)
+        return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.

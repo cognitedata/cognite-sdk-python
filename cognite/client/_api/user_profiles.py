@@ -15,12 +15,12 @@ class UserProfilesAPI(APIClient):
     def enable(self) -> UserProfilesConfiguration:
         """Enable user profiles for the project"""
         res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
-        return UserProfilesConfiguration.load(res.json()["userProfilesConfiguration"])
+        return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
     def disable(self) -> UserProfilesConfiguration:
         """Disable user profiles for the project"""
         res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
-        return UserProfilesConfiguration.load(res.json()["userProfilesConfiguration"])
+        return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
     def me(self) -> UserProfile:
         """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
@@ -41,7 +41,7 @@ class UserProfilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.iam.user_profiles.me()
         """
-        return UserProfile.load(self._get(self._RESOURCE_PATH + "/me").json())
+        return UserProfile._load(self._get(self._RESOURCE_PATH + "/me").json())
 
     @overload
     def retrieve(self, user_identifier: str) -> UserProfile | None: ...

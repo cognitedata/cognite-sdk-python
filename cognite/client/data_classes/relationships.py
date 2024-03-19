@@ -212,7 +212,7 @@ class Relationship(RelationshipCore):
         if resource_type == "timeseries":
             return TimeSeries._load(resource, cognite_client=cognite_client)
         if resource_type == "asset":
-            return Asset.load(resource, cognite_client=cognite_client)
+            return Asset._load(resource, cognite_client=cognite_client)
         if resource_type == "sequence":
             return Sequence._load(resource, cognite_client=cognite_client)
         if resource_type == "file":
