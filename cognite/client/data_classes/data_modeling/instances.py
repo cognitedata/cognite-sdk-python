@@ -258,6 +258,19 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         view_id = ViewId.load(view)
         self.data[view_id] = properties
 
+    def _repr_html_(self) -> str:
+        pd = local_import("pandas")
+        index_names = "space", "view", "version"
+        if not self:
+            df = pd.DataFrame(index=pd.MultiIndex(levels=([], [], []), codes=([], [], []), names=index_names))
+        else:
+            df = pd.DataFrame.from_dict(
+                {view_id.as_tuple(): props for view_id, props in self.data.items()},
+                orient="index",
+            )
+            df.index.names = index_names
+        return df._repr_html_()
+
 
 class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the read version of the instance.
