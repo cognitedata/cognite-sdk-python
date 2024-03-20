@@ -9,13 +9,7 @@ from tests.utils import jsgz_load
 
 
 def generate_datapoints(start: int, end: int, granularity=1):
-    dps = []
-    for i in range(start, end, granularity):
-        dp = {}
-        dp["value"] = random()
-        dp["timestamp"] = i
-        dps.append(dp)
-    return dps
+    return [{"value": random(), "timestamp": i} for i in range(start, end, granularity)]
 
 
 @pytest.fixture
@@ -94,36 +88,37 @@ class TestSyntheticQuery:
     def test_expression_builder(self, cognite_client):
         from sympy import symbols
 
-        assert ("ts{externalId:'x'}", "a") == cognite_client.time_series.data.synthetic._build_expression(
-            symbols("a"), {"a": "x"}
-        )
+        build_fn = cognite_client.time_series.data.synthetic._build_expression
+        assert ("ts{externalId:'x'}", "a") == build_fn(symbols("a"), {"a": "x"})
         assert (
             "ts{externalId:'x',aggregate:'average',granularity:'1m'}",
             "a",
-        ) == cognite_client.time_series.data.synthetic._build_expression(
-            symbols("a"), {"a": "x"}, aggregate="average", granularity="1m"
-        )
+        ) == build_fn(symbols("a"), {"a": "x"}, aggregate="average", granularity="1m")
         assert (
             "(ts{externalId:'x'}+ts{externalId:'y'}+ts{externalId:'z'})",
             "(a+b+c)",
-        ) == cognite_client.time_series.data.synthetic._build_expression(
-            symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"}
-        )
-        assert ("(1/ts{externalId:'a'})", "(1/a)") == cognite_client.time_series.data.synthetic._build_expression(
-            1 / symbols("a"), {"a": "a"}
-        )
+        ) == build_fn(symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"})
+        assert ("(1/ts{externalId:'a'})", "(1/a)") == build_fn(1 / symbols("a"), {"a": "a"})
         assert (
             "ts{externalId:'x',targetUnit:'temperature:deg_c'}",
             "a",
-        ) == cognite_client.time_series.data.synthetic._build_expression(
-            symbols("a"), {"a": "x"}, target_unit="temperature:deg_c"
-        )
+        ) == build_fn(symbols("a"), {"a": "x"}, target_unit="temperature:deg_c")
         assert (
             "ts{externalId:'x',targetUnitSystem:'Imperial'}",
             "a",
-        ) == cognite_client.time_series.data.synthetic._build_expression(
-            symbols("a"), {"a": "x"}, target_unit_system="Imperial"
-        )
+        ) == build_fn(symbols("a"), {"a": "x"}, target_unit_system="Imperial")
+
+    @pytest.mark.dsl
+    def test_expression_builder__overlapping(self, cognite_client):
+        # Before SDK version 7.31.0, variable replacements were done one-by-one, which could mean
+        # that a later replacement would affect an earlier replacement.
+        from sympy import symbols
+
+        build_fn = cognite_client.time_series.data.synthetic._build_expression
+        x, y = symbols("x y")
+        long_expr, short_expr = build_fn(x + y, {x: "test-x-y-z", y: "foo"})
+        assert short_expr == "(x+y)"
+        assert long_expr == "(ts{externalId:'test-x-y-z'}+ts{externalId:'foo'})", "(x+y)"
 
     @pytest.mark.dsl
     def test_expression_builder_variables_missing(self, cognite_client):
@@ -138,7 +133,7 @@ class TestSyntheticQuery:
     def test_expression_builder_unsupported_missing(self, cognite_client):
         from sympy import cot, symbols
 
-        with pytest.raises(ValueError, match="Unsupported sympy class cot"):
+        with pytest.raises(TypeError, match="^Unsupported sympy class cot"):
             cognite_client.time_series.data.synthetic.query(
                 [symbols("a") + cot(symbols("a"))], start=0, end="now", variables={"a": "a"}
             )
