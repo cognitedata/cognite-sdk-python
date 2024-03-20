@@ -51,7 +51,7 @@ class TestSyntheticDatapointsAPI:
         assert 23456 == len(dps[1])
         assert 6 == cognite_client.time_series.data.synthetic._post.call_count
 
-    def test_query_with_errors(self, cognite_client, test_time_series, post_spy):
+    def test_query_using_time_series_objs__with_errors(self, cognite_client, test_time_series, post_spy):
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=["A / (B - B)"],
             start=datetime(2017, 1, 1),
@@ -65,6 +65,18 @@ class TestSyntheticDatapointsAPI:
         assert all(x is None for x in dps.value)
         assert (100, 1) == dps.to_pandas().shape
         assert (100, 2) == dps.to_pandas(include_errors=True).shape
+
+    def test_query_using_time_series_objs__missing_external_id(self, cognite_client, test_time_series):
+        (whoopsie_ts := test_time_series[1].as_write()).external_id = None
+        # TODO: This should raise or use internal id, for sure not cast None as a string...
+        # with pytest.raises(CogniteNotFoundError, match="^Not found: "):
+        cognite_client.time_series.data.synthetic.query(
+            expressions="A / B",
+            start=datetime(2017, 1, 1),
+            end="now",
+            limit=100,
+            variables={"A": test_time_series[0], "B": whoopsie_ts},
+        )
 
     @pytest.mark.dsl
     def test_expression_builder_time_series_vs_string(self, cognite_client, test_time_series):
