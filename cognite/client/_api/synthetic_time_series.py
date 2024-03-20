@@ -4,14 +4,16 @@ import re
 from datetime import datetime
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
+from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
+from cognite.client.data_classes.time_series import TimeSeriesCore
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import timestamp_to_ms
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import sympy
@@ -33,7 +35,7 @@ class SyntheticDatapointsAPI(APIClient):
         start: int | str | datetime,
         end: int | str | datetime,
         limit: int | None = None,
-        variables: dict[str | sympy.Symbol, str | TimeSeries] | None = None,
+        variables: dict[str | sympy.Symbol, str | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -46,7 +48,7 @@ class SyntheticDatapointsAPI(APIClient):
             start (int | str | datetime): Inclusive start.
             end (int | str | datetime): Exclusive end
             limit (int | None): Number of datapoints per expression to retrieve.
-            variables (dict[str | sympy.Symbol, str | TimeSeries] | None): An optional map of symbol replacements.
+            variables (dict[str | sympy.Symbol, str | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
             aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
@@ -89,11 +91,11 @@ class SyntheticDatapointsAPI(APIClient):
         if is_unlimited(limit):
             limit = cast(int, float("inf"))
 
-        if single_expr := isinstance(expressions, (str, sympy.Basic)):
-            expressions = [expressions]
+        if single_expr := not isinstance(expressions, SequenceNotStr):
+            expressions = [cast(Union[str, "sympy.Basic"], expressions)]
 
         tasks = []
-        for user_expr in expressions:
+        for user_expr in cast(Sequence[Union[str, "sympy.Basic"]], expressions):
             expression, short_expression = self._build_expression(
                 user_expr, variables, aggregate, granularity, target_unit, target_unit_system
             )
@@ -124,7 +126,7 @@ class SyntheticDatapointsAPI(APIClient):
     def _build_expression(
         self,
         expression: str | sympy.Basic,
-        variables: dict[str | sympy.Symbol, str | TimeSeries] | None = None,
+        variables: dict[str | sympy.Symbol, str | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -165,7 +167,7 @@ class SyntheticDatapointsAPI(APIClient):
         for k, v in variables.items():
             if isinstance(k, sympy.Symbol):
                 k = k.name
-            if isinstance(v, TimeSeries):
+            if isinstance(v, TimeSeriesCore):
                 if v.external_id is None:
                     raise ValueError(f"TimeSeries passed in 'variables' is missing required field 'external_id' ({v})")
                 v = v.external_id
