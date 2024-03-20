@@ -102,28 +102,30 @@ class TestSyntheticDatapointsAPI:
         assert isinstance(dps1, Datapoints)
         assert isinstance(dps2, DatapointsList)
 
-    @pytest.mark.skip("flaky")
     @pytest.mark.dsl
     def test_expression_builder_complex(self, cognite_client, test_time_series):
-        from sympy import cos, log, pi, sin, sqrt, symbols
+        from sympy import Abs, cos, log, pi, sin, sqrt, symbols
 
-        abc = list("abcdefghij")
-        syms = symbols(abc)
-        expression = syms[0]
-        for s in syms:
-            expression = expression + s
+        string_symbols = list("abcdefghij")
+        symbols = symbols(string_symbols)
         expression = (
-            (expression * expression)
-            + sqrt(sin(pi * 0.1 ** syms[1]))
-            + log(23 + syms[5] ** 1.234)
-            + cos(syms[3] ** (1 + 0.1 ** syms[4]))
-            + sqrt(log(abs(syms[8]) + 1))
+            sum(symbols) ** 2
+            + sqrt(sin(pi * 0.1 ** symbols[1]))
+            + log(23 + symbols[5] ** 1.234)
+            + cos(symbols[3] ** (1 + 0.1 ** symbols[4]))
+            + sqrt(log(Abs(symbols[8]) + 1))
         )
-        dps1 = cognite_client.time_series.data.synthetic.query(
-            expressions=[expression],
-            start=datetime(2017, 1, 1),
-            end="now",
-            limit=100,
-            variables={v: test_time_series[tsi] for v, tsi in zip(abc, range(10))},
-        )[0]
-        assert 100 == len(dps1)
+        symbolic_vars = {sym: ts for sym, ts in zip(symbols, test_time_series.values())}
+        string_variables = {ss: ts for ss, ts in zip(string_symbols, test_time_series.values())}
+
+        for variables in symbolic_vars, string_variables:
+            dps1 = cognite_client.time_series.data.synthetic.query(
+                expressions=expression,
+                start=datetime(2017, 1, 1, tzinfo=timezone.utc),
+                end="now",
+                limit=100,
+                variables=variables,
+                aggregate="average",
+                granularity="3s",
+            )
+            assert 100 == len(dps1)
