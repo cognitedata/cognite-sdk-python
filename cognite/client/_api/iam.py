@@ -445,7 +445,7 @@ class SessionsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return SessionList.load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: str | None = None) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_

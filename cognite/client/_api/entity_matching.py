@@ -150,14 +150,14 @@ class EntityMatchingAPI(APIClient):
         filter = {k: v for k, v in filter.items() if v is not None}
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
-        return EntityMatchingModelList.load(models, cognite_client=self._cognite_client)
+        return EntityMatchingModelList._load(models, cognite_client=self._cognite_client)
 
     def list_jobs(self) -> ContextualizationJobList:
         # TODO: Not in service contract
         """List jobs, typically model fit and predict runs.
         Returns:
             ContextualizationJobList: List of jobs."""
-        return ContextualizationJobList.load(
+        return ContextualizationJobList._load(
             self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 
@@ -252,7 +252,7 @@ class EntityMatchingAPI(APIClient):
                 "ignoreMissingFields": ignore_missing_fields,
             },
         )
-        return EntityMatchingModel.load(response.json(), cognite_client=self._cognite_client)
+        return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
 
     def predict(
         self,

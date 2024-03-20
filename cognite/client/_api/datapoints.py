@@ -578,8 +578,7 @@ class DatapointsAPI(APIClient):
 
             1. For best speed, and significantly lower memory usage, consider using ``retrieve_arrays(...)`` which uses ``numpy.ndarrays`` for data storage.
             2. Unlimited queries (``limit=None``) are most performant as they are always fetched in parallel, for any number of requested time series.
-            3. Limited queries, (e.g. ``limit=200_000``) are much less performant, at least for large limits, as each individual time series is fetched serially
-                (we can't predict where on the timeline the datapoints lie). Thus parallelisation is only used when asking for multiple "limited" time series.
+            3. Limited queries, (e.g. ``limit=200_000``) are much less performant, at least for large limits, as each individual time series is fetched serially (we can't predict where on the timeline the datapoints are). Thus parallelisation is only used when asking for multiple "limited" time series.
             4. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't use start=0 (1970).
 
         Args:
@@ -1229,10 +1228,10 @@ class DatapointsAPI(APIClient):
         )
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
-            return DatapointsList.load(res, cognite_client=self._cognite_client)
+            return DatapointsList._load(res, cognite_client=self._cognite_client)
         elif not res and ignore_unknown_ids:
             return None
-        return Datapoints.load(res[0], cognite_client=self._cognite_client)
+        return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,

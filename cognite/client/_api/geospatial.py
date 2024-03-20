@@ -228,7 +228,7 @@ class GeospatialAPI(APIClient):
             ]
         }
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=payload)
-        return FeatureTypeList.load(res.json()["items"], cognite_client=self._cognite_client)
+        return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     @overload
     def create_features(
@@ -648,7 +648,7 @@ class GeospatialAPI(APIClient):
                 "allowDimensionalityMismatch": allow_dimensionality_mismatch,
             },
         )
-        return FeatureList.load(res.json()["items"], cognite_client=self._cognite_client)
+        return FeatureList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def stream_features(
         self,
@@ -771,7 +771,7 @@ class GeospatialAPI(APIClient):
                 "output": output,
             },
         )
-        return FeatureAggregateList.load(res.json()["items"], cognite_client=self._cognite_client)
+        return FeatureAggregateList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
@@ -799,7 +799,7 @@ class GeospatialAPI(APIClient):
         res = self._post(
             url_path=f"{self._RESOURCE_PATH}/crs/byids", json={"items": [{"srid": srid} for srid in srids_processed]}
         )
-        return CoordinateReferenceSystemList.load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems`
@@ -820,7 +820,7 @@ class GeospatialAPI(APIClient):
                 >>> crs = client.geospatial.list_coordinate_reference_systems(only_custom=True)
         """
         res = self._get(url_path=f"{self._RESOURCE_PATH}/crs", params={"filterCustom": only_custom})
-        return CoordinateReferenceSystemList.load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create_coordinate_reference_systems(
         self,
@@ -890,7 +890,7 @@ class GeospatialAPI(APIClient):
         res = self._post(
             url_path=f"{self._RESOURCE_PATH}/crs", json={"items": [it.dump(camel_case=True) for it in crs]}
         )
-        return CoordinateReferenceSystemList.load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
         """`Delete Coordinate Reference System`

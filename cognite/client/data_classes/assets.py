@@ -8,6 +8,7 @@ import threading
 import warnings
 from abc import ABC
 from collections import Counter, defaultdict
+from enum import auto
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -1064,18 +1065,18 @@ class AssetHierarchy:
 
 
 class AssetProperty(EnumProperty):
-    labels = "labels"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    parent_id = "parentId"
-    root_id = "rootId"
-    description = "description"
-    external_id = "externalId"
-    metadata = "metadata"
-    name = "name"
-    source = "source"
+    labels = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    parent_id = auto()
+    root_id = auto()
+    description = auto()
+    external_id = auto()
+    metadata = auto()
+    name = auto()  # type: ignore [assignment]
+    source = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -1086,13 +1087,13 @@ AssetPropertyLike: TypeAlias = Union[AssetProperty, str, List[str]]
 
 
 class SortableAssetProperty(EnumProperty):
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    name = "name"
-    source = "source"
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    name = auto()  # type: ignore [assignment]
+    source = auto()
     score = "_score_"
 
     @staticmethod

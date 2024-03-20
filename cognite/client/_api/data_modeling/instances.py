@@ -772,7 +772,7 @@ class InstancesAPI(APIClient):
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
-        return list_cls.load(res.json()["items"], cognite_client=None)
+        return list_cls._load(res.json()["items"], cognite_client=None)
 
     @overload
     def aggregate(
@@ -886,7 +886,7 @@ class InstancesAPI(APIClient):
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
-        result_list = InstanceAggregationResultList.load(res.json()["items"], cognite_client=None)
+        result_list = InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
         if group_by is not None:
             return result_list
 

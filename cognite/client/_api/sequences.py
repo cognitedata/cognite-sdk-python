@@ -1185,7 +1185,7 @@ class SequencesDataAPI(APIClient):
             for row_response in row_response_iterator:
                 sequence_rows["rows"].extend(row_response["rows"])
 
-            return SequenceRows.load(sequence_rows)
+            return SequenceRows._load(sequence_rows)
 
         tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
@@ -1230,7 +1230,7 @@ class SequencesDataAPI(APIClient):
         res = self._do_request(
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
         ).json()
-        return SequenceRows.load(res)
+        return SequenceRows._load(res)
 
     def retrieve_dataframe(
         self,

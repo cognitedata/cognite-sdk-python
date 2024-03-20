@@ -637,11 +637,11 @@ class DocumentsAPI(APIClient):
                 break
 
         if highlight:
-            return DocumentHighlightList.load(
+            return DocumentHighlightList._load(
                 ({"highlight": item["highlight"], "document": item["item"]} for item in json_content["items"]),
                 cognite_client=self._cognite_client,
             )
-        return DocumentList.load((item["item"] for item in results), cognite_client=self._cognite_client)
+        return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
     def list(
         self,
