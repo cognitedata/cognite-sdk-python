@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from datetime import datetime
+from enum import auto
 from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
@@ -408,23 +409,23 @@ class TimeSeriesList(WriteableCogniteResourceList[TimeSeriesWrite, TimeSeries], 
 
 
 class TimeSeriesProperty(EnumProperty):
-    description = "description"
-    external_id = "externalId"
-    name = "name"
-    unit = "unit"
-    unit_external_id = "unitExternalId"
-    unit_quantity = "unitQuantity"
-    asset_id = "assetId"
-    asset_root_id = "assetRootId"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    is_step = "isStep"
-    is_string = "isString"
-    access_categories = "accessCategories"
-    security_categories = "securityCategories"
-    metadata = "metadata"
+    description = auto()
+    external_id = auto()
+    name = auto()  # type: ignore [assignment]
+    unit = auto()
+    unit_external_id = auto()
+    unit_quantity = auto()
+    asset_id = auto()
+    asset_root_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    is_step = auto()
+    is_string = auto()
+    access_categories = auto()
+    security_categories = auto()
+    metadata = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -432,13 +433,13 @@ class TimeSeriesProperty(EnumProperty):
 
 
 class SortableTimeSeriesProperty(EnumProperty):
-    asset_id = "assetId"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    name = "name"
+    asset_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    name = auto()  # type: ignore [assignment]
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:

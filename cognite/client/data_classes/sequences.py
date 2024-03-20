@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 from abc import ABC
+from enum import auto
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, NoReturn, Union, cast, get_args, overload
 
 from typing_extensions import Self, TypeAlias
@@ -901,17 +902,17 @@ SequenceDataList = SequenceRowsList
 
 
 class SequenceProperty(EnumProperty):
-    description = "description"
-    external_id = "externalId"
-    name = "name"
-    asset_id = "assetId"
-    asset_root_id = "assetRootId"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    access_categories = "accessCategories"
-    metadata = "metadata"
+    description = auto()
+    external_id = auto()
+    name = auto()  # type: ignore [assignment]
+    asset_id = auto()
+    asset_root_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    access_categories = auto()
+    metadata = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -919,13 +920,13 @@ class SequenceProperty(EnumProperty):
 
 
 class SortableSequenceProperty(EnumProperty):
-    asset_id = "assetId"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    name = "name"
+    asset_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    name = auto()  # type: ignore [assignment]
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import auto
 from typing import TYPE_CHECKING, Any, Collection, List, Literal, Union, cast
 
 from typing_extensions import Self, TypeAlias
@@ -343,29 +344,29 @@ class DocumentUniqueResult(UniqueResult): ...
 
 
 class SortableSourceFileProperty(EnumProperty):
-    name = "name"
-    mime_type = "mimeType"
-    source = "source"
-    data_set_id = "dataSetId"
-    metadata = "metadata"
+    name = auto()  # type: ignore [assignment]
+    mime_type = auto()
+    source = auto()
+    data_set_id = auto()
+    metadata = auto()
 
     def as_reference(self) -> list[str]:
         return ["sourceFile", self.value]
 
 
 class SourceFileProperty(EnumProperty):
-    name = "name"
-    mime_type = "mimeType"
-    source = "source"
-    data_set_id = "dataSetId"
-    metadata = "metadata"
-    size = "size"
-    directory = "directory"
-    asset_ids = "assetIds"
-    asset_external_ids = "assetExternalIds"
-    security_categories = "securityCategories"
-    geo_location = "geoLocation"
-    labels = "labels"
+    name = auto()  # type: ignore [assignment]
+    mime_type = auto()
+    source = auto()
+    data_set_id = auto()
+    metadata = auto()
+    size = auto()
+    directory = auto()
+    asset_ids = auto()
+    asset_external_ids = auto()
+    security_categories = auto()
+    geo_location = auto()
+    labels = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -376,39 +377,39 @@ class SourceFileProperty(EnumProperty):
 
 
 class SortableDocumentProperty(EnumProperty):
-    id = "id"
-    external_id = "externalId"
-    mime_type = "mimeType"
-    extension = "extension"
-    page_count = "pageCount"
-    author = "author"
-    title = "title"
-    language = "language"
-    type = "type"
-    created_time = "createdTime"
-    modified_time = "modifiedTime"
-    last_indexed_time = "lastIndexedTime"
+    id = auto()
+    external_id = auto()
+    mime_type = auto()
+    extension = auto()
+    page_count = auto()
+    author = auto()
+    title = auto()
+    language = auto()
+    type = auto()
+    created_time = auto()
+    modified_time = auto()
+    last_indexed_time = auto()
 
 
 class DocumentProperty(EnumProperty):
-    id = "id"
-    external_id = "externalId"
-    mime_type = "mimeType"
-    extension = "extension"
-    page_count = "pageCount"
-    producer = "producer"
-    author = "author"
-    title = "title"
-    language = "language"
-    type = "type"
-    created_time = "createdTime"
-    modified_time = "modifiedTime"
-    last_indexed_time = "lastIndexedTime"
-    geo_location = "geoLocation"
-    asset_ids = "assetIds"
-    asset_external_ids = "assetExternalIds"
-    labels = "labels"
-    content = "content"
+    id = auto()
+    external_id = auto()
+    mime_type = auto()
+    extension = auto()
+    page_count = auto()
+    producer = auto()
+    author = auto()
+    title = auto()
+    language = auto()
+    type = auto()
+    created_time = auto()
+    modified_time = auto()
+    last_indexed_time = auto()
+    geo_location = auto()
+    asset_ids = auto()
+    asset_external_ids = auto()
+    labels = auto()
+    content = auto()
 
 
 SortableProperty: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]

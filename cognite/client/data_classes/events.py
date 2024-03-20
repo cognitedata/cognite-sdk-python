@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from enum import auto
 from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
@@ -384,19 +385,19 @@ class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMi
 
 
 class EventProperty(EnumProperty):
-    asset_ids = "assetIds"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    end_time = "endTime"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    start_time = "startTime"
-    description = "description"
-    external_id = "externalId"
-    metadata = "metadata"
-    source = "source"
-    subtype = "subtype"
-    type = "type"
+    asset_ids = auto()
+    created_time = auto()
+    data_set_id = auto()
+    end_time = auto()
+    id = auto()
+    last_updated_time = auto()
+    start_time = auto()
+    description = auto()
+    external_id = auto()
+    metadata = auto()
+    source = auto()
+    subtype = auto()
+    type = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -407,16 +408,16 @@ EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
 
 
 class SortableEventProperty(EnumProperty):
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    end_time = "endTime"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    source = "source"
-    start_time = "startTime"
-    subtype = "subtype"
-    type = "type"
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    end_time = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    source = auto()
+    start_time = auto()
+    subtype = auto()
+    type = auto()
     score = "_score_"
 
     @staticmethod
