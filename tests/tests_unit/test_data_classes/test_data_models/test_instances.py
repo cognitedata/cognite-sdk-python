@@ -189,7 +189,9 @@ def test_instances__quick_property_access_single_source(
         del inst["space"]
     # ...but __setitem__ should work, Python mantra is "we are adults". Either way, the API will block all
     # reserved ones, and we don't want to keep a duplicate list up-to-date:
+    assert "space" not in inst
     inst["space"] = "more-space"
+    assert "space" in inst  # ensre __contains__ reflects change
     assert inst.space == "craft"  # ...ensure attribute not affected
 
     # Any property should work fine with all access/set/delete:
@@ -225,6 +227,8 @@ def test_instances__quick_property_access_no_source(
         inst["space"] = "more-space"
     with pytest.raises(RuntimeError):
         del inst["space"]
+    with pytest.raises(RuntimeError):
+        "space" in inst
 
     # ...same applies to properties. We have none so everything should fail:
     with pytest.raises(RuntimeError):

@@ -291,6 +291,37 @@ class TestRawRows:
             cognite_client.raw.rows(db_name="db1", table_name="table1", columns="a,b")
 
 
+def test_raw_row__direct_column_access():
+    # Verify additional methods: 'get', '__getitem__', '__setitem__', '__delitem__' and '__contains__'
+    key = "itsamee"
+    row = Row(key="foo", columns={"bar": 42, key: "mario"})
+    assert row[key] == row.columns[key] == row.get(key) == "mario"
+
+    row[key] = "luigi?"
+    assert row[key] == row.columns[key] == row.get(key) == "luigi?"
+
+    del row[key]
+    assert key not in row
+    assert key not in row.columns
+    assert row.get(key) is None
+
+    row.columns[key] = "wario?"
+    assert row[key] == row.columns[key] == "wario?"
+
+    del row.columns[key]
+    assert key not in row
+    assert key not in row.columns
+
+    del row["bar"]
+    assert row.columns == {}
+    with pytest.raises(KeyError, match="^'wrong-key'$"):
+        del row["wrong-key"]
+
+    row.columns = None
+    with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
+        del row["wrong-key"]
+
+
 @pytest.mark.dsl
 class TestPandasIntegration:
     def test_dbs_to_pandas(self):

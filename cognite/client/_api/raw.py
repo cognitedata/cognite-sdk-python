@@ -617,11 +617,17 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            Retrieve a row with key 'k1' from table 't1' in database 'db1'::
+            Retrieve a row with key 'k1' from table 't1' in database 'db1':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> row = client.raw.rows.retrieve("db1", "t1", "k1")
+
+            You may access the data directly on the row (like a dict), or use '.get' when keys can be missing:
+
+                >>> val1 = row["col1"]
+                >>> val2 = row.get("col2")
+
         """
         return self._retrieve(
             cls=Row,
@@ -736,12 +742,13 @@ class RawRowsAPI(APIClient):
             Iterate through all rows one-by-one to reduce memory load (no concurrency used):
 
                 >>> for row in client.raw.rows("db1", "t1", columns=["col1","col2"]):
-                ...     row  # do something with the row
+                ...     val1 = row["col1"]  # You may access the data directly
+                ...     val2 = row.get("col2")  # ...or use '.get' when keys can be missing
 
             Iterate through all rows, one chunk at a time, to reduce memory load (no concurrency used):
 
                 >>> for row_list in client.raw.rows("db1", "t1", chunk_size=2500):
-                ...     row_list  # do something with the rows
+                ...     row_list  # Do something with the rows
 
             Iterate through a massive table to reduce memory load while using concurrency for high throughput.
             Note: ``partitions`` must be specified for concurrency to be used (this is different from ``list()``
@@ -752,7 +759,7 @@ class RawRowsAPI(APIClient):
                 ...     db_name="db1", table_name="t1", partitions=5, chunk_size=5000, limit=1_000_000
                 ... )
                 >>> for row_list in rows_iterator:
-                ...     row_list  # do something with the rows
+                ...     row_list  # Do something with the rows
         """
         chunk_size = None
         if _RUNNING_IN_BROWSER:

@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.29.0] - 2024-03-19
+### Added
+- Direct access to the columns/data stored on raw rows have been added (alongside a `.get` method). Example usage:
+  `row["my_col"]` (short-cut for: `row.columns["my_col"]`).
+
 ## [7.28.2] - 2024-03-14
 ### Fixed
  - Retrieving more than 100 containers, views, data models, or spaces would raise a
@@ -249,7 +254,7 @@ Changes are grouped as follows
 
 ## [7.13.2] - 2024-01-11
 ### Fixed
-- When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+- When calling `ExtractionPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
 
 ## [7.13.1] - 2024-01-10
 ### Improved

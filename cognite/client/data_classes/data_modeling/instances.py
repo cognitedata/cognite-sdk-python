@@ -333,6 +333,12 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
+    def __contains__(self, attr: str) -> bool:
+        try:
+            return attr in self._prop_lookup
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if "properties" in dumped:
