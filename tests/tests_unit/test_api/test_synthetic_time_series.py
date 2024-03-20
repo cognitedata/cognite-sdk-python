@@ -110,8 +110,8 @@ class TestSyntheticQuery:
 
     @pytest.mark.dsl
     def test_expression_builder__overlapping(self, cognite_client):
-        # Before SDK version 7.31.0, variable replacements were done one-by-one, which could mean
-        # that a later replacement would affect an earlier replacement.
+        # Before SDK version 7.30.1, variable replacements were done one-by-one, which could mean
+        # that a later replacement would affect an earlier one.
         from sympy import symbols
 
         build_fn = cognite_client.time_series.data.synthetic._build_expression

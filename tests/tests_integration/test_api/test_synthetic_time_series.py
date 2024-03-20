@@ -109,15 +109,15 @@ class TestSyntheticDatapointsAPI:
         from sympy import Abs, cos, log, pi, sin, sqrt, symbols
 
         string_symbols = list("abcdefghij")
-        symbols = symbols(string_symbols)
+        syms = symbols(string_symbols)
         expression = (
-            sum(symbols) ** 2
-            + sqrt(sin(pi * 0.1 ** symbols[1]))
-            + log(23 + symbols[5] ** 1.234)
-            + cos(symbols[3] ** (1 + 0.1 ** symbols[4]))
-            + sqrt(log(Abs(symbols[8]) + 1))
+            sum(syms) ** 2
+            + sqrt(sin(pi * 0.1 ** syms[1]))
+            + log(23 + syms[5] ** 1.234)
+            + cos(syms[3] ** (1 + 0.1 ** syms[4]))
+            + sqrt(log(Abs(syms[8]) + 1))
         )
-        symbolic_vars = {sym: ts for sym, ts in zip(symbols, test_time_series.values())}
+        symbolic_vars = {sym: ts for sym, ts in zip(syms, test_time_series.values())}
         string_variables = {ss: ts for ss, ts in zip(string_symbols, test_time_series.values())}
 
         for variables in symbolic_vars, string_variables:

@@ -46,7 +46,7 @@ class SyntheticDatapointsAPI(APIClient):
         Args:
             expressions (str | sympy.Basic | Sequence[str | sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
             start (int | str | datetime): Inclusive start.
-            end (int | str | datetime): Exclusive end
+            end (int | str | datetime): Exclusive end.
             limit (int | None): Number of datapoints per expression to retrieve.
             variables (dict[str | sympy.Symbol, str | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
             aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
@@ -64,7 +64,7 @@ class SyntheticDatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="TS{id:123} + TS{externalId:'abc'}",
+                ...     expressions="ts{id:123} + ts{externalId:'abc'}",
                 ...     start="2w-ago",
                 ...     end="now")
 
@@ -117,8 +117,8 @@ class SyntheticDatapointsAPI(APIClient):
             resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
             datapoints._extend(Datapoints._load(data, expected_fields=["value", "error"]))
-            limit -= len(data["datapoints"])
-            if len(data["datapoints"]) < self._DPS_LIMIT_SYNTH or limit <= 0:
+            limit -= (n_fetched := len(data["datapoints"]))
+            if n_fetched < self._DPS_LIMIT_SYNTH or limit <= 0:
                 break
             query["start"] = data["datapoints"][-1]["timestamp"] + 1
         return datapoints
@@ -132,10 +132,9 @@ class SyntheticDatapointsAPI(APIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
     ) -> tuple[str, str]:
-        sympy = local_import("sympy")
-        if isinstance(expression, sympy.Basic):
+        if getattr(expression, "__sympy__", False) is True:
             if variables:
-                expression_str = self._process_sympy_expression(expression)
+                expression_str = self._process_sympy_expression(cast("sympy.Basic", expression))
             else:
                 raise ValueError(
                     "sympy expressions are only supported in combination with the `variables` parameter to map symbols to time series."
@@ -165,13 +164,12 @@ class SyntheticDatapointsAPI(APIClient):
 
         to_substitute = {}
         for k, v in variables.items():
-            if isinstance(k, sympy.Symbol):
-                k = k.name
             if isinstance(v, TimeSeriesCore):
                 if v.external_id is None:
                     raise ValueError(f"TimeSeries passed in 'variables' is missing required field 'external_id' ({v})")
                 v = v.external_id
-            to_substitute[re.escape(cast(str, k))] = f"ts{{externalId:'{v}'{aggregate_str}{target_unit_str}}}"
+            # We convert to str to ensure any sympy.Symbol is replaced with its name:
+            to_substitute[re.escape(str(k))] = f"ts{{externalId:'{v}'{aggregate_str}{target_unit_str}}}"
 
         # Substitute all variables in one go to avoid substitution of prior substitutions:
         pattern = re.compile(r"\b" + r"\b|\b".join(to_substitute) + r"\b")  # note: \b marks a word boundary
