@@ -122,7 +122,7 @@ class AssetsAPI(APIClient):
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[Asset] | Iterator[AssetList]:
         """Iterate over assets
@@ -149,7 +149,7 @@ class AssetsAPI(APIClient):
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of assets to return. Defaults to return all items.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
@@ -288,14 +288,14 @@ class AssetsAPI(APIClient):
     def aggregate_count(
         self,
         property: AssetPropertyLike | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
         """`Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
-            advanced_filter (Filter | dict | None): The advanced filter to narrow down the assets to count.
+            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down the assets to count.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count (strict matching).
 
         Returns:
@@ -330,7 +330,7 @@ class AssetsAPI(APIClient):
     def aggregate_cardinality_values(
         self,
         property: AssetPropertyLike,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
@@ -338,7 +338,7 @@ class AssetsAPI(APIClient):
 
         Args:
             property (AssetPropertyLike): The property to count the cardinality of.
-            advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
+            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
         Returns:
@@ -376,7 +376,7 @@ class AssetsAPI(APIClient):
     def aggregate_cardinality_properties(
         self,
         path: AssetPropertyLike,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
@@ -385,7 +385,7 @@ class AssetsAPI(APIClient):
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
+            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
         Returns:
@@ -412,7 +412,7 @@ class AssetsAPI(APIClient):
     def aggregate_unique_values(
         self,
         property: AssetPropertyLike,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> UniqueResultList:
@@ -423,7 +423,7 @@ class AssetsAPI(APIClient):
 
         Args:
             property (AssetPropertyLike): The property to group by.
-            advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
+            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
 
@@ -478,7 +478,7 @@ class AssetsAPI(APIClient):
     def aggregate_unique_properties(
         self,
         path: AssetPropertyLike,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> UniqueResultList:
@@ -490,7 +490,7 @@ class AssetsAPI(APIClient):
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The advanced filter to narrow down assets.
+            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
 
@@ -1019,7 +1019,7 @@ class AssetsAPI(APIClient):
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
@@ -1043,7 +1043,7 @@ class AssetsAPI(APIClient):
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:

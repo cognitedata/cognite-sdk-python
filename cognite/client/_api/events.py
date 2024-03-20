@@ -74,7 +74,7 @@ class EventsAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[Event] | Iterator[EventList]:
         """Iterate over events
 
@@ -101,7 +101,7 @@ class EventsAPI(APIClient):
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
             limit (int | None): Maximum number of events to return. Defaults to return all items.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
 
         Returns:
             Iterator[Event] | Iterator[EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
@@ -240,7 +240,7 @@ class EventsAPI(APIClient):
         self,
         filter: EventFilter | dict | None = None,
         property: EventPropertyLike | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> UniqueResultList:
         """`Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
@@ -248,7 +248,7 @@ class EventsAPI(APIClient):
         Args:
             filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
             property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
-            advanced_filter (Filter | dict | None): The filter to narrow down the events to consider.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to consider.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
 
         Returns:
@@ -302,7 +302,7 @@ class EventsAPI(APIClient):
     def aggregate_count(
         self,
         property: EventPropertyLike | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
         """`Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
@@ -310,7 +310,7 @@ class EventsAPI(APIClient):
         Args:
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
                 (property is not null) and matching the filters.
-            advanced_filter (Filter | dict | None): The filter to narrow down the events to count.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
 
         Returns:
@@ -344,7 +344,7 @@ class EventsAPI(APIClient):
     def aggregate_cardinality_values(
         self,
         property: EventPropertyLike,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
@@ -352,7 +352,7 @@ class EventsAPI(APIClient):
 
         Args:
             property (EventPropertyLike): The property to count the cardinality of.
-            advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
         Returns:
@@ -390,7 +390,7 @@ class EventsAPI(APIClient):
     def aggregate_cardinality_properties(
         self,
         path: EventPropertyLike,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
@@ -399,7 +399,7 @@ class EventsAPI(APIClient):
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
         Returns:
@@ -427,7 +427,7 @@ class EventsAPI(APIClient):
     def aggregate_unique_properties(
         self,
         path: EventPropertyLike,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> UniqueResultList:
@@ -436,7 +436,7 @@ class EventsAPI(APIClient):
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
 
@@ -711,7 +711,7 @@ class EventsAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -735,7 +735,7 @@ class EventsAPI(APIClient):
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
 
         Returns:
             EventList: List of requested events
