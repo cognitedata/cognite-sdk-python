@@ -617,11 +617,17 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            Retrieve a row with key 'k1' from table 't1' in database 'db1'::
+            Retrieve a row with key 'k1' from table 't1' in database 'db1':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> row = client.raw.rows.retrieve("db1", "t1", "k1")
+
+            You may access the data directly on the row (like a dict), or use '.get' when keys can be missing:
+
+                >>> val1 = row["col1"]
+                >>> val2 = row.get("col2")
+
         """
         return self._retrieve(
             cls=Row,
@@ -737,7 +743,7 @@ class RawRowsAPI(APIClient):
 
                 >>> for row in client.raw.rows("db1", "t1", columns=["col1","col2"]):
                 ...     val1 = row["col1"]  # You may access the data directly
-                ...     val2 = row.get("col2")  # ...or use .get when keys can be missing
+                ...     val2 = row.get("col2")  # ...or use '.get' when keys can be missing
 
             Iterate through all rows, one chunk at a time, to reduce memory load (no concurrency used):
 
