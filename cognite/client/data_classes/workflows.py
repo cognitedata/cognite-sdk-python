@@ -578,8 +578,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
 
     task_type: ClassVar[str] = "dynamic"
 
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
@@ -596,8 +595,7 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
 
     task_type: ClassVar[str] = "subworkflow"
 
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:

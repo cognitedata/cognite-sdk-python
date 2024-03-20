@@ -146,8 +146,8 @@ class CogniteObject:
         yaml = local_import("yaml")
         return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
-    @classmethod
     @final
+    @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         if isinstance(resource, dict):
@@ -273,12 +273,10 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return super().__iter__()
 
     @overload
-    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource:
-        ...
+    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource: ...
 
     @overload
-    def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList:
-        ...
+    def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList: ...
 
     def __getitem__(
         self: T_CogniteResourceList, item: SupportsIndex | slice
@@ -373,8 +371,8 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
 
-    @classmethod
     @final
+    @classmethod
     def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or iterable of dict."""
         if isinstance(resource, str):
@@ -398,7 +396,9 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
 
-class WriteableCogniteResourceList(CogniteResourceList, Generic[T_WriteClass, T_WritableCogniteResource]):
+class WriteableCogniteResourceList(
+    CogniteResourceList[T_WritableCogniteResource], Generic[T_WriteClass, T_WritableCogniteResource]
+):
     @abstractmethod
     def as_write(self) -> CogniteResourceList[T_WriteClass]:
         raise NotImplementedError()
@@ -738,6 +738,9 @@ class CogniteSort:
                 order=data[1],
                 nulls=data[2],
             )
+        elif isinstance(data, str) and (prop_order := data.split(":", 1))[-1] in ("asc", "desc"):
+            # Syntax "<fieldname>:asc|desc" is depreacted but handled for compatibility
+            return cls(property=prop_order[0], order=cast(Literal["asc", "desc"], prop_order[1]))
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)
         else:
@@ -765,30 +768,25 @@ T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 class HasExternalId(Protocol):
     @property
-    def external_id(self) -> str | None:
-        ...
+    def external_id(self) -> str | None: ...
 
 
 class HasName(Protocol):
     @property
-    def name(self) -> str | None:
-        ...
+    def name(self) -> str | None: ...
 
 
 class HasInternalId(Protocol):
     @property
-    def id(self) -> int | None:
-        ...
+    def id(self) -> int | None: ...
 
 
 class HasExternalAndInternalId(Protocol):
     @property
-    def external_id(self) -> str | None:
-        ...
+    def external_id(self) -> str | None: ...
 
     @property
-    def id(self) -> int | None:
-        ...
+    def id(self) -> int | None: ...
 
 
 class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):

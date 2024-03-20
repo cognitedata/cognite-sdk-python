@@ -115,8 +115,7 @@ class DiagramsAPI(APIClient):
         configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[False],
-    ) -> DiagramDetectResults:
-        ...
+    ) -> DiagramDetectResults: ...
 
     @overload
     def detect(
@@ -132,8 +131,7 @@ class DiagramsAPI(APIClient):
         configuration: dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[True],
-    ) -> tuple[DetectJobBundle | None, list[dict[str, Any]]]:
-        ...
+    ) -> tuple[DetectJobBundle | None, list[dict[str, Any]]]: ...
 
     @overload
     def detect(
@@ -147,8 +145,7 @@ class DiagramsAPI(APIClient):
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
         configuration: dict[str, Any] | None = None,
-    ) -> DiagramDetectResults:
-        ...
+    ) -> DiagramDetectResults: ...
 
     def detect(
         self,

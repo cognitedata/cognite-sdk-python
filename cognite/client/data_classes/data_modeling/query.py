@@ -3,12 +3,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, Mapping, cast
+from typing import TYPE_CHECKING, Any, Literal, Mapping, Sequence, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject
-from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
     EdgeListWithCursor,
@@ -16,7 +16,9 @@ from cognite.client.data_classes.data_modeling.instances import (
     Node,
     NodeListWithCursor,
     PropertyValue,
+    TargetUnit,
 )
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._importing import local_import
 
@@ -27,20 +29,55 @@ if TYPE_CHECKING:
 @dataclass
 class SourceSelector(CogniteObject):
     source: ViewId
-    properties: list[str]
+    properties: list[str] | None = None
+    target_units: list[TargetUnit] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "source": self.source.dump(camel_case),
-            "properties": self.properties,
-        }
+        output: dict[str, Any] = {"source": self.source.dump(camel_case)}
+        if self.properties is not None:
+            output["properties"] = self.properties
+        if self.target_units:
+            output["targetUnits" if camel_case else "target_units"] = [
+                unit.dump(camel_case) for unit in self.target_units
+            ]
+        return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            source=ViewId.load(resource["source"]),
-            properties=resource["properties"],
-        )
+    def _load(
+        cls,
+        resource: dict[str, Any] | SourceSelector | ViewIdentifier | View,
+        cognite_client: CogniteClient | None = None,
+    ) -> Self:
+        if isinstance(resource, cls):
+            return resource
+        elif isinstance(resource, dict):
+            if "source" in resource:
+                view_id = ViewId.load(resource["source"])
+            else:
+                # This is in case only a ViewId is passed in.
+                view_id = ViewId.load(resource)
+            return cls(
+                source=view_id,
+                properties=resource.get("properties"),
+                target_units=[TargetUnit.load(unit) for unit in resource.get("targetUnits", [])] or None,
+            )
+
+        if isinstance(resource, View):
+            view_id = resource.as_id()
+        else:
+            view_id = ViewId.load(resource)  # type: ignore[arg-type]
+        return cls(source=view_id)
+
+    @classmethod
+    def _load_list(
+        cls, data: ViewIdentifier | View | SourceSelector | Sequence[ViewIdentifier | View | SourceSelector]
+    ) -> list[SourceSelector]:
+        if isinstance(data, (View, SourceSelector, ViewId)) or (
+            isinstance(data, tuple) and 2 <= len(data) <= 3 and all(isinstance(v, str) for v in data)
+        ):
+            data = [data]
+
+        return [cls._load(v) for v in data]  # type: ignore[arg-type]
 
 
 @dataclass
@@ -52,9 +89,7 @@ class Select(CogniteObject):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.sources:
-            output["sources"] = [
-                {"source": source.source.dump(camel_case), "properties": source.properties} for source in self.sources
-            ]
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
         if self.sort:
             output["sort"] = [s.dump(camel_case) for s in self.sort]
         if self.limit:
@@ -71,7 +106,7 @@ class Select(CogniteObject):
 
 
 class Query(CogniteObject):
-    """Query allows you to do advanced queries on the data model.
+    r"""Query allows you to do advanced queries on the data model.
 
     Args:
         with_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
@@ -157,8 +192,7 @@ class ResultSetExpression(CogniteObject, ABC):
         self.chain_to = chain_to
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        ...
+    def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:

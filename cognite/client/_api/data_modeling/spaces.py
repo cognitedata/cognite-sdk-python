@@ -12,22 +12,21 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class SpacesAPI(APIClient):
     _RESOURCE_PATH = "/models/spaces"
+    _LIST_LIMIT = 100
 
     @overload
     def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
-    ) -> Iterator[Space]:
-        ...
+    ) -> Iterator[Space]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
-    ) -> Iterator[SpaceList]:
-        ...
+    ) -> Iterator[SpaceList]: ...
 
     def __call__(
         self,
@@ -64,12 +63,10 @@ class SpacesAPI(APIClient):
         return self()
 
     @overload
-    def retrieve(self, spaces: str) -> Space | None:
-        ...
+    def retrieve(self, spaces: str) -> Space | None: ...
 
     @overload
-    def retrieve(self, spaces: SequenceNotStr[str]) -> SpaceList:
-        ...
+    def retrieve(self, spaces: SequenceNotStr[str]) -> SpaceList: ...
 
     def retrieve(self, spaces: str | SequenceNotStr[str]) -> Space | SpaceList | None:
         """`Retrieve one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
@@ -172,12 +169,10 @@ class SpacesAPI(APIClient):
         )
 
     @overload
-    def apply(self, spaces: Sequence[SpaceApply]) -> SpaceList:
-        ...
+    def apply(self, spaces: Sequence[SpaceApply]) -> SpaceList: ...
 
     @overload
-    def apply(self, spaces: SpaceApply) -> Space:
-        ...
+    def apply(self, spaces: SpaceApply) -> Space: ...
 
     def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
         """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_

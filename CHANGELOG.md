@@ -17,6 +17,74 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.29.0] - 2024-03-19
+### Added
+- Direct access to the columns/data stored on raw rows have been added (alongside a `.get` method). Example usage:
+  `row["my_col"]` (short-cut for: `row.columns["my_col"]`).
+
+## [7.28.2] - 2024-03-14
+### Fixed
+ - Retrieving more than 100 containers, views, data models, or spaces would raise a
+   `CogniteAPIError`. This is now fixed.
+
+## [7.28.1] - 2024-03-13
+### Fixed
+ - Fixed issue causing multipart file upload to fail when mime-type was set.
+
+## [7.28.0] - 2024-03-13
+### Added
+- Added support for advanced filter query in the `list()` (and `__call__()`) method of `assets`, `events`, `sequences`,
+  and `time_series` APIs. Now you are able to use advanced filter (like in `filter()`) at the same time as the simple
+  filter properties, allowing for more complex requests.
+- Added missing `sort` parameter to `list()` and `__call__()` methods for `AssetsAPI`.
+- Added missing `sort` parameter to `list()` and `__call__()` methods for `TimeSeriesAPI`.
+- Added missing `sort` and `partitions` parameters to `list()` and `__call__()` methods for `SequencesAPI`.
+### Deprecated
+- Added a deprecation warning on the `filter()` method of `assets`, `events`, `sequences`, and `time_series` APIs as
+  its functionality is fully covered by the `list()` method.
+
+## [7.27.2] - 2024-03-08
+### Added
+- Retry 429s on graphql endpoints
+
+## [7.27.1] - 2024-03-08
+### Improved
+- When iterating raw rows concurrently, a max queue size for pending results have been added to keep a stable low
+  bounded memory usage profile (for when the caller's code isn't processing fast enough to keep up). Worth noting
+  that this has no effect on the total retrieval time.
+
+## [7.27.0] - 2024-03-04
+### Added
+- Added support for multipart file uploads using the `client.files.multipart_upload_session` method.
+
+## [7.26.2] - 2024-03-05
+### Fixed
+- Fixed a regression from 7.26.1 in the logic for when to refresh token.
+
+## [7.26.1] - 2024-03-05
+### Fixed
+- The `CredentialProvider` class for client credentials, `OAuthClientCredentials`, was switched from using the non-standard
+  field `expires_at` to `expires_in` that's part of the OAuth 2.0 standard (RFC 6749).
+
+## [7.26.0] - 2024-02-29
+### Added
+- In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,
+  listing, searching, aggregating, querying and syncing nodes/edges with a target unit or target unit system.
+
+## [7.25.0] - 2024-02-29
+### Added
+- Support for sorting on `client.data_modeling.instances.search`
+
+## [7.24.4] - 2024-02-28
+### Fixed
+- Unknown ACLs, actions or scopes no longer causes `IAMAPI.[groups.list(...), token.inspect()]` to raise.
+### Added
+- New action for `DataModelInstancesAcl` added: `Write_Properties`.
+
+## [7.24.3] - 2024-02-28
+### Fixed
+- Fix handling of GeometryCollection objects in the Documents API.
+
 ## [7.24.2] - 2024-02-25
 ### Fixed
 - [Pyodide/WASM only] The list method for raw rows now works for non-finite queries (got broken in `7.24.1`).
@@ -186,7 +254,7 @@ Changes are grouped as follows
 
 ## [7.13.2] - 2024-01-11
 ### Fixed
-- When calling `ExtractinoPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+- When calling `ExtractionPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
 
 ## [7.13.1] - 2024-01-10
 ### Improved

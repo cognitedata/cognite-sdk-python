@@ -29,7 +29,7 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, T_CogniteResource
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
@@ -38,7 +38,11 @@ from cognite.client.data_classes.data_modeling.core import (
     DataModelingSort,
     WritableDataModelingResource,
 )
-from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
+from cognite.client.data_classes.data_modeling.data_types import (
+    DirectRelationReference,
+    UnitReference,
+    UnitSystemReference,
+)
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     EdgeId,
@@ -228,14 +232,12 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         return view_id in self.data
 
     @overload
-    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None:
-        ...
+    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None: ...
 
     @overload
     def get(
         self, view: ViewIdentifier, default: MutableMapping[PropertyIdentifier, PropertyValue] | _T
-    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T:
-        ...
+    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T: ...
 
     def get(
         self,
@@ -258,7 +260,6 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
 
 
 class Instance(WritableInstanceCore[T_CogniteResource], ABC):
-
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -303,12 +304,10 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         raise RuntimeError(err_msg) from None
 
     @overload
-    def get(self, attr: str) -> PropertyValue | None:
-        ...
+    def get(self, attr: str) -> PropertyValue | None: ...
 
     @overload
-    def get(self, attr: str, default: _T) -> PropertyValue | _T:
-        ...
+    def get(self, attr: str, default: _T) -> PropertyValue | _T: ...
 
     def get(self, attr: str, default: Any = None) -> Any:
         try:
@@ -331,6 +330,12 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     def __delitem__(self, attr: str) -> None:
         try:
             del self._prop_lookup[attr]
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __contains__(self, attr: str) -> bool:
+        try:
+            return attr in self._prop_lookup
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
@@ -961,7 +966,7 @@ class InstanceSort(DataModelingSort):
         self,
         property: list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
-        nulls_first: bool = False,
+        nulls_first: bool | None = None,
     ) -> None:
         super().__init__(property, direction, nulls_first)
 
@@ -1024,3 +1029,21 @@ class SubscriptionContext:
 
     def is_alive(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
+
+
+@dataclass
+class TargetUnit(CogniteObject):
+    property: str
+    unit: UnitReference | UnitSystemReference
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"property": self.property, "unit": self.unit.dump(camel_case)}
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TargetUnit:
+        return cls(
+            property=resource["property"],
+            unit=UnitReference.load(resource["unit"])
+            if "externalId" in resource["unit"]
+            else UnitSystemReference.load(resource["unit"]),
+        )

@@ -69,6 +69,27 @@ class Row(RowCore):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def get(self, attr: str, default: Any = None) -> Any:
+        return (self.columns or {}).get(attr, default)
+
+    def __getitem__(self, attr: str) -> Any:
+        return (self.columns or {})[attr]
+
+    def __setitem__(self, attr: str, value: Any) -> None:
+        if self.columns is not None:
+            self.columns[attr] = value
+        else:
+            raise RuntimeError("columns not set on Row instance")
+
+    def __delitem__(self, attr: str) -> None:
+        if self.columns is not None:
+            del self.columns[attr]
+        else:
+            raise RuntimeError("columns not set on Row instance")
+
+    def __contains__(self, attr: str) -> bool:
+        return self.columns is not None and attr in self.columns
+
     def as_write(self) -> RowWrite:
         """Returns this Row as a RowWrite"""
         if self.key is None or self.columns is None:
@@ -179,12 +200,10 @@ class Table(TableCore):
         return TableWrite(name=self.name)
 
     @overload
-    def rows(self, key: str, limit: int | None = None) -> Row | None:
-        ...
+    def rows(self, key: str, limit: int | None = None) -> Row | None: ...
 
     @overload
-    def rows(self, key: None = None, limit: int | None = None) -> RowList:
-        ...
+    def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
 
     def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
         """Get the rows in this table.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import time
 from typing import Any, ClassVar, cast
 
@@ -9,16 +10,20 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
+    ContainerApply,
+    ContainerProperty,
     DataModel,
     DirectRelationReference,
     Edge,
     EdgeApply,
     EdgeApplyResult,
     EdgeList,
+    Float64,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
     InstancesResult,
+    MappedPropertyApply,
     Node,
     NodeApply,
     NodeApplyResult,
@@ -28,12 +33,15 @@ from cognite.client.data_classes.data_modeling import (
     SingleHopConnectionDefinition,
     Space,
     View,
+    ViewApply,
     ViewId,
     ViewList,
     aggregations,
     filters,
     query,
 )
+from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.instances import TargetUnit
 from cognite.client.data_classes.data_modeling.query import (
     NodeResultSetExpression,
     Query,
@@ -41,6 +49,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
+from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -73,6 +82,43 @@ def actor_view(movie_views: ViewList) -> View:
 @pytest.fixture()
 def movie_view(movie_views: ViewList) -> View:
     return cast(View, movie_views.get(external_id="Movie"))
+
+
+@pytest.fixture(scope="session")
+def unit_view(cognite_client: CogniteClient, integration_test_space: Space) -> View:
+    container = ContainerApply(
+        space=integration_test_space.space,
+        external_id="integration_test_unit_container",
+        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference("pressure:bar")))},
+    )
+    view = ViewApply(
+        space=integration_test_space.space,
+        external_id="integration_test_unit_view",
+        version="v1",
+        properties={
+            "pressure": MappedPropertyApply(container=container.as_id(), container_property_identifier="pressure")
+        },
+    )
+    _ = cognite_client.data_modeling.containers.apply(container)
+    return cognite_client.data_modeling.views.apply(view)
+
+
+@pytest.fixture(scope="session")
+def node_with_1_1_pressure_in_bar(
+    cognite_client: CogniteClient, unit_view: View, integration_test_space: Space
+) -> NodeApply:
+    node = NodeApply(
+        space=integration_test_space.space,
+        external_id="pressure_1.1_bar_node",
+        sources=[
+            NodeOrEdgeData(
+                unit_view.as_id(),
+                {"pressure": 1.1},
+            )
+        ],
+    )
+    _ = cognite_client.data_modeling.instances.apply(node)
+    return node
 
 
 class TestInstancesAPI:
@@ -401,6 +447,17 @@ class TestInstancesAPI:
         )
         assert len(search_result) == 0
 
+    def test_search_with_sort(self, cognite_client: CogniteClient, person_view: View) -> None:
+        search = lambda direction: cognite_client.data_modeling.instances.search(
+            person_view.as_id(),
+            query="",
+            filter=Prefix(["node", "externalId"], "person:j"),
+            sort=InstanceSort(["node", "externalId"], direction=direction),
+        )
+        expected_result_asc = ["person:jamie_foxx", "person:joel_coen", "person:john_travolta"]
+        assert [node.external_id for node in search("ascending")] == expected_result_asc
+        assert [node.external_id for node in search("descending")] == list(reversed(expected_result_asc))
+
     def test_aggregate_histogram_across_nodes(self, cognite_client: CogniteClient, person_view: View) -> None:
         view_id = person_view.as_id()
         birth_by_decade = aggregations.Histogram("birthYear", interval=10.0)
@@ -529,6 +586,73 @@ class TestInstancesAPI:
         assert len(result["actors"]) > 0, "Add at least one actor that acted in the movies released before 2000"
         assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
         assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
+
+    def test_retrieve_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        node = node_with_1_1_pressure_in_bar
+        source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
+
+        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
+        assert retrieved.nodes
+        assert math.isclose(retrieved.nodes[0]["pressure"], 1.1 * 1e5)
+
+    def test_list_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+        listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
+
+        assert listed
+        assert len(listed) == 1
+        assert math.isclose(listed[0]["pressure"], 1.1 * 1e5)
+
+    def test_search_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        target_units = [TargetUnit("pressure", UnitReference("pressure:pa"))]
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+
+        searched = cognite_client.data_modeling.instances.search(
+            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units
+        )
+
+        assert searched
+        assert len(searched) == 1
+        assert math.isclose(searched[0]["pressure"], 1.1 * 1e5)
+
+    def test_aggregate_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        target_units = [TargetUnit("pressure", UnitReference("pressure:pa"))]
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+
+        aggregated = cognite_client.data_modeling.instances.aggregate(
+            view=unit_view.as_id(),
+            aggregates=[aggregations.Avg("pressure")],
+            target_units=target_units,
+            filter=is_node,
+        )
+
+        assert aggregated
+        assert len(aggregated) == 1
+        assert math.isclose(aggregated[0].value, 1.1 * 1e5)
+
+    def test_query_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+        target_units = [TargetUnit("pressure", UnitReference("pressure:pa"))]
+        query = Query(
+            with_={"nodes": NodeResultSetExpression(filter=is_node, limit=1)},
+            select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], target_units)])},
+        )
+        queried = cognite_client.data_modeling.instances.query(query)
+
+        assert queried
+        assert len(queried["nodes"]) == 1
+        assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
 
 
 class TestInstancesSync:

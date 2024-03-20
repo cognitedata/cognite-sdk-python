@@ -1,11 +1,11 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     DirectRelationReference,
     Float32,
     PropertyType,
+    UnitReference,
 )
 
 
@@ -21,7 +21,7 @@ class TestPropertyType:
         "data",
         [
             {"type": "text", "collation": "ucs_basic", "list": False},
-            {"type": "int32", "list": True, "unit": "temperature:deg_c"},
+            {"type": "int32", "list": True},
             {"type": "timeseries", "list": False},
         ],
     )
@@ -31,7 +31,7 @@ class TestPropertyType:
         assert data == actual
 
     def test_load_ignore_unknown_properties(self) -> None:
-        data = {"type": "float64", "list": True, "unit": "known", "super_unit": "unknown"}
+        data = {"type": "float64", "list": True, "unit": {"externalId": "known"}, "super_unit": "unknown"}
         actual = PropertyType.load(data).dump(camel_case=True)
         data.pop("super_unit")
 
@@ -47,7 +47,7 @@ class TestDirectRelation:
 
 class TestUnitSupport:
     def test_load_dump_property_with_unit(self) -> None:
-        data = {"type": "float32", "list": False, "unit": {"space": "cdf_units", "externalId": "temperature:celsius"}}
+        data = {"type": "float32", "list": False, "unit": {"externalId": "temperature:celsius"}}
         property = Float32.load(data)
-        assert isinstance(property.unit, NodeId)
+        assert isinstance(property.unit, UnitReference)
         assert data == property.dump(camel_case=True)

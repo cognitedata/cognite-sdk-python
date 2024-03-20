@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 import math
 import numbers
 import re
@@ -195,13 +196,11 @@ def _convert_and_isoformat_time_attrs_in_dict(item: dict) -> dict:
 
 
 @overload
-def convert_and_isoformat_time_attrs(item: dict) -> dict:
-    ...
+def convert_and_isoformat_time_attrs(item: dict) -> dict: ...
 
 
 @overload
-def convert_and_isoformat_time_attrs(item: list[dict]) -> list[dict]:
-    ...
+def convert_and_isoformat_time_attrs(item: list[dict]) -> list[dict]: ...
 
 
 def convert_and_isoformat_time_attrs(item: dict | list[dict]) -> dict | list[dict]:
@@ -231,23 +230,19 @@ class DateTimeAligner(ABC):
 
     @classmethod
     @abstractmethod
-    def ceil(cls, date: datetime) -> datetime:
-        ...
+    def ceil(cls, date: datetime) -> datetime: ...
 
     @classmethod
     @abstractmethod
-    def floor(cls, date: datetime) -> datetime:
-        ...
+    def floor(cls, date: datetime) -> datetime: ...
 
     @classmethod
     @abstractmethod
-    def units_between(cls, start: datetime, end: datetime) -> int:
-        ...
+    def units_between(cls, start: datetime, end: datetime) -> int: ...
 
     @classmethod
     @abstractmethod
-    def add_units(cls, date: datetime, units: int) -> datetime:
-        ...
+    def add_units(cls, date: datetime, units: int) -> datetime: ...
 
 
 class DayAligner(DateTimeAligner):
@@ -404,6 +399,9 @@ class YearAligner(DateTimeAligner):
 
     @classmethod
     def add_units(cls, date: datetime, units: int) -> datetime:
+        if date.month == 2 and date.day == 29 and not calendar.isleap(date.year + units):
+            # Avoid raising ValueError for invalid date
+            date = date.replace(day=28)
         return date.replace(year=date.year + units)
 
 

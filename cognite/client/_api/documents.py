@@ -112,8 +112,6 @@ class DocumentPreviewAPI(APIClient):
     def download_document_as_pdf_bytes(self, id: int) -> bytes:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
-        Only the 100 first pages will be included.
-
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
@@ -135,8 +133,6 @@ class DocumentPreviewAPI(APIClient):
 
     def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
-
-        Only the 100 first pages will be included.
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
@@ -203,8 +199,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]:
-        ...
+    ) -> Iterator[DocumentList]: ...
 
     @overload
     def __call__(
@@ -214,8 +209,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]:
-        ...
+    ) -> Iterator[DocumentList]: ...
 
     def __call__(
         self,
@@ -557,8 +551,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> DocumentList:
-        ...
+    ) -> DocumentList: ...
 
     @overload
     def search(
@@ -568,8 +561,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> DocumentHighlightList:
-        ...
+    ) -> DocumentHighlightList: ...
 
     def search(
         self,

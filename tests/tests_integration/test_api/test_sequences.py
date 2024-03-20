@@ -250,6 +250,18 @@ class TestSequencesAPI:
         assert len(result) == 1, "Expected only one sequence in subtree"
         assert result[0].external_id == sequence_list[0].external_id
 
+    def test_list_with_advanced_filter(
+        self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset
+    ) -> None:
+        f = filters
+        is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
+
+        result = cognite_client.sequences.list(
+            external_id_prefix="integration_test:", advanced_filter=is_asset, sort=SortableSequenceProperty.created_time
+        )
+        assert len(result) == 1, "Expected only one sequence in subtree"
+        assert result[0].external_id == sequence_list[0].external_id
+
     def test_filter_without_sort(
         self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset
     ) -> None:

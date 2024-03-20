@@ -412,7 +412,7 @@ class SequenceFilter(CogniteFilter):
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         metadata (dict[str, Any] | None): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (typing.Sequence[int] | None): Return only sequences linked to one of the specified assets.
-        asset_subtree_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         data_set_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that belong to these datasets.
@@ -670,12 +670,10 @@ class SequenceRows(CogniteResource):
         return len(self.rows)
 
     @overload
-    def __getitem__(self, item: int) -> list[RowValues]:
-        ...
+    def __getitem__(self, item: int) -> list[RowValues]: ...
 
     @overload
-    def __getitem__(self, item: slice) -> NoReturn:
-        ...
+    def __getitem__(self, item: slice) -> NoReturn: ...
 
     def __getitem__(self, item: int | slice) -> list[RowValues]:
         if isinstance(item, slice):
@@ -849,8 +847,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["id", "external_id"] = "external_id",
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: Literal[True] = True,
-    ) -> pandas.DataFrame:
-        ...
+    ) -> pandas.DataFrame: ...
 
     @overload
     def to_pandas(
@@ -858,8 +855,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["external_id"] = "external_id",
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: Literal[False] = False,
-    ) -> dict[str, pandas.DataFrame]:
-        ...
+    ) -> dict[str, pandas.DataFrame]: ...
 
     @overload
     def to_pandas(
@@ -867,8 +863,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         key: Literal["id"],
         column_names: ColumnNames = "externalId|columnExternalId",
         concat: Literal[False] = False,
-    ) -> dict[int, pandas.DataFrame]:
-        ...
+    ) -> dict[int, pandas.DataFrame]: ...
 
     def to_pandas(
         self,

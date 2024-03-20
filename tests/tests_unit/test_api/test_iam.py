@@ -149,11 +149,11 @@ class TestTokenAPI:
 
         assert obj.dump(camel_case=False) == {
             "subject": "subject",
-            "projects": [{"url_name": "urlName", "groups": groups}],
+            "projects": [{"project_url_name": "urlName", "groups": groups}],
             "capabilities": capabilities.dump(camel_case=False),
         }
         assert obj.dump(camel_case=True) == {
             "subject": "subject",
-            "projects": [{"urlName": "urlName", "groups": groups}],
+            "projects": [{"projectUrlName": "urlName", "groups": groups}],
             "capabilities": capabilities.dump(camel_case=True),
         }

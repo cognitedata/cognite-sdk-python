@@ -122,6 +122,8 @@ class AssetsAPI(APIClient):
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[Asset] | Iterator[AssetList]:
         """Iterate over assets
 
@@ -132,8 +134,8 @@ class AssetsAPI(APIClient):
             name (str | None): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
             parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_ids (int | Sequence[int] | None): Only include assets in subtrees rooted at any of the specified assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include assets in subtrees rooted at any of the specified assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
@@ -146,7 +148,9 @@ class AssetsAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of assets to return. Defaults to return all items.
-            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             Iterator[Asset] | Iterator[AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
@@ -171,12 +175,17 @@ class AssetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
 
+        prep_sort = prepare_filter_sort(sort, AssetSort)
+        self._validate_filter(advanced_filter)
+
         return self._list_generator(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
             limit=limit,
             partitions=partitions,
             other_params=agg_props,
@@ -507,12 +516,10 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def create(self, asset: Sequence[Asset] | Sequence[AssetWrite]) -> AssetList:
-        ...
+    def create(self, asset: Sequence[Asset] | Sequence[AssetWrite]) -> AssetList: ...
 
     @overload
-    def create(self, asset: Asset | AssetWrite) -> Asset:
-        ...
+    def create(self, asset: Asset | AssetWrite) -> Asset: ...
 
     def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """`Create one or more assets. <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_
@@ -710,12 +717,10 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Asset | AssetWrite | AssetUpdate]) -> AssetList:
-        ...
+    def update(self, item: Sequence[Asset | AssetWrite | AssetUpdate]) -> AssetList: ...
 
     @overload
-    def update(self, item: Asset | AssetWrite | AssetUpdate) -> Asset:
-        ...
+    def update(self, item: Asset | AssetWrite | AssetUpdate) -> Asset: ...
 
     def update(
         self, item: Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]
@@ -780,12 +785,10 @@ class AssetsAPI(APIClient):
         return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
     @overload
-    def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList:
-        ...
+    def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList: ...
 
     @overload
-    def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset:
-        ...
+    def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset: ...
 
     def upsert(
         self, item: Asset | AssetWrite | Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch"
@@ -852,9 +855,9 @@ class AssetsAPI(APIClient):
             and sort by external id ascending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
-                >>> in_timezone = flt.Prefix(["metadata", "timezone"], "Europe")
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
                 >>> res = client.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
@@ -864,15 +867,19 @@ class AssetsAPI(APIClient):
             for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
                 >>> client = CogniteClient()
-                >>> in_timezone = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+                >>> in_timezone = filters.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.assets.filter(
                 ...     filter=in_timezone,
                 ...     sort=(SortableAssetProperty.external_id, "asc"))
 
         """
+        warnings.warn(
+            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
         agg_props = self._process_aggregated_props(aggregated_properties)
         return self._list(
@@ -1012,6 +1019,8 @@ class AssetsAPI(APIClient):
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        advanced_filter: Filter | dict | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -1019,8 +1028,8 @@ class AssetsAPI(APIClient):
             name (str | None): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
             parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_ids (int | Sequence[int] | None): Only include assets in subtrees rooted at any of the specified assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include assets in subtrees rooted at any of the specified assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the assets matching the specified label filter.
@@ -1032,11 +1041,19 @@ class AssetsAPI(APIClient):
             root (bool | None): filtered assets are root assets or not.
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             AssetList: List of requested assets
+
+        .. note::
+            When using `partitions`, there are few considerations to keep in mind:
+                * `limit` has to be set to `None` (or `-1`).
+                * API may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+                * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
 
         Examples:
 
@@ -1067,6 +1084,42 @@ class AssetsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
                 >>> asset_list = client.assets.list(labels=my_label_filter)
+
+            Using advanced filter, find all assets that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = client.assets.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+                >>> res = client.assets.list(
+                ...     advanced_filter=in_timezone,
+                ...     sort=(SortableAssetProperty.external_id, "asc"))
+
+            Combine filter and advanced filter:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> not_instrument_lvl5 = filters.And(
+                ...    filters.ContainsAny("labels", ["Level5"]),
+                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ... )
+                >>> res = client.assets.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+
         """
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
@@ -1087,12 +1140,18 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
+
+        prep_sort = prepare_filter_sort(sort, AssetSort)
+        self._validate_filter(advanced_filter)
+
         return self._list(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
             limit=limit,
             filter=filter,
+            advanced_filter=advanced_filter,
+            sort=prep_sort,
             other_params=agg_props,
             partitions=partitions,
         )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import random
 import threading
 import time
 from collections import deque
@@ -70,12 +71,10 @@ class RawDatabasesAPI(APIClient):
         return cast(Iterator[Database], self())
 
     @overload
-    def create(self, name: str) -> Database:
-        ...
+    def create(self, name: str) -> Database: ...
 
     @overload
-    def create(self, name: list[str]) -> DatabaseList:
-        ...
+    def create(self, name: list[str]) -> DatabaseList: ...
 
     def create(self, name: str | list[str]) -> Database | DatabaseList:
         """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
@@ -193,12 +192,10 @@ class RawTablesAPI(APIClient):
         return self._set_db_name_on_tables_generator(table_iterator, db_name)
 
     @overload
-    def create(self, db_name: str, name: str) -> Table:
-        ...
+    def create(self, db_name: str, name: str) -> Table: ...
 
     @overload
-    def create(self, db_name: str, name: list[str]) -> TableList:
-        ...
+    def create(self, db_name: str, name: list[str]) -> TableList: ...
 
     def create(self, db_name: str, name: str | list[str]) -> Table | TableList:
         """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
@@ -359,6 +356,10 @@ class RawRowsAPI(APIClient):
 
         Returns:
             Iterator[Row] | Iterator[RowList]: An iterator yielding the requested row or rows.
+
+        Note:
+            When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
+            by halting retrival speed when the callers code can't keep up.
         """
         if partitions is None or _RUNNING_IN_BROWSER:
             return self._list_generator(
@@ -422,16 +423,24 @@ class RawRowsAPI(APIClient):
             for initial in cursors
         ]
 
-        def exhaust(iterator: Iterator, results: deque[RowList], quit_early: threading.Event) -> None:
+        def exhaust(iterator: Iterator) -> None:
             for res in iterator:
                 results.append(res)
                 if quit_early.is_set():
                     return
+                # User code might be processing slower than the rate of row-fetching, and we want this
+                # iteration-based method to have a upper-bounded memory impact, so we keep a max queue
+                # size of unprocessed row-chunks:
+                while len(results) >= partitions:
+                    # Sleep randomly per thread to avoid sending all new fetch requests at the same time
+                    time.sleep(random.uniform(0, partitions))
+                    if quit_early.is_set():
+                        return
 
         quit_early = threading.Event()
         results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
         pool = ConcurrencySettings.get_thread_pool_executor_or_raise(max_workers=self._config.max_workers)
-        futures = [pool.submit(exhaust, task, results, quit_early) for task in read_iterators]
+        futures = [pool.submit(exhaust, task) for task in read_iterators]
 
         if finite_limit:
             yield from self._read_rows_limited(futures, results, cast(int, limit), quit_early)
@@ -445,7 +454,6 @@ class RawRowsAPI(APIClient):
         while not all(f.done() for f in futures):
             while results:
                 yield results.popleft()
-            time.sleep(0.5)
         yield from results
 
     def _read_rows_limited(
@@ -464,7 +472,6 @@ class RawRowsAPI(APIClient):
                     quit_early.set()
                     yield part[: limit - n_total]
                     return
-            time.sleep(0.5)
             if all(f.done() for f in futures) and not results:
                 return
 
@@ -610,11 +617,17 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            Retrieve a row with key 'k1' from table 't1' in database 'db1'::
+            Retrieve a row with key 'k1' from table 't1' in database 'db1':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> row = client.raw.rows.retrieve("db1", "t1", "k1")
+
+            You may access the data directly on the row (like a dict), or use '.get' when keys can be missing:
+
+                >>> val1 = row["col1"]
+                >>> val2 = row.get("col2")
+
         """
         return self._retrieve(
             cls=Row,
@@ -729,12 +742,13 @@ class RawRowsAPI(APIClient):
             Iterate through all rows one-by-one to reduce memory load (no concurrency used):
 
                 >>> for row in client.raw.rows("db1", "t1", columns=["col1","col2"]):
-                ...     row  # do something with the row
+                ...     val1 = row["col1"]  # You may access the data directly
+                ...     val2 = row.get("col2")  # ...or use '.get' when keys can be missing
 
             Iterate through all rows, one chunk at a time, to reduce memory load (no concurrency used):
 
                 >>> for row_list in client.raw.rows("db1", "t1", chunk_size=2500):
-                ...     row_list  # do something with the rows
+                ...     row_list  # Do something with the rows
 
             Iterate through a massive table to reduce memory load while using concurrency for high throughput.
             Note: ``partitions`` must be specified for concurrency to be used (this is different from ``list()``
@@ -745,7 +759,7 @@ class RawRowsAPI(APIClient):
                 ...     db_name="db1", table_name="t1", partitions=5, chunk_size=5000, limit=1_000_000
                 ... )
                 >>> for row_list in rows_iterator:
-                ...     row_list  # do something with the rows
+                ...     row_list  # Do something with the rows
         """
         chunk_size = None
         if _RUNNING_IN_BROWSER:

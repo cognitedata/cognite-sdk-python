@@ -64,7 +64,9 @@ def new_file_with_label(cognite_client):
     label_external_id = uuid.uuid4().hex[0:20]
     label = cognite_client.labels.create(LabelDefinition(external_id=label_external_id, name="mandatory"))
     file = cognite_client.files.upload_bytes(
-        content="blabla", name="myspecialfile", labels=[Label(external_id=label_external_id)]
+        content="blabla",
+        name="myspecialfile",
+        labels=[Label(external_id=label_external_id)],
     )
     await_file_upload(cognite_client, file.id)
     yield file, label.external_id
@@ -209,8 +211,39 @@ class TestFilesAPI:
         external_id = "test_upload_bytes_with_nordic_characters"
 
         _ = cognite_client.files.upload_bytes(
-            content=content, name="nordic_chars.txt", external_id=external_id, overwrite=True
+            content=content,
+            name="nordic_chars.txt",
+            external_id=external_id,
+            overwrite=True,
         )
 
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert retrieved_content == content.encode("utf-8")
+
+    def test_upload_multipart(self, cognite_client: CogniteClient) -> None:
+        # Min file chunk size is 5MiB
+        content_1 = "abcde" * 1_200_000
+        content_2 = "fghij"
+
+        external_id = "test_upload_multipart"
+
+        with cognite_client.files.multipart_upload_session(
+            name="test_multipart.txt",
+            mime_type="text/plain",
+            parts=2,
+            external_id=external_id,
+            overwrite=True,
+        ) as session:
+            session.upload_part(0, content_1)
+            session.upload_part(1, content_2)
+
+        for _ in range(10):
+            file = cognite_client.files.retrieve(session.file_metadata.id)
+            if file.uploaded:
+                break
+            time.sleep(1)
+
+        retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
+        assert len(retrieved_content) == 6000005
+
+        cognite_client.files.delete(session.file_metadata.id)

@@ -71,9 +71,10 @@ class EventsAPI(APIClient):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
-        sort: SequenceNotStr[str] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
+        advanced_filter: Filter | dict | None = None,
     ) -> Iterator[Event] | Iterator[EventList]:
         """Iterate over events
 
@@ -89,17 +90,18 @@ class EventsAPI(APIClient):
             metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
             asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
             source (str | None): The source of this event.
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str | None): External Id provided by client. Should be unique within the project
-            sort (SequenceNotStr[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when omitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
             limit (int | None): Maximum number of events to return. Defaults to return all items.
-            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
 
         Returns:
             Iterator[Event] | Iterator[EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
@@ -123,14 +125,19 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
+
+        prep_sort = prepare_filter_sort(sort, EventSort)
+        self._validate_filter(advanced_filter)
+
         return self._list_generator(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
+            advanced_filter=advanced_filter,
             limit=limit,
-            sort=sort,
+            sort=prep_sort,
             partitions=partitions,
         )
 
@@ -456,12 +463,10 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList:
-        ...
+    def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList: ...
 
     @overload
-    def create(self, event: Event | EventWrite) -> Event:
-        ...
+    def create(self, event: Event | EventWrite) -> Event: ...
 
     def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """`Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
@@ -512,12 +517,10 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Event | EventWrite | EventUpdate]) -> EventList:
-        ...
+    def update(self, item: Sequence[Event | EventWrite | EventUpdate]) -> EventList: ...
 
     @overload
-    def update(self, item: Event | EventWrite | EventUpdate) -> Event:
-        ...
+    def update(self, item: Event | EventWrite | EventUpdate) -> Event: ...
 
     def update(
         self, item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]
@@ -578,12 +581,10 @@ class EventsAPI(APIClient):
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
 
     @overload
-    def upsert(self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch") -> EventList:
-        ...
+    def upsert(self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch") -> EventList: ...
 
     @overload
-    def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event:
-        ...
+    def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event: ...
 
     def upsert(
         self, item: Event | EventWrite | Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"
@@ -648,12 +649,12 @@ class EventsAPI(APIClient):
             and sort by start time descending:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
-                >>> is_workorder = flt.Prefix("external_id", "workorder")
-                >>> has_failure = flt.Search("description", "failure")
+                >>> is_workorder = filters.Prefix("external_id", "workorder")
+                >>> has_failure = filters.Search("description", "failure")
                 >>> res = client.events.filter(
-                ...     filter=flt.And(is_workorder, has_failure), sort=("start_time", "desc"))
+                ...     filter=filters.And(is_workorder, has_failure), sort=("start_time", "desc"))
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -662,15 +663,19 @@ class EventsAPI(APIClient):
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters as flt
+                >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> client = CogniteClient()
-                >>> is_workorder = flt.Prefix(EventProperty.external_id, "workorder")
-                >>> has_failure = flt.Search(EventProperty.description, "failure")
+                >>> is_workorder = filters.Prefix(EventProperty.external_id, "workorder")
+                >>> has_failure = filters.Search(EventProperty.description, "failure")
                 >>> res = client.events.filter(
-                ...     filter=flt.And(is_workorder, has_failure),
+                ...     filter=filters.And(is_workorder, has_failure),
                 ...     sort=(SortableEventProperty.start_time, "desc"))
         """
+        warnings.warn(
+            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
+            DeprecationWarning,
+        )
         self._validate_filter(filter)
 
         return self._list(
@@ -703,9 +708,10 @@ class EventsAPI(APIClient):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
-        sort: SequenceNotStr[str] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        advanced_filter: Filter | dict | None = None,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -718,20 +724,28 @@ class EventsAPI(APIClient):
             metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
             asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
             source (str | None): The source of this event.
             created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            sort (SequenceNotStr[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when omitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
-            partitions (int | None): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
 
         Returns:
             EventList: List of requested events
+
+        .. note::
+            When using `partitions`, there are few considerations to keep in mind:
+                * `limit` has to be set to `None` (or `-1`).
+                * API may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+                * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
+
 
         Examples:
 
@@ -754,6 +768,42 @@ class EventsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> for event_list in client.events(chunk_size=2500):
                 ...     event_list # do something with the events
+
+            Using advanced filter, find all events that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = client.events.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
+                >>> client = CogniteClient()
+                >>> in_timezone = filters.Prefix(EventProperty.metadata_key("timezone"), "Europe")
+                >>> res = client.events.list(
+                ...     advanced_filter=in_timezone,
+                ...     sort=(SortableEventProperty.external_id, "asc"))
+
+            Combine filter and advanced filter:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> client = CogniteClient()
+                >>> not_instrument_lvl5 = filters.And(
+                ...    filters.ContainsAny("labels", ["Level5"]),
+                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ... )
+                >>> res = client.events.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -774,12 +824,17 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
+
+        prep_sort = prepare_filter_sort(sort, EventSort)
+        self._validate_filter(advanced_filter)
+
         return self._list(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
             limit=limit,
             filter=filter,
+            advanced_filter=advanced_filter,
             partitions=partitions,
-            sort=sort,
+            sort=prep_sort,
         )

@@ -11,23 +11,19 @@ _T = TypeVar("_T")
 
 
 @overload
-def local_import(m1: str, /) -> ModuleType:
-    ...
+def local_import(m1: str, /) -> ModuleType: ...
 
 
 @overload
-def local_import(m1: str, m2: str, /) -> tuple[ModuleType, ModuleType]:
-    ...
+def local_import(m1: str, m2: str, /) -> tuple[ModuleType, ModuleType]: ...
 
 
 @overload
-def local_import(m1: str, m2: str, m3: str, /) -> tuple[ModuleType, ModuleType, ModuleType]:
-    ...
+def local_import(m1: str, m2: str, m3: str, /) -> tuple[ModuleType, ModuleType, ModuleType]: ...
 
 
 @overload
-def local_import(m1: str, m2: str, m3: str, m4: str, /) -> tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
-    ...
+def local_import(m1: str, m2: str, m3: str, m4: str, /) -> tuple[ModuleType, ModuleType, ModuleType, ModuleType]: ...
 
 
 def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:

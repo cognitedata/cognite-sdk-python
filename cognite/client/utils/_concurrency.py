@@ -120,13 +120,11 @@ T_Result = TypeVar("T_Result", covariant=True)
 
 
 class TaskExecutor(Protocol):
-    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]:
-        ...
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]: ...
 
 
 class TaskFuture(Protocol[T_Result]):
-    def result(self) -> T_Result:
-        ...
+    def result(self) -> T_Result: ...
 
 
 class SyncFuture(TaskFuture[T_Result]):

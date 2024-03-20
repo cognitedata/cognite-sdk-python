@@ -25,6 +25,7 @@ from cognite.client.data_classes import (
     FileMetadataList,
     FileMetadataUpdate,
     FileMetadataWrite,
+    FileMultipartUploadSession,
     GeoLocation,
     GeoLocationFilter,
     Label,
@@ -78,8 +79,8 @@ class FilesAPI(APIClient):
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
             asset_external_ids (SequenceNotStr[str] | None): No description.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_ids (int | Sequence[int] | None): Only include files that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include files that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the files matching the specified label(s).
@@ -278,12 +279,10 @@ class FilesAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     @overload
-    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata:
-        ...
+    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata: ...
 
     @overload
-    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList:
-        ...
+    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList: ...
 
     def update(
         self,
@@ -527,6 +526,8 @@ class FilesAPI(APIClient):
 
         You can also pass a file handle to content.
 
+        Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_session`.
+
         Args:
             content (str | bytes | TextIO | BinaryIO): The content to upload.
             name (str): Name of the file.
@@ -597,6 +598,139 @@ class FilesAPI(APIClient):
             )
 
         return FileMetadata._load(returned_file_metadata)
+
+    def multipart_upload_session(
+        self,
+        name: str,
+        parts: int,
+        external_id: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
+        overwrite: bool = False,
+    ) -> FileMultipartUploadSession:
+        """Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
+        Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
+        must be greater than 5MiB.
+
+        The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
+        the parts are stored in the correct order by uploading each chunk to the correct upload URL.
+
+        This returns a context object you must enter (using the `with` keyword), then call `upload_part` on
+        for each part before exiting.
+
+        Args:
+            name (str): Name of the file.
+            parts (int): The number of parts to upload, must be between 1 and 250.
+            external_id (str | None): The external ID provided by the client. Must be unique within the project.
+            source (str | None): The source of the file.
+            mime_type (str | None): File type. E.g. text/plain, application/pdf,...
+            metadata (dict[str, str] | None): Customizable extra data about the file. String key -> String value.
+            directory (str | None): The directory to be associated with this file. Must be an absolute, unix-style path.
+            asset_ids (Sequence[int] | None): No description.
+            data_set_id (int | None): Id of the data set.
+            labels (Sequence[Label] | None): A list of the labels associated with this resource item.
+            geo_location (GeoLocation | None): The geographic metadata of the file.
+            source_created_time (int | None): The timestamp for when the file was originally created in the source system.
+            source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
+            security_categories (Sequence[int] | None): Security categories to attach to this file.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
+
+        Returns:
+            FileMultipartUploadSession: Object containing metadata about the created file,
+            and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once
+            all parts are uploaded.
+
+        Examples:
+
+            Upload binary data in two chunks
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> with client.files.multipart_upload_session("my_file.txt", parts=2) as session:
+                ...     # Note that the minimum chunk size is 5 MiB.
+                ...     session.upload_part(0, "hello" * 1_200_000)
+                ...     session.upload_part(1, " world")
+        """
+        file_metadata = FileMetadata(
+            name=name,
+            external_id=external_id,
+            source=source,
+            mime_type=mime_type,
+            metadata=metadata,
+            directory=directory,
+            asset_ids=asset_ids,
+            data_set_id=data_set_id,
+            labels=labels,
+            geo_location=geo_location,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            security_categories=security_categories,
+        )
+        try:
+            res = self._post(
+                url_path=self._RESOURCE_PATH + "/initmultipartupload",
+                json=file_metadata.dump(camel_case=True),
+                params={"overwrite": overwrite, "parts": parts},
+            )
+        except CogniteAPIError as e:
+            if e.code == 403 and "insufficient access rights" in e.message:
+                dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
+                msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+            raise
+
+        returned_file_metadata = res.json()
+        upload_urls = returned_file_metadata["uploadUrls"]
+        upload_id = returned_file_metadata["uploadId"]
+
+        return FileMultipartUploadSession(
+            FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
+        )
+
+    def _upload_multipart_part(self, upload_url: str, content: str | bytes | TextIO | BinaryIO) -> None:
+        """Upload part of a file to an upload URL returned from `multipart_upload_session`.
+        Note that if `content` does not somehow expose its length, this method may not work
+        on Azure. See `requests.utils.super_len`.
+
+        Args:
+            upload_url (str): URL to upload file chunk to.
+            content (str | bytes | TextIO | BinaryIO): The content to upload.
+        """
+        if isinstance(content, str):
+            content = content.encode("utf-8")
+
+        upload_response = self._http_client_with_retry.request(
+            "PUT",
+            upload_url,
+            data=content,
+            timeout=self._config.file_transfer_timeout,
+            headers=None,
+        )
+        if not upload_response.ok:
+            raise CogniteFileUploadError(
+                message=upload_response.text,
+                code=upload_response.status_code,
+            )
+
+    def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
+        """Complete a multipart upload. Once this returns the file can be downloaded.
+
+        Args:
+            session (FileMultipartUploadSession): Multipart upload session returned from
+        """
+        self._post(
+            self._RESOURCE_PATH + "/completemultipartupload",
+            json={"id": session.file_metadata.id, "uploadId": session._upload_id},
+        )
 
     def retrieve_download_urls(
         self,
@@ -896,8 +1030,8 @@ class FilesAPI(APIClient):
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
             asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
             asset_external_ids (SequenceNotStr[str] | None): No description.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            asset_subtree_ids (int | Sequence[int] | None): Only include files that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include files that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter | None): Return only the files matching the specified label filter(s).
