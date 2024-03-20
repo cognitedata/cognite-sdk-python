@@ -87,7 +87,7 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
         """Iterate over time series
@@ -114,7 +114,7 @@ class TimeSeriesAPI(APIClient):
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Maximum number of time series to return. Defaults to return all items.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
@@ -259,13 +259,13 @@ class TimeSeriesAPI(APIClient):
 
     def aggregate_count(
         self,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> int:
         """`Count of time series matching the specified filters and search. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count.
             filter (TimeSeriesFilter | dict | None): The filter to narrow down time series to count requiring exact match.
 
         Returns:
@@ -299,7 +299,7 @@ class TimeSeriesAPI(APIClient):
     def aggregate_cardinality_values(
         self,
         property: TimeSeriesProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> int:
@@ -307,7 +307,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
-            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
         Returns:
@@ -349,7 +349,7 @@ class TimeSeriesAPI(APIClient):
     def aggregate_cardinality_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> int:
@@ -357,7 +357,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
         Returns:
@@ -384,7 +384,7 @@ class TimeSeriesAPI(APIClient):
     def aggregate_unique_values(
         self,
         property: TimeSeriesProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> UniqueResultList:
@@ -392,7 +392,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to group by.
-            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
 
@@ -445,7 +445,7 @@ class TimeSeriesAPI(APIClient):
     def aggregate_unique_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> UniqueResultList:
@@ -453,7 +453,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requiring exact match.
 
@@ -757,7 +757,7 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: dict[str, Any] | None = None,
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> TimeSeriesList:
         """`List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
@@ -781,7 +781,7 @@ class TimeSeriesAPI(APIClient):
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
