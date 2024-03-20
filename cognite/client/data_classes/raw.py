@@ -76,13 +76,13 @@ class Row(RowCore):
         return (self.columns or {})[attr]
 
     def __setitem__(self, attr: str, value: Any) -> None:
-        if self.columns:
+        if self.columns is not None:
             self.columns[attr] = value
         else:
             raise RuntimeError("columns not set on Row instance")
 
     def __delitem__(self, attr: str) -> None:
-        if self.columns:
+        if self.columns is not None:
             del self.columns[attr]
         else:
             raise RuntimeError("columns not set on Row instance")

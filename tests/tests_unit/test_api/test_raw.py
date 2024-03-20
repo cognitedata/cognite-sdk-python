@@ -312,6 +312,15 @@ def test_raw_row__direct_column_access():
     assert key not in row
     assert key not in row.columns
 
+    del row["bar"]
+    assert row.columns == {}
+    with pytest.raises(KeyError, match="^'wrong-key'$"):
+        del row["wrong-key"]
+
+    row.columns = None
+    with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
+        del row["wrong-key"]
+
 
 @pytest.mark.dsl
 class TestPandasIntegration:
