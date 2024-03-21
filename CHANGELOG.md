@@ -23,7 +23,7 @@ Changes are grouped as follows
   query, a `CogniteNotFoundError` would most likely be raised, due to `None` being silently cast to a string. It now
   raises a friendly `ValueError`.
 - An invalid expression could be created when using multiple variables in a synthetic datapoints query. This happened
-  while substituting the variables into the expression; this was done one at the time, leading to later replacements
+  while substituting the variables into the expression; this was done one at a time, leading to later replacements
   possibly affecting earlier ones. Now all variables are substituted at the same time/in a single call.
 ### Improved
 - Passing sympy symbols as part of the variables mapping (in synthetic datapoints queries) is now documented properly

@@ -142,7 +142,7 @@ class SyntheticDatapointsAPI(APIClient):
         elif isinstance(expression, str):
             expression_str = expression
         else:
-            raise TypeError(f"expression must be str or a sympy expressioin, not {type(expression)}")
+            raise TypeError(f"expression must be str or a sympy expression, not {type(expression)}")
 
         if aggregate and granularity:
             aggregate_str = f",aggregate:'{aggregate}',granularity:'{granularity}'"
