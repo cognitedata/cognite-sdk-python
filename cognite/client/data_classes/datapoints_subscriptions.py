@@ -420,16 +420,13 @@ class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
     _RESOURCE = TimeSeriesID
 
 
-def _metadata(key: str) -> list[str]:
-    return ["metadata", key]
-
-
-class DatapointSubscriptionFilterProperties(EnumProperty):
+class DatapointSubscriptionProperty(EnumProperty):
     description = auto()
     external_id = auto()
-    metadata = _metadata
     name = auto()  # type: ignore [assignment]
     unit = auto()
+    unit_external_id = auto()
+    unit_quantity = auto()
     asset_id = auto()
     asset_root_id = auto()
     created_time = auto()
@@ -438,3 +435,13 @@ class DatapointSubscriptionFilterProperties(EnumProperty):
     last_updated_time = auto()
     is_step = auto()
     is_string = auto()
+
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
+        return ["metadata", key]
+
+    metadata = metadata_key  # TODO: Remove in major version 8
+
+
+# TODO: Remove in major version 8:
+DatapointSubscriptionFilterProperties = DatapointSubscriptionProperty
