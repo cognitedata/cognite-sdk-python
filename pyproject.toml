@@ -27,7 +27,7 @@ python = "^3.8"
 requests = "^2"
 requests_oauthlib = "^1"
 msal = "^1"
-protobuf = ">=3.16.0"
+protobuf = ">=4"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
 numpy = { version = "^1.20", optional = true }

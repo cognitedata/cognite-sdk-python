@@ -39,6 +39,7 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
+from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes.datapoints import (
     Aggregate,
     Datapoints,
@@ -57,7 +58,7 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
-from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
+from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
     align_large_granularity,
     pandas_date_range_tz,
@@ -68,14 +69,6 @@ from cognite.client.utils._time import (
 )
 from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if not import_legacy_protobuf():
-    from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
-else:
-    from cognite.client._proto_legacy.data_point_list_response_pb2 import (  # type: ignore [assignment]
-        DataPointListItem,
-        DataPointListResponse,
-    )
 
 if TYPE_CHECKING:
     from concurrent.futures import Future, ThreadPoolExecutor
