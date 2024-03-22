@@ -15,6 +15,7 @@ from cognite.client.data_classes import (
     Asset,
     AssetHierarchy,
     AssetList,
+    AssetWrite,
     Event,
     EventList,
     FileMetadata,
@@ -152,15 +153,15 @@ def basic_issue_assets():
         Asset(name="a1", external_id="i am groot", parent_external_id=None),
         # Duplicated XIDs:
         Asset(name="a2", external_id="a", parent_external_id="i am groot"),
-        Asset(name="a3", external_id="a", parent_external_id="i am groot"),
+        AssetWrite(name="a3", external_id="a", parent_external_id="i am groot"),
         # Duplicated AND orphan:
         Asset(name="a4", external_id="a", parent_external_id="i am orphan"),
         # Orphan:
-        Asset(name="a5", external_id="b", parent_external_id="i am orphan"),
+        AssetWrite(name="a5", external_id="b", parent_external_id="i am orphan"),
         # Invalid (missing XIDs):
         Asset(name="a6", external_id=None, parent_external_id="i am groot"),
         # Doubly defined parent asset:
-        Asset(name="a7", external_id="c", parent_external_id="i am groot", parent_id=42),
+        AssetWrite(name="a7", external_id="c", parent_external_id="i am groot", parent_id=42),
     ]
 
 
@@ -237,9 +238,9 @@ class TestAssetHierarchy:
         (
             # Invalid name:
             Asset(name="", external_id="foo"),
-            Asset(name=None, external_id="foo"),
+            AssetWrite(name=None, external_id="foo"),
             # Invalid external_id (empty str allowed):
-            Asset(name="a", external_id=None),
+            AssetWrite(name="a", external_id=None),
             # Id given:
             Asset(name="a", external_id="", id=123),
         ),
@@ -253,7 +254,7 @@ class TestAssetHierarchy:
     def test_validate_asset_hierarchy__orphans_given_ignore_false(self):
         assets = [
             Asset(name="a", parent_external_id="1", external_id="2"),
-            Asset(name="a", parent_external_id="2", external_id="3"),
+            AssetWrite(name="a", parent_external_id="2", external_id="3"),
         ]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
         assert len(hierarchy.orphans) == 1

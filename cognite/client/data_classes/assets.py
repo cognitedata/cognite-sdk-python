@@ -740,7 +740,8 @@ class AssetHierarchy:
 
     @staticmethod
     def _convert_to_read(assets: Sequence[Asset | AssetWrite]) -> Sequence[Asset]:
-        # TODO: AssetHierarchy doesn't work with AssetWrite, and we don't have the reverse of "as_write":
+        # TODO: AssetHierarchy doesn't work with AssetWrite (or more correctly, _AssetHierarchyCreator...)
+        #       and as don't have a reverse of "as_write", we dump-load the write into a read:
         return [
             Asset._load(asset.dump(camel_case=True)) if isinstance(asset, AssetWrite) else asset for asset in assets
         ]
