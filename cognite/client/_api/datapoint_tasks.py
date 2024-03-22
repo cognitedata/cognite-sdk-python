@@ -112,8 +112,31 @@ class DatapointsPayload(DatapointsPayloadItem):
 
 
 @dataclass
-class _DatapointsQuery:
-    """Internal representation of a user request for datapoints, previously public (before v5)"""
+class DatapointsQuery:
+    """Represent a user request for datapoints for a single time series"""
+
+    start: int | str | datetime | None = None
+    end: int | str | datetime | None = None
+    id: int | None = None
+    external_id: str | None = None
+    aggregates: Aggregate | str | list[Aggregate | str] | None = None
+    granularity: str | None = None
+    target_unit: str | None = None
+    target_unit_system: str | None = None
+    limit: int | None = None
+    include_outside_points: bool = False
+    ignore_unknown_ids: bool = False
+    include_status: bool = False
+    ignore_bad_data_points: bool = True
+    treat_uncertain_as_bad: bool = True
+
+
+@dataclass
+class _FullDatapointsQuery:
+    """
+    Internal representation of a full user request for datapoints, meaning any number of time series
+    requested, previously public (before v5).
+    """
 
     start: int | str | datetime | None = None
     end: int | str | datetime | None = None
@@ -126,6 +149,9 @@ class _DatapointsQuery:
     limit: int | None = None
     include_outside_points: bool = False
     ignore_unknown_ids: bool = False
+    include_status: bool = False
+    ignore_bad_data_points: bool = True
+    treat_uncertain_as_bad: bool = True
 
     @property
     def is_single_identifier(self) -> bool:
@@ -153,7 +179,7 @@ class _SingleTSQueryValidator:
         }
     )
 
-    def __init__(self, user_query: _DatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
+    def __init__(self, user_query: _FullDatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
         self.user_query = user_query
         self.dps_limit_raw = dps_limit_raw
         self.dps_limit_agg = dps_limit_agg
