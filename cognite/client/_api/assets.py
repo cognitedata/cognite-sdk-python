@@ -263,11 +263,11 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[CountAggregate]:
+    def aggregate(self, filter: AssetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            filter (AssetFilter | dict | None): Filter on assets with strict matching.
+            filter (AssetFilter | dict[str, Any] | None): Filter on assets with strict matching.
 
         Returns:
             list[CountAggregate]: List of asset aggregates
@@ -289,14 +289,14 @@ class AssetsAPI(APIClient):
         self,
         property: AssetPropertyLike | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        filter: AssetFilter | dict | None = None,
+        filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
             advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down the assets to count.
-            filter (AssetFilter | dict | None): The filter to narrow down the assets to count (strict matching).
+            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down the assets to count (strict matching).
 
         Returns:
             int: The number of assets matching the specified filters.
@@ -331,16 +331,16 @@ class AssetsAPI(APIClient):
         self,
         property: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: AssetFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike): The property to count the cardinality of.
             advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
         Returns:
             int: The number of properties matching the specified filters and search.
 
@@ -377,8 +377,8 @@ class AssetsAPI(APIClient):
         self,
         path: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: AssetFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for assets.  <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
@@ -386,8 +386,8 @@ class AssetsAPI(APIClient):
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
         Returns:
             int: The number of properties matching the specified filters.
 
@@ -413,8 +413,8 @@ class AssetsAPI(APIClient):
         self,
         property: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: AssetFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
@@ -424,8 +424,8 @@ class AssetsAPI(APIClient):
         Args:
             property (AssetPropertyLike): The property to group by.
             advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
 
         Returns:
             UniqueResultList: List of unique values of assets matching the specified filters and search.
@@ -479,8 +479,8 @@ class AssetsAPI(APIClient):
         self,
         path: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: AssetFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
@@ -491,8 +491,8 @@ class AssetsAPI(APIClient):
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict | None): The filter to narrow down assets (strict matching).
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
 
         Returns:
             UniqueResultList: List of unique values of assets matching the specified filters and search.
@@ -892,7 +892,7 @@ class AssetsAPI(APIClient):
             other_params=agg_props,
         )
 
-    def _validate_filter(self, filter: Filter | dict | None) -> None:
+    def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
     def search(
@@ -900,7 +900,7 @@ class AssetsAPI(APIClient):
         name: str | None = None,
         description: str | None = None,
         query: str | None = None,
-        filter: AssetFilter | dict | None = None,
+        filter: AssetFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_
@@ -910,7 +910,7 @@ class AssetsAPI(APIClient):
             name (str | None): Fuzzy match on name.
             description (str | None): Fuzzy match on description.
             query (str | None): Whitespace-separated terms to search for in assets. Does a best-effort fuzzy search in relevant fields (currently name and description) for variations of any of the search terms, and orders results by relevance.
-            filter (AssetFilter | dict | None): Filter to apply. Performs exact match on these fields.
+            filter (AssetFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
         Returns:

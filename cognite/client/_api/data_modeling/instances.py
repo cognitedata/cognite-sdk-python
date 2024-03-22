@@ -173,7 +173,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[Node]: ...
 
     @overload
@@ -186,7 +186,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[Edge]: ...
 
     @overload
@@ -199,7 +199,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[NodeList]: ...
 
     @overload
@@ -212,7 +212,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[EdgeList]: ...
 
     def __call__(
@@ -224,7 +224,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
         """Iterate over nodes or edges.
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
@@ -237,7 +237,7 @@ class InstancesAPI(APIClient):
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
             space (str | Sequence[str] | None): Only return instances in the given space (or list of spaces).
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
-            filter (Filter | dict | None): Advanced filtering of instances.
+            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
 
         Returns:
             Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
@@ -674,7 +674,7 @@ class InstancesAPI(APIClient):
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList: ...
@@ -688,7 +688,7 @@ class InstancesAPI(APIClient):
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList: ...
@@ -701,7 +701,7 @@ class InstancesAPI(APIClient):
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList | EdgeList:
@@ -714,7 +714,7 @@ class InstancesAPI(APIClient):
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | Sequence[str] | None): Restrict instance search to the given space (or list of spaces).
-            filter (Filter | dict | None): Advanced filtering of instances.
+            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
 
@@ -785,7 +785,7 @@ class InstancesAPI(APIClient):
         properties: str | SequenceNotStr[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue: ...
 
@@ -800,7 +800,7 @@ class InstancesAPI(APIClient):
         properties: str | SequenceNotStr[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[AggregatedNumberedValue]: ...
 
@@ -815,7 +815,7 @@ class InstancesAPI(APIClient):
         properties: str | SequenceNotStr[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList: ...
 
@@ -829,7 +829,7 @@ class InstancesAPI(APIClient):
         properties: str | SequenceNotStr[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
@@ -843,7 +843,7 @@ class InstancesAPI(APIClient):
             properties (str | SequenceNotStr[str] | None): Optional list of properties you want to apply the query to. If you do not list any properties, you search through text fields by default.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | Sequence[str] | None): Restrict instance aggregate query to the given space (or list of spaces).
-            filter (Filter | dict | None): Advanced filtering of instances.
+            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
@@ -905,7 +905,7 @@ class InstancesAPI(APIClient):
         properties: SequenceNotStr[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue: ...
 
@@ -919,7 +919,7 @@ class InstancesAPI(APIClient):
         properties: SequenceNotStr[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]: ...
 
@@ -932,7 +932,7 @@ class InstancesAPI(APIClient):
         properties: SequenceNotStr[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
@@ -945,7 +945,7 @@ class InstancesAPI(APIClient):
             properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | Sequence[str] | None): Restrict histogram query to instances in the given space (or list of spaces).
-            filter (Filter | dict | None): Advanced filtering of instances.
+            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
             limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
@@ -1099,7 +1099,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> NodeList: ...
 
     @overload
@@ -1111,7 +1111,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> EdgeList: ...
 
     def list(
@@ -1122,7 +1122,7 @@ class InstancesAPI(APIClient):
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
     ) -> NodeList | EdgeList:
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
@@ -1133,7 +1133,7 @@ class InstancesAPI(APIClient):
             space (str | Sequence[str] | None): Only return instances in the given space (or list of spaces).
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
-            filter (Filter | dict | None): Advanced filtering of instances.
+            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
 
         Returns:
             NodeList | EdgeList: List of requested instances
@@ -1196,13 +1196,15 @@ class InstancesAPI(APIClient):
             ),
         )
 
-    def _validate_filter(self, filter: Filter | dict | None) -> None:
+    def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)
 
     @staticmethod
     def _merge_space_into_filter(
-        instance_type: Literal["node", "edge"], space: str | Sequence[str] | None, filter: Filter | dict | None
-    ) -> Filter | dict | None:
+        instance_type: Literal["node", "edge"],
+        space: str | Sequence[str] | None,
+        filter: Filter | dict[str, Any] | None,
+    ) -> Filter | dict[str, Any] | None:
         if space is None:
             return filter
 
