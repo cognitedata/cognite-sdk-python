@@ -31,7 +31,7 @@ from cognite.client._api.datapoint_tasks import (
     BaseTaskOrchestrator,
     DatapointsPayload,
     DatapointsPayloadItem,
-    _DatapointsQuery,
+    _FullDatapointsQuery,
     _SingleTSQueryBase,
     _SingleTSQueryValidator,
 )
@@ -86,7 +86,7 @@ _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
-def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
+def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _FullDatapointsQuery) -> DpsFetchStrategy:
     validator = _SingleTSQueryValidator(
         user_query,
         dps_limit_raw=dps_client._DPS_LIMIT_RAW,
@@ -714,7 +714,7 @@ class DatapointsAPI(APIClient):
                 ...   id=42, start="2w-ago", limit=None, target_unit_system="Imperial")
 
         """
-        query = _DatapointsQuery(
+        query = _FullDatapointsQuery(
             start=start,
             end=end,
             id=id,
@@ -817,7 +817,7 @@ class DatapointsAPI(APIClient):
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """
         local_import("numpy")  # Verify that numpy is available or raise CogniteImportError
-        query = _DatapointsQuery(
+        query = _FullDatapointsQuery(
             start=start,
             end=end,
             id=id,
@@ -933,7 +933,7 @@ class DatapointsAPI(APIClient):
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
-        query = _DatapointsQuery(
+        query = _FullDatapointsQuery(
             start=start,
             end=end,
             id=id,
