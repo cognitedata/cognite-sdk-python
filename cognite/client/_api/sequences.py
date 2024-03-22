@@ -221,11 +221,11 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: SequenceFilter | dict | None = None) -> list[CountAggregate]:
+    def aggregate(self, filter: SequenceFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            filter (SequenceFilter | dict | None): Filter on sequence filter with exact match
+            filter (SequenceFilter | dict[str, Any] | None): Filter on sequence filter with exact match
 
         Returns:
             list[CountAggregate]: List of sequence aggregates
@@ -246,13 +246,13 @@ class SequencesAPI(APIClient):
     def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        filter: SequenceFilter | dict | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of sequences matching the specified filters and search. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count.
-            filter (SequenceFilter | dict | None): The filter to narrow down sequences to count requiring exact match.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down sequences to count requiring exact match.
 
         Returns:
             int: The number of sequences matching the specified filters and search.
@@ -287,16 +287,16 @@ class SequencesAPI(APIClient):
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | list[str]): The property to count the cardinality of.
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requiring exact match.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
             int: The number of properties matching the specified filters and search.
@@ -338,16 +338,16 @@ class SequencesAPI(APIClient):
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for sequences.  <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requiring exact match.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
             int: The number of properties matching the specified filters and search.
@@ -375,16 +375,16 @@ class SequencesAPI(APIClient):
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | list[str]): The property to group by.
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requiring exact match.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of sequences matching the specified filters and search.
@@ -446,16 +446,16 @@ class SequencesAPI(APIClient):
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requiring exact match.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of sequences matching the specified filters and search.
@@ -695,7 +695,7 @@ class SequencesAPI(APIClient):
         name: str | None = None,
         description: str | None = None,
         query: str | None = None,
-        filter: SequenceFilter | dict | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Search for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_
@@ -705,7 +705,7 @@ class SequencesAPI(APIClient):
             name (str | None): Prefix and fuzzy search on name.
             description (str | None): Prefix and fuzzy search on description.
             query (str | None): Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
-            filter (SequenceFilter | dict | None): Filter to apply. Performs exact match on these fields.
+            filter (SequenceFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
             limit (int): Max number of results to return.
 
         Returns:
@@ -791,7 +791,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def _validate_filter(self, filter: Filter | dict | None) -> None:
+    def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
     def list(

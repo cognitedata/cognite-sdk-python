@@ -213,11 +213,11 @@ class EventsAPI(APIClient):
             list_cls=EventList, resource_cls=Event, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: EventFilter | dict | None = None) -> list[AggregateResult]:
+    def aggregate(self, filter: EventFilter | dict[str, Any] | None = None) -> list[AggregateResult]:
         """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            filter (EventFilter | dict | None): Filter on events filter with exact match
+            filter (EventFilter | dict[str, Any] | None): Filter on events filter with exact match
 
         Returns:
             list[AggregateResult]: List of event aggregates
@@ -238,18 +238,18 @@ class EventsAPI(APIClient):
 
     def aggregate_unique_values(
         self,
-        filter: EventFilter | dict | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
         property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
             property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to consider.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
 
         Returns:
             UniqueResultList: List of unique values of events matching the specified filters and search.
@@ -303,7 +303,7 @@ class EventsAPI(APIClient):
         self,
         property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        filter: EventFilter | dict | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
@@ -311,7 +311,7 @@ class EventsAPI(APIClient):
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
                 (property is not null) and matching the filters.
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
 
         Returns:
             int: The number of events matching the specified filters and search.
@@ -345,16 +345,16 @@ class EventsAPI(APIClient):
         self,
         property: EventPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: EventFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             property (EventPropertyLike): The property to count the cardinality of.
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filter.
 
@@ -391,8 +391,8 @@ class EventsAPI(APIClient):
         self,
         path: EventPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: EventFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
@@ -400,8 +400,8 @@ class EventsAPI(APIClient):
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filters and search.
 
@@ -428,8 +428,8 @@ class EventsAPI(APIClient):
         self,
         path: EventPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: EventFilter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
@@ -437,8 +437,8 @@ class EventsAPI(APIClient):
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requiring exact match.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of events matching the specified filters and search.
@@ -556,7 +556,7 @@ class EventsAPI(APIClient):
     def search(
         self,
         description: str | None = None,
-        filter: EventFilter | dict | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
@@ -564,7 +564,7 @@ class EventsAPI(APIClient):
 
         Args:
             description (str | None): Fuzzy match on description.
-            filter (EventFilter | dict | None): Filter to apply. Performs exact match on these fields.
+            filter (EventFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
         Returns:
@@ -687,7 +687,7 @@ class EventsAPI(APIClient):
             sort=prepare_filter_sort(sort, EventSort),
         )
 
-    def _validate_filter(self, filter: Filter | dict | None) -> None:
+    def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
     def list(

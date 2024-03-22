@@ -239,11 +239,11 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[CountAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
-            filter (FileMetadataFilter | dict | None): Filter on file metadata filter with exact match
+            filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
 
         Returns:
             list[CountAggregate]: List of count aggregates
@@ -345,7 +345,7 @@ class FilesAPI(APIClient):
     def search(
         self,
         name: str | None = None,
-        filter: FileMetadataFilter | dict | None = None,
+        filter: FileMetadataFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
         """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
@@ -353,7 +353,7 @@ class FilesAPI(APIClient):
 
         Args:
             name (str | None): Prefix and fuzzy search on name.
-            filter (FileMetadataFilter | dict | None): Filter to apply. Performs exact match on these fields.
+            filter (FileMetadataFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
             limit (int): Max number of results to return.
 
         Returns:

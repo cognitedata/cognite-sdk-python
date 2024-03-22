@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, BinaryIO, Literal, cast, overload
+from typing import IO, TYPE_CHECKING, Any, BinaryIO, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -195,7 +195,7 @@ class DocumentsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
@@ -205,7 +205,7 @@ class DocumentsAPI(APIClient):
     def __call__(
         self,
         chunk_size: Literal[None] = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
@@ -214,7 +214,7 @@ class DocumentsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
@@ -225,7 +225,7 @@ class DocumentsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of documents to return in each chunk. Defaults to yielding one document at a time.
-            filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            filter (Filter | dict[str, Any] | None): Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
             sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Default to return all items.
             partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
@@ -255,12 +255,12 @@ class DocumentsAPI(APIClient):
         """
         return cast(Iterator[Document], self())
 
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
+    def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count.
 
         Returns:
             int: The number of documents matching the specified filters and search.
@@ -291,16 +291,16 @@ class DocumentsAPI(APIClient):
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to count the cardinality of.
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
 
         Returns:
             int: The number of documents matching the specified filters and search.
@@ -347,16 +347,16 @@ class DocumentsAPI(APIClient):
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
 
         Returns:
             int: The number of documents matching the specified filters and search.
@@ -384,8 +384,8 @@ class DocumentsAPI(APIClient):
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
         """`Get unique properties with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -393,8 +393,8 @@ class DocumentsAPI(APIClient):
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
             limit (int): Maximum number of items. Defaults to 25.
 
         Returns:
@@ -445,8 +445,8 @@ class DocumentsAPI(APIClient):
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
         """`Get unique paths with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -454,8 +454,8 @@ class DocumentsAPI(APIClient):
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
             limit (int): Maximum number of items. Defaults to 25.
 
         Returns:
@@ -548,7 +548,7 @@ class DocumentsAPI(APIClient):
         self,
         query: str,
         highlight: Literal[False] = False,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList: ...
@@ -558,7 +558,7 @@ class DocumentsAPI(APIClient):
         self,
         query: str,
         highlight: Literal[True],
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentHighlightList: ...
@@ -567,7 +567,7 @@ class DocumentsAPI(APIClient):
         self,
         query: str,
         highlight: bool = False,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList | DocumentHighlightList:
@@ -580,7 +580,7 @@ class DocumentsAPI(APIClient):
         Args:
             query (str): The free text search query.
             highlight (bool): Whether or not matches in search results should be highlighted.
-            filter (Filter | dict | None): The filter to narrow down the documents to search.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to search.
             sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int): Maximum number of items to return. When using highlights, the maximum value is reduced to 20. Defaults to 25.
 
@@ -645,7 +645,7 @@ class DocumentsAPI(APIClient):
 
     def list(
         self,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DocumentList:
@@ -656,7 +656,7 @@ class DocumentsAPI(APIClient):
         project.
 
         Args:
-            filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            filter (Filter | dict[str, Any] | None): Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
             sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
 
@@ -700,5 +700,5 @@ class DocumentsAPI(APIClient):
             sort=[DocumentSort.load(sort).dump()] if sort else None,
         )
 
-    def _validate_filter(self, filter: Filter | dict | None) -> None:
+    def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _DOCUMENTS_SUPPORTED_FILTERS, type(self).__name__)

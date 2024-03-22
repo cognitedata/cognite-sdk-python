@@ -195,7 +195,9 @@ class Filter(ABC):
         return output
 
 
-def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[type[Filter]], api_name: str) -> None:
+def _validate_filter(
+    filter: Filter | dict[str, Any] | None, supported_filters: frozenset[type[Filter]], api_name: str
+) -> None:
     if filter is None or isinstance(filter, dict):
         return
     if not_supported := (filter._involved_filter_types() - supported_filters):
