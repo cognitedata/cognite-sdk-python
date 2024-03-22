@@ -201,7 +201,7 @@ def cdf_aggregate(
         raw_freq (str): The frequency of the raw data. If it is not given, it is attempted inferred from raw_df.
     """
     if is_step:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     pd = cast(Any, local_import("pandas"))
     granularity_pd = granularity.replace("m", "T")
