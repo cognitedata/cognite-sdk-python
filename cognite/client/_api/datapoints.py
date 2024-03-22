@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import contextlib
 import functools
 import heapq
 import itertools
 import math
 import time
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from datetime import datetime
@@ -132,23 +130,6 @@ class DpsFetchStrategy(ABC):
         self.max_workers = max_workers
         self.api_subversion = api_subversion
         self.n_queries = len(all_queries)
-
-        # Fetching datapoints relies on protobuf, which, depending on OS and major version used
-        # might be running in pure python or compiled C code. We issue a warning if we can determine
-        # that the user is running in pure python mode (quite a bit slower...)
-        with contextlib.suppress(ImportError):
-            from google.protobuf.descriptor import _USE_C_DESCRIPTORS
-
-            if _USE_C_DESCRIPTORS is False:
-                warnings.warn(
-                    "Your installation of 'protobuf' is missing compiled C binaries, and will run in pure-python mode, "
-                    "which causes datapoints fetching to be ~5x slower. To verify, set the environment variable "
-                    "`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp` before running (this will cause the code to fail). "
-                    "The easiest fix is probably to pin your 'protobuf' dependency to major version 4 (or higher), "
-                    "see: https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates",
-                    UserWarning,
-                    stacklevel=3,
-                )
 
     def fetch_all_datapoints(self) -> DatapointsList:
         pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
