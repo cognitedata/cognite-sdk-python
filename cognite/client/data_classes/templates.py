@@ -360,8 +360,13 @@ class TemplateInstance(TemplateInstanceCore):
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(external_id, template_name, field_resolvers, data_set_id)
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        # created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> TemplateInstanceWrite:
@@ -545,11 +550,14 @@ class View(ViewCore):
         last_updated_time: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.source = source
-        self.data_set_id = data_set_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        super().__init__(external_id=external_id, source=source, data_set_id=data_set_id)
+        # created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> ViewWrite:

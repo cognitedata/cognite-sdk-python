@@ -94,7 +94,11 @@ class Group(GroupCore):
             capabilities=capabilities,
             metadata=metadata,
         )
-        self.id = id
+        # id is required when using the class to read, but doesn't make sense passing in when
+        # creating a new object. So in order to make the typing correct here
+        # (i.e. int and not Optional[int]), we force the type to be int rather than Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
         self._cognite_client = cast("CogniteClient", cognite_client)
