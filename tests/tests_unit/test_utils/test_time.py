@@ -14,12 +14,12 @@ from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
+    MonthAligner,
     align_large_granularity,
     align_start_and_end_for_granularity,
-    convert_time_attributes_to_datetime,
+    convert_and_isoformat_time_attrs,
     datetime_to_ms,
     granularity_to_ms,
-    granularity_unit_to_ms,
     import_zoneinfo,
     ms_to_datetime,
     pandas_date_range_tz,
@@ -187,8 +187,6 @@ class TestGranularityToMs:
         with pytest.raises(ValueError, match=granularity):
             granularity_to_ms(granularity)
 
-
-class TestGranularityUnitToMs:
     @pytest.mark.parametrize(
         "granularity, expected_ms",
         [
@@ -202,36 +200,40 @@ class TestGranularityUnitToMs:
             ("13d", 1 * 24 * 60 * 60 * 1000),
         ],
     )
-    def test_to_ms(self, granularity, expected_ms):
-        assert granularity_unit_to_ms(granularity) == expected_ms
+    def test_to_ms_as_unit(self, granularity, expected_ms):
+        assert granularity_to_ms(granularity, as_unit=True) == expected_ms
 
     @pytest.mark.parametrize("granularity", ["2w", "-3h", "13m-ago", "13", "bla"])
-    def test_to_ms_invalid(self, granularity):
-        with pytest.raises(ValueError, match="format"):
-            granularity_unit_to_ms(granularity)
+    def test_to_ms_as_unit_invalid(self, granularity):
+        with pytest.raises(ValueError, match=rf"Invalid granularity format: `{granularity}`"):
+            granularity_to_ms(granularity, as_unit=True)
 
 
 class TestObjectTimeConversion:
     @pytest.mark.parametrize(
         "item, expected_output",
         [
-            ({"created_time": 0}, {"created_time": "1970-01-01 00:00:00"}),
-            ({"last_updated_time": 0}, {"last_updated_time": "1970-01-01 00:00:00"}),
-            ({"start_time": 0}, {"start_time": "1970-01-01 00:00:00"}),
-            ({"end_time": 0}, {"end_time": "1970-01-01 00:00:00"}),
+            ({"created_time": 0}, {"created_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"last_updated_time": 0}, {"last_updated_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"start_time": 0}, {"start_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"end_time": 0}, {"end_time": "1970-01-01 00:00:00.000+00:00"}),
             ({"not_a_time": 0}, {"not_a_time": 0}),
-            ([{"created_time": 0}], [{"created_time": "1970-01-01 00:00:00"}]),
-            ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00"}]),
-            ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00"}]),
-            ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00"}]),
-            ([{"source_created_time": 0}], [{"source_created_time": "1970-01-01 00:00:00"}]),
-            ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00"}]),
+            ({"expirationTime": -41103211}, {"expirationTime": "1969-12-31 12:34:56.789+00:00"}),
+            ({"lastSuccess": -1}, {"lastSuccess": "1969-12-31 23:59:59.999+00:00"}),
+            ({"scheduledExecutionTime": 1}, {"scheduledExecutionTime": "1970-01-01 00:00:00.001+00:00"}),
+            ({"uploaded_time": 123456789}, {"uploaded_time": "1970-01-02 10:17:36.789+00:00"}),
+            ([{"created_time": 0}], [{"created_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"source_created_time": 0}], [{"source_created_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00.000+00:00"}]),
             ([{"not_a_time": 0}], [{"not_a_time": 0}]),
             ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
         ],
     )
-    def test_convert_time_attributes_to_datetime(self, item, expected_output):
-        assert expected_output == convert_time_attributes_to_datetime(item)
+    def test_convert_and_isoformat_time_attrs(self, item, expected_output):
+        assert expected_output == convert_and_isoformat_time_attrs(item)
 
 
 class TestSplitTimeDomain:
@@ -344,16 +346,13 @@ class TestCDFAggregation:
     def test_cdf_aggregation(
         start: str, end: str, raw_freq: str, granularity: str, expected_aggregate: pandas.DataFrame
     ):
-        # Arrange
         import pandas as pd
 
         index = pd.date_range(start, end, freq=raw_freq)
         raw_df = pd.DataFrame(data=range(len(index)), index=index)
 
-        # Act
         actual_aggregate = cdf_aggregate(raw_df=raw_df, aggregate="count", granularity=granularity, is_step=False)
 
-        # Assert
         pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
 
 
@@ -629,16 +628,13 @@ class TestToPandasFreq:
         ],
     )
     def test_to_pandas_freq(granularity: str, start: str, expected_first_step: str):
-        # Arrange
         import pandas as pd
 
         start = pd.Timestamp(start)
         expected_index = pd.DatetimeIndex([start, expected_first_step])
 
-        # Act
         freq = to_pandas_freq(granularity, start.to_pydatetime())
 
-        # Assert
         actual_index = pd.date_range(start, periods=2, freq=freq)
         pd.testing.assert_index_equal(actual_index, expected_index)
 
@@ -647,7 +643,6 @@ class TestPandasDateRangeTz:
     @staticmethod
     @pytest.mark.dsl
     def test_pandas_date_range_tz_ambiguous_time_error():
-        # Arrange
         ZoneInfo = import_zoneinfo()
         oslo = ZoneInfo("Europe/Oslo")
         start = datetime(1916, 8, 1, tzinfo=oslo)
@@ -655,8 +650,51 @@ class TestPandasDateRangeTz:
         expected_length = 5
         freq = to_pandas_freq("1month", start)
 
-        # Act
         index = pandas_date_range_tz(start, end, freq)
 
-        # Assert
         assert len(index) == expected_length
+
+
+class TestDateTimeAligner:
+    # TODO: DayAligner
+    # TODO: WeekAligner
+    # TODO: MonthAligner
+    # TODO: QuarterAligner
+    # TODO: YearAligner
+
+    @pytest.mark.parametrize(
+        "dt, expected",
+        (
+            (datetime(2023, 11, 1), datetime(2023, 11, 1)),
+            (datetime(2023, 10, 15), datetime(2023, 11, 1)),
+            (datetime(2023, 12, 15), datetime(2024, 1, 1)),
+            (datetime(2024, 1, 10), datetime(2024, 2, 1)),
+            # Bug prior to 7.5.7 would cause this to raise:
+            (datetime(2023, 11, 2), datetime(2023, 12, 1)),
+        ),
+    )
+    def test_month_aligner__ceil(self, dt, expected):
+        assert expected == MonthAligner.ceil(dt)
+
+    def test_month_aligner_ceil__invalid_date(self):
+        with pytest.raises(ValueError, match="^day is out of range for month$"):
+            MonthAligner.add_units(datetime(2023, 7, 31), 2)  # sept has 30 days
+
+    @pytest.mark.parametrize(
+        "dt, n_units, expected",
+        (
+            (datetime(2023, 7, 2), 12, datetime(2024, 7, 2)),
+            (datetime(2023, 7, 2), 12 * 12, datetime(2035, 7, 2)),
+            (datetime(2023, 7, 2), -12 * 2, datetime(2021, 7, 2)),
+            # Bug prior to 7.5.7 would cause these to raise:
+            (datetime(2023, 11, 15), 1, datetime(2023, 12, 15)),
+            (datetime(2023, 12, 15), 0, datetime(2023, 12, 15)),
+            (datetime(2024, 1, 15), -1, datetime(2023, 12, 15)),
+        ),
+    )
+    def test_month_aligner__add_unites(self, dt, n_units, expected):
+        assert expected == MonthAligner.add_units(dt, n_units)
+
+    def test_month_aligner_add_unites__invalid_date(self):
+        with pytest.raises(ValueError, match="^day is out of range for month$"):
+            MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year

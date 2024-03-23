@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import json
+from abc import ABC
 from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any
+
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
@@ -13,17 +15,20 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
+    IdTransformerMixin,
+    NoCaseConversionPropertyList,
     PropertySpec,
-    T_CogniteResource,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
-from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-ExternalId = str
+ExternalId: TypeAlias = str
 
 _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
     {
@@ -41,34 +46,24 @@ _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
 )
 
 
-class DatapointSubscriptionCore(CogniteResource):
+class DatapointSubscriptionCore(WriteableCogniteResource["DataPointSubscriptionWrite"], ABC):
     def __init__(
         self,
         external_id: ExternalId,
         partition_count: int,
-        filter: Filter | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        **_: Any,
+        filter: Filter | None,
+        name: str | None,
+        description: str | None,
+        data_set_id: int | None,
     ) -> None:
         self.external_id = external_id
         self.partition_count = partition_count
         self.filter = filter
         self.name = name
         self.description = description
+        self.data_set_id = data_set_id
 
-    @classmethod
-    def _load(
-        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
-    ) -> T_CogniteResource:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-        if "filter" in resource:
-            resource["filter"] = Filter.load(resource["filter"])
-
-        resource = convert_all_keys_to_snake_case(resource)
-        return cls(**resource)
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case)
         if "filter" in data:
             data["filter"] = data["filter"].dump()
@@ -88,7 +83,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         filter (Filter | None): If present, the subscription is defined by this filter.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
-        **_ (Any): No description.
+        data_set_id (int | None): The id of the dataset this subscription belongs to.
     """
 
     def __init__(
@@ -101,15 +96,40 @@ class DatapointSubscription(DatapointSubscriptionCore):
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
-        **_: Any,
+        data_set_id: int | None = None,
     ) -> None:
-        super().__init__(external_id, partition_count, filter, name, description)
+        super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_count = time_series_count
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            partition_count=resource["partitionCount"],
+            filter=Filter.load(resource["filter"]) if "filter" in resource else None,
+            name=resource.get("name"),
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+            time_series_count=resource["timeSeriesCount"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+        )
 
-class DataPointSubscriptionCreate(DatapointSubscriptionCore):
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription as a DataPointSubscriptionWrite"""
+        return DataPointSubscriptionWrite(
+            external_id=self.external_id,
+            partition_count=self.partition_count,
+            filter=self.filter,
+            name=self.name,
+            description=self.description,
+            data_set_id=self.data_set_id,
+        )
+
+
+class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     """A data point subscription is a way to listen to changes to time series data points, in ingestion order.
         This is the write version of a subscription, used to create new subscriptions.
 
@@ -122,6 +142,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
+        data_set_id (int | None): The id of the dataset this subscription belongs to.
     """
 
     def __init__(
@@ -132,12 +153,34 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
+        data_set_id: int | None = None,
     ) -> None:
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
         _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
-        super().__init__(external_id, partition_count, filter, name, description)
+        super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_ids = time_series_ids
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        filter = Filter.load(resource["filter"]) if "filter" in resource else None
+        return cls(
+            external_id=resource["externalId"],
+            partition_count=resource["partitionCount"],
+            time_series_ids=resource.get("timeSeriesIds"),
+            filter=filter,
+            name=resource.get("name"),
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+        )
+
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription instance"""
+        return self
+
+
+# Todo: Remove this in next major release
+DataPointSubscriptionCreate = DataPointSubscriptionWrite
 
 
 class DataPointSubscriptionUpdate(CogniteUpdate):
@@ -173,6 +216,10 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "name")
 
     @property
+    def data_set_id(self) -> _PrimitiveDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "dataSetId")
+
+    @property
     def time_series_ids(self) -> _ListDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "timeSeriesIds")
 
@@ -186,6 +233,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
             PropertySpec("name"),
             PropertySpec("time_series_ids", is_container=True),
             PropertySpec("filter", is_nullable=False),
+            PropertySpec("data_set_id"),
         ]
 
 
@@ -203,11 +251,10 @@ class TimeSeriesID(CogniteResource):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
         return cls(id=resource["id"], external_id=resource.get("externalId"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {"id": self.id}
         if self.external_id is not None:
             resource["externalId" if camel_case else "external_id"] = self.external_id
@@ -220,10 +267,10 @@ class DataDeletion:
     exclusive_end: int | None
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DataDeletion:
+    def load(cls, data: dict[str, Any]) -> DataDeletion:
         return cls(inclusive_begin=data["inclusiveBegin"], exclusive_end=data.get("exclusiveEnd"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {("inclusiveBegin" if camel_case else "inclusive_begin"): self.inclusive_begin}
         if self.exclusive_end is not None:
             resource["exclusiveEnd" if camel_case else "exclusive_end"] = self.exclusive_end
@@ -237,25 +284,24 @@ class DatapointsUpdate:
     deletes: list[DataDeletion]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DatapointsUpdate:
+    def load(cls, data: dict[str, Any]) -> DatapointsUpdate:
         datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
         if (values := data["upserts"]) and ("value" in values[0]):
             datapoints["upserts"] = Datapoints._load(
                 {
                     "id": data["timeSeries"]["id"],
                     "externalId": data["timeSeries"].get("externalId"),
-                    "isString": isinstance(values[0]["value"], str),
                     "datapoints": values,
                 }
             )
         if values := data["deletes"]:
-            datapoints["deletes"] = [DataDeletion._load(value) for value in values]
+            datapoints["deletes"] = [DataDeletion.load(value) for value in values]
         return cls(
             time_series=TimeSeriesID._load(data["timeSeries"], None),
             **datapoints,
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {("timeSeries" if camel_case else "time_series"): self.time_series.dump(camel_case)}
         if self.upserts is not None:
             resource["upserts"] = self.upserts.dump(camel_case)
@@ -270,13 +316,13 @@ class SubscriptionTimeSeriesUpdate:
     removed: list[TimeSeriesID]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
+    def load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
         return cls(
             added=[TimeSeriesID._load(added) for added in data.get("added", [])],
             removed=[TimeSeriesID._load(added) for added in data.get("removed", [])],
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {}
         resource["added"] = [id_.dump() for id_ in self.added]
         resource["removed"] = [id_.dump() for id_ in self.removed]
@@ -299,10 +345,10 @@ class DatapointSubscriptionPartition:
         return cls(data)
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
+    def load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
         return cls(index=data["index"], cursor=data.get("cursor") or data.get("nextCursor"))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"index": self.index}
         if self.cursor is not None:
             output["cursor"] = self.cursor
@@ -334,34 +380,49 @@ class _DatapointSubscriptionBatchWithPartitions:
     partitions: list[DatapointSubscriptionPartition]
 
     @classmethod
-    def _load(cls, resource: dict | str) -> _DatapointSubscriptionBatchWithPartitions:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def load(cls, resource: dict) -> _DatapointSubscriptionBatchWithPartitions:
         return cls(
-            updates=[DatapointsUpdate._load(u) for u in resource["updates"]],
-            partitions=[DatapointSubscriptionPartition._load(p) for p in resource["partitions"]],
+            updates=[DatapointsUpdate.load(u) for u in resource["updates"]],
+            partitions=[DatapointSubscriptionPartition.load(p) for p in resource["partitions"]],
             has_next=resource["hasNext"],
-            subscription_changes=SubscriptionTimeSeriesUpdate._load(resource.get("subscriptionChanges", [])),
+            subscription_changes=SubscriptionTimeSeriesUpdate.load(resource.get("subscriptionChanges", [])),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {
             "updates": [u.dump(camel_case) for u in self.updates],
             "partitions": [p.dump(camel_case) for p in self.partitions],
             ("hasNext" if camel_case else "has_next"): self.has_next,
         }
         if self.subscription_changes is not None:
-            resource[
-                ("subscriptionChanges" if camel_case else "subscription_changes")
-            ] = self.subscription_changes.dump(camel_case)
+            resource[("subscriptionChanges" if camel_case else "subscription_changes")] = (
+                self.subscription_changes.dump(camel_case)
+            )
         return resource
 
 
-class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
+class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = DataPointSubscriptionWrite
+
+
+class DatapointSubscriptionList(
+    WriteableCogniteResourceList[DataPointSubscriptionWrite, DatapointSubscription], ExternalIDTransformerMixin
+):
     _RESOURCE = DatapointSubscription
+
+    def as_write(self) -> DatapointSubscriptionWriteList:
+        """Returns this DatapointSubscriptionList as a DatapointSubscriptionWriteList"""
+        return DatapointSubscriptionWriteList(
+            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
+        )
+
+
+class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
+    _RESOURCE = TimeSeriesID
 
 
 def _metadata(key: str) -> list[str]:
-    return ["metadata", key]
+    return NoCaseConversionPropertyList(["metadata", key])
 
 
 class DatapointSubscriptionFilterProperties(EnumProperty):

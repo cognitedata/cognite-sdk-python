@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, BinaryIO, Literal, cast, overload
+from typing import IO, TYPE_CHECKING, Any, BinaryIO, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -62,13 +62,13 @@ class DocumentPreviewAPI(APIClient):
             Download image preview of page 5 of file with id 123:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> content = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
+                >>> client = CogniteClient()
+                >>> content = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
 
             Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
 
                 >>> from IPython.display import Image
-                >>> binary_png = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
+                >>> binary_png = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
                 >>> Image(binary_png)
         """
         res = self._do_request(
@@ -92,8 +92,8 @@ class DocumentPreviewAPI(APIClient):
             Download Image preview of page 5 of file with id 123 to folder "previews":
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.documents.previews.download_page_as_png("previews", id=123, page_number=5)
+                >>> client = CogniteClient()
+                >>> client.documents.previews.download_page_as_png("previews", id=123, page_number=5)
         """
         if isinstance(path, IO):
             content = self.download_page_as_png_bytes(id)
@@ -112,8 +112,6 @@ class DocumentPreviewAPI(APIClient):
     def download_document_as_pdf_bytes(self, id: int) -> bytes:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
-        Only the 100 first pages will be included.
-
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
@@ -127,16 +125,14 @@ class DocumentPreviewAPI(APIClient):
             Download PDF preview of file with id 123:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> content = c.documents.previews.download_document_as_pdf_bytes(id=123)
+                >>> client = CogniteClient()
+                >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
         """
         res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
         return res.content
 
     def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
-
-        Only the 100 first pages will be included.
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
@@ -150,8 +146,8 @@ class DocumentPreviewAPI(APIClient):
             Download PDF preview of file with id 123 to folder "previews":
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.documents.previews.download_document_as_pdf("previews", id=123)
+                >>> client = CogniteClient()
+                >>> client.documents.previews.download_document_as_pdf("previews", id=123)
         """
         if isinstance(path, IO):
             content = self.download_document_as_pdf_bytes(id)
@@ -181,8 +177,8 @@ class DocumentPreviewAPI(APIClient):
             Retrieve the PDF preview download link for document with id 123:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> link = c.documents.previews.retrieve_pdf_link(id=123)
+                >>> client = CogniteClient()
+                >>> link = client.documents.previews.retrieve_pdf_link(id=123)
         """
         res = self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
         return TemporaryLink.load(res.json())
@@ -199,26 +195,27 @@ class DocumentsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]:
-        ...
+    ) -> Iterator[DocumentList]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: Literal[None] = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]:
-        ...
+    ) -> Iterator[DocumentList]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
     ) -> Iterator[Document] | Iterator[DocumentList]:
@@ -228,7 +225,8 @@ class DocumentsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of documents to return in each chunk. Defaults to yielding one document at a time.
-            filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Default to return all items.
             partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
@@ -239,6 +237,7 @@ class DocumentsAPI(APIClient):
         return self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
+            sort=[DocumentSort.load(sort).dump()] if sort else None,
             method="POST",
             chunk_size=chunk_size,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
@@ -256,12 +255,12 @@ class DocumentsAPI(APIClient):
         """
         return cast(Iterator[Document], self())
 
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
+    def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count.
 
         Returns:
             int: The number of documents matching the specified filters and search.
@@ -271,17 +270,17 @@ class DocumentsAPI(APIClient):
             Count the number of documents in your CDF project:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> count = c.documents.aggregate_count()
+                >>> client = CogniteClient()
+                >>> count = client.documents.aggregate_count()
 
             Count the number of PDF documents in your CDF project:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-                >>> pdf_count = c.documents.aggregate_count(filter=is_pdf)
+                >>> pdf_count = client.documents.aggregate_count(filter=is_pdf)
         """
         self._validate_filter(filter)
         return self._advanced_aggregate(
@@ -292,16 +291,16 @@ class DocumentsAPI(APIClient):
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to count the cardinality of.
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
 
         Returns:
             int: The number of documents matching the specified filters and search.
@@ -312,27 +311,27 @@ class DocumentsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
-                >>> count = c.documents.aggregate_cardinality_values(DocumentProperty.type)
+                >>> client = CogniteClient()
+                >>> count = client.documents.aggregate_cardinality_values(DocumentProperty.type)
 
             Count the number of authors of plain/text documents in your CDF project:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-                >>> plain_text_author_count = c.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
+                >>> plain_text_author_count = client.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
 
             Count the number of types of documents in your CDF project but exclude documents that start with "text":
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.data_classes import aggregations
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> type_count_excluded_text = c.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
+                >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
         """
         self._validate_filter(filter)
 
@@ -348,16 +347,16 @@ class DocumentsAPI(APIClient):
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
 
         Returns:
             int: The number of documents matching the specified filters and search.
@@ -368,8 +367,8 @@ class DocumentsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import SourceFileProperty
-                >>> c = CogniteClient()
-                >>> count = c.documents.aggregate_cardinality_properties(SourceFileProperty.metadata)
+                >>> client = CogniteClient()
+                >>> count = client.documents.aggregate_cardinality_properties(SourceFileProperty.metadata)
         """
         self._validate_filter(filter)
 
@@ -385,8 +384,8 @@ class DocumentsAPI(APIClient):
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
         """`Get unique properties with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -394,8 +393,8 @@ class DocumentsAPI(APIClient):
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
             limit (int): Maximum number of items. Defaults to 25.
 
         Returns:
@@ -407,8 +406,8 @@ class DocumentsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
-                >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type)
+                >>> client = CogniteClient()
+                >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type)
                 >>> unique_types = result.unique
 
             Get the different languages with count for documents with external id prefix "abc":
@@ -416,9 +415,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
-                >>> result = c.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
+                >>> result = client.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
                 >>> unique_languages = result.unique
 
             Get the unique mime types with count of documents, but exclude mime types that start with text:
@@ -426,10 +425,10 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.data_classes import aggregations
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
+                >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
                 >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
@@ -446,8 +445,8 @@ class DocumentsAPI(APIClient):
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
         """`Get unique paths with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -455,8 +454,8 @@ class DocumentsAPI(APIClient):
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
             limit (int): Maximum number of items. Defaults to 25.
 
         Returns:
@@ -468,8 +467,8 @@ class DocumentsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import SourceFileProperty
-                >>> c = CogniteClient()
-                >>> result = c.documents.aggregate_unique_values(SourceFileProperty.metadata)
+                >>> client = CogniteClient()
+                >>> result = client.documents.aggregate_unique_values(SourceFileProperty.metadata)
         """
         self._validate_filter(filter)
 
@@ -506,8 +505,8 @@ class DocumentsAPI(APIClient):
             Retrieve the content of a document with id 123:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> content = c.documents.retrieve_content(id=123)
+                >>> client = CogniteClient()
+                >>> content = client.documents.retrieve_content(id=123)
         """
         response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
         return response.content
@@ -533,9 +532,9 @@ class DocumentsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from pathlib import Path
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> with Path("my_file.txt").open("wb") as buffer:
-                ...     c.documents.retrieve_content_buffer(id=123, buffer=buffer)
+                ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
         with self._do_request(
             "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
@@ -549,28 +548,26 @@ class DocumentsAPI(APIClient):
         self,
         query: str,
         highlight: Literal[False] = False,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> DocumentList:
-        ...
+    ) -> DocumentList: ...
 
     @overload
     def search(
         self,
         query: str,
         highlight: Literal[True],
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
-    ) -> DocumentHighlightList:
-        ...
+    ) -> DocumentHighlightList: ...
 
     def search(
         self,
         query: str,
         highlight: bool = False,
-        filter: Filter | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList | DocumentHighlightList:
@@ -583,7 +580,7 @@ class DocumentsAPI(APIClient):
         Args:
             query (str): The free text search query.
             highlight (bool): Whether or not matches in search results should be highlighted.
-            filter (Filter | dict | None): The filter to narrow down the documents to search.
+            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to search.
             sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int): Maximum number of items to return. When using highlights, the maximum value is reduced to 20. Defaults to 25.
 
@@ -597,9 +594,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-                >>> documents = c.documents.search("pump 123", filter=is_pdf)
+                >>> documents = client.documents.search("pump 123", filter=is_pdf)
 
             Find all documents with exact text 'CPLEX Error 1217: No Solution exists.'
             in plain text files created the last week in your CDF project and highlight the matches:
@@ -609,11 +606,11 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.utils import timestamp_to_ms
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
                 >>> last_week = filters.Range(DocumentProperty.created_time,
                 ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
-                >>> documents = c.documents.search('"CPLEX Error 1217: No Solution exists."',
+                >>> documents = client.documents.search('"CPLEX Error 1217: No Solution exists."',
                 ...     highlight=True,
                 ...     filter=filters.And(is_plain_text, last_week))
         """
@@ -646,7 +643,12 @@ class DocumentsAPI(APIClient):
             )
         return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
-    def list(self, filter: Filter | dict | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> DocumentList:
+    def list(
+        self,
+        filter: Filter | dict[str, Any] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+    ) -> DocumentList:
         """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
 
         You can use filters to narrow down the list. Unlike the search method, list does not restrict the number
@@ -654,7 +656,8 @@ class DocumentsAPI(APIClient):
         project.
 
         Args:
-            filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            filter (Filter | dict[str, Any] | None): Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
 
         Returns:
@@ -667,17 +670,25 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-                >>> pdf_documents = c.documents.list(filter=is_pdf)
+                >>> pdf_documents = client.documents.list(filter=is_pdf)
 
             Iterate over all documents in your CDF project:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> c = CogniteClient()
-                >>> for document in c.documents:
+                >>> client = CogniteClient()
+                >>> for document in client.documents:
                 ...    print(document.name)
+
+            List all documents in your CDF project sorted by mime/type in descending order:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import SortableDocumentProperty
+                >>> client = CogniteClient()
+                >>> documents = client.documents.list(sort=(SortableDocumentProperty.mime_type, "desc"))
+
         """
         self._validate_filter(filter)
         return self._list(
@@ -686,7 +697,8 @@ class DocumentsAPI(APIClient):
             method="POST",
             limit=limit,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
+            sort=[DocumentSort.load(sort).dump()] if sort else None,
         )
 
-    def _validate_filter(self, filter: Filter | dict | None) -> None:
+    def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _DOCUMENTS_SUPPORTED_FILTERS, type(self).__name__)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import operator as op
 import typing
 import warnings
@@ -16,14 +15,14 @@ from typing import (
     Iterator,
     Literal,
     Sequence,
-    cast,
     overload,
 )
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import find_duplicates, local_import
+from cognite.client.utils import _json
+from cognite.client.utils._auxiliary import find_duplicates, no_op
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dataframes_with_nullable_int_cols,
     notebook_display_with_fallback,
@@ -34,6 +33,8 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
+from cognite.client.utils._time import convert_and_isoformat_time_attrs
+from cognite.client.utils.useful_types import SequenceNotStr
 
 Aggregate = Literal[
     "average",
@@ -81,11 +82,15 @@ class LatestDatapointQuery:
         id (Optional[int]): The internal ID of the time series to query.
         external_id (Optional[str]): The external ID of the time series to query.
         before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
+        target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+        target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
     """
 
     id: int | None = None
     external_id: str | None = None
     before: None | int | str | datetime = None
+    target_unit: str | None = None
+    target_unit_system: str | None = None
 
     def __post_init__(self) -> None:
         # Ensure user have just specified one of id/xid:
@@ -147,7 +152,7 @@ class Datapoint(CogniteResource):
         Returns:
             pandas.DataFrame: pandas.DataFrame
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
 
         dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
@@ -165,6 +170,7 @@ class DatapointsArray(CogniteResource):
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
         granularity: str | None = None,
         timestamp: NumpyDatetime64NSArray | None = None,
         value: NumpyFloat64Array | NumpyObjArray | None = None,
@@ -184,6 +190,7 @@ class DatapointsArray(CogniteResource):
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.granularity = granularity
         self.timestamp = timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
         self.value = value
@@ -206,19 +213,44 @@ class DatapointsArray(CogniteResource):
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
         }
 
     @classmethod
-    def _load(  # type: ignore [override]
+    @typing.no_type_check
+    def _load(
         cls,
         dps_dct: dict[str, int | str | bool | npt.NDArray],
+        cognite_client: CogniteClient | None = None,
     ) -> DatapointsArray:
-        assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
-        # Since pandas always uses nanoseconds for datetime, we stick with the same
-        # (also future-proofs the SDK; ns is coming!):
-        dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
-        return cls(**convert_all_keys_to_snake_case(dps_dct))
+        if "timestamp" in dps_dct:
+            assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
+            # Since pandas always uses nanoseconds for datetime, we stick with the same
+            # (also future-proofs the SDK; ns is coming!):
+            dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
+            return cls(**convert_all_keys_to_snake_case(dps_dct))
+
+        array_by_attr = {}
+        if "datapoints" in dps_dct:
+            datapoints_by_attr = defaultdict(list)
+            for row in dps_dct["datapoints"]:
+                for attr, value in row.items():
+                    datapoints_by_attr[attr].append(value)
+            for attr, values in datapoints_by_attr.items():
+                array_by_attr[attr] = np.array(values)
+                if attr == "timestamp":
+                    dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
+        return cls(
+            id=dps_dct.get("id"),
+            external_id=dps_dct.get("externalId"),
+            is_step=dps_dct.get("isStep"),
+            is_string=dps_dct.get("isString"),
+            unit=dps_dct.get("unit"),
+            granularity=dps_dct.get("granularity"),
+            unit_external_id=dps_dct.get("unitExternalId"),
+            **convert_all_keys_to_snake_case(array_by_attr),
+        )
 
     @classmethod
     def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
@@ -247,15 +279,13 @@ class DatapointsArray(CogniteResource):
         return id(self) == id(other)
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(convert_timestamps=True), indent=4)
+        return _json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     @overload
-    def __getitem__(self, item: int) -> Datapoint:
-        ...
+    def __getitem__(self, item: int) -> Datapoint: ...
 
     @overload
-    def __getitem__(self, item: slice) -> DatapointsArray:
-        ...
+    def __getitem__(self, item: slice) -> DatapointsArray: ...
 
     def __getitem__(self, item: int | slice) -> Datapoint | DatapointsArray:
         if isinstance(item, slice):
@@ -292,7 +322,7 @@ class DatapointsArray(CogniteResource):
     def _dtype_fix(self) -> Callable:
         if self.is_string:
             # Return no-op as array contains just references to vanilla python objects:
-            return lambda s: s
+            return no_op
         # Using .item() on numpy scalars gives us vanilla python types:
         return op.methodcaller("item")
 
@@ -303,13 +333,13 @@ class DatapointsArray(CogniteResource):
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
-        return attrs, arrays  # type: ignore [return-value]
+        return attrs, arrays
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> dict[str, Any]:
         """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Default: False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
@@ -347,7 +377,7 @@ class DatapointsArray(CogniteResource):
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         if column_names == "id":
             if self.id is None:
                 raise ValueError("Unable to use `id` as column name(s), not set on object")
@@ -392,10 +422,11 @@ class Datapoints(CogniteResource):
         external_id (str | None): External id of the timeseries the datapoints belong to
         is_string (bool | None): Whether the time series is string valued or not.
         is_step (bool | None): Whether the time series is a step series or not.
-        unit (str | None): The physical unit of the time series.
+        unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted.
+        unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Sequence[str] | Sequence[float] | None): The data values. Can be string or numeric
+        value (SequenceNotStr[str] | Sequence[float] | None): The data values. Can be string or numeric
         average (list[float] | None): The integral average values in the aggregate period
         max (list[float] | None): The maximum values in the aggregate period
         min (list[float] | None): The minimum values in the aggregate period
@@ -416,9 +447,10 @@ class Datapoints(CogniteResource):
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
+        unit_external_id: str | None = None,
         granularity: str | None = None,
         timestamp: Sequence[int] | None = None,
-        value: Sequence[str] | Sequence[float] | None = None,
+        value: SequenceNotStr[str] | Sequence[float] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
         min: list[float] | None = None,
@@ -436,6 +468,7 @@ class Datapoints(CogniteResource):
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
+        self.unit_external_id = unit_external_id
         self.granularity = granularity
         self.timestamp = timestamp or []  # Needed in __len__
         self.value = value
@@ -455,8 +488,8 @@ class Datapoints(CogniteResource):
 
     def __str__(self) -> str:
         item = self.dump()
-        item["datapoints"] = utils._time.convert_time_attributes_to_datetime(item["datapoints"])
-        return json.dumps(item, indent=4)
+        item["datapoints"] = convert_and_isoformat_time_attrs(item["datapoints"])
+        return _json.dumps(item, indent=4)
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -470,12 +503,10 @@ class Datapoints(CogniteResource):
         )
 
     @overload
-    def __getitem__(self, item: int) -> Datapoint:
-        ...
+    def __getitem__(self, item: int) -> Datapoint: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Datapoints:
-        ...
+    def __getitem__(self, item: slice) -> Datapoints: ...
 
     def __getitem__(self, item: int | slice) -> Datapoint | Datapoints:
         if isinstance(item, slice):
@@ -488,11 +519,11 @@ class Datapoints(CogniteResource):
     def __iter__(self) -> Iterator[Datapoint]:
         yield from self.__get_datapoint_objects()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the datapoints into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
             dict[str, Any]: A dictionary representing the instance.
@@ -503,6 +534,7 @@ class Datapoints(CogniteResource):
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
@@ -527,7 +559,7 @@ class Datapoints(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
             identifier = self.external_id if self.external_id is not None else self.id
         elif column_names == "id":
@@ -580,9 +612,10 @@ class Datapoints(CogniteResource):
         instance = cls(
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
-            is_string=dps_object["isString"],
+            is_string=dps_object.get("isString"),
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
+            unit_external_id=dps_object.get("unitExternalId"),
         )
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
@@ -603,6 +636,7 @@ class Datapoints(CogniteResource):
             self.is_string = other_dps.is_string
             self.is_step = other_dps.is_step
             self.unit = other_dps.unit
+            self.unit_external_id = other_dps.unit_external_id
 
         for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
             value = getattr(self, attr)
@@ -615,7 +649,7 @@ class Datapoints(CogniteResource):
         self, get_empty_lists: bool = False, get_error: bool = True
     ) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
-        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "granularity"}
+        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "unit_external_id", "granularity"}
         for attr, value in self.__dict__.copy().items():
             if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
                 if value is not None or attr == "timestamp":
@@ -680,7 +714,6 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self.data.clear()
 
         # This implementation takes advantage of the ordering of the duplicated in the __init__ method
-
         has_external_ids = set()
         for ext_id, items in self._external_id_to_item.items():
             if not isinstance(items, list):
@@ -728,7 +761,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         return super().get(id, external_id)
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(convert_timestamps=True), indent=4)
+        return _json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     def to_pandas(  # type: ignore [override]
         self,
@@ -746,18 +779,18 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
 
         return concat_dataframes_with_nullable_int_cols(dfs)
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> list[dict[str, Any]]:
+    def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Default: False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
             convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
@@ -809,8 +842,8 @@ class DatapointsList(CogniteResourceList[Datapoints]):
     def __str__(self) -> str:
         item = self.dump()
         for i in item:
-            i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
-        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
+            i["datapoints"] = convert_and_isoformat_time_attrs(i["datapoints"])
+        return _json.dumps(item, indent=4)
 
     def to_pandas(  # type: ignore [override]
         self,
@@ -828,7 +861,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
-        pd = cast(Any, local_import("pandas"))
+        pd = local_import("pandas")
         dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))

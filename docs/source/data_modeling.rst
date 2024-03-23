@@ -148,7 +148,7 @@ Example on syncing instances to local sqlite
     )
     from cognite.client.data_classes.filters import Equals
 
-    c = CogniteClient()
+    client = CogniteClient()
 
 
     def sqlite_connection(db_name: str) -> sqlite3.Connection:
@@ -220,7 +220,7 @@ Example on syncing instances to local sqlite
                 connection.commit()
             print(f"Wrote {len(inserts)} nodes and deleted {len(deletes)} nodes")
 
-        return c.data_modeling.instances.subscribe(query, _sync_batch_to_sqlite)
+        return client.data_modeling.instances.subscribe(query, _sync_batch_to_sqlite)
 
 
     if __name__ == "__main__":
@@ -249,12 +249,6 @@ Instances query data classes
     :members:
     :show-inheritance:
 
-Data Modeling Filtering data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.filters
-    :members:
-    :show-inheritance:
-
 Data Modeling ID data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_modeling.ids
@@ -266,3 +260,7 @@ GraphQL
 Apply DML
 ^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.apply_dml
+
+Execute GraphQl query
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.query

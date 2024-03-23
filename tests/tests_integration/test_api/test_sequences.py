@@ -6,6 +6,8 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
     Sequence,
+    SequenceColumn,
+    SequenceColumnList,
     SequenceColumnUpdate,
     SequenceFilter,
     SequenceList,
@@ -18,16 +20,18 @@ from tests.utils import set_request_limit
 
 
 @pytest.fixture
-def new_seq(cognite_client):
-    column_def = [
-        {"valueType": "STRING", "externalId": "user", "description": "some description"},
-        {"valueType": "DOUBLE", "externalId": "amount"},
-        {"valueType": "LONG", "externalId": "age"},
-    ]
+def new_seq(cognite_client: CogniteClient) -> Sequence:
+    column_def = SequenceColumnList(
+        [
+            SequenceColumn(value_type="String", external_id="user", description="some description"),
+            SequenceColumn(value_type="Double", external_id="amount"),
+            SequenceColumn(value_type="Long", external_id="age"),
+        ]
+    )
     seq = cognite_client.sequences.create(Sequence(name="test_temp", columns=column_def, metadata={"a": "b"}))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(seq.id) is None
+    assert cognite_client.sequences.retrieve(id=seq.id) is None
 
 
 @pytest.fixture
@@ -48,8 +52,9 @@ def root_asset(cognite_client: CogniteClient) -> Asset:
         name="integration_test:root_asset",
         external_id="integration_test:root_asset",
     )
-    retrieved = cognite_client.assets.retrieve_multiple(external_ids=[root_asset.external_id], ignore_unknown_ids=True)
-    if retrieved:
+    if retrieved := cognite_client.assets.retrieve_multiple(
+        external_ids=[root_asset.external_id], ignore_unknown_ids=True
+    ):
         return retrieved[0]
     return cognite_client.assets.create(root_asset)
 
@@ -57,10 +62,12 @@ def root_asset(cognite_client: CogniteClient) -> Asset:
 @pytest.fixture
 def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceList:
     prefix = "integration_test:"
-    columns = [
-        {"valueType": "STRING", "externalId": "text"},
-        {"valueType": "DOUBLE", "externalId": "value"},
-    ]
+    columns = SequenceColumnList(
+        [
+            SequenceColumn(external_id="text", value_type="String"),
+            SequenceColumn(external_id="value", value_type="Double"),
+        ]
+    )
     sequences = SequenceList(
         [
             Sequence(
@@ -87,7 +94,7 @@ def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceL
 class TestSequencesAPI:
     def test_retrieve(self, cognite_client):
         listed_asset = cognite_client.sequences.list(limit=1)[0]
-        retrieved_asset = cognite_client.sequences.retrieve(listed_asset.id)
+        retrieved_asset = cognite_client.sequences.retrieve(id=listed_asset.id)
         assert retrieved_asset == listed_asset
 
     def test_retrieve_multiple(self, cognite_client):
@@ -110,7 +117,7 @@ class TestSequencesAPI:
         except CogniteNotFoundError:
             failed = True
 
-        assert failed ^ ignore_unknown_ids
+        assert failed ^ ignore_unknown_ids  # xor
 
     def test_call(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.sequences, 10):
@@ -171,60 +178,57 @@ class TestSequencesAPI:
         assert len(res.columns) == 5
         assert res.column_external_ids[3:5] == ["user_added", "amount_added"]
 
-    def test_update_columns_remove_single(self, cognite_client, new_seq):
+    def test_update_columns_remove_single(self, cognite_client: CogniteClient, new_seq: Sequence):
         assert len(new_seq.columns) == 3
-        update_seq = SequenceUpdate(new_seq.id).columns.remove(new_seq.columns[0]["externalId"])
+        update_seq = SequenceUpdate(new_seq.id).columns.remove(new_seq.columns[0].external_id)
         res = cognite_client.sequences.update(update_seq)
         assert len(res.columns) == 2
         assert res.columns[0:2] == new_seq.columns[1:3]
 
-    def test_update_columns_remove_multiple(self, cognite_client, new_seq):
+    def test_update_columns_remove_multiple(self, cognite_client, new_seq: Sequence):
         assert len(new_seq.columns) == 3
-        update_seq = SequenceUpdate(new_seq.id).columns.remove([col["externalId"] for col in new_seq.columns[0:2]])
+        update_seq = SequenceUpdate(new_seq.id).columns.remove([col.external_id for col in new_seq.columns[0:2]])
         res = cognite_client.sequences.update(update_seq)
         assert len(res.columns) == 1
         assert res.columns[0] == new_seq.columns[2]
 
-    def test_update_columns_modify(self, cognite_client, new_seq):
-        assert new_seq.columns[1].get("description") is None
+    def test_update_columns_modify(self, cognite_client: CogniteClient, new_seq: Sequence):
+        assert new_seq.columns[1].description is None
         column_update = [
-            SequenceColumnUpdate(external_id=new_seq.columns[0]["externalId"]).external_id.set("new_col_external_id"),
-            SequenceColumnUpdate(external_id=new_seq.columns[1]["externalId"]).description.set("my new description"),
+            SequenceColumnUpdate(external_id=new_seq.columns[0].external_id).external_id.set("new_col_external_id"),
+            SequenceColumnUpdate(external_id=new_seq.columns[1].external_id).description.set("my new description"),
         ]
         update_seq = SequenceUpdate(new_seq.id).columns.modify(column_update)
         res = cognite_client.sequences.update(update_seq)
         assert len(res.columns) == 3
-        assert res.columns[0]["externalId"] == "new_col_external_id"
-        assert res.columns[1]["description"] == "my new description"
+        assert res.columns[0].external_id == "new_col_external_id"
+        assert res.columns[1].description == "my new description"
 
     def test_get_new(self, cognite_client, new_seq):
         cognite_client.sequences.retrieve(id=new_seq.id)
-        # assert ["DOUBLE"] == res.column_value_types # soon to change
+        # assert ["DOUBLE"] == res.column_value_types # soon to change (TODO?)
         assert len(new_seq.columns) == 3
 
     def test_upsert_2_sequence_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_sequence = Sequence(
             external_id="test_upsert_2_sequence_one_preexisting:new",
             name="my new sequence",
-            columns=[{"externalId": "col1", "valueType": "STRING"}],
+            columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
         )
         preexisting = Sequence(
             external_id="test_upsert_2_sequence_one_preexisting:preexisting",
             name="my preexisting sequence",
-            columns=[{"externalId": "col1", "valueType": "STRING"}],
+            columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
         )
-        preexisting_update = Sequence._load(preexisting.dump(camel_case=True))
+        preexisting_update = Sequence.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting sequence updated"
 
         try:
             created_existing = cognite_client.sequences.create(preexisting)
             assert created_existing.id is not None
 
-            # Act
             res = cognite_client.sequences.upsert([new_sequence, preexisting_update], mode="replace")
 
-            # Assert
             assert len(res) == 2
             assert new_sequence.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
@@ -236,32 +240,36 @@ class TestSequencesAPI:
             )
 
     def test_filter_equals(self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset) -> None:
-        # Arrange
         f = filters
         is_integration_test = f.Prefix(SequenceProperty.external_id, "integration_test:")
         is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
 
-        # Act
         result = cognite_client.sequences.filter(
             f.And(is_integration_test, is_asset), sort=SortableSequenceProperty.created_time
         )
+        assert len(result) == 1, "Expected only one sequence in subtree"
+        assert result[0].external_id == sequence_list[0].external_id
 
-        # Assert
+    def test_list_with_advanced_filter(
+        self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset
+    ) -> None:
+        f = filters
+        is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
+
+        result = cognite_client.sequences.list(
+            external_id_prefix="integration_test:", advanced_filter=is_asset, sort=SortableSequenceProperty.created_time
+        )
         assert len(result) == 1, "Expected only one sequence in subtree"
         assert result[0].external_id == sequence_list[0].external_id
 
     def test_filter_without_sort(
         self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset
     ) -> None:
-        # Arrange
         f = filters
         is_integration_test = f.Prefix(SequenceProperty.external_id, "integration_test:")
         is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
 
-        # Act
         result = cognite_client.sequences.filter(f.And(is_integration_test, is_asset), sort=None)
-
-        # Assert
         assert len(result) == 1
         assert result[0].external_id == sequence_list[0].external_id
 
@@ -270,7 +278,6 @@ class TestSequencesAPI:
         is_integration_test = f.Prefix("externalId", "integration_test:")
 
         count = cognite_client.sequences.aggregate_count(advanced_filter=is_integration_test)
-
         assert count >= len(sequence_list)
 
     def test_aggregate_asset_id_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
@@ -280,8 +287,7 @@ class TestSequencesAPI:
         count = cognite_client.sequences.aggregate_cardinality_values(
             SequenceProperty.asset_id, advanced_filter=is_integration_test
         )
-
-        assert count >= sum(1 for s in sequence_list if s.asset_id is not None)
+        assert count >= len([s for s in sequence_list if s.asset_id is not None])
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
         f = filters
@@ -290,7 +296,6 @@ class TestSequencesAPI:
         count = cognite_client.sequences.aggregate_cardinality_properties(
             SequenceProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert count >= len({k for s in sequence_list for k in s.metadata.keys()})
 
     def test_aggregate_metadata_key_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
@@ -300,7 +305,6 @@ class TestSequencesAPI:
         count = cognite_client.sequences.aggregate_cardinality_values(
             SequenceProperty.metadata_key("unit"), advanced_filter=is_integration_test
         )
-
         assert count >= len({s.metadata["unit"] for s in sequence_list if "unit" in s.metadata})
 
     def test_aggregate_unique_asset_ids(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
@@ -310,7 +314,6 @@ class TestSequencesAPI:
         result = cognite_client.sequences.aggregate_unique_values(
             SequenceProperty.asset_id, advanced_filter=is_integration_test
         )
-
         assert result
         assert {int(item) for item in result.unique} >= {s.asset_id for s in sequence_list if s.asset_id is not None}
 
@@ -321,7 +324,6 @@ class TestSequencesAPI:
         result = cognite_client.sequences.aggregate_unique_properties(
             SequenceProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in sequence_list for key in a.metadata or []

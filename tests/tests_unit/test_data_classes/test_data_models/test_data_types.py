@@ -3,7 +3,9 @@ import pytest
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     DirectRelationReference,
+    Float32,
     PropertyType,
+    UnitReference,
 )
 
 
@@ -28,9 +30,24 @@ class TestPropertyType:
 
         assert data == actual
 
+    def test_load_ignore_unknown_properties(self) -> None:
+        data = {"type": "float64", "list": True, "unit": {"externalId": "known"}, "super_unit": "unknown"}
+        actual = PropertyType.load(data).dump(camel_case=True)
+        data.pop("super_unit")
+
+        assert data == actual
+
 
 class TestDirectRelation:
     def test_load_dump_container_direct_relation(self) -> None:
         data = {"type": "direct", "container": {"space": "mySpace", "externalId": "myId", "type": "container"}}
 
         assert data == DirectRelation.load(data).dump(camel_case=True)
+
+
+class TestUnitSupport:
+    def test_load_dump_property_with_unit(self) -> None:
+        data = {"type": "float32", "list": False, "unit": {"externalId": "temperature:celsius"}}
+        property = Float32.load(data)
+        assert isinstance(property.unit, UnitReference)
+        assert data == property.dump(camel_case=True)

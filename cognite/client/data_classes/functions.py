@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import time
-from numbers import Number
-from typing import TYPE_CHECKING, cast
+from abc import ABC
+from typing import TYPE_CHECKING, Any, Literal, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import (
@@ -10,21 +12,73 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
+RunTime: TypeAlias = Literal["py38", "py39", "py310", "py311"]
 
-class Function(CogniteResource):
+
+class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
     """A representation of a Cognite Function.
 
     Args:
-        id (int | None): Id of the function.
+        name (str | None): Name of the function.
+        external_id (str | None): External id of the function.
+        description (str | None): Description of the function.
+        owner (str | None): Owner of the function.
+        file_id (int | None): File id of the code represented by this object.
+        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        secrets (dict | None): Secrets attached to the function ((key, value) pairs).
+        env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
+        cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
+        memory (float | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
+        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
+    """
+
+    def __init__(
+        self,
+        name: str | None = None,
+        external_id: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        function_path: str | None = None,
+        secrets: dict | None = None,
+        env_vars: dict | None = None,
+        cpu: float | None = None,
+        memory: float | None = None,
+        runtime: str | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        self.name = cast(str, name)
+        self.external_id = external_id
+        self.description = description
+        self.owner = owner
+        self.file_id = file_id
+        self.function_path = function_path
+        self.secrets = secrets
+        self.env_vars = env_vars
+        self.cpu = cpu
+        self.memory = memory
+        self.runtime = runtime
+        self.metadata = metadata
+
+
+class Function(FunctionCore):
+    """A representation of a Cognite Function.
+    This is the reading version, which is used when retrieving a function.
+
+    Args:
+        id (int | None): ID of the function.
         name (str | None): Name of the function.
         external_id (str | None): External id of the function.
         description (str | None): Description of the function.
@@ -35,8 +89,8 @@ class Function(CogniteResource):
         created_time (int | None): Created time in UNIX.
         secrets (dict | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (Number | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
-        memory (Number | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
+        cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
+        memory (float | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
         runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
@@ -57,32 +111,53 @@ class Function(CogniteResource):
         created_time: int | None = None,
         secrets: dict | None = None,
         env_vars: dict | None = None,
-        cpu: Number | None = None,
-        memory: Number | None = None,
+        cpu: float | None = None,
+        memory: float | None = None,
         runtime: str | None = None,
         runtime_version: str | None = None,
         metadata: dict | None = None,
         error: dict | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
+        super().__init__(
+            name=name,
+            external_id=external_id,
+            description=description,
+            owner=owner,
+            file_id=file_id,
+            function_path=function_path,
+            secrets=secrets,
+            env_vars=env_vars,
+            cpu=cpu,
+            memory=memory,
+            runtime=runtime,
+            metadata=metadata,
+        )
         self.id = cast(int, id)
-        self.name = cast(str, name)
-        self.external_id = external_id
-        self.description = description
-        self.owner = owner
         self.status = status
-        self.file_id = file_id
-        self.function_path = function_path
         self.created_time = created_time
-        self.secrets = secrets
-        self.env_vars = env_vars
-        self.cpu = cpu
-        self.memory = memory
-        self.runtime = runtime
         self.runtime_version = runtime_version
-        self.metadata = metadata
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> FunctionWrite:
+        """Returns a writeable version of this function."""
+        if self.file_id is None or self.name is None:
+            raise ValueError("file_id and name are required to create a function")
+        return FunctionWrite(
+            name=self.name,
+            external_id=self.external_id,
+            description=self.description,
+            owner=self.owner,
+            file_id=self.file_id,
+            function_path=self.function_path,
+            secrets=self.secrets,
+            env_vars=self.env_vars,
+            cpu=self.cpu,
+            memory=self.memory,
+            runtime=cast(RunTime, self.runtime),
+            metadata=self.metadata,
+        )
 
     def call(self, data: dict | None = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
@@ -134,15 +209,7 @@ class Function(CogniteResource):
         Returns:
             FunctionSchedulesList: List of function schedules
         """
-        schedules_by_external_id = self._cognite_client.functions.schedules.list(
-            function_external_id=self.external_id, limit=limit
-        )
-        schedules_by_id = self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
-
-        if is_unlimited(limit):
-            limit = self._cognite_client.functions.schedules._LIST_LIMIT_CEILING
-
-        return (schedules_by_external_id + schedules_by_id)[:limit]
+        return self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
 
     def retrieve_call(self, id: int) -> FunctionCall | None:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
@@ -166,6 +233,85 @@ class Function(CogniteResource):
                 continue
             latest_value = getattr(latest, attribute)
             setattr(self, attribute, latest_value)
+
+
+class FunctionWrite(FunctionCore):
+    """A representation of a Cognite Function.
+    This is the writing version, which is used when creating a function.
+
+    Args:
+        name (str): Name of the function.
+        file_id (int): File id of the code represented by this object.
+        external_id (str | None): External id of the function.
+        description (str | None): Description of the function.
+        owner (str | None): Owner of the function.
+        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        secrets (dict | None): Secrets attached to the function ((key, value) pairs).
+        env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
+        cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
+        memory (float | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
+        runtime (RunTime | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
+        index_url (str | None): Specify a different python package index, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
+        extra_index_urls (list[str] | None): Extra package index URLs to use when building the function, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        file_id: int,
+        external_id: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        function_path: str | None = None,
+        secrets: dict | None = None,
+        env_vars: dict | None = None,
+        cpu: float | None = None,
+        memory: float | None = None,
+        runtime: RunTime | None = None,
+        metadata: dict | None = None,
+        index_url: str | None = None,
+        extra_index_urls: list[str] | None = None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            external_id=external_id,
+            description=description,
+            owner=owner,
+            file_id=file_id,
+            function_path=function_path,
+            secrets=secrets,
+            env_vars=env_vars,
+            cpu=cpu,
+            memory=memory,
+            runtime=runtime,
+            metadata=metadata,
+        )
+        self.index_url = index_url
+        self.extra_index_urls = extra_index_urls
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FunctionWrite:
+        return cls(
+            name=resource["name"],
+            external_id=resource.get("externalId"),
+            description=resource.get("description"),
+            owner=resource.get("owner"),
+            file_id=resource["fileId"],
+            function_path=resource.get("functionPath"),
+            secrets=resource.get("secrets"),
+            env_vars=resource.get("envVars"),
+            cpu=resource.get("cpu"),
+            memory=resource.get("memory"),
+            runtime=resource.get("runtime"),
+            metadata=resource.get("metadata"),
+            index_url=resource.get("indexUrl"),
+            extra_index_urls=resource.get("extraIndexUrls"),
+        )
+
+    def as_write(self) -> FunctionWrite:
+        """Returns this FunctionWrite instance."""
+        return self
 
 
 class FunctionFilter(CogniteFilter):
@@ -200,13 +346,40 @@ class FunctionCallsFilter(CogniteFilter):
         self.end_time = end_time
 
 
-class FunctionSchedule(CogniteResource):
+class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], ABC):
     """A representation of a Cognite Function Schedule.
 
     Args:
-        id (int | None): Id of the schedule.
         name (str | None): Name of the function schedule.
         function_id (str | None): Id of the function.
+        function_external_id (str | None): External id of the function.
+        description (str | None): Description of the function schedule.
+        cron_expression (str | None): Cron expression
+    """
+
+    def __init__(
+        self,
+        name: str | None = None,
+        function_id: str | None = None,
+        function_external_id: str | None = None,
+        description: str | None = None,
+        cron_expression: str | None = None,
+    ) -> None:
+        self.name = name
+        self.function_id = function_id
+        self.function_external_id = function_external_id
+        self.description = description
+        self.cron_expression = cron_expression
+
+
+class FunctionSchedule(FunctionScheduleCore):
+    """A representation of a Cognite Function Schedule.
+    This is the reading version, which is used when retrieving a function schedule.
+
+    Args:
+        id (int | None): ID of the schedule.
+        name (str | None): Name of the function schedule.
+        function_id (str | None): ID of the function.
         function_external_id (str | None): External id of the function.
         description (str | None): Description of the function schedule.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -229,16 +402,31 @@ class FunctionSchedule(CogniteResource):
         when: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
+        super().__init__(
+            name=name,
+            function_id=function_id,
+            function_external_id=function_external_id,
+            description=description,
+            cron_expression=cron_expression,
+        )
         self.id = id
-        self.name = name
-        self.function_id = function_id
-        self.function_external_id = function_external_id
-        self.description = description
-        self.cron_expression = cron_expression
         self.created_time = created_time
         self.session_id = session_id
         self.when = when
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> FunctionScheduleWrite:
+        """Returns a writeable version of this function schedule."""
+        if self.cron_expression is None or self.name is None:
+            raise ValueError("cron_expression or name are required to create a FunctionSchedule")
+        return FunctionScheduleWrite(
+            name=self.name,
+            cron_expression=self.cron_expression,
+            function_id=self.function_id,
+            function_external_id=self.function_external_id,
+            description=self.description,
+            data=self.get_input_data(),
+        )
 
     def get_input_data(self) -> dict | None:
         """
@@ -250,6 +438,52 @@ class FunctionSchedule(CogniteResource):
         if self.id is None:
             raise ValueError("FunctionSchedule is missing 'id'")
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
+
+
+class FunctionScheduleWrite(FunctionScheduleCore):
+    """A representation of a Cognite Function Schedule.
+
+    Args:
+        name (str): Name of the function schedule.
+        cron_expression (str): Cron expression
+        function_id (str | None): ID of the function.
+        function_external_id (str | None): External ID of the function.
+        description (str | None): Description of the function schedule.
+        data (dict | None): Input data to the function (only present if provided on the schedule). This data is passed deserialized into the function through one of the arguments called data. WARNING: Secrets or other confidential information should not be passed via the data object. There is a dedicated secrets object in the request body to "Create functions" for this purpose.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        cron_expression: str,
+        function_id: str | None = None,
+        function_external_id: str | None = None,
+        description: str | None = None,
+        data: dict | None = None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            function_id=function_id,
+            function_external_id=function_external_id,
+            description=description,
+            cron_expression=cron_expression,
+        )
+        self.data = data
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FunctionScheduleWrite:
+        return cls(
+            name=resource["name"],
+            function_id=resource.get("functionId"),
+            function_external_id=resource.get("functionExternalId"),
+            description=resource.get("description"),
+            cron_expression=resource["cronExpression"],
+            data=resource.get("data"),
+        )
+
+    def as_write(self) -> FunctionScheduleWrite:
+        """Returns this FunctionScheduleWrite instance."""
+        return self
 
 
 class FunctionSchedulesFilter(CogniteFilter):
@@ -268,12 +502,28 @@ class FunctionSchedulesFilter(CogniteFilter):
         self.cron_expression = cron_expression
 
 
-class FunctionSchedulesList(CogniteResourceList[FunctionSchedule]):
+class FunctionScheduleWriteList(CogniteResourceList[FunctionScheduleWrite]):
+    _RESOURCE = FunctionScheduleWrite
+
+
+class FunctionSchedulesList(WriteableCogniteResourceList[FunctionScheduleWrite, FunctionSchedule]):
     _RESOURCE = FunctionSchedule
 
+    def as_write(self) -> FunctionScheduleWriteList:
+        """Returns a writeable version of this function schedule."""
+        return FunctionScheduleWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
 
-class FunctionList(CogniteResourceList[Function], IdTransformerMixin):
+
+class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = FunctionWrite
+
+
+class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTransformerMixin):
     _RESOURCE = Function
+
+    def as_write(self) -> FunctionWriteList:
+        """Returns a writeable version of this function."""
+        return FunctionWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
 
 
 class FunctionCall(CogniteResource):
@@ -426,7 +676,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response: dict) -> FunctionsLimits:
+    def load(cls, api_response: dict) -> FunctionsLimits:
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -447,5 +697,5 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def _load(cls, api_response: dict) -> FunctionsStatus:
+    def load(cls, api_response: dict) -> FunctionsStatus:
         return cls(status=api_response["status"])

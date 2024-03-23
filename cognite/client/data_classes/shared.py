@@ -1,39 +1,38 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
-from cognite.client.data_classes._base import CognitePropertyClassUtil, Geometry
-from cognite.client.utils._text import convert_all_keys_to_camel_case
+from typing_extensions import Self
+
+from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
-class TimestampRange(dict):
+class TimestampRange(CogniteObject):
     """Range between two timestamps.
 
     Args:
         max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
-    def __init__(self, max: int | None = None, min: int | None = None, **kwargs: Any) -> None:
+    def __init__(self, max: int | None = None, min: int | None = None, **_: Any) -> None:
         self.max = max
         self.min = min
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
 
 
-class AggregateResult(dict):
+class AggregateResult(CogniteObject):
     """Aggregation group
 
     Args:
         count (int | None): Size of the aggregation group
-        **kwargs (Any): No description.
+        **_ (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        super().__init__(count=count, **kwargs)
+    def __init__(self, count: int | None = None, **_: Any) -> None:
         self.count = count
 
 
@@ -51,45 +50,82 @@ class AggregateUniqueValuesResult(AggregateResult):
         self.value = value
 
 
-class AggregateBucketResult(AggregateResult):
-    """Aggregation group
-
-    Args:
-        count (int | None): Size of the bucket
-        value (int | str | None): A unique value for the bucket
-        **kwargs (Any): No description.
-    """
-
-    def __init__(self, count: int | None = None, value: int | str | None = None, **kwargs: Any) -> None:
-        super().__init__(count=count, value=value, **kwargs)
-        self.value = value
-
-
-class GeometryFilter(dict):
+class GeometryFilter(CogniteFilter):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
-        coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
+        coordinates (Sequence[float] | Sequence[Sequence[float]] | Sequence[Sequence[Sequence[float]]] | Sequence[Sequence[Sequence[Sequence[float]]]]): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+
+    Point:
+        Coordinates of a point in 2D space, described as an array of 2 numbers.
+
+        Example: `[4.306640625, 60.205710352530346]`
+
+
+    LineString:
+        Coordinates of a line described by a list of two or more points.
+        Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+        Example: `[[30, 10], [10, 30], [40, 40]]`
+
+
+    Polygon:
+        List of one or more linear rings representing a shape.
+        A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+        Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+        Example: `[[[35, 10], [45, 45], [15, 40], [10, 20], [35, 10]], [[20, 30], [35, 35], [30, 20], [20, 30]]]`
+        type: array
+
+    MultiPoint:
+        List of Points. Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+        Example: `[[35, 10], [45, 45]]`
+
+    MultiLineString:
+            List of lines where each line (LineString) is defined as a list of two or more points.
+            Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+            Example: `[[[30, 10], [10, 30]], [[35, 10], [10, 30], [40, 40]]]`
+
+    MultiPolygon:
+        List of multiple polygons.
+
+        Each polygon is defined as a list of one or more linear rings representing a shape.
+
+        A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+
+        Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+        Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
     """
 
-    _VALID_TYPES = frozenset({"Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
+    _VALID_TYPES = frozenset({"Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
 
     def __init__(
         self,
-        type: Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
-        coordinates: list,
+        type: Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
+        coordinates: Sequence[float]
+        | Sequence[Sequence[float]]
+        | Sequence[Sequence[Sequence[float]]]
+        | Sequence[Sequence[Sequence[Sequence[float]]]],
     ) -> None:
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
-        self.coordinates = coordinates
+        self.coordinates = list(coordinates)
 
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
+    @classmethod
+    def _load(cls, raw_geometry: dict[str, Any]) -> Self:
+        return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
+
+    @classmethod
+    def load(cls, raw_geometry: dict[str, Any]) -> Self:
+        return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
 
-class GeoLocation(dict):
+class GeoLocation(CogniteObject):
     """A GeoLocation object conforming to the GeoJSON spec.
 
     Args:
@@ -107,23 +143,22 @@ class GeoLocation(dict):
         self.geometry = geometry
         self.properties = properties
 
-    type = CognitePropertyClassUtil.declare_property("type")
-    geometry = CognitePropertyClassUtil.declare_property("geometry")
-    properties = CognitePropertyClassUtil.declare_property("properties")
-
     @classmethod
-    def _load(cls, raw_geo_location: dict[str, Any]) -> GeoLocation:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocation:
         return cls(
-            type=raw_geo_location.get("type", "Feature"),
-            geometry=raw_geo_location["geometry"],
-            properties=raw_geo_location.get("properties"),
+            type=resource["type"],
+            geometry=Geometry._load(resource["geometry"], cognite_client),
+            properties=resource.get("properties"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.geometry:
+            result["geometry"] = self.geometry.dump(camel_case)
+        return result
 
 
-class GeoLocationFilter(dict):
+class GeoLocationFilter(CogniteObject):
     """Return only the resource matching the specified geographic relation.
 
     Args:
@@ -135,12 +170,12 @@ class GeoLocationFilter(dict):
         self.relation = relation
         self.shape = shape
 
-    relation = CognitePropertyClassUtil.declare_property("relation")
-    shape = CognitePropertyClassUtil.declare_property("shape")
-
     @classmethod
-    def _load(cls, raw_geo_location_filter: dict[str, Any]) -> GeoLocationFilter:
-        return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocationFilter:
+        return cls(relation=resource["relation"], shape=resource["shape"])
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case)
+        if isinstance(self.shape, GeometryFilter):
+            dumped["shape"] = self.shape.dump(camel_case)
+        return dumped

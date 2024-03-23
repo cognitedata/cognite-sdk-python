@@ -3,6 +3,7 @@ import string
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
     OidcCredentials,
@@ -15,7 +16,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def new_transformation(cognite_client):
+def new_transformation(cognite_client: CogniteClient) -> Transformation:
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     assert isinstance(creds, OAuthClientCredentials)
@@ -50,7 +51,9 @@ def new_transformation(cognite_client):
 other_transformation = new_transformation
 
 
-def schedule_from_transformation(cognite_client, transformation):
+def schedule_from_transformation(
+    cognite_client: CogniteClient, transformation: Transformation
+) -> TransformationSchedule:
     schedule = TransformationSchedule(id=transformation.id, interval="0 * * * *")
     tsc = cognite_client.transformations.schedules.create(schedule)
 
@@ -62,12 +65,12 @@ def schedule_from_transformation(cognite_client, transformation):
 
 
 @pytest.fixture
-def new_schedule(cognite_client, new_transformation):
+def new_schedule(cognite_client: CogniteClient, new_transformation: Transformation) -> TransformationSchedule:
     yield from schedule_from_transformation(cognite_client, new_transformation)
 
 
 @pytest.fixture
-def other_schedule(cognite_client, other_transformation):
+def other_schedule(cognite_client: CogniteClient, other_transformation: Transformation) -> TransformationSchedule:
     yield from schedule_from_transformation(cognite_client, other_transformation)
 
 

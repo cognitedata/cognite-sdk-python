@@ -1,14 +1,18 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
-from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact
+from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact, ExtractionPipelineRunList
 from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import random_string
+from cognite.client.utils._time import DayAligner
 
 
-@pytest.fixture
-def new_extpipe(cognite_client):
+@pytest.fixture(scope="function")
+def new_extpipe(cognite_client: CogniteClient):
     testid = random_string(50)
     dataset = cognite_client.data_sets.list()[0]
     extpipe = cognite_client.extraction_pipelines.create(
@@ -31,6 +35,28 @@ def new_extpipe(cognite_client):
     except Exception:
         pass
     assert cognite_client.extraction_pipelines.retrieve(extpipe.id) is None
+
+
+@pytest.fixture(scope="function")
+def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipeline) -> ExtractionPipelineRunList:
+    now = datetime_to_ms(dt_now := datetime.now(timezone.utc))
+    long_time_ago = datetime_to_ms(DayAligner.add_units(dt_now, -300))
+    runs = [
+        ExtractionPipelineRun(
+            extpipe_external_id=new_extpipe.external_id, status="failure", message="lorem ipsum", created_time=now
+        ),
+        ExtractionPipelineRun(
+            extpipe_external_id=new_extpipe.external_id,
+            status="success",
+            message="dolor sit amet",
+            created_time=long_time_ago,
+        ),
+    ]
+    created = []
+    for run in runs:
+        new_run = cognite_client.extraction_pipelines.runs.create(run)
+        created.append(new_run)
+    return ExtractionPipelineRunList(created)
 
 
 class TestExtractionPipelinesAPI:
@@ -113,6 +139,35 @@ class TestExtractionPipelinesAPI:
             assert run.extpipe_external_id == new_extpipe.external_id
 
         # Make sure we can dump it without errors
-        dumped = res.dump()
+        dumped = res.dump(camel_case=False)
         for run in dumped:
             assert run["external_id"] == new_extpipe.external_id
+
+    def test_list_failed_extraction_pipeline_runs(
+        self,
+        cognite_client: CogniteClient,
+        new_extpipe: ExtractionPipeline,
+        populated_runs: ExtractionPipelineRunList,
+    ) -> None:
+        expected = ExtractionPipelineRunList([run for run in populated_runs if run.status == "failure"])
+
+        filtered = cognite_client.extraction_pipelines.runs.list(
+            external_id=new_extpipe.external_id, statuses="failure", limit=1
+        )
+
+        assert expected.dump() == filtered.dump()
+
+    def test_filter_extraction_pipeline_runs_created_ago(
+        self,
+        cognite_client: CogniteClient,
+        new_extpipe: ExtractionPipeline,
+        populated_runs: ExtractionPipelineRunList,
+    ) -> None:
+        yesterday = datetime_to_ms(datetime.now(timezone.utc) - timedelta(days=1))
+        expected = ExtractionPipelineRunList([run for run in populated_runs if run.created_time > yesterday])
+
+        filtered = cognite_client.extraction_pipelines.runs.list(
+            external_id=new_extpipe.external_id, created_time="24h-ago", limit=1
+        )
+
+        assert expected.dump() == filtered.dump()

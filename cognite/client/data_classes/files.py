@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from abc import ABC
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, BinaryIO, Sequence, TextIO, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -8,39 +10,117 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
-    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
+from cognite.client.exceptions import CogniteFileUploadError
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class FileMetadata(CogniteResource):
+class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
     """No description.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): Name of the file.
         source (str | None): The source of the file.
-        mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        directory (str | None): Directory associated with the file. Must be an absolute, unix-style path.
+        mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory (str | None): Directory associated with the file. It must be an absolute, unix-style path.
         asset_ids (Sequence[int] | None): No description.
-        data_set_id (int | None): The dataSet Id for the item.
+        data_set_id (int | None): The dataSet ID for the item.
+        labels (Sequence[Label] | None): A list of the labels associated with this resource item.
+        geo_location (GeoLocation | None): The geographic metadata of the file.
+        source_created_time (int | None): The timestamp for when the file was originally created in the source system.
+        source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
+        security_categories (Sequence[int] | None): The security category IDs required to access this file.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
+    ) -> None:
+        if geo_location is not None:
+            if isinstance(geo_location, dict):
+                geo_location = GeoLocation.load(geo_location)
+            if not isinstance(geo_location, GeoLocation):
+                raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
+        self.external_id = external_id
+        self.name = name
+        self.directory = directory
+        self.source = source
+        self.mime_type = mime_type
+        self.metadata = metadata
+        self.asset_ids = asset_ids
+        self.data_set_id = data_set_id
+        self.labels = Label._load_list(labels)
+        self.geo_location = geo_location
+        self.source_created_time = source_created_time
+        self.source_modified_time = source_modified_time
+        self.security_categories = security_categories
+
+    @classmethod
+    def _load(cls: type[T_FileMetadata], resource: dict, cognite_client: CogniteClient | None = None) -> T_FileMetadata:
+        instance = super()._load(resource, cognite_client)
+        instance.labels = Label._load_list(instance.labels)
+        if isinstance(instance.geo_location, dict):
+            instance.geo_location = GeoLocation._load(instance.geo_location)
+        return instance
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        return result
+
+
+T_FileMetadata = TypeVar("T_FileMetadata", bound=FileMetadataCore)
+
+
+class FileMetadata(FileMetadataCore):
+    """This represents the metadata for a file. It does not contain the actual file itself.
+    This is the reading version of FileMetadata, and it is used when retrieving from CDF.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): Name of the file.
+        source (str | None): The source of the file.
+        mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory (str | None): Directory associated with the file. It must be an absolute, unix-style path.
+        asset_ids (Sequence[int] | None): No description.
+        data_set_id (int | None): The dataSet ID for the item.
         labels (Sequence[Label] | None): A list of the labels associated with this resource item.
         geo_location (GeoLocation | None): The geographic metadata of the file.
         source_created_time (int | None): The timestamp for when the file was originally created in the source system.
         source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
         security_categories (Sequence[int] | None): The security category IDs required to access this file.
         id (int | None): A server-generated ID for the object.
-        uploaded (bool | None): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
+        uploaded (bool | None): Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -69,21 +149,21 @@ class FileMetadata(CogniteResource):
         last_updated_time: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        if geo_location is not None and not isinstance(geo_location, GeoLocation):
-            raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
-        self.external_id = external_id
-        self.name = name
-        self.directory = directory
-        self.source = source
-        self.mime_type = mime_type
-        self.metadata = metadata
-        self.asset_ids = asset_ids
-        self.data_set_id = data_set_id
-        self.labels = Label._load_list(labels)
-        self.geo_location = geo_location
-        self.source_created_time = source_created_time
-        self.source_modified_time = source_modified_time
-        self.security_categories = security_categories
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            directory=directory,
+            source=source,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            data_set_id=data_set_id,
+            labels=labels,
+            geo_location=geo_location,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            security_categories=security_categories,
+        )
         self.id = id
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
@@ -91,13 +171,101 @@ class FileMetadata(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def as_write(self) -> FileMetadataWrite:
+        """Returns this FileMetadata in its writing format."""
+        if self.name is None:
+            raise ValueError("FileMetadata must have a name to be written")
+
+        return FileMetadataWrite(
+            external_id=self.external_id,
+            name=self.name,
+            directory=self.directory,
+            source=self.source,
+            mime_type=self.mime_type,
+            metadata=self.metadata,
+            asset_ids=self.asset_ids,
+            data_set_id=self.data_set_id,
+            labels=self.labels,
+            geo_location=self.geo_location,
+            source_created_time=self.source_created_time,
+            source_modified_time=self.source_modified_time,
+            security_categories=self.security_categories,
+        )
+
+
+class FileMetadataWrite(FileMetadataCore):
+    """This represents the metadata for a file. It does not contain the actual file itself.
+    This is the writing version of FileMetadata, and it is used when inserting or updating files.
+
+    Args:
+        name (str): Name of the file.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        source (str | None): The source of the file.
+        mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory (str | None): Directory associated with the file. It must be an absolute, unix-style path.
+        asset_ids (Sequence[int] | None): No description.
+        data_set_id (int | None): The dataSet ID for the item.
+        labels (Sequence[Label] | None): A list of the labels associated with this resource item.
+        geo_location (GeoLocation | None): The geographic metadata of the file.
+        source_created_time (int | None): The timestamp for when the file was originally created in the source system.
+        source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
+        security_categories (Sequence[int] | None): The security category IDs required to access this file.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        external_id: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            directory=directory,
+            source=source,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            data_set_id=data_set_id,
+            labels=labels,
+            geo_location=geo_location,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            security_categories=security_categories,
+        )
+
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FileMetadata:
-        instance = super()._load(resource, cognite_client)
-        instance.labels = Label._load_list(instance.labels)
-        if instance.geo_location is not None:
-            instance.geo_location = GeoLocation._load(instance.geo_location)
-        return instance
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FileMetadataWrite:
+        return cls(
+            name=resource["name"],
+            external_id=resource.get("externalId"),
+            directory=resource.get("directory"),
+            source=resource.get("source"),
+            mime_type=resource.get("mimeType"),
+            metadata=resource.get("metadata"),
+            asset_ids=resource.get("assetIds"),
+            data_set_id=resource.get("dataSetId"),
+            labels=(labels := resource.get("labels")) and Label._load_list(labels),
+            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            source_created_time=resource.get("sourceCreatedTime"),
+            source_modified_time=resource.get("sourceModifiedTime"),
+            security_categories=resource.get("securityCategories"),
+        )
+
+    def as_write(self) -> FileMetadataWrite:
+        """Returns self."""
+        return self
 
 
 class FileMetadataFilter(CogniteFilter):
@@ -108,17 +276,17 @@ class FileMetadataFilter(CogniteFilter):
         mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-        asset_external_ids (Sequence[str] | None): Only include files that reference these specific asset external IDs.
+        asset_external_ids (SequenceNotStr[str] | None): Only include files that reference these specific asset external IDs.
         data_set_ids (Sequence[dict[str, Any]] | None): Only include files that belong to these datasets.
         labels (LabelFilter | None): Return only the files matching the specified label(s).
         geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include files that have a related asset in a subtree rooted at any of these asset IDs or external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         source (str | None): The source of this event.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        source_created_time (dict[str, Any] | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-        source_modified_time (dict[str, Any] | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+        source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+        source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
         uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
@@ -130,7 +298,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         data_set_ids: Sequence[dict[str, Any]] | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
@@ -139,8 +307,8 @@ class FileMetadataFilter(CogniteFilter):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         uploaded_time: dict[str, Any] | TimestampRange | None = None,
-        source_created_time: dict[str, Any] | None = None,
-        source_modified_time: dict[str, Any] | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
@@ -169,12 +337,20 @@ class FileMetadataFilter(CogniteFilter):
         if geo_location is not None and not isinstance(geo_location, GeoLocationFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         if isinstance(self.geo_location, GeoLocationFilter):
-            result["geoLocation"] = self.geo_location.dump(camel_case)
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        keys = (
+            ["createdTime", "lastUpdatedTime", "uploadedTime", "sourceCreatedTime", "sourceModifiedTime"]
+            if camel_case
+            else ["created_time", "last_updated_time", "uploaded_time", "source_created_time", "source_modified_time"]
+        )
+        for key in keys:
+            if key in result and isinstance(result[key], TimestampRange):
+                result[key] = result[key].dump(camel_case)
         return result
 
 
@@ -282,20 +458,69 @@ class FileMetadataUpdate(CogniteUpdate):
         ]
 
 
-class FileAggregate(dict):
-    """Aggregation results for files
+class FileMetadataWriteList(CogniteResourceList[FileMetadataWrite], ExternalIDTransformerMixin):
+    _RESOURCE = FileMetadataWrite
+
+
+class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetadata], IdTransformerMixin):
+    _RESOURCE = FileMetadata
+
+    def as_write(self) -> FileMetadataWriteList:
+        """Returns this FileMetadataList in its writing format."""
+        return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+
+
+class FileMultipartUploadSession:
+    """Result of a call to `multipart_upload_session`
 
     Args:
-        count (int | None): Number of filtered items included in aggregation
-        **kwargs (Any): No description.
+        file_metadata (FileMetadata): The created file in CDF.
+        upload_urls (list[str]): List of upload URLs for the file upload.
+        upload_id (str): ID of the multipart upload, needed to complete the upload.
+        cognite_client (CogniteClient): Cognite client to use for completing the upload.
     """
 
-    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
-        self.count = count
-        self.update(kwargs)
+    def __init__(
+        self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str, cognite_client: CogniteClient
+    ) -> None:
+        self.file_metadata = file_metadata
+        self._upload_urls = upload_urls
+        self._upload_id = upload_id
+        self._uploaded_urls = [False for _ in upload_urls]
+        self._in_context = False
+        self._cognite_client = cognite_client
 
-    count = CognitePropertyClassUtil.declare_property("count")
+    def upload_part(self, part_no: int, content: str | bytes | TextIO | BinaryIO) -> None:
+        """Upload part of a file.
+        Note that if `content` does not somehow expose its length, this method may not work
+        on Azure. See `requests.utils.super_len`.
 
+        Args:
+            part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
+            content (str | bytes | TextIO | BinaryIO): The content to upload.
+        """
+        if part_no < 0 or part_no > len(self._uploaded_urls):
+            raise ValueError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
+        if self._uploaded_urls[part_no]:
+            raise CogniteFileUploadError(message="Attempted to upload an already uploaded part", code=400)
+        self._cognite_client.files._upload_multipart_part(self._upload_urls[part_no], content)
+        self._uploaded_urls[part_no] = True
 
-class FileMetadataList(CogniteResourceList[FileMetadata], IdTransformerMixin):
-    _RESOURCE = FileMetadata
+    def __enter__(self) -> FileMultipartUploadSession:
+        self.in_context = True
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> bool:
+        self.in_context = False
+        # If we failed, do not call complete
+        if exc_type is not None:
+            return False
+
+        if not all(self._uploaded_urls):
+            raise CogniteFileUploadError(message="Did not upload all parts of file during multipart upload", code=400)
+
+        self._cognite_client.files._complete_multipart_upload(self)
+
+        return True

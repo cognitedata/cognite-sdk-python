@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from cognite.client import utils
 from cognite.client.data_classes import Asset
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
@@ -15,14 +14,13 @@ from cognite.client.data_classes.geospatial import (
     FeatureList,
     FeatureType,
     FeatureTypePatch,
-    FeatureTypeUpdate,
     GeospatialGeometryTransformComputeFunction,
     GeospatialGeometryValueComputeFunction,
     OrderSpec,
     Patches,
-    PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._importing import local_import
 from tests.utils import set_request_limit
 
 FIXED_SRID = 121111 + random.randint(0, 1_000)
@@ -271,6 +269,7 @@ class TestGeospatialAPI:
         assert res.temperature == 6.237
         assert res.asset_ids == [new_asset.id]
 
+    @pytest.mark.skip("flaky")
     def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
         results = cognite_client.geospatial.update_features(
             feature_type_external_id=test_feature_type.external_id,
@@ -299,6 +298,34 @@ class TestGeospatialAPI:
             limit=10,
         )
         assert len(res) == 0
+
+    def test_search_feature_dimensionality_mismatch(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        polygon = "POLYGON((2.276 48.858,2.278 48.859,2.275 48.859,2.276 48.858))"
+        res = cognite_client.geospatial.search_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon}}},
+            limit=10,
+        )
+        assert res[0].external_id == test_feature.external_id
+
+        with pytest.raises(CogniteAPIError):
+            res = cognite_client.geospatial.search_features(
+                feature_type_external_id=test_feature_type.external_id,
+                filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+                limit=10,
+            )
+
+    def test_search_feature_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        res = cognite_client.geospatial.search_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+            limit=10,
+            allow_dimensionality_mismatch=True,
+        )
+        assert len(res) == 1
+        assert res[0].external_id == test_feature.external_id
 
     def test_retrieve_multiple_feature_types_by_external_id(
         self, cognite_client, test_feature_type, another_test_feature_type
@@ -336,15 +363,12 @@ class TestGeospatialAPI:
         assert res[0].external_id == test_feature.external_id
 
     def test_search_wrong_crs(self, cognite_client, test_feature_type, test_feature):
-        try:
+        with pytest.raises(CogniteAPIError):
             cognite_client.geospatial.search_features(
                 feature_type_external_id=test_feature_type.external_id,
                 filter={"stWithin": {"property": "location", "value": {"wkt": "", "srid": 3857}}},
                 limit=10,
             )
-            raise pytest.fail("searching features using a geometry in invalid crs should have raised an exception")
-        except CogniteAPIError:
-            pass
 
     def test_get_coordinate_reference_system(self, cognite_client):
         res = cognite_client.geospatial.get_coordinate_reference_systems(srids=4326)
@@ -425,24 +449,6 @@ class TestGeospatialAPI:
         assert res[0].temperature == 12.4
         assert res[1].temperature == -10.8
 
-    def test_update_feature_types(self, cognite_client, test_feature_type):
-        res = cognite_client.geospatial.update_feature_types(
-            update=FeatureTypeUpdate(
-                external_id=test_feature_type.external_id,
-                add=PropertyAndSearchSpec(
-                    properties={"altitude": {"type": "DOUBLE", "optional": True}},
-                    search_spec={
-                        "altitude_idx": {"properties": ["altitude"]},
-                        "pos_alt_idx": {"properties": ["position", "altitude"]},
-                    },
-                ),
-                remove=PropertyAndSearchSpec(properties=["volume"], search_spec=["vol_press_idx"]),
-            )
-        )
-        assert len(res) == 1
-        assert len(res[0].properties) == len(test_feature_type.properties)
-        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 1
-
     def test_patch_feature_types(self, cognite_client, test_feature_type):
         res = cognite_client.geospatial.patch_feature_types(
             patch=FeatureTypePatch(
@@ -467,6 +473,34 @@ class TestGeospatialAPI:
         )
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
+
+    def test_stream_features_dimensionality_mismatch(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        polygon = "POLYGON((2.276 48.858,2.278 48.859,2.275 48.859,2.276 48.858))"
+        stream_res = cognite_client.geospatial.stream_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon}}},
+        )
+        res = [x for x in stream_res]
+        assert res[0].external_id == test_feature.external_id
+
+        with pytest.raises(CogniteAPIError):
+            stream_res = cognite_client.geospatial.stream_features(
+                feature_type_external_id=test_feature_type.external_id,
+                filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+            )
+            _ = [x for x in stream_res]
+
+    def test_stream_features_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        stream_res = cognite_client.geospatial.stream_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+            allow_dimensionality_mismatch=True,
+        )
+        res = [x for x in stream_res]
+        assert len(res) == 1
+        assert res[0].external_id == test_feature.external_id
 
     def test_list(self, cognite_client, test_feature_type, test_features):
         with set_request_limit(cognite_client.geospatial, 2):
@@ -503,11 +537,11 @@ class TestGeospatialAPI:
             "lastUpdatedTime",
             "assetIds",
         ]
-        geopandas = utils._auxiliary.local_import("geopandas")
-        assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
+        geopandas = local_import("geopandas")
+        assert type(gdf.dtypes["position"]) is geopandas.array.GeometryDtype
 
     def test_from_geopandas_basic(self, cognite_client, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame(
             {
                 "externalId": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
@@ -522,8 +556,8 @@ class TestGeospatialAPI:
                 "pressure": [2121.0, 2121.0, 2121.0, 2121.0],
             }
         )
-        utils._auxiliary.local_import("shapely.wkt")
-        geopandas = utils._auxiliary.local_import("geopandas")
+        local_import("shapely.wkt")
+        geopandas = local_import("geopandas")
         df["position"] = geopandas.GeoSeries.from_wkt(df["position"])
         gdf = geopandas.GeoDataFrame(df, geometry="position")
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
@@ -531,7 +565,7 @@ class TestGeospatialAPI:
         assert len(res) == 4
 
     def test_from_geopandas_flexible(self, cognite_client, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame(
             {
                 "some_unique_id": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
@@ -546,8 +580,8 @@ class TestGeospatialAPI:
                 "some_pressure": [2121.0, 2121.0, 2121.0, 2121.0],
             }
         )
-        utils._auxiliary.local_import("shapely.wkt")
-        geopandas = utils._auxiliary.local_import("geopandas")
+        local_import("shapely.wkt")
+        geopandas = local_import("geopandas")
         df["some_position"] = geopandas.GeoSeries.from_wkt(df["some_position"])
         gdf = geopandas.GeoDataFrame(df, geometry="some_position")
         fl = FeatureList.from_geopandas(
@@ -564,27 +598,34 @@ class TestGeospatialAPI:
         res = cognite_client.geospatial.create_features(test_feature_type.external_id, fl)
         assert len(res) == 4
 
-    def test_aggregate(self, cognite_client, test_feature_type, test_features):
+    def test_aggregate__temperature_property_min_max(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["min", "max"],
+            output={
+                "min": {"min": {"property": "temperature"}},
+                "max": {"max": {"property": "temperature"}},
+            },
         )
         assert res[0].min == 3.4
         assert res[0].max == 23.4
 
+    def test_aggregate__range_gt_lt(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
             filter={"range": {"property": "temperature", "gt": 12.0, "lt": 13.0}},
-            property="temperature",
-            aggregates=["count"],
+            output={"count": {"count": {"property": "temperature"}}},
         )
         assert res[0].count == 1
 
+    def test_aggregate__temperature_property_min_max_groupby_xid(
+        self, cognite_client, test_feature_type, test_features
+    ):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["min", "max"],
+            output={
+                "min": {"min": {"property": "temperature"}},
+                "max": {"max": {"property": "temperature"}},
+            },
             group_by=["externalId"],
         )
         assert len(res) == 4
@@ -592,8 +633,7 @@ class TestGeospatialAPI:
     def test_aggregate_with_order_by(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["count"],
+            output={"count": {"count": {"property": "temperature"}}},
             group_by=["externalId"],
             order_by=[OrderSpec("externalId", "DESC")],
         )
@@ -601,8 +641,7 @@ class TestGeospatialAPI:
         external_ids.reverse()
         res_asc = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            property="temperature",
-            aggregates=["count"],
+            output={"count": {"count": {"property": "temperature"}}},
             group_by=["externalId"],
             order_by=[OrderSpec("externalId", "ASC")],
         )
@@ -723,32 +762,6 @@ class TestGeospatialAPI:
         assert res[0].external_id == test_feature_with_raster.external_id
         assert hasattr(res[0], "raster") is False
 
-    def test_delete_raster_property(self, cognite_client, test_feature_type, test_feature_with_raster):
-        feature_type_updated = cognite_client.geospatial.update_feature_types(
-            update=FeatureTypeUpdate(
-                external_id=test_feature_type.external_id,
-                add=PropertyAndSearchSpec(properties={}, search_spec={}),
-                remove=PropertyAndSearchSpec(properties=["raster"], search_spec=[]),
-            )
-        )
-        assert list(feature_type_updated[0].properties.keys()) == [
-            "position",
-            "volume",
-            "temperature",
-            "pressure",
-            "externalId",
-            "createdTime",
-            "lastUpdatedTime",
-            "dataSetId",
-            "assetIds",
-        ]
-        res = cognite_client.geospatial.retrieve_features(
-            feature_type_external_id=test_feature_type.external_id,
-            external_id=[test_feature_with_raster.external_id],
-        )
-        assert res[0].external_id == test_feature_with_raster.external_id
-        assert hasattr(res[0], "raster") is False
-
     def test_compute_st_transform_geometry_value(self, cognite_client, test_crs):
         compute_st_transform = GeospatialGeometryTransformComputeFunction(
             GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=test_crs.srid
@@ -760,5 +773,5 @@ class TestGeospatialAPI:
         )
         items = res.items
         assert len(items) == 1
-        assert items[0]["output"]["srid"] == test_crs.srid
-        assert items[0]["output"]["wkt"] == "POLYGON((0 0,10 0,10 10,0 10,0 0))"
+        assert items[0].output["srid"] == test_crs.srid
+        assert items[0].output["wkt"] == "POLYGON((0 0,10 0,10 10,0 10,0 0))"

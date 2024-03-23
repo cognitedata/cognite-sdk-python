@@ -1,51 +1,66 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Literal, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
-from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
+from cognite.client.data_classes.annotations import AnnotationCore, AnnotationReverseLookupFilter, AnnotationWrite
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
-from cognite.client.utils._auxiliary import assert_type
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.utils._validation import assert_type
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
-    @overload
-    def create(self, annotations: Annotation) -> Annotation:
-        ...
-
-    @overload
-    def create(self, annotations: Sequence[Annotation]) -> AnnotationList:
-        ...
-
-    def create(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
-        """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
-
-        Args:
-            annotations (Annotation | Sequence[Annotation]): annotation(s) to create
-
-        Returns:
-            Annotation | AnnotationList: created annotation(s)
-        """
-        assert_type(annotations, "annotations", [Annotation, Sequence])
-        return self._create_multiple(
-            list_cls=AnnotationList, resource_cls=Annotation, resource_path=self._RESOURCE_PATH + "/", items=annotations
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._reverse_lookup_warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="beta", feature_name="Annotation reverse lookup"
         )
 
     @overload
-    def suggest(self, annotations: Annotation) -> Annotation:
-        ...
+    def create(self, annotations: Annotation | AnnotationWrite) -> Annotation: ...
 
     @overload
-    def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList:
-        ...
+    def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList: ...
+
+    def create(
+        self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
+    ) -> Annotation | AnnotationList:
+        """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
+
+        Args:
+            annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
+
+        Returns:
+            Annotation | AnnotationList: Created annotation(s)
+        """
+        assert_type(annotations, "annotations", [AnnotationCore, Sequence])
+
+        return self._create_multiple(
+            list_cls=AnnotationList,
+            resource_cls=Annotation,
+            resource_path=self._RESOURCE_PATH + "/",
+            items=annotations,
+            input_resource_cls=AnnotationWrite,
+        )
+
+    @overload
+    def suggest(self, annotations: Annotation) -> Annotation: ...
+
+    @overload
+    def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList: ...
 
     def suggest(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
         """`Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
@@ -98,20 +113,22 @@ class AnnotationsAPI(APIClient):
         return annotation_update.dump()
 
     @overload
-    def update(self, item: Annotation | AnnotationUpdate) -> Annotation:
-        ...
+    def update(self, item: Annotation | AnnotationWrite | AnnotationUpdate) -> Annotation: ...
 
     @overload
-    def update(self, item: Sequence[Annotation | AnnotationUpdate]) -> AnnotationList:
-        ...
+    def update(self, item: Sequence[Annotation | AnnotationWrite | AnnotationUpdate]) -> AnnotationList: ...
 
     def update(
-        self, item: Annotation | AnnotationUpdate | Sequence[Annotation | AnnotationUpdate]
+        self,
+        item: Annotation
+        | AnnotationWrite
+        | AnnotationUpdate
+        | Sequence[Annotation | AnnotationWrite | AnnotationUpdate],
     ) -> Annotation | AnnotationList:
         """`Update annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_
 
         Args:
-            item (Annotation | AnnotationUpdate | Sequence[Annotation | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
+            item (Annotation | AnnotationWrite | AnnotationUpdate | Sequence[Annotation | AnnotationWrite | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
 
         Returns:
             Annotation | AnnotationList: No description."""
@@ -156,13 +173,23 @@ class AnnotationsAPI(APIClient):
 
         Args:
             filter (AnnotationReverseLookupFilter): Filter to apply
-            limit (int | None): Maximum number of results to return. Defaults to None.
+            limit (int | None): Maximum number of results to return. Defaults to None (all).
 
         Returns:
             ResourceReferenceList: List of resource references
+
+        Examples:
+
+            Retrieve the first 100 ids of annotated resources mathing the 'file' resource type:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AnnotationReverseLookupFilter
+                >>> client = CogniteClient()
+                >>> flt = AnnotationReverseLookupFilter(annotated_resource_type="file")
+                >>> res = client.annotations.reverse_lookup(flt, limit=100)
         """
+        self._reverse_lookup_warning.warn()
         assert_type(filter, "filter", types=[AnnotationReverseLookupFilter], allow_none=False)
-        assert_type(limit, "limit", [int, type(None)], allow_none=True)
 
         return self._list(
             list_cls=ResourceReferenceList,
@@ -171,30 +198,56 @@ class AnnotationsAPI(APIClient):
             limit=limit,
             filter=filter.dump(camel_case=True),
             url_path=self._RESOURCE_PATH + "/reverselookup",
+            api_subversion="beta",
         )
 
     def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
+        Note:
+            Passing a filter with both 'annotated_resource_type' and 'annotated_resource_ids' is always required.
+
         Args:
-            filter (AnnotationFilter | dict): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
+            filter (AnnotationFilter | dict): Return annotations with parameter values that match what is specified.
             limit (int | None): Maximum number of annotations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AnnotationList: list of annotations
+
+        Example:
+
+            List all annotations for the file with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AnnotationFilter
+                >>> client = CogniteClient()
+                >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
+                >>> res = client.annotations.list(flt, limit=None)
         """
-        assert_type(limit, "limit", [int], allow_none=False)
         assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
 
         if isinstance(filter, AnnotationFilter):
             filter = filter.dump(camel_case=True)
-
         elif isinstance(filter, dict):
-            filter = {to_camel_case(k): v for k, v in filter.items()}
+            filter = convert_all_keys_to_camel_case(filter)
 
-        if "annotatedResourceIds" in filter:
-            filter["annotatedResourceIds"] = [
-                {to_camel_case(k): v for k, v in f.items()} for f in filter["annotatedResourceIds"]
-            ]
+        if "annotatedResourceIds" not in filter or "annotatedResourceType" not in filter:
+            raise ValueError("Both 'annotated_resource_type' and 'annotated_resource_ids' are required in filter!")
+        res_ids = list(map(convert_all_keys_to_camel_case, filter.pop("annotatedResourceIds")))
 
-        return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
+        remaining_limit = limit
+        is_finite_limit = not is_unlimited(limit)
+
+        all_annots = AnnotationList([], cognite_client=self._cognite_client)
+        for id_chunk in split_into_chunks(res_ids, 1000):
+            filter["annotatedResourceIds"] = id_chunk
+            chunk_result = self._list(
+                list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=remaining_limit, filter=filter
+            )
+            all_annots.extend(chunk_result)
+
+            if is_finite_limit:
+                remaining_limit = cast(int, limit) - len(all_annots)
+                if remaining_limit == 0:
+                    break
+        return all_annots

@@ -50,12 +50,17 @@ class TestLabels:
         )
 
     def test_create_multiple(self, cognite_client, mock_labels_response):
-        res = cognite_client.labels.create([LabelDefinition(external_id="1"), LabelDefinition(external_id="2")])
+        res = cognite_client.labels.create(
+            [
+                LabelDefinition(external_id="1", name="Rotating"),
+                LabelDefinition(external_id="2", name="Positive Displacement"),
+            ]
+        )
         assert isinstance(res, LabelDefinitionList)
         assert mock_labels_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"items": [{"externalId": "1"}, {"externalId": "2"}]} == jsgz_load(
-            mock_labels_response.calls[0].request.body
-        )
+        assert {
+            "items": [{"externalId": "1", "name": "Rotating"}, {"externalId": "2", "name": "Positive Displacement"}]
+        } == jsgz_load(mock_labels_response.calls[0].request.body)
 
     def test_delete_single(self, cognite_client, mock_labels_response):
         res = cognite_client.labels.delete(external_id="PUMP")

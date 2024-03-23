@@ -16,9 +16,10 @@ from cognite.client.data_classes import (
     GeoLocationFilter,
     Geometry,
     GeometryFilter,
-    filters,
 )
+from cognite.client.data_classes import filters as flt
 from cognite.client.data_classes.assets import AssetProperty
+from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
@@ -105,6 +106,11 @@ def asset_list(cognite_client: CogniteClient) -> AssetList:
     return cognite_client.assets.upsert(assets, mode="replace")
 
 
+@pytest.fixture
+def is_integration_test() -> Filter:
+    return flt.Prefix("externalId", "integration_test:")
+
+
 class TestAssetsAPI:
     def test_get(self, cognite_client):
         res = cognite_client.assets.list(limit=1)
@@ -145,25 +151,11 @@ class TestAssetsAPI:
     def test_list_with_aggregated_properties_param(self, cognite_client, post_spy):
         res = cognite_client.assets.list(limit=10, aggregated_properties=["child_count"])
         for asset in res:
-            assert {"childCount"} == asset.aggregates.keys()
-            assert isinstance(asset.aggregates["childCount"], int)
+            assert {"childCount"} == asset.aggregates.dump(camel_case=True).keys()
+            assert isinstance(asset.aggregates.child_count, int)
 
     def test_aggregate(self, cognite_client, new_asset):
         res = cognite_client.assets.aggregate(filter=AssetFilter(name="test__asset_0"))
-        assert res[0].count > 0
-
-    def test_aggregate_metadata_keys(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate_metadata_keys()
-        assert len(res) > 1
-        assert set(res[0]) == {"count", "value", "values"}
-        assert isinstance(res[0].value, str)
-        assert res[0].count > 1
-
-    def test_aggregate_metadata_values(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate_metadata_values(keys=["a"])
-        assert len(res) > 0
-        assert set(res[0]) == {"count", "value", "values"}
-        assert isinstance(res[0].value, str)
         assert res[0].count > 0
 
     def test_search(self, cognite_client):
@@ -231,15 +223,16 @@ class TestAssetsAPI:
             geometry=Geometry(type="LineString", coordinates=[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]),
             properties={},
         )
+        a = None
         try:
             a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
 
             result_asset = cognite_client.assets.retrieve(id=a.id)
             assert result_asset is not None
             assert result_asset.geo_location == geo_location
-
         finally:
-            cognite_client.assets.delete(id=a.id)  # TODO: raises UnboundLocalError for 'a' when call fails
+            if a is not None:
+                cognite_client.assets.delete(id=a.id)
 
     def test_filter_by_geo_location(self, cognite_client):
         geo_location = GeoLocation(
@@ -247,7 +240,6 @@ class TestAssetsAPI:
             geometry=Geometry(type="LineString", coordinates=[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]),
             properties={},
         )
-
         try:
             a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
             result_assets = cognite_client.assets.list(
@@ -260,28 +252,23 @@ class TestAssetsAPI:
                 limit=1,
             )
             assert len(result_assets) > 0
-
         finally:
             cognite_client.assets.delete(id=a.id)
 
     def test_upsert_2_asset_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_asset = Asset(external_id="test_upsert_2_asset_one_preexisting:new", name="my new asset")
         preexisting = Asset(
             external_id="test_upsert_2_asset_one_preexisting:preexisting",
             name="my preexisting asset",
         )
-        preexisting_update = Asset._load(preexisting.dump(camel_case=True))
+        preexisting_update = Asset.load(preexisting.dump(camel_case=True))
         preexisting_update.name = "my preexisting asset updated"
-
         try:
             created_existing = cognite_client.assets.create(preexisting)
             assert created_existing.id is not None
 
-            # Act
             res = cognite_client.assets.upsert([new_asset, preexisting_update], mode="replace")
 
-            # Assert
             assert len(res) == 2
             assert new_asset.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
@@ -292,96 +279,102 @@ class TestAssetsAPI:
                 external_id=[new_asset.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
 
-    def test_filter_on_metadata_key(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Arrange
-        f = filters
-        is_integration_test = f.Prefix("external_id", "integration_test:")
-        in_europe = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+    def test_filter_on_metadata_key(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
+        in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
-        # Act
         result = cognite_client.assets.filter(
-            f.And(is_integration_test, in_europe), sort=("external_id", "asc"), aggregated_properties=["child_count"]
+            filter=flt.And(is_integration_test, in_europe),
+            sort=("external_id", "asc"),
+            aggregated_properties=["child_count"],
         )
-
-        # Assert
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"
 
-    def test_filter_without_sort(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Arrange
-        f = filters
-        is_integration_test = f.Prefix("external_id", "integration_test:")
-        in_europe = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+    def test_filter_without_sort(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
+        in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
-        # Act
         result = cognite_client.assets.filter(
-            f.And(is_integration_test, in_europe), aggregated_properties=["child_count"], sort=None
+            filter=flt.And(is_integration_test, in_europe), aggregated_properties=["child_count"], sort=None
         )
-
-        # Assert
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"
 
-    def test_aggregate_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        f = filters
-        is_integration_test = f.Prefix("externalId", "integration_test:")
+    def test_list_with_advanced_filter(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ):
+        adv_filter = flt.And(is_integration_test, flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe"))
+        result = cognite_client.assets.list(
+            external_id_prefix="integration_test:",
+            advanced_filter=adv_filter,
+            sort=("external_id", "asc"),
+        )
+        assert len(result) == 1, "Expected only one asset to match the filter"
+        assert result[0].external_id == "integration_test:asset2"
 
+    def test_aggregate_count(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         count = cognite_client.assets.aggregate_count(advanced_filter=is_integration_test)
-
         assert count >= len(asset_list), "Expected at least the created asset list to exist"
 
-    def test_aggregate_has_parent_id_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        f = filters
-        is_integration_test = f.Prefix("externalId", "integration_test:")
-
+    def test_aggregate_has_parent_id_count(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         count = cognite_client.assets.aggregate_count(AssetProperty.parent_id, advanced_filter=is_integration_test)
-
         assert count >= sum(1 for a in asset_list if a.parent_id)
 
-    def test_aggregate_timezone_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        f = filters
-        is_integration_test = f.Prefix("externalId", "integration_test:")
-
+    def test_aggregate_timezone_count(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         count = cognite_client.assets.aggregate_cardinality_values(
             AssetProperty.metadata_key("timezone"), advanced_filter=is_integration_test
         )
-
         assert count >= len({a.metadata["timezone"] for a in asset_list if "timezone" in a.metadata})
 
-    def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        f = filters
-        is_integration_test = f.Prefix("externalId", "integration_test:")
-
+    def test_aggregate_metadata_keys_count(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         count = cognite_client.assets.aggregate_cardinality_properties(
             AssetProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert count >= len({key for a in asset_list for key in a.metadata or []})
 
-    def test_aggregate_unique_timezone(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        f = filters
-        is_integration_test = f.Prefix("externalId", "integration_test:")
-
+    def test_aggregate_unique_timezone(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         result = cognite_client.assets.aggregate_unique_values(
             AssetProperty.metadata_key("timezone"), advanced_filter=is_integration_test
         )
-
         assert result
         # Casefold is needed because the aggregation is case insensitive
         assert set(result.unique) >= {a.metadata["timezone"].casefold() for a in asset_list if "timezone" in a.metadata}
 
-    def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        f = filters
-        is_integration_test = f.Prefix("externalId", "integration_test:")
-
+    def test_aggregate_unique_metadata_keys(
+        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
+    ) -> None:
         result = cognite_client.assets.aggregate_unique_properties(
             AssetProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in asset_list for key in a.metadata or []
         }
+
+    def test_create_strips_server_side_set_fields(self, cognite_client: CogniteClient, new_asset: Asset) -> None:
+        my_new_asset = new_asset.external_id = "my_new_asset"
+        try:
+            # New asset is obtained from .create, so it should have server-side set fields which need to be stripped.
+            created = cognite_client.assets.create(new_asset)
+            assert created.external_id == my_new_asset
+            assert created.name == "any"
+            assert created.description == "haha"
+            assert created.metadata == {"a": "b"}
+        finally:
+            cognite_client.assets.delete(external_id="my_new_asset", ignore_unknown_ids=True)
 
 
 def generate_orphan_assets(n_id, n_xid, sample_from):

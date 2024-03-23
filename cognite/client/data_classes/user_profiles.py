@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, Sequence, cast
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import to_camel_case
@@ -46,9 +47,7 @@ class UserProfile(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> UserProfile:
-        if isinstance(resource, str):
-            resource = cast(dict[str, Any], json.loads(resource))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UserProfile:
         to_load = {
             "user_identifier": resource["userIdentifier"],
             "last_updated_time": resource["lastUpdatedTime"],
@@ -76,3 +75,12 @@ class UserProfileList(CogniteResourceList[UserProfile]):
             UserProfile | None: The requested item or None if not found.
         """
         return self._user_identifier_to_item.get(user_identifier)
+
+
+class UserProfilesConfiguration(CogniteResource):
+    def __init__(self, enabled: bool) -> None:
+        self.enabled = enabled
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(enabled=resource["enabled"])

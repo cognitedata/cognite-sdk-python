@@ -1,4 +1,5 @@
 import re
+from urllib.parse import unquote_plus
 
 import pytest
 
@@ -13,6 +14,7 @@ from cognite.client._api.three_d import (
     ThreeDModelUpdate,
     ThreeDNodeList,
 )
+from cognite.client.data_classes import BoundingBox3D
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
@@ -79,13 +81,17 @@ class Test3DModels:
     def test_create(self, cognite_client, mock_3d_model_response):
         res = cognite_client.three_d.models.create(name="My Model")
         assert isinstance(res, ThreeDModel)
-        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model"}]}
+
+        request_body = jsgz_load(mock_3d_model_response.calls[0].request.body)
+        assert request_body == {"items": [{"dataSetId": None, "metadata": None, "name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_model_response):
         res = cognite_client.three_d.models.create(name=["My Model"])
         assert isinstance(res, ThreeDModelList)
-        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model"}]}
+
+        request_body = jsgz_load(mock_3d_model_response.calls[0].request.body)
+        assert request_body == {"items": [{"dataSetId": None, "metadata": None, "name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
 
@@ -226,13 +232,17 @@ class Test3DModelRevisions:
     def test_create(self, cognite_client, mock_3d_model_revision_response):
         res = cognite_client.three_d.revisions.create(model_id=1, revision=ThreeDModelRevision(file_id=123))
         assert isinstance(res, ThreeDModelRevision)
-        assert {"items": [{"fileId": 123}]} == jsgz_load(mock_3d_model_revision_response.calls[0].request.body)
+        assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
+            mock_3d_model_revision_response.calls[0].request.body
+        )
         assert mock_3d_model_revision_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_model_revision_response):
         res = cognite_client.three_d.revisions.create(model_id=1, revision=[ThreeDModelRevision(file_id=123)])
         assert isinstance(res, ThreeDModelRevisionList)
-        assert {"items": [{"fileId": 123}]} == jsgz_load(mock_3d_model_revision_response.calls[0].request.body)
+        assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
+            mock_3d_model_revision_response.calls[0].request.body
+        )
         assert mock_3d_model_revision_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_update_thumbnail(self, cognite_client, mock_3d_model_revision_thumbnail_response):
@@ -282,10 +292,24 @@ class Test3DAssetMappings:
 
     def test_list(self, cognite_client, mock_3d_asset_mappings_response):
         res = cognite_client.three_d.asset_mappings.list(
-            model_id=1, revision_id=1, node_id=None, asset_id=None, limit=None
+            model_id=1, revision_id=1, node_id=None, asset_id=None, intersects_bounding_box=None, limit=None
         )
         assert isinstance(res, ThreeDAssetMappingList)
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+        url = mock_3d_asset_mappings_response.calls[0].request.url
+        assert "intersectsBoundingBox" not in unquote_plus(url)
+
+    def test_list__with_intersects_bounding_box(self, cognite_client, mock_3d_asset_mappings_response):
+        bbox = BoundingBox3D(min=[0.0, 0.0, 0.0], max=[1.0, 1.0, 1.0])
+        res = cognite_client.three_d.asset_mappings.list(
+            model_id=1, revision_id=1, node_id=None, asset_id=None, intersects_bounding_box=bbox, limit=None
+        )
+        assert isinstance(res, ThreeDAssetMappingList)
+        assert mock_3d_asset_mappings_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+        url = mock_3d_asset_mappings_response.calls[0].request.url
+        assert 'intersectsBoundingBox={"max": [1.0, 1.0, 1.0], "min": [0.0, 0.0, 0.0]}' in unquote_plus(url)
 
     def test_create(self, cognite_client, mock_3d_asset_mappings_response):
         res = cognite_client.three_d.asset_mappings.create(
@@ -330,4 +354,4 @@ class Test3DAssetMappings:
             cognite_client.three_d.asset_mappings.delete(
                 model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(1, 1)]
             )
-        assert e.value.unknown == [ThreeDAssetMapping._load({"assetId": 1, "nodeId": 1})]
+        assert e.value.unknown == [ThreeDAssetMapping.load({"assetId": 1, "nodeId": 1})]

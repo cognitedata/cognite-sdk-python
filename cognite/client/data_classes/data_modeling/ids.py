@@ -2,11 +2,18 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
 
+from typing_extensions import Self
+
+from cognite.client.data_classes._base import CogniteObject
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils.useful_types import SequenceNotStr
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass(frozen=True)
@@ -26,7 +33,7 @@ class DataModelingId(AbstractDataclass):
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
 
-    def dump(self, camel_case: bool = False, include_type: bool = True) -> dict[str, str]:
+    def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_type:
             output["type"] = self._type
@@ -40,7 +47,7 @@ class DataModelingId(AbstractDataclass):
             return cls(*data)
         elif isinstance(data, dict):
             return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        raise ValueError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
@@ -56,7 +63,7 @@ class VersionedDataModelingId(AbstractDataclass):
     def as_tuple(self) -> tuple[str, str, str | None]:
         return self.space, self.external_id, self.version
 
-    def dump(self, camel_case: bool = False, include_type: bool = True) -> dict[str, str]:
+    def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_type:
             output["type"] = self._type
@@ -73,7 +80,7 @@ class VersionedDataModelingId(AbstractDataclass):
             return cls(*data)
         elif isinstance(data, dict):
             return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        raise ValueError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)
@@ -85,7 +92,7 @@ class InstanceId:
     space: str
     external_id: str
 
-    def dump(self, camel_case: bool = False, include_instance_type: bool = True) -> dict[str, str]:
+    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_instance_type:
             output["instanceType" if camel_case else "instance_type"] = self._instance_type
@@ -100,6 +107,9 @@ class InstanceId:
     @property
     def instance_type(self) -> Literal["node", "edge"]:
         return self._instance_type
+
+    def as_tuple(self) -> tuple[str, str]:
+        return self.space, self.external_id
 
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
@@ -122,7 +132,7 @@ class ContainerId(DataModelingId):
     def as_source_identifier(self) -> str:
         return self.external_id
 
-    def as_property_ref(self, property: str) -> tuple[str, ...]:
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
         return (self.space, self.as_source_identifier(), property)
 
 
@@ -133,8 +143,35 @@ class ViewId(VersionedDataModelingId):
     def as_source_identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
 
-    def as_property_ref(self, property: str) -> tuple[str, ...]:
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
         return (self.space, self.as_source_identifier(), property)
+
+
+@dataclass(frozen=True)
+class PropertyId(CogniteObject):
+    source: ViewId | ContainerId
+    property: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            source=cls.__load_view_or_container_id(resource["source"]),
+            property=resource["identifier"],
+        )
+
+    @staticmethod
+    def __load_view_or_container_id(view_or_container_id: dict[str, Any]) -> ViewId | ContainerId:
+        if "type" in view_or_container_id and view_or_container_id["type"] in {"view", "container"}:
+            if view_or_container_id["type"] == "view":
+                return ViewId.load(view_or_container_id)
+            return ContainerId.load(view_or_container_id)
+        raise ValueError(f"Invalid type {view_or_container_id}")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "source": self.source.dump(camel_case=camel_case, include_type=True),
+            "identifier": self.property,
+        }
 
 
 @dataclass(frozen=True)
@@ -144,18 +181,15 @@ class DataModelId(VersionedDataModelingId):
 
 class IdLike(Protocol):
     @property
-    def space(self) -> str:
-        ...
+    def space(self) -> str: ...
 
     @property
-    def external_id(self) -> str:
-        ...
+    def external_id(self) -> str: ...
 
 
 class VersionedIdLike(IdLike, Protocol):
     @property
-    def version(self) -> str | None:
-        ...
+    def version(self) -> str | None: ...
 
 
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
@@ -169,7 +203,7 @@ EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 Id = Union[Tuple[str, str], Tuple[str, str, str], IdLike, VersionedIdLike]
 
 
-def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
+def _load_space_identifier(ids: str | SequenceNotStr[str]) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not isinstance(ids, str)
     spaces = [ids] if isinstance(ids, str) else ids
     return DataModelingIdentifierSequence(
@@ -193,7 +227,7 @@ def _load_identifier(
                 return id_[0], id_[1], None, id_type  # type: ignore[return-value]
             raise ValueError("Instance given as a tuple must have two elements (space, externalId)")
         if isinstance(id_, tuple):
-            return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None  # type: ignore[misc]
+            return id_[0], id_[1], (id_[2] if len(id_) == 3 else None), None
         instance_type = None
         if is_instance:
             instance_type = "node" if isinstance(id_, NodeId) else "edge"

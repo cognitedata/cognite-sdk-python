@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -12,6 +11,7 @@ from cognite.client.data_classes import (
     TransformationJobMetric,
     TransformationJobMetricList,
 )
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
 
 
@@ -39,14 +39,14 @@ class TransformationJobsAPI(APIClient):
             List transformation jobs::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> transformation_jobs_list = c.transformations.jobs.list()
+                >>> client = CogniteClient()
+                >>> transformation_jobs_list = client.transformations.jobs.list()
 
             List transformation jobs of a single transformation::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> transformation_jobs_list = c.transformations.jobs.list(transformation_id = 1)
+                >>> client = CogniteClient()
+                >>> transformation_jobs_list = client.transformations.jobs.list(transformation_id=1)
         """
 
         filter = TransformationJobFilter(
@@ -71,8 +71,8 @@ class TransformationJobsAPI(APIClient):
             Get transformation job by id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.jobs.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.transformations.jobs.retrieve(id=1)
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
         return self._retrieve_multiple(
@@ -93,10 +93,10 @@ class TransformationJobsAPI(APIClient):
             Get metrics by transformation job id:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.jobs.list_metrics(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.transformations.jobs.list_metrics(id=1)
         """
-        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
 
         return self._list(
             list_cls=TransformationJobMetricList,
@@ -121,8 +121,8 @@ class TransformationJobsAPI(APIClient):
             Get jobs by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
+                >>> client = CogniteClient()
+                >>> res = client.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
         return self._retrieve_multiple(

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -24,9 +24,9 @@ jobs:
           poetry install -E numpy
 
       - name: Linting and static code checks
-        run: |
-          pre-commit run --all-files
+        run: pre-commit run --all-files
 
+      # TODO: Consider moving to a meta test (or remove entirely)
       - name: Verify proto files
         env:
           TMPDIR: latest_proto
@@ -38,12 +38,11 @@ jobs:
           diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
           diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
 
-
   build_docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -60,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -71,10 +70,7 @@ jobs:
           poetry install
 
       - name: Test core
-        env:
-          CI: 1
-        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl'
-          --test-deps-only-core
+        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
   test_full:
     runs-on: ${{ matrix.os }}
@@ -84,7 +80,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -104,9 +100,7 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-          CI: 1
-        run: |
-          pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
+        run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@v3
         with:
@@ -117,13 +111,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install full dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
+        run: python3 -m pip install --upgrade pip poetry
 
       - name: Build package
         run: poetry build

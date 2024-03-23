@@ -1,7 +1,6 @@
 import io
 import operator as op
 import os
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
@@ -118,7 +117,6 @@ CALL_SCHEDULED = {
     "scheduleId": 6789,
     "functionId": FUNCTION_ID,
 }
-SESSION_REVOKED = {"creationTime": 0, "expirationTime": 0, "id": 123, "status": "REVOKED", "type": "TOKEN_EXCHANGE"}
 
 
 @pytest.fixture
@@ -136,15 +134,6 @@ def mock_sessions_with_client_credentials(rsps, cognite_client_with_client_crede
         match=[post_body_matcher({"items": [{"clientId": creds.client_id, "clientSecret": creds.client_secret}]})],
     )
 
-    url = full_url(cognite_client_with_client_credentials_flow, "/sessions/revoke", api="iam.sessions")
-    rsps.add(
-        rsps.POST,
-        url=url,
-        status=200,
-        json={"items": [SESSION_REVOKED]},
-        match=[post_body_matcher({"items": [{"id": 123}]})],
-    )
-
     return rsps
 
 
@@ -158,14 +147,6 @@ def mock_sessions_with_token_exchange(rsps, cognite_client):
         status=200,
         json={"items": [{"nonce": "aabbccdd", "id": 123, "status": "mocky"}]},
         match=[post_body_matcher({"items": [{"tokenExchange": True}]})],
-    )
-
-    rsps.add(
-        rsps.POST,
-        url=full_url(cognite_client, "/sessions/revoke"),
-        status=200,
-        json={"items": [SESSION_REVOKED]},
-        match=[post_body_matcher({"items": [{"id": 123}]})],
     )
 
     return rsps
@@ -341,7 +322,7 @@ def cognite_client_with_client_credentials_flow(rsps):
         rsps.POST,
         "https://bla",
         status=200,
-        json={"access_token": "abc", "expires_at": datetime.now().timestamp() + 1000},
+        json={"access_token": "abc", "expires_in": 1000},
     )
     return CogniteClient(
         ClientConfig(
@@ -522,6 +503,17 @@ class TestFunctionsAPI:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", file_id=1234, memory="0.5")
 
+    def test_create_upload_with_data_set_id(self, mock_functions_create_response, cognite_client, function_handle):
+        cognite_client.files = MagicMock(spec=cognite_client.files)
+
+        def mock_upload_bytes(*args, **kwargs):
+            assert kwargs.get("data_set_id") == 999
+            return FileMetadata(id=FUNCTION_ID, data_set_id=kwargs.get("data_set_id"))
+
+        cognite_client.files.upload_bytes.side_effect = mock_upload_bytes
+
+        cognite_client.functions.create(name="myfunction", function_handle=function_handle, data_set_id=999)
+
     def test_delete_single_id(self, mock_functions_delete_response, cognite_client):
         _ = cognite_client.functions.delete(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_functions_delete_response.calls[0].request.body)
@@ -578,13 +570,12 @@ class TestFunctionsAPI:
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_from_oidc_client_credentials_flow(
-        self, mock_functions_call_responses, cognite_client_with_client_credentials_flow: CogniteClient
+        self, mock_functions_call_responses, cognite_client_with_client_credentials_flow
     ):
         res = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
 
         assert isinstance(res, FunctionCall)
-        # The last call is to revoke the session
-        assert mock_functions_call_responses.calls[-2].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_functions_call_responses.calls[-1].response.json()["items"][0] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_by_external_id_from_oidc_client_credentials_flow(
@@ -593,8 +584,7 @@ class TestFunctionsAPI:
         res = cognite_client_with_client_credentials_flow.functions.call(external_id=f"func-no-{FUNCTION_ID}")
 
         assert isinstance(res, FunctionCall)
-        # The last call is to revoke the session
-        expected = mock_functions_call_by_external_id_responses.calls[-2].response.json()["items"][0]
+        expected = mock_functions_call_by_external_id_responses.calls[-1].response.json()["items"][0]
         assert expected == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
@@ -609,8 +599,7 @@ class TestFunctionsAPI:
     ):
         res = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
         assert isinstance(res, FunctionCall)
-        # The last call is to revoke the session
-        assert mock_functions_call_timeout_response.calls[-2].response.json() == res.dump(camel_case=True)
+        assert mock_functions_call_timeout_response.calls[-1].response.json() == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_with_token_exchange")
     def test_function_call_from_oidc_token_exchange_flow(
@@ -816,12 +805,7 @@ def mock_function_schedules_response(rsps, cognite_client):
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.GET, url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
     rsps.add(rsps.POST, url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
-    rsps.add(
-        rsps.POST,
-        full_url(cognite_client, "/sessions/revoke"),
-        status=200,
-        json={"items": [{"id": 123, "status": "mocky"}]},
-    )
+
     yield rsps
 
 
@@ -845,12 +829,6 @@ def mock_function_schedules_response_xid_not_valid_with_oidc(rsps, cognite_clien
             }
         },
     )
-    rsps.add(
-        rsps.POST,
-        full_url(cognite_client, "/sessions/revoke"),
-        status=200,
-        json={"items": [{"id": 123, "status": "mocky"}]},
-    )
     yield rsps
 
 
@@ -868,13 +846,6 @@ def mock_function_schedules_response_oidc_client_credentials(rsps, cognite_clien
 
     url = full_url(cognite_client, "/functions/schedules")
     rsps.add(rsps.POST, url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_ID_AND_SESSION]})
-    rsps.add(
-        rsps.POST,
-        full_url(cognite_client, "/sessions/revoke"),
-        status=200,
-        json={"items": [{"id": 123, "status": "mocky"}]},
-        match=[post_body_matcher({"items": [{"id": 123}]})],
-    )
     yield rsps
 
 
@@ -932,32 +903,12 @@ class TestFunctionSchedulesAPI:
         assert len(res) == 1
 
     def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.list(function_id=123, function_external_id="my-func")
         assert (
             "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
             == excinfo.value.args[0]
         )
-
-    def test_create_schedules_with_function_external_id(
-        self, mock_function_schedules_response_xid_not_valid_with_oidc, cognite_client
-    ):
-        with pytest.raises(CogniteAPIError) as excinfo:
-            cognite_client.functions.schedules.create(
-                name="my-schedule",
-                function_external_id="user/hello-cognite/hello-cognite:latest",
-                cron_expression="*/5 * * * *",
-                description="Hi",
-            )
-        exp_err = "When creating a schedule with OIDC-tokens, you must use 'function_id' and not 'function_external_id'"
-        assert excinfo.value.message == exp_err
-        assert excinfo.value.code == 400
-
-        # Verify that the mocked nonce from the first call is sent in the create-schedule call:
-        _, schedule_create_call, _ = mock_function_schedules_response_xid_not_valid_with_oidc.calls
-        req_body = jsgz_load(schedule_create_call.request.body)["items"][0]
-        assert req_body["nonce"] == "very noncy"
-        assert req_body["functionId"] is None
 
     def test_create_schedules_with_function_id_and_client_credentials(
         self, mock_function_schedules_response_oidc_client_credentials, cognite_client
@@ -974,22 +925,10 @@ class TestFunctionSchedulesAPI:
         expected = mock_function_schedules_response_oidc_client_credentials.calls[1].response.json()["items"][0]
         assert expected == res.dump(camel_case=True)
 
-    def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
-            cognite_client.functions.schedules.create(
-                name="my-schedule",
-                function_id=123,
-                function_external_id="user/hello-cognite/hello-cognite:latest",
-                cron_expression="*/5 * * * *",
-                description="Hi",
-                client_credentials={"client_id": "aabbccdd", "client_secret": "xxyyzz"},
-            )
-        assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
-
     def test_create_schedules_with_data(self, mock_function_schedules_response, cognite_client):
         res = cognite_client.functions.schedules.create(
             name="my-schedule",
-            function_external_id="user/hello-cognite/hello-cognite:latest",
+            function_id=123,
             cron_expression="*/5 * * * *",
             description="Hi",
             data={"value": 2},
@@ -1054,7 +993,7 @@ class TestFunctionCallsAPI:
         assert mock_function_calls_filter_response.calls[1].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_calls_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.list(function_id=123, function_external_id="my-function")
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
@@ -1070,7 +1009,7 @@ class TestFunctionCallsAPI:
         assert mock_function_calls_retrieve_response.calls[1].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_call_with_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.retrieve(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
@@ -1090,7 +1029,7 @@ class TestFunctionCallsAPI:
     def test_function_call_logs_by_function_id_and_function_external_id_raises(
         self, mock_function_call_logs_response, cognite_client
     ):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_logs(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
@@ -1133,7 +1072,7 @@ class TestFunctionCallsAPI:
         assert mock_function_call_response_response.calls[0].response.json()["response"] == res
 
     def test_function_call_response_by_function_id_and_function_external_id_raises(self, cognite_client):
-        with pytest.raises(AssertionError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_response(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
@@ -1153,7 +1092,14 @@ def fns_api_with_mock_client(cognite_client):
     return cognite_client.functions
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle):
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes.return_value = FileMetadata(id=123)
@@ -1163,14 +1109,21 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
     assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
-    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
     def validate_file_upload_call(*args, **kwargs):
         assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
-        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
             assert zip_file.testzip() is None
@@ -1195,10 +1148,17 @@ def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid,
     assert file_id == 123
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite):
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes.return_value = FileMetadata(id=123)
+    mock.files.upload_bytes.return_value = FileMetadata(id=123, data_set_id=None)
 
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
     file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
@@ -1207,14 +1167,21 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
     assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
-    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
-@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+@pytest.mark.parametrize(
+    "xid, overwrite",
+    (
+        (None, False),
+        ("xid", True),
+        ("xid", True),
+    ),
+)
 def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite):
     def validate_file_upload_call(*args, **kwargs):
         assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
-        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
             assert zip_file.testzip() is None
@@ -1230,7 +1197,7 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
                 ]
                 # We use splitlines to ignore line ending differences between OSs:
                 assert py_file.read().decode("utf-8").splitlines() == expected_lines
-        return FileMetadata(id=123)
+        return FileMetadata(id=123, data_set_id=None)
 
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes = validate_file_upload_call

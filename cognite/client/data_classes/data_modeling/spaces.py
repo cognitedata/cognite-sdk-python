@@ -1,25 +1,32 @@
 from __future__ import annotations
 
-from typing import Any
+from abc import ABC
+from typing import TYPE_CHECKING, Any
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
+    WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.core import WritableDataModelingResource
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
-class SpaceCore(DataModelingResource):
+class SpaceCore(WritableDataModelingResource["SpaceApply"], ABC):
     """A workspace for data models and instances.
 
     Args:
-        space (str): A unique identifier for space.
+        space (str): A unique identifier for the space.
         description (str | None): Textual description of the space
         name (str | None): Human readable name for the space.
     """
 
-    def __init__(self, space: str, description: str | None = None, name: str | None = None) -> None:
-        self.space = space
+    def __init__(self, space: str, description: str | None, name: str | None) -> None:
+        super().__init__(space)
         self.description = description
         self.name = name
 
@@ -31,34 +38,38 @@ class SpaceApply(SpaceCore):
     """A workspace for data models and instances. This is the write version
 
     Args:
-        space (str): A unique identifier for space.
+        space (str): A unique identifier for the space.
         description (str | None): Textual description of the space
         name (str | None): Human readable name for the space.
-        **_ (Any): No description.
     """
 
-    def __init__(
-        self,
-        space: str,
-        description: str | None = None,
-        name: str | None = None,
-        **_: Any,
-    ) -> None:
+    def __init__(self, space: str, description: str | None = None, name: str | None = None) -> None:
         validate_data_modeling_identifier(space)
         super().__init__(space, description, name)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            description=resource.get("description"),
+            name=resource.get("name"),
+        )
+
+    def as_write(self) -> SpaceApply:
+        """Returns this SpaceApply instance."""
+        return self
 
 
 class Space(SpaceCore):
     """A workspace for data models and instances. This is the read version.
 
     Args:
-        space (str): a unique identifier for the space.
+        space (str): A unique identifier for the space.
         is_global (bool): Whether the space is global or not.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str | None): Textual description of the space
         name (str | None): Human readable name for the space.
-        **_ (Any): No description.
     """
 
     def __init__(
@@ -69,7 +80,6 @@ class Space(SpaceCore):
         created_time: int,
         description: str | None = None,
         name: str | None = None,
-        **_: Any,
     ) -> None:
         super().__init__(space, description, name)
         self.is_global = is_global
@@ -81,6 +91,20 @@ class Space(SpaceCore):
             space=self.space,
             description=self.description,
             name=self.name,
+        )
+
+    def as_write(self) -> SpaceApply:
+        return self.as_apply()
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            is_global=resource["isGlobal"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
+            description=resource.get("description"),
+            name=resource.get("name"),
         )
 
 
@@ -97,7 +121,7 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
         return [item.space for item in self]
 
 
-class SpaceList(CogniteResourceList[Space]):
+class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
     _RESOURCE = Space
 
     def as_ids(self) -> list[str]:
@@ -118,5 +142,8 @@ class SpaceList(CogniteResourceList[Space]):
         """
         return SpaceApplyList(
             resources=[item.as_apply() for item in self],
-            cognite_client=self._cognite_client,
+            cognite_client=self._get_cognite_client(),
         )
+
+    def as_write(self) -> SpaceApplyList:
+        return self.as_apply()

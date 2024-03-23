@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Sequence, overload
+from itertools import groupby
+from operator import itemgetter
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, overload
+
+from typing_extensions import TypeAlias
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -19,11 +24,68 @@ from cognite.client.data_classes import (
     Session,
     SessionList,
 )
-from cognite.client.data_classes.iam import SessionStatus, TokenInspection
+from cognite.client.data_classes.capabilities import (
+    AllScope,
+    Capability,
+    LegacyCapability,
+    ProjectCapability,
+    ProjectCapabilityList,
+    RawAcl,
+    UnknownAcl,
+)
+from cognite.client.data_classes.iam import GroupWrite, SecurityCategoryWrite, SessionStatus, TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+ComparableCapability: TypeAlias = Union[
+    Capability,
+    Sequence[Capability],
+    Dict[str, Any],
+    Sequence[Dict[str, Any]],
+    Group,
+    GroupList,
+    ProjectCapability,
+    ProjectCapabilityList,
+]
+
+
+def _convert_capability_to_tuples(capabilities: ComparableCapability, project: str | None = None) -> set[tuple]:
+    if isinstance(capabilities, ProjectCapability):
+        return ProjectCapabilityList([capabilities]).as_tuples(project)
+    if isinstance(capabilities, ProjectCapabilityList):
+        return capabilities.as_tuples(project)
+
+    if isinstance(capabilities, (dict, Capability)):
+        capabilities = [capabilities]  # type: ignore [assignment]
+    elif isinstance(capabilities, Group):
+        capabilities = capabilities.capabilities or []
+    elif isinstance(capabilities, GroupList):
+        capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
+    if isinstance(capabilities, Sequence):
+        tpls: set[tuple] = set()
+        has_skipped = False
+        for cap in capabilities:
+            if isinstance(cap, dict):
+                cap = Capability.load(cap)
+            if isinstance(cap, UnknownAcl):
+                warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
+                has_skipped = True
+                continue
+            if isinstance(cap, LegacyCapability):
+                # Legacy capabilities are no longer in use, so they are safe to skip.
+                has_skipped = True
+                continue
+            tpls.update(cap.as_tuples())  # type: ignore [union-attr]
+        if tpls or has_skipped:
+            return tpls
+        raise ValueError("No capabilities given")
+    raise TypeError(
+        "input capabilities not understood, expected a ComparableCapability: "
+        f"{ComparableCapability} not {type(capabilities)}"
+    )
 
 
 class IAMAPI(APIClient):
@@ -35,6 +97,144 @@ class IAMAPI(APIClient):
         self.user_profiles = UserProfilesAPI(config, api_version, cognite_client)
         # TokenAPI only uses base_url, so we pass `api_version=None`:
         self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
+
+    @staticmethod
+    def compare_capabilities(
+        existing_capabilities: ComparableCapability,
+        desired_capabilities: ComparableCapability,
+        project: str | None = None,
+        ignore_allscope_meaning: bool = False,
+    ) -> list[Capability]:
+        """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
+
+        Note:
+            Capabilities that are no longer in use by the API will be ignored. These have names prefixed with `Legacy` and
+            all inherit from the base class `LegacyCapability`. If you want to check for these, you must do so manually.
+
+        Args:
+            existing_capabilities (ComparableCapability): List of existing capabilities.
+            desired_capabilities (ComparableCapability): List of wanted capabilities to check against existing.
+            project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
+                to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
+                is used, it will be inferred from the CogniteClient used to call retrieve it via token/inspect.
+            ignore_allscope_meaning (bool): Option on how to treat scopes that encompass other scopes, like allScope. When True,
+                this function will return e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. The
+                same logic applies to RawAcl scoped to a specific database->table, even when the user have access to all tables
+                in that database. Defaults to False.
+
+        Returns:
+            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+
+        Examples:
+
+            Ensure that a user's groups grant access to read- and write for assets in all scope,
+            and events write, scoped to a specific dataset with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
+                >>> client = CogniteClient()
+                >>> my_groups = client.iam.groups.list(all=False)
+                >>> to_check = [
+                ...     AssetsAcl(
+                ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
+                ...         scope=AssetsAcl.Scope.All()),
+                ...     EventsAcl(
+                ...         actions=[EventsAcl.Action.Write],
+                ...         scope=EventsAcl.Scope.DataSet([123]),
+                ... )]
+                >>> missing = client.iam.compare_capabilities(
+                ...     existing_capabilities=my_groups,
+                ...     desired_capabilities=to_check)
+                >>> if missing:
+                ...     pass  # do something
+
+            Capabilities can also be passed as dictionaries:
+
+                >>> to_check = [
+                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
+                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ... ]
+                >>> missing = client.iam.compare_capabilities(
+                ...     existing_capabilities=my_groups,
+                ...     desired_capabilities=to_check)
+
+        Tip:
+            If you just want to check against your existing capabilities, you may use the helper method
+            ``client.iam.verify_capabilities`` instead.
+        """
+        has_capabilties = _convert_capability_to_tuples(existing_capabilities, project)
+        to_check = _convert_capability_to_tuples(desired_capabilities, project)
+        missing = to_check - has_capabilties
+
+        has_capabilties_lookup = {k: set(grp) for k, grp in groupby(sorted(has_capabilties), key=itemgetter(slice(2)))}
+        to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
+
+        missing.clear()
+        raw_group, raw_check_grp = set(), set()
+        for key, check_grp in to_check_lookup.items():
+            group = has_capabilties_lookup.get(key, set())
+            if any(AllScope._scope_name == grp[2] for grp in group):
+                continue  # If allScope exists for capability, we safely skip ahead
+            elif RawAcl._capability_name == next(iter(check_grp))[0]:
+                raw_group.update(group)
+                raw_check_grp.update(check_grp)
+            else:
+                missing.update(check_grp)
+
+        # Special handling of rawAcl which has a "hidden" database scope between "all" and "tables":
+        raw_to_check = {k: sorted(grp) for k, grp in groupby(sorted(raw_check_grp), key=itemgetter(slice(4)))}
+        raw_has_capabs = {k: sorted(grp) for k, grp in groupby(sorted(raw_group), key=itemgetter(slice(4)))}
+        for key, check_db_grp in raw_to_check.items():
+            if (db_group := raw_has_capabs.get(key)) and not db_group[0][-1]:
+                # [0] because empty string sorts first; [-1] is table; if no table -> db scope -> skip ahead
+                continue
+            missing.update(check_db_grp)
+
+        return [Capability.from_tuple(tpl) for tpl in missing]
+
+    def verify_capabilities(
+        self,
+        desired_capabilities: ComparableCapability,
+        ignore_allscope_meaning: bool = False,
+    ) -> list[Capability]:
+        """Helper method to compare your current capabilities with a set of desired capabilities and return any missing.
+
+        Args:
+            desired_capabilities (ComparableCapability): List of desired capabilities to check against existing.
+            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
+                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
+
+        Returns:
+            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+
+        Examples:
+
+            Ensure that the user's credentials have access to read- and write assets in all scope,
+            and write events scoped to a specific dataset with id=123:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
+                >>> client = CogniteClient()
+                >>> to_check = [
+                ...     AssetsAcl(
+                ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
+                ...         scope=AssetsAcl.Scope.All()),
+                ...     EventsAcl(
+                ...         actions=[EventsAcl.Action.Write],
+                ...         scope=EventsAcl.Scope.DataSet([123]),
+                ... )]
+                >>> if missing := client.iam.verify_capabilities(to_check):
+                ...     pass  # do something
+
+            Capabilities can also be passed as dictionaries:
+
+                >>> missing = client.iam.verify_capabilities([
+                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
+                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ... ])
+        """
+        existing_capabilities = self.token.inspect().capabilities
+        return self.compare_capabilities(existing_capabilities, desired_capabilities)
 
 
 class GroupsAPI(APIClient):
@@ -51,20 +251,32 @@ class GroupsAPI(APIClient):
 
         Example:
 
-            List groups::
+            List your own groups:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.groups.list()
+                >>> client = CogniteClient()
+                >>> res = client.iam.groups.list()
+
+            List all groups:
+
+                >>> res = client.iam.groups.list(all=True)
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList._load(res.json()["items"])
+        # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
+        # not raise whenever new Acls/actions/scopes are added to the API. So we specifically allow the 'unknown':
+        return GroupList._load(res.json()["items"], cognite_client=self._cognite_client, allow_unknown=True)
 
-    def create(self, group: Group | Sequence[Group]) -> Group | GroupList:
+    @overload
+    def create(self, group: Group | GroupWrite) -> Group: ...
+
+    @overload
+    def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
+
+    def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
 
         Args:
-            group (Group | Sequence[Group]): Group or list of groups to create.
+            group (Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]): Group or list of groups to create.
         Returns:
             Group | GroupList: The created group(s).
 
@@ -73,13 +285,16 @@ class GroupsAPI(APIClient):
             Create group::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Group
-                >>> c = CogniteClient()
-                >>> my_capabilities = [{"groupsAcl": {"actions": ["LIST"],"scope": {"all": { }}}}]
-                >>> my_group = Group(name="My Group", capabilities=my_capabilities)
-                >>> res = c.iam.groups.create(my_group)
+                >>> from cognite.client.data_classes import GroupWrite
+                >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
+                >>> client = CogniteClient()
+                >>> my_capabilities = [
+                ...     AssetsAcl([AssetsAcl.Action.Read], AssetsAcl.Scope.All()),
+                ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
+                >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
+                >>> res = client.iam.groups.create(my_group)
         """
-        return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group)
+        return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
 
     def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
@@ -92,8 +307,8 @@ class GroupsAPI(APIClient):
             Delete group::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.iam.groups.delete(1)
+                >>> client = CogniteClient()
+                >>> client.iam.groups.delete(1)
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
@@ -115,18 +330,30 @@ class SecurityCategoriesAPI(APIClient):
             List security categories::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.security_categories.list()
+                >>> client = CogniteClient()
+                >>> res = client.iam.security_categories.list()
         """
         return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
+    @overload
+    def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
+
+    @overload
     def create(
-        self, security_category: SecurityCategory | Sequence[SecurityCategory]
+        self, security_category: Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]
+    ) -> SecurityCategoryList: ...
+
+    def create(
+        self,
+        security_category: SecurityCategory
+        | SecurityCategoryWrite
+        | Sequence[SecurityCategory]
+        | Sequence[SecurityCategoryWrite],
     ) -> SecurityCategory | SecurityCategoryList:
         """`Create one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
-            security_category (SecurityCategory | Sequence[SecurityCategory]): Security category or list of categories to create.
+            security_category (SecurityCategory | SecurityCategoryWrite | Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]): Security category or list of categories to create.
 
         Returns:
             SecurityCategory | SecurityCategoryList: The created security category or categories.
@@ -136,13 +363,16 @@ class SecurityCategoriesAPI(APIClient):
             Create security category::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SecurityCategory
-                >>> c = CogniteClient()
-                >>> my_category = SecurityCategory(name="My Category")
-                >>> res = c.iam.security_categories.create(my_category)
+                >>> from cognite.client.data_classes import SecurityCategoryWrite
+                >>> client = CogniteClient()
+                >>> my_category = SecurityCategoryWrite(name="My Category")
+                >>> res = client.iam.security_categories.create(my_category)
         """
         return self._create_multiple(
-            list_cls=SecurityCategoryList, resource_cls=SecurityCategory, items=security_category
+            list_cls=SecurityCategoryList,
+            resource_cls=SecurityCategory,
+            items=security_category,
+            input_resource_cls=SecurityCategoryWrite,
         )
 
     def delete(self, id: int | Sequence[int]) -> None:
@@ -156,8 +386,8 @@ class SecurityCategoriesAPI(APIClient):
             Delete security category::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.iam.security_categories.delete(1)
+                >>> client = CogniteClient()
+                >>> client.iam.security_categories.delete(1)
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
@@ -176,10 +406,11 @@ class TokenAPI(APIClient):
             Inspect token::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.token.inspect()
+                >>> client = CogniteClient()
+                >>> res = client.iam.token.inspect()
         """
-        return TokenInspection._load(self._get("/api/v1/token/inspect").json())
+        # To not raise whenever new Acls/actions/scopes are added to the API, we specifically allow the unknown:
+        return TokenInspection.load(self._get("/api/v1/token/inspect").json(), self._cognite_client, allow_unknown=True)
 
 
 class SessionsAPI(APIClient):
@@ -236,7 +467,7 @@ class SessionsAPI(APIClient):
             client_credentials = ClientCredentials(client_credentials["client_id"], client_credentials["client_secret"])
 
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
-        return CreatedSession._load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
+        return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
     def revoke(self, id: int | Sequence[int]) -> SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
@@ -254,12 +485,10 @@ class SessionsAPI(APIClient):
         return SessionList._load(response_json["items"])
 
     @overload
-    def retrieve(self, id: int) -> Session:
-        ...
+    def retrieve(self, id: int) -> Session: ...
 
     @overload
-    def retrieve(self, id: Sequence[int]) -> SessionList:
-        ...
+    def retrieve(self, id: Sequence[int]) -> SessionList: ...
 
     def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Retrieves sessions with given IDs. <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_

@@ -4,14 +4,16 @@ import random
 import re
 import string
 from functools import lru_cache
-from typing import Any, Iterator, Sequence
+from typing import Any, Iterator
+
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class DrawTables:
-    HLINE = "\N{box drawings light horizontal}"
-    VLINE = "\N{box drawings light vertical}"
-    XLINE = "\N{box drawings light vertical and horizontal}"
-    TOPLINE = "\N{box drawings light down and horizontal}"
+    HLINE = "\N{BOX DRAWINGS LIGHT HORIZONTAL}"
+    VLINE = "\N{BOX DRAWINGS LIGHT VERTICAL}"
+    XLINE = "\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}"
+    TOPLINE = "\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}"
 
 
 def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
@@ -30,7 +32,7 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
+def iterable_to_case(seq: SequenceNotStr[str], camel_case: bool) -> Iterator[str]:
     if camel_case:
         yield from map(to_camel_case, seq)
     else:
@@ -38,7 +40,10 @@ def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
 
 
 def convert_all_keys_to_camel_case(dct: dict[str, Any]) -> dict[str, Any]:
-    return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
+    try:
+        return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
+    except AttributeError:
+        raise TypeError("Expected a dictionary")
 
 
 def convert_all_keys_to_camel_case_recursive(dct: dict[str, Any]) -> dict[str, Any]:

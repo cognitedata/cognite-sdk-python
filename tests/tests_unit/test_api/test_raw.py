@@ -178,7 +178,7 @@ class TestRawTables:
 
     def test_get_rows_in_table(self, cognite_client, mock_raw_table_response, mock_raw_row_response):
         tables = cognite_client.raw.tables.list(db_name="db1")
-        exp_rows = RowList._load([{"key": "row1", "columns": {"c1": 1, "c2": "2"}}])
+        exp_rows = RowList.load([{"key": "row1", "columns": {"c1": 1, "c2": "2"}}])
         assert tables[0].rows() == exp_rows
 
 
@@ -238,7 +238,7 @@ class TestRawRows:
         assert "columns=%2C&" in mock_raw_row_response.calls[0].request.path_url + "&"
 
     def test_list_cols_str_not_supported(self, cognite_client, mock_raw_row_response):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             cognite_client.raw.rows.list(db_name="db1", table_name="table1", columns="a,b")
 
     def test_iter_single(self, cognite_client, mock_raw_row_response):
@@ -287,8 +287,39 @@ class TestRawRows:
         assert "columns=%2C&" in mock_raw_row_response.calls[0].request.path_url + "&"
 
     def test_iter_cols_str_not_supported(self, cognite_client, mock_raw_row_response):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             cognite_client.raw.rows(db_name="db1", table_name="table1", columns="a,b")
+
+
+def test_raw_row__direct_column_access():
+    # Verify additional methods: 'get', '__getitem__', '__setitem__', '__delitem__' and '__contains__'
+    key = "itsamee"
+    row = Row(key="foo", columns={"bar": 42, key: "mario"})
+    assert row[key] == row.columns[key] == row.get(key) == "mario"
+
+    row[key] = "luigi?"
+    assert row[key] == row.columns[key] == row.get(key) == "luigi?"
+
+    del row[key]
+    assert key not in row
+    assert key not in row.columns
+    assert row.get(key) is None
+
+    row.columns[key] = "wario?"
+    assert row[key] == row.columns[key] == "wario?"
+
+    del row.columns[key]
+    assert key not in row
+    assert key not in row.columns
+
+    del row["bar"]
+    assert row.columns == {}
+    with pytest.raises(KeyError, match="^'wrong-key'$"):
+        del row["wrong-key"]
+
+    row.columns = None
+    with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
+        del row["wrong-key"]
 
 
 @pytest.mark.dsl

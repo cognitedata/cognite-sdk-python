@@ -80,7 +80,7 @@ class _RetryTracker:
         backoff_time_adjusted = self._max_backoff_and_jitter(backoff_time)
         return backoff_time_adjusted
 
-    def should_retry(self, status_code: int | None) -> bool:
+    def should_retry(self, status_code: int | None, is_auto_retryable: bool = False) -> bool:
         if self.total >= self.config.max_retries_total:
             return False
         if self.status > 0 and self.status >= self.config.max_retries_status:
@@ -89,7 +89,7 @@ class _RetryTracker:
             return False
         if self.connect > 0 and self.connect >= self.config.max_retries_connect:
             return False
-        if status_code and status_code not in self.config.status_codes_to_retry:
+        if status_code and status_code not in self.config.status_codes_to_retry and not is_auto_retryable:
             return False
         return True
 
@@ -110,23 +110,28 @@ class HTTPClient:
     def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         retry_tracker = self.retry_tracker_factory(self.config)
         headers = kwargs.get("headers")
-        last_status = None
         while True:
             try:
                 res = self._do_request(method=method, url=url, **kwargs)
-                last_status = res.status_code
+                # Cache .json() return value in order to avoid redecoding JSON if called multiple times
+                res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
                 retry_tracker.status += 1
-                if not retry_tracker.should_retry(status_code=last_status):
-                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
+
+                try:
+                    is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
+                except Exception:
+                    # if the response is not JSON or it doesn't conform to the api design guide,
+                    # we assume it's not auto-retryable
+                    is_auto_retryable = False
+                if not retry_tracker.should_retry(status_code=res.status_code, is_auto_retryable=is_auto_retryable):
                     return res
             except CogniteReadTimeout as e:
                 retry_tracker.read += 1
-                if not retry_tracker.should_retry(status_code=last_status):
+                if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):
                     raise e
             except CogniteConnectionError as e:
                 retry_tracker.connect += 1
-                if not retry_tracker.should_retry(status_code=last_status):
+                if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):
                     raise e
 
             # During a backoff loop, our credentials might expire, so we check and maybe refresh:

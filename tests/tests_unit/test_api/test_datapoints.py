@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 import re
 from datetime import datetime, timezone
@@ -12,6 +11,7 @@ from cognite.client import CogniteClient
 from cognite.client._api.datapoints import DatapointsBin
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._time import granularity_to_ms, import_zoneinfo
 from tests.utils import jsgz_load
 
@@ -55,7 +55,7 @@ def mock_retrieve_latest(rsps, cognite_client):
                     "datapoints": [{"timestamp": before - 1, "value": random()}],
                 }
             )
-        return 200, {}, json.dumps({"items": items})
+        return 200, {}, _json.dumps({"items": items})
 
     rsps.add_callback(
         rsps.POST,
@@ -224,7 +224,7 @@ class TestInsertDatapoints:
     @pytest.mark.parametrize("ts_key, value_key", [("timestamp", "values"), ("timstamp", "value")])
     def test_invalid_datapoints_keys(self, cognite_client, ts_key, value_key):
         dps = [{ts_key: i * 1e11, value_key: i} for i in range(1, 11)]
-        with pytest.raises(AssertionError, match="is missing the"):
+        with pytest.raises(KeyError, match="A datapoint is missing one or both keys"):
             cognite_client.time_series.data.insert(dps, id=1)
 
     def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints, monkeypatch):
@@ -242,7 +242,7 @@ class TestInsertDatapoints:
         } in request_bodies
 
     def test_insert_datapoints_no_data(self, cognite_client):
-        with pytest.raises(AssertionError, match="No datapoints provided"):
+        with pytest.raises(ValueError, match="No datapoints provided"):
             cognite_client.time_series.data.insert(id=1, datapoints=[])
 
     def test_insert_datapoints_in_multiple_time_series(self, cognite_client, mock_post_datapoints):
@@ -323,7 +323,7 @@ class TestDeleteDatapoints:
             cognite_client.time_series.data.delete_range("1d-ago", "now", id, external_id)
 
     def test_delete_range_start_after_end(self, cognite_client):
-        with pytest.raises(AssertionError, match="must be"):
+        with pytest.raises(ValueError, match="must be"):
             cognite_client.time_series.data.delete_range(1, 0, 1)
 
     def test_delete_ranges(self, cognite_client, mock_delete_datapoints):
@@ -396,7 +396,7 @@ class TestDatapointsObject:
         assert Datapoints(id=1, timestamp=[1, 2], value=[1, 2]) == dps[:2]
 
     def test_load(self, cognite_client):
-        res = Datapoints._load(
+        res = Datapoints.load(
             {
                 "id": 1,
                 "externalId": "1",
@@ -415,7 +415,7 @@ class TestDatapointsObject:
         assert res.is_string is False
 
     def test_load_string(self, cognite_client):
-        res = Datapoints._load(
+        res = Datapoints.load(
             {
                 "id": 1,
                 "externalId": "1",
@@ -774,7 +774,7 @@ class TestRetrieveDataPointsInTz:
                 },
                 "Europe/Oslo",
                 "Europe/Oslo",
-                "Granularity above the maximum limit, 11 years.",
+                r"^Granularity, '12years', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
                 id="Granularity above maximum aggregation limit in hours",
             ),
             pytest.param(
@@ -787,7 +787,7 @@ class TestRetrieveDataPointsInTz:
                 },
                 "Europe/Oslo",
                 "Europe/Oslo",
-                "Granularity above the maximum limit, 45 quarters.",
+                r"^Granularity, '48quarters', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
                 id="Granularity above maximum aggregation limit in quarters",
             ),
             pytest.param(
@@ -835,13 +835,11 @@ class TestRetrieveDataPointsInTz:
     def test_retrieve_data_points_in_tz_invalid_user_input(
         args: dict, expected_error_message: str, start_tz: str | None, end_tz: str | None, cognite_client: CogniteClient
     ):
-        # Arrange
         ZoneInfo = import_zoneinfo()
         if start_tz is not None:
             args["start"] = args["start"].astimezone(ZoneInfo(start_tz))
         if end_tz is not None:
             args["end"] = args["end"].astimezone(ZoneInfo(end_tz))
 
-        # Act and Assert
         with pytest.raises(ValueError, match=expected_error_message):
             cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)

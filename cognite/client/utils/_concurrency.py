@@ -1,41 +1,45 @@
 from __future__ import annotations
 
 import functools
-import inspect
 from collections import UserList
-from concurrent.futures import CancelledError, ThreadPoolExecutor
-from copy import copy
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
-    Iterator,
     Literal,
+    NoReturn,
     Protocol,
     Sequence,
     TypeVar,
 )
 
+from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
-from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
-
-if TYPE_CHECKING:
-    from types import TracebackType
+from cognite.client.utils._auxiliary import no_op
 
 
 class TasksSummary:
     def __init__(
-        self, successful_tasks: list, unknown_tasks: list, failed_tasks: list, results: list, exceptions: list
+        self,
+        successful_tasks: list,
+        unknown_tasks: list,
+        failed_tasks: list,
+        skipped_tasks: list,
+        results: list,
+        exceptions: list,
     ) -> None:
         self.successful_tasks = successful_tasks
         self.unknown_tasks = unknown_tasks
         self.failed_tasks = failed_tasks
+        self.skipped_tasks = skipped_tasks
         self.results = results
-        self.exceptions = exceptions
 
-    def joined_results(self, unwrap_fn: Callable | None = None) -> list:
-        unwrap_fn = unwrap_fn or (lambda x: x)
+        self.not_found_error: Exception | None = None
+        self.duplicated_error: Exception | None = None
+        self.unknown_error: Exception | None = None
+        self.missing, self.duplicated = self._inspect_exceptions(exceptions)
+
+    def joined_results(self, unwrap_fn: Callable = no_op) -> list:
         joined_results: list = []
         for result in self.results:
             unwrapped = unwrap_fn(result)
@@ -47,117 +51,91 @@ class TasksSummary:
 
     def raise_compound_exception_if_failed_tasks(
         self,
-        task_unwrap_fn: Callable | None = None,
+        task_unwrap_fn: Callable = no_op,
         task_list_element_unwrap_fn: Callable | None = None,
-        str_format_element_fn: Callable | None = None,
+        str_format_element_fn: Callable = no_op,
     ) -> None:
-        if not self.exceptions:
+        if not (self.unknown_error or self.not_found_error or self.duplicated_error):
             return None
-        task_unwrap_fn = (lambda x: x) if task_unwrap_fn is None else task_unwrap_fn
-        if task_list_element_unwrap_fn is not None:
-            successful = []
-            for t in self.successful_tasks:
-                successful.extend([task_list_element_unwrap_fn(el) for el in task_unwrap_fn(t)])
-            unknown = []
-            for t in self.unknown_tasks:
-                unknown.extend([task_list_element_unwrap_fn(el) for el in task_unwrap_fn(t)])
-            failed = []
-            for t in self.failed_tasks:
-                failed.extend([task_list_element_unwrap_fn(el) for el in task_unwrap_fn(t)])
-        else:
+
+        if task_list_element_unwrap_fn is None:
             successful = [task_unwrap_fn(t) for t in self.successful_tasks]
             unknown = [task_unwrap_fn(t) for t in self.unknown_tasks]
             failed = [task_unwrap_fn(t) for t in self.failed_tasks]
+            skipped = [task_unwrap_fn(t) for t in self.skipped_tasks]
+        else:
+            successful = [task_list_element_unwrap_fn(el) for t in self.successful_tasks for el in task_unwrap_fn(t)]
+            unknown = [task_list_element_unwrap_fn(el) for t in self.unknown_tasks for el in task_unwrap_fn(t)]
+            failed = [task_list_element_unwrap_fn(el) for t in self.failed_tasks for el in task_unwrap_fn(t)]
+            skipped = [task_list_element_unwrap_fn(el) for t in self.skipped_tasks for el in task_unwrap_fn(t)]
 
-        collect_exc_info_and_raise(
-            self.exceptions, successful=successful, failed=failed, unknown=unknown, unwrap_fn=str_format_element_fn
-        )
+        task_lists = dict(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
+        if self.unknown_error:
+            self._raise_basic_api_error(str_format_element_fn, **task_lists)
+        if self.not_found_error:
+            self._raise_not_found_error(str_format_element_fn, **task_lists)
+        if self.duplicated_error:
+            self._raise_duplicated_error(str_format_element_fn, **task_lists)
 
-    def raise_first_encountered_exception(self) -> None:
-        if self.exceptions:
-            raise self.exceptions[0]
+    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list]:
+        missing, duplicated = [], []
+        for exc in exceptions:
+            if not isinstance(exc, CogniteAPIError):
+                self.unknown_error = exc
+                continue
 
-
-def collect_exc_info_and_raise(
-    exceptions: list[Exception],
-    successful: list | None = None,
-    failed: list | None = None,
-    unknown: list | None = None,
-    unwrap_fn: Callable | None = None,
-) -> None:
-    missing: list = []
-    duplicated: list = []
-    missing_exc = None
-    dup_exc = None
-    unknown_exc: Exception | None = None
-    for exc in exceptions:
-        if isinstance(exc, CogniteAPIError):
-            if exc.code in [400, 422] and exc.missing is not None:
+            if exc.code in (400, 422) and exc.missing is not None:
                 missing.extend(exc.missing)
-                missing_exc = exc
+                self.not_found_error = exc
+
             elif exc.code == 409 and exc.duplicated is not None:
                 duplicated.extend(exc.duplicated)
-                dup_exc = exc
+                self.duplicated_error = exc
             else:
-                unknown_exc = exc
-        else:
-            unknown_exc = exc
+                self.unknown_error = exc
+        return missing, duplicated
 
-    if unknown_exc:
-        if isinstance(unknown_exc, CogniteAPIError) and (failed or unknown):
+    def _raise_basic_api_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
+        if isinstance(self.unknown_error, CogniteAPIError) and (task_lists["failed"] or task_lists["unknown"]):
             raise CogniteAPIError(
-                message=unknown_exc.message,
-                code=unknown_exc.code,
-                x_request_id=unknown_exc.x_request_id,
-                missing=missing,
-                duplicated=duplicated,
-                successful=successful,
-                failed=failed,
-                unknown=unknown,
+                message=self.unknown_error.message,
+                code=self.unknown_error.code,
+                x_request_id=self.unknown_error.x_request_id,
+                missing=self.missing,
+                duplicated=self.duplicated,
+                extra=self.unknown_error.extra,
                 unwrap_fn=unwrap_fn,
-                extra=unknown_exc.extra,
+                **task_lists,
             )
-        raise unknown_exc
+        raise self.unknown_error  # type: ignore [misc]
 
-    if missing_exc:
-        raise CogniteNotFoundError(
-            not_found=missing, successful=successful, failed=failed, unknown=unknown, unwrap_fn=unwrap_fn
-        ) from missing_exc
+    def _raise_not_found_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
+        raise CogniteNotFoundError(self.missing, unwrap_fn=unwrap_fn, **task_lists) from self.not_found_error
 
-    if dup_exc:
-        raise CogniteDuplicatedError(
-            duplicated=duplicated, successful=successful, failed=failed, unknown=unknown, unwrap_fn=unwrap_fn
-        ) from dup_exc
+    def _raise_duplicated_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
+        raise CogniteDuplicatedError(self.duplicated, unwrap_fn=unwrap_fn, **task_lists) from self.duplicated_error
 
 
 T_Result = TypeVar("T_Result", covariant=True)
 
 
 class TaskExecutor(Protocol):
-    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]:
-        ...
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]: ...
 
 
 class TaskFuture(Protocol[T_Result]):
-    def result(self) -> T_Result:
-        ...
+    def result(self) -> T_Result: ...
 
 
 class SyncFuture(TaskFuture[T_Result]):
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
         self._task = functools.partial(fn, *args, **kwargs)
         self._result: T_Result | None = None
-        self._is_cancelled = False
 
     def result(self) -> T_Result:
-        if self._is_cancelled:
-            raise CancelledError
         if self._result is None:
             self._result = self._task()
         return self._result
-
-    def cancel(self) -> None:
-        self._is_cancelled = True
 
 
 class MainThreadExecutor(TaskExecutor):
@@ -177,106 +155,165 @@ class MainThreadExecutor(TaskExecutor):
         self._work_queue = AlwaysEmpty()
 
     def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
-        if "priority" in inspect.signature(fn).parameters:
-            raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
-        kwargs.pop("priority", None)
         return SyncFuture(fn, *args, **kwargs)
 
-    def shutdown(self, wait: bool = False) -> None:
-        return None
 
-    @staticmethod
-    def as_completed(it: Iterable[SyncFuture]) -> Iterator[SyncFuture]:
-        return iter(copy(it))
-
-    def __enter__(self) -> MainThreadExecutor:
-        return self
-
-    def __exit__(
-        self,
-        type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        self.shutdown()
-
-
+_DATA_MODELING_MAX_WORKERS = 1
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
+_DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 
 
 class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
-    priority_executor_type: Literal["priority_threadpool", "mainthread"] = "priority_threadpool"
 
+    @classmethod
+    def uses_threadpool(cls) -> bool:
+        return cls.executor_type == "threadpool"
 
-def get_executor(max_workers: int) -> TaskExecutor:
-    global _THREAD_POOL_EXECUTOR_SINGLETON
+    @classmethod
+    def uses_mainthread(cls) -> bool:
+        return cls.executor_type == "mainthread"
 
-    if max_workers < 1:
-        raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
+    @classmethod
+    def get_executor(cls, max_workers: int) -> TaskExecutor:
+        if cls.uses_threadpool():
+            return cls.get_thread_pool_executor(max_workers)
+        elif cls.uses_mainthread():
+            return cls.get_mainthread_executor()
+        raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
 
-    if ConcurrencySettings.executor_type == "threadpool":
+    @classmethod
+    def get_mainthread_executor(cls) -> TaskExecutor:
+        return _MAIN_THREAD_EXECUTOR_SINGLETON
+
+    @classmethod
+    def get_thread_pool_executor(cls, max_workers: int) -> ThreadPoolExecutor:
+        assert cls.uses_threadpool(), "use get_executor instead"
+        global _THREAD_POOL_EXECUTOR_SINGLETON
+
+        if max_workers < 1:
+            raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
         try:
-            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
+            executor = _THREAD_POOL_EXECUTOR_SINGLETON
         except NameError:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
-    elif ConcurrencySettings.executor_type == "mainthread":
-        executor = _MAIN_THREAD_EXECUTOR_SINGLETON
-    else:
-        raise RuntimeError(f"Invalid executor type '{ConcurrencySettings.executor_type}'")
-    return executor
+        return executor
+
+    @classmethod
+    def get_thread_pool_executor_or_raise(cls, max_workers: int) -> ThreadPoolExecutor:
+        if cls.uses_threadpool():
+            return cls.get_thread_pool_executor(max_workers)
+
+        if _RUNNING_IN_BROWSER:
+            raise RuntimeError("The method you tried to use is not available in Pyodide/WASM")
+        raise RuntimeError(
+            "The method you tried to use requires a version of Python with a working implementation of threads."
+        )
+
+    @classmethod
+    def get_data_modeling_executor(cls) -> ThreadPoolExecutor:
+        """
+        The data modeling backend has different concurrency limits compared with the rest of CDF.
+        Thus, we use a dedicated executor for these endpoints to match the backend requirements.
+
+        Returns:
+            ThreadPoolExecutor: The data modeling executor.
+        """
+        if cls.uses_mainthread():
+            return cls.get_mainthread_executor()  # type: ignore [return-value]
+
+        global _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
+        try:
+            executor = _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
+        except NameError:
+            # TPE has not been initialized
+            executor = _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(_DATA_MODELING_MAX_WORKERS)
+        return executor
 
 
-def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
-    if max_workers < 1:
-        raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
+def execute_tasks_serially(
+    func: Callable[..., T_Result],
+    tasks: Sequence[tuple | dict],
+    fail_fast: bool = False,
+) -> TasksSummary:
+    results, exceptions = [], []
+    successful_tasks, failed_tasks, unknown_result_tasks, skipped_tasks = [], [], [], []
 
-    if ConcurrencySettings.priority_executor_type == "priority_threadpool":
-        return PriorityThreadPoolExecutor(max_workers)
-    elif ConcurrencySettings.priority_executor_type == "mainthread":
-        return MainThreadExecutor()  # type: ignore [return-value]
+    for i, task in enumerate(tasks):
+        try:
+            if isinstance(task, dict):
+                results.append(func(**task))
+            elif isinstance(task, tuple):
+                results.append(func(*task))
+            else:
+                continue
+            successful_tasks.append(task)
 
-    raise RuntimeError(f"Invalid priority-queue executor type '{ConcurrencySettings.priority_executor_type}'")
+        except Exception as err:
+            exceptions.append(err)
+            if classify_error(err) == "failed":
+                failed_tasks.append(task)
+            else:
+                unknown_result_tasks.append(task)
+
+            if fail_fast:
+                skipped_tasks = list(tasks[i + 1 :])
+                break
+
+    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, skipped_tasks, results, exceptions)
 
 
 def execute_tasks(
     func: Callable[..., T_Result],
-    tasks: Sequence[tuple] | list[dict],
+    tasks: Sequence[tuple | dict],
     max_workers: int,
-    executor: TaskExecutor | None = None,
+    fail_fast: bool = False,
+    executor: ThreadPoolExecutor | None = None,
 ) -> TasksSummary:
     """
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
-    be changed using ExecutorSettings.executor_type.
+    be changed using ConcurrencySettings.executor_type.
     """
-    executor = executor or get_executor(max_workers)
-    futures = []
+    if ConcurrencySettings.uses_mainthread() or isinstance(executor, MainThreadExecutor):
+        return execute_tasks_serially(func, tasks, fail_fast)
+
+    executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
+
+    futures_dct: dict[Future, tuple | dict] = {}
     for task in tasks:
         if isinstance(task, dict):
-            futures.append(executor.submit(func, **task))
+            futures_dct[executor.submit(func, **task)] = task
         elif isinstance(task, tuple):
-            futures.append(executor.submit(func, *task))
+            futures_dct[executor.submit(func, *task)] = task
 
-    successful_tasks = []
-    failed_tasks = []
-    unknown_result_tasks = []
-    results = []
-    exceptions = []
-    for i, f in enumerate(futures):
+    results, exceptions = [], []
+    successful_tasks, failed_tasks, unknown_result_tasks, skipped_tasks = [], [], [], []
+
+    for fut in as_completed(futures_dct):
+        task = futures_dct[fut]
         try:
-            res = f.result()
-            successful_tasks.append(tasks[i])
+            res = fut.result()
+            successful_tasks.append(task)
             results.append(res)
-        except Exception as e:
-            exceptions.append(e)
-            if classify_error(e) == "failed":
-                failed_tasks.append(tasks[i])
-            else:
-                unknown_result_tasks.append(tasks[i])
+        except CancelledError:
+            # In fail-fast mode, after an error has been raised, we attempt to cancel and skip tasks:
+            skipped_tasks.append(task)
+            continue
 
-    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
+        except Exception as err:
+            exceptions.append(err)
+            if classify_error(err) == "failed":
+                failed_tasks.append(task)
+            else:
+                unknown_result_tasks.append(task)
+
+            if fail_fast:
+                for fut in futures_dct:
+                    fut.cancel()
+
+    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, skipped_tasks, results, exceptions)
 
 
 def classify_error(err: Exception) -> Literal["failed", "unknown"]:

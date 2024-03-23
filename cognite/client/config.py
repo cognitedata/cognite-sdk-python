@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import getpass
 import pprint
+import warnings
 from contextlib import suppress
 
 from cognite.client._version import __api_subversion__
@@ -26,6 +27,7 @@ class GlobalConfig:
             Defaults to 50.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
         proxies (Dict[str, str]): Dictionary mapping from protocol to url. e.g. {"https": "http://10.10.1.10:1080"}
+        max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
     """
 
     def __init__(self) -> None:
@@ -39,6 +41,7 @@ class GlobalConfig:
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
         self.proxies: dict[str, str] | None = {}
+        self.max_workers: int = 5
 
 
 global_config = GlobalConfig()
@@ -53,7 +56,8 @@ class ClientConfig:
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str | None): API subversion
         base_url (str | None): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        max_workers (int | None): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
+        max_workers (int | None): DEPRECATED. Use global_config.max_workers instead.
+            Max number of workers to spawn when parallelizing data fetching. Defaults to 5.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 30 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
@@ -78,16 +82,15 @@ class ClientConfig:
         self.credentials = credentials
         self.api_subversion = api_subversion or __api_subversion__
         self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
-        self.max_workers = max_workers if max_workers is not None else 10
+        if max_workers is not None:
+            # TODO: Remove max_workers from ClientConfig in next major version
+            self.max_workers = max_workers  # Will trigger a deprecation warning
         self.headers = headers or {}
         self.timeout = timeout or 30
         self.file_transfer_timeout = file_transfer_timeout or 600
-        self.debug = debug
 
         if debug:
-            from cognite.client.utils._logging import _configure_logger_for_debug_mode
-
-            _configure_logger_for_debug_mode()
+            self.debug = True
 
         if not global_config.disable_pypi_version_check:
             with suppress(Exception):  # PyPI might be unreachable, if so, skip version check
@@ -96,12 +99,41 @@ class ClientConfig:
                 _check_client_has_newest_major_version()
         self._validate_config()
 
+    @property
+    def max_workers(self) -> int:
+        return global_config.max_workers
+
+    @max_workers.setter
+    def max_workers(self, value: int) -> None:
+        global_config.max_workers = value
+        warnings.warn(
+            "Passing (or setting) max_workers to ClientConfig is deprecated. Please use global_config.max_workers instead",
+            DeprecationWarning,
+        )
+
+    @property
+    def debug(self) -> bool:
+        from cognite.client.utils._logging import _is_debug_logging_enabled
+
+        return _is_debug_logging_enabled()
+
+    @debug.setter
+    def debug(self, value: bool) -> None:
+        from cognite.client.utils._logging import _configure_logger_for_debug_mode, _disable_debug_logging
+
+        if value:
+            _configure_logger_for_debug_mode()
+        else:
+            _disable_debug_logging()
+
     def _validate_config(self) -> None:
         if not self.project:
             raise ValueError(f"Invalid value for ClientConfig.project: <{self.project}>")
+        if not self.base_url:
+            raise ValueError(f"Invalid value for ClientConfig.base_url: <{self.base_url}>")
 
     def __str__(self) -> str:
-        return pprint.pformat(self.__dict__, indent=4)
+        return pprint.pformat({"max_workers": self.max_workers, **self.__dict__}, indent=4)
 
     def _repr_html_(self) -> str:
         return str(self)

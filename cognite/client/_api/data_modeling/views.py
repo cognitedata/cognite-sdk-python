@@ -11,12 +11,12 @@ from cognite.client.data_classes.data_modeling.ids import (
     _load_identifier,
 )
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
-
-from ._data_modeling_executor import get_data_modeling_executor
+from cognite.client.utils._concurrency import ConcurrencySettings
 
 
 class ViewsAPI(APIClient):
     _RESOURCE_PATH = "/models/views"
+    _LIST_LIMIT = 100
 
     @overload
     def __call__(
@@ -27,8 +27,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[View]:
-        ...
+    ) -> Iterator[View]: ...
 
     @overload
     def __call__(
@@ -39,8 +38,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[ViewList]:
-        ...
+    ) -> Iterator[ViewList]: ...
 
     def __call__(
         self,
@@ -111,8 +109,8 @@ class ViewsAPI(APIClient):
         Examples:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
 
         """
         identifier = _load_identifier(ids, "view")
@@ -121,7 +119,7 @@ class ViewsAPI(APIClient):
             resource_cls=View,
             identifiers=identifier,
             params={"includeInheritedProperties": include_inherited_properties},
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
         if all_versions is True:
             return views
@@ -140,8 +138,8 @@ class ViewsAPI(APIClient):
             Delete views by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
         """
         deleted_views = cast(
             list,
@@ -149,7 +147,7 @@ class ViewsAPI(APIClient):
                 identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
-                executor=get_data_modeling_executor(),
+                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
@@ -179,21 +177,21 @@ class ViewsAPI(APIClient):
             List 5 views::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> view_list = c.data_modeling.views.list(limit=5)
+                >>> client = CogniteClient()
+                >>> view_list = client.data_modeling.views.list(limit=5)
 
             Iterate over views::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for view in c.data_modeling.views:
+                >>> client = CogniteClient()
+                >>> for view in client.data_modeling.views:
                 ...     view # do something with the view
 
             Iterate over chunks of views to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for view_list in c.data_modeling.views(chunk_size=10):
+                >>> client = CogniteClient()
+                >>> for view_list in client.data_modeling.views(chunk_size=10):
                 ...     view_list # do something with the views
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
@@ -203,12 +201,10 @@ class ViewsAPI(APIClient):
         )
 
     @overload
-    def apply(self, view: Sequence[ViewApply]) -> ViewList:
-        ...
+    def apply(self, view: Sequence[ViewApply]) -> ViewList: ...
 
     @overload
-    def apply(self, view: ViewApply) -> View:
-        ...
+    def apply(self, view: ViewApply) -> View: ...
 
     def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
@@ -224,16 +220,84 @@ class ViewsAPI(APIClient):
             Create new views::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ViewApply
-                >>> c = CogniteClient()
-                >>> views = [ViewApply(space="mySpace",external_id="myView",version="v1"),
-                ... ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
-                >>> res = c.data_modeling.views.apply(views)
+                >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
+                >>> client = CogniteClient()
+                >>> views = [
+                ...     ViewApply(
+                ...         space="mySpace",
+                ...         external_id="myView",
+                ...         version="v1",
+                ...         properties={
+                ...             "someAlias": MappedPropertyApply(
+                ...                 container=ContainerId("mySpace", "myContainer"),
+                ...                 container_property_identifier="someProperty",
+                ...             ),
+                ...         }
+                ...    )
+                ... ]
+                >>> res = client.data_modeling.views.apply(views)
+
+
+            Create views with edge relations::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ContainerId,
+                ...     DirectRelationReference,
+                ...     MappedPropertyApply,
+                ...     MultiEdgeConnectionApply,
+                ...     ViewApply,
+                ...     ViewId
+                ... )
+                >>> client = CogniteClient()
+                >>> movie_view = ViewApply(
+                ...     space="imdb",
+                ...     external_id="Movie",
+                ...     version="1",
+                ...     name="Movie",
+                ...     properties={
+                ...         "name": MappedPropertyApply(
+                ...             container=ContainerId("imdb", "Movie"),
+                ...             name="name",
+                ...             container_property_identifier="name",
+                ...         ),
+                ...         "actors": MultiEdgeConnectionApply(
+                ...             type=DirectRelationReference(
+                ...                 space="imdb", external_id="Movie.actors"
+                ...             ),
+                ...             source=ViewId("imdb", "Actor", "1"),
+                ...             name="actors",
+                ...             direction="outwards",
+                ...         ),
+                ...     }
+                ... )
+                >>> actor_view = ViewApply(
+                ...     space="imdb",
+                ...     external_id="Actor",
+                ...     version="1",
+                ...     name="Actor",
+                ...     properties={
+                ...         "name": MappedPropertyApply(
+                ...             container=ContainerId("imdb", "Actor"),
+                ...             name="name",
+                ...             container_property_identifier="name",
+                ...         ),
+                ...         "movies": MultiEdgeConnectionApply(
+                ...             type=DirectRelationReference(
+                ...                 space="imdb", external_id="Movie.actors"
+                ...             ),
+                ...             source=ViewId("imdb", "Movie", "1"),
+                ...             name="movies",
+                ...             direction="inwards",
+                ...         ),
+                ...     }
+                ... )
+                >>> res = client.data_modeling.views.apply([movie_view, actor_view])
         """
         return self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
             items=view,
             input_resource_cls=ViewApply,
-            executor=get_data_modeling_executor(),
+            executor=ConcurrencySettings.get_data_modeling_executor(),
         )

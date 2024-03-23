@@ -3,6 +3,7 @@ import re
 import pytest
 
 from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
+from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapability, ProjectCapabilityList
 from cognite.client.data_classes.iam import ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
 
@@ -35,13 +36,14 @@ class TestGroups:
         assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_groups):
-        my_capabilities = [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
-        my_group = Group(name="My Group", capabilities=my_capabilities)
+        my_group = Group(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
-        assert {"items": [{"name": "My Group", "capabilities": my_capabilities}]} == jsgz_load(
-            mock_groups.calls[0].request.body
-        )
+        assert {
+            "items": [
+                {"name": "My Group", "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]}
+            ]
+        } == jsgz_load(mock_groups.calls[0].request.body)
         assert mock_groups.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_groups):
@@ -105,7 +107,9 @@ def mock_token_inspect(rsps, cognite_client):
     response_body = {
         "subject": "someSubject",
         "projects": [{"projectUrlName": "veryGoodUrlName", "groups": [1, 2, 3]}],
-        "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
+        "capabilities": [
+            {"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}, "projectScope": {"allProjects": {}}}
+        ],
     }
     url_pattern = re.compile(
         re.escape(cognite_client.iam.token._get_base_url_with_base_path()) + "/api/v1/token/inspect"
@@ -121,20 +125,35 @@ class TestTokenAPI:
         assert isinstance(res, TokenInspection)
         assert res.subject == "someSubject"
         assert res.projects == [ProjectSpec(url_name="veryGoodUrlName", groups=[1, 2, 3])]
-        assert res.capabilities == [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
+        assert res.capabilities == ProjectCapabilityList(
+            ProjectCapabilityList(
+                [
+                    ProjectCapability(
+                        capability=GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All()),
+                        project_scope=ProjectCapability.Scope.All(),
+                    )
+                ]
+            )
+        )
 
     def test_token_inspection_dump(self):
-        capabilities = [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
+        capabilities = ProjectCapabilityList(
+            [
+                ProjectCapability(
+                    GroupsAcl([GroupsAcl.Action.List], GroupsAcl.Scope.All()), ProjectCapability.Scope.All()
+                )
+            ]
+        )
         groups = [1, 2, 3]
         obj = TokenInspection("subject", [ProjectSpec("urlName", groups)], capabilities)
 
-        assert obj.dump() == {
+        assert obj.dump(camel_case=False) == {
             "subject": "subject",
-            "projects": [{"url_name": "urlName", "groups": groups}],
-            "capabilities": capabilities,
+            "projects": [{"project_url_name": "urlName", "groups": groups}],
+            "capabilities": capabilities.dump(camel_case=False),
         }
         assert obj.dump(camel_case=True) == {
             "subject": "subject",
-            "projects": [{"urlName": "urlName", "groups": groups}],
-            "capabilities": capabilities,
+            "projects": [{"projectUrlName": "urlName", "groups": groups}],
+            "capabilities": capabilities.dump(camel_case=True),
         }

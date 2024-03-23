@@ -19,6 +19,7 @@
                 },
                 "retries": 2,
                 "timeout": 300,
+                "onFailure": "abortWorkflow",
                 "dependsOn": []
             },
             {
@@ -32,6 +33,7 @@
                 },
                 "retries": 0,
                 "timeout": 3600,
+                "onFailure": "skipTask",
                 "dependsOn": [
                     {
                         "externalId": "testTaskDispatcher"
@@ -49,6 +51,7 @@
                 },
                 "retries": 0,
                 "timeout": 3600,
+                "onFailure": "abortWorkflow",
                 "dependsOn": [
                     {
                         "externalId": "testTaskDispatcher"
@@ -69,6 +72,7 @@
                 },
                 "retries": 2,
                 "timeout": 300,
+                "onFailure": "abortWorkflow",
                 "dependsOn": [
                     {
                         "externalId": "testMatrixCalculation"
@@ -116,6 +120,7 @@
                             },
                             "retries": 2,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -137,6 +142,7 @@
                             },
                             "retries": 1,
                             "timeout": 3600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -153,6 +159,7 @@
                             },
                             "retries": 2,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -174,6 +181,7 @@
                             },
                             "retries": 1,
                             "timeout": 3600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         }
                     ],
@@ -192,6 +200,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -208,6 +217,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -240,6 +250,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -256,6 +267,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -272,6 +284,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -288,6 +301,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -304,6 +318,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -320,6 +335,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         }
                     ],
@@ -357,6 +373,7 @@
                             },
                             "retries": 2,
                             "timeout": 600,
+                            "onFailure": "skipTask",
                             "type": "function"
                         },
                         {
@@ -378,6 +395,7 @@
                             },
                             "retries": 1,
                             "timeout": 3600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -394,6 +412,7 @@
                             },
                             "retries": 2,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -415,6 +434,7 @@
                             },
                             "retries": 1,
                             "timeout": 3600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         }
                     ]
@@ -446,6 +466,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -462,6 +483,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -478,6 +500,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -494,6 +517,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -510,6 +534,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -526,6 +551,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -542,6 +568,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -558,6 +585,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         },
                         {
@@ -574,6 +602,7 @@
                             },
                             "retries": 1,
                             "timeout": 600,
+                            "onFailure": "abortWorkflow",
                             "type": "function"
                         }
                     ]

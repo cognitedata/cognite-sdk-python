@@ -8,6 +8,7 @@ raised, making sure the user making the commit aware of the issue(s).
 Should be used together with an appropriate linter, e.g. pydoclint, to verify
 the automatic changes being made.
 """
+
 from __future__ import annotations
 
 import importlib

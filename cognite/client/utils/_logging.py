@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 
+_COGNITE_LOGGER_NAME = "cognite.client"
+
 
 class DebugLogFormatter(logging.Formatter):
     RESERVED_ATTRS = (
@@ -62,11 +64,22 @@ class DebugLogFormatter(logging.Formatter):
 
 
 def _configure_logger_for_debug_mode() -> None:
-    logger = logging.getLogger("cognite-sdk")
-    logger.setLevel("DEBUG")
+    logger = logging.getLogger(_COGNITE_LOGGER_NAME)
+    logger.setLevel(logging.DEBUG)
     log_handler = logging.StreamHandler()
     formatter = DebugLogFormatter()
     log_handler.setFormatter(formatter)
     logger.handlers = []
     logger.propagate = False
     logger.addHandler(log_handler)
+
+
+def _disable_debug_logging() -> None:
+    logger = logging.getLogger(_COGNITE_LOGGER_NAME)
+    logger.setLevel(logging.INFO)
+    logger.handlers = []
+
+
+def _is_debug_logging_enabled() -> bool:
+    logger = logging.getLogger(_COGNITE_LOGGER_NAME)
+    return logger.isEnabledFor(logging.DEBUG) and logger.hasHandlers()

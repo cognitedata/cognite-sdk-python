@@ -3,10 +3,22 @@ import re
 import pytest
 
 from cognite.client.utils._validation import (
+    assert_type,
     process_asset_subtree_ids,
     process_data_set_ids,
     validate_user_input_dict_with_identifier,
 )
+
+
+class TestAssertions:
+    @pytest.mark.parametrize("var, var_name, types", [(1, "var1", [int]), ("1", "var2", [int, str])])
+    def test_assert_type_ok(self, var, var_name, types):
+        assert_type(var, var_name, types=types)
+
+    @pytest.mark.parametrize("var, var_name, types", [("1", "var", [int, float]), ((1,), "var2", [dict, list])])
+    def test_assert_type_fail(self, var, var_name, types):
+        with pytest.raises(TypeError, match=str(types)):
+            assert_type(var, var_name, types)
 
 
 class TestValidateUserInputDictWithIdentifier:
@@ -60,7 +72,7 @@ class TestProcessIdentifiers:
         with pytest.raises(TypeError, match=exp_match):
             fn("97", "a")
 
-        exp_match = rf"^{name}_external_ids must be of type str or Sequence\[str\]\. Found <class 'int'>$"
+        exp_match = rf"^{name}_external_ids must be of type str or SequenceNotStr\[str\]\. Found <class 'int'>$"
         with pytest.raises(TypeError, match=exp_match):
             fn(97, ord("a"))
 

@@ -6,7 +6,7 @@ import textwrap
 import time
 from contextlib import redirect_stdout
 from pathlib import Path
-from unittest import mock
+from unittest import TestCase, mock
 from unittest.mock import call
 
 import pytest
@@ -80,28 +80,28 @@ class TestAssetList:
         cognite_client.events.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.events()
-        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.events.list.call_count == 1
 
     def test_get_time_series(self, cognite_client):
         cognite_client.time_series.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.time_series()
-        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.time_series.list.call_count == 1
 
     def test_get_sequences(self, cognite_client):
         cognite_client.sequences.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.sequences()
-        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.sequences.list.call_count == 1
 
     def test_get_files(self, cognite_client):
         cognite_client.files.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.files()
-        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.files.list.call_count == 1
 
     @pytest.mark.parametrize(
@@ -118,16 +118,23 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_method = getattr(cognite_client, method)
+        mock_method = mock.Mock()
+        setattr(cognite_client, method, mock_method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
 
         assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=cognite_client)
-        assets._retrieve_chunk_size = 1
+        assets._actual_method = assets._retrieve_related_resources
+
+        def override_chunk_size(*a, **kw):
+            kw["chunk_size"] = 1
+            return assets._actual_method(*a, **kw)
+
+        assets._retrieve_related_resources = override_chunk_size
 
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]
-        assert expected == resources
+        TestCase().assertCountEqual(expected, resources)  # Asserts equal, but ignores ordering
 
     @pytest.mark.dsl
     def test_to_pandas_nullable_int(self, cognite_client):
@@ -226,36 +233,31 @@ def cycles_issue_output():
 
 class TestAssetHierarchy:
     @pytest.mark.parametrize(
-        "exc_type, asset",
+        "asset",
         (
             # Invalid name:
-            (AssertionError, Asset(name="", external_id="foo")),
-            (CogniteAssetHierarchyError, Asset(name="", external_id="foo")),
-            (AssertionError, Asset(name=None, external_id="foo")),
-            (CogniteAssetHierarchyError, Asset(name=None, external_id="foo")),
+            Asset(name="", external_id="foo"),
+            Asset(name=None, external_id="foo"),
             # Invalid external_id (empty str allowed):
-            (AssertionError, Asset(name="a", external_id=None)),
-            (CogniteAssetHierarchyError, Asset(name="a", external_id=None)),
+            Asset(name="a", external_id=None),
             # Id given:
-            (AssertionError, Asset(name="a", external_id="", id=123)),
-            (CogniteAssetHierarchyError, Asset(name="a", external_id="", id=123)),
+            Asset(name="a", external_id="", id=123),
         ),
     )
-    def test_validate_asset_hierarchy___invalid_assets(self, exc_type, asset):
+    def test_validate_asset_hierarchy___invalid_assets(self, asset):
         hierarchy = AssetHierarchy([asset]).validate(on_error="ignore")
         assert len(hierarchy.invalid) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 invalid$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 invalid$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy__orphans_given_ignore_false(self, exc_type):
+    def test_validate_asset_hierarchy__orphans_given_ignore_false(self):
         assets = [
             Asset(name="a", parent_external_id="1", external_id="2"),
             Asset(name="a", parent_external_id="2", external_id="3"),
         ]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
         assert len(hierarchy.orphans) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 orphans$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 orphans$"):
             hierarchy.is_valid(on_error="raise")
 
     @pytest.mark.parametrize("n", [1, 2, 3, 10])
@@ -283,28 +285,25 @@ class TestAssetHierarchy:
         assert len(hierarchy.orphans) == 1  # note: still marked as orphans, but no issues are raised:
         assert hierarchy.is_valid(on_error="raise") is True
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self, exc_type):
+    def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
         assets = [
             Asset(name="a", external_id="1"),
             Asset(name="a", parent_external_id="1", parent_id=1, external_id="2"),
         ]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.unsure_parents) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 unsure_parents$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 unsure_parents$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_duplicate_ref_ids(self, exc_type):
+    def test_validate_asset_hierarchy_duplicate_ref_ids(self):
         assets = [Asset(name="a", external_id="1"), Asset(name="a", parent_external_id="1", external_id="1")]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert list(hierarchy.duplicates) == ["1"]
         assert sum(len(assets) for assets in hierarchy.duplicates.values()) == 2
-        with pytest.raises(exc_type, match=r"Issue\(s\): 2 duplicates$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 2 duplicates$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_circular_dependency(self, exc_type):
+    def test_validate_asset_hierarchy_circular_dependency(self):
         assets = [
             Asset(name="a", external_id="1", parent_external_id="3"),
             Asset(name="a", external_id="2", parent_external_id="1"),
@@ -312,16 +311,15 @@ class TestAssetHierarchy:
         ]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.cycles) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 cycles$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 cycles$"):
             hierarchy.is_valid(on_error="raise")
 
-    @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
-    def test_validate_asset_hierarchy_self_dependency(self, exc_type):
+    def test_validate_asset_hierarchy_self_dependency(self):
         # Shortest cycle possible is self->self:
         assets = [Asset(name="a", external_id="2", parent_external_id="2")]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.cycles) == 1
-        with pytest.raises(exc_type, match=r"Issue\(s\): 1 cycles$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 cycles$"):
             hierarchy.is_valid(on_error="raise")
 
     def test_validate_asset_hierarchy__everything_is_wrong(self):
@@ -353,7 +351,8 @@ class TestAssetHierarchy:
             AssetHierarchy(assets).validate_and_report()
         # Cycle output does not have deterministic ordering due to extensive set usage
         # (correctness tested separately):
-        assert exp_output == (output := stdout.getvalue()) or output.startswith(exp_output)
+        output = stdout.getvalue()
+        assert exp_output == output or output.startswith(exp_output)
 
     @pytest.mark.parametrize(
         "assets, exp_output",
@@ -370,7 +369,8 @@ class TestAssetHierarchy:
 
         # Try again with Path instead of str:
         AssetHierarchy(assets).validate_and_report(output_file=tmp_path)
-        assert exp_output == (output := tmp_path.read_text(encoding="utf-8")) or output.startswith(exp_output)
+        output = tmp_path.read_text(encoding="utf-8")
+        assert exp_output == output or output.startswith(exp_output)
 
     @pytest.mark.parametrize(
         "assets, exp_output",
@@ -383,7 +383,9 @@ class TestAssetHierarchy:
         outfile = Path(tmp_path) / "report.txt"
         with outfile.open("w", encoding="utf-8") as file:
             AssetHierarchy(assets).validate_and_report(output_file=file)
-        assert exp_output == (output := outfile.read_text(encoding="utf-8")) or output.startswith(exp_output)
+
+        output = outfile.read_text(encoding="utf-8")
+        assert exp_output == output or output.startswith(exp_output)
 
         with io.StringIO() as file_like:
             AssetHierarchy(assets).validate_and_report(output_file=file_like)

@@ -10,6 +10,7 @@ Cognite Python SDK
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
 [![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 [![PyPI version](https://badge.fury.io/py/cognite-sdk.svg)](https://pypi.org/project/cognite-sdk/)
+[![conda version](https://anaconda.org/conda-forge/cognite-sdk/badges/version.svg)](https://anaconda.org/conda-forge/cognite-sdk)
 [![mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
@@ -24,8 +25,7 @@ The package is tightly integrated with pandas, and helps you work easily and eff
 ## Installation
 
 ### Without any optional dependencies
-
-To install this package without pandas and geopandas support:
+To install the core version of this package:
 ```bash
 $ pip install cognite-sdk
 ```
@@ -38,7 +38,8 @@ The available extras (along with the libraries they include) are:
 - geo `[geopandas, shapely]`
 - sympy `[sympy]`
 - functions `[pip]`
-- all `[numpy, pandas, geopandas, shapely, sympy, pip]`
+- yaml `[PyYAML]`
+- all `[numpy, pandas, geopandas, shapely, sympy, pip, PyYAML]`
 
 To include optional dependencies, specify them like this with pip:
 
@@ -56,7 +57,6 @@ If you regularly need to fetch large amounts of datapoints, consider installing 
 (or with `pandas`, as it depends on `numpy`) for best performance, then use the `retrieve_arrays` (or `retrieve_dataframe`) endpoint(s). This avoids building large pure Python data structures, and instead reads data directly into memory-efficient `numpy.ndarrays`.
 
 ### Windows specific
-
 On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager, see [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation).
 The following commands create a new environment, install `geopandas` and `cognite-sdk`.
 

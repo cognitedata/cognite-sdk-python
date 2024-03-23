@@ -82,13 +82,18 @@ class TestDocumentsAPI:
         text_file, _ = text_file_content_pair
         is_integration_test = filters.Prefix("externalId", _FILE_PREFIX)
 
-        documents = cognite_client.documents.list(limit=5, filter=is_integration_test)
+        documents = cognite_client.documents.list(
+            limit=5, filter=is_integration_test, sort=SortableDocumentProperty.mime_type
+        )
 
         assert len(documents) >= len(document_list)
+        assert [doc.mime_type for doc in documents] == sorted(doc.mime_type for doc in document_list)
         exclude = set(_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE)
         retrieved_text = documents.get(id=text_file.id)
         assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
-        assert dict_without(retrieved_text.source_file.dump(), exclude) == dict_without(text_file.dump(), exclude)
+        assert dict_without(retrieved_text.source_file.dump(camel_case=False), exclude) == dict_without(
+            text_file.dump(camel_case=False), exclude
+        )
 
     def test_list_lorem_ipsum(
         self,
@@ -106,7 +111,9 @@ class TestDocumentsAPI:
         retrieved_pdf = documents.get(id=pdf_file.id)
         assert retrieved_pdf is not None, "Expected to retrieve the pdf file to be the list"
         exclude = set(_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE)
-        assert dict_without(retrieved_pdf.source_file.dump(), exclude) == dict_without(pdf_file.dump(), exclude)
+        assert dict_without(retrieved_pdf.source_file.dump(camel_case=False), exclude) == dict_without(
+            pdf_file.dump(camel_case=False), exclude
+        )
 
     def test_retrieve_content(self, cognite_client: CogniteClient, text_file_content_pair):
         doc, content = text_file_content_pair

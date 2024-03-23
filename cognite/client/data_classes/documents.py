@@ -1,28 +1,119 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
+from enum import auto
+from typing import TYPE_CHECKING, Any, Collection, List, Literal, Union, cast
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     CogniteSort,
     EnumProperty,
+    Geometry,
     IdTransformerMixin,
+    NoCaseConversionPropertyList,
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
-from cognite.client.data_classes.shared import GeoLocation
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class SourceFile(CogniteResource):
+class DocumentsGeoJsonGeometry(CogniteObject):
+    """Represents the points, curves and surfaces in the coordinate space.
+
+    Args:
+        type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon", "GeometryCollection"]): The geometry type.
+        coordinates (list | None): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        geometries (Collection[Geometry] | None): No description.
+
+    Examples:
+        Point:
+            Coordinates of a point in 2D space, described as an array of 2 numbers.
+
+            Example: `[4.306640625, 60.205710352530346]`
+
+        LineString:
+            Coordinates of a line described by a list of two or more points.
+            Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+            Example: `[[30, 10], [10, 30], [40, 40]]`
+
+        Polygon:
+            List of one or more linear rings representing a shape.
+            A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+            Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+            Example: `[[[35, 10], [45, 45], [15, 40], [10, 20], [35, 10]], [[20, 30], [35, 35], [30, 20], [20, 30]]]`
+            type: array
+
+        MultiPoint:
+            List of Points. Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+            Example: `[[35, 10], [45, 45]]`
+
+        MultiLineString:
+                List of lines where each line (LineString) is defined as a list of two or more points.
+                Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+                Example: `[[[30, 10], [10, 30]], [[35, 10], [10, 30], [40, 40]]]`
+
+        MultiPolygon:
+            List of multiple polygons.
+            Each polygon is defined as a list of one or more linear rings representing a shape.
+            A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+            Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+            Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
+
+        GeometryCollection:
+            List of geometries as described above.
+    """
+
+    _VALID_TYPES = frozenset(
+        {"Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon", "GeometryCollection"}
+    )
+
+    def __init__(
+        self,
+        type: Literal[
+            "Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon", "GeometryCollection"
+        ],
+        coordinates: list | None = None,
+        geometries: Collection[Geometry] | None = None,
+    ) -> None:
+        if type not in self._VALID_TYPES:
+            raise ValueError(f"type must be one of {self._VALID_TYPES}")
+        self.type = type
+        self.coordinates = coordinates
+        self.geometries = geometries and list(geometries)
+
+    @classmethod
+    def _load(
+        cls, raw_geometry: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> DocumentsGeoJsonGeometry:
+        instance = cls(
+            type=raw_geometry["type"],
+            coordinates=raw_geometry.get("coordinates"),
+            geometries=raw_geometry.get("geometries"),
+        )
+        if isinstance(instance.geometries, list):
+            instance.geometries = [Geometry.load(geometry) for geometry in instance.geometries]
+        return instance
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.geometries:
+            output["geometries"] = [g.dump(camel_case) for g in self.geometries]
+        return output
+
+
+class SourceFile(CogniteObject):
     """
     The source file that a document is derived from.
 
@@ -35,7 +126,7 @@ class SourceFile(CogniteResource):
         size (int | None): The size of the file in bytes.
         asset_ids (list[int] | None): The ids of the assets related to this file.
         labels (list[Label | str | LabelDefinition] | None): A list of labels associated with this document's source file in CDF.
-        geo_location (GeoLocation | None): The geolocation of the source file.
+        geo_location (DocumentsGeoJsonGeometry | None): The geolocation of the source file.
         dataset_id (int | None): The id if the dataset this file belongs to, if any.
         security_categories (list[int] | None): The security category IDs required to access this file.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
@@ -53,7 +144,7 @@ class SourceFile(CogniteResource):
         size: int | None = None,
         asset_ids: list[int] | None = None,
         labels: list[Label | str | LabelDefinition] | None = None,
-        geo_location: GeoLocation | None = None,
+        geo_location: DocumentsGeoJsonGeometry | None = None,
         dataset_id: int | None = None,
         security_categories: list[int] | None = None,
         metadata: dict[str, str] | None = None,
@@ -75,22 +166,21 @@ class SourceFile(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SourceFile:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SourceFile:
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = DocumentsGeoJsonGeometry.load(instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.labels:
             output["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location:
             output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
-        for key in ["metadata", "labels", "asset_ids"]:
-            # Remove empty lists and dicts:
-            if not output[key]:
+        for key in ["metadata", "labels", "asset_ids", "assetIds"]:
+            # Remove empty lists and dicts
+            if key in output and not output[key]:
                 del output[key]
         return output
 
@@ -117,7 +207,7 @@ class Document(CogniteResource):
         truncated_content (str | None): The truncated content of the document.
         asset_ids (list[int] | None): The ids of any assets referred to in the document.
         labels (list[Label | str | LabelDefinition] | None): The labels attached to the document.
-        geo_location (GeoLocation | None): The geolocation of the document.
+        geo_location (DocumentsGeoJsonGeometry | None): The geolocation of the document.
         cognite_client (CogniteClient | None): No description.
         **_ (Any): No description.
     """
@@ -141,7 +231,7 @@ class Document(CogniteResource):
         truncated_content: str | None = None,
         asset_ids: list[int] | None = None,
         labels: list[Label | str | LabelDefinition] | None = None,
-        geo_location: GeoLocation | None = None,
+        geo_location: DocumentsGeoJsonGeometry | None = None,
         cognite_client: CogniteClient | None = None,
         **_: Any,
     ) -> None:
@@ -166,17 +256,15 @@ class Document(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Document:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Document:
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.source_file, dict):
-            instance.source_file = SourceFile._load(instance.source_file)
+            instance.source_file = SourceFile.load(instance.source_file)
         if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
+            instance.geo_location = DocumentsGeoJsonGeometry.load(instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.source_file:
             output[("sourceFile" if camel_case else "source_file")] = self.source_file.dump(camel_case)
@@ -192,7 +280,7 @@ class DocumentList(CogniteResourceList[Document], IdTransformerMixin):
 
 
 @dataclass
-class Highlight(CogniteResource):
+class Highlight(CogniteObject):
     """
     Highlighted snippets from name and content fields which show where the query matches are.
 
@@ -206,11 +294,15 @@ class Highlight(CogniteResource):
     name: list[str]
     content: list[str]
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "name": self.name,
             "content": self.content,
         }
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(name=resource["name"], content=resource["content"])
 
 
 @dataclass
@@ -229,17 +321,13 @@ class DocumentHighlight(CogniteResource):
     document: Document
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
+        return cls(
+            highlight=Highlight._load(resource["highlight"]),
+            document=Document._load(resource["document"]),
+        )
 
-        instance = cls(**convert_all_keys_to_snake_case(resource))
-        if isinstance(instance.highlight, dict):
-            instance.highlight = Highlight(**convert_all_keys_to_snake_case(instance.highlight))
-        if isinstance(instance.document, dict):
-            instance.document = Document._load(instance.document)
-        return instance
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.highlight:
             output["highlight"] = self.highlight.dump(camel_case)
@@ -252,77 +340,76 @@ class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
     _RESOURCE = DocumentHighlight
 
 
-class DocumentUniqueResult(UniqueResult):
-    ...
+class DocumentUniqueResult(UniqueResult): ...
 
 
 class SortableSourceFileProperty(EnumProperty):
-    name = "name"
-    mime_type = "mimeType"
-    source = "source"
-    data_set_id = "dataSetId"
-    metadata = "metadata"
+    name = auto()  # type: ignore [assignment]
+    mime_type = auto()
+    source = auto()
+    data_set_id = auto()
+    metadata = auto()
 
     def as_reference(self) -> list[str]:
         return ["sourceFile", self.value]
 
 
 class SourceFileProperty(EnumProperty):
-    name = "name"
-    mime_type = "mimeType"
-    source = "source"
-    data_set_id = "dataSetId"
-    metadata = "metadata"
-    size = "size"
-    directory = "directory"
-    asset_ids = "assetIds"
-    asset_external_ids = "assetExternalIds"
-    security_categories = "securityCategories"
-    geo_location = "geoLocation"
-    labels = "labels"
+    name = auto()  # type: ignore [assignment]
+    mime_type = auto()
+    source = auto()
+    data_set_id = auto()
+    metadata = auto()
+    size = auto()
+    directory = auto()
+    asset_ids = auto()
+    asset_external_ids = auto()
+    security_categories = auto()
+    geo_location = auto()
+    labels = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return ["sourceFile", "metadata", key]
+        return NoCaseConversionPropertyList(["sourceFile", "metadata", key])
 
     def as_reference(self) -> list[str]:
         return ["sourceFile", self.value]
 
 
 class SortableDocumentProperty(EnumProperty):
-    id = "id"
-    external_id = "externalId"
-    mime_type = "mimeType"
-    extension = "extension"
-    page_count = "pageCount"
-    author = "author"
-    title = "title"
-    language = "language"
-    type = "type"
-    created_time = "createdTime"
-    modified_time = "modifiedTime"
-    last_indexed_time = "lastIndexedTime"
+    id = auto()
+    external_id = auto()
+    mime_type = auto()
+    extension = auto()
+    page_count = auto()
+    author = auto()
+    title = auto()
+    language = auto()
+    type = auto()
+    created_time = auto()
+    modified_time = auto()
+    last_indexed_time = auto()
 
 
 class DocumentProperty(EnumProperty):
-    id = "id"
-    external_id = "externalId"
-    mime_type = "mimeType"
-    extension = "extension"
-    page_count = "pageCount"
-    producer = "producer"
-    author = "author"
-    title = "title"
-    language = "language"
-    type = "type"
-    created_time = "createdTime"
-    modified_time = "modifiedTime"
-    last_indexed_time = "lastIndexedTime"
-    geo_location = "geoLocation"
-    asset_ids = "assetIds"
-    asset_external_ids = "assetExternalIds"
-    labels = "labels"
-    content = "content"
+    id = auto()
+    external_id = auto()
+    mime_type = auto()
+    extension = auto()
+    page_count = auto()
+    producer = auto()
+    author = auto()
+    title = auto()
+    language = auto()
+    type = auto()
+    created_time = auto()
+    modified_time = auto()
+    last_indexed_time = auto()
+    geo_location = auto()
+    asset_ids = auto()
+    asset_external_ids = auto()
+    labels = auto()
+    content = auto()
 
 
 SortableProperty: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]

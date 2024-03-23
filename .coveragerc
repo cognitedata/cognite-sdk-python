@@ -4,8 +4,5 @@ source=cognite
 [report]
 exclude_lines =
     pragma: no cover
-    raise AssertionError
     raise NotImplementedError
     if TYPE_CHECKING:
-omit =
-    cognite/client/_auxiliary/*

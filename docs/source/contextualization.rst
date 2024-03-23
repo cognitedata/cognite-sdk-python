@@ -58,8 +58,8 @@ Start an asynchronous job to extract information from image files stored in CDF:
     from cognite.client import CogniteClient
     from cognite.client.data_classes.contextualization import VisionFeature
 
-    c = CogniteClient()
-    extract_job = c.vision.extract(
+    client = CogniteClient()
+    extract_job = client.vision.extract(
         features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION],
         file_ids=[1, 2],
     )
@@ -90,10 +90,12 @@ Tweaking the parameters of a feature extractor:
 
     from cognite.client.data_classes.contextualization import FeatureParameters, TextDetectionParameters
 
-    extract_job = c.vision.extract(
+    extract_job = client.vision.extract(
         features=VisionFeature.TEXT_DETECTION,
         file_ids=[1, 2],
         parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
+        # or
+        # parameters = {"textDetectionParameters": {"threshold": 0.9}}
     )
 
 Extract

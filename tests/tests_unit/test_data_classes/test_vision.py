@@ -5,14 +5,23 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Annotation
-from cognite.client.data_classes.annotation_types.images import ObjectDetection, Polygon, TextRegion
+from cognite.client.data_classes.annotation_types.images import (
+    AssetLink,
+    KeypointCollection,
+    KeypointCollectionWithObjectDetection,
+    ObjectDetection,
+    Polygon,
+    TextRegion,
+)
 from cognite.client.data_classes.annotation_types.primitives import (
+    Attribute,
     BoundingBox,
     CdfResourceRef,
+    Keypoint,
     Point,
-    PolyLine,
+    Polyline,
     VisionResource,
 )
 from cognite.client.data_classes.contextualization import (
@@ -24,20 +33,98 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractJob,
     VisionExtractPredictions,
 )
+from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
+
+object_detection_sample = ObjectDetection(
+    label="foo",
+    confidence=None,
+    bounding_box=BoundingBox(x_min=0.1, y_min=0.2, x_max=0.3, y_max=0.4),
+    attributes={
+        "foo": Attribute(type="boolean", value=True),
+        "bar": {"type": "numerical", "value": 0.1},
+    },
+)
+
+object_detection_dict_sample = {
+    "boundingBox": {"xMin": 0.1, "yMin": 0.2, "xMax": 0.3, "yMax": 0.4},
+    "label": "foo",
+    "attributes": {
+        "foo": {"type": "boolean", "value": True},
+        "bar": {"type": "numerical", "value": 0.1},
+    },
+}
+
+keypoint_collection_with_object_detection_sample = KeypointCollectionWithObjectDetection(
+    keypoint_collection=KeypointCollection(
+        label="foo",
+        confidence=0.2,
+        attributes={"attr": Attribute(type="numerical", value=0.1)},
+        keypoints={
+            "bottom": Keypoint(Point(x=0.1, y=0.1)),
+            "top": Keypoint(Point(x=0.2, y=0.2)),
+            "value": Keypoint(Point(x=0.3, y=0.3)),
+        },
+    ),
+    object_detection=object_detection_sample,
+)
+
+keypoint_collection_with_object_detection_dict_sample = {
+    "keypointCollection": {
+        "label": "foo",
+        "confidence": 0.2,
+        "attributes": {"attr": {"type": "numerical", "value": 0.1}},
+        "keypoints": {
+            "bottom": {"point": {"x": 0.1, "y": 0.1}},
+            "top": {"point": {"x": 0.2, "y": 0.2}},
+            "value": {"point": {"x": 0.3, "y": 0.3}},
+        },
+    },
+    "objectDetection": object_detection_dict_sample,
+}
 
 mock_vision_predictions_dict: dict[str, list[dict[str, Any]]] = {
     "textPredictions": [
-        {"text": "a", "textRegion": {"xMin": 0.1, "xMax": 0.2, "yMin": 0.3, "yMax": 0.4}, "confidence": 0.1}
-    ]
+        {"text": "a", "textRegion": {"xMin": 0.1, "yMin": 0.2, "xMax": 0.3, "yMax": 0.4}, "confidence": 0.1}
+    ],
+    "assetTagPredictions": [
+        {
+            "text": "foo",
+            "textRegion": {"xMin": 0.1, "yMin": 0.2, "xMax": 0.3, "yMax": 0.4},
+            "assetRef": {"id": 1},
+        }
+    ],
+    "industrialObjectPredictions": [object_detection_dict_sample],
+    "peoplePredictions": [object_detection_dict_sample],
+    "personalProtectiveEquipmentPredictions": [object_detection_dict_sample],
+    "digitalGaugePredictions": [object_detection_dict_sample],
+    "dialGaugePredictions": [keypoint_collection_with_object_detection_dict_sample],
+    "levelGaugePredictions": [keypoint_collection_with_object_detection_dict_sample],
+    "valvePredictions": [keypoint_collection_with_object_detection_dict_sample],
 }
+
 mock_vision_extract_predictions = VisionExtractPredictions(
     text_predictions=[
         TextRegion(
             text="a",
-            text_region=BoundingBox(x_min=0.1, x_max=0.2, y_min=0.3, y_max=0.4),
+            text_region=BoundingBox(x_min=0.1, y_min=0.2, x_max=0.3, y_max=0.4),
             confidence=0.1,
         )
-    ]
+    ],
+    asset_tag_predictions=[
+        AssetLink(
+            text="foo",
+            text_region={"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4},
+            asset_ref={"id": 1},
+        )
+    ],
+    industrial_object_predictions=[object_detection_sample],
+    people_predictions=[object_detection_sample],
+    personal_protective_equipment_predictions=[object_detection_sample],
+    digital_gauge_predictions=[object_detection_sample],
+    dial_gauge_predictions=[keypoint_collection_with_object_detection_sample],
+    level_gauge_predictions=[keypoint_collection_with_object_detection_sample],
+    valve_predictions=[keypoint_collection_with_object_detection_sample],
 )
 
 
@@ -56,25 +143,90 @@ class TestVisionResource:
                 True,
             ),
             (
-                TextRegion(
-                    text="foo", text_region={"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}, confidence=None
-                ),
-                {"text": "foo", "text_region": {"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}},
-                False,
-            ),
-            (
-                # Ensure nested objects with list of VisionResource subclasses are recursively dumped:
-                Polygon([Point(1, 2), Point(3, 4), Point(-1, 0)]),
+                Polygon([Point(1, 2), Point(3, 4), {"x": -1, "y": 0}]),
                 {"vertices": [{"x": 1, "y": 2}, {"x": 3, "y": 4}, {"x": -1, "y": 0}]},
                 False,
             ),
             (
-                ObjectDetection(label="foo", confidence=None, polyline=PolyLine([Point(1, 2), Point(3, 4)])),
-                {"label": "foo", "polyline": {"vertices": [{"x": 1, "y": 2}, {"x": 3, "y": 4}]}},
+                Polyline([Point(1, 2), Point(3, 4), {"x": -1, "y": 0}]),
+                {"vertices": [{"x": 1, "y": 2}, {"x": 3, "y": 4}, {"x": -1, "y": 0}]},
                 False,
             ),
+            (
+                Keypoint(point=Point(1, 2), confidence=None),
+                {"point": {"x": 1, "y": 2}},
+                False,
+            ),
+            (
+                Attribute(type="numerical", value=0.1),
+                {"type": "numerical", "value": 0.1},
+                False,
+            ),
+            (
+                object_detection_sample,
+                object_detection_dict_sample,
+                True,
+            ),
+            (
+                TextRegion(
+                    text="foo", text_region={"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4}, confidence=None
+                ),
+                {"text": "foo", "text_region": {"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4}},
+                False,
+            ),
+            (
+                AssetLink(
+                    text="foo",
+                    text_region={"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4},
+                    asset_ref={"id": 1},
+                ),
+                {
+                    "text": "foo",
+                    "text_region": {"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4},
+                    "asset_ref": {"id": 1},
+                },
+                False,
+            ),
+            (
+                KeypointCollection(
+                    label="bar",
+                    keypoints={"a": Keypoint(point=Point(1, 2))},
+                    confidence=0.1,
+                    attributes={
+                        "foo": Attribute(type="boolean", value=True),
+                        "bar": {"type": "numerical", "value": 0.1},
+                    },
+                ),
+                {
+                    "label": "bar",
+                    "keypoints": {"a": {"point": {"x": 1, "y": 2}}},
+                    "confidence": 0.1,
+                    "attributes": {
+                        "foo": {"type": "boolean", "value": True},
+                        "bar": {"type": "numerical", "value": 0.1},
+                    },
+                },
+                False,
+            ),
+            (
+                keypoint_collection_with_object_detection_sample,
+                keypoint_collection_with_object_detection_dict_sample,
+                True,
+            ),
         ],
-        ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_nested_dump1", "valid_nested_dump2"],
+        ids=[
+            "cdf_resource_ref",
+            "cdf_resource_ref_camel_case",
+            "polygon",
+            "polyline",
+            "keypoint",
+            "attribute",
+            "object_detection",
+            "text_region",
+            "asset_link",
+            "keypoint_collection",
+            "keypoint_collection_with_object_detection",
+        ],
     )
     def test_dump(self, item: VisionResource, expected_dump: dict[str, Any], camel_case: bool) -> None:
         assert item.dump(camel_case) == expected_dump
@@ -97,9 +249,9 @@ class TestVisionResource:
             ),
             (
                 TextRegion(
-                    text="foo", text_region={"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}, confidence=None
+                    text="foo", text_region={"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4}, confidence=None
                 ),
-                {"value": ["foo", {"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}]},
+                {"value": ["foo", {"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4}]},
                 ["text", "text_region"],
                 False,
             ),
@@ -108,20 +260,52 @@ class TestVisionResource:
                     text_predictions=[
                         TextRegion(
                             text="foo",
-                            text_region={"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1},
+                            text_region={"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4},
                             confidence=None,
                         )
-                    ]
+                    ],
+                    level_gauge_predictions=[
+                        KeypointCollectionWithObjectDetection(
+                            keypoint_collection=KeypointCollection(
+                                label="levelGauge",
+                                attributes={"level_gauge_value": Attribute(type="numerical", value=0.1)},
+                                keypoints={
+                                    "bottom": Keypoint(Point(x=0.1, y=0.1)),
+                                },
+                            ),
+                            object_detection=ObjectDetection(
+                                label="foo",
+                                bounding_box=BoundingBox(x_min=0.1, y_min=0.2, x_max=0.3, y_max=0.4),
+                            ),
+                        )
+                    ],
                 ),
-                {"value": [[{"text": "foo", "textRegion": {"xMin": 0.1, "xMax": 0.1, "yMin": 0.1, "yMax": 0.1}}]]},
-                ["textPredictions"],
+                {
+                    "value": [
+                        [{"text": "foo", "textRegion": {"xMin": 0.1, "yMin": 0.2, "xMax": 0.3, "yMax": 0.4}}],
+                        [
+                            {
+                                "keypointCollection": {
+                                    "label": "levelGauge",
+                                    "attributes": {"level_gauge_value": {"type": "numerical", "value": 0.1}},
+                                    "keypoints": {"bottom": {"point": {"x": 0.1, "y": 0.1}}},
+                                },
+                                "objectDetection": {
+                                    "label": "foo",
+                                    "boundingBox": {"xMin": 0.1, "yMin": 0.2, "xMax": 0.3, "yMax": 0.4},
+                                },
+                            },
+                        ],
+                    ]
+                },
+                ["textPredictions", "levelGaugePredictions"],
                 True,
             ),
         ],
         ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_dump_list"],
     )
     def test_to_pandas(self, item: VisionResource, exp_df_data, exp_df_index, camel_case: bool) -> None:
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
 
         res = item.to_pandas(camel_case)
         exp = pd.DataFrame(exp_df_data, index=exp_df_index)
@@ -151,7 +335,7 @@ class TestVisionExtractItem:
         ids=["valid_vision_extract_item_no_predictions", "valid_vision_extract_item"],
     )
     def test_load(self, resource: dict[str, Any], expected_item: VisionExtractItem) -> None:
-        vision_extract_item = VisionExtractItem._load(resource)
+        vision_extract_item = VisionExtractItem.load(resource)
         assert vision_extract_item == expected_item
 
     @pytest.mark.parametrize(
@@ -254,43 +438,122 @@ class TestVisionExtractJob:
                 [],
             ),
             (
-                {"items": [{"fileId": 1, "predictions": mock_vision_predictions_dict}]},
+                {
+                    "items": [
+                        {
+                            "fileId": 1,
+                            "predictions": {
+                                k: v
+                                for k, v in mock_vision_predictions_dict.items()
+                                if k
+                                in [
+                                    "textPredictions",
+                                    "assetTagPredictions",
+                                    "peoplePredictions",
+                                    "dialGaugePredictions",
+                                ]
+                            },
+                        }
+                    ]
+                },
                 {"creating_user": None, "creating_app": None, "creating_app_version": None},
                 [
                     Annotation(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
                         data={
-                            "text": "a",
-                            "text_region": {"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4},
-                            "confidence": 0.1,
+                            # convert all keys to snake case since data is dumped as snake case in _predictions_to_annotations()
+                            to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
+                            for k, v in mock_vision_predictions_dict["textPredictions"][0].items()
                         },
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
                         creating_app_version=1,
                         creating_user=None,
-                    )
+                    ),
+                    Annotation(
+                        annotated_resource_id=1,
+                        annotation_type="images.AssetLink",
+                        data={
+                            to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
+                            for k, v in mock_vision_predictions_dict["assetTagPredictions"][0].items()
+                        },
+                        annotated_resource_type="file",
+                        status="suggested",
+                        creating_app="cognite-sdk-python",
+                        creating_app_version=1,
+                        creating_user=None,
+                    ),
+                    Annotation(
+                        annotated_resource_id=1,
+                        annotation_type="images.ObjectDetection",
+                        data={
+                            to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
+                            for k, v in object_detection_dict_sample.items()
+                        },
+                        annotated_resource_type="file",
+                        status="suggested",
+                        creating_app="cognite-sdk-python",
+                        creating_app_version=1,
+                        creating_user=None,
+                    ),
+                    Annotation(
+                        annotated_resource_id=1,
+                        annotation_type="images.KeypointCollection",
+                        data={
+                            to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
+                            for k, v in keypoint_collection_with_object_detection_dict_sample[
+                                "keypointCollection"
+                            ].items()
+                        },
+                        annotated_resource_type="file",
+                        status="suggested",
+                        creating_app="cognite-sdk-python",
+                        creating_app_version=1,
+                        creating_user=None,
+                    ),
+                    Annotation(
+                        annotated_resource_id=1,
+                        annotation_type="images.ObjectDetection",
+                        data={
+                            to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
+                            for k, v in keypoint_collection_with_object_detection_dict_sample["objectDetection"].items()
+                        },
+                        annotated_resource_type="file",
+                        status="suggested",
+                        creating_app="cognite-sdk-python",
+                        creating_app_version=1,
+                        creating_user=None,
+                    ),
                 ],
             ),
             (
-                {"items": [{"fileId": 1, "predictions": mock_vision_predictions_dict}]},
+                {
+                    "items": [
+                        {
+                            "fileId": 1,
+                            "predictions": {
+                                k: v for k, v in mock_vision_predictions_dict.items() if k == "textPredictions"
+                            },
+                        }
+                    ]
+                },
                 {"creating_user": "foo", "creating_app": "bar", "creating_app_version": "1.0.0"},
                 [
                     Annotation(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
                         data={
-                            "text": "a",
-                            "text_region": {"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4},
-                            "confidence": 0.1,
+                            to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
+                            for k, v in mock_vision_predictions_dict["textPredictions"][0].items()
                         },
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="bar",
                         creating_app_version="1.0.0",
                         creating_user="foo",
-                    )
+                    ),
                 ],
             ),
         ],
