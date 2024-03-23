@@ -145,11 +145,11 @@ class TestSingleTSQueryValidator:
             "When passing `aggregates`, argument `granularity` is also required.",
             "'Include outside points' is not supported for aggregates.",
         ]
-        user_query = _FullDatapointsQuery(
+        full_query = _FullDatapointsQuery(
             id=1, granularity=granularity, aggregates=aggregates, include_outside_points=outside
         )
         with pytest.raises(exp_err, match=re.escape(err_msgs[exp_err_msg_idx])):
-            _SingleTSQueryValidator(user_query, **LIMIT_KWS).validate_and_create_single_queries()
+            _SingleTSQueryValidator(full_query, **LIMIT_KWS).validate_and_create_single_queries()
 
     @pytest.mark.parametrize(
         "start, end",
@@ -166,8 +166,8 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__valid_inputs(self, start, end):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
-            user_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
-            ts_query = _SingleTSQueryValidator(user_query, **LIMIT_KWS).validate_and_create_single_queries()
+            full_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
+            ts_query = _SingleTSQueryValidator(full_query, **LIMIT_KWS).validate_and_create_single_queries()
             assert isinstance(ts_query[0].start, int)
             assert isinstance(ts_query[0].end, int)
 
@@ -187,9 +187,9 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__raises(self, start, end):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
-            user_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
+            full_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
             with pytest.raises(ValueError, match="Invalid time range"):
-                _SingleTSQueryValidator(user_query, **LIMIT_KWS).validate_and_create_single_queries()
+                _SingleTSQueryValidator(full_query, **LIMIT_KWS).validate_and_create_single_queries()
 
     def test_retrieve_aggregates__include_outside_points_raises(self):
         id_dct_lst = [
@@ -199,6 +199,6 @@ class TestSingleTSQueryValidator:
         # Only one time series is configured wrong and will raise:
         id_dct_lst[-1]["include_outside_points"] = True
 
-        user_query = _FullDatapointsQuery(id=id_dct_lst, include_outside_points=False)
+        full_query = _FullDatapointsQuery(id=id_dct_lst, include_outside_points=False)
         with pytest.raises(ValueError, match="'Include outside points' is not supported for aggregates."):
-            _SingleTSQueryValidator(user_query, **LIMIT_KWS).validate_and_create_single_queries()
+            _SingleTSQueryValidator(full_query, **LIMIT_KWS).validate_and_create_single_queries()

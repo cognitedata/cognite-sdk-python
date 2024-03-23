@@ -79,6 +79,30 @@ def numpy_dtype_fix(element: np.float64 | str) -> float | str:
         raise
 
 
+@dataclass
+class DatapointsQuery:
+    """Represent a user request for datapoints for a single time series"""
+
+    start: int | str | datetime | None = None
+    end: int | str | datetime | None = None
+    id: int | None = None
+    external_id: str | None = None
+    aggregates: Aggregate | str | list[Aggregate | str] | None = None
+    granularity: str | None = None
+    target_unit: str | None = None
+    target_unit_system: str | None = None
+    limit: int | None = None
+    include_outside_points: bool = False
+    ignore_unknown_ids: bool = False
+    include_status: bool = False
+    ignore_bad_data_points: bool = True
+    treat_uncertain_as_bad: bool = True
+
+    def __post_init__(self) -> None:
+        # Ensure user have just specified one of id/xid:
+        Identifier.of_either(self.id, self.external_id)
+
+
 @dataclass(frozen=True)
 class LatestDatapointQuery:
     """Parameters describing a query for the latest datapoint from a time series.

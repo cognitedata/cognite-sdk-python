@@ -36,6 +36,7 @@ from typing_extensions import NotRequired, TypeAlias
 
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
 from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
+from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier
@@ -69,8 +70,10 @@ DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
 DatapointsRaw = Union[DatapointsNum, DatapointsStr]
 
 RawDatapointValue = Union[float, str]
-DatapointsId = Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]
-DatapointsExternalId = Union[None, str, Dict[str, Any], SequenceNotStr[Union[str, Dict[str, Any]]]]
+DatapointsId = Union[None, int, DatapointsQuery, Dict[str, Any], Sequence[Union[int, DatapointsQuery, Dict[str, Any]]]]
+DatapointsExternalId = Union[
+    None, str, DatapointsQuery, Dict[str, Any], SequenceNotStr[Union[str, DatapointsQuery, Dict[str, Any]]]
+]
 
 
 class CustomDatapointsQuery(TypedDict, total=False):
@@ -109,26 +112,6 @@ class DatapointsPayloadItem(TypedDict, total=False):
 class DatapointsPayload(DatapointsPayloadItem):
     items: list[DatapointsPayloadItem]
     ignoreUnknownIds: NotRequired[bool]
-
-
-@dataclass
-class DatapointsQuery:
-    """Represent a user request for datapoints for a single time series"""
-
-    start: int | str | datetime | None = None
-    end: int | str | datetime | None = None
-    id: int | None = None
-    external_id: str | None = None
-    aggregates: Aggregate | str | list[Aggregate | str] | None = None
-    granularity: str | None = None
-    target_unit: str | None = None
-    target_unit_system: str | None = None
-    limit: int | None = None
-    include_outside_points: bool = False
-    ignore_unknown_ids: bool = False
-    include_status: bool = False
-    ignore_bad_data_points: bool = True
-    treat_uncertain_as_bad: bool = True
 
 
 @dataclass
@@ -179,22 +162,22 @@ class _SingleTSQueryValidator:
         }
     )
 
-    def __init__(self, user_query: _FullDatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
-        self.user_query = user_query
+    def __init__(self, full_query: _FullDatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
+        self.full_query = full_query
         self.dps_limit_raw = dps_limit_raw
         self.dps_limit_agg = dps_limit_agg
         self.defaults: dict[str, Any] = dict(
-            start=user_query.start,
-            end=user_query.end,
-            limit=user_query.limit,
-            aggregates=user_query.aggregates,
-            granularity=user_query.granularity,
-            target_unit=user_query.target_unit,
-            target_unit_system=user_query.target_unit_system,
-            include_outside_points=user_query.include_outside_points,
-            ignore_unknown_ids=user_query.ignore_unknown_ids,
+            start=full_query.start,
+            end=full_query.end,
+            limit=full_query.limit,
+            aggregates=full_query.aggregates,
+            granularity=full_query.granularity,
+            target_unit=full_query.target_unit,
+            target_unit_system=full_query.target_unit_system,
+            include_outside_points=full_query.include_outside_points,
+            ignore_unknown_ids=full_query.ignore_unknown_ids,
         )
-        self._user_query_is_valid = False
+        self._full_query_is_valid = False
 
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
@@ -203,14 +186,14 @@ class _SingleTSQueryValidator:
 
     def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
         queries = []
-        if self.user_query.id is not None:
-            id_queries = self._validate_multiple_id(self.user_query.id)
+        if self.full_query.id is not None:
+            id_queries = self._validate_multiple_id(self.full_query.id)
             queries.extend(id_queries)
-        if self.user_query.external_id is not None:
-            xid_queries = self._validate_multiple_xid(self.user_query.external_id)
+        if self.full_query.external_id is not None:
+            xid_queries = self._validate_multiple_xid(self.full_query.external_id)
             queries.extend(xid_queries)
         if queries:
-            self._user_query_is_valid = True
+            self._full_query_is_valid = True
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
@@ -233,7 +216,7 @@ class _SingleTSQueryValidator:
     def _validate_id_or_xid(
         self, id_or_xid: DatapointsId | DatapointsExternalId, arg_name: str, exp_type: type
     ) -> list[_SingleTSQueryBase]:
-        id_or_xid_seq: Sequence[int | str | dict[str, Any]]
+        id_or_xid_seq: Sequence[int | str | DatapointsQuery | dict[str, Any]]
         if isinstance(id_or_xid, (dict, exp_type)):
             # Lazy - we postpone evaluation:
             id_or_xid_seq = [cast(Union[int, str, Dict[str, Any]], id_or_xid)]
