@@ -386,11 +386,11 @@ class TestWorkflowExecutions:
         assert non_existing is None
 
     def test_trigger_retrieve_detailed_update_update_task(
-        # Each trigger creates a new execution, so we need to clean up after each test to avoid
-        # running out of quota
         self,
         cognite_client: CogniteClient,
         add_multiply_workflow: WorkflowVersion,
+        # Each trigger creates a new execution, so we need to clean up after each test to avoid
+        # running out of quota
         clean_created_sessions: None,
     ) -> None:
         workflow_execution = cognite_client.workflows.executions.trigger(
