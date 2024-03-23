@@ -50,7 +50,6 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> created = client.time_series.subscriptions.create(sub)
 
             Create a filter defined subscription for all numeric time series:
-
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes import filters as flt
