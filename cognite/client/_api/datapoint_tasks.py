@@ -70,31 +70,10 @@ DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
 DatapointsRaw = Union[DatapointsNum, DatapointsStr]
 
 RawDatapointValue = Union[float, str]
-DatapointsId = Union[None, int, DatapointsQuery, Dict[str, Any], Sequence[Union[int, DatapointsQuery, Dict[str, Any]]]]
+DatapointsId = Union[int, DatapointsQuery, Dict[str, Any], Sequence[Union[int, DatapointsQuery, Dict[str, Any]]]]
 DatapointsExternalId = Union[
-    None, str, DatapointsQuery, Dict[str, Any], SequenceNotStr[Union[str, DatapointsQuery, Dict[str, Any]]]
+    str, DatapointsQuery, Dict[str, Any], SequenceNotStr[Union[str, DatapointsQuery, Dict[str, Any]]]
 ]
-
-
-class CustomDatapointsQuery(TypedDict, total=False):
-    # No field required
-    start: int | str | datetime | None
-    end: int | str | datetime | None
-    aggregates: list[str] | None
-    granularity: str | None
-    target_unit: str | None
-    target_unit_system: str | None
-    limit: int | None
-    include_outside_points: bool | None
-    ignore_unknown_ids: bool | None
-
-
-class DatapointsQueryId(CustomDatapointsQuery):
-    id: int  # required field
-
-
-class DatapointsQueryExternalId(CustomDatapointsQuery):
-    external_id: str  # required field
 
 
 class DatapointsPayloadItem(TypedDict, total=False):
@@ -140,10 +119,27 @@ class _FullDatapointsQuery:
     def is_single_identifier(self) -> bool:
         # No lists given and exactly one of id/xid was given:
         return (
-            isinstance(self.id, (dict, numbers.Integral))
+            isinstance(self.id, (dict, DatapointsQuery, numbers.Integral))
             and self.external_id is None
-            or isinstance(self.external_id, (dict, str))
+            or isinstance(self.external_id, (dict, DatapointsQuery, str))
             and self.id is None
+        )
+
+    @cached_property
+    def top_level_defaults(self) -> dict[str, Any]:
+        return dict(
+            start=self.start,
+            end=self.end,
+            limit=self.limit,
+            aggregates=self.aggregates,
+            granularity=self.granularity,
+            target_unit=self.target_unit,
+            target_unit_system=self.target_unit_system,
+            include_outside_points=self.include_outside_points,
+            ignore_unknown_ids=self.ignore_unknown_ids,
+            include_status=self.include_status,
+            ignore_bad_data_points=self.ignore_bad_data_points,
+            treat_uncertain_as_bad=self.treat_uncertain_as_bad,
         )
 
 
@@ -159,6 +155,9 @@ class _SingleTSQueryValidator:
             "limit",
             "include_outside_points",
             "ignore_unknown_ids",
+            "include_status",
+            "ignore_bad_data_points",
+            "treat_uncertain_as_bad",
         }
     )
 
@@ -166,17 +165,6 @@ class _SingleTSQueryValidator:
         self.full_query = full_query
         self.dps_limit_raw = dps_limit_raw
         self.dps_limit_agg = dps_limit_agg
-        self.defaults: dict[str, Any] = dict(
-            start=full_query.start,
-            end=full_query.end,
-            limit=full_query.limit,
-            aggregates=full_query.aggregates,
-            granularity=full_query.granularity,
-            target_unit=full_query.target_unit,
-            target_unit_system=full_query.target_unit_system,
-            include_outside_points=full_query.include_outside_points,
-            ignore_unknown_ids=full_query.ignore_unknown_ids,
-        )
         self._full_query_is_valid = False
 
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
@@ -187,11 +175,9 @@ class _SingleTSQueryValidator:
     def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
         queries = []
         if self.full_query.id is not None:
-            id_queries = self._validate_multiple_id(self.full_query.id)
-            queries.extend(id_queries)
+            queries.extend(self._validate_multiple_id(self.full_query.id))
         if self.full_query.external_id is not None:
-            xid_queries = self._validate_multiple_xid(self.full_query.external_id)
-            queries.extend(xid_queries)
+            queries.extend(self._validate_multiple_xid(self.full_query.external_id))
         if queries:
             self._full_query_is_valid = True
             return queries
@@ -216,11 +202,12 @@ class _SingleTSQueryValidator:
     def _validate_id_or_xid(
         self, id_or_xid: DatapointsId | DatapointsExternalId, arg_name: str, exp_type: type
     ) -> list[_SingleTSQueryBase]:
-        id_or_xid_seq: Sequence[int | str | DatapointsQuery | dict[str, Any]]
-        if isinstance(id_or_xid, (dict, exp_type)):
+        id_or_xid_seq: SequenceNotStr[int | str | DatapointsQuery | dict[str, Any]]
+        if isinstance(id_or_xid, (dict, DatapointsQuery, exp_type)):
             # Lazy - we postpone evaluation:
-            id_or_xid_seq = [cast(Union[int, str, Dict[str, Any]], id_or_xid)]
-        elif isinstance(id_or_xid, Sequence):
+            id_or_xid_seq = [cast(Union[int, str, DatapointsQuery, Dict[str, Any]], id_or_xid)]
+
+        elif isinstance(id_or_xid, SequenceNotStr):
             # We use Sequence because we require an ordering of elements
             id_or_xid_seq = id_or_xid
         else:
@@ -229,23 +216,17 @@ class _SingleTSQueryValidator:
         queries = []
         for ts in id_or_xid_seq:
             if isinstance(ts, exp_type):
-                ts_dct = {**self.defaults, arg_name: ts}
-                queries.append(
-                    self._validate_and_create_query(cast(Union[DatapointsQueryId, DatapointsQueryExternalId], ts_dct))
-                )
-
+                ts_dct = {arg_name: ts}
+            elif isinstance(ts, DatapointsQuery) and getattr(ts, arg_name) is not None:
+                ts_dct = ts.dump()
             elif isinstance(ts, dict):
-                ts_validated = self._validate_user_supplied_dict_keys(ts, arg_name)
-                if not isinstance(identifier := ts_validated[arg_name], exp_type):
-                    self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
-                # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
-                ts_dct = {**self.defaults, **ts_validated}
-                queries.append(
-                    self._validate_and_create_query(cast(Union[DatapointsQueryId, DatapointsQueryExternalId], ts_dct))
-                )
-
-            else:  # pragma: no cover
+                ts_dct = self._validate_user_supplied_dict_keys(ts, arg_name)
+            else:
                 self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
+
+            # We merge 'defaults' and given ts-dict; ts-dict takes precedence:
+            ts_dct = {**self.full_query.top_level_defaults, **ts_dct}
+            queries.append(self._validate_and_create_query(ts_dct))
         return queries
 
     @staticmethod
@@ -256,7 +237,7 @@ class _SingleTSQueryValidator:
     ) -> NoReturn:
         raise TypeError(
             f"Got unsupported type {type(id_or_xid)}, as, or part of argument `{arg_name}`. Expected one of "
-            f"{exp_type}, {dict} or a (mixed) list of these, but got `{id_or_xid}`."
+            f"{exp_type}, {DatapointsQuery} or {dict} (deprecated), or a (mixed) list of these, but got `{id_or_xid}`."
         )
 
     @classmethod
@@ -275,7 +256,7 @@ class _SingleTSQueryValidator:
             )
         return dct
 
-    def _validate_and_create_query(self, dct: DatapointsQueryId | DatapointsQueryExternalId) -> _SingleTSQueryBase:
+    def _validate_and_create_query(self, dct: dict[str, Any]) -> _SingleTSQueryBase:
         limit = self._verify_limit(dct["limit"])
 
         target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
@@ -315,12 +296,7 @@ class _SingleTSQueryValidator:
             return _SingleTSQueryAggUnlimited(**agg_query, max_query_limit=self.dps_limit_agg)
         return _SingleTSQueryAggLimited(**agg_query, max_query_limit=self.dps_limit_agg)
 
-    def _convert_parameters(
-        self,
-        dct: DatapointsQueryId | DatapointsQueryExternalId,
-        limit: int | None,
-        is_raw: bool,
-    ) -> dict[str, Any]:
+    def _convert_parameters(self, dct: dict[str, Any], limit: int | None, is_raw: bool) -> dict[str, Any]:
         identifier = Identifier.of_either(
             cast(Optional[int], dct.get("id")), cast(Optional[str], dct.get("external_id"))
         )
