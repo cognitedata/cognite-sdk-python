@@ -418,23 +418,18 @@ class SessionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
-    def create(self, client_credentials: ClientCredentials | dict | None = None) -> CreatedSession:
+    def create(self, client_credentials: ClientCredentials | None = None) -> CreatedSession:
         """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
 
         Args:
-            client_credentials (ClientCredentials | dict | None): The client credentials to create the session. If set to None,
-                a session will be created using the credentials used to instantiate -this- CogniteClient object.
-                If that was done using a token, a session will be created using token exchange.
-                Similarly, if the credentials were client credentials, a session will be created using client credentials.
-                This method does not work when using client certificates (not supported server-side).
+            client_credentials (ClientCredentials | None): The client credentials to create the session. If set to None, a session will be created using the credentials used to instantiate -this- CogniteClient object. If that was done using a token, a session will be created using token exchange. Similarly, if the credentials were client credentials, a session will be created using client credentials. This method does not work when using client certificates (not supported server-side).
+
 
         Returns:
             CreatedSession: The object with token inspection details.
         """
         if client_credentials is None and isinstance((creds := self._config.credentials), OAuthClientCredentials):
             client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
-        elif isinstance(client_credentials, dict):
-            client_credentials = ClientCredentials(client_credentials["client_id"], client_credentials["client_secret"])
 
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
         return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
