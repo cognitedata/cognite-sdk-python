@@ -86,6 +86,9 @@ class DatapointsPayloadItem(TypedDict, total=False):
     targetUnitSystem: str | None
     limit: int
     includeOutsidePoints: bool
+    includeStatus: bool
+    ignoreBadDataPoints: bool
+    treatUncertainAsBad: bool
 
 
 class DatapointsPayload(DatapointsPayloadItem):
@@ -259,6 +262,10 @@ class _SingleTSQueryValidator:
         return dct
 
     def _validate_and_create_query(self, dct: dict[str, Any]) -> _SingleTSQueryBase:
+        # TODO: Add verification on:
+        #       - include_status
+        #       - ignore_bad_data_points
+        #       - treat_uncertain_as_bad
         limit = self._verify_limit(dct["limit"])
 
         target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
@@ -311,9 +318,12 @@ class _SingleTSQueryValidator:
             "target_unit_system": dct["target_unit_system"],
             "limit": limit,
             "ignore_unknown_ids": dct["ignore_unknown_ids"],
+            "ignore_bad_data_points": dct["ignore_bad_data_points"],
+            "treat_uncertain_as_bad": dct["treat_uncertain_as_bad"],
         }
         if is_raw:
             converted["include_outside_points"] = dct["include_outside_points"]
+            converted["include_status"] = dct["include_status"]
         else:
             if isinstance(aggs := dct["aggregates"], str):
                 aggs = [aggs]
@@ -369,6 +379,9 @@ class _SingleTSQueryBase:
         target_unit_system: str | None,
         include_outside_points: bool,
         ignore_unknown_ids: bool,
+        include_status: bool,
+        ignore_bad_data_points: bool,
+        treat_uncertain_as_bad: bool,
     ) -> None:
         self.identifier = identifier
         self.start = start
@@ -379,6 +392,9 @@ class _SingleTSQueryBase:
         self.target_unit_system = target_unit_system
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
+        self.include_status = include_status
+        self.ignore_bad_data_points = ignore_bad_data_points
+        self.treat_uncertain_as_bad = treat_uncertain_as_bad
 
         self.granularity: str | None = None
         self._is_missing: bool | None = None
@@ -448,6 +464,13 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
             payload["targetUnit"] = self.target_unit
         elif self.target_unit_system is not None:
             payload["targetUnitSystem"] = self.target_unit_system
+
+        if self.include_status is True:
+            payload["includeStatus"] = self.include_status
+        if self.ignore_bad_data_points is False:
+            payload["ignoreBadDataPoints"] = self.ignore_bad_data_points
+        if self.treat_uncertain_as_bad is False:
+            payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
         return payload
 
 
@@ -492,12 +515,16 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
             aggregates=self.aggs_camel_case,
             granularity=self.granularity,
             limit=self.capped_limit,
-            includeOutsidePoints=self.include_outside_points,
         )
         if self.target_unit is not None:
             payload["targetUnit"] = self.target_unit
         elif self.target_unit_system is not None:
             payload["targetUnitSystem"] = self.target_unit_system
+
+        if self.ignore_bad_data_points is False:
+            payload["ignoreBadDataPoints"] = self.ignore_bad_data_points
+        if self.treat_uncertain_as_bad is False:
+            payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
         return payload
 
 
@@ -595,6 +622,9 @@ class BaseDpsFetchSubtask:
         is_raw_query: bool,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_data_points: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> None:
         self.start = start
         self.end = end
@@ -604,6 +634,9 @@ class BaseDpsFetchSubtask:
         self.max_query_limit = max_query_limit
         self.target_unit = target_unit
         self.target_unit_system = target_unit_system
+        self.include_status = include_status
+        self.ignore_bad_data_points = ignore_bad_data_points
+        self.treat_uncertain_as_bad = treat_uncertain_as_bad
         self.is_done = False
         self.n_dps_fetched = 0
 
@@ -612,6 +645,14 @@ class BaseDpsFetchSubtask:
             self.static_kwargs["targetUnit"] = target_unit
         elif target_unit_system is not None:
             self.static_kwargs["targetUnitSystem"] = target_unit_system
+
+        if ignore_bad_data_points is False:
+            self.static_kwargs["ignoreBadDataPoints"] = ignore_bad_data_points
+        if treat_uncertain_as_bad is False:
+            self.static_kwargs["treatUncertainAsBad"] = treat_uncertain_as_bad
+
+        if self.is_raw_query and include_status is True:
+            self.static_kwargs["includeStatus"] = include_status
 
     @abstractmethod
     def get_next_payload_item(self) -> DatapointsPayloadItem: ...
@@ -718,6 +759,9 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             is_raw_query=self.is_raw_query,
             target_unit=self.target_unit,
             target_unit_system=self.target_unit_system,
+            include_status=self.include_status,
+            ignore_bad_data_points=self.ignore_bad_data_points,
+            treat_uncertain_as_bad=self.treat_uncertain_as_bad,
         )
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
@@ -917,6 +961,9 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
                 aggregates=self.query.aggs_camel_case,
                 granularity=self.query.granularity,
                 subtask_idx=FIRST_IDX,
+                include_status=self.query.include_status,
+                ignore_bad_data_points=self.query.ignore_bad_data_points,
+                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
         ]
         self.subtasks.extend(subtasks)
@@ -1046,6 +1093,9 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
                 target_unit_system=self.query.target_unit_system,
                 max_query_limit=self.query.max_query_limit,
                 is_raw_query=self.query.is_raw_query,
+                include_status=self.query.include_status,
+                ignore_bad_data_points=self.query.ignore_bad_data_points,
+                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
         ]

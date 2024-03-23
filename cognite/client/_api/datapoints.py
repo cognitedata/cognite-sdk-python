@@ -95,6 +95,7 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapo
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
     api_subversion = None
+    # TODO: If status codes or new aggregates = use beta
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
