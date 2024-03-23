@@ -17,6 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.31.0] - 2024-03-24
+### Added
+- Retrieve method for session, `client.iam.session.retrieve`
+- The parameter `limit` to the method `client.iam.session.list`.
+
+### Fixed
+- The method `client.iam.session.revoke` is now overloaded correctly and returns a `Session` for single id 
+  and a `SessionList` for multiple ids.
+
 ## [7.30.1] - 2024-03-23
 ### Fixed
 - When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` would raise

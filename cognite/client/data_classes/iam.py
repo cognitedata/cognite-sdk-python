@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Iterable, cast
+from typing import TYPE_CHECKING, Any, Iterable, Literal, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -336,23 +336,27 @@ class TokenInspection(CogniteResponse):
         }
 
 
+SessionStatus: TypeAlias = Literal["READY", "ACTIVE", "CANCELLED", "EXPIRED", "REVOKED", "ACCESS_LOST"]
+SessionType: TypeAlias = Literal["CLIENT_CREDENTIALS", "TOKEN_EXCHANGE", "ONESHOT_TOKEN_EXCHANGE"]
+
+
 class CreatedSession(CogniteResponse):
     """Session creation related information
 
     Args:
         id (int): ID of the created session.
-        status (str): Current status of the session.
+        status (SessionStatus): Current status of the session.
         nonce (str): Nonce to be passed to the internal service that will bind the session
-        type (str | None): Credentials kind used to create the session.
+        type (SessionType | None): Credentials kind used to create the session.
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
     """
 
     def __init__(
         self,
         id: int,
-        status: str,
+        status: SessionStatus,
         nonce: str,
-        type: str | None = None,
+        type: SessionType | None = None,
         client_id: str | None = None,
     ) -> None:
         self.id = id
@@ -377,8 +381,8 @@ class Session(CogniteResource):
 
     Args:
         id (int | None): ID of the session.
-        type (str | None): Credentials kind used to create the session.
-        status (str | None): Current status of the session.
+        type (SessionType | None): Credentials kind used to create the session.
+        status (SessionStatus | None): Current status of the session.
         creation_time (int | None): Session creation time, in milliseconds since 1970
         expiration_time (int | None): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
@@ -388,8 +392,8 @@ class Session(CogniteResource):
     def __init__(
         self,
         id: int | None = None,
-        type: str | None = None,
-        status: str | None = None,
+        type: SessionType | None = None,
+        status: SessionStatus | None = None,
         creation_time: int | None = None,
         expiration_time: int | None = None,
         client_id: str | None = None,

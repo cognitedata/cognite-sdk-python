@@ -56,6 +56,10 @@ Create a session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SessionsAPI.create
 
+Retrieve a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.retrieve
+
 Revoke a session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SessionsAPI.revoke
