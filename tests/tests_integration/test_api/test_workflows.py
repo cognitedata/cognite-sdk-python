@@ -226,8 +226,7 @@ def clean_created_sessions(cognite_client: CogniteClient) -> None:
     current_sessions = cognite_client.iam.sessions.list(status="active")
     existing_ids = {session.id for session in existing_active_sessions}
     to_revoked = [session.id for session in current_sessions if session.id not in existing_ids]
-    for session_id in to_revoked:
-        cognite_client.iam.sessions.revoke(session_id)
+    cognite_client.iam.sessions.revoke(to_revoked)
 
 
 class TestWorkflows:
@@ -385,13 +384,13 @@ class TestWorkflowExecutions:
 
         assert non_existing is None
 
+    # Each trigger creates a new execution, so we need to clean up after each test to avoid
+    # running out of quota
+    @pytest.mark.usefixtures("clean_created_sessions")
     def test_trigger_retrieve_detailed_update_update_task(
         self,
         cognite_client: CogniteClient,
         add_multiply_workflow: WorkflowVersion,
-        # Each trigger creates a new execution, so we need to clean up after each test to avoid
-        # running out of quota
-        clean_created_sessions: None,
     ) -> None:
         workflow_execution = cognite_client.workflows.executions.trigger(
             add_multiply_workflow.workflow_external_id,

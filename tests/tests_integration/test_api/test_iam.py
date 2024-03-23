@@ -5,7 +5,7 @@ import os
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Group, GroupList, SecurityCategory
+from cognite.client.data_classes import CreatedSession, Group, GroupList, SecurityCategory
 from cognite.client.data_classes.capabilities import EventsAcl, ProjectCapabilityList
 from cognite.client.utils._text import random_string
 
@@ -64,10 +64,15 @@ class TestSecurityCategoriesAPI:
 )
 class TestSessionsAPI:
     def test_create_retrieve_and_revoke(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.iam.sessions.create()
+        created: CreatedSession | None = None
+        try:
+            created = cognite_client.iam.sessions.create()
 
-        retrieved = cognite_client.iam.sessions.retrieve(res.id)
+            retrieved = cognite_client.iam.sessions.retrieve(created.id)
 
-        assert retrieved.id == res.id
-        assert res.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
-        assert res.id in {s.id for s in cognite_client.iam.sessions.revoke(res.id) if s.status == "REVOKED"}
+            assert retrieved.id == created.id
+            assert created.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
+        finally:
+            if created:
+                revoked = cognite_client.iam.sessions.revoke(created.id)
+                assert created.id == revoked.id

@@ -434,19 +434,26 @@ class SessionsAPI(APIClient):
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
         return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
-    def revoke(self, id: int | Sequence[int]) -> SessionList:
+    @overload
+    def revoke(self, id: int) -> Session: ...
+
+    @overload
+    def revoke(self, id: Sequence[int]) -> SessionList: ...
+
+    def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
 
         Args:
             id (int | Sequence[int]): Id or list of session ids
 
         Returns:
-            SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
+            Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        result = SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return result[0] if isinstance(id, int) else result
 
     @overload
     def retrieve(self, id: int) -> Session: ...
