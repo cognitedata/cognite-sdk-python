@@ -35,6 +35,7 @@ from cognite.client.data_classes.functions import FunctionCallsFilter, Functions
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._session import create_session_and_return_nonce
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 

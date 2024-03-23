@@ -481,8 +481,7 @@ class SessionsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        response_json = self._post(self._RESOURCE_PATH + "/revoke", items).json()
-        return SessionList._load(response_json["items"])
+        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     @overload
     def retrieve(self, id: int) -> Session: ...
