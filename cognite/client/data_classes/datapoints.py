@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -85,28 +85,35 @@ def numpy_dtype_fix(element: np.float64 | str) -> float | str:
         raise
 
 
+NOT_SET = object()
+
+
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
 
-    start: int | str | datetime | None = None
-    end: int | str | datetime | None = None
     id: int | None = None
     external_id: str | None = None
-    aggregates: Aggregate | str | list[Aggregate | str] | None = None
-    granularity: str | None = None
-    target_unit: str | None = None
-    target_unit_system: str | None = None
-    limit: int | None = None
-    include_outside_points: bool = False
-    ignore_unknown_ids: bool = False
-    include_status: bool = False
-    ignore_bad_data_points: bool = True
-    treat_uncertain_as_bad: bool = True
+    start: int | str | datetime = NOT_SET  # type: ignore [assignment]
+    end: int | str | datetime = NOT_SET  # type: ignore [assignment]
+    aggregates: Aggregate | str | list[Aggregate | str] = NOT_SET  # type: ignore [assignment]
+    granularity: str = NOT_SET  # type: ignore [assignment]
+    target_unit: str = NOT_SET  # type: ignore [assignment]
+    target_unit_system: str = NOT_SET  # type: ignore [assignment]
+    limit: int = NOT_SET  # type: ignore [assignment]
+    include_outside_points: bool = NOT_SET  # type: ignore [assignment]
+    ignore_unknown_ids: bool = NOT_SET  # type: ignore [assignment]
+    include_status: bool = NOT_SET  # type: ignore [assignment]
+    ignore_bad_data_points: bool = NOT_SET  # type: ignore [assignment]
+    treat_uncertain_as_bad: bool = NOT_SET  # type: ignore [assignment]
 
     def __post_init__(self) -> None:
         # Ensure user have just specified one of id/xid:
         Identifier.of_either(self.id, self.external_id)
+
+    def dump(self) -> dict[str, Any]:
+        # We need to dump only those fields specifically passed by the user:
+        return dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) not in (NOT_SET, None))
 
 
 @dataclass(frozen=True)
