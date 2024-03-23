@@ -897,6 +897,9 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
 
         raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")
 
+    def _repr_html_(self) -> str:
+        return self.to_pandas(key="external_id", concat=True).to_html()
+
 
 SequenceDataList = SequenceRowsList
 
