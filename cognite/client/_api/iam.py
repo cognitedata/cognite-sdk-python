@@ -482,5 +482,5 @@ class SessionsAPI(APIClient):
         Returns:
             SessionList: a list of sessions in the current project.
         """
-        filter = {"status": status} if status is not None else None
+        filter = {"status": status.upper()} if status is not None else None
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
