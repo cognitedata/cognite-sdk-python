@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.31.0] - 2024-03-23
+## [7.31.0] - 2024-03-24
 ### Added
 - Retrieve method for session, `client.iam.session.retrieve`
 - The parameter `limit` to the method `client.iam.session.list`.
