@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator
-from contextlib import contextmanager
 from itertools import groupby
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, overload
@@ -419,34 +417,6 @@ class SessionsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
-
-    @contextmanager
-    def create_session(self, client_credentials: ClientCredentials | dict | None = None) -> Iterator[CreatedSession]:
-        """
-        Create a session and return a context manager that will revoke the session when it exits.
-
-        Args:
-            client_credentials (ClientCredentials | dict | None): The client credentials to create the session. If set to None, a session will be created using the credentials used to instantiate -this- CogniteClient object. If that was done using a token, a session will be created using token exchange. Similarly, if the credentials were client credentials, a session will be created using client credentials. This method does not work when using client certificates (not supported server-side).
-
-        Returns:
-            Iterator[CreatedSession]: No description.
-        Yields:
-            CreatedSession: The created session which will be revoked after exiting the context manager.
-
-        Examples:
-
-            Create a session and use it in a context manager:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> with c.iam.sessions.create_session() as session:
-                ...     print(session.status)
-        """
-        created_session = self.create(client_credentials)
-        try:
-            yield created_session
-        finally:
-            self.revoke(created_session.id)
 
     def create(self, client_credentials: ClientCredentials | dict | None = None) -> CreatedSession:
         """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
