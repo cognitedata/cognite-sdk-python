@@ -480,14 +480,15 @@ class SessionsAPI(APIClient):
             identifiers=identifiers,
         )
 
-    def list(self, status: str | SessionStatus | None = None) -> SessionList:
+    def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
-            status (str | SessionStatus | None): If given, only sessions with the given status are returned.
+            status (SessionStatus | None): If given, only sessions with the given status are returned.
+            limit (int): Max number of sessions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SessionList: a list of sessions in the current project.
         """
         filter = {"status": status.upper()} if status is not None else None
-        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
+        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)

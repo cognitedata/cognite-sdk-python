@@ -221,9 +221,9 @@ def workflow_execution_list(
 
 @pytest.fixture()
 def clean_created_sessions(cognite_client: CogniteClient) -> None:
-    existing_active_sessions = cognite_client.iam.sessions.list(status="active")
+    existing_active_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
     yield None
-    current_sessions = cognite_client.iam.sessions.list(status="active")
+    current_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
     existing_ids = {session.id for session in existing_active_sessions}
     to_revoked = [session.id for session in current_sessions if session.id not in existing_ids]
     cognite_client.iam.sessions.revoke(to_revoked)

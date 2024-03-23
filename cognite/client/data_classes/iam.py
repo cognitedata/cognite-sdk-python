@@ -336,8 +336,8 @@ class TokenInspection(CogniteResponse):
         }
 
 
-SessionStatus: TypeAlias = Literal["ready", "active", "cancelled", "expired", "revoked", "access_lost"]
-SessionType: TypeAlias = Literal["CLIENT_CREDENTIALS", "TOKEN_EXCHANGE"]
+SessionStatus: TypeAlias = Literal["READY", "ACTIVE", "CANCELLED", "EXPIRED", "REVOKED", "ACCESS_LOST"]
+SessionType: TypeAlias = Literal["CLIENT_CREDENTIALS", "TOKEN_EXCHANGE", "ONESHOT_TOKEN_EXCHANGE"]
 
 
 class CreatedSession(CogniteResponse):
