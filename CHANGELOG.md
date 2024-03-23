@@ -22,6 +22,12 @@ Changes are grouped as follows
 - Retrieve method for session, `client.iam.session.retrieve`
 - The parameter `limit` to the method `client.iam.session.list`.
 
+## [7.30.1] - 2024-03-23
+### Fixed
+- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` would raise
+  an `AttributeError: 'dict' object has no attribute '_repr_html_'`, i.e., the HTML representation of `SequenceRowsList`
+  was failing. This is now fixed.
+
 ## [7.30.0] - 2024-03-20
 ### Added
 - `Properties` class, as used on e.g. `Node` and `Edge`, now renders in Jupyter Notebooks (`_repr_html_` added).
