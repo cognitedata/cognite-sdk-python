@@ -20,6 +20,7 @@ Changes are grouped as follows
 ## [7.31.0] - 2024-03-23
 ### Added
 - Retrieve method for session, `client.iam.session.retrieve`
+- The parameter `limit` to the method `client.iam.session.list`.
 
 ## [7.30.0] - 2024-03-20
 ### Added
