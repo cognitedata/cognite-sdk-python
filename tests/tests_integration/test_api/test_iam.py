@@ -71,7 +71,7 @@ class TestSessionsAPI:
             retrieved = cognite_client.iam.sessions.retrieve(created.id)
 
             assert retrieved.id == created.id
-            assert created.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
+            assert created.id in {s.id for s in cognite_client.iam.sessions.list("READY", limit=-1)}
         finally:
             if created:
                 revoked = cognite_client.iam.sessions.revoke(created.id)
