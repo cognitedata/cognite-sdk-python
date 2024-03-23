@@ -217,7 +217,9 @@ class _SingleTSQueryValidator:
         for ts in id_or_xid_seq:
             if isinstance(ts, exp_type):
                 ts_dct = {arg_name: ts}
-            elif isinstance(ts, DatapointsQuery) and getattr(ts, arg_name) is not None:
+            elif isinstance(ts, DatapointsQuery):
+                if ts.identifier.name() != arg_name:
+                    raise ValueError(f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}")
                 ts_dct = ts.dump()
             elif isinstance(ts, dict):
                 ts_dct = self._validate_user_supplied_dict_keys(ts, arg_name)

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 import typing
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass, fields
+from dataclasses import InitVar, dataclass, fields
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -85,35 +86,45 @@ def numpy_dtype_fix(element: np.float64 | str) -> float | str:
         raise
 
 
-NOT_SET = object()
+_NOT_SET = object()
 
 
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
 
-    id: int | None = None
-    external_id: str | None = None
-    start: int | str | datetime = NOT_SET  # type: ignore [assignment]
-    end: int | str | datetime = NOT_SET  # type: ignore [assignment]
-    aggregates: Aggregate | str | list[Aggregate | str] = NOT_SET  # type: ignore [assignment]
-    granularity: str = NOT_SET  # type: ignore [assignment]
-    target_unit: str = NOT_SET  # type: ignore [assignment]
-    target_unit_system: str = NOT_SET  # type: ignore [assignment]
-    limit: int = NOT_SET  # type: ignore [assignment]
-    include_outside_points: bool = NOT_SET  # type: ignore [assignment]
-    ignore_unknown_ids: bool = NOT_SET  # type: ignore [assignment]
-    include_status: bool = NOT_SET  # type: ignore [assignment]
-    ignore_bad_data_points: bool = NOT_SET  # type: ignore [assignment]
-    treat_uncertain_as_bad: bool = NOT_SET  # type: ignore [assignment]
+    id: InitVar[int | None] = None
+    external_id: InitVar[str | None] = None
+    start: int | str | datetime = _NOT_SET  # type: ignore [assignment]
+    end: int | str | datetime = _NOT_SET  # type: ignore [assignment]
+    aggregates: Aggregate | str | list[Aggregate | str] = _NOT_SET  # type: ignore [assignment]
+    granularity: str = _NOT_SET  # type: ignore [assignment]
+    target_unit: str = _NOT_SET  # type: ignore [assignment]
+    target_unit_system: str = _NOT_SET  # type: ignore [assignment]
+    limit: int | None = _NOT_SET  # type: ignore [assignment]
+    include_outside_points: bool = _NOT_SET  # type: ignore [assignment]
+    ignore_unknown_ids: bool = _NOT_SET  # type: ignore [assignment]
+    include_status: bool = _NOT_SET  # type: ignore [assignment]
+    ignore_bad_data_points: bool = _NOT_SET  # type: ignore [assignment]
+    treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, id: int | None, external_id: str | None) -> None:
         # Ensure user have just specified one of id/xid:
-        Identifier.of_either(self.id, self.external_id)
+        self._identifier = Identifier.of_either(id, external_id)
+
+    @property
+    def identifier(self) -> Identifier:
+        return self._identifier
+
+    def __repr__(self) -> str:
+        return json.dumps(self.dump(), indent=4)
 
     def dump(self) -> dict[str, Any]:
         # We need to dump only those fields specifically passed by the user:
-        return dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) not in (NOT_SET, None))
+        return {
+            **self._identifier.as_dict(camel_case=False),
+            **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not _NOT_SET),
+        }
 
 
 @dataclass(frozen=True)
