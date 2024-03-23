@@ -38,14 +38,15 @@ from cognite.client._api.datapoint_tasks import (
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
-from cognite.client.data_classes.datapoints import (
-    Aggregate,
+from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
     DatapointsList,
+    DatapointsQuery,
     LatestDatapointQuery,
 )
+from cognite.client.data_classes.datapoints import Aggregate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
@@ -86,11 +87,9 @@ _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
-def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _FullDatapointsQuery) -> DpsFetchStrategy:
+def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapointsQuery) -> DpsFetchStrategy:
     validator = _SingleTSQueryValidator(
-        user_query,
-        dps_limit_raw=dps_client._DPS_LIMIT_RAW,
-        dps_limit_agg=dps_client._DPS_LIMIT_AGG,
+        full_query, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG
     )
     all_queries = validator.validate_and_create_single_queries()
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
@@ -533,8 +532,12 @@ class DatapointsAPI(APIClient):
     def retrieve(
         self,
         *,
-        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
+        id: None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]] = None,
+        external_id: None
+        | str
+        | DatapointsQuery
+        | dict[str, Any]
+        | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -544,6 +547,9 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_data_points: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> Datapoints | DatapointsList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
@@ -556,8 +562,8 @@ class DatapointsAPI(APIClient):
             4. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't use start=0 (1970).
 
         Args:
-            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -567,6 +573,9 @@ class DatapointsAPI(APIClient):
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): No description.
+            ignore_bad_data_points (bool): No description.
+            treat_uncertain_as_bad (bool): No description.
 
         Returns:
             Datapoints | DatapointsList | None: A ``Datapoints`` object containing the requested data, or a ``DatapointsList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -610,20 +619,21 @@ class DatapointsAPI(APIClient):
                 >>> for dp in dps_slice:
                 ...     pass  # do something!
 
-            All parameters can be individually set if you pass (one or more) dictionaries (even `ignore_unknown_ids`, contrary to the API).
+            All parameters can be individually set if you use and pass DatapointsQuery objects (even `ignore_unknown_ids`, contrary to the API).
             If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
-            mix any kind of ids and external ids: Single identifiers, single dictionaries and (mixed) lists of these.
+            mix any kind of ids and external ids: Single identifiers, single DatapointsQuery objects and (mixed) lists of these.
 
             Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
             the string directly for convenience)::
 
+                >>> from cognite.client.data_classes import DatapointsQuery
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
-                ...         {"id": 42, "end": "1d-ago", "aggregates": "average"},
-                ...         {"id": 69, "end": "2d-ago", "aggregates": ["average"]},
-                ...         {"id": 96, "end": "3d-ago", "aggregates": ["min", "max", "count"]},
+                ...         DatapointsQuery(id=42, end="1d-ago", aggregates= "average"),
+                ...         DatapointsQuery(id=69, end="2d-ago", aggregates=["average"]),
+                ...         DatapointsQuery(id=96, end="3d-ago", aggregates=["min", "max", "count"]),
                 ...     ],
-                ...     external_id={"external_id": "foo", "aggregates": "max"},
+                ...     external_id=DatapointsQuery(external_id="foo", aggregates="max"),
                 ...     start="5d-ago",
                 ...     granularity="1h")
 
@@ -653,7 +663,7 @@ class DatapointsAPI(APIClient):
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[42, 43, 44],
                 ...     external_id=[
-                ...         {"external_id": sensor_xid, "start": ev.start_time, "end": ev.end_time}
+                ...         DatapointsQuery(external_id=sensor_xid, start=ev.start_time, end=ev.end_time)
                 ...         for ev in periods
                 ...     ])
                 >>> ts_44 = dps_lst.get(id=44)  # Single ``Datapoints`` object
@@ -668,7 +678,7 @@ class DatapointsAPI(APIClient):
                 ...     datetime(year, month, 1, tzinfo=utc)
                 ...     for year, month in itertools.product(range(2000, 2011), range(1, 13))]
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...     external_id=[{"external_id": "foo", "start": start} for start in month_starts],
+                ...     external_id=[DatapointsQuery(external_id="foo", start=start) for start in month_starts],
                 ...     limit=1)
 
             To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
@@ -684,21 +694,21 @@ class DatapointsAPI(APIClient):
             Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
 
                 >>> ts1 = 1337
-                >>> ts2 = {
-                ...     "id": 42,
-                ...     "start": -12345,  # Overrides `start` arg. below
-                ...     "end": "1h-ago",
-                ...     "limit": 1000,  # Overrides `limit` arg. below
-                ...     "include_outside_points": True,
-                ... }
-                >>> ts3 = {
-                ...     "id": 11,
-                ...     "end": "1h-ago",
-                ...     "aggregates": ["max"],
-                ...     "granularity": "42h",
-                ...     "include_outside_points": False,
-                ...     "ignore_unknown_ids": True,  # Overrides `ignore_unknown_ids` arg. below
-                ... }
+                >>> ts2 = DatapointsQuery(
+                ...     id=42,
+                ...     start=-12345,  # Overrides `start` arg. below
+                ...     end="1h-ago",
+                ...     limit=1000,  # Overrides `limit` arg. below
+                ...     include_outside_points=True,
+                ... )
+                >>> ts3 = DatapointsQuery(
+                ...     id=11,
+                ...     end="1h-ago",
+                ...     aggregates=["max"],
+                ...     granularity="42h",
+                ...     include_outside_points=False,
+                ...     ignore_unknown_ids=True,  # Overrides `ignore_unknown_ids` arg. below
+                ... )
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False)
 
@@ -712,7 +722,6 @@ class DatapointsAPI(APIClient):
 
                 >>> client.time_series.data.retrieve(
                 ...   id=42, start="2w-ago", limit=None, target_unit_system="Imperial")
-
         """
         query = _FullDatapointsQuery(
             start=start,
@@ -726,8 +735,11 @@ class DatapointsAPI(APIClient):
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_data_points=ignore_bad_data_points,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        fetcher = select_dps_fetch_strategy(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, full_query=query)
 
         dps_lst = fetcher.fetch_all_datapoints()
         if not query.is_single_identifier:
@@ -830,7 +842,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = select_dps_fetch_strategy(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, full_query=query)
 
         dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
@@ -946,7 +958,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = select_dps_fetch_strategy(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, full_query=query)
 
         if not uniform_index:
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
