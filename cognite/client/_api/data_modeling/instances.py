@@ -57,6 +57,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeList,
     SubscriptionContext,
     TargetUnit,
+    TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
@@ -1124,7 +1125,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> tuple[NodeList, dict]: ...
+    ) -> tuple[NodeList, TypeInformation]: ...
 
     @overload
     def list(
@@ -1136,7 +1137,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> tuple[EdgeList, dict]: ...
+    ) -> tuple[EdgeList, TypeInformation]: ...
 
     def list(
         self,
@@ -1147,7 +1148,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> NodeList | EdgeList | tuple[NodeList, dict] | tuple[EdgeList, dict]:
+    ) -> NodeList | EdgeList | tuple[NodeList, TypeInformation] | tuple[EdgeList, TypeInformation]:
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
@@ -1160,7 +1161,8 @@ class InstancesAPI(APIClient):
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
 
         Returns:
-            NodeList | EdgeList | tuple[NodeList, dict] | tuple[EdgeList, dict]: List of requested instances
+            NodeList | EdgeList | tuple[NodeList, TypeInformation] | tuple[EdgeList, TypeInformation]: List of requested instances.
+                If include_typing is True, the return value will be a tuple with the instances and type information.
 
         Examples:
 
