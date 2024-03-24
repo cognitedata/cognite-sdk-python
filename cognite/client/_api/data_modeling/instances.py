@@ -1094,7 +1094,7 @@ class InstancesAPI(APIClient):
     def list(
         self,
         instance_type: Literal["node"] = "node",
-        include_typing: bool = False,
+        include_typing: Literal[False] = False,
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -1106,13 +1106,37 @@ class InstancesAPI(APIClient):
     def list(
         self,
         instance_type: Literal["edge"],
-        include_typing: bool = False,
+        include_typing: Literal[False] = False,
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
     ) -> EdgeList: ...
+
+    @overload
+    def list(
+        self,
+        instance_type: Literal["node"],
+        include_typing: Literal[True],
+        sources: Source | Sequence[Source] | None = None,
+        space: str | Sequence[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> tuple[NodeList, dict]: ...
+
+    @overload
+    def list(
+        self,
+        instance_type: Literal["edge"],
+        include_typing: Literal[True],
+        sources: Source | Sequence[Source] | None = None,
+        space: str | Sequence[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> tuple[EdgeList, dict]: ...
 
     def list(
         self,
@@ -1123,7 +1147,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> NodeList | EdgeList:
+    ) -> NodeList | EdgeList | tuple[NodeList, dict] | tuple[EdgeList, dict]:
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
@@ -1136,7 +1160,7 @@ class InstancesAPI(APIClient):
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
 
         Returns:
-            NodeList | EdgeList: List of requested instances
+            NodeList | EdgeList | tuple[NodeList, dict] | tuple[EdgeList, dict]: List of requested instances
 
         Examples:
 
