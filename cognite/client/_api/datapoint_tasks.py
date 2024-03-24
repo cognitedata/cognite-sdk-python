@@ -20,7 +20,6 @@ from typing import (
     Iterator,
     List,
     Literal,
-    MutableSequence,
     NoReturn,
     Optional,
     Sequence,
@@ -31,11 +30,15 @@ from typing import (
     cast,
 )
 
-from google.protobuf.message import Message
+from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from typing_extensions import NotRequired, TypeAlias
 
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
-from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, Status, StringDatapoint
+from cognite.client._proto.data_points_pb2 import (
+    AggregateDatapoint,
+    NumericDatapoint,
+    StringDatapoint,
+)
 from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import is_unlimited
@@ -77,13 +80,15 @@ _AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hi
         "durationUncertain",
     ]
 )
+AggregateDatapoints = RepeatedCompositeFieldContainer[AggregateDatapoint]
+NumericDatapoints = RepeatedCompositeFieldContainer[NumericDatapoint]
+StringDatapoints = RepeatedCompositeFieldContainer[StringDatapoint]
 
-DatapointsAgg = MutableSequence[AggregateDatapoint]
-DatapointsNum = MutableSequence[NumericDatapoint]
-DatapointsStr = MutableSequence[StringDatapoint]
+DatapointAny = Union[AggregateDatapoint, NumericDatapoint, StringDatapoint]
+DatapointsAny = Union[AggregateDatapoints, NumericDatapoints, StringDatapoints]
 
-DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
-DatapointsRaw = Union[DatapointsNum, DatapointsStr]
+DatapointRaw = Union[NumericDatapoint, StringDatapoint]
+DatapointsRaw = Union[NumericDatapoints, StringDatapoints]
 
 RawDatapointValue = Union[float, str]
 DatapointsId = Union[int, DatapointsQuery, Dict[str, Any], Sequence[Union[int, DatapointsQuery, Dict[str, Any]]]]
@@ -581,14 +586,21 @@ class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
 
 
 class DpsUnpackFns:
-    ts: Callable[[Message], int] = op.attrgetter("timestamp")
-    raw_dp: Callable[[Message], RawDatapointValue] = op.attrgetter("value")
-    ts_dp_tpl: Callable[[Message], tuple[int, RawDatapointValue]] = op.attrgetter("timestamp", "value")
-    count: Callable[[Message], int] = op.attrgetter("count")
-    status: Callable[[Message], Status] = op.attrgetter("status")
+    ts: Callable[[DatapointAny], int] = op.attrgetter("timestamp")
+    raw_dp: Callable[[DatapointRaw], RawDatapointValue] = op.attrgetter("value")
+    ts_dp_tpl: Callable[[DatapointRaw], tuple[int, RawDatapointValue]] = op.attrgetter("timestamp", "value")
+    count: Callable[[AggregateDatapoint], int] = op.attrgetter("count")
+
+    # Status is a nested object in the response (code+symbol). Since most dps is expected to be good
+    # (code 0), status is not returned for these:
+    status_code: Callable[[NumericDatapoint], int] = op.attrgetter("status.code")  # Gives 0 by default when missing
 
     @staticmethod
-    def custom_from_aggregates(lst: list[str]) -> Callable[[DatapointsAgg], tuple[float, ...]]:
+    def status_symbol(msg: NumericDatapoint) -> str:
+        return msg.status.symbol or "Good"  # Gives empty str when missing, so we set 'Good' manually
+
+    @staticmethod
+    def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoints], tuple[float, ...]]:
         return op.attrgetter(*lst)
 
 
@@ -605,7 +617,7 @@ def decide_numpy_dtype_from_is_string(is_string: bool) -> type:
 def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     if (dp_type := res.WhichOneof("datapointType")) is not None:
         return getattr(res, dp_type).datapoints
-    return cast(MutableSequence[Any], [])
+    return cast(DatapointsAny, [])
 
 
 def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool]:
@@ -952,6 +964,9 @@ class BaseTaskOrchestrator(ABC):
                 end=self.query.end,
                 identifier=self.query.identifier,
                 parent=self,
+                include_status=self.query.include_status,
+                ignore_bad_data_points=self.query.ignore_bad_data_points,
+                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
             # Append the outside subtask to returned subtasks so that it will be queued:
             subtasks.append(self.subtask_outside_points)
@@ -1012,7 +1027,8 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         super().__init__(**kwargs)
 
         if self.query.include_status:
-            self.status_data: _DataContainer = defaultdict(list)
+            self.status_code: _DataContainer = defaultdict(list)
+            self.status_symbol: _DataContainer = defaultdict(list)
 
     @property
     def offset_next(self) -> Literal[1]:
@@ -1045,22 +1061,17 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     "value": create_array_from_dps_container(self.dps_data),
                 }
             )
-        extra: dict[str, Any] = {}
-        if self.status_data:
-            # TODO: Hacky "POC", needs optimizing
-            status_code = []
-            status_symbol = []
-            for status in create_list_from_dps_container(self.status_data):
-                # Since most dps is expected to be good (code 0), status is not returned for these:
-                status_code.append(status.code or 0)
-                status_symbol.append(status.symbol or "Good")
-            extra.update(status_code=status_code, status_symbol=status_symbol)
-
+        status_columns: dict[str, Any] = {}
+        if self.query.include_status:
+            status_columns.update(
+                status_code=create_list_from_dps_container(self.status_code),
+                status_symbol=create_list_from_dps_container(self.status_symbol),
+            )
         return Datapoints(
             **self.ts_info_dct,
             timestamp=create_list_from_dps_container(self.ts_data),
             value=create_list_from_dps_container(self.dps_data),
-            **extra,
+            **status_columns,
         )
 
     def _include_outside_points_in_result(self) -> None:
@@ -1083,7 +1094,10 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
             self.dps_data[idx].append(list(map(DpsUnpackFns.raw_dp, dps)))
             if self.query.include_status:
-                self.status_data[idx].append(list(map(DpsUnpackFns.status, dps)))
+                # TODO: StringDatapoints still missing API implementation for status codes
+                dps = cast(NumericDatapoints, dps)
+                self.status_code[idx].append(list(map(DpsUnpackFns.status_code, dps)))
+                self.status_symbol[idx].append(list(map(DpsUnpackFns.status_symbol, dps)))
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         if self.query.include_outside_points:
@@ -1243,13 +1257,13 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 lst_dct.update(dict(zip(self.float_aggs, aggs_iter)))
         return Datapoints(**self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
 
-    def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsAgg) -> None:  # type: ignore [override]
+    def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
         if self.use_numpy:
             self._unpack_and_store_numpy(idx, dps)
         else:
             self._unpack_and_store_basic(idx, dps)
 
-    def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsAgg) -> None:
+    def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
         n = len(dps)
         self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=n))
 
@@ -1271,7 +1285,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 )
             self.dps_data[idx].append(arr.reshape(n, len(self.float_aggs)))
 
-    def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: DatapointsAgg) -> None:
+    def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
         self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
 
         if self.is_count_query:
