@@ -1072,15 +1072,32 @@ class TypePropertyDefinition(CogniteObject):
     name: str | None = None
     description: str | None = None
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "type": self.type.dump(camel_case),
-            "nullable": self.nullable,
-            "autoIncrement": self.auto_increment,
-            "defaultValue": self.default_value,
-            "name": self.name,
-            "description": self.description,
-        }
+    def dump(self, camel_case: bool = True, return_flat_dict: bool = False) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        if return_flat_dict:
+            dumped = self._flatten_dict(self.type.dump(camel_case), ("type",))
+            output.update({key: value for key, value in dumped.items()})
+        else:
+            output["type"] = self.type.dump(camel_case)
+        output.update(
+            {
+                "nullable": self.nullable,
+                "autoIncrement": self.auto_increment,
+                "defaultValue": self.default_value,
+                "name": self.name,
+                "description": self.description,
+            }
+        )
+        return output
+
+    def _flatten_dict(self, d: dict[str, Any], parent_keys: tuple[str, ...]) -> dict[str, Any]:
+        items: list[tuple[str, Any]] = []
+        for key, value in d.items():
+            if isinstance(value, dict):
+                items.extend(self._flatten_dict(value, (*parent_keys, key)).items())
+            else:
+                items.append((".".join((*parent_keys, key)), value))
+        return dict(items)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TypePropertyDefinition:
@@ -1122,7 +1139,27 @@ class TypeInformation(UserDict, CogniteObject):
             }
         )
 
-    def to_pandas(self) -> pd.DataFrame: ...
+    def to_pandas(self) -> pd.DataFrame:
+        pd = local_import("pandas")
+
+        index_names = "space_name", "view_or_container"
+        if not self:
+            df = pd.DataFrame(index=pd.MultiIndex(levels=([], []), codes=([], []), names=index_names))
+        else:
+            df = pd.DataFrame.from_dict(
+                {
+                    (space_name, view_or_container_id): {
+                        "identifier": type_name,
+                        **type_data.dump(camel_case=False, return_flat_dict=True),
+                    }
+                    for space_name, space_data in self.data.items()
+                    for view_or_container_id, view_data in space_data.items()
+                    for type_name, type_data in view_data.items()
+                },
+                orient="index",
+            )
+            df.index.names = index_names
+        return df
 
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
