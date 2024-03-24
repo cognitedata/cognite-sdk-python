@@ -1262,11 +1262,15 @@ class TypeInformation(UserDict, CogniteObject):
             {
                 space_name: {
                     view_or_container_id: {
-                        type_name: TypePropertyDefinition.load(type_data) for type_name, type_data in view_data.items()
+                        type_name: TypePropertyDefinition.load(type_data)
+                        for type_name, type_data in view_data.items()
+                        if isinstance(type_data, dict)
                     }
                     for view_or_container_id, view_data in space_data.items()
+                    if isinstance(view_data, dict)
                 }
                 for space_name, space_data in resource.items()
+                if isinstance(space_data, dict)
             }
         )
 
