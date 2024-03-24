@@ -1227,7 +1227,7 @@ class InstancesAPI(APIClient):
         )
         if include_typing and extra_response:
             return items, TypeInformation._load(extra_response[0]["typing"])  # type: ignore[return-value]
-        elif instance_type:
+        elif include_typing:
             warnings.warn(
                 "No type infomation was returned. This is likely due to the includeTyping parameter being set to false.",
                 RuntimeWarning,
