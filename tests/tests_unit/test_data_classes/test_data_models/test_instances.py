@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, List, Union, cast
 
-import pandas as pd
 import pytest
 
 from cognite.client.data_classes.data_modeling import (
@@ -446,6 +445,8 @@ class TestInstancesToPandas:
 class TestTypeInformation:
     @pytest.mark.dsl
     def test_to_pandas(self) -> None:
+        import pandas as pd
+
         info = TypeInformation(
             {
                 "my_space": {
