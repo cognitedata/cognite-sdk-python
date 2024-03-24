@@ -35,7 +35,7 @@ from google.protobuf.message import Message
 from typing_extensions import NotRequired, TypeAlias
 
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
-from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
+from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, Status, StringDatapoint
 from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import is_unlimited
@@ -61,6 +61,22 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 FIRST_IDX = (0,)
+_AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hits GA
+    [
+        "count_bad",
+        "count_good",
+        "count_uncertain",
+        "duration_bad",
+        "duration_good",
+        "duration_uncertain",
+        "countBad",
+        "countGood",
+        "countUncertain",
+        "durationBad",
+        "durationGood",
+        "durationUncertain",
+    ]
+)
 
 DatapointsAgg = MutableSequence[AggregateDatapoint]
 DatapointsNum = MutableSequence[NumericDatapoint]
@@ -379,7 +395,6 @@ class _SingleTSQueryBase:
         target_unit_system: str | None,
         include_outside_points: bool,
         ignore_unknown_ids: bool,
-        include_status: bool,
         ignore_bad_data_points: bool,
         treat_uncertain_as_bad: bool,
     ) -> None:
@@ -392,7 +407,6 @@ class _SingleTSQueryBase:
         self.target_unit_system = target_unit_system
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
-        self.include_status = include_status
         self.ignore_bad_data_points = ignore_bad_data_points
         self.treat_uncertain_as_bad = treat_uncertain_as_bad
 
@@ -420,6 +434,10 @@ class _SingleTSQueryBase:
 
     @property
     @abstractmethod
+    def requires_api_subversion_beta(self) -> bool: ...
+
+    @property
+    @abstractmethod
     def is_raw_query(self) -> bool: ...
 
     @property
@@ -443,10 +461,17 @@ class _SingleTSQueryBase:
 
 
 class _SingleTSQueryRaw(_SingleTSQueryBase):
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, include_status: bool, **kwargs: Any) -> None:
         super().__init__(**kwargs)
+        self.include_status = include_status
         self.aggregates = self.aggs_camel_case = None
         self.granularity = None
+
+    @property
+    def requires_api_subversion_beta(self) -> bool:
+        return (
+            self.include_status is True or self.ignore_bad_data_points is False or self.treat_uncertain_as_bad is False
+        )
 
     @property
     def is_raw_query(self) -> Literal[True]:
@@ -498,6 +523,14 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
         super().__init__(**kwargs, include_outside_points=False)
         self.aggregates = aggregates
         self.granularity = granularity
+
+    @property
+    def requires_api_subversion_beta(self) -> bool:
+        return (
+            self.ignore_bad_data_points is False
+            or self.treat_uncertain_as_bad is False
+            or bool(_AGGREGATES_IN_BETA.intersection(self.aggregates))
+        )
 
     @property
     def is_raw_query(self) -> Literal[False]:
@@ -552,6 +585,7 @@ class DpsUnpackFns:
     raw_dp: Callable[[Message], RawDatapointValue] = op.attrgetter("value")
     ts_dp_tpl: Callable[[Message], tuple[int, RawDatapointValue]] = op.attrgetter("timestamp", "value")
     count: Callable[[Message], int] = op.attrgetter("count")
+    status: Callable[[Message], Status] = op.attrgetter("status")
 
     @staticmethod
     def custom_from_aggregates(lst: list[str]) -> Callable[[DatapointsAgg], tuple[float, ...]]:
@@ -961,7 +995,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
                 aggregates=self.query.aggs_camel_case,
                 granularity=self.query.granularity,
                 subtask_idx=FIRST_IDX,
-                include_status=self.query.include_status,
+                include_status=self.query.include_status if self.query.is_raw_query else False,
                 ignore_bad_data_points=self.query.ignore_bad_data_points,
                 treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
@@ -976,6 +1010,9 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         self.dp_outside_start: tuple[int, RawDatapointValue] | None = None
         self.dp_outside_end: tuple[int, RawDatapointValue] | None = None
         super().__init__(**kwargs)
+
+        if self.query.include_status:
+            self.status_data: _DataContainer = defaultdict(list)
 
     @property
     def offset_next(self) -> Literal[1]:
@@ -1008,10 +1045,22 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     "value": create_array_from_dps_container(self.dps_data),
                 }
             )
+        extra: dict[str, Any] = {}
+        if self.status_data:
+            # TODO: Hacky "POC", needs optimizing
+            status_code = []
+            status_symbol = []
+            for status in create_list_from_dps_container(self.status_data):
+                # Since most dps is expected to be good (code 0), status is not returned for these:
+                status_code.append(status.code or 0)
+                status_symbol.append(status.symbol or "Good")
+            extra.update(status_code=status_code, status_symbol=status_symbol)
+
         return Datapoints(
             **self.ts_info_dct,
             timestamp=create_list_from_dps_container(self.ts_data),
             value=create_list_from_dps_container(self.dps_data),
+            **extra,
         )
 
     def _include_outside_points_in_result(self) -> None:
@@ -1033,6 +1082,8 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         else:
             self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
             self.dps_data[idx].append(list(map(DpsUnpackFns.raw_dp, dps)))
+            if self.query.include_status:
+                self.status_data[idx].append(list(map(DpsUnpackFns.status, dps)))
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         if self.query.include_outside_points:
@@ -1093,7 +1144,7 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
                 target_unit_system=self.query.target_unit_system,
                 max_query_limit=self.query.max_query_limit,
                 is_raw_query=self.query.is_raw_query,
-                include_status=self.query.include_status,
+                include_status=self.query.include_status if self.query.is_raw_query else False,
                 ignore_bad_data_points=self.query.ignore_bad_data_points,
                 treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
