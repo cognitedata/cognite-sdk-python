@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
+import warnings
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from threading import Thread
@@ -1210,7 +1211,9 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
-        return cast(
+        extra_response: list[dict[str, Any]] = []
+
+        items = cast(
             Union[NodeList, EdgeList],
             self._list(
                 list_cls=list_cls,
@@ -1219,8 +1222,20 @@ class InstancesAPI(APIClient):
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
+                extra_response=extra_response,
             ),
         )
+        if include_typing and extra_response:
+            return items, TypeInformation._load(extra_response[0]["typing"])  # type: ignore[return-value]
+        elif instance_type:
+            warnings.warn(
+                "No type infomation was returned. This is likely due to the includeTyping parameter being set to false.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return items, TypeInformation({})  # type: ignore[return-value]
+        else:
+            return items
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)
