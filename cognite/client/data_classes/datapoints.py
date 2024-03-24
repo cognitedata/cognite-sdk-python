@@ -494,6 +494,14 @@ class Datapoints(CogniteResource):
         continuous_variance (list[float] | None): The variance of the interpolated underlying function.
         discrete_variance (list[float] | None): The variance of the datapoint values.
         total_variation (list[float] | None): The total variation of the interpolated underlying function.
+        count_bad (list[int] | None): No description.
+        count_good (list[int] | None): No description.
+        count_uncertain (list[int] | None): No description.
+        duration_bad (list[int] | None): No description.
+        duration_good (list[int] | None): No description.
+        duration_uncertain (list[int] | None): No description.
+        status_code (list[int] | None): No description.
+        status_symbol (list[str] | None): No description.
         error (list[None | str] | None): No description.
     """
 
@@ -518,6 +526,14 @@ class Datapoints(CogniteResource):
         continuous_variance: list[float] | None = None,
         discrete_variance: list[float] | None = None,
         total_variation: list[float] | None = None,
+        count_bad: list[int] | None = None,
+        count_good: list[int] | None = None,
+        count_uncertain: list[int] | None = None,
+        duration_bad: list[int] | None = None,
+        duration_good: list[int] | None = None,
+        duration_uncertain: list[int] | None = None,
+        status_code: list[int] | None = None,
+        status_symbol: list[str] | None = None,
         error: list[None | str] | None = None,
     ) -> None:
         self.id = id
@@ -539,6 +555,14 @@ class Datapoints(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
         self.error = error
 
         self.__datapoint_objects: list[Datapoint] | None = None
@@ -604,6 +628,7 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_errors: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
@@ -612,6 +637,7 @@ class Datapoints(CogniteResource):
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
+            include_status (bool): TODO: XXX
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -645,11 +671,11 @@ class Datapoints(CogniteResource):
             if include_granularity_name and self.granularity is not None:
                 id_col_name += f"|{self.granularity}"
             field_names.append(id_col_name)
-            if attr == "error":
+            if attr in ("error", "status_symbol"):
                 data_lists.append(data)
                 continue  # Keep string (object) column non-numeric
             data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
-            if attr == "count":
+            if attr.startswith("count") or attr.startswith("duration") or attr == "status_code":
                 data_lists.append(data.astype("int64"))
             else:
                 data_lists.append(data.astype("float64"))
