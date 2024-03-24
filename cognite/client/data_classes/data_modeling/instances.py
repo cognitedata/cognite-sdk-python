@@ -1294,3 +1294,24 @@ class TypeInformation(UserDict, CogniteObject):
 
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
+
+    @overload
+    def __getitem__(self, item: str) -> dict[str, dict[str, TypePropertyDefinition]]: ...
+
+    @overload
+    def __getitem__(self, item: tuple[str, str]) -> dict[str, TypePropertyDefinition]: ...
+
+    @overload
+    def __getitem__(self, item: tuple[str, str, str]) -> TypePropertyDefinition: ...
+
+    def __getitem__(
+        self, item: str | tuple[str, str] | tuple[str, str, str]
+    ) -> dict[str, dict[str, TypePropertyDefinition]] | dict[str, TypePropertyDefinition] | TypePropertyDefinition:
+        if isinstance(item, str):
+            return super().__getitem__(item)
+        elif isinstance(item, tuple) and len(item) == 2:
+            return super().__getitem__(item[0])[item[1]]
+        elif isinstance(item, tuple) and len(item) == 3:
+            return super().__getitem__(item[0])[item[1]][item[2]]
+        else:
+            raise ValueError(f"Invalid key: {item}")
