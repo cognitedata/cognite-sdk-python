@@ -1093,7 +1093,6 @@ class InstancesAPI(APIClient):
     @overload
     def list(
         self,
-        *,
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: Source | Sequence[Source] | None = None,
@@ -1106,7 +1105,6 @@ class InstancesAPI(APIClient):
     @overload
     def list(
         self,
-        *,
         instance_type: Literal["edge"],
         include_typing: bool = False,
         sources: Source | Sequence[Source] | None = None,
