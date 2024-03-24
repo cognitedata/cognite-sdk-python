@@ -9,6 +9,7 @@ from typing_extensions import TypeAlias
 from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConversionPropertyList
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
@@ -753,7 +754,7 @@ class SpaceFilter(FilterWithPropertyAndValueList):
     """Filters instances based on the space.
 
     Args:
-        space (str | Sequence[str]): The space (or spaces) to filter on.
+        space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
         instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
 
     Example:
@@ -769,7 +770,7 @@ class SpaceFilter(FilterWithPropertyAndValueList):
 
     _filter_name = In._filter_name
 
-    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node") -> None:
+    def __init__(self, space: str | SequenceNotStr[str], instance_type: Literal["node", "edge"] = "node") -> None:
         space_list = [space] if isinstance(space, str) else list(space)
         super().__init__(property=[instance_type, "space"], values=space_list)
 
