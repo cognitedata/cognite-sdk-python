@@ -1192,3 +1192,105 @@ class TargetUnit(CogniteObject):
             if "externalId" in resource["unit"]
             else UnitSystemReference.load(resource["unit"]),
         )
+
+
+@dataclass
+class TypePropertyDefinition(CogniteObject):
+    type: PropertyType
+    nullable: bool
+    auto_increment: bool
+    default_value: str | int | dict | None = None
+    name: str | None = None
+    description: str | None = None
+
+    def dump(self, camel_case: bool = True, return_flat_dict: bool = False) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        if return_flat_dict:
+            dumped = self._flatten_dict(self.type.dump(camel_case), ("type",))
+            output.update({key: value for key, value in dumped.items()})
+        else:
+            output["type"] = self.type.dump(camel_case)
+        output.update(
+            {
+                "nullable": self.nullable,
+                "autoIncrement": self.auto_increment,
+                "defaultValue": self.default_value,
+                "name": self.name,
+                "description": self.description,
+            }
+        )
+        return output
+
+    def _flatten_dict(self, d: dict[str, Any], parent_keys: tuple[str, ...]) -> dict[str, Any]:
+        items: list[tuple[str, Any]] = []
+        for key, value in d.items():
+            if isinstance(value, dict):
+                items.extend(self._flatten_dict(value, (*parent_keys, key)).items())
+            else:
+                items.append((".".join((*parent_keys, key)), value))
+        return dict(items)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TypePropertyDefinition:
+        return cls(
+            type=PropertyType.load(resource["type"]),
+            nullable=resource["nullable"],
+            auto_increment=resource["autoIncrement"],
+            default_value=resource.get("defaultValue"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+        )
+
+
+class TypeInformation(UserDict, CogniteObject):
+    def __init__(self, data: dict[str, dict[str, dict[str, TypePropertyDefinition]]] | None = None) -> None:
+        super().__init__(data or {})
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for space_name, space_data in self.data.items():
+            output.setdefault(space_name, {})
+            for view_or_container_id, view_data in space_data.items():
+                output[space_name].setdefault(view_or_container_id, {})
+                for type_name, type_data in view_data.items():
+                    output[space_name][view_or_container_id][type_name] = type_data.dump(camel_case)
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TypeInformation:
+        return cls(
+            {
+                space_name: {
+                    view_or_container_id: {
+                        type_name: TypePropertyDefinition.load(type_data) for type_name, type_data in view_data.items()
+                    }
+                    for view_or_container_id, view_data in space_data.items()
+                }
+                for space_name, space_data in resource.items()
+            }
+        )
+
+    def to_pandas(self) -> pd.DataFrame:
+        pd = local_import("pandas")
+
+        index_names = "space_name", "view_or_container"
+        if not self:
+            df = pd.DataFrame(index=pd.MultiIndex(levels=([], []), codes=([], []), names=index_names))
+        else:
+            df = pd.DataFrame.from_dict(
+                {
+                    (space_name, view_or_container_id): {
+                        "identifier": type_name,
+                        **type_data.dump(camel_case=False, return_flat_dict=True),
+                    }
+                    for space_name, space_data in self.data.items()
+                    for view_or_container_id, view_data in space_data.items()
+                    for type_name, type_data in view_data.items()
+                },
+                orient="index",
+            )
+            df.index.names = index_names
+        return df
+
+    def _repr_html_(self) -> str:
+        return self.to_pandas()._repr_html_()
