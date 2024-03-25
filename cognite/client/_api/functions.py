@@ -12,7 +12,7 @@ from multiprocessing import Process, Queue
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Sequence
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -452,7 +452,7 @@ class FunctionsAPI(APIClient):
                     overwrite=overwrite,
                     data_set_id=data_set_id,
                 )
-                return cast(int, file.id)
+                return file.id
         finally:
             os.chdir(current_dir)
 
@@ -491,7 +491,7 @@ class FunctionsAPI(APIClient):
                 overwrite=overwrite,
                 data_set_id=data_set_id,
             )
-            return cast(int, file.id)
+            return file.id
 
     @staticmethod
     def _assert_exactly_one_of_folder_or_file_id_or_function_handle(

@@ -901,7 +901,7 @@ class FilesAPI(APIClient):
 
         id_to_metadata: dict[str | int, FileMetadata] = {}
         for f in files_metadata:
-            id_to_metadata[cast(int, f.id)] = f
+            id_to_metadata[f.id] = f
             if f.external_id is not None:
                 id_to_metadata[f.external_id] = f
 

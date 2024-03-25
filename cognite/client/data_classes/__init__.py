@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from cognite.client.data_classes._base import Geometry
+from cognite.client.data_classes._base import Geometry, HasExternalAndInternalId, HasExternalId, HasInternalId, HasName
 from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.annotations import (
     Annotation,
@@ -561,4 +561,8 @@ __all__ = [
     "WorkflowTask",
     "WorkflowUpsertList",
     "WorkflowVersionUpsertList",
+    "HasName",
+    "HasExternalId",
+    "HasInternalId",
+    "HasExternalAndInternalId",
 ]

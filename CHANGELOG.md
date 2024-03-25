@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.32.0] - 2024-03-25
+### Changed
+- Type hint for `id`, `last_updated_time`, and `create_time` attributes are no longer `Optional` on
+subclasses of `CogniteResource`. This is to reflect that these attributes are always set when the 
+object is returned by the SDK.
+
+
 ## [7.31.0] - 2024-03-24
 ### Added
 - Retrieve method for session, `client.iam.session.retrieve`

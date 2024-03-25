@@ -201,9 +201,14 @@ class EntityMatchingModel(CogniteResource):
         external_id: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.id = id
+        # id/created_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
         self.status = status
-        self.created_time = created_time
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
