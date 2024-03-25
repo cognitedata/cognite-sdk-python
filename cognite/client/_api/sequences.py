@@ -93,7 +93,7 @@ class SequencesAPI(APIClient):
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[Sequence] | Iterator[SequenceList]:
         """Iterate over sequences
@@ -114,7 +114,7 @@ class SequencesAPI(APIClient):
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to return all items.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
@@ -221,11 +221,11 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: SequenceFilter | dict | None = None) -> list[CountAggregate]:
+    def aggregate(self, filter: SequenceFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            filter (SequenceFilter | dict | None): Filter on sequence filter with exact match
+            filter (SequenceFilter | dict[str, Any] | None): Filter on sequence filter with exact match
 
         Returns:
             list[CountAggregate]: List of sequence aggregates
@@ -245,14 +245,14 @@ class SequencesAPI(APIClient):
 
     def aggregate_count(
         self,
-        advanced_filter: Filter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of sequences matching the specified filters and search. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count.
-            filter (SequenceFilter | dict | None): The filter to narrow down sequences to count requiring exact match.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down sequences to count requiring exact match.
 
         Returns:
             int: The number of sequences matching the specified filters and search.
@@ -286,17 +286,17 @@ class SequencesAPI(APIClient):
     def aggregate_cardinality_values(
         self,
         property: SequenceProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | list[str]): The property to count the cardinality of.
-            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requiring exact match.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
             int: The number of properties matching the specified filters and search.
@@ -337,17 +337,17 @@ class SequencesAPI(APIClient):
     def aggregate_cardinality_properties(
         self,
         path: SequenceProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for sequences.  <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requiring exact match.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
             int: The number of properties matching the specified filters and search.
@@ -374,17 +374,17 @@ class SequencesAPI(APIClient):
     def aggregate_unique_values(
         self,
         property: SequenceProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | list[str]): The property to group by.
-            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requiring exact match.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of sequences matching the specified filters and search.
@@ -445,17 +445,17 @@ class SequencesAPI(APIClient):
     def aggregate_unique_properties(
         self,
         path: SequenceProperty | str | list[str],
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        filter: SequenceFilter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requiring exact match.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
             UniqueResultList: List of unique values of sequences matching the specified filters and search.
@@ -695,7 +695,7 @@ class SequencesAPI(APIClient):
         name: str | None = None,
         description: str | None = None,
         query: str | None = None,
-        filter: SequenceFilter | dict | None = None,
+        filter: SequenceFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Search for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_
@@ -705,7 +705,7 @@ class SequencesAPI(APIClient):
             name (str | None): Prefix and fuzzy search on name.
             description (str | None): Prefix and fuzzy search on description.
             query (str | None): Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
-            filter (SequenceFilter | dict | None): Filter to apply. Performs exact match on these fields.
+            filter (SequenceFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
             limit (int): Max number of results to return.
 
         Returns:
@@ -791,7 +791,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def _validate_filter(self, filter: Filter | dict | None) -> None:
+    def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
     def list(
@@ -808,7 +808,7 @@ class SequencesAPI(APIClient):
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
-        advanced_filter: Filter | dict | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> SequenceList:
         """`List sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
@@ -826,7 +826,7 @@ class SequencesAPI(APIClient):
             last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            advanced_filter (Filter | dict | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
@@ -1185,7 +1185,7 @@ class SequencesDataAPI(APIClient):
             for row_response in row_response_iterator:
                 sequence_rows["rows"].extend(row_response["rows"])
 
-            return SequenceRows.load(sequence_rows)
+            return SequenceRows._load(sequence_rows)
 
         tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
@@ -1230,7 +1230,7 @@ class SequencesDataAPI(APIClient):
         res = self._do_request(
             "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
         ).json()
-        return SequenceRows.load(res)
+        return SequenceRows._load(res)
 
     def retrieve_dataframe(
         self,

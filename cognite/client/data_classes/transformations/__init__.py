@@ -780,9 +780,9 @@ class TransformationPreviewResult(CogniteResource):
         if isinstance(instance.schema, dict):
             items = instance.schema.get("items")
             if items is not None:
-                instance.schema = TransformationSchemaColumnList.load(items, cognite_client=cognite_client)
+                instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
         elif isinstance(instance.schema, list):
-            instance.schema = TransformationSchemaColumnList.load(instance.schema, cognite_client=cognite_client)
+            instance.schema = TransformationSchemaColumnList._load(instance.schema, cognite_client=cognite_client)
         if isinstance(instance.results, dict):
             items = instance.results.get("items")
             if items is not None:

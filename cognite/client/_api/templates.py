@@ -88,7 +88,7 @@ class TemplatesAPI(APIClient):
         path = "/templategroups/{}/versions/{}/graphql"
         path = interpolate_and_url_encode(path, external_id, version)
         response = self._post(path, {"query": query})
-        return GraphQlResponse.load(response.json())
+        return GraphQlResponse._load(response.json())
 
 
 class TemplateGroupsAPI(APIClient):
@@ -151,7 +151,7 @@ class TemplateGroupsAPI(APIClient):
         updated = self._post(
             path, {"items": [item.dump(camel_case=True) for item in template_groups_processed]}
         ).json()["items"]
-        res = TemplateGroupList.load(updated, cognite_client=self._cognite_client)
+        res = TemplateGroupList._load(updated, cognite_client=self._cognite_client)
         if is_single:
             return res[0]
         return res
@@ -286,7 +286,7 @@ class TemplateGroupVersionsAPI(APIClient):
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
         version_res = self._post(resource_path, version.dump(camel_case=True)).json()
-        return TemplateGroupVersion.load(version_res)
+        return TemplateGroupVersion._load(version_res)
 
     def list(
         self,
@@ -444,7 +444,7 @@ class TemplateInstancesAPI(APIClient):
         updated = self._post(
             resource_path, {"items": [instance.dump(camel_case=True) for instance in instances]}
         ).json()["items"]
-        res = TemplateInstanceList.load(updated, cognite_client=self._cognite_client)
+        res = TemplateInstanceList._load(updated, cognite_client=self._cognite_client)
         if len(res) == 1:
             return res[0]
         return res
@@ -664,7 +664,7 @@ class TemplateViewsAPI(APIClient):
             views = [views]
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
         updated = self._post(resource_path, {"items": [view.dump(camel_case=True) for view in views]}).json()["items"]
-        res = ViewList.load(updated, cognite_client=self._cognite_client)
+        res = ViewList._load(updated, cognite_client=self._cognite_client)
         if len(res) == 1:
             return res[0]
         return res

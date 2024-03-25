@@ -99,8 +99,8 @@ class AssetLink(VisionResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> AssetLink:
         return cls(
             text=resource["text"],
-            text_region=BoundingBox.load(resource["textRegion"]),
-            asset_ref=CdfResourceRef.load(resource["assetRef"]),
+            text_region=BoundingBox._load(resource["textRegion"]),
+            asset_ref=CdfResourceRef._load(resource["assetRef"]),
             confidence=resource.get("confidence"),
         )
 
@@ -122,7 +122,7 @@ class KeypointCollection(VisionResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
-            keypoints={k: Keypoint.load(v) for k, v in resource["keypoints"].items()},
+            keypoints={k: Keypoint._load(v) for k, v in resource["keypoints"].items()},
             attributes=resource.get("attributes"),
             confidence=resource.get("confidence"),
         )

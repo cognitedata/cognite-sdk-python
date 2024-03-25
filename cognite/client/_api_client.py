@@ -295,8 +295,8 @@ class APIClient:
         identifier: IdentifierCore,
         cls: type[T_CogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
@@ -497,11 +497,11 @@ class APIClient:
         resource_path: str | None = None,
         url_path: str | None = None,
         limit: int | None = None,
-        filter: dict | None = None,
-        other_params: dict | None = None,
+        filter: dict[str, Any] | None = None,
+        other_params: dict[str, Any] | None = None,
         partitions: int | None = None,
         sort: SequenceNotStr[str | dict[str, Any]] | None = None,
-        headers: dict | None = None,
+        headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
@@ -550,9 +550,9 @@ class APIClient:
         method: Literal["POST", "GET"],
         list_cls: type[T_CogniteResourceList],
         resource_path: str | None = None,
-        filter: dict | None = None,
-        other_params: dict | None = None,
-        headers: dict | None = None,
+        filter: dict[str, Any] | None = None,
+        other_params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         advanced_filter: dict | Filter | None = None,
     ) -> T_CogniteResourceList:
         def get_partition(partition: int) -> list[dict[str, Any]]:
@@ -603,11 +603,11 @@ class APIClient:
         self,
         cls: type[T],
         resource_path: str | None = None,
-        filter: CogniteFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
         aggregate: str | None = None,
         fields: SequenceNotStr[str] | None = None,
         keys: SequenceNotStr[str] | None = None,
-        headers: dict | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> list[T]:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         assert_type(fields, "fields", [list], allow_none=True)
@@ -639,9 +639,9 @@ class APIClient:
         | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
-        filter: CogniteFilter | dict | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
     ) -> int: ...
@@ -657,9 +657,9 @@ class APIClient:
         | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
-        filter: CogniteFilter | dict | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
     ) -> UniqueResultList: ...
@@ -674,9 +674,9 @@ class APIClient:
         | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
-        filter: CogniteFilter | dict | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
     ) -> int | UniqueResultList:
@@ -756,9 +756,9 @@ class APIClient:
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
-        extra_body_fields: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
@@ -772,9 +772,9 @@ class APIClient:
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
-        extra_body_fields: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
@@ -790,9 +790,9 @@ class APIClient:
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
-        extra_body_fields: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
@@ -893,8 +893,8 @@ class APIClient:
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
     ) -> T_CogniteResource: ...
@@ -907,8 +907,8 @@ class APIClient:
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList: ...
@@ -920,8 +920,8 @@ class APIClient:
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
@@ -1100,7 +1100,7 @@ class APIClient:
     def _prepare_item_chunks(
         items: Sequence[T_CogniteResource] | Sequence[dict[str, Any]],
         limit: int,
-        extra_body_fields: dict | None,
+        extra_body_fields: dict[str, Any] | None,
     ) -> list[dict[str, Any]]:
         return [
             {"items": chunk, **(extra_body_fields or {})}
@@ -1238,7 +1238,7 @@ class APIClient:
         return "<binary>"
 
     @staticmethod
-    def _sanitize_headers(headers: dict | None) -> None:
+    def _sanitize_headers(headers: dict[str, Any] | None) -> None:
         if headers is None:
             return None
         if "api-key" in headers:

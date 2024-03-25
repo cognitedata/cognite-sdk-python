@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import dataclasses
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, TypeVar, cast
 
 from typing_extensions import Self
@@ -159,7 +159,7 @@ class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType
         )
 
 
-@dataclasses.dataclass
+@dataclass
 class PropertyAndSearchSpec(CogniteObject):
     """A representation of a feature type property and search spec."""
 
@@ -167,13 +167,13 @@ class PropertyAndSearchSpec(CogniteObject):
     search_spec: dict[str, Any] | list[str] | None = None
 
 
-@dataclasses.dataclass
+@dataclass
 class Patches(CogniteObject):
     add: dict[str, Any] | None = None
     remove: list[str] | None = None
 
 
-@dataclasses.dataclass
+@dataclass
 class FeatureTypePatch(CogniteObject):
     external_id: str | None = None
     property_patches: Patches | None = None
@@ -700,7 +700,7 @@ class GeospatialComputedResponse(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeospatialComputedResponse:
-        item_list = GeospatialComputedItemList.load(
+        item_list = GeospatialComputedItemList._load(
             cast(List[Any], resource.get("items")), cognite_client=cognite_client
         )
         return cls(item_list, cognite_client=cognite_client)

@@ -17,19 +17,45 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.29.0] - 2024-03-19
+## [7.32.0] - 2024-03-25
+### Changed
+- Type hint for `id`, `last_updated_time`, and `create_time` attributes are no longer `Optional` on
+subclasses of `CogniteResource`. This is to reflect that these attributes are always set when the 
+object is returned by the SDK.
+
+
+## [7.31.0] - 2024-03-24
+### Added
+- Retrieve method for session, `client.iam.session.retrieve`
+- The parameter `limit` to the method `client.iam.session.list`.
+
+### Fixed
+- The method `client.iam.session.revoke` is now overloaded correctly and returns a `Session` for single id 
+  and a `SessionList` for multiple ids.
+
+## [7.30.1] - 2024-03-23
+### Fixed
+- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` would raise
+  an `AttributeError: 'dict' object has no attribute '_repr_html_'`, i.e., the HTML representation of `SequenceRowsList`
+  was failing. This is now fixed.
+
+## [7.30.0] - 2024-03-20
+### Added
+- `Properties` class, as used on e.g. `Node` and `Edge`, now renders in Jupyter Notebooks (`_repr_html_` added).
+
+## [7.29.0] - 2024-03-20
 ### Added
 - Direct access to the columns/data stored on raw rows have been added (alongside a `.get` method). Example usage:
   `row["my_col"]` (short-cut for: `row.columns["my_col"]`).
 
 ## [7.28.2] - 2024-03-14
 ### Fixed
- - Retrieving more than 100 containers, views, data models, or spaces would raise a
+- Retrieving more than 100 containers, views, data models, or spaces would raise a
    `CogniteAPIError`. This is now fixed.
 
 ## [7.28.1] - 2024-03-13
 ### Fixed
- - Fixed issue causing multipart file upload to fail when mime-type was set.
+- Fixed issue causing multipart file upload to fail when mime-type was set.
 
 ## [7.28.0] - 2024-03-13
 ### Added
@@ -532,7 +558,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
   `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
   `dict` but classes with attributes matching the API.
-- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `cababilities` of type `ProjectCapabilityList`
+- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `capabilities` of type `ProjectCapabilityList`
   instead of `list[dict]`
 - In data class `Transformation` the attribute `schedule`, `running_job`, and `last_running_job`, `external_id` and `id`
   are set to the `Transformation` `id` and `external_id` if not set. If they are set to a different value, a `ValueError` is raised

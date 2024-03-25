@@ -8,6 +8,7 @@ import threading
 import warnings
 from abc import ABC
 from collections import Counter, defaultdict
+from enum import auto
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -202,9 +203,14 @@ class Asset(AssetCore):
             labels=Label._load_list(labels),
             geo_location=geo_location,
         )
-        self.id = id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self.root_id = root_id
         self.aggregates = aggregates
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -1064,18 +1070,18 @@ class AssetHierarchy:
 
 
 class AssetProperty(EnumProperty):
-    labels = "labels"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    parent_id = "parentId"
-    root_id = "rootId"
-    description = "description"
-    external_id = "externalId"
-    metadata = "metadata"
-    name = "name"
-    source = "source"
+    labels = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    parent_id = auto()
+    root_id = auto()
+    description = auto()
+    external_id = auto()
+    metadata = auto()
+    name = auto()  # type: ignore [assignment]
+    source = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -1086,13 +1092,13 @@ AssetPropertyLike: TypeAlias = Union[AssetProperty, str, List[str]]
 
 
 class SortableAssetProperty(EnumProperty):
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    name = "name"
-    source = "source"
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    name = auto()  # type: ignore [assignment]
+    source = auto()
     score = "_score_"
 
     @staticmethod

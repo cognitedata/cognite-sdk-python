@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 from abc import ABC
+from enum import auto
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, NoReturn, Union, cast, get_args, overload
 
 from typing_extensions import Self, TypeAlias
@@ -259,7 +260,15 @@ class Sequence(SequenceCore):
             metadata=metadata,
             data_set_id=data_set_id,
         )
-        self.id = id
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
+
         self.columns: SequenceColumnList | None
         if columns is None or isinstance(columns, SequenceColumnList):
             self.columns = columns
@@ -273,8 +282,6 @@ class Sequence(SequenceCore):
             self.columns = SequenceColumnList._load(columns)
         else:
             raise ValueError(f"columns must be a sequence of SequenceColumn objects not {type(columns)}")
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
@@ -896,22 +903,25 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
 
         raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")
 
+    def _repr_html_(self) -> str:
+        return self.to_pandas(key="external_id", concat=True)._repr_html_()
+
 
 SequenceDataList = SequenceRowsList
 
 
 class SequenceProperty(EnumProperty):
-    description = "description"
-    external_id = "externalId"
-    name = "name"
-    asset_id = "assetId"
-    asset_root_id = "assetRootId"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    access_categories = "accessCategories"
-    metadata = "metadata"
+    description = auto()
+    external_id = auto()
+    name = auto()  # type: ignore [assignment]
+    asset_id = auto()
+    asset_root_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    access_categories = auto()
+    metadata = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -919,13 +929,13 @@ class SequenceProperty(EnumProperty):
 
 
 class SortableSequenceProperty(EnumProperty):
-    asset_id = "assetId"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    name = "name"
+    asset_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    name = auto()  # type: ignore [assignment]
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:

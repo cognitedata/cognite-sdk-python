@@ -31,7 +31,7 @@ from cognite.client.data_classes.capabilities import (
     RawAcl,
     UnknownAcl,
 )
-from cognite.client.data_classes.iam import GroupWrite, SecurityCategoryWrite, TokenInspection
+from cognite.client.data_classes.iam import GroupWrite, SecurityCategoryWrite, SessionStatus, TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -424,6 +424,7 @@ class SessionsAPI(APIClient):
         Args:
             client_credentials (ClientCredentials | None): The client credentials to create the session. If set to None, a session will be created using the credentials used to instantiate -this- CogniteClient object. If that was done using a token, a session will be created using token exchange. Similarly, if the credentials were client credentials, a session will be created using client credentials. This method does not work when using client certificates (not supported server-side).
 
+
         Returns:
             CreatedSession: The object with token inspection details.
         """
@@ -433,28 +434,61 @@ class SessionsAPI(APIClient):
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
         return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
-    def revoke(self, id: int | Sequence[int]) -> SessionList:
+    @overload
+    def revoke(self, id: int) -> Session: ...
+
+    @overload
+    def revoke(self, id: Sequence[int]) -> SessionList: ...
+
+    def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
 
         Args:
             id (int | Sequence[int]): Id or list of session ids
 
         Returns:
-            SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
+            Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return SessionList.load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        result = SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return result[0] if isinstance(id, int) else result
 
-    def list(self, status: str | None = None) -> SessionList:
+    @overload
+    def retrieve(self, id: int) -> Session: ...
+
+    @overload
+    def retrieve(self, id: Sequence[int]) -> SessionList: ...
+
+    def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
+        """`Retrieves sessions with given IDs. <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_
+
+        The request will fail if any of the IDs does not belong to an existing session.
+
+        Args:
+            id (int | Sequence[int]): Id or list of session ids
+
+        Returns:
+            Session | SessionList: Session or list of sessions.
+        """
+
+        identifiers = IdentifierSequence.load(ids=id, external_ids=None)
+        return self._retrieve_multiple(
+            list_cls=SessionList,
+            resource_cls=Session,
+            identifiers=identifiers,
+        )
+
+    def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
-            status (str | None): If given, only sessions with the given status are returned.
+            status (SessionStatus | None): If given, only sessions with the given status are returned.
+            limit (int): Max number of sessions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SessionList: a list of sessions in the current project.
         """
-        filter = {"status": status} if status is not None else None
-        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
+        filter = {"status": status.upper()} if status is not None else None
+        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)

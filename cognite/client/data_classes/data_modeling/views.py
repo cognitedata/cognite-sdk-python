@@ -162,7 +162,7 @@ class View(ViewCore):
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
         writable (bool): Whether the view supports write operations.
         used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
-        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
+        is_global (bool): Whether this is a global view.
     """
 
     def __init__(
@@ -361,7 +361,7 @@ class ViewProperty(CogniteObject, ABC):
             return cast(Self, ConnectionDefinition.load(resource))
         elif "direction" in resource:
             warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
                 "This will be required in the next major version",
                 DeprecationWarning,
             )
@@ -381,7 +381,7 @@ class ViewPropertyApply(CogniteObject, ABC):
             return cast(Self, ConnectionDefinitionApply.load(resource))
         elif "direction" in resource:
             warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
                 "This will be required in the next major version",
                 DeprecationWarning,
             )
@@ -413,11 +413,10 @@ class MappedPropertyApply(ViewPropertyApply):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "containerPropertyIdentifier" if camel_case else "container_property_identifier"
         output: dict[str, Any] = {
             "container": self.container.dump(camel_case, include_type=True),
-            (
-                "containerPropertyIdentifier" if camel_case else "container_property_identifier"
-            ): self.container_property_identifier,
+            key: self.container_property_identifier,
         }
         if self.name is not None:
             output["name"] = self.name

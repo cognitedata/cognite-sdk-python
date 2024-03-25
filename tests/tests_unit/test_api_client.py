@@ -14,7 +14,7 @@ from responses import matchers
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig, global_config
+from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
 from cognite.client.data_classes import TimeSeries, TimeSeriesUpdate
 from cognite.client.data_classes._base import (
@@ -1034,16 +1034,11 @@ class TestStandardUpdate:
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
 
-    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps, monkeypatch):
+    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps):
         # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
         # execution order. Depending on whether the 400 or 500 hits the first or second task,
         # the following asserts fail (ordering issue). Thus, we use 'matchers.json_params_matcher'
         # to make sure the responses match the two tasks.
-
-        # Note 2: The matcher function expects request.body to not be gzipped (it just does .decode("utf-8")
-        # which fails, making the matching functions useless.. so we temporarily turn off gzip for this test
-        monkeypatch.setattr(global_config, "disable_gzip", True)
-
         rsps.add(
             rsps.POST,
             BASE_URL + URL_PATH + "/update",

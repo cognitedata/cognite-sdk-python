@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from enum import auto
 from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
@@ -140,9 +141,14 @@ class Event(EventCore):
             asset_ids=asset_ids,
             source=source,
         )
-        self.id = id
-        self.last_updated_time = last_updated_time
-        self.created_time = created_time
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> EventWrite:
@@ -384,19 +390,19 @@ class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMi
 
 
 class EventProperty(EnumProperty):
-    asset_ids = "assetIds"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    end_time = "endTime"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    start_time = "startTime"
-    description = "description"
-    external_id = "externalId"
-    metadata = "metadata"
-    source = "source"
-    subtype = "subtype"
-    type = "type"
+    asset_ids = auto()
+    created_time = auto()
+    data_set_id = auto()
+    end_time = auto()
+    id = auto()
+    last_updated_time = auto()
+    start_time = auto()
+    description = auto()
+    external_id = auto()
+    metadata = auto()
+    source = auto()
+    subtype = auto()
+    type = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
@@ -407,16 +413,16 @@ EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
 
 
 class SortableEventProperty(EnumProperty):
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    end_time = "endTime"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    source = "source"
-    start_time = "startTime"
-    subtype = "subtype"
-    type = "type"
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    end_time = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    source = auto()
+    start_time = auto()
+    subtype = auto()
+    type = auto()
     score = "_score_"
 
     @staticmethod

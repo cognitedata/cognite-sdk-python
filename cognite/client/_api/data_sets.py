@@ -168,11 +168,11 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: DataSetFilter | dict | None = None) -> list[CountAggregate]:
+    def aggregate(self, filter: DataSetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
-            filter (DataSetFilter | dict | None): Filter on data set filter with exact match
+            filter (DataSetFilter | dict[str, Any] | None): Filter on data set filter with exact match
 
         Returns:
             list[CountAggregate]: List of data set aggregates

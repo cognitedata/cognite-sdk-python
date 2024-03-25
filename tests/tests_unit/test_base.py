@@ -23,6 +23,10 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteResponse,
     CogniteUpdate,
+    HasExternalAndInternalId,
+    HasExternalId,
+    HasInternalId,
+    HasName,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -154,10 +158,7 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
@@ -172,10 +173,7 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_dump_load_only_required(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
@@ -192,8 +190,8 @@ class TestCogniteObject:
     @pytest.mark.parametrize(
         "cognite_writable_cls",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(WriteableCogniteResource)
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(WriteableCogniteResource)
         ],
     )
     def test_writable_as_write(
@@ -209,9 +207,9 @@ class TestCogniteObject:
     @pytest.mark.parametrize(
         "writable_list",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(WriteableCogniteResourceList)
-            if class_ not in [EdgeListWithCursor, NodeListWithCursor]
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(WriteableCogniteResourceList)
+            if cls not in [EdgeListWithCursor, NodeListWithCursor]
         ],
     )
     def test_writable_list_as_write(
@@ -254,10 +252,7 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_handle_unknown_arguments_when_loading(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
@@ -277,10 +272,7 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_yaml_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
@@ -296,10 +288,7 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_dump_default_camel_case_false(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
@@ -395,8 +384,8 @@ class TestCogniteResource:
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteResource)
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
     def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
@@ -414,8 +403,8 @@ class TestCogniteResource:
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteResource)
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
     def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
@@ -432,8 +421,8 @@ class TestCogniteResource:
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteResource)
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
     def test_dump_default_camel_case_false(self, cognite_resource_subclass: type[CogniteResource]):
@@ -800,3 +789,28 @@ class TestCogniteResponse:
         # CogniteResponse does not have a reference to the cognite client:
         with pytest.raises(AttributeError):
             MyResponse(1)._cognite_client
+
+
+class TestHasIdProtocols:
+    class WithIdAndExternalId:
+        def __init__(self):
+            self.id: int = 1
+            self.external_id: str | None = None
+
+    class WithName:
+        def __init__(self):
+            self.name: str = "name"
+
+    def test_has_id_protocols(self) -> None:
+        obj = self.WithIdAndExternalId()
+        assert isinstance(obj, HasInternalId)
+        assert isinstance(obj, HasExternalId)
+        assert isinstance(obj, HasExternalAndInternalId)
+        assert not isinstance(obj, HasName)
+
+    def test_has_name_protocol(self) -> None:
+        obj = self.WithName()
+        assert not isinstance(obj, HasInternalId)
+        assert not isinstance(obj, HasExternalId)
+        assert not isinstance(obj, HasExternalAndInternalId)
+        assert isinstance(obj, HasName)

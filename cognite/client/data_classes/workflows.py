@@ -1057,7 +1057,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             reason_for_incompletion=resource.get("reasonForIncompletion"),
-            workflow_definition=WorkflowDefinition.load(resource["workflowDefinition"]),
+            workflow_definition=WorkflowDefinition._load(resource["workflowDefinition"]),
             executed_tasks=[WorkflowTaskExecution.load(task) for task in resource["executedTasks"]],
             input=resource.get("input"),
             metadata=resource.get("metadata"),
