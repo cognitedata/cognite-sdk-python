@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.32.1] - 2024-03-25
+### Fixed
+- Fix type hints for functions data classes Function/FunctionSchedule/FunctionCall 
+
+
 ## [7.32.0] - 2024-03-25
 ### Changed
 - Type hint for `id`, `last_updated_time`, and `create_time` attributes are no longer `Optional` on
