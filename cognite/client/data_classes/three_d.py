@@ -101,8 +101,13 @@ class ThreeDModel(ThreeDModelCore):
             data_set_id=data_set_id,
             metadata=metadata,
         )
-        self.id = id
-        self.created_time = created_time
+        # id/created_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> ThreeDModelWrite:
@@ -317,12 +322,17 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
             camera=camera,
             metadata=metadata,
         )
-        self.id = id
+        # id/created_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
         self.status = status
         self.thumbnail_threed_file_id = thumbnail_threed_file_id
         self.thumbnail_url = thumbnail_url
         self.asset_mapping_count = asset_mapping_count
-        self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> ThreeDModelRevisionWrite:

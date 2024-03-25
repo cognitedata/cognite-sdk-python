@@ -133,9 +133,14 @@ class Function(FunctionCore):
             runtime=runtime,
             metadata=metadata,
         )
-        self.id = cast(int, id)
+        # id/created_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
         self.status = status
-        self.created_time = created_time
         self.runtime_version = runtime_version
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -553,7 +558,12 @@ class FunctionCall(CogniteResource):
         function_id: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.id = id
+        # id is required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
         self.start_time = start_time
         self.end_time = end_time
         self.scheduled_time = scheduled_time

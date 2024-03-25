@@ -164,11 +164,16 @@ class FileMetadata(FileMetadataCore):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
-        self.id = id
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> FileMetadataWrite:
