@@ -588,7 +588,6 @@ class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
 class DpsUnpackFns:
     ts: Callable[[DatapointAny], int] = op.attrgetter("timestamp")
     raw_dp: Callable[[DatapointRaw], RawDatapointValue] = op.attrgetter("value")
-    ts_dp_tpl: Callable[[DatapointRaw], tuple[int, RawDatapointValue]] = op.attrgetter("timestamp", "value")
     count: Callable[[AggregateDatapoint], int] = op.attrgetter("count")
 
     # Status is a nested object in the response (code+symbol). Since most dps is expected to be good
@@ -596,8 +595,14 @@ class DpsUnpackFns:
     status_code: Callable[[NumericDatapoint], int] = op.attrgetter("status.code")  # Gives 0 by default when missing
 
     @staticmethod
-    def status_symbol(msg: NumericDatapoint) -> str:
-        return msg.status.symbol or "Good"  # Gives empty str when missing, so we set 'Good' manually
+    def status_symbol(dp: NumericDatapoint) -> str:
+        return dp.status.symbol or "Good"  # Gives empty str when missing, so we set 'Good' manually
+
+    # When datapoints with bad status codes are not ignored, value may be missing:
+    @staticmethod
+    def nullable_raw_dp(dp: NumericDatapoint) -> float:
+        # We pretend like float is always returned to not break every dps annot. in the entire SDK..
+        return dp.value if not dp.nullValue else None  # type: ignore [return-value]
 
     @staticmethod
     def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoints], tuple[float, ...]]:
@@ -1105,9 +1110,11 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self.dps_data[idx].append(np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=self.raw_dtype, count=len(dps)))
         else:
             self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
-            self.dps_data[idx].append(list(map(DpsUnpackFns.raw_dp, dps)))
-            if self.query.include_status:
+            if not self.query.include_status:
+                self.dps_data[idx].append(list(map(DpsUnpackFns.raw_dp, dps)))
+            else:
                 dps = cast(NumericDatapoints, dps)
+                self.dps_data[idx].append(list(map(DpsUnpackFns.nullable_raw_dp, dps)))
                 try:
                     self.status_code[idx].append(list(map(DpsUnpackFns.status_code, dps)))
                     self.status_symbol[idx].append(list(map(DpsUnpackFns.status_symbol, dps)))
@@ -1127,19 +1134,19 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if dps[0].timestamp < self.query.start:
             # We got a dp before `start`, this (and 'after') should not impact our count towards `limit`,
             # so we pop to remove it from dps:
-            self.dp_outside_start = DpsUnpackFns.ts_dp_tpl(first := dps.pop(0))
+            first = cast(NumericDatapoint, dps.pop(0))
+            self.dp_outside_start = DpsUnpackFns.ts(first), DpsUnpackFns.nullable_raw_dp(first)
 
         if dps and dps[-1].timestamp >= self.query.end:  # >= because `end` is exclusive
-            self.dp_outside_end = DpsUnpackFns.ts_dp_tpl(last := dps.pop(-1))
+            last = cast(NumericDatapoint, dps.pop(-1))
+            self.dp_outside_start = DpsUnpackFns.ts(last), DpsUnpackFns.nullable_raw_dp(last)
 
         if self.query.include_status:
             try:
                 if first is not None:
-                    first = cast(NumericDatapoint, first)
                     self.dp_outside_status_code_start = DpsUnpackFns.status_code(first)
                     self.dp_outside_status_symbol_start = DpsUnpackFns.status_symbol(first)
                 if last is not None:
-                    last = cast(NumericDatapoint, last)
                     self.dp_outside_status_code_end = DpsUnpackFns.status_code(last)
                     self.dp_outside_status_symbol_end = DpsUnpackFns.status_symbol(last)
             except AttributeError:
