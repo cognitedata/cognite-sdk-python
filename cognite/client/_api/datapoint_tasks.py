@@ -1027,6 +1027,10 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         super().__init__(**kwargs)
 
         if self.query.include_status:
+            self.dp_outside_status_code_start: int | None = None
+            self.dp_outside_status_code_end: int | None = None
+            self.dp_outside_status_symbol_start: str | None = None
+            self.dp_outside_status_symbol_end: str | None = None
             self.status_code: _DataContainer = defaultdict(list)
             self.status_symbol: _DataContainer = defaultdict(list)
 
@@ -1075,7 +1079,12 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         )
 
     def _include_outside_points_in_result(self) -> None:
-        for dp, idx in zip((self.dp_outside_start, self.dp_outside_end), (-math.inf, math.inf)):
+        for dp, status_code, status_symbol, idx in zip(
+            (self.dp_outside_start, self.dp_outside_end),
+            (self.dp_outside_status_code_start, self.dp_outside_status_code_end),
+            (self.dp_outside_status_symbol_start, self.dp_outside_status_symbol_end),
+            (-math.inf, math.inf),
+        ):
             if not dp:
                 continue
             ts: list[int] | NumpyInt64Array = [dp[0]]
@@ -1086,6 +1095,10 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self.ts_data[(idx,)].append(ts)
             self.dps_data[(idx,)].append(value)
 
+            if self.query.include_status:
+                self.status_code[(idx,)].append([status_code])
+                self.status_symbol[(idx,)].append([status_symbol])
+
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:  # Faster than feeding listcomp to np.array:
             self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))
@@ -1094,10 +1107,12 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
             self.dps_data[idx].append(list(map(DpsUnpackFns.raw_dp, dps)))
             if self.query.include_status:
-                # TODO: StringDatapoints still missing API implementation for status codes
                 dps = cast(NumericDatapoints, dps)
-                self.status_code[idx].append(list(map(DpsUnpackFns.status_code, dps)))
-                self.status_symbol[idx].append(list(map(DpsUnpackFns.status_symbol, dps)))
+                try:
+                    self.status_code[idx].append(list(map(DpsUnpackFns.status_code, dps)))
+                    self.status_symbol[idx].append(list(map(DpsUnpackFns.status_symbol, dps)))
+                except AttributeError:
+                    raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         if self.query.include_outside_points:
@@ -1108,13 +1123,27 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         super()._store_first_batch(dps, first_limit)
 
     def _extract_outside_points(self, dps: DatapointsRaw) -> None:
+        first, last = None, None
         if dps[0].timestamp < self.query.start:
             # We got a dp before `start`, this (and 'after') should not impact our count towards `limit`,
             # so we pop to remove it from dps:
-            self.dp_outside_start = DpsUnpackFns.ts_dp_tpl(dps.pop(0))
+            self.dp_outside_start = DpsUnpackFns.ts_dp_tpl(first := dps.pop(0))
 
         if dps and dps[-1].timestamp >= self.query.end:  # >= because `end` is exclusive
-            self.dp_outside_end = DpsUnpackFns.ts_dp_tpl(dps.pop(-1))
+            self.dp_outside_end = DpsUnpackFns.ts_dp_tpl(last := dps.pop(-1))
+
+        if self.query.include_status:
+            try:
+                if first is not None:
+                    first = cast(NumericDatapoint, first)
+                    self.dp_outside_status_code_start = DpsUnpackFns.status_code(first)
+                    self.dp_outside_status_symbol_start = DpsUnpackFns.status_symbol(first)
+                if last is not None:
+                    last = cast(NumericDatapoint, last)
+                    self.dp_outside_status_code_end = DpsUnpackFns.status_code(last)
+                    self.dp_outside_status_symbol_end = DpsUnpackFns.status_symbol(last)
+            except AttributeError:
+                raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
 
 
 class SerialLimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, SerialTaskOrchestratorMixin):
