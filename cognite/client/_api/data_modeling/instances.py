@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
+import warnings
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from threading import Thread
@@ -57,6 +58,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeList,
     SubscriptionContext,
     TargetUnit,
+    TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
@@ -1094,7 +1096,7 @@ class InstancesAPI(APIClient):
     def list(
         self,
         instance_type: Literal["node"] = "node",
-        include_typing: bool = False,
+        include_typing: Literal[False] = False,
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -1106,13 +1108,37 @@ class InstancesAPI(APIClient):
     def list(
         self,
         instance_type: Literal["edge"],
-        include_typing: bool = False,
+        include_typing: Literal[False] = False,
         sources: Source | Sequence[Source] | None = None,
         space: str | Sequence[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
     ) -> EdgeList: ...
+
+    @overload
+    def list(
+        self,
+        instance_type: Literal["node"],
+        include_typing: Literal[True],
+        sources: Source | Sequence[Source] | None = None,
+        space: str | Sequence[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> tuple[NodeList, TypeInformation]: ...
+
+    @overload
+    def list(
+        self,
+        instance_type: Literal["edge"],
+        include_typing: Literal[True],
+        sources: Source | Sequence[Source] | None = None,
+        space: str | Sequence[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> tuple[EdgeList, TypeInformation]: ...
 
     def list(
         self,
@@ -1123,7 +1149,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> NodeList | EdgeList:
+    ) -> NodeList | EdgeList | tuple[NodeList, TypeInformation] | tuple[EdgeList, TypeInformation]:
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
@@ -1136,7 +1162,8 @@ class InstancesAPI(APIClient):
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
 
         Returns:
-            NodeList | EdgeList: List of requested instances
+            NodeList | EdgeList | tuple[NodeList, TypeInformation] | tuple[EdgeList, TypeInformation]: List of requested instances.
+                If include_typing is True, the return value will be a tuple with the instances and type information.
 
         Examples:
 
@@ -1184,7 +1211,9 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
-        return cast(
+        extra_response: list[dict[str, Any]] = []
+
+        items = cast(
             Union[NodeList, EdgeList],
             self._list(
                 list_cls=list_cls,
@@ -1193,8 +1222,20 @@ class InstancesAPI(APIClient):
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
+                extra_response=extra_response,
             ),
         )
+        if include_typing and extra_response:
+            return items, TypeInformation._load(extra_response[0]["typing"])  # type: ignore[return-value]
+        elif include_typing:
+            warnings.warn(
+                "No type infomation was returned. This is likely due to the includeTyping parameter being set to false.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return items, TypeInformation({})  # type: ignore[return-value]
+        else:
+            return items
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)
