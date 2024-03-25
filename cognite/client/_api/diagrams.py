@@ -341,14 +341,14 @@ class DiagramsAPI(APIClient):
         )
 
     def ocr(self, file_id: int, start_page: int = 1, limit: int = 50) -> list[dict[str, Any]]:
-        """
-        Get ocr text from a file that has been through diagram/detect before.
+        """Get ocr text from a file that has been through diagram/detect before.
+
         Args:
             file_id (int): file id
             start_page (int): First page to get ocr from.
             limit (int): The maximum number of pages to get ocr from.
         Returns:
-            (list[dict[str, Any]): List of ocr results per page.
+            list[dict[str, Any]]: List of ocr results per page.
         """
 
         response = self._camel_post(
