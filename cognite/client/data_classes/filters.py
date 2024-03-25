@@ -61,7 +61,10 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):
-        return type(property_)(map(to_camel_case, property_)) if camel_case else property_
+        if len(property_) == 1:
+            return [to_camel_case(property_[0])] if camel_case else property_
+        else:
+            return property_
     else:
         raise ValueError(f"Invalid property format {property_}")
 
