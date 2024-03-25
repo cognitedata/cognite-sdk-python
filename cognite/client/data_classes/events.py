@@ -19,7 +19,6 @@ from cognite.client.data_classes._base import (
     EnumProperty,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
-    NoCaseConversionPropertyList,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -406,7 +405,7 @@ class EventProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
@@ -427,7 +426,7 @@ class SortableEventProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]
