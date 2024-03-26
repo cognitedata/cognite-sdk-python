@@ -1041,11 +1041,12 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         self.dp_outside_end: tuple[int, RawDatapointValue] | None = None
         super().__init__(**kwargs)
 
+        self.dp_outside_status_code_start: int | None = None
+        self.dp_outside_status_code_end: int | None = None
+        self.dp_outside_status_symbol_start: str | None = None
+        self.dp_outside_status_symbol_end: str | None = None
+
         if self.query.include_status:
-            self.dp_outside_status_code_start: int | None = None
-            self.dp_outside_status_code_end: int | None = None
-            self.dp_outside_status_symbol_start: str | None = None
-            self.dp_outside_status_symbol_end: str | None = None
             self.status_code: _DataContainer = defaultdict(list)
             self.status_symbol: _DataContainer = defaultdict(list)
 
@@ -1145,11 +1146,17 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             # We got a dp before `start`, this (and 'after') should not impact our count towards `limit`,
             # so we pop to remove it from dps:
             first = cast(NumericDatapoint, dps.pop(0))
-            self.dp_outside_start = DpsUnpackFns.ts(first), DpsUnpackFns.nullable_raw_dp(first)
+            if self.query.include_status:
+                self.dp_outside_start = DpsUnpackFns.ts(first), DpsUnpackFns.nullable_raw_dp(first)
+            else:
+                self.dp_outside_start = DpsUnpackFns.ts(first), DpsUnpackFns.raw_dp(first)
 
         if dps and dps[-1].timestamp >= self.query.end:  # >= because `end` is exclusive
             last = cast(NumericDatapoint, dps.pop(-1))
-            self.dp_outside_start = DpsUnpackFns.ts(last), DpsUnpackFns.nullable_raw_dp(last)
+            if self.query.include_status:
+                self.dp_outside_end = DpsUnpackFns.ts(last), DpsUnpackFns.nullable_raw_dp(last)
+            else:
+                self.dp_outside_end = DpsUnpackFns.ts(last), DpsUnpackFns.raw_dp(last)
 
         if self.query.include_status:
             try:
