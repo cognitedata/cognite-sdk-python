@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
+from cognite.client._api.datapoint_tasks import _INT_AGGREGATES
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
@@ -44,7 +45,7 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import random_string
+from cognite.client.utils._text import random_string, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -112,13 +113,18 @@ def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
     return f"{unit}{gran}"
 
 
-def random_aggregates(n=None, exclude=None):
+INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
+
+
+def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False):
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
     agg_lst = ALL_SORTED_DP_AGGS
     if exclude:
         agg_lst = [a for a in agg_lst if a not in exclude]
+    if exclude_integer_aggregates:
+        agg_lst = [a for a in agg_lst if a not in INTEGER_AGGREGATES]
     n = n or random.randint(1, len(agg_lst))
     return random.sample(agg_lst, k=n)
 
