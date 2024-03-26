@@ -612,7 +612,10 @@ class DpsUnpackFns:
     @staticmethod
     def nullable_raw_dp(dp: NumericDatapoint) -> float:
         # We pretend like float is always returned to not break every dps annot. in the entire SDK..
-        return dp.value if not dp.nullValue else None  # type: ignore [return-value]
+        try:
+            return dp.value if not dp.nullValue else None  # type: ignore [return-value]
+        except AttributeError:
+            raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
 
     @staticmethod
     def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoints], tuple[float, ...]]:

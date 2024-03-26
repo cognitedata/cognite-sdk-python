@@ -757,8 +757,12 @@ class DatapointsAPI(APIClient):
     def retrieve_arrays(
         self,
         *,
-        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
+        id: None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]] = None,
+        external_id: None
+        | str
+        | DatapointsQuery
+        | dict[str, Any]
+        | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -768,14 +772,17 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_data_points: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> DatapointsArray | DatapointsArrayList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         **Note**: This method requires ``numpy`` to be installed.
 
         Args:
-            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -785,13 +792,17 @@ class DatapointsAPI(APIClient):
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): No description.
+            ignore_bad_data_points (bool): No description.
+            treat_uncertain_as_bad (bool): No description.
 
         Returns:
             DatapointsArray | DatapointsArrayList | None: A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
-        Examples:
+        Note:
+            For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
-            **Note:** For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
+        Examples:
 
             Get weekly ``min`` and ``max`` aggregates for a time series with id=42 since the year 2000, then compute the range of values:
 
@@ -847,6 +858,9 @@ class DatapointsAPI(APIClient):
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_data_points=ignore_bad_data_points,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         fetcher = select_dps_fetch_strategy(self, full_query=query)
 

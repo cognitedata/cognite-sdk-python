@@ -169,6 +169,14 @@ class Datapoint(CogniteResource):
         continuous_variance (float | None): The variance of the interpolated underlying function.
         discrete_variance (float | None): The variance of the datapoint values.
         total_variation (float | None): The total variation of the interpolated underlying function.
+        count_bad (int | None): No description.
+        count_good (int | None): No description.
+        count_uncertain (int | None): No description.
+        duration_bad (int | None): No description.
+        duration_good (int | None): No description.
+        duration_uncertain (int | None): No description.
+        status_code (int | None): No description.
+        status_symbol (str | None): No description.
     """
 
     def __init__(
@@ -185,6 +193,14 @@ class Datapoint(CogniteResource):
         continuous_variance: float | None = None,
         discrete_variance: float | None = None,
         total_variation: float | None = None,
+        count_bad: int | None = None,
+        count_good: int | None = None,
+        count_uncertain: int | None = None,
+        duration_bad: int | None = None,
+        duration_good: int | None = None,
+        duration_uncertain: int | None = None,
+        status_code: int | None = None,
+        status_symbol: str | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.value = value
@@ -198,6 +214,14 @@ class Datapoint(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
@@ -240,6 +264,14 @@ class DatapointsArray(CogniteResource):
         continuous_variance: NumpyFloat64Array | None = None,
         discrete_variance: NumpyFloat64Array | None = None,
         total_variation: NumpyFloat64Array | None = None,
+        count_bad: NumpyInt64Array | None = None,
+        count_good: NumpyInt64Array | None = None,
+        count_uncertain: NumpyInt64Array | None = None,
+        duration_bad: NumpyInt64Array | None = None,
+        duration_good: NumpyInt64Array | None = None,
+        duration_uncertain: NumpyInt64Array | None = None,
+        status_code: NumpyInt64Array | None = None,
+        status_symbol: NumpyObjArray | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -260,6 +292,14 @@ class DatapointsArray(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
 
     @property
     def _ts_info(self) -> dict[str, Any]:
