@@ -59,11 +59,16 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         runtime: str | None = None,
         metadata: dict | None = None,
     ) -> None:
-        self.name = cast(str, name)
+        # name/file_id are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.name: str = name  # type: ignore
+        self.file_id: int = file_id  # type: ignore
         self.external_id = external_id
         self.description = description
         self.owner = owner
-        self.file_id = file_id
         self.function_path = function_path
         self.secrets = secrets
         self.env_vars = env_vars
@@ -133,9 +138,14 @@ class Function(FunctionCore):
             runtime=runtime,
             metadata=metadata,
         )
-        self.id = cast(int, id)
-        self.status = status
-        self.created_time = created_time
+        # id/created_time/status are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.status: str = status  # type: ignore
         self.runtime_version = runtime_version
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -351,7 +361,7 @@ class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], AB
 
     Args:
         name (str | None): Name of the function schedule.
-        function_id (str | None): Id of the function.
+        function_id (int | None): Id of the function.
         function_external_id (str | None): External id of the function.
         description (str | None): Description of the function schedule.
         cron_expression (str | None): Cron expression
@@ -360,16 +370,21 @@ class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], AB
     def __init__(
         self,
         name: str | None = None,
-        function_id: str | None = None,
+        function_id: int | None = None,
         function_external_id: str | None = None,
         description: str | None = None,
         cron_expression: str | None = None,
     ) -> None:
-        self.name = name
-        self.function_id = function_id
+        # name/function_id is required when using the class to read,
+        # but doesn't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.name: str = name  # type: ignore
+        self.function_id: int = function_id  # type: ignore
         self.function_external_id = function_external_id
         self.description = description
-        self.cron_expression = cron_expression
+        self.cron_expression: str = cron_expression  # type: ignore
 
 
 class FunctionSchedule(FunctionScheduleCore):
@@ -379,7 +394,7 @@ class FunctionSchedule(FunctionScheduleCore):
     Args:
         id (int | None): ID of the schedule.
         name (str | None): Name of the function schedule.
-        function_id (str | None): ID of the function.
+        function_id (int | None): ID of the function.
         function_external_id (str | None): External id of the function.
         description (str | None): Description of the function schedule.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -393,7 +408,7 @@ class FunctionSchedule(FunctionScheduleCore):
         self,
         id: int | None = None,
         name: str | None = None,
-        function_id: str | None = None,
+        function_id: int | None = None,
         function_external_id: str | None = None,
         description: str | None = None,
         created_time: int | None = None,
@@ -409,10 +424,15 @@ class FunctionSchedule(FunctionScheduleCore):
             description=description,
             cron_expression=cron_expression,
         )
-        self.id = id
-        self.created_time = created_time
+        # id/created_time/when are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
         self.session_id = session_id
-        self.when = when
+        self.when: str = when  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> FunctionScheduleWrite:
@@ -446,7 +466,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
     Args:
         name (str): Name of the function schedule.
         cron_expression (str): Cron expression
-        function_id (str | None): ID of the function.
+        function_id (int | None): ID of the function.
         function_external_id (str | None): External ID of the function.
         description (str | None): Description of the function schedule.
         data (dict | None): Input data to the function (only present if provided on the schedule). This data is passed deserialized into the function through one of the arguments called data. WARNING: Secrets or other confidential information should not be passed via the data object. There is a dedicated secrets object in the request body to "Create functions" for this purpose.
@@ -456,7 +476,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         self,
         name: str,
         cron_expression: str,
-        function_id: str | None = None,
+        function_id: int | None = None,
         function_external_id: str | None = None,
         description: str | None = None,
         data: dict | None = None,
@@ -553,14 +573,19 @@ class FunctionCall(CogniteResource):
         function_id: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.id = id
-        self.start_time = start_time
+        # id/start_time/status/function_id is required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.start_time: int = start_time  # type: ignore
         self.end_time = end_time
         self.scheduled_time = scheduled_time
-        self.status = status
+        self.status: str = status  # type: ignore
         self.schedule_id = schedule_id
         self.error = error
-        self.function_id = function_id
+        self.function_id: int = function_id  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def get_response(self) -> dict | None:

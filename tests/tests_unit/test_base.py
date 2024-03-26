@@ -23,6 +23,10 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteResponse,
     CogniteUpdate,
+    HasExternalAndInternalId,
+    HasExternalId,
+    HasInternalId,
+    HasName,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -785,3 +789,28 @@ class TestCogniteResponse:
         # CogniteResponse does not have a reference to the cognite client:
         with pytest.raises(AttributeError):
             MyResponse(1)._cognite_client
+
+
+class TestHasIdProtocols:
+    class WithIdAndExternalId:
+        def __init__(self):
+            self.id: int = 1
+            self.external_id: str | None = None
+
+    class WithName:
+        def __init__(self):
+            self.name: str = "name"
+
+    def test_has_id_protocols(self) -> None:
+        obj = self.WithIdAndExternalId()
+        assert isinstance(obj, HasInternalId)
+        assert isinstance(obj, HasExternalId)
+        assert isinstance(obj, HasExternalAndInternalId)
+        assert not isinstance(obj, HasName)
+
+    def test_has_name_protocol(self) -> None:
+        obj = self.WithName()
+        assert not isinstance(obj, HasInternalId)
+        assert not isinstance(obj, HasExternalId)
+        assert not isinstance(obj, HasExternalAndInternalId)
+        assert isinstance(obj, HasName)

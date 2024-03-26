@@ -41,7 +41,6 @@ from cognite.client.data_classes._base import (
     EnumProperty,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
-    NoCaseConversionPropertyList,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -203,9 +202,14 @@ class Asset(AssetCore):
             labels=Label._load_list(labels),
             geo_location=geo_location,
         )
-        self.id = id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self.root_id = root_id
         self.aggregates = aggregates
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -1080,7 +1084,7 @@ class AssetProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 AssetPropertyLike: TypeAlias = Union[AssetProperty, str, List[str]]
@@ -1098,7 +1102,7 @@ class SortableAssetProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 SortableAssetPropertyLike: TypeAlias = Union[SortableAssetProperty, str, List[str]]

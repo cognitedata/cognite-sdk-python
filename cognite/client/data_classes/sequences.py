@@ -21,7 +21,6 @@ from cognite.client.data_classes._base import (
     EnumProperty,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
-    NoCaseConversionPropertyList,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -260,7 +259,15 @@ class Sequence(SequenceCore):
             metadata=metadata,
             data_set_id=data_set_id,
         )
-        self.id = id
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
+
         self.columns: SequenceColumnList | None
         if columns is None or isinstance(columns, SequenceColumnList):
             self.columns = columns
@@ -274,8 +281,6 @@ class Sequence(SequenceCore):
             self.columns = SequenceColumnList._load(columns)
         else:
             raise ValueError(f"columns must be a sequence of SequenceColumn objects not {type(columns)}")
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
@@ -897,6 +902,9 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
 
         raise ValueError(f"Invalid key value '{key}', should be one of ['id', 'external_id']")
 
+    def _repr_html_(self) -> str:
+        return self.to_pandas(key="external_id", concat=True)._repr_html_()
+
 
 SequenceDataList = SequenceRowsList
 
@@ -916,7 +924,7 @@ class SequenceProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 class SortableSequenceProperty(EnumProperty):
@@ -930,7 +938,7 @@ class SortableSequenceProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 SortableSequencePropertyLike: TypeAlias = Union[SortableSequenceProperty, str, List[str]]

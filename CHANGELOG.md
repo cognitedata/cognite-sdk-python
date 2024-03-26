@@ -17,6 +17,36 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.32.2] - 2024-03-26
+### Added
+- Missing filterable properties `unit_external_id` and `unit_quantity` to `DatapointSubscriptionProperty`.
+  Note: was renamed from `DatapointSubscriptionFilterProperties`, which is now a deprecated alias.
+
+## [7.32.1] - 2024-03-25
+### Fixed
+- Fix type hints for functions data classes Function/FunctionSchedule/FunctionCall
+
+## [7.32.0] - 2024-03-25
+### Changed
+- Type hint for `id`, `last_updated_time`, and `create_time` attributes are no longer `Optional` on
+  subclasses of `CogniteResource`. This is to reflect that these attributes are always set when the
+  object is returned by the SDK.
+
+## [7.31.0] - 2024-03-24
+### Added
+- Retrieve method for session, `client.iam.session.retrieve`
+- The parameter `limit` to the method `client.iam.session.list`.
+
+### Fixed
+- The method `client.iam.session.revoke` is now overloaded correctly and returns a `Session` for single id
+  and a `SessionList` for multiple ids.
+
+## [7.30.1] - 2024-03-23
+### Fixed
+- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` would raise
+  an `AttributeError: 'dict' object has no attribute '_repr_html_'`, i.e., the HTML representation of `SequenceRowsList`
+  was failing. This is now fixed.
+
 ## [7.30.0] - 2024-03-20
 ### Added
 - `Properties` class, as used on e.g. `Node` and `Edge`, now renders in Jupyter Notebooks (`_repr_html_` added).

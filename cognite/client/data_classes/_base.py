@@ -22,6 +22,7 @@ from typing import (
     cast,
     final,
     overload,
+    runtime_checkable,
 )
 
 from typing_extensions import Self, TypeAlias
@@ -600,11 +601,6 @@ class CogniteFilter(ABC):
 T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
 
 
-class NoCaseConversionPropertyList(list):
-    def as_reference(self) -> list[str]:
-        return list(self)
-
-
 class EnumProperty(Enum):
     @staticmethod
     def _generate_next_value_(name: str, *_: Any) -> str:
@@ -766,27 +762,31 @@ class CogniteSort:
 T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
+@runtime_checkable
 class HasExternalId(Protocol):
     @property
     def external_id(self) -> str | None: ...
 
 
+@runtime_checkable
 class HasName(Protocol):
     @property
     def name(self) -> str | None: ...
 
 
+@runtime_checkable
 class HasInternalId(Protocol):
     @property
-    def id(self) -> int | None: ...
+    def id(self) -> int: ...
 
 
+@runtime_checkable
 class HasExternalAndInternalId(Protocol):
     @property
     def external_id(self) -> str | None: ...
 
     @property
-    def id(self) -> int | None: ...
+    def id(self) -> int: ...
 
 
 class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
@@ -846,37 +846,4 @@ class InternalIdTransformerMixin(Sequence[HasInternalId], ABC):
         return ids
 
 
-class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
-    def as_external_ids(self) -> list[str]:
-        """
-        Returns the external ids of all resources.
-
-        Raises:
-            ValueError: If any resource in the list does not have an external id.
-
-        Returns:
-            list[str]: The external ids of all resources in the list.
-        """
-        external_ids: list[str] = []
-        for x in self:
-            if x.external_id is None:
-                raise ValueError(f"All {type(x).__name__} must have external_id")
-            external_ids.append(x.external_id)
-        return external_ids
-
-    def as_ids(self) -> list[int]:
-        """
-        Returns the ids of all resources.
-
-        Raises:
-            ValueError: If any resource in the list does not have an id.
-
-        Returns:
-            list[int]: The ids of all resources in the list.
-        """
-        ids: list[int] = []
-        for x in self:
-            if x.id is None:
-                raise ValueError(f"All {type(x).__name__} must have id")
-            ids.append(x.id)
-        return ids
+class IdTransformerMixin(ExternalIDTransformerMixin, InternalIdTransformerMixin): ...
