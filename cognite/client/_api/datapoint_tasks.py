@@ -618,6 +618,20 @@ class DpsUnpackFns:
             raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
 
     @staticmethod
+    def nullable_raw_dp_with_index(dps: NumericDatapoints) -> tuple[list[float], list[int]]:
+        values, idx_missing = [], []
+        try:
+            for i, dp in enumerate(dps):
+                if not dp.nullValue:
+                    values.append(dp.value)
+                else:
+                    values.append(None)  # type: ignore [arg-type]
+                    idx_missing.append(i)
+            return values, idx_missing
+        except AttributeError:
+            raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
+
+    @staticmethod
     def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoints], tuple[float, ...]]:
         return op.attrgetter(*lst)
 
@@ -1076,15 +1090,23 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             return self._create_empty_result()
         if self.query.include_outside_points:
             self._include_outside_points_in_result()
+
+        status_columns: dict[str, Any] = {}
         if self.use_numpy:
+            if self.query.include_status:
+                status_columns.update(
+                    status_code=create_array_from_dps_container(self.status_code),
+                    status_symbol=create_array_from_dps_container(self.status_symbol),
+                )
             return DatapointsArray._load(
                 {
                     **self.ts_info_dct,
                     "timestamp": create_array_from_dps_container(self.ts_data),
                     "value": create_array_from_dps_container(self.dps_data),
+                    **status_columns,
                 }
             )
-        status_columns: dict[str, Any] = {}
+
         if self.query.include_status:
             status_columns.update(
                 status_code=create_list_from_dps_container(self.status_code),
@@ -1100,8 +1122,8 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
     def _include_outside_points_in_result(self) -> None:
         for dp, status_code, status_symbol, idx in zip(
             (self.dp_outside_start, self.dp_outside_end),
-            (self.dp_outside_status_code_start, self.dp_outside_status_code_end),
-            (self.dp_outside_status_symbol_start, self.dp_outside_status_symbol_end),
+            ([self.dp_outside_status_code_start], [self.dp_outside_status_code_end]),
+            ([self.dp_outside_status_symbol_start], [self.dp_outside_status_symbol_end]),
             (-math.inf, math.inf),
         ):
             if not dp:
@@ -1115,13 +1137,40 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self.dps_data[(idx,)].append(value)
 
             if self.query.include_status:
-                self.status_code[(idx,)].append([status_code])
-                self.status_symbol[(idx,)].append([status_symbol])
+                if self.use_numpy:
+                    status_code = np.array(status_code, dtype=np.int64)  # type: ignore [assignment]
+                    status_symbol = np.array(status_symbol, dtype=np.object_)  # type: ignore [assignment]
+                self.status_code[(idx,)].append(status_code)
+                self.status_symbol[(idx,)].append(status_symbol)
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:  # Faster than feeding listcomp to np.array:
             self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))
-            self.dps_data[idx].append(np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=self.raw_dtype, count=len(dps)))
+            if not self.query.include_status:
+                self.dps_data[idx].append(
+                    np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=self.raw_dtype, count=len(dps))
+                )
+            else:
+                dps = cast(NumericDatapoints, dps)
+                # TODO: After this step, missing values (represented with None) will become NaNs and thus become
+                #       indistinguishable from NaNs that was returned! We must probably store timestamps for these
+                #       in a (public) separate attribute to allow our users to inspect - but also ourselves to
+                #       accurately insert the resulting DatapointsArray to another time series (data replication).
+                nullable_values, missing_idxs = DpsUnpackFns.nullable_raw_dp_with_index(dps)
+                if missing_idxs:
+                    # TODO: Store this somewhere:
+                    missing_ts = self.ts_data[idx][-1][missing_idxs]  # noqa: F841
+                self.dps_data[idx].append(np.fromiter(nullable_values, dtype=self.raw_dtype, count=len(dps)))
+                try:
+                    self.status_code[idx].append(
+                        np.fromiter(map(DpsUnpackFns.status_code, dps), dtype=np.int64, count=len(dps))
+                    )
+                    self.status_symbol[idx].append(
+                        np.fromiter(map(DpsUnpackFns.status_symbol, dps), dtype=np.object_, count=len(dps))
+                    )
+                except AttributeError:
+                    raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
+
         else:
             self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
             if not self.query.include_status:

@@ -426,7 +426,7 @@ class DatapointsArray(CogniteResource):
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         data_field_tuples = [
             (attr, arr)
-            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first!
+            for attr in ("timestamp", "value", "status_code", "status_symbol", *ALL_SORTED_DP_AGGS)  # ts must be first
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
@@ -498,16 +498,21 @@ class DatapointsArray(CogniteResource):
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
 
         if self.value is not None:
-            return pd.DataFrame({identifier: self.value}, index=self.timestamp, copy=False)
+            raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
+            if self.status_code is not None:
+                raw_columns[f"{identifier}|status_code"] = self.status_code
+            if self.status_symbol is not None:
+                raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
+            return pd.DataFrame(raw_columns, index=self.timestamp, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
-        columns = [
+        aggregate_columns = [
             str(identifier) + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
             for agg in agg_names
         ]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = columns
+        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = aggregate_columns
         return df
 
 
