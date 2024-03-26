@@ -1695,7 +1695,10 @@ class TestRetrieveDataFrameAPI:
                 "external_id": ts_numeric.external_id,
                 "granularity": random_granularity(upper_lim=120),
                 # Exclude count (only non-float agg) and (step_)interpolation which might yield nans:
-                "aggregates": random_aggregates(exclude={"count", "interpolation", "step_interpolation"}),
+                "aggregates": random_aggregates(
+                    exclude={"interpolation", "step_interpolation"},
+                    exclude_integer_aggregates=True,
+                ),
             },
             start=random.randint(YEAR_MS[1950], YEAR_MS[2000]),
             end=ts_to_ms("2019-12-01"),
