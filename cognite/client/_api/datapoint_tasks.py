@@ -80,6 +80,17 @@ _AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hi
         "durationUncertain",
     ]
 )
+_INT_AGGREGATES = frozenset(
+    {
+        "count",
+        "countBad",
+        "countGood",
+        "countUncertain",
+        "durationBad",
+        "durationGood",
+        "durationUncertain",
+    }
+)
 AggregateDatapoints = RepeatedCompositeFieldContainer[AggregateDatapoint]
 NumericDatapoints = RepeatedCompositeFieldContainer[NumericDatapoint]
 StringDatapoints = RepeatedCompositeFieldContainer[StringDatapoint]
@@ -588,7 +599,6 @@ class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
 class DpsUnpackFns:
     ts: Callable[[DatapointAny], int] = op.attrgetter("timestamp")
     raw_dp: Callable[[DatapointRaw], RawDatapointValue] = op.attrgetter("value")
-    count: Callable[[AggregateDatapoint], int] = op.attrgetter("count")
 
     # Status is a nested object in the response (code+symbol). Since most dps is expected to be good
     # (code 0), status is not returned for these:
@@ -1228,46 +1238,31 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         # Nice. However, when using protobuf, you get `double` xD ...so when this code was pivoted from
         # JSON -> protobuf, the special handling of `count` was kept in the hopes that one day protobuf
         # would yield the correct type...!
-        self.float_aggs = aggs_camel_case[:]
-        self.is_count_query = "count" in self.float_aggs
-        if self.is_count_query:
-            self.count_data: _DataContainer = defaultdict(list)
-            self.float_aggs.remove("count")  # Only aggregate that is (supposed to be) integer, handle separately
+        self.all_aggregates = aggs_camel_case
+        self.int_aggs = _INT_AGGREGATES.intersection(aggs_camel_case)
+        self.float_aggs = set(aggs_camel_case).difference(self.int_aggs)
 
-        self.has_non_count_aggs = bool(self.float_aggs)
-        if not self.has_non_count_aggs:
-            return
-
-        self.agg_unpack_fn = DpsUnpackFns.custom_from_aggregates(self.float_aggs)
-        self.first_non_count_agg, *others = self.float_aggs
-        self.single_non_count_agg = not others
+        self.agg_unpack_fn = DpsUnpackFns.custom_from_aggregates(self.all_aggregates)
+        self.first_agg, *others = self.all_aggregates
+        self.single_agg = not others
 
         if use_numpy:
-            if self.single_non_count_agg:
+            if self.single_agg:
                 self.dtype_aggs: np.dtype[Any] = np.dtype(np.float64)
             else:  # (.., 1) is deprecated for some reason
-                self.dtype_aggs = np.dtype((np.float64, len(self.float_aggs)))
-
-    def _clear_data_containers(self) -> None:
-        super()._clear_data_containers()
-        if self.is_count_query:
-            del self.count_data
+                self.dtype_aggs = np.dtype((np.float64, len(self.all_aggregates)))
 
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
         if self.use_numpy:
             arr_dct = {"timestamp": np.array([], dtype=np.int64)}
-            if self.is_count_query:
-                arr_dct["count"] = np.array([], dtype=np.int64)
-            if self.has_non_count_aggs:
+            if self.float_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
+            if self.int_aggs:
+                arr_dct.update({agg: np.array([], dtype=np.int64) for agg in self.int_aggs})
             return DatapointsArray._load({**self.ts_info_dct, **arr_dct})
 
-        lst_dct: dict[str, list] = {"timestamp": []}
-        if self.is_count_query:
-            lst_dct["count"] = []
-        if self.has_non_count_aggs:
-            lst_dct.update({agg: [] for agg in self.float_aggs})
-        return Datapoints(**self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
+        lst_dct: dict[str, list] = {agg: [] for agg in self.all_aggregates}
+        return Datapoints(timestamp=[], **self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
         if not self.ts_data or self.query.limit == 0:
@@ -1275,22 +1270,27 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
 
         if self.use_numpy:
             arr_dct = {"timestamp": create_array_from_dps_container(self.ts_data)}
-            if self.is_count_query:
-                arr_dct["count"] = create_array_from_dps_container(self.count_data)
-            if self.has_non_count_aggs:
-                arr_lst = create_aggregates_arrays_from_dps_container(self.dps_data, len(self.float_aggs))
-                arr_dct.update(dict(zip(self.float_aggs, arr_lst)))
+            arr_lst = create_aggregates_arrays_from_dps_container(self.dps_data, len(self.all_aggregates))
+            arr_dct.update(dict(zip(self.all_aggregates, arr_lst)))
+            for agg in self.int_aggs:
+                # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double...
+                # If an interval with no datapoints (i.e. count does not exist) has data from another aggregate (probably
+                # (step_)interpolation), count returns nan... which we need float to represent... which we do not want.
+                # Thus we convert any NaNs to 0 (which for count - and duration - makes perfect sense):
+                arr_dct[agg] = np.nan_to_num(arr_dct[agg], copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(
+                    np.int64
+                )
             return DatapointsArray._load({**self.ts_info_dct, **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}
-        if self.is_count_query:
-            lst_dct["count"] = create_list_from_dps_container(self.count_data)
-        if self.has_non_count_aggs:
-            if self.single_non_count_agg:
-                lst_dct[self.first_non_count_agg] = create_list_from_dps_container(self.dps_data)
-            else:
-                aggs_iter = create_aggregates_list_from_dps_container(self.dps_data)
-                lst_dct.update(dict(zip(self.float_aggs, aggs_iter)))
+        if self.single_agg:
+            lst_dct[self.first_agg] = create_list_from_dps_container(self.dps_data)
+        else:
+            aggs_iter = create_aggregates_list_from_dps_container(self.dps_data)
+            lst_dct.update(dict(zip(self.all_aggregates, aggs_iter)))
+        for agg in self.int_aggs:
+            # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double:
+            lst_dct[agg] = list(map(ensure_int, lst_dct[agg]))
         return Datapoints(**self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
@@ -1302,41 +1302,25 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
         n = len(dps)
         self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=n))
-
-        if self.is_count_query:
-            # If an interval with no datapoints (i.e. count does not exist) has data from another aggregate (probably
-            # (step_)interpolation), count returns nan... which we need float to represent... which we do not want.
-            # Thus we convert any NaNs to 0 (which for count makes perfect sense):
-            arr = np.fromiter(map(DpsUnpackFns.count, dps), dtype=np.float64, count=n)
-            arr = np.nan_to_num(arr, copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(np.int64)
-            self.count_data[idx].append(arr)
-
-        if self.has_non_count_aggs:
-            try:  # Fast method uses multi-key unpacking:
-                arr = np.fromiter(map(self.agg_unpack_fn, dps), dtype=self.dtype_aggs, count=n)  # type: ignore [arg-type]
-            except AttributeError:  # An aggregate is missing, fallback to slower `getattr`:
-                arr = np.array(
-                    [tuple(getattr(dp, agg, math.nan) for agg in self.float_aggs) for dp in dps],
-                    dtype=np.float64,
-                )
-            self.dps_data[idx].append(arr.reshape(n, len(self.float_aggs)))
+        try:  # Fast method uses multi-key unpacking:
+            arr = np.fromiter(map(self.agg_unpack_fn, dps), dtype=self.dtype_aggs, count=n)  # type: ignore [arg-type]
+        except AttributeError:  # An aggregate is missing, fallback to slower `getattr`:
+            arr = np.array(
+                [tuple(getattr(dp, agg, math.nan) for agg in self.all_aggregates) for dp in dps],
+                dtype=np.float64,
+            )
+        self.dps_data[idx].append(arr.reshape(n, len(self.all_aggregates)))
 
     def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
         self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
-
-        if self.is_count_query:
-            # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double:
-            self.count_data[idx].append(list(map(ensure_int, (getattr(dp, "count") for dp in dps))))
-
-        if self.has_non_count_aggs:
-            try:
-                lst: list[Any] = list(map(self.agg_unpack_fn, dps))  # type: ignore [arg-type]
-            except AttributeError:
-                if self.single_non_count_agg:
-                    lst = [getattr(dp, self.first_non_count_agg, None) for dp in dps]
-                else:
-                    lst = [tuple(getattr(dp, agg, None) for agg in self.float_aggs) for dp in dps]
-            self.dps_data[idx].append(lst)
+        try:
+            lst: list[Any] = list(map(self.agg_unpack_fn, dps))  # type: ignore [arg-type]
+        except AttributeError:
+            if self.single_agg:
+                lst = [getattr(dp, self.first_agg, None) for dp in dps]
+            else:
+                lst = [tuple(getattr(dp, agg, None) for agg in self.all_aggregates) for dp in dps]
+        self.dps_data[idx].append(lst)
 
 
 class SerialLimitedAggTaskOrchestrator(BaseAggTaskOrchestrator, SerialTaskOrchestratorMixin):
