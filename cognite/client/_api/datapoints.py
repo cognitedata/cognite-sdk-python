@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import contextlib
 import functools
 import heapq
 import itertools
 import math
 import time
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from datetime import datetime
@@ -39,6 +37,7 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
+from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes.datapoints import (
     Aggregate,
     Datapoints,
@@ -57,7 +56,7 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
-from cognite.client.utils._importing import import_as_completed, import_legacy_protobuf, local_import
+from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
     align_large_granularity,
     pandas_date_range_tz,
@@ -68,14 +67,6 @@ from cognite.client.utils._time import (
 )
 from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if not import_legacy_protobuf():
-    from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
-else:
-    from cognite.client._proto_legacy.data_point_list_response_pb2 import (  # type: ignore [assignment]
-        DataPointListItem,
-        DataPointListResponse,
-    )
 
 if TYPE_CHECKING:
     from concurrent.futures import Future, ThreadPoolExecutor
@@ -139,23 +130,6 @@ class DpsFetchStrategy(ABC):
         self.max_workers = max_workers
         self.api_subversion = api_subversion
         self.n_queries = len(all_queries)
-
-        # Fetching datapoints relies on protobuf, which, depending on OS and major version used
-        # might be running in pure python or compiled C code. We issue a warning if we can determine
-        # that the user is running in pure python mode (quite a bit slower...)
-        with contextlib.suppress(ImportError):
-            from google.protobuf.descriptor import _USE_C_DESCRIPTORS
-
-            if _USE_C_DESCRIPTORS is False:
-                warnings.warn(
-                    "Your installation of 'protobuf' is missing compiled C binaries, and will run in pure-python mode, "
-                    "which causes datapoints fetching to be ~5x slower. To verify, set the environment variable "
-                    "`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp` before running (this will cause the code to fail). "
-                    "The easiest fix is probably to pin your 'protobuf' dependency to major version 4 (or higher), "
-                    "see: https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates",
-                    UserWarning,
-                    stacklevel=3,
-                )
 
     def fetch_all_datapoints(self) -> DatapointsList:
         pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)

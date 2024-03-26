@@ -13,7 +13,7 @@ repos:
           - --select=E,W,F,I,T,RUF,TID,UP
           - --fixable=E,W,F,I,T,RUF,TID,UP
           - --target-version=py38
-          - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
+          - --exclude=cognite/client/_proto
       - id: ruff-format
         args:
           - --line-length=120

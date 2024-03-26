@@ -34,10 +34,11 @@ from typing import (
 from google.protobuf.message import Message
 from typing_extensions import NotRequired, TypeAlias
 
+from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
+from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier
-from cognite.client.utils._importing import import_legacy_protobuf
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
@@ -47,17 +48,6 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if not import_legacy_protobuf():
-    from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
-    from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
-else:
-    from cognite.client._proto_legacy.data_point_list_response_pb2 import DataPointListItem  # type: ignore [assignment]
-    from cognite.client._proto_legacy.data_points_pb2 import (  # type: ignore [assignment]
-        AggregateDatapoint,
-        NumericDatapoint,
-        StringDatapoint,
-    )
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
