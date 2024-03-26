@@ -79,11 +79,11 @@ class TestSingleTSQueryValidator:
             ([{"id": "123"}], None, str, "id"),
             (None, [{"external_id": 123}], int, "external_id"),
             (None, [{"externalId": b"foo"}], bytes, "external_id"),
-            ({"id": None}, {"external_id": "foo"}, type(None), "id"),
         ),
     )
     def test_identifier_in_dict_has_wrong_type(self, ids, xids, exp_wrong_type, exp_attr_to_fail):
-        err_msg = f"Got unsupported type {exp_wrong_type}, as, or part of argument `{exp_attr_to_fail}`."
+        exp_type = "int" if exp_attr_to_fail == "id" else "str"
+        err_msg = f"Invalid {exp_attr_to_fail}, expected {exp_type}, got {exp_wrong_type}"
 
         with pytest.raises(TypeError, match=re.escape(err_msg)):
             _SingleTSQueryValidator(

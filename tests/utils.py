@@ -343,7 +343,15 @@ class FakeCogniteResourceGenerator:
                 if isinstance(keyword_arguments[key], list) and key not in {"timestamp", "value"}:
                     keyword_arguments.pop(key)
         elif resource_cls is DatapointsArray:
-            keyword_arguments["is_string"] = False
+            # Datapoints(Array) does either have raw dps or aggregates, never both. We flip a coin:
+            is_string = keyword_arguments["is_string"] = self._random.choice([True, False])
+            if is_string:
+                # This DatapointsArray will be a [value, status_code, status_symbol]:
+                for aggregate in ALL_SORTED_DP_AGGS:
+                    del keyword_arguments[aggregate]
+            else:
+                for raw in ["value", "status_code", "status_symbol"]:
+                    del keyword_arguments[raw]
         elif resource_cls is SequenceRows:
             # All row values must match the number of columns
             # Reducing to one column, and one value for each row
@@ -458,9 +466,11 @@ class FakeCogniteResourceGenerator:
             elif type_ == NDArray[np.int64]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
             elif type_ == NDArray[np.datetime64]:
-                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ms]")
+                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ns]")
+            elif type_ == NDArray[np.object_]:
+                return np.array([self._random_string(10) for _ in range(3)], dtype=np.object_)
             else:
-                raise ValueError(f"Unknown type {type_} {type(type_)}. {self._error_msg}")
+                raise ValueError(f"Unknown type {type_} {type(type_)}, {var_name=}. {self._error_msg}")
 
         # Handle containers
         args = get_args(type_)
