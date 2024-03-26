@@ -17,7 +17,6 @@ from cognite.client.data_classes._base import (
     EnumProperty,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
-    NoCaseConversionPropertyList,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -422,7 +421,7 @@ class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
 
 
 def _metadata(key: str) -> list[str]:
-    return NoCaseConversionPropertyList(["metadata", key])
+    return ["metadata", key]
 
 
 class DatapointSubscriptionFilterProperties(EnumProperty):
