@@ -600,6 +600,10 @@ class DpsUnpackFns:
     ts: Callable[[DatapointAny], int] = op.attrgetter("timestamp")
     raw_dp: Callable[[DatapointRaw], RawDatapointValue] = op.attrgetter("value")
 
+    @staticmethod
+    def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoint], tuple[float, ...]]:
+        return op.attrgetter(*lst)
+
     # Status is a nested object in the response (code+symbol). Since most dps is expected to be good
     # (code 0), status is not returned for these:
     status_code: Callable[[NumericDatapoint], int] = op.attrgetter("status.code")  # Gives 0 by default when missing
@@ -617,23 +621,74 @@ class DpsUnpackFns:
         except AttributeError:
             raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
 
+    # --------------- #
+    # Above are functions that operate on single elements
+    # Below are functions that operate on containers
+    # --------------- #
     @staticmethod
-    def nullable_raw_dp_with_index(dps: NumericDatapoints) -> tuple[list[float], list[int]]:
-        values, idx_missing = [], []
-        try:
-            for i, dp in enumerate(dps):
-                if not dp.nullValue:
-                    values.append(dp.value)
-                else:
-                    values.append(None)  # type: ignore [arg-type]
-                    idx_missing.append(i)
-            return values, idx_missing
-        except AttributeError:
-            raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
+    def extract_timestamps(dps: DatapointsAny) -> list[int]:
+        return list(map(DpsUnpackFns.ts, dps))
 
     @staticmethod
-    def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoints], tuple[float, ...]]:
-        return op.attrgetter(*lst)
+    def extract_timestamps_numpy(dps: DatapointsAny) -> npt.NDArray[np.int64]:
+        return np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps))
+
+    @staticmethod
+    def extract_raw_dps(dps: DatapointsRaw) -> list[float | str]:  # Actually: exclusively either one
+        return list(map(DpsUnpackFns.raw_dp, dps))
+
+    @staticmethod
+    def extract_raw_dps_numpy(dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]) -> npt.NDArray[Any]:
+        return np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=dtype, count=len(dps))
+
+    @staticmethod
+    def extract_nullable_raw_dps(dps: NumericDatapoints) -> list[float]:  # actually Optional[float]
+        return list(map(DpsUnpackFns.nullable_raw_dp, dps))
+
+    @staticmethod
+    def extract_nullable_raw_dps_numpy(dps: NumericDatapoints) -> tuple[npt.NDArray[np.float64], list[int]]:
+        # This is a very hot loop, thus we make some ugly optimizations:
+        values = [None] * len(dps)
+        missing: list[int] = []
+        add_missing = missing.append
+        for i, dp in enumerate(map(DpsUnpackFns.nullable_raw_dp, dps)):
+            # we use list because of its significantly lower overhead than numpy on single element access:
+            values[i] = dp  # type: ignore [call-overload]
+            if dp is None:
+                add_missing(i)
+        arr = np.array(values, dtype=np.float64)
+        return arr, missing
+
+    @staticmethod
+    def extract_status_code(dps: NumericDatapoints) -> list[int]:
+        return list(map(DpsUnpackFns.status_code, dps))
+
+    @staticmethod
+    def extract_status_code_numpy(dps: NumericDatapoints) -> npt.NDArray[np.int64]:
+        return np.fromiter(map(DpsUnpackFns.status_code, dps), dtype=np.int64, count=len(dps))
+
+    @staticmethod
+    def extract_status_symbol(dps: NumericDatapoints) -> list[str]:
+        return list(map(DpsUnpackFns.status_symbol, dps))
+
+    @staticmethod
+    def extract_status_symbol_numpy(dps: NumericDatapoints) -> npt.NDArray[np.object_]:
+        return np.fromiter(map(DpsUnpackFns.status_symbol, dps), dtype=np.object_, count=len(dps))
+
+    @staticmethod
+    def extract_aggregates(
+        dps: AggregateDatapoints,
+        unpack_fn: Callable[[AggregateDatapoint], tuple[float, ...]],
+    ) -> list:
+        return list(map(unpack_fn, dps))
+
+    @staticmethod
+    def extract_aggregates_numpy(
+        dps: AggregateDatapoints,
+        unpack_fn: Callable[[AggregateDatapoint], tuple[float, ...]],
+        dtype: np.dtype[Any],
+    ) -> npt.NDArray[np.float64]:
+        return np.fromiter(map(unpack_fn, dps), dtype=dtype, count=len(dps))
 
 
 def ensure_int(val: float, change_nan_to: int = 0) -> int:
@@ -894,7 +949,7 @@ class BaseTaskOrchestrator(ABC):
         self.use_numpy = use_numpy
         self.ts_info: dict | None = None
         self.subtask_outside_points: OutsideDpsFetchSubtask | None = None
-        self.raw_dtype: type | None = None
+        self.raw_dtype_numpy: type[np.object_] | type[np.float64] | None = None
         self.has_limit = self.query.limit is not None
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
@@ -960,7 +1015,7 @@ class BaseTaskOrchestrator(ABC):
         self.ts_info = get_ts_info_from_proto(res)
         self.ts_info["granularity"] = self.query.granularity
         if self.use_numpy:
-            self.raw_dtype = decide_numpy_dtype_from_is_string(res.isString)
+            self.raw_dtype_numpy = decide_numpy_dtype_from_is_string(res.isString)
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         # Set `start` for the first subtask:
@@ -1078,7 +1133,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             {
                 **self.ts_info_dct,
                 "timestamp": np.array([], dtype=np.int64),
-                "value": np.array([], dtype=self.raw_dtype),
+                "value": np.array([], dtype=self.raw_dtype_numpy),
             }
         )
 
@@ -1132,7 +1187,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             value: list[float | str] | NumpyFloat64Array | NumpyObjArray = [dp[1]]
             if self.use_numpy:
                 ts = np.array(ts, dtype=np.int64)
-                value = np.array(value, dtype=self.raw_dtype)
+                value = np.array(value, dtype=self.raw_dtype_numpy)
             self.ts_data[(idx,)].append(ts)
             self.dps_data[(idx,)].append(value)
 
@@ -1145,42 +1200,37 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:  # Faster than feeding listcomp to np.array:
-            self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))
+            self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
             if not self.query.include_status:
-                self.dps_data[idx].append(
-                    np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=self.raw_dtype, count=len(dps))
-                )
+                assert self.raw_dtype_numpy is not None
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
             else:
                 dps = cast(NumericDatapoints, dps)
                 # TODO: After this step, missing values (represented with None) will become NaNs and thus become
                 #       indistinguishable from NaNs that was returned! We must probably store timestamps for these
                 #       in a (public) separate attribute to allow our users to inspect - but also ourselves to
                 #       accurately insert the resulting DatapointsArray to another time series (data replication).
-                nullable_values, missing_idxs = DpsUnpackFns.nullable_raw_dp_with_index(dps)
+                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps)
                 if missing_idxs:
                     # TODO: Store this somewhere:
                     missing_ts = self.ts_data[idx][-1][missing_idxs]  # noqa: F841
-                self.dps_data[idx].append(np.fromiter(nullable_values, dtype=self.raw_dtype, count=len(dps)))
+                self.dps_data[idx].append(arr)
                 try:
-                    self.status_code[idx].append(
-                        np.fromiter(map(DpsUnpackFns.status_code, dps), dtype=np.int64, count=len(dps))
-                    )
-                    self.status_symbol[idx].append(
-                        np.fromiter(map(DpsUnpackFns.status_symbol, dps), dtype=np.object_, count=len(dps))
-                    )
+                    self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
+                    self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
                 except AttributeError:
                     raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
 
         else:
-            self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
+            self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
             if not self.query.include_status:
-                self.dps_data[idx].append(list(map(DpsUnpackFns.raw_dp, dps)))
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
             else:
                 dps = cast(NumericDatapoints, dps)
-                self.dps_data[idx].append(list(map(DpsUnpackFns.nullable_raw_dp, dps)))
+                self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
                 try:
-                    self.status_code[idx].append(list(map(DpsUnpackFns.status_code, dps)))
-                    self.status_symbol[idx].append(list(map(DpsUnpackFns.status_symbol, dps)))
+                    self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
+                    self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
                 except AttributeError:
                     raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
 
@@ -1359,22 +1409,21 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
             self._unpack_and_store_basic(idx, dps)
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
-        n = len(dps)
-        self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=n))
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
         try:  # Fast method uses multi-key unpacking:
-            arr = np.fromiter(map(self.agg_unpack_fn, dps), dtype=self.dtype_aggs, count=n)  # type: ignore [arg-type]
+            arr = DpsUnpackFns.extract_aggregates_numpy(dps, self.agg_unpack_fn, self.dtype_aggs)
         except AttributeError:  # An aggregate is missing, fallback to slower `getattr`:
             arr = np.array(
                 [tuple(getattr(dp, agg, math.nan) for agg in self.all_aggregates) for dp in dps],
                 dtype=np.float64,
             )
-        self.dps_data[idx].append(arr.reshape(n, len(self.all_aggregates)))
+        self.dps_data[idx].append(arr.reshape(len(dps), len(self.all_aggregates)))
 
     def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
-        self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
-        try:
-            lst: list[Any] = list(map(self.agg_unpack_fn, dps))  # type: ignore [arg-type]
-        except AttributeError:
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
+        try:  # Fast method uses multi-key unpacking:
+            lst: list[Any] = DpsUnpackFns.extract_aggregates(dps, self.agg_unpack_fn)
+        except AttributeError:  # An aggregate is missing, fallback to slower `getattr`:
             if self.single_agg:
                 lst = [getattr(dp, self.first_agg, None) for dp in dps]
             else:
