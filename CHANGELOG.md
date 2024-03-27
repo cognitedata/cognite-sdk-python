@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.32.3] - 2024-03-27
+### Removed
+- Support for `protobuf==3.*` was dropped.
+
 ## [7.32.2] - 2024-03-26
 ### Added
 - Missing filterable properties `unit_external_id` and `unit_quantity` to `DatapointSubscriptionProperty`.
