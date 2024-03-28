@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import operator as op
 import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Collection,
     Iterator,
     Literal,
@@ -20,7 +17,7 @@ from typing import (
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import find_duplicates, no_op
+from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -69,6 +66,17 @@ if TYPE_CHECKING:
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
+
+
+def numpy_dtype_fix(element: np.float64 | str) -> float | str:
+    try:
+        # Using .item() on numpy scalars gives us vanilla python types:
+        return element.item()  # type: ignore [union-attr]
+    except AttributeError:
+        # Return no-op as array contains just references to vanilla python objects:
+        if isinstance(element, str):
+            return element
+        raise
 
 
 @dataclass(frozen=True)
@@ -292,8 +300,8 @@ class DatapointsArray(CogniteResource):
             return self._slice(item)
         attrs, arrays = self._data_fields()
         return Datapoint(
-            timestamp=self._dtype_fix(arrays[0][item]) // 1_000_000,
-            **{attr: self._dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])},
+            timestamp=arrays[0][item].item() // 1_000_000,
+            **{attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])},  # type: ignore [arg-type]
         )
 
     def _slice(self, part: slice) -> DatapointsArray:
@@ -307,24 +315,25 @@ class DatapointsArray(CogniteResource):
             For efficient storage, datapoints are not stored as a sequence of (singular) Datapoint
             objects, so these are created on demand while iterating (slow).
 
-        Returns:
-            Iterator[Datapoint]: No description."""
-        # Let's not create a single Datapoint more than we have too:
+        Yields:
+            Datapoint: No description.
+        """
+        warnings.warn(
+            "Iterating through a DatapointsArray is very inefficient. Tip: Access the arrays directly and use "
+            "vectorised numpy ops on those. E.g. `dps.average` for the 'average' aggregate, `dps.value` for the "
+            "raw datapoints or `dps.timestamp` for the timestamps. You may also convert to a pandas DataFrame using "
+            "`dps.to_pandas()`.",
+            UserWarning,
+        )
         attrs, arrays = self._data_fields()
-        return (
+        # Let's not create a single Datapoint more than we have too:
+        yield from (
             Datapoint(
-                timestamp=self._dtype_fix(row[0]) // 1_000_000, **dict(zip(attrs[1:], map(self._dtype_fix, row[1:])))
+                timestamp=row[0].item() // 1_000_000,
+                **dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:]))),  # type: ignore [arg-type]
             )
             for row in zip(*arrays)
         )
-
-    @cached_property
-    def _dtype_fix(self) -> Callable:
-        if self.is_string:
-            # Return no-op as array contains just references to vanilla python objects:
-            return no_op
-        # Using .item() on numpy scalars gives us vanilla python types:
-        return op.methodcaller("item")
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         data_field_tuples = [
@@ -356,7 +365,7 @@ class DatapointsArray(CogniteResource):
         if camel_case:
             attrs = list(map(to_camel_case, attrs))
 
-        dumped = {**self._ts_info, "datapoints": [dict(zip(attrs, map(self._dtype_fix, row))) for row in zip(*arrays)]}
+        dumped = {**self._ts_info, "datapoints": [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]}
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {k: v for k, v in dumped.items() if v is not None}
