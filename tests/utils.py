@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
+from cognite.client._api.datapoint_tasks import _INT_AGGREGATES
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
@@ -44,7 +45,7 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import random_string
+from cognite.client.utils._text import random_string, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -112,13 +113,18 @@ def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
     return f"{unit}{gran}"
 
 
-def random_aggregates(n=None, exclude=None):
+INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
+
+
+def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False):
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
     agg_lst = ALL_SORTED_DP_AGGS
     if exclude:
         agg_lst = [a for a in agg_lst if a not in exclude]
+    if exclude_integer_aggregates:
+        agg_lst = [a for a in agg_lst if a not in INTEGER_AGGREGATES]
     n = n or random.randint(1, len(agg_lst))
     return random.sample(agg_lst, k=n)
 
@@ -337,7 +343,15 @@ class FakeCogniteResourceGenerator:
                 if isinstance(keyword_arguments[key], list) and key not in {"timestamp", "value"}:
                     keyword_arguments.pop(key)
         elif resource_cls is DatapointsArray:
-            keyword_arguments["is_string"] = False
+            # Datapoints(Array) does either have raw dps or aggregates, never both. We flip a coin:
+            is_string = keyword_arguments["is_string"] = self._random.choice([True, False])
+            if is_string:
+                # This DatapointsArray will be a [value, status_code, status_symbol]:
+                for aggregate in ALL_SORTED_DP_AGGS:
+                    del keyword_arguments[aggregate]
+            else:
+                for raw in ["value", "status_code", "status_symbol"]:
+                    del keyword_arguments[raw]
         elif resource_cls is SequenceRows:
             # All row values must match the number of columns
             # Reducing to one column, and one value for each row
@@ -452,9 +466,11 @@ class FakeCogniteResourceGenerator:
             elif type_ == NDArray[np.int64]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
             elif type_ == NDArray[np.datetime64]:
-                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ms]")
+                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ns]")
+            elif type_ == NDArray[np.object_]:
+                return np.array([self._random_string(10) for _ in range(3)], dtype=np.object_)
             else:
-                raise ValueError(f"Unknown type {type_} {type(type_)}. {self._error_msg}")
+                raise ValueError(f"Unknown type {type_} {type(type_)}, {var_name=}. {self._error_msg}")
 
         # Handle containers
         args = get_args(type_)

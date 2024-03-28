@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import json
 import operator as op
 import typing
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, fields
 from datetime import datetime
 from functools import cached_property
 from typing import (
@@ -40,7 +41,13 @@ Aggregate = Literal[
     "average",
     "continuous_variance",
     "count",
+    "count_bad",
+    "count_good",
+    "count_uncertain",
     "discrete_variance",
+    "duration_bad",
+    "duration_good",
+    "duration_uncertain",
     "interpolation",
     "max",
     "min",
@@ -69,6 +76,47 @@ if TYPE_CHECKING:
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
+
+
+_NOT_SET = object()
+
+
+@dataclass
+class DatapointsQuery:
+    """Represent a user request for datapoints for a single time series"""
+
+    id: InitVar[int | None] = None
+    external_id: InitVar[str | None] = None
+    start: int | str | datetime = _NOT_SET  # type: ignore [assignment]
+    end: int | str | datetime = _NOT_SET  # type: ignore [assignment]
+    aggregates: Aggregate | str | list[Aggregate | str] = _NOT_SET  # type: ignore [assignment]
+    granularity: str = _NOT_SET  # type: ignore [assignment]
+    target_unit: str = _NOT_SET  # type: ignore [assignment]
+    target_unit_system: str = _NOT_SET  # type: ignore [assignment]
+    limit: int | None = _NOT_SET  # type: ignore [assignment]
+    include_outside_points: bool = _NOT_SET  # type: ignore [assignment]
+    ignore_unknown_ids: bool = _NOT_SET  # type: ignore [assignment]
+    include_status: bool = _NOT_SET  # type: ignore [assignment]
+    ignore_bad_data_points: bool = _NOT_SET  # type: ignore [assignment]
+    treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
+
+    def __post_init__(self, id: int | None, external_id: str | None) -> None:
+        # Ensure user have just specified one of id/xid:
+        self._identifier = Identifier.of_either(id, external_id)
+
+    @property
+    def identifier(self) -> Identifier:
+        return self._identifier
+
+    def __repr__(self) -> str:
+        return json.dumps(self.dump(), indent=4)
+
+    def dump(self) -> dict[str, Any]:
+        # We need to dump only those fields specifically passed by the user:
+        return {
+            **self._identifier.as_dict(camel_case=False),
+            **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not _NOT_SET),
+        }
 
 
 @dataclass(frozen=True)
@@ -113,6 +161,14 @@ class Datapoint(CogniteResource):
         continuous_variance (float | None): The variance of the interpolated underlying function.
         discrete_variance (float | None): The variance of the datapoint values.
         total_variation (float | None): The total variation of the interpolated underlying function.
+        count_bad (int | None): No description.
+        count_good (int | None): No description.
+        count_uncertain (int | None): No description.
+        duration_bad (int | None): No description.
+        duration_good (int | None): No description.
+        duration_uncertain (int | None): No description.
+        status_code (int | None): No description.
+        status_symbol (str | None): No description.
     """
 
     def __init__(
@@ -129,6 +185,14 @@ class Datapoint(CogniteResource):
         continuous_variance: float | None = None,
         discrete_variance: float | None = None,
         total_variation: float | None = None,
+        count_bad: int | None = None,
+        count_good: int | None = None,
+        count_uncertain: int | None = None,
+        duration_bad: int | None = None,
+        duration_good: int | None = None,
+        duration_uncertain: int | None = None,
+        status_code: int | None = None,
+        status_symbol: str | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.value = value
@@ -142,6 +206,14 @@ class Datapoint(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
@@ -184,6 +256,15 @@ class DatapointsArray(CogniteResource):
         continuous_variance: NumpyFloat64Array | None = None,
         discrete_variance: NumpyFloat64Array | None = None,
         total_variation: NumpyFloat64Array | None = None,
+        count_bad: NumpyInt64Array | None = None,
+        count_good: NumpyInt64Array | None = None,
+        count_uncertain: NumpyInt64Array | None = None,
+        duration_bad: NumpyInt64Array | None = None,
+        duration_good: NumpyInt64Array | None = None,
+        duration_uncertain: NumpyInt64Array | None = None,
+        status_code: NumpyInt64Array | None = None,
+        status_symbol: NumpyObjArray | None = None,
+        null_timestamps: set[int] | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -204,6 +285,15 @@ class DatapointsArray(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
+        self.null_timestamps = null_timestamps
 
     @property
     def _ts_info(self) -> dict[str, Any]:
@@ -238,6 +328,7 @@ class DatapointsArray(CogniteResource):
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
             for attr, values in datapoints_by_attr.items():
+                # TODO: np.array needs dtype arg due to int32 vs int64 defaults on windows
                 array_by_attr[attr] = np.array(values)
                 if attr == "timestamp":
                     dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
@@ -257,10 +348,10 @@ class DatapointsArray(CogniteResource):
         sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
         if len(sort_by_time) == 0:
             return arrays[0]
-        elif len(sort_by_time) == 1:
-            return sort_by_time[0]
 
         first = sort_by_time[0]
+        if len(sort_by_time) == 1:
+            return first
 
         arrays_by_attribute = defaultdict(list)
         for array in sort_by_time:
@@ -268,7 +359,12 @@ class DatapointsArray(CogniteResource):
                 arrays_by_attribute[attr].append(arr)
         arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
 
-        return cls(**first._ts_info, **arrays_by_attribute)  # type: ignore [arg-type]
+        all_null_ts = set().union(*(arr.null_timestamps for arr in sort_by_time if arr.null_timestamps))
+        return cls(
+            **first._ts_info,
+            **arrays_by_attribute,  # type: ignore [arg-type]
+            null_timestamps=all_null_ts,
+        )
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -308,12 +404,16 @@ class DatapointsArray(CogniteResource):
             objects, so these are created on demand while iterating (slow).
 
         Returns:
-            Iterator[Datapoint]: No description."""
+            Iterator[Datapoint]: No description.
+        """
         # Let's not create a single Datapoint more than we have too:
         attrs, arrays = self._data_fields()
         return (
             Datapoint(
-                timestamp=self._dtype_fix(row[0]) // 1_000_000, **dict(zip(attrs[1:], map(self._dtype_fix, row[1:])))
+                # TODO: Bug for string datapoints, _dtype_fix is no_op leading to:
+                #       UFuncTypeError: ufunc 'floor_divide' cannot use operands with types dtype('<M8[ns]') and dtype('int64')
+                timestamp=self._dtype_fix(row[0]) // 1_000_000,
+                **dict(zip(attrs[1:], map(self._dtype_fix, row[1:]))),
             )
             for row in zip(*arrays)
         )
@@ -327,9 +427,10 @@ class DatapointsArray(CogniteResource):
         return op.methodcaller("item")
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
+        # Note: Does not return status-related fields
         data_field_tuples = [
             (attr, arr)
-            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first!
+            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
@@ -366,6 +467,7 @@ class DatapointsArray(CogniteResource):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
@@ -373,6 +475,7 @@ class DatapointsArray(CogniteResource):
             column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -401,16 +504,22 @@ class DatapointsArray(CogniteResource):
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
 
         if self.value is not None:
-            return pd.DataFrame({identifier: self.value}, index=self.timestamp, copy=False)
+            raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
+            if include_status:
+                if self.status_code is not None:
+                    raw_columns[f"{identifier}|status_code"] = self.status_code
+                if self.status_symbol is not None:
+                    raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
+            return pd.DataFrame(raw_columns, index=self.timestamp, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
-        columns = [
+        aggregate_columns = [
             str(identifier) + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
             for agg in agg_names
         ]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = columns
+        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = aggregate_columns
         return df
 
 
@@ -437,6 +546,14 @@ class Datapoints(CogniteResource):
         continuous_variance (list[float] | None): The variance of the interpolated underlying function.
         discrete_variance (list[float] | None): The variance of the datapoint values.
         total_variation (list[float] | None): The total variation of the interpolated underlying function.
+        count_bad (list[int] | None): No description.
+        count_good (list[int] | None): No description.
+        count_uncertain (list[int] | None): No description.
+        duration_bad (list[int] | None): No description.
+        duration_good (list[int] | None): No description.
+        duration_uncertain (list[int] | None): No description.
+        status_code (list[int] | None): No description.
+        status_symbol (list[str] | None): No description.
         error (list[None | str] | None): No description.
     """
 
@@ -461,6 +578,14 @@ class Datapoints(CogniteResource):
         continuous_variance: list[float] | None = None,
         discrete_variance: list[float] | None = None,
         total_variation: list[float] | None = None,
+        count_bad: list[int] | None = None,
+        count_good: list[int] | None = None,
+        count_uncertain: list[int] | None = None,
+        duration_bad: list[int] | None = None,
+        duration_good: list[int] | None = None,
+        duration_uncertain: list[int] | None = None,
+        status_code: list[int] | None = None,
+        status_symbol: list[str] | None = None,
         error: list[None | str] | None = None,
     ) -> None:
         self.id = id
@@ -482,6 +607,14 @@ class Datapoints(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
         self.error = error
 
         self.__datapoint_objects: list[Datapoint] | None = None
@@ -547,6 +680,7 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_errors: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
@@ -555,6 +689,7 @@ class Datapoints(CogniteResource):
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -582,6 +717,13 @@ class Datapoints(CogniteResource):
             if attr == "value":
                 field_names.append(id_col_name)
                 data_lists.append(data)
+                if include_status:
+                    if self.status_code is not None:
+                        field_names.append(f"{identifier}|status_code")
+                        data_lists.append(self.status_code)
+                    if self.status_symbol is not None:
+                        field_names.append(f"{identifier}|status_symbol")
+                        data_lists.append(self.status_symbol)
                 continue
             if include_aggregate_name:
                 id_col_name += f"|{attr}"
@@ -591,8 +733,9 @@ class Datapoints(CogniteResource):
             if attr == "error":
                 data_lists.append(data)
                 continue  # Keep string (object) column non-numeric
+
             data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
-            if attr == "count":
+            if attr.startswith("count") or attr.startswith("duration"):
                 data_lists.append(data.astype("int64"))
             else:
                 data_lists.append(data.astype("float64"))
@@ -649,7 +792,17 @@ class Datapoints(CogniteResource):
         self, get_empty_lists: bool = False, get_error: bool = True
     ) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
-        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "unit_external_id", "granularity"}
+        skip_attrs = {
+            "id",
+            "external_id",
+            "is_string",
+            "is_step",
+            "unit",
+            "unit_external_id",
+            "granularity",
+            "status_code",
+            "status_symbol",
+        }
         for attr, value in self.__dict__.copy().items():
             if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
                 if value is not None or attr == "timestamp":
