@@ -272,6 +272,7 @@ class DatapointsArray(CogniteResource):
         duration_uncertain: NumpyInt64Array | None = None,
         status_code: NumpyInt64Array | None = None,
         status_symbol: NumpyObjArray | None = None,
+        null_timestamps: set[int] | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -300,6 +301,7 @@ class DatapointsArray(CogniteResource):
         self.duration_uncertain = duration_uncertain
         self.status_code = status_code
         self.status_symbol = status_symbol
+        self.null_timestamps = null_timestamps
 
     @property
     def _ts_info(self) -> dict[str, Any]:
@@ -353,10 +355,10 @@ class DatapointsArray(CogniteResource):
         sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
         if len(sort_by_time) == 0:
             return arrays[0]
-        elif len(sort_by_time) == 1:
-            return sort_by_time[0]
 
         first = sort_by_time[0]
+        if len(sort_by_time) == 1:
+            return first
 
         arrays_by_attribute = defaultdict(list)
         for array in sort_by_time:
@@ -364,7 +366,12 @@ class DatapointsArray(CogniteResource):
                 arrays_by_attribute[attr].append(arr)
         arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
 
-        return cls(**first._ts_info, **arrays_by_attribute)  # type: ignore [arg-type]
+        all_null_ts = set().union(*(arr.null_timestamps for arr in sort_by_time if arr.null_timestamps))
+        return cls(
+            **first._ts_info,
+            **arrays_by_attribute,  # type: ignore [arg-type]
+            null_timestamps=all_null_ts,
+        )
 
     def __len__(self) -> int:
         return len(self.timestamp)
