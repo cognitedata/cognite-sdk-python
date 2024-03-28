@@ -778,7 +778,8 @@ class DatapointsAPI(APIClient):
     ) -> DatapointsArray | DatapointsArrayList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
-        **Note**: This method requires ``numpy`` to be installed.
+        Note:
+            This method requires ``numpy`` to be installed.
 
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -874,8 +875,12 @@ class DatapointsAPI(APIClient):
     def retrieve_dataframe(
         self,
         *,
-        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
+        id: None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]] = None,
+        external_id: None
+        | str
+        | DatapointsQuery
+        | dict[str, Any]
+        | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -885,6 +890,9 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_data_points: bool = True,
+        treat_uncertain_as_bad: bool = True,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
@@ -892,11 +900,12 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
 
-        **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
+        Note:
+            If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
 
         Args:
-            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
@@ -906,6 +915,9 @@ class DatapointsAPI(APIClient):
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): No description.
+            ignore_bad_data_points (bool): No description.
+            treat_uncertain_as_bad (bool): No description.
             uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
@@ -931,10 +943,11 @@ class DatapointsAPI(APIClient):
             individually specified aggregates, from 1990 through 2020:
 
                 >>> from datetime import datetime, timezone
+                >>> from cognite.client.data_classes import DatapointsQuery
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id=[
-                ...         {"external_id": "foo", "aggregates": ["discrete_variance"]},
-                ...         {"external_id": "bar", "aggregates": ["total_variation", "continuous_variance"]},
+                ...     external_id=[
+                ...         DatapointsQuery(external_id="foo", aggregates="discrete_variance"),
+                ...         DatapointsQuery(external_id="bar", aggregates=["total_variation", "continuous_variance"]),
                 ...     ],
                 ...     granularity="1d",
                 ...     start=datetime(1990, 1, 1, tzinfo=timezone.utc),
@@ -946,20 +959,17 @@ class DatapointsAPI(APIClient):
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
-                ...     aggregates=["average"],
+                ...     aggregates="average",
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
 
-            Remember that pandas.Timestamp is a subclass of datetime, so you can use Timestamps as start and
-            end arguments:
+            You may also use ``pandas.Timestamp`` to define start and end:
 
                 >>> import pandas as pd
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id="foo",
                 ...     start=pd.Timestamp("2023-01-01"),
-                ...     end=pd.Timestamp("2023-02-01"),
-                ...     )
-
+                ...     end=pd.Timestamp("2023-02-01"))
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
@@ -977,6 +987,9 @@ class DatapointsAPI(APIClient):
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_data_points=ignore_bad_data_points,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         fetcher = select_dps_fetch_strategy(self, full_query=query)
 
@@ -1015,6 +1028,9 @@ class DatapointsAPI(APIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_data_points: bool = True,
+        treat_uncertain_as_bad: bool = True,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
@@ -1054,6 +1070,9 @@ class DatapointsAPI(APIClient):
             target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): No description.
+            ignore_bad_data_points (bool): No description.
+            treat_uncertain_as_bad (bool): No description.
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
@@ -1107,6 +1126,7 @@ class DatapointsAPI(APIClient):
         if aggregates is None and granularity is None:
             # For raw data, we only need to convert the timezone:
             return (
+                # TODO: include_outside_points is missing
                 self.retrieve_dataframe(
                     id=id,
                     external_id=external_id,
@@ -1117,6 +1137,9 @@ class DatapointsAPI(APIClient):
                     target_unit=target_unit,
                     target_unit_system=target_unit_system,
                     ignore_unknown_ids=ignore_unknown_ids,
+                    include_status=include_status,
+                    ignore_bad_data_points=ignore_bad_data_points,
+                    treat_uncertain_as_bad=treat_uncertain_as_bad,
                     uniform_index=uniform_index,
                     include_aggregate_name=include_aggregate_name,
                     include_granularity_name=include_granularity_name,
@@ -1141,6 +1164,9 @@ class DatapointsAPI(APIClient):
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_data_points=ignore_bad_data_points,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
             **{identifiers[0].name(): queries},  # type: ignore [arg-type]
@@ -1158,6 +1184,7 @@ class DatapointsAPI(APIClient):
         )
         if uniform_index:
             freq = to_pandas_freq(granularity, start)
+            # TODO: Bug, "small" granularities like s/m/h raise here:
             start, end = align_large_granularity(start, end, granularity)
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
         return df
