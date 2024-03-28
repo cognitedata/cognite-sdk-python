@@ -1119,6 +1119,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         self.dp_outside_status_symbol_end: str | None = None
 
         if self.query.include_status:
+            self.null_timestamps: set[int] = set()
             self.status_code: _DataContainer = defaultdict(list)
             self.status_symbol: _DataContainer = defaultdict(list)
 
@@ -1150,6 +1151,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if self.use_numpy:
             if self.query.include_status:
                 status_columns.update(
+                    null_timestamps=self.null_timestamps,
                     status_code=create_array_from_dps_container(self.status_code),
                     status_symbol=create_array_from_dps_container(self.status_symbol),
                 )
@@ -1206,15 +1208,14 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
             else:
                 dps = cast(NumericDatapoints, dps)
-                # TODO: After this step, missing values (represented with None) will become NaNs and thus become
-                #       indistinguishable from NaNs that was returned! We must probably store timestamps for these
-                #       in a (public) separate attribute to allow our users to inspect - but also ourselves to
-                #       accurately insert the resulting DatapointsArray to another time series (data replication).
+                # After this step, missing values (represented with None) will become NaNs and thus become
+                # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
+                # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
+                # use the DatapointsArray to replicate datapoints (exactly).
                 arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps)
-                if missing_idxs:
-                    # TODO: Store this somewhere:
-                    missing_ts = self.ts_data[idx][-1][missing_idxs]  # noqa: F841
                 self.dps_data[idx].append(arr)
+                if missing_idxs:
+                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs])
                 try:
                     self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
                     self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
