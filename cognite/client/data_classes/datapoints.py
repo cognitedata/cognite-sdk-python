@@ -336,6 +336,7 @@ class DatapointsArray(CogniteResource):
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
             for attr, values in datapoints_by_attr.items():
+                # TODO: np.array needs dtype arg due to int32 vs int64 defaults on windows
                 array_by_attr[attr] = np.array(values)
                 if attr == "timestamp":
                     dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
@@ -431,9 +432,10 @@ class DatapointsArray(CogniteResource):
         )
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
+        # Note: Does not return status-related fields
         data_field_tuples = [
             (attr, arr)
-            for attr in ("timestamp", "value", "status_code", "status_symbol", *ALL_SORTED_DP_AGGS)  # ts must be first
+            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
@@ -470,6 +472,7 @@ class DatapointsArray(CogniteResource):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
@@ -477,6 +480,7 @@ class DatapointsArray(CogniteResource):
             column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -506,10 +510,11 @@ class DatapointsArray(CogniteResource):
 
         if self.value is not None:
             raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
-            if self.status_code is not None:
-                raw_columns[f"{identifier}|status_code"] = self.status_code
-            if self.status_symbol is not None:
-                raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
+            if include_status:
+                if self.status_code is not None:
+                    raw_columns[f"{identifier}|status_code"] = self.status_code
+                if self.status_symbol is not None:
+                    raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
             return pd.DataFrame(raw_columns, index=self.timestamp, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
@@ -689,7 +694,7 @@ class Datapoints(CogniteResource):
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
-            include_status (bool): TODO: XXX
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -717,17 +722,25 @@ class Datapoints(CogniteResource):
             if attr == "value":
                 field_names.append(id_col_name)
                 data_lists.append(data)
+                if include_status:
+                    if self.status_code is not None:
+                        field_names.append(f"{identifier}|status_code")
+                        data_lists.append(self.status_code)
+                    if self.status_symbol is not None:
+                        field_names.append(f"{identifier}|status_symbol")
+                        data_lists.append(self.status_symbol)
                 continue
             if include_aggregate_name:
                 id_col_name += f"|{attr}"
             if include_granularity_name and self.granularity is not None:
                 id_col_name += f"|{self.granularity}"
             field_names.append(id_col_name)
-            if attr in ("error", "status_symbol"):
+            if attr == "error":
                 data_lists.append(data)
                 continue  # Keep string (object) column non-numeric
+
             data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
-            if attr.startswith("count") or attr.startswith("duration") or attr == "status_code":
+            if attr.startswith("count") or attr.startswith("duration"):
                 data_lists.append(data.astype("int64"))
             else:
                 data_lists.append(data.astype("float64"))
@@ -784,7 +797,17 @@ class Datapoints(CogniteResource):
         self, get_empty_lists: bool = False, get_error: bool = True
     ) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
-        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "unit_external_id", "granularity"}
+        skip_attrs = {
+            "id",
+            "external_id",
+            "is_string",
+            "is_step",
+            "unit",
+            "unit_external_id",
+            "granularity",
+            "status_code",
+            "status_symbol",
+        }
         for attr, value in self.__dict__.copy().items():
             if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
                 if value is not None or attr == "timestamp":
