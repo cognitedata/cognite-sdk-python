@@ -594,6 +594,8 @@ class FakeCogniteResourceGenerator:
             return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("tuple[") and annotation.endswith("]"):
             return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("set[") and annotation.endswith("]"):
+            return typing.Set[cls._create_type_hint_3_10(annotation[4:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("typing.Sequence[") and annotation.endswith("]"):
             # This is used in the Sequence data class file to avoid name collision
             return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
