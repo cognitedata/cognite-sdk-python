@@ -348,10 +348,10 @@ class FakeCogniteResourceGenerator:
             if is_string:
                 # This DatapointsArray will be a [value, status_code, status_symbol]:
                 for aggregate in ALL_SORTED_DP_AGGS:
-                    del keyword_arguments[aggregate]
+                    keyword_arguments.pop(aggregate, None)
             else:
                 for raw in ["value", "status_code", "status_symbol"]:
-                    del keyword_arguments[raw]
+                    keyword_arguments.pop(raw, None)
         elif resource_cls is SequenceRows:
             # All row values must match the number of columns
             # Reducing to one column, and one value for each row
