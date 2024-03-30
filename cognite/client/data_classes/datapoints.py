@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
     NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
+    NumpyUInt32Array = npt.NDArray[np.uint32]
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
@@ -270,7 +271,7 @@ class DatapointsArray(CogniteResource):
         duration_bad: NumpyInt64Array | None = None,
         duration_good: NumpyInt64Array | None = None,
         duration_uncertain: NumpyInt64Array | None = None,
-        status_code: NumpyInt64Array | None = None,
+        status_code: NumpyUInt32Array | None = None,
         status_symbol: NumpyObjArray | None = None,
         null_timestamps: set[int] | None = None,
     ) -> None:

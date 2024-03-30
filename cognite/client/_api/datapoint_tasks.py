@@ -664,8 +664,8 @@ class DpsUnpackFns:
         return list(map(DpsUnpackFns.status_code, dps))
 
     @staticmethod
-    def extract_status_code_numpy(dps: NumericDatapoints) -> npt.NDArray[np.int64]:
-        return np.fromiter(map(DpsUnpackFns.status_code, dps), dtype=np.int64, count=len(dps))
+    def extract_status_code_numpy(dps: NumericDatapoints) -> npt.NDArray[np.uint32]:
+        return np.fromiter(map(DpsUnpackFns.status_code, dps), dtype=np.uint32, count=len(dps))
 
     @staticmethod
     def extract_status_symbol(dps: NumericDatapoints) -> list[str]:
@@ -1195,7 +1195,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
 
             if self.query.include_status:
                 if self.use_numpy:
-                    status_code = np.array(status_code, dtype=np.int64)  # type: ignore [assignment]
+                    status_code = np.array(status_code, dtype=np.uint32)  # type: ignore [assignment]
                     status_symbol = np.array(status_symbol, dtype=np.object_)  # type: ignore [assignment]
                 self.status_code[(idx,)].append(status_code)
                 self.status_symbol[(idx,)].append(status_symbol)
