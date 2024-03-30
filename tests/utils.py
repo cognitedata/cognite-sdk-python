@@ -463,6 +463,8 @@ class FakeCogniteResourceGenerator:
 
             if type_ == NDArray[np.float64]:
                 return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
+            elif type_ == NDArray[np.uint32]:
+                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.uint32)
             elif type_ == NDArray[np.int64]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
             elif type_ == NDArray[np.datetime64]:
@@ -512,7 +514,7 @@ class FakeCogniteResourceGenerator:
         return "".join(self._random.choices(sample_from, k=k))
 
     @classmethod
-    def _type_checking(cls) -> dict[str, Any]:
+    def _type_checking(cls) -> dict[str, type]:
         """
         When calling the get_type_hints function, it imports the module with the function TYPE_CHECKING is set to False.
 
@@ -524,16 +526,13 @@ class FakeCogniteResourceGenerator:
 
         from cognite.client import CogniteClient
 
-        NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
-        NumpyInt64Array = npt.NDArray[np.int64]
-        NumpyFloat64Array = npt.NDArray[np.float64]
-        NumpyObjArray = npt.NDArray[np.object_]
         return {
             "CogniteClient": CogniteClient,
-            "NumpyDatetime64NSArray": NumpyDatetime64NSArray,
-            "NumpyInt64Array": NumpyInt64Array,
-            "NumpyFloat64Array": NumpyFloat64Array,
-            "NumpyObjArray": NumpyObjArray,
+            "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
+            "NumpyUInt32Array": npt.NDArray[np.uint32],
+            "NumpyInt64Array": npt.NDArray[np.int64],
+            "NumpyFloat64Array": npt.NDArray[np.float64],
+            "NumpyObjArray": npt.NDArray[np.object_],
         }
 
     @classmethod
