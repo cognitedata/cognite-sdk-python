@@ -316,19 +316,23 @@ class DatapointsArray(CogniteResource):
         }
 
     @classmethod
-    @typing.no_type_check
-    def _load(
+    def _load_from_arrays(
         cls,
-        dps_dct: dict[str, int | str | bool | npt.NDArray],
+        dps_dct: dict[str, Any],
         cognite_client: CogniteClient | None = None,
     ) -> DatapointsArray:
-        if "timestamp" in dps_dct:
-            assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
-            # Since pandas always uses nanoseconds for datetime, we stick with the same
-            # (also future-proofs the SDK; ns is coming!):
-            dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
-            return cls(**convert_all_keys_to_snake_case(dps_dct))
+        assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
+        # Since pandas always uses nanoseconds for datetime, we stick with the same
+        # (also future-proofs the SDK; ns is coming!):
+        dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
+        return cls(**convert_all_keys_to_snake_case(dps_dct))
 
+    @classmethod
+    def _load(
+        cls,
+        dps_dct: dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+    ) -> DatapointsArray:
         array_by_attr = {}
         if "datapoints" in dps_dct:
             datapoints_by_attr = defaultdict(list)

@@ -1130,7 +1130,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
         if not self.use_numpy:
             return Datapoints(**self.ts_info_dct, timestamp=[], value=[])
-        return DatapointsArray._load(
+        return DatapointsArray._load_from_arrays(
             {
                 **self.ts_info_dct,
                 "timestamp": np.array([], dtype=np.int64),
@@ -1155,7 +1155,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     status_code=create_array_from_dps_container(self.status_code),
                     status_symbol=create_array_from_dps_container(self.status_symbol),
                 )
-            return DatapointsArray._load(
+            return DatapointsArray._load_from_arrays(
                 {
                     **self.ts_info_dct,
                     "timestamp": create_array_from_dps_container(self.ts_data),
@@ -1369,7 +1369,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
             if self.int_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.int64) for agg in self.int_aggs})
-            return DatapointsArray._load({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
 
         lst_dct: dict[str, list] = {agg: [] for agg in self.all_aggregates}
         return Datapoints(timestamp=[], **self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
@@ -1390,7 +1390,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct[agg] = np.nan_to_num(arr_dct[agg], copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(
                     np.int64
                 )
-            return DatapointsArray._load({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}
         if self.single_agg:
