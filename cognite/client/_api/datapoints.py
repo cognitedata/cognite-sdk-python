@@ -574,14 +574,14 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): No description.
-            ignore_bad_data_points (bool): No description.
-            treat_uncertain_as_bad (bool): No description.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
             Datapoints | DatapointsList | None: A ``Datapoints`` object containing the requested data, or a ``DatapointsList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -697,7 +697,7 @@ class DatapointsAPI(APIClient):
                 ...     start=MIN_TIMESTAMP_MS,
                 ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
 
-            Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
+            Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query:
 
                 >>> ts1 = 1337
                 >>> ts2 = DatapointsQuery(
@@ -710,7 +710,7 @@ class DatapointsAPI(APIClient):
                 >>> ts3 = DatapointsQuery(
                 ...     id=11,
                 ...     end="1h-ago",
-                ...     aggregates=["max"],
+                ...     aggregates="max",
                 ...     granularity="42h",
                 ...     include_outside_points=False,
                 ...     ignore_unknown_ids=True,  # Overrides `ignore_unknown_ids` arg. below
@@ -718,16 +718,33 @@ class DatapointsAPI(APIClient):
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False)
 
-            If we have created a timeseries set with 'unit_external_id' we can use the 'target_unit' parameter to convert the datapoints to the desired unit.
-            In the example below, we assume that the timeseries is set with unit_external_id 'temperature:deg_c' and id='42'.
+            If you have a time series with 'unit_external_id' set, you can use the 'target_unit' parameter to convert the datapoints
+            to the desired unit. In the example below, we are converting temperature readings from a sensor measured and stored in Celsius,
+            to Fahrenheit (we're assuming that the time series has e.g. ``unit_external_id='temperature:deg_c'``):
 
                 >>> client.time_series.data.retrieve(
-                ...   id=42, start="2w-ago", limit=None, target_unit="temperature:deg_f")
+                ...   id=42, start="2w-ago", target_unit="temperature:deg_f")
 
-            Or alternatively, we can use the 'target_unit_system' parameter to convert the datapoints to the desired unit system.
+            Or alternatively, you can use the 'target_unit_system' parameter to convert the datapoints to the desired unit system:
 
                 >>> client.time_series.data.retrieve(
-                ...   id=42, start="2w-ago", limit=None, target_unit_system="Imperial")
+                ...   id=42, start="2w-ago", target_unit_system="Imperial")
+
+            To retrieve status codes for a time series, pass ``include_status=True``. This is only possible for raw datapoint queries.
+            You would typically also pass ``ignore_bad_data_points=False`` to not hide all the datapoints that are marked as uncertain or bad,
+            which is the API's default behaviour. You can also do ``treat_uncertain_as_bad=False`` to just return good and uncertain.
+
+                >>> dps = client.time_series.data.retrieve(
+                ...   id=42, include_status=True, ignore_bad_data_points=False)
+                >>> dps.status_code  # list of integer codes, e.g.: [0, 1073741824, 2147483648]
+                >>> dps.status_symbol  # list of symbolic representations, e.g. [Good, Uncertain, Bad]
+
+            There are six aggregates directly related to status codes, three for count: 'count_good', 'count_uncertain' and 'count_bad', and
+            three for duration: 'duration_good', 'duration_uncertain' and 'duration_bad'. These may be fetched as any other aggregate.
+            It is important to note that status codes may influence how other aggregates are computed: Aggregates will in general omit the
+            time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good
+            datapoint will be considered constant. To put simply, what 'average' may return depends on your setting for 'ignore_bad_data_points'
+            and 'treat_uncertain_as_bad' (in the presence of uncertain/bad datapoints).
         """
         query = _FullDatapointsQuery(
             start=start,
@@ -788,14 +805,14 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): No description.
-            ignore_bad_data_points (bool): No description.
-            treat_uncertain_as_bad (bool): No description.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
             DatapointsArray | DatapointsArrayList | None: A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -910,14 +927,14 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): No description.
-            ignore_bad_data_points (bool): No description.
-            treat_uncertain_as_bad (bool): No description.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
             uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
@@ -1003,7 +1020,7 @@ class DatapointsAPI(APIClient):
         if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
             raise ValueError(
                 "Cannot return a uniform index when asking for aggregates with multiple granularities "
-                f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
+                f"({grans_given or []}) OR when (partly) querying raw datapoints OR when a finite limit is used."
             )
 
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
@@ -1067,12 +1084,12 @@ class DatapointsAPI(APIClient):
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): No description.
-            ignore_bad_data_points (bool): No description.
-            treat_uncertain_as_bad (bool): No description.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
@@ -1204,8 +1221,8 @@ class DatapointsAPI(APIClient):
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
             before (None | int | str | datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
-            target_unit (str | None): The unit_external_id of the data point returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data point returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
