@@ -147,7 +147,7 @@ class _FullDatapointsQuery:
     include_outside_points: bool = False
     ignore_unknown_ids: bool = False
     include_status: bool = False
-    ignore_bad_data_points: bool = True
+    ignore_bad_datapoints: bool = True
     treat_uncertain_as_bad: bool = True
 
     @property
@@ -173,7 +173,7 @@ class _FullDatapointsQuery:
             include_outside_points=self.include_outside_points,
             ignore_unknown_ids=self.ignore_unknown_ids,
             include_status=self.include_status,
-            ignore_bad_data_points=self.ignore_bad_data_points,
+            ignore_bad_datapoints=self.ignore_bad_datapoints,
             treat_uncertain_as_bad=self.treat_uncertain_as_bad,
         )
 
@@ -191,7 +191,7 @@ class _SingleTSQueryValidator:
             "include_outside_points",
             "ignore_unknown_ids",
             "include_status",
-            "ignore_bad_data_points",
+            "ignore_bad_datapoints",
             "treat_uncertain_as_bad",
         }
     )
@@ -296,7 +296,7 @@ class _SingleTSQueryValidator:
     def _validate_and_create_query(self, dct: dict[str, Any]) -> _SingleTSQueryBase:
         # TODO: Add verification on:
         #       - include_status
-        #       - ignore_bad_data_points
+        #       - ignore_bad_datapoints
         #       - treat_uncertain_as_bad
         limit = self._verify_limit(dct["limit"])
 
@@ -350,7 +350,7 @@ class _SingleTSQueryValidator:
             "target_unit_system": dct["target_unit_system"],
             "limit": limit,
             "ignore_unknown_ids": dct["ignore_unknown_ids"],
-            "ignore_bad_data_points": dct["ignore_bad_data_points"],
+            "ignore_bad_datapoints": dct["ignore_bad_datapoints"],
             "treat_uncertain_as_bad": dct["treat_uncertain_as_bad"],
         }
         if is_raw:
@@ -411,7 +411,7 @@ class _SingleTSQueryBase:
         target_unit_system: str | None,
         include_outside_points: bool,
         ignore_unknown_ids: bool,
-        ignore_bad_data_points: bool,
+        ignore_bad_datapoints: bool,
         treat_uncertain_as_bad: bool,
     ) -> None:
         self.identifier = identifier
@@ -423,7 +423,7 @@ class _SingleTSQueryBase:
         self.target_unit_system = target_unit_system
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
-        self.ignore_bad_data_points = ignore_bad_data_points
+        self.ignore_bad_datapoints = ignore_bad_datapoints
         self.treat_uncertain_as_bad = treat_uncertain_as_bad
 
         self.granularity: str | None = None
@@ -486,7 +486,7 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
     @property
     def requires_api_subversion_beta(self) -> bool:
         return (
-            self.include_status is True or self.ignore_bad_data_points is False or self.treat_uncertain_as_bad is False
+            self.include_status is True or self.ignore_bad_datapoints is False or self.treat_uncertain_as_bad is False
         )
 
     @property
@@ -508,8 +508,8 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
 
         if self.include_status is True:
             payload["includeStatus"] = self.include_status
-        if self.ignore_bad_data_points is False:
-            payload["ignoreBadDataPoints"] = self.ignore_bad_data_points
+        if self.ignore_bad_datapoints is False:
+            payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
         if self.treat_uncertain_as_bad is False:
             payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
         return payload
@@ -543,7 +543,7 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
     @property
     def requires_api_subversion_beta(self) -> bool:
         return (
-            self.ignore_bad_data_points is False
+            self.ignore_bad_datapoints is False
             or self.treat_uncertain_as_bad is False
             or bool(_AGGREGATES_IN_BETA.intersection(self.aggregates))
         )
@@ -570,8 +570,8 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
         elif self.target_unit_system is not None:
             payload["targetUnitSystem"] = self.target_unit_system
 
-        if self.ignore_bad_data_points is False:
-            payload["ignoreBadDataPoints"] = self.ignore_bad_data_points
+        if self.ignore_bad_datapoints is False:
+            payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
         if self.treat_uncertain_as_bad is False:
             payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
         return payload
@@ -756,7 +756,7 @@ class BaseDpsFetchSubtask:
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
-        ignore_bad_data_points: bool = True,
+        ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> None:
         self.start = start
@@ -768,7 +768,7 @@ class BaseDpsFetchSubtask:
         self.target_unit = target_unit
         self.target_unit_system = target_unit_system
         self.include_status = include_status
-        self.ignore_bad_data_points = ignore_bad_data_points
+        self.ignore_bad_datapoints = ignore_bad_datapoints
         self.treat_uncertain_as_bad = treat_uncertain_as_bad
         self.is_done = False
         self.n_dps_fetched = 0
@@ -779,8 +779,8 @@ class BaseDpsFetchSubtask:
         elif target_unit_system is not None:
             self.static_kwargs["targetUnitSystem"] = target_unit_system
 
-        if ignore_bad_data_points is False:
-            self.static_kwargs["ignoreBadDataPoints"] = ignore_bad_data_points
+        if ignore_bad_datapoints is False:
+            self.static_kwargs["ignoreBadDataPoints"] = ignore_bad_datapoints
         if treat_uncertain_as_bad is False:
             self.static_kwargs["treatUncertainAsBad"] = treat_uncertain_as_bad
 
@@ -893,7 +893,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             target_unit=self.target_unit,
             target_unit_system=self.target_unit_system,
             include_status=self.include_status,
-            ignore_bad_data_points=self.ignore_bad_data_points,
+            ignore_bad_datapoints=self.ignore_bad_datapoints,
             treat_uncertain_as_bad=self.treat_uncertain_as_bad,
         )
 
@@ -1052,7 +1052,7 @@ class BaseTaskOrchestrator(ABC):
                 identifier=self.query.identifier,
                 parent=self,
                 include_status=self.query.include_status,
-                ignore_bad_data_points=self.query.ignore_bad_data_points,
+                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
                 treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
             # Append the outside subtask to returned subtasks so that it will be queued:
@@ -1098,7 +1098,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
                 granularity=self.query.granularity,
                 subtask_idx=FIRST_IDX,
                 include_status=self.query.include_status if self.query.is_raw_query else False,
-                ignore_bad_data_points=self.query.ignore_bad_data_points,
+                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
                 treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
         ]
@@ -1315,7 +1315,7 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
                 max_query_limit=self.query.max_query_limit,
                 is_raw_query=self.query.is_raw_query,
                 include_status=self.query.include_status if self.query.is_raw_query else False,
-                ignore_bad_data_points=self.query.ignore_bad_data_points,
+                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
                 treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)

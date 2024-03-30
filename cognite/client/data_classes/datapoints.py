@@ -105,7 +105,7 @@ class DatapointsQuery:
     include_outside_points: bool = _NOT_SET  # type: ignore [assignment]
     ignore_unknown_ids: bool = _NOT_SET  # type: ignore [assignment]
     include_status: bool = _NOT_SET  # type: ignore [assignment]
-    ignore_bad_data_points: bool = _NOT_SET  # type: ignore [assignment]
+    ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
     def __post_init__(self, id: int | None, external_id: str | None) -> None:

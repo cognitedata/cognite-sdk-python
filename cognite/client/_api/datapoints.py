@@ -554,7 +554,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
         include_status: bool = False,
-        ignore_bad_data_points: bool = True,
+        ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> Datapoints | DatapointsList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
@@ -580,7 +580,7 @@ class DatapointsAPI(APIClient):
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
-            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
@@ -731,11 +731,11 @@ class DatapointsAPI(APIClient):
                 ...   id=42, start="2w-ago", target_unit_system="Imperial")
 
             To retrieve status codes for a time series, pass ``include_status=True``. This is only possible for raw datapoint queries.
-            You would typically also pass ``ignore_bad_data_points=False`` to not hide all the datapoints that are marked as uncertain or bad,
+            You would typically also pass ``ignore_bad_datapoints=False`` to not hide all the datapoints that are marked as uncertain or bad,
             which is the API's default behaviour. You can also do ``treat_uncertain_as_bad=False`` to just return good and uncertain.
 
                 >>> dps = client.time_series.data.retrieve(
-                ...   id=42, include_status=True, ignore_bad_data_points=False)
+                ...   id=42, include_status=True, ignore_bad_datapoints=False)
                 >>> dps.status_code  # list of integer codes, e.g.: [0, 1073741824, 2147483648]
                 >>> dps.status_symbol  # list of symbolic representations, e.g. [Good, Uncertain, Bad]
 
@@ -743,7 +743,7 @@ class DatapointsAPI(APIClient):
             three for duration: 'duration_good', 'duration_uncertain' and 'duration_bad'. These may be fetched as any other aggregate.
             It is important to note that status codes may influence how other aggregates are computed: Aggregates will in general omit the
             time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good
-            datapoint will be considered constant. To put simply, what 'average' may return depends on your setting for 'ignore_bad_data_points'
+            datapoint will be considered constant. To put simply, what 'average' may return depends on your setting for 'ignore_bad_datapoints'
             and 'treat_uncertain_as_bad' (in the presence of uncertain/bad datapoints).
         """
         query = _FullDatapointsQuery(
@@ -759,7 +759,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
             include_status=include_status,
-            ignore_bad_data_points=ignore_bad_data_points,
+            ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         fetcher = select_dps_fetch_strategy(self, full_query=query)
@@ -790,7 +790,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
         include_status: bool = False,
-        ignore_bad_data_points: bool = True,
+        ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> DatapointsArray | DatapointsArrayList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
@@ -811,7 +811,7 @@ class DatapointsAPI(APIClient):
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
-            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
@@ -877,7 +877,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
             include_status=include_status,
-            ignore_bad_data_points=ignore_bad_data_points,
+            ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         fetcher = select_dps_fetch_strategy(self, full_query=query)
@@ -908,7 +908,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
         include_status: bool = False,
-        ignore_bad_data_points: bool = True,
+        ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
@@ -933,7 +933,7 @@ class DatapointsAPI(APIClient):
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
-            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
             uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
@@ -1005,7 +1005,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
             include_status=include_status,
-            ignore_bad_data_points=ignore_bad_data_points,
+            ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         fetcher = select_dps_fetch_strategy(self, full_query=query)
@@ -1046,7 +1046,7 @@ class DatapointsAPI(APIClient):
         target_unit_system: str | None = None,
         ignore_unknown_ids: bool = False,
         include_status: bool = False,
-        ignore_bad_data_points: bool = True,
+        ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
@@ -1088,7 +1088,7 @@ class DatapointsAPI(APIClient):
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
-            ignore_bad_data_points (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as Good. Used for both raw queries and aggregates. Default: True.
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
@@ -1155,7 +1155,7 @@ class DatapointsAPI(APIClient):
                     target_unit_system=target_unit_system,
                     ignore_unknown_ids=ignore_unknown_ids,
                     include_status=include_status,
-                    ignore_bad_data_points=ignore_bad_data_points,
+                    ignore_bad_datapoints=ignore_bad_datapoints,
                     treat_uncertain_as_bad=treat_uncertain_as_bad,
                     uniform_index=uniform_index,
                     include_aggregate_name=include_aggregate_name,
@@ -1182,7 +1182,7 @@ class DatapointsAPI(APIClient):
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
             include_status=include_status,
-            ignore_bad_data_points=ignore_bad_data_points,
+            ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
