@@ -494,6 +494,8 @@ class FakeCogniteResourceGenerator:
             return {
                 self.create_value(key_type): self.create_value(value_type) for _ in range(self._random.randint(1, 3))
             }
+        elif container_type in [typing.Set, set]:
+            return set(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
         elif container_type in [typing.Tuple, tuple]:
             if any(arg is ... for arg in args):
                 return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
