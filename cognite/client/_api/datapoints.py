@@ -1231,7 +1231,7 @@ class DatapointsAPI(APIClient):
         Examples:
 
             Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint will
-            be the first element::
+            be the first element (note: status codes are not supported or returned yet):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1294,7 +1294,8 @@ class DatapointsAPI(APIClient):
     ) -> None:
         """Insert datapoints into a time series
 
-        Timestamps can be represented as milliseconds since epoch or datetime objects.
+        Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
+        are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime]] | Sequence[tuple[int | float | datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
@@ -1318,7 +1319,7 @@ class DatapointsAPI(APIClient):
                 >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
                 >>> client.time_series.data.insert(datapoints, id=2)
 
-            Or they can be a list of dictionaries::
+            Or they can be a list of dictionaries (status codes are not supported yet):
 
                 >>> datapoints = [
                 ...     {"timestamp": 150000000000, "value": 1000},
@@ -1329,7 +1330,7 @@ class DatapointsAPI(APIClient):
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
-            `external_id="foo"`::
+            `external_id="foo"`:
 
                 >>> data = client.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
                 >>> client.time_series.data.insert(data, external_id="foo")
@@ -1358,7 +1359,7 @@ class DatapointsAPI(APIClient):
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
             must have the key "datapoints" (containing the data) specified as a ``Datapoints`` object, a ``DatapointsArray`` object, or list of either
-            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}`::
+            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}` (status codes not yet supported):
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
@@ -1461,8 +1462,12 @@ class DatapointsAPI(APIClient):
             external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
 
+        Note:
+            You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
+            to use the :py:meth:`~DatapointsAPI.insert` method instead (once support is added in an upcoming release).
+
         Examples:
-            Post a dataframe with white noise::
+            Post a dataframe with white noise:
 
                 >>> import numpy as np
                 >>> import pandas as pd
@@ -1535,6 +1540,8 @@ class DatapointsPoster:
             raise ValueError(
                 "Only raw datapoints are supported when inserting data from ``Datapoints`` or ``DatapointsArray``"
             )
+        if dps.status_code is not None or dps.status_symbol is not None:
+            raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
         if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
             raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
 
@@ -1569,6 +1576,8 @@ class DatapointsPoster:
             return [(timestamp_to_ms(t), v) for t, v in datapoints]
         datapoints = cast(List[Dict[str, Any]], datapoints)
         try:
+            if any("status" in dp for dp in datapoints):
+                raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
             return [(timestamp_to_ms(dp["timestamp"]), dp["value"]) for dp in datapoints]
         except KeyError:
             raise KeyError("A datapoint is missing one or both keys ['value', 'timestamp'].")
