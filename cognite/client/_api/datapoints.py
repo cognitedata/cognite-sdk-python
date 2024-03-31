@@ -32,8 +32,8 @@ from cognite.client._api.datapoint_tasks import (
     DatapointsPayload,
     DatapointsPayloadItem,
     _FullDatapointsQuery,
+    _FullDatapointsQueryValidator,
     _SingleTSQueryBase,
-    _SingleTSQueryValidator,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
@@ -89,7 +89,7 @@ _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
 def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapointsQuery) -> DpsFetchStrategy:
-    validator = _SingleTSQueryValidator(
+    validator = _FullDatapointsQueryValidator(
         full_query, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG
     )
     all_queries = validator.validate_and_create_single_queries()

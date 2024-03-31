@@ -178,7 +178,7 @@ class _FullDatapointsQuery:
         )
 
 
-class _SingleTSQueryValidator:
+class _FullDatapointsQueryValidator:
     OPTIONAL_DICT_KEYS: ClassVar[frozenset[str]] = frozenset(
         {
             "start",
@@ -294,10 +294,6 @@ class _SingleTSQueryValidator:
         return dct
 
     def _validate_and_create_query(self, dct: dict[str, Any]) -> _SingleTSQueryBase:
-        # TODO: Add verification on:
-        #       - include_status
-        #       - ignore_bad_datapoints
-        #       - treat_uncertain_as_bad
         limit = self._verify_limit(dct["limit"])
 
         target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
@@ -331,6 +327,10 @@ class _SingleTSQueryValidator:
 
         elif dct["include_outside_points"] is True:
             raise ValueError("'Include outside points' is not supported for aggregates.")
+
+        elif dct["include_status"] is True:
+            raise ValueError("'Include status' is not supported for aggregates.")
+
         # Request is for one or more aggregates:
         agg_query = self._convert_parameters(dct, limit, is_raw=False)
         if limit is None:
