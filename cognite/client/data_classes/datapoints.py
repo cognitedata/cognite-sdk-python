@@ -931,6 +931,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
@@ -938,12 +939,21 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
             column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
         pd = local_import("pandas")
-        dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
+        dfs = [
+            dps.to_pandas(
+                column_names=column_names,
+                include_aggregate_name=include_aggregate_name,
+                include_granularity_name=include_granularity_name,
+                include_status=include_status,
+            )
+            for dps in self
+        ]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
 
@@ -1013,6 +1023,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
@@ -1020,12 +1031,21 @@ class DatapointsList(CogniteResourceList[Datapoints]):
             column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         pd = local_import("pandas")
-        dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
+        dfs = [
+            dps.to_pandas(
+                column_names=column_names,
+                include_aggregate_name=include_aggregate_name,
+                include_granularity_name=include_granularity_name,
+                include_status=include_status,
+            )
+            for dps in self
+        ]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
 
