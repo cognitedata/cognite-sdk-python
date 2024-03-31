@@ -17,7 +17,24 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.32.8] - 2024-03-21
+## [7.33.0] - 2024-04-08
+### Added
+- All datapoints retrieve methods (except `retrieve_latest`) now support status codes. Note: Support for *inserting*
+  datapoints with status codes will be released shortly. There are three new arguments:
+    * `include_status (bool)`: Toggle the return of status code and -symbol on/off, only valid for raw datapoints.
+    * `ignore_bad_datapoints (bool)`: For raw datapoints: Whether to return those marked bad (or not).
+      For aggregates: Whether the time periods of bad datapoints should affect aggregate calculations (or not).
+    * `treat_uncertain_as_bad (bool)`: Toggle whether datapoints marked uncertain should be regarded as good or bad.
+- The `to_pandas` method for `Datapoints`, `DatapointsList`, `DatapointsArray` and `DatapointsArrayList` now accepts
+  a new parameter, `include_status (bool)`, that controls whether to include status codes & -symbols as separate columns.
+- New datapoints query class, `DatapointsQuery`, to make writing custom queries easier, type-safe and more robust,
+  as opposed to passing dictionaries (of settings).
+### Deprecated
+- Passing *custom* datapoints queries using dictionaries is deprecated and will be removed in the next major release.
+  Consider refactoring already to `DatapointsQuery`. Example: `{"id": 12, "aggregates" : "min", "granularity": "6h"} ->
+  DatapointsQuery(id=12, aggregates=min", granularity="6h")`.
+
+## [7.32.8] - 2024-04-08
 ### Fixed
 - When using TimeSeries objects without `external_id` as part of the `variables` parameter in a synthetic datapoints
   query, a `CogniteNotFoundError` would most likely be raised, due to `None` being silently cast to a string. It now
