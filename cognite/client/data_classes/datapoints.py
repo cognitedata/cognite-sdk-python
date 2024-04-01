@@ -90,7 +90,7 @@ def numpy_dtype_fix(element: np.float64 | str) -> float | str:
 _NOT_SET = object()
 
 
-@dataclass
+@dataclass(frozen=True)
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
 
@@ -111,11 +111,11 @@ class DatapointsQuery:
 
     def __post_init__(self, id: int | None, external_id: str | None) -> None:
         # Ensure user have just specified one of id/xid:
-        self._identifier = Identifier.of_either(id, external_id)
+        object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id))
 
     @property
     def identifier(self) -> Identifier:
-        return self._identifier
+        return self._identifier  # type: ignore [attr-defined]
 
     def __repr__(self) -> str:
         return json.dumps(self.dump(), indent=4)
@@ -123,7 +123,7 @@ class DatapointsQuery:
     def dump(self) -> dict[str, Any]:
         # We need to dump only those fields specifically passed by the user:
         return {
-            **self._identifier.as_dict(camel_case=False),
+            **self.identifier.as_dict(camel_case=False),
             **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not _NOT_SET),
         }
 
