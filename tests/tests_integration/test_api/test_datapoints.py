@@ -672,6 +672,28 @@ class TestRetrieveRawDatapointsAPI:
         assert res[1].unit_external_id == "temperature:deg_f"
         assert res[2].unit_external_id == "temperature:k"
 
+    def test_numpy_dtypes_conversions_for_string_and_numeric(self, cognite_client, all_test_time_series):
+        # Bug prior to 7.32.4, several methods on DatapointsArray would fail due to a bad
+        # conversion of numpy dtypes to native.
+        str_ts = all_test_time_series[1]
+        # We only test retrieve_array since that uses numpy arrays
+        dps_arr = cognite_client.time_series.data.retrieve_arrays(id=str_ts.id, limit=3)
+        # Test __iter__
+        for dp in dps_arr:
+            assert type(dp.timestamp) is int  # noqa: E721
+            assert type(dp.value) is str  # noqa: E721
+        # Test __getitem__ of non-slices
+        dp = dps_arr[0]
+        assert type(dp.timestamp) is int  # noqa: E721
+        assert type(dp.value) is str  # noqa: E721
+        # Test dump()
+        dumped = dps_arr.dump(camel_case=False)
+        dp_dumped = dumped["datapoints"][0]
+        assert dumped["is_string"] is True
+        assert dp_dumped == {"timestamp": 0, "value": "2"}
+        assert type(dp_dumped["timestamp"]) is int  # noqa: E721
+        assert type(dp_dumped["value"]) is str  # noqa: E721
+
 
 class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
