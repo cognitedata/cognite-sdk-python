@@ -27,6 +27,7 @@ from cognite.client.data_classes import (
     DatapointsArray,
     DatapointsArrayList,
     DatapointsList,
+    DatapointsQuery,
     LatestDatapointQuery,
     TimeSeries,
     TimeSeriesList,
@@ -98,6 +99,8 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
             f"{TEST_PREFIX} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
             f"{TEST_PREFIX} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
             f"{TEST_PREFIX} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
+            f"{TEST_PREFIX} 121: mixed status codes, daily values, 2023-2024, numeric",
+            f"{TEST_PREFIX} 122: only bad status codes, daily values, 2023-2024, numeric",
         ]
     )
 
@@ -135,6 +138,11 @@ def hourly_normal_dist(all_test_time_series) -> TimeSeries:
 @pytest.fixture(scope="session")
 def minutely_normal_dist(all_test_time_series) -> TimeSeries:
     return all_test_time_series[117]
+
+
+@pytest.fixture
+def ts_status_codes(all_test_time_series) -> TimeSeriesList:
+    return all_test_time_series[118:120]
 
 
 @pytest.fixture(scope="session")
@@ -693,6 +701,66 @@ class TestRetrieveRawDatapointsAPI:
         assert dp_dumped == {"timestamp": 0, "value": "2"}
         assert type(dp_dumped["timestamp"]) is int  # noqa: E721
         assert type(dp_dumped["value"]) is str  # noqa: E721
+
+    def test_n_dps_retrieved_with_without_uncertain_and_bad(self, retrieve_endpoints, ts_status_codes):
+        mixed_ts, bad_ts = ts_status_codes
+        q1 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True)
+        q2 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True)
+        q3 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=True)
+        q4 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False, ignore_bad_datapoints=True)
+        q5 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False)
+        q6 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False)
+
+        for endpoint in retrieve_endpoints:
+            mix1, mix2, mix3, bad1, bad2, bad3 = endpoint(
+                id=[q1, q3, q5], external_id=[q2, q4, q6], include_status=False
+            )
+            assert mix1.status_code is mix1.status_symbol is bad1.status_code is bad1.status_symbol is None
+            assert len(mix1) == 126  # good
+            assert len(mix2) == 252  # good + uncertain
+            assert len(mix3) == 365  # good + uncertain + bad
+
+            assert len(bad1) == 0
+            assert len(bad2) == 0
+            assert len(bad3) == 365
+
+    def test_outside_points_with_bad_and_uncertain(self, retrieve_endpoints, ts_status_codes):
+        mixed_ts, bad_ts = ts_status_codes
+
+        for endpoint in retrieve_endpoints:
+            mix1, mix2, bad1, bad2, mix3, bad3, mix4, bad4 = endpoint(
+                id=[
+                    DatapointsQuery(id=mixed_ts.id, include_outside_points=False),
+                    DatapointsQuery(id=mixed_ts.id, include_outside_points=False, treat_uncertain_as_bad=False),
+                    DatapointsQuery(id=bad_ts.id, include_outside_points=False),
+                    DatapointsQuery(id=bad_ts.id, include_outside_points=False, ignore_bad_datapoints=False),
+                ],
+                external_id=[
+                    mixed_ts.external_id,
+                    bad_ts.external_id,
+                    DatapointsQuery(external_id=mixed_ts.external_id, treat_uncertain_as_bad=False),
+                    DatapointsQuery(external_id=bad_ts.external_id, ignore_bad_datapoints=False),
+                ],
+                include_outside_points=True,
+                start=1673049600000 + 1,  # first good dp @ 2023-01-07
+                end=1703721600000,  # last good dp @ 2023-12-28
+                include_status=False,
+                treat_uncertain_as_bad=True,
+                ignore_bad_datapoints=True,
+            )
+            assert len(mix1) == 124  # good only, no outside
+            assert len(mix3) == 126  # good only, with outside
+            assert len(mix2) == 246  # good+uncertain, no outside
+            assert len(mix4) == 248  # good+uncertain, with outside
+
+            assert len(bad1) == 0
+            assert len(bad3) == 0
+            assert len(bad2) == 354
+            assert len(bad4) == 356
+
+    def test_status_codes_and_symbols(self, retrieve_endpoints, ts_status_codes):
+        mixed_ts, bad_ts = ts_status_codes
+        pass  # TODO: implement
 
 
 class TestRetrieveAggregateDatapointsAPI:
