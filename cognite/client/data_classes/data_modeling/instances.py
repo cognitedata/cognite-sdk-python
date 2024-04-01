@@ -5,6 +5,8 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable
+from collections import UserDict, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import (
@@ -998,6 +1000,15 @@ T_Node = TypeVar("T_Node", bound=Node)
 class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
     _RESOURCE = Node  # type: ignore[assignment]
 
+    def __init__(
+        self,
+        resources: Collection[Any],
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(resources, cognite_client)
+        self.typing = typing
+
     def as_ids(self) -> list[NodeId]:
         """
         Convert the list of nodes to a list of node ids.
@@ -1011,12 +1022,41 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         """Returns this NodeList as a NodeApplyList"""
         return NodeApplyList([node.as_write() for node in self])
 
+    @classmethod
+    def _load(
+        cls,
+        resource_list: Iterable[dict[str, Any]] | dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+    ) -> Self:
+        if isinstance(resource_list, dict):
+            resources = [
+                cls._RESOURCE._load(item, cognite_client=cognite_client) for item in resource_list.get("items", [])
+            ]
+            typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
+            return cls(resources, typing, cognite_client=cognite_client)
+        else:
+            return super()._load(resource_list, cognite_client)
+
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]] | dict[str, Any]:  # type: ignore[override]
+        items = super().dump(camel_case)
+        if self.typing:
+            return {
+                "items": items,
+                "typing": self.typing.dump(camel_case),
+            }
+        else:
+            return items
+
 
 class NodeListWithCursor(NodeList[T_Node]):
     def __init__(
-        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+        self,
+        resources: Collection[Any],
+        cursor: str | None,
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, cognite_client)
+        super().__init__(resources, typing, cognite_client)
         self.cursor = cursor
 
     def extend(self, other: NodeListWithCursor) -> None:  # type: ignore[override]
@@ -1063,6 +1103,15 @@ T_Edge = TypeVar("T_Edge", bound=Edge)
 class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
     _RESOURCE = Edge  # type: ignore[assignment]
 
+    def __init__(
+        self,
+        resources: Collection[Any],
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(resources, cognite_client)
+        self.typing = typing
+
     def as_ids(self) -> list[EdgeId]:
         """
         Convert the list of edges to a list of edge ids.
@@ -1076,12 +1125,41 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
         """Returns this EdgeList as a EdgeApplyList"""
         return EdgeApplyList([edge.as_write() for edge in self], cognite_client=self._get_cognite_client())
 
+    @classmethod
+    def _load(
+        cls,
+        resource_list: Iterable[dict[str, Any]] | dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+    ) -> Self:
+        if isinstance(resource_list, dict):
+            resources = [
+                cls._RESOURCE._load(item, cognite_client=cognite_client) for item in resource_list.get("items", [])
+            ]
+            typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
+            return cls(resources, typing, cognite_client=cognite_client)
+        else:
+            return super()._load(resource_list, cognite_client)
+
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]] | dict[str, Any]:  # type: ignore[override]
+        items = super().dump(camel_case)
+        if self.typing:
+            return {
+                "items": items,
+                "typing": self.typing.dump(camel_case),
+            }
+        else:
+            return items
+
 
 class EdgeListWithCursor(EdgeList):
     def __init__(
-        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+        self,
+        resources: Collection[Any],
+        cursor: str | None,
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, cognite_client)
+        super().__init__(resources, typing, cognite_client)
         self.cursor = cursor
 
     def extend(self, other: EdgeListWithCursor) -> None:  # type: ignore[override]
