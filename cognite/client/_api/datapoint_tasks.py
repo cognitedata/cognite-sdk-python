@@ -958,7 +958,7 @@ class BaseTaskOrchestrator(ABC):
         self.dps_data: _DataContainer = defaultdict(list)
         self.subtasks: list[BaseDpsFetchSubtask] = []
 
-        if self.query.include_status:
+        if self.query.is_raw_query and self.query.include_status:
             self.status_code: _DataContainer = defaultdict(list)
             self.status_symbol: _DataContainer = defaultdict(list)
             if self.use_numpy:
