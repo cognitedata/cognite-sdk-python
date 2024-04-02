@@ -97,6 +97,8 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
             f"{TEST_PREFIX} 114: 1mill dps, random distribution, 1950-2020, numeric",
             f"{TEST_PREFIX} 115: 1mill dps, random distribution, 1950-2020, string",
             f"{TEST_PREFIX} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{TEST_PREFIX} 117: single dp at 1900-01-01 00:00:00, numeric",
+            f"{TEST_PREFIX} 118: single dp at 2099-12-31 23:59:59.999, numeric",
             f"{TEST_PREFIX} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
             f"{TEST_PREFIX} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
             f"{TEST_PREFIX} 121: mixed status codes, daily values, 2023-2024, numeric",
@@ -130,19 +132,19 @@ def ms_bursty_ts(all_test_time_series):
     return all_test_time_series[115]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def hourly_normal_dist(all_test_time_series) -> TimeSeries:
-    return all_test_time_series[116]
+    return all_test_time_series[118]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def minutely_normal_dist(all_test_time_series) -> TimeSeries:
-    return all_test_time_series[117]
+    return all_test_time_series[119]
 
 
 @pytest.fixture
 def ts_status_codes(all_test_time_series) -> TimeSeriesList:
-    return all_test_time_series[118:120]
+    return all_test_time_series[120:122]
 
 
 @pytest.fixture(scope="session")
@@ -200,15 +202,6 @@ def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
         assert np.all(np.diff(values) == delta)
 
     return index, values
-
-
-def get_test_series(test_series_no: str, available_test_series: TimeSeriesList) -> TimeSeries:
-    time_series = next(
-        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX} {test_series_no}")), None
-    )
-    if time_series is None:
-        raise ValueError(f"Invalid test data, test case {test_series_no} does not exists")
-    return time_series
 
 
 PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
@@ -330,14 +323,14 @@ def parametrized_values_uniform_index_fails(testrun_uid):
 
 @pytest.fixture(scope="module")
 def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeries:
-    timeseries = TimeSeries(
+    ts = TimeSeries(
         external_id="test_retrieve_datapoints_in_target_unit",
         name="test_retrieve_datapoints_in_target_unit",
         is_string=False,
         unit_external_id="temperature:deg_c",
     )
-    created_timeseries = cognite_client.time_series.upsert(timeseries, mode="patch")
-    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+    created_timeseries = cognite_client.time_series.upsert(ts, mode="patch")
+    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=ts.external_id)
     return created_timeseries
 
 
@@ -646,10 +639,10 @@ class TestRetrieveRawDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
 
-        res = retrieve_method(external_id=timeseries.external_id, end=3, **kwargs)
+        res = retrieve_method(external_id=ts.external_id, end=3, **kwargs)
 
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(value=res.values)
@@ -662,20 +655,20 @@ class TestRetrieveRawDatapointsAPI:
     def test_unit_external_id__is_overridden_if_converted(
         self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries, retrieve_method_name: str
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
-        assert timeseries.unit_external_id == "temperature:deg_c"
+        ts = timeseries_degree_c_minus40_0_100
+        assert ts.unit_external_id == "temperature:deg_c"
 
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
         res = retrieve_method(
             id=[
-                {"id": timeseries.id},
-                {"id": timeseries.id, "target_unit": "temperature:deg_f"},
-                {"id": timeseries.id, "target_unit": "temperature:k"},
+                {"id": ts.id},
+                {"id": ts.id, "target_unit": "temperature:deg_f"},
+                {"id": ts.id, "target_unit": "temperature:k"},
             ],
             end=3,
         )
         # Ensure unit_external_id is unchanged (Celsius):
-        assert res[0].unit_external_id == timeseries.unit_external_id
+        assert res[0].unit_external_id == ts.unit_external_id
         # ...and ensure it has changed for converted units (Fahrenheit or Kelvin):
         assert res[1].unit_external_id == "temperature:deg_f"
         assert res[2].unit_external_id == "temperature:k"
@@ -1255,25 +1248,13 @@ class TestRetrieveAggregateDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
 
-        res = retrieve_method(external_id=timeseries.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
+        res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(max=res.values)
         assert math.isclose(res.max[0], 212)
-
-
-@pytest.fixture(scope="session")
-def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
-    utc = ZoneInfo("UTC")
-    # Adding a day to ensure we get the entire 2023 when converting to specific time zone later
-    start = datetime(2022, 12, 31, tzinfo=utc)
-    end = datetime(2024, 1, 1, hour=23, minute=59, second=59, tzinfo=utc)
-
-    return cognite_client.time_series.data.retrieve_dataframe(
-        external_id=hourly_normal_dist.external_id, start=start, end=end
-    ).tz_localize(utc)
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
@@ -1340,7 +1321,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
     # "106: every minute, 1969-12-31 - 1970-01-02, numeric",
     oslo = ZoneInfo("Europe/Oslo")
     yield pytest.param(
-        "106",
+        106,
         datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
         datetime(1970, 1, 2, 0, 0, 0, tzinfo=oslo),
         "6hours",
@@ -1353,7 +1334,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         id="6 hour granularities on minute raw data",
     )
     yield pytest.param(
-        "106",
+        106,
         datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
         datetime(1970, 1, 1, 0, 30, 0, tzinfo=oslo),
         "10minutes",
@@ -1366,7 +1347,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         id="10 minutes granularities on minute raw data",
     )
     yield pytest.param(
-        "106",
+        106,
         datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
         datetime(1970, 1, 1, 0, 0, 2, tzinfo=oslo),
         "1second",
@@ -1380,7 +1361,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
 def retrieve_dataframe_in_tz_uniform_data():
     oslo = ZoneInfo("Europe/Oslo")
     yield pytest.param(
-        "119",
+        119,
         datetime(2019, 12, 23, tzinfo=oslo),
         datetime(2020, 1, 14, tzinfo=oslo),
         "1week",
@@ -1392,7 +1373,7 @@ def retrieve_dataframe_in_tz_uniform_data():
     )
 
     yield pytest.param(
-        "119",
+        119,
         datetime(2019, 11, 23, tzinfo=oslo),
         datetime(2020, 1, 14, tzinfo=oslo),
         "2quarters",
@@ -1422,15 +1403,15 @@ class TestRetrieveTimezoneDatapointsAPI:
     @pytest.mark.parametrize(
         "test_series_no, start, end, aggregation, granularity",
         (
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "count", "5h"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "count", "38m"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "count", "5h"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "count", "38m"),
         ),
     )
     def test_cdf_aggregate_equal_to_cdf(
@@ -1442,21 +1423,19 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client: CogniteClient,
         all_test_time_series: TimeSeriesList,
     ):
-        time_series = get_test_series(test_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
-        raw_df = cognite_client.time_series.data.retrieve_dataframe(
-            external_id=time_series.external_id, start=start, end=end
-        )
+        raw_df = cognite_client.time_series.data.retrieve_dataframe(external_id=ts.external_id, start=start, end=end)
         expected_aggregate = cognite_client.time_series.data.retrieve_dataframe(
             start=start,
             end=end,
-            external_id=time_series.external_id,
+            external_id=ts.external_id,
             aggregates=aggregation,
             granularity=granularity,
             include_aggregate_name=False,
             include_granularity_name=False,
         )
-        actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
+        actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, ts.is_step)
 
         # Pandas adds the correct frequency to the index, while the SDK does not when uniform is not True.
         # The last point is not compared as the raw data might be missing information to do the correct aggregate.
@@ -1478,12 +1457,19 @@ class TestRetrieveTimezoneDatapointsAPI:
         granularity: str,
         tz_name: str,
         cognite_client: CogniteClient,
-        hourly_2023: pd.DataFrame,
+        hourly_normal_dist: TimeSeries,
     ):
         tz = ZoneInfo(tz_name)
         start = datetime(2023, 1, 1, tzinfo=tz)
         end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
-        raw_df = hourly_2023.tz_convert(tz_name).loc[str(start) : str(end)].copy()
+        raw_df = (
+            cognite_client.time_series.data.retrieve_dataframe(
+                external_id=hourly_normal_dist.external_id, start=start, end=end
+            )
+            .tz_localize("UTC")
+            .tz_convert(tz_name)
+            .loc[str(start) : str(end)]
+        )
         expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity)
 
         actual_aggregate = cognite_client.time_series.data.retrieve_dataframe_in_tz(
@@ -1518,11 +1504,11 @@ class TestRetrieveTimezoneDatapointsAPI:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "time_series_no, start, end, granularity, expected_df",
+        "test_series_no, start, end, granularity, expected_df",
         list(retrieve_dataframe_in_tz_count_small_granularities_data()),
     )
     def test_retrieve_dataframe_in_tz_count_small_granularities(
-        time_series_no: str,
+        test_series_no: str,
         start: datetime,
         end: datetime,
         granularity: str,
@@ -1530,9 +1516,9 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client,
         all_test_time_series,
     ):
-        time_series = get_test_series(time_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=time_series.external_id,
+            external_id=ts.external_id,
             start=start,
             end=end,
             aggregates="count",
@@ -1543,11 +1529,11 @@ class TestRetrieveTimezoneDatapointsAPI:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "time_series_no, start, end, granularity, expected_index",
+        "test_series_no, start, end, granularity, expected_index",
         list(retrieve_dataframe_in_tz_uniform_data()),
     )
     def test_retrieve_dataframe_in_tz_uniform(
-        time_series_no: str,
+        test_series_no: str,
         start: datetime,
         end: datetime,
         granularity: str,
@@ -1555,9 +1541,9 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client,
         all_test_time_series,
     ):
-        time_series = get_test_series(time_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=time_series.external_id,
+            external_id=ts.external_id,
             start=start,
             end=end,
             aggregates="count",
@@ -1571,24 +1557,24 @@ class TestRetrieveTimezoneDatapointsAPI:
     @pytest.mark.parametrize(
         "test_series_no, start, end, tz_name",
         [
-            ("119", "2023-01-01", "2023-02-01", "Europe/Oslo"),
-            ("120", "2023-01-01", "2023-02-01", "Europe/Oslo"),
+            (119, "2023-01-01", "2023-02-01", "Europe/Oslo"),
+            (120, "2023-01-01", "2023-02-01", "Europe/Oslo"),
         ],
     )
     def test_retrieve_dataframe_in_tz_raw_data(
         test_series_no: str, start: str, end: str, tz_name: str, cognite_client, all_test_time_series
     ):
-        timeseries = get_test_series(test_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         start, end = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
         tz = ZoneInfo(tz_name)
         start, end = start.replace(tzinfo=tz), end.replace(tzinfo=tz)
         expected_df = (
-            cognite_client.time_series.data.retrieve_dataframe(external_id=timeseries.external_id, start=start, end=end)
+            cognite_client.time_series.data.retrieve_dataframe(external_id=ts.external_id, start=start, end=end)
             .tz_localize("utc")
             .tz_convert(tz_name)
         )
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=timeseries.external_id, start=start, end=end
+            external_id=ts.external_id, start=start, end=end
         )
         pd.testing.assert_frame_equal(actual_df, expected_df)
 
@@ -1898,11 +1884,9 @@ class TestRetrieveLatestDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
 
-        res = cognite_client.time_series.data.retrieve_latest(
-            external_id=timeseries.external_id, before="now", **kwargs
-        )
+        res = cognite_client.time_series.data.retrieve_latest(external_id=ts.external_id, before="now", **kwargs)
         assert math.isclose(res.value[0], 212)
         assert res.unit_external_id == "temperature:deg_f"
 
@@ -1916,10 +1900,10 @@ class TestRetrieveLatestDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
 
         res = cognite_client.time_series.data.retrieve_latest(
-            external_id=LatestDatapointQuery(external_id=timeseries.external_id, before="now", **kwargs)
+            external_id=LatestDatapointQuery(external_id=ts.external_id, before="now", **kwargs)
         )
         assert math.isclose(res.value[0], 212)
         assert res.unit_external_id == "temperature:deg_f"
