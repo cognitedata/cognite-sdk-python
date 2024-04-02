@@ -958,6 +958,12 @@ class BaseTaskOrchestrator(ABC):
         self.dps_data: _DataContainer = defaultdict(list)
         self.subtasks: list[BaseDpsFetchSubtask] = []
 
+        if self.query.include_status:
+            self.status_code: _DataContainer = defaultdict(list)
+            self.status_symbol: _DataContainer = defaultdict(list)
+            if self.use_numpy:
+                self.null_timestamps: set[int] = set()
+
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points for free (if asked for) and ts info:
         if not self.eager_mode:
@@ -1117,11 +1123,6 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         self.dp_outside_status_code_end: int | None = None
         self.dp_outside_status_symbol_start: str | None = None
         self.dp_outside_status_symbol_end: str | None = None
-
-        if self.query.include_status:
-            self.null_timestamps: set[int] = set()
-            self.status_code: _DataContainer = defaultdict(list)
-            self.status_symbol: _DataContainer = defaultdict(list)
 
     @property
     def offset_next(self) -> Literal[1]:
