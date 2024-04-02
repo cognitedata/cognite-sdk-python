@@ -391,7 +391,7 @@ class FunctionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
-                >>> call = funclient.call()
+                >>> call = func.call()
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
@@ -762,7 +762,7 @@ class FunctionCallsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
-                >>> calls = funclient.list_calls()
+                >>> calls = func.list_calls()
 
         """
         identifier = _get_function_identifier(function_id, function_external_id)
@@ -806,7 +806,7 @@ class FunctionCallsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
-                >>> call = funclient.retrieve_call(id=2)
+                >>> call = func.retrieve_call(id=2)
         """
         identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
@@ -956,7 +956,7 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
-                >>> schedules = funclient.list_schedules(limit=None)
+                >>> schedules = func.list_schedules(limit=None)
 
         """
         if function_id or function_external_id:
