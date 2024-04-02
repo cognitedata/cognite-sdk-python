@@ -1133,7 +1133,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if not self.use_numpy:
             if self.query.include_status:
                 status_cols.update(status_code=[], status_symbol=[])
-            return Datapoints(**self.ts_info_dct, timestamp=[], value=[], **status_cols)  # type: ignore [arg-type]
+            return Datapoints(**self.ts_info_dct, timestamp=[], value=[], **status_cols)
 
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
