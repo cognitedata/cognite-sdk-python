@@ -1,9 +1,11 @@
+import random
 import time
 from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 
+from cognite.client import CogniteClient
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client.data_classes import DatapointsList, TimeSeries, TimeSeriesList
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
@@ -30,6 +32,8 @@ NAMES = [
         "116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
         "119: hourly normally distributed (0,1) data, 2020-2024 numeric",
         "120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
+        "121: mixed status codes, daily values, 2023-2024, numeric",
+        "122: only bad status codes, daily values, 2023-2024, numeric",
     ]
 ]
 SPARSE_NAMES = [
@@ -238,6 +242,76 @@ def create_dense_time_series() -> Tuple[List[TimeSeries], List[pd.DataFrame]]:
     return ts_lst, df_lst
 
 
+# Some examples of status codes
+GOOD_STATUS_CODES_COMPRESSED = [
+    0, 45, 46, 47, 48, 150, 162, 163, 167, 168, 169, 170, 186, 217, 220, 224, 278, 279, 280, 1026, 1027, 1032, 1033
+]  # fmt: skip
+UNCERTAIN_STATUS_CODES_COMPRESSED = [
+    16384, 16492, 16527, 16528, 16529, 16530, 16531, 16533, 16548, 16572, 16576, 16606, 16610, 16905, 16906, 16911
+]  # fmt: skip
+BAD_STATUS_CODES_COMPRESSED = [
+    *range(32768, 32808 + 1),
+    *range(32810, 32812 + 1),
+    *range(32817, 32875 + 1),
+    *range(32877, 32910 + 1),
+    *range(32919, 32923 + 1),
+    *range(32925, 32929 + 1),
+    *range(32939, 32953 + 1),
+    *range(32968, 32984 + 1),
+    *range(33037, 33045 + 1),
+    *range(33049, 33055 + 1),
+]
+
+
+def create_status_code_ts(client: CogniteClient) -> None:
+    random.seed(123456789)
+
+    def get_good():
+        v = abs(random.gauss(0, 1e3))
+        c = random.choice(GOOD_STATUS_CODES_COMPRESSED)
+        return v, c << 16
+
+    def get_uncertain():
+        v = -abs(random.gauss(0, 1e6))
+        c = random.choice(UNCERTAIN_STATUS_CODES_COMPRESSED)
+        return v, c << 16
+
+    def get_bad():
+        options = [None, "NaN", "Infinity", "-Infinity", -1e100, 2.71, 3.14, 420, 1e100]
+        # TODO: Need PY39 for math.nextafter
+        options.extend((np.nextafter(0, -np.inf).item(), np.nextafter(0, np.inf).item()))
+        v = random.choice(options)
+        c = random.choice(BAD_STATUS_CODES_COMPRESSED)
+        return v, c << 16
+
+    dps, dps_all_bad = [], []
+    idx = pd.date_range("2023", "2024", freq="d", inclusive="left").astype("datetime64[ms]").astype(int)
+    for ts in idx:
+        v, c = get_bad()
+        dps_all_bad.append({"timestamp": ts, "value": v, "status": {"code": c}})
+        v, c = random.choice([get_good, get_uncertain, get_bad])()
+        dps.append({"timestamp": ts, "value": v, "status": {"code": c}})
+
+    mixed_ts, bad_ts = NAMES[118:120]
+    client.time_series.upsert(
+        [
+            TimeSeries(name=mixed_ts, external_id=mixed_ts, is_string=False, metadata={"delta": UNIT_IN_MS["d"]}),
+            TimeSeries(name=bad_ts, external_id=bad_ts, is_string=False, metadata={"delta": UNIT_IN_MS["d"]}),
+        ]
+    )
+    # TODO: Insert normally when supported by SDK
+    client.post(
+        f"/api/v1/projects/{client.config.project}/timeseries/data",
+        json={
+            "items": [
+                {"externalId": mixed_ts, "datapoints": dps},
+                {"externalId": bad_ts, "datapoints": dps_all_bad},
+            ]
+        },
+        headers={"cdf-version": "20230101-beta"},
+    )
+
+
 def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: List[TimeSeries], df_lst: List[pd.DataFrame]) -> None:
     existing = {
         t.external_id
@@ -288,3 +362,4 @@ if __name__ == "__main__":
     ts_lst, df_lst = create_dense_time_series()
     create_if_not_exists(client.time_series, ts_lst, df_lst)
     create_edge_case_if_not_exists(client.time_series)
+    create_status_code_ts(client)
