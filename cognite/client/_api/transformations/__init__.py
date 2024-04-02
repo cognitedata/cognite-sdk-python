@@ -348,7 +348,7 @@ class TransformationsAPI(APIClient):
             Perform a partial update on a transformation, updating the query and making it private::
 
                 >>> from cognite.client.data_classes import TransformationUpdate
-                >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_publiclient.set(False)
+                >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = client.transformations.update(my_update)
 
             Update the session used for reading (source) and writing (destination) when authenticating for all
