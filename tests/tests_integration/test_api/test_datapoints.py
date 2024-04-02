@@ -709,8 +709,8 @@ class TestRetrieveRawDatapointsAPI:
                 id=[q1, q3, q5], external_id=[q2, q4, q6], include_status=False
             )
             assert mix1.status_code is mix1.status_symbol is bad1.status_code is bad1.status_symbol is None
-            assert len(mix1) == 126  # good
-            assert len(mix2) == 252  # good + uncertain
+            assert len(mix1) == 117  # good
+            assert len(mix2) == 239  # good + uncertain
             assert len(mix3) == 365  # good + uncertain + bad
 
             assert len(bad1) == 0
@@ -735,25 +735,86 @@ class TestRetrieveRawDatapointsAPI:
                     DatapointsQuery(external_id=bad_ts.external_id, ignore_bad_datapoints=False),
                 ],
                 include_outside_points=True,
-                start=1673049600000 + 1,  # first good dp @ 2023-01-07
-                end=1703721600000,  # last good dp @ 2023-12-28
+                start=ts_to_ms("2023-01-10") + 1,  # first good dp
+                end=ts_to_ms("2023-12-27"),  # last good dp
                 include_status=False,
                 treat_uncertain_as_bad=True,
                 ignore_bad_datapoints=True,
             )
-            assert len(mix1) == 124  # good only, no outside
-            assert len(mix3) == 126  # good only, with outside
-            assert len(mix2) == 246  # good+uncertain, no outside
-            assert len(mix4) == 248  # good+uncertain, with outside
+            assert len(mix1) == 115  # good only, no outside
+            assert len(mix3) == 117  # good only, with outside
+            assert len(mix2) == 233  # good+uncertain, no outside
+            assert len(mix4) == 235  # good+uncertain, with outside
 
             assert len(bad1) == 0
             assert len(bad3) == 0
-            assert len(bad2) == 354
-            assert len(bad4) == 356
+            assert len(bad2) == 350
+            assert len(bad4) == 352
 
     def test_status_codes_and_symbols(self, retrieve_endpoints, ts_status_codes):
         mixed_ts, bad_ts = ts_status_codes
-        pass  # TODO: implement
+        for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
+            dps_lst = endpoint(
+                id=[
+                    DatapointsQuery(id=mixed_ts.id),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                    DatapointsQuery(id=bad_ts.id),
+                    DatapointsQuery(id=bad_ts.id, treat_uncertain_as_bad=False),
+                    DatapointsQuery(id=bad_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                ],
+                start=ts_to_ms("2023-08-08"),
+                include_status=True,
+                limit=10,
+            )
+            for dps in dps_lst:
+                # Some of these are empty, make sure they are still initiated to a container:
+                assert dps.status_code is not None
+                assert dps.status_symbol is not None
+
+            m1, m2, m3, b1, b2, b3 = dps_lst
+            assert math.isclose(m1.value[0], 686.4757694370811)
+            assert math.isclose(m1.value[-1], 611.7573455502195)
+            assert m1.status_code[0] == 10682368
+            assert m1.status_code[-1] == m2.status_code[-1] == 3145728
+            assert m1.status_symbol[-1] == m2.status_symbol[-1] == "GoodClamped"
+
+            assert math.isclose(m2.value[0], -371525.6348704161)
+            assert math.isclose(m2.value[-1], 538.1994761772598)
+            assert m2.status_code[0] == 1083244544
+
+            assert math.isclose(m3.value[0], 420)
+            assert math.isnan(m3.value[2])  # actual nan returned
+            if uses_numpy:
+                assert math.isnan(m3.value[4])  # cant store 'missing' in numpy array
+                assert convert_any_ts_to_integer(m3.timestamp[4]) in m3.null_timestamps
+            else:
+                assert m3.value[4] is None  # missing, nothing returned
+            assert math.isclose(m3.value[-1], 1227.6332936465685)
+            assert m3.status_code[0] == 2149122048
+            assert m3.status_code[2] == 2152071168
+            assert m3.status_code[4] == 2149777408
+            assert m3.status_code[-1] == 67239936
+            assert list(m3.status_symbol[5:8]) == [
+                "BadWaitingForResponse",
+                "GoodEntryReplaced",
+                "UncertainReferenceOutOfServer",
+            ]
+            assert not b1.value and not b2.value
+            assert not b1.status_code and not b2.status_code
+            assert not b1.status_symbol and not b2.status_symbol
+
+            assert b3.value[0] == -math.inf
+            if uses_numpy:
+                assert math.isnan(b3.value[1])
+                assert convert_any_ts_to_integer(b3.timestamp[1]) in b3.null_timestamps
+            else:
+                assert b3.value[1] is None
+            assert math.isclose(b3.value[-1], 2.71)
+            assert b3.status_code[0] == 2148335616
+            assert b3.status_code[1] == 2152267776
+            assert b3.status_code[-1] == 2165309440
+            assert b3.status_symbol[-1] == "BadLicenseNotAvailable"
 
 
 class TestRetrieveAggregateDatapointsAPI:
