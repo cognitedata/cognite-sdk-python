@@ -172,7 +172,7 @@ def convert_any_ts_to_integer(ts):
     if isinstance(ts, int):
         return ts
     elif isinstance(ts, np.datetime64):
-        return ts.astype("datetime64[ms]").astype(int)
+        return ts.astype("datetime64[ms]").astype(np.int64).item()
     raise ValueError
 
 
