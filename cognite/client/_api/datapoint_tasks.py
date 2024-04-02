@@ -1129,13 +1129,20 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         return 1  # millisecond
 
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
+        status_cols: dict[str, Any] = {}
         if not self.use_numpy:
-            return Datapoints(**self.ts_info_dct, timestamp=[], value=[])
+            if self.query.include_status:
+                status_cols.update(status_code=[], status_symbol=[])
+            return Datapoints(**self.ts_info_dct, timestamp=[], value=[], **status_cols)  # type: ignore [arg-type]
+
+        if self.query.include_status:
+            status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
         return DatapointsArray._load_from_arrays(
             {
                 **self.ts_info_dct,
                 "timestamp": np.array([], dtype=np.int64),
                 "value": np.array([], dtype=self.raw_dtype_numpy),
+                **status_cols,
             }
         )
 
