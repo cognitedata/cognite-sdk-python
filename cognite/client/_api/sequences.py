@@ -1031,13 +1031,13 @@ class SequencesDataAPI(APIClient):
             dropna (bool): Whether to drop all NaN rows before inserting.
 
         Examples:
-            Multiply data in the sequence by 2::
+            Insert three rows into columns 'col_a' and 'col_b' of the sequence with id=123:
 
                 >>> from cognite.client import CogniteClient
                 >>> import pandas as pd
                 >>> client = CogniteClient()
                 >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
-                >>> client.sequences.data.insert_dataframe(df, id=1)
+                >>> client.sequences.data.insert_dataframe(df, id=123)
         """
         if dropna:
             dataframe = dataframe.dropna()
