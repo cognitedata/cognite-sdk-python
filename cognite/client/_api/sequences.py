@@ -1028,7 +1028,7 @@ class SequencesDataAPI(APIClient):
             dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
-            dropna (bool): Whether to drop all NaN rows before inserting.
+            dropna (bool): Whether to drop rows where all values are missing. Default: True.
 
         Examples:
             Insert three rows into columns 'col_a' and 'col_b' of the sequence with id=123:
@@ -1040,10 +1040,11 @@ class SequencesDataAPI(APIClient):
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """
         if dropna:
-            dataframe = dataframe.dropna()
+            # These will be rejected by the API, hence we remove them by default:
+            dataframe = dataframe.dropna(how="all")
         dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
-        data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
-        columns = [str(s) for s in dataframe.columns]
+        data = [(row.Index, row[1:]) for row in dataframe.itertuples()]
+        columns = list(dataframe.columns.astype(str))
         self.insert(rows=data, columns=columns, id=id, external_id=external_id)
 
     def _insert_data(self, task: dict[str, Any]) -> None:
