@@ -167,17 +167,27 @@ class LatestDatapointQuery:
         before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
         target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
         target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+        include_status (bool): Also return the status code, an integer, for each datapoint in the response.
+        ignore_bad_datapoints (bool): Prevent data points with a bad status code to be returned. Default: True.
+        treat_uncertain_as_bad (bool): Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
     """
 
-    id: int | None = None
-    external_id: str | None = None
+    id: InitVar[int | None] = None
+    external_id: InitVar[str | None] = None
     before: None | int | str | datetime = None
     target_unit: str | None = None
     target_unit_system: str | None = None
+    include_status: bool = False
+    ignore_bad_datapoints: bool = True
+    treat_uncertain_as_bad: bool = True
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, id: int | None, external_id: str | None) -> None:
         # Ensure user have just specified one of id/xid:
-        Identifier.of_either(self.id, self.external_id)
+        object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id))
+
+    @property
+    def identifier(self) -> Identifier:
+        return self._identifier  # type: ignore [attr-defined]
 
 
 class Datapoint(CogniteResource):
