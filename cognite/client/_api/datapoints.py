@@ -732,7 +732,7 @@ class DatapointsAPI(APIClient):
 
             To retrieve status codes for a time series, pass ``include_status=True``. This is only possible for raw datapoint queries.
             You would typically also pass ``ignore_bad_datapoints=False`` to not hide all the datapoints that are marked as uncertain or bad,
-            which is the API's default behaviour. You can also do ``treat_uncertain_as_bad=False`` to just return good and uncertain.
+            which is the API's default behaviour. You may also use ``treat_uncertain_as_bad`` to control how uncertain values are interpreted.
 
                 >>> dps = client.time_series.data.retrieve(
                 ...   id=42, include_status=True, ignore_bad_datapoints=False)

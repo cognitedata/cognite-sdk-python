@@ -285,7 +285,7 @@ def create_status_code_ts(client: CogniteClient) -> None:
         return v, c << 16
 
     dps, dps_all_bad = [], []
-    idx = pd.date_range("2023", "2024", freq="d", inclusive="left").astype("datetime64[ms]").astype(int)
+    idx = pd.date_range("2023", "2024", freq="d", inclusive="left").astype("datetime64[ms]").astype(np.int64)
     for ts in idx:
         v, c = get_bad()
         dps_all_bad.append({"timestamp": ts, "value": v, "status": {"code": c}})

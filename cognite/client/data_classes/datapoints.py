@@ -159,25 +159,25 @@ class Datapoint(CogniteResource):
 
     Args:
         timestamp (int | None): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (str | float | None): The data value. Can be string or numeric
-        average (float | None): The integral average value in the aggregate period
-        max (float | None): The maximum value in the aggregate period
-        min (float | None): The minimum value in the aggregate period
-        count (int | None): The number of datapoints in the aggregate period
-        sum (float | None): The sum of the datapoints in the aggregate period
-        interpolation (float | None): The interpolated value of the series in the beginning of the aggregate
-        step_interpolation (float | None): The last value before or at the beginning of the aggregate.
+        value (str | float | None): The raw data value. Can be string or numeric.
+        average (float | None): The time-weighted average value in the aggregate interval.
+        max (float | None): The maximum value in the aggregate interval.
+        min (float | None): The minimum value in the aggregate interval.
+        count (int | None): The number of raw datapoints in the aggregate interval.
+        sum (float | None): The sum of the raw datapoints in the aggregate interval.
+        interpolation (float | None): The interpolated value at the beginning of the aggregate interval.
+        step_interpolation (float | None): The interpolated value at the beginning of the aggregate interval using stepwise interpretation.
         continuous_variance (float | None): The variance of the interpolated underlying function.
         discrete_variance (float | None): The variance of the datapoint values.
         total_variation (float | None): The total variation of the interpolated underlying function.
-        count_bad (int | None): No description.
-        count_good (int | None): No description.
-        count_uncertain (int | None): No description.
-        duration_bad (int | None): No description.
-        duration_good (int | None): No description.
-        duration_uncertain (int | None): No description.
-        status_code (int | None): No description.
-        status_symbol (str | None): No description.
+        count_bad (int | None): The number of raw datapoints with a bad status code, in the aggregate interval.
+        count_good (int | None): The number of raw datapoints with a good status code, in the aggregate interval.
+        count_uncertain (int | None): The number of raw datapoints with a uncertain status code, in the aggregate interval.
+        duration_bad (int | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
+        duration_good (int | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
+        duration_uncertain (int | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        status_code (int | None): The status code for the raw datapoint.
+        status_symbol (str | None): The status symbol for the raw datapoint.
     """
 
     def __init__(
@@ -537,34 +537,34 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int | None): Id of the timeseries the datapoints belong to
-        external_id (str | None): External id of the timeseries the datapoints belong to
-        is_string (bool | None): Whether the time series is string valued or not.
-        is_step (bool | None): Whether the time series is a step series or not.
-        unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted.
+        id (int | None): Id of the time series the datapoints belong to
+        external_id (str | None): External id of the time series the datapoints belong to
+        is_string (bool | None): Whether the time series contains numerical or string data.
+        is_step (bool | None): Whether the time series is stepwise or continuous.
+        unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (SequenceNotStr[str] | Sequence[float] | None): The data values. Can be string or numeric
-        average (list[float] | None): The integral average values in the aggregate period
-        max (list[float] | None): The maximum values in the aggregate period
-        min (list[float] | None): The minimum values in the aggregate period
-        count (list[int] | None): The number of datapoints in the aggregate periods
-        sum (list[float] | None): The sum of the datapoints in the aggregate periods
-        interpolation (list[float] | None): The interpolated values of the series in the beginning of the aggregates
-        step_interpolation (list[float] | None): The last values before or at the beginning of the aggregates.
+        value (SequenceNotStr[str] | Sequence[float] | None): The raw data values. Can be string or numeric.
+        average (list[float] | None): The time-weighted average values per aggregate interval.
+        max (list[float] | None): The maximum values per aggregate interval.
+        min (list[float] | None): The minimum values per aggregate interval.
+        count (list[int] | None): The number of raw datapoints per aggregate interval.
+        sum (list[float] | None): The sum of the raw datapoints per aggregate interval.
+        interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval.
+        step_interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval using stepwise interpretation.
         continuous_variance (list[float] | None): The variance of the interpolated underlying function.
         discrete_variance (list[float] | None): The variance of the datapoint values.
         total_variation (list[float] | None): The total variation of the interpolated underlying function.
-        count_bad (list[int] | None): No description.
-        count_good (list[int] | None): No description.
-        count_uncertain (list[int] | None): No description.
-        duration_bad (list[int] | None): No description.
-        duration_good (list[int] | None): No description.
-        duration_uncertain (list[int] | None): No description.
-        status_code (list[int] | None): No description.
-        status_symbol (list[str] | None): No description.
-        error (list[None | str] | None): No description.
+        count_bad (list[int] | None): The number of raw datapoints with a bad status code, per aggregate interval.
+        count_good (list[int] | None): The number of raw datapoints with a good status code, per aggregate interval.
+        count_uncertain (list[int] | None): The number of raw datapoints with a uncertain status code, per aggregate interval.
+        duration_bad (list[int] | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
+        duration_good (list[int] | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
+        duration_uncertain (list[int] | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        status_code (list[int] | None): The status codes for the raw datapoints.
+        status_symbol (list[str] | None): The status symbols for the raw datapoints.
+        error (list[None | str] | None): Human readable strings with description of what went wrong (returned by synthetic datapoints queries).
     """
 
     def __init__(
