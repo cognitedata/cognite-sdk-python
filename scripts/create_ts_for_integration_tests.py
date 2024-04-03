@@ -267,12 +267,12 @@ def create_status_code_ts(client: CogniteClient) -> None:
     random.seed(123456789)
 
     def get_good():
-        v = abs(random.gauss(0, 1e3))
+        v = random.gauss(0, 1e3)
         c = random.choice(GOOD_STATUS_CODES_COMPRESSED)
         return v, c << 16
 
     def get_uncertain():
-        v = -abs(random.gauss(0, 1e6))
+        v = random.gauss(0, 1e6)
         c = random.choice(UNCERTAIN_STATUS_CODES_COMPRESSED)
         return v, c << 16
 

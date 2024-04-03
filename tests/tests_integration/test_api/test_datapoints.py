@@ -20,6 +20,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_allclose
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
@@ -1316,6 +1317,94 @@ class TestRetrieveAggregateDatapointsAPI:
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(max=res.values)
         assert math.isclose(res.max[0], 212)
+
+    def test_status_codes_affect_aggregate_calculations(self, retrieve_endpoints, ts_status_codes):
+        mixed_ts, bad_ts = ts_status_codes
+        bad_xid = bad_ts.external_id
+        for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
+            dps_lst = endpoint(
+                id=[
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=True),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=True, ignore_bad_datapoints=False),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                ],
+                external_id=[
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=True, ignore_bad_datapoints=True),
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=False, ignore_bad_datapoints=True),
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=True, ignore_bad_datapoints=False),
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                ],
+                start=ts_to_ms("2023-01-01"),
+                end=ts_to_ms("2024-01-01"),
+                aggregates=ALL_SORTED_DP_AGGS,
+                granularity="30d",
+            )
+            # Ensure all are not just empty, but not set:
+            for dps in dps_lst:
+                assert dps.status_code is None
+                assert dps.status_symbol is None
+
+            # Count and duration of specific status should be invariant:
+            for dps in [dps_lst[:4], dps_lst[4:]]:
+                for agg in "count", "duration":
+                    for status in f"{agg}_good", f"{agg}_uncertain", f"{agg}_bad":
+                        l1, l2, l3, l4 = (getattr(x, status) for x in dps)
+                        assert list(l1) == list(l2) == list(l3) == list(l4)
+
+                # Normal count may count uncertain depending on treat_uncertain_as_bad:
+                assert list(dps[0].count) == list(dps[2].count)  # note: ignores treat_uncertain_as_bad
+                assert list(dps[1].count) == list(dps[3].count)
+
+            m1, m2, m3, m4, b1, b2, b3, b4 = dps_lst
+            assert sum(m1.count) < sum(m2.count)
+            assert sum(b1.count) == sum(b2.count) == sum(b3.count) == sum(b4.count) == 0  # bad is never counted
+
+            for bad in b1, b2, b3, b4:
+                assert np.isnan(bad.average).all()
+                assert np.isnan(bad.interpolation).all()
+                assert np.isnan(bad.total_variation).all()
+
+            # Last aggregation period contains good only:
+            assert_allclose(-543.501385, [m1.average[-1], m2.average[-1], m3.average[-1], m4.average[-1]])
+            assert_allclose(
+                -543.501385, [m1.interpolation[-1], m2.interpolation[-1], m3.interpolation[-1], m4.interpolation[-1]]
+            )
+            assert_allclose(
+                0.0, [m1.total_variation[-1], m2.total_variation[-1], m3.total_variation[-1], m4.total_variation[-1]]
+            )
+            # The following aggregates do not care about the 'ignore_bad_datapoints' setting, only 'treat_uncertain_as_bad':
+            for agg in ["min", "max", "sum", "interpolation", "discrete_variance", "total_variation"]:
+                m1_agg, m2_agg, m3_agg, m4_agg = (getattr(m, agg) for m in (m1, m2, m3, m4))
+                assert_allclose(m1_agg, m3_agg)  # both treat_uncertain_as_bad=True
+                assert_allclose(m2_agg, m4_agg)  # both treat_uncertain_as_bad=False
+                with pytest.raises(AssertionError, match=r"^\nNot equal to tolerance"):
+                    assert_allclose(m1_agg, m2_agg)
+            # The following aggregates varies with both settings, 'average', 'step_interpolation' and 'continuous_variance':
+            assert_allclose(m1.average[:4], [-100.266803, 180.102903, 709.306477, -342.590187])
+            assert_allclose(m2.average[:4], [-166855.089388, 113784.358276, 13372.243630, -65191.492671])
+            assert_allclose(m3.average[:4], [-283.850509, 205.634247, 881.584739, -91.393828])
+            assert_allclose(m4.average[:4], [-264471.559047, 117022.569448, -38772.339529, 47902.527674])
+
+            assert_allclose(m1.step_interpolation[:4], [math.nan, -1138.57277, 274.866615, 651.621005])
+            assert_allclose(
+                m2.step_interpolation[:4], [math.nan, -1355647.5886087606, -110240.71105459922, 651.6210049165213]
+            )
+            assert_allclose(m3.step_interpolation[:4], [math.nan, math.nan, math.nan, 651.621005])
+            assert_allclose(m4.step_interpolation[:4], [math.nan, math.nan, -110240.711055, 651.621005])
+
+            assert_allclose(m1.continuous_variance[:4], [642800.685332, 426005.553231, 435043.668454, 622115.239423])
+            assert_allclose(
+                m2.continuous_variance[:4],
+                [284755948510.1042, 375008672701.96277, 148584225325.00912, 375298973299.39276],
+            )
+            assert_allclose(
+                m3.continuous_variance[:4], [625723.5820629946, 638941.7823122272, 675739.8119564621, 1583061.859119803]
+            )
+            assert_allclose(
+                m4.continuous_variance[:4],
+                [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
+            )
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
