@@ -156,12 +156,14 @@ class LabelsAPI(APIClient):
                 >>> client.labels.delete(external_id=["big_pump", "small_pump"])
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)
-    
-    def retrieve_multiple(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> LabelDefinitionList:
+
+    def retrieve_multiple(
+        self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> LabelDefinitionList:
         """`Retrieve multiple label definitions by external id. <https://developer.cognite.com/api/#tag/Labels/operation/byIdsLabels>`_
 
         Args:
-            external_ids (Sequence[str]): The external ids to retrieve.
+            external_ids (SequenceNotStr[str]): The external ids to retrieve.
             ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
 
         Returns:
@@ -176,4 +178,9 @@ class LabelsAPI(APIClient):
                 >>> res = client.labels.retrieve_multiple(external_ids=["big_pump", "small_pump"])
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
-        return self._retrieve_multiple(identifiers=identifiers, resource_cls=LabelDefinition, list_cls=LabelDefinitionList, ignore_unknown_ids=ignore_unknown_ids)
+        return self._retrieve_multiple(
+            identifiers=identifiers,
+            resource_cls=LabelDefinition,
+            list_cls=LabelDefinitionList,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )

@@ -52,4 +52,3 @@ class TestLabelsAPI:
 
         assert not ua.labels
         cognite_client.assets.delete(id=ac.id)
-
