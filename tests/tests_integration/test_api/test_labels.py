@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client.data_classes import Asset, AssetUpdate, Label, LabelDefinition
 from cognite.client.data_classes.labels import LabelDefinitionList
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
 
@@ -44,9 +44,9 @@ class TestLabelsAPI:
         assert len(res_lst) == 1
         assert res_lst[0].external_id == xids[0]
 
-        with pytest.raises(CogniteAPIError) as exc:
+        with pytest.raises(CogniteNotFoundError) as error:
             cognite_client.labels.retrieve(xids)
-        assert exc.value.code == 400
+        assert error.value.code == 400
 
     def test_create_asset_with_label(self, cognite_client, new_label):
         ac = cognite_client.assets.create(Asset(name="any", labels=[Label(external_id=new_label.external_id)]))
