@@ -721,15 +721,30 @@ class Datapoints(CogniteResource):
         Returns:
             dict[str, Any]: A dictionary representing the instance.
         """
-        dumped = {
+        dumped: dict[str, Any] = {
             "id": self.id,
             "external_id": self.external_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
-            "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
+        datapoints = [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()]
+        if self.status_code is not None or self.status_symbol is not None:
+            if (
+                self.status_code is None
+                or self.status_symbol is None
+                or not len(self.status_symbol) == len(datapoints) == len(self.status_code)
+            ):
+                raise ValueError("The number of status codes/symbols does not match the number of datapoints")
+
+            for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
+                dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
+                # When we're dealing with status codes, bad can have missing values:
+                if "value" not in dp:
+                    dp["value"] = None  # type: ignore [assignment]
+        dumped["datapoints"] = datapoints
+
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {key: value for key, value in dumped.items() if value is not None}
@@ -804,6 +819,8 @@ class Datapoints(CogniteResource):
         (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
         return df
 
+    # TODO: remove 'expected_fields' in the next major version:
+    #       the method should not need to be told what to load...
     @classmethod
     def _load(  # type: ignore [override]
         cls,
@@ -825,11 +842,19 @@ class Datapoints(CogniteResource):
             for key in expected_fields:
                 snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
-        else:
-            for key in expected_fields:
-                data = [dp.get(key) for dp in dps_object["datapoints"]]
-                snake_key = to_snake_case(key)
-                setattr(instance, snake_key, data)
+            return instance
+
+        data_lists = defaultdict(list)
+        for row in dps_object["datapoints"]:
+            for attr, value in row.items():
+                data_lists[attr].append(value)
+        if (status := data_lists.pop("status", None)) is not None:
+            data_lists["status_code"] = [s["code"] for s in status]
+            data_lists["status_symbol"] = [s["symbol"] for s in status]
+
+        for key, data in data_lists.items():
+            snake_key = to_snake_case(key)
+            setattr(instance, snake_key, data)
         return instance
 
     def _extend(self, other_dps: Datapoints) -> None:
@@ -884,7 +909,14 @@ class Datapoints(CogniteResource):
         return self.__datapoint_objects
 
     def _slice(self, slice: slice) -> Datapoints:
-        truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
+        truncated_datapoints = Datapoints(
+            id=self.id,
+            external_id=self.external_id,
+            is_string=self.is_string,
+            is_step=self.is_step,
+            unit=self.unit,
+            unit_external_id=self.unit_external_id,
+        )
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
         return truncated_datapoints
