@@ -29,6 +29,17 @@ class TestIdentifier:
         with pytest.raises(ValueError, match=err_msg):
             Identifier.of_either(id, external_id)
 
+    def test_handles_id_type_correctly(self):
+        # int is ok
+        Identifier(1)
+
+        # string is ok
+        Identifier("abc")
+
+        # anything else is not ok
+        with pytest.raises(TypeError, match="Expected id/external_id to be of type int or str"):
+            Identifier(object())
+
 
 class TestIdentifierSequence:
     @pytest.mark.parametrize(
