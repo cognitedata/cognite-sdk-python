@@ -29,7 +29,7 @@ class TestLabelsAPI:
         res = cognite_client.labels.list(limit=1)
         assert 1 == len(res)
         res_retrieve = cognite_client.labels.retrieve_multiple([res[0].external_id])
-        assert res_retrieve.external_id == res[0].external_id
+        assert res_retrieve[0].external_id == res[0].external_id
 
     def test_create_asset_with_label(self, cognite_client, new_label):
         ac = cognite_client.assets.create(Asset(name="any", labels=[Label(external_id=new_label.external_id)]))
