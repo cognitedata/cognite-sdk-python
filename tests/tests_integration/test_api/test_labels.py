@@ -20,12 +20,16 @@ def post_spy(cognite_client):
 
 
 class TestLabelsAPI:
-    def test_list_and_retrieve(self, cognite_client, new_label, post_spy):
+    def test_list(self, cognite_client, new_label, post_spy):
         res = cognite_client.labels.list(limit=100)
         assert 0 < len(res) <= 100
         assert 1 == cognite_client.labels._post.call_count
-        res_retrieve = cognite_client.labels.retrieve_multiple(external_ids=[res[0].external_id])
-        assert res_retrieve[0].external_id == res[0].external_id
+
+    def test_retrieve(self, cognite_client):
+        res = cognite_client.labels.list(limit=1)
+        assert 1 == len(res)
+        res_retrieve = cognite_client.labels.retrieve_multiple([res[0].external_id])
+        assert res_retrieve.external_id == res[0].external_id
 
     def test_create_asset_with_label(self, cognite_client, new_label):
         ac = cognite_client.assets.create(Asset(name="any", labels=[Label(external_id=new_label.external_id)]))
