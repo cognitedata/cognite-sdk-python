@@ -40,7 +40,14 @@ from cognite.client._proto.data_points_pb2 import (
     StringDatapoint,
 )
 from cognite.client.data_classes import DatapointsQuery
-from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
+from cognite.client.data_classes.datapoints import (
+    _AGGREGATES_IN_BETA,
+    _INT_AGGREGATES,
+    NUMPY_IS_AVAILABLE,
+    Aggregate,
+    Datapoints,
+    DatapointsArray,
+)
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
@@ -64,33 +71,7 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 FIRST_IDX = (0,)
-_AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hits GA
-    [
-        "count_bad",
-        "count_good",
-        "count_uncertain",
-        "duration_bad",
-        "duration_good",
-        "duration_uncertain",
-        "countBad",
-        "countGood",
-        "countUncertain",
-        "durationBad",
-        "durationGood",
-        "durationUncertain",
-    ]
-)
-_INT_AGGREGATES = frozenset(
-    {
-        "count",
-        "countBad",
-        "countGood",
-        "countUncertain",
-        "durationBad",
-        "durationGood",
-        "durationUncertain",
-    }
-)
+
 AggregateDatapoints = RepeatedCompositeFieldContainer[AggregateDatapoint]
 NumericDatapoints = RepeatedCompositeFieldContainer[NumericDatapoint]
 StringDatapoints = RepeatedCompositeFieldContainer[StringDatapoint]

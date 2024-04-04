@@ -52,7 +52,33 @@ Aggregate = Literal[
     "sum",
     "total_variation",
 ]
-
+_AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hits GA
+    [
+        "count_bad",
+        "count_good",
+        "count_uncertain",
+        "duration_bad",
+        "duration_good",
+        "duration_uncertain",
+        "countBad",
+        "countGood",
+        "countUncertain",
+        "durationBad",
+        "durationGood",
+        "durationUncertain",
+    ]
+)
+_INT_AGGREGATES = frozenset(
+    {
+        "count",
+        "countBad",
+        "countGood",
+        "countUncertain",
+        "durationBad",
+        "durationGood",
+        "durationUncertain",
+    }
+)
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
 
 try:
@@ -324,7 +350,7 @@ class DatapointsArray(CogniteResource):
     ) -> DatapointsArray:
         assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
         # Since pandas always uses nanoseconds for datetime, we stick with the same
-        # (also future-proofs the SDK; ns is coming!):
+        # (also future-proofs the SDK; ns may be coming!):
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
 
@@ -340,11 +366,18 @@ class DatapointsArray(CogniteResource):
             for row in dps_dct["datapoints"]:
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
+            status = datapoints_by_attr.pop("status", None)
             for attr, values in datapoints_by_attr.items():
-                # TODO: np.array needs dtype arg due to int32 vs int64 defaults on windows
-                array_by_attr[attr] = np.array(values)
                 if attr == "timestamp":
-                    dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
+                    array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
+                elif attr in _INT_AGGREGATES:
+                    array_by_attr[attr] = np.array(values, dtype=np.int64)
+                else:
+                    array_by_attr[attr] = np.array(values, dtype=np.float64)
+            if status is not None:
+                array_by_attr["status_code"] = np.array([s["code"] for s in status], dtype=np.uint32)
+                array_by_attr["status_symbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
+
         return cls(
             id=dps_dct.get("id"),
             external_id=dps_dct.get("externalId"),
@@ -467,7 +500,24 @@ class DatapointsArray(CogniteResource):
         if camel_case:
             attrs = list(map(to_camel_case, attrs))
 
-        dumped = {**self._ts_info, "datapoints": [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]}
+        dumped = self._ts_info
+        datapoints = [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]
+
+        if self.status_code is not None or self.status_symbol is not None:
+            if (
+                self.status_code is None
+                or self.status_symbol is None
+                or not len(self.status_symbol) == len(datapoints) == len(self.status_code)
+            ):
+                raise ValueError("The number of status codes/symbols does not match the number of datapoints")
+
+            for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
+                dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
+                # When we're dealing with status codes, NaN might be either one of [<missing>, nan]:
+                if dp["timestamp"] in (self.null_timestamps or ()):  # ...luckily, we know :3
+                    dp["value"] = None  # type: ignore [assignment]
+        dumped["datapoints"] = datapoints
+
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {k: v for k, v in dumped.items() if v is not None}

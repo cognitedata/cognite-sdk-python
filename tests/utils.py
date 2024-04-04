@@ -16,7 +16,6 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
-from cognite.client._api.datapoint_tasks import _INT_AGGREGATES
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
@@ -32,7 +31,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
-from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
+from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
 from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
