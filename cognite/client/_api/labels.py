@@ -157,17 +157,23 @@ class LabelsAPI(APIClient):
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)
 
-    def retrieve_multiple(
-        self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> LabelDefinitionList:
-        """`Retrieve multiple label definitions by external id. <https://developer.cognite.com/api/#tag/Labels/operation/byIdsLabels>`_
+    @overload
+    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | LabelDefinition: ...
+
+    @overload
+    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> LabelDefinitionList: ...
+
+    def retrieve(
+        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> LabelDefinition | LabelDefinitionList | None:
+        """`Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
 
         Args:
-            external_ids (SequenceNotStr[str]): The external ids to retrieve.
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs
             ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
 
         Returns:
-            LabelDefinitionList: The requested label definitions.
+            LabelDefinition | LabelDefinitionList | None: If a single external ID is specified: the requested label definition, or None if it does not exist. If several external IDs are specified: the requested label definitions.
 
         Examples:
 
@@ -175,9 +181,9 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.labels.retrieve_multiple(external_ids=["big_pump", "small_pump"])
+                >>> res = client.labels.retrieve(external_id=["big_pump", "small_pump"])
         """
-        identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
         return self._retrieve_multiple(
             identifiers=identifiers,
             resource_cls=LabelDefinition,
