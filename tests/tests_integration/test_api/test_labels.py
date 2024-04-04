@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 
 from cognite.client.data_classes import Asset, AssetUpdate, Label, LabelDefinition
+from cognite.client.data_classes.labels import LabelDefinitionList
 from cognite.client.utils._text import random_string
 
 
