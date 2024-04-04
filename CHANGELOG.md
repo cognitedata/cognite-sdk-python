@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.32.5] - 2024-04-4
+### Improved
+- Type validation of identifiers
+
 ## [7.32.4] - 2024-03-28
 ### Fixed
 - Several methods for `DatapointsArray` that previously failed for string datapoints due to bad handling
