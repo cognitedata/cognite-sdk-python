@@ -85,6 +85,10 @@ Create a label
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.labels.LabelsAPI.create
 
+Retrieve multiple labels by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.retrieve_multiple
+
 Delete labels
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.labels.LabelsAPI.delete
