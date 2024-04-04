@@ -156,3 +156,22 @@ class LabelsAPI(APIClient):
                 >>> client.labels.delete(external_id=["big_pump", "small_pump"])
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)
+    
+    def retrieve_multiple(self, external_ids: Sequence[str]) -> LabelDefinitionList:
+        """`Retrieve multiple label definitions by external id. <https://developer.cognite.com/api/#tag/Labels/operation/byIdsLabels>`_
+
+        Args:
+            external_ids (Sequence[str]): The external ids to retrieve.
+
+        Returns:
+            LabelDefinitionList: The requested label definitions.
+
+        Examples:
+
+            Get label definitions by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.labels.retrieve_multiple(external_ids=["big_pump", "small_pump"])
+        """
+        return self._retrieve_multiple(external_ids=external_ids)

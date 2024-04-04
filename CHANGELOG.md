@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.33.0] - 2024-04-04
+### Added
+- Support for retrieving labels using their external ids
+
 ## [7.32.4] - 2024-03-28
 ### Fixed
 - Several methods for `DatapointsArray` that previously failed for string datapoints due to bad handling
