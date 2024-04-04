@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.34.0] - 2024-04-10
+### Added
+- Datapoints method `retrieve_latest` now supports status codes.
+
 ## [7.33.1] - 2024-04-10
 ### Fixed
 - Ordering of elements from calls to `retrieve_multiple` now match the requested elements. For SDK versions between
