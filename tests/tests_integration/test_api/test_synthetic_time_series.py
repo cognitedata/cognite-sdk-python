@@ -61,6 +61,7 @@ class TestSyntheticDatapointsAPI:
         )[0]
         assert 100 == len(dps)
         assert 100 == len(dps.error)
+        assert 100 == len(dps.value)
         assert all(x is not None for x in dps.error)
         assert all(x is None for x in dps.value)
         assert (100, 1) == dps.to_pandas().shape

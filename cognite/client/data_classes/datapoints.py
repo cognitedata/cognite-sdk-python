@@ -511,7 +511,7 @@ class DatapointsArray(CogniteResource):
             ):
                 raise ValueError("The number of status codes/symbols does not match the number of datapoints")
 
-            for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
+            for dp, code, symbol in zip(datapoints, map(numpy_dtype_fix, self.status_code), self.status_symbol):
                 dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
                 # When we're dealing with status codes, NaN might be either one of [<missing>, nan]:
                 if dp["timestamp"] in (self.null_timestamps or ()):  # ...luckily, we know :3
@@ -739,10 +739,10 @@ class Datapoints(CogniteResource):
                 raise ValueError("The number of status codes/symbols does not match the number of datapoints")
 
             for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
-                dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
+                dp["status"] = {"code": code, "symbol": symbol}
                 # When we're dealing with status codes, bad can have missing values:
                 if "value" not in dp:
-                    dp["value"] = None  # type: ignore [assignment]
+                    dp["value"] = None
         dumped["datapoints"] = datapoints
 
         if camel_case:
@@ -818,6 +818,22 @@ class Datapoints(CogniteResource):
         idx = pd.to_datetime(self.timestamp, unit="ms")
         (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
         return df
+
+    @classmethod
+    def _load_from_synthetic(
+        cls,
+        dps_object: dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+    ) -> Datapoints:
+        if dps := dps_object["datapoints"]:
+            for dp in dps:
+                dp.setdefault("error", None)
+                dp.setdefault("value", None)
+            return cls._load(dps_object, cognite_client=cognite_client)
+
+        instance = cls._load(dps_object, cognite_client=cognite_client)
+        instance.error, instance.value = [], []
+        return instance
 
     # TODO: remove 'expected_fields' in the next major version:
     #       the method should not need to be told what to load...

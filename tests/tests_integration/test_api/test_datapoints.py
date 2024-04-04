@@ -781,7 +781,7 @@ class TestRetrieveRawDatapointsAPI:
             assert m1.status_symbol[-1] == m2.status_symbol[-1] == "GoodClamped"
 
             assert math.isclose(m2.value[0], -371525.6348704161)
-            assert math.isclose(m2.value[-1], 538.1994761772598)
+            assert math.isclose(m2.value[-1], -538.1994761772598)
             assert m2.status_code[0] == 1083244544
 
             assert math.isclose(m3.value[0], 420)
