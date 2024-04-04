@@ -43,7 +43,6 @@ Contents
    assets
    events
    files
-   labels
    time_series
    sequences
    geospatial
