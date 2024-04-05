@@ -590,17 +590,14 @@ class DpsUnpackFns:
     status_code: Callable[[NumericDatapoint], int] = op.attrgetter("status.code")  # Gives 0 by default when missing
 
     @staticmethod
-    def status_symbol(dp: NumericDatapoint) -> str:
+    def status_symbol(dp: DatapointRaw) -> str:
         return dp.status.symbol or "Good"  # Gives empty str when missing, so we set 'Good' manually
 
     # When datapoints with bad status codes are not ignored, value may be missing:
     @staticmethod
-    def nullable_raw_dp(dp: NumericDatapoint) -> float:
+    def nullable_raw_dp(dp: DatapointRaw) -> float | str:
         # We pretend like float is always returned to not break every dps annot. in the entire SDK..
-        try:
-            return dp.value if not dp.nullValue else None  # type: ignore [return-value]
-        except AttributeError:
-            raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
+        return dp.value if not dp.nullValue else None  # type: ignore [return-value]
 
     # --------------- #
     # Above are functions that operate on single elements
@@ -623,11 +620,11 @@ class DpsUnpackFns:
         return np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=dtype, count=len(dps))
 
     @staticmethod
-    def extract_nullable_raw_dps(dps: NumericDatapoints) -> list[float]:  # actually Optional[float]
+    def extract_nullable_raw_dps(dps: DatapointsRaw) -> list[float | str]:  # actually list of [... | None]
         return list(map(DpsUnpackFns.nullable_raw_dp, dps))
 
     @staticmethod
-    def extract_nullable_raw_dps_numpy(dps: NumericDatapoints) -> tuple[npt.NDArray[np.float64], list[int]]:
+    def extract_nullable_raw_dps_numpy(dps: DatapointsRaw) -> tuple[npt.NDArray[np.float64], list[int]]:
         # This is a very hot loop, thus we make some ugly optimizations:
         values = [None] * len(dps)
         missing: list[int] = []
@@ -1205,11 +1202,8 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 self.dps_data[idx].append(arr)
                 if missing_idxs:
                     self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs])
-                try:
-                    self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
-                    self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
-                except AttributeError:
-                    raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
+                self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
+                self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
 
         else:
             self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
@@ -1218,11 +1212,8 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             else:
                 dps = cast(NumericDatapoints, dps)
                 self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
-                try:
-                    self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
-                    self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
-                except AttributeError:
-                    raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
+                self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
+                self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         if self.query.include_outside_points:
@@ -1251,15 +1242,12 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 self.dp_outside_end = DpsUnpackFns.ts(last), DpsUnpackFns.raw_dp(last)
 
         if self.query.include_status:
-            try:
-                if first is not None:
-                    self.dp_outside_status_code_start = DpsUnpackFns.status_code(first)
-                    self.dp_outside_status_symbol_start = DpsUnpackFns.status_symbol(first)
-                if last is not None:
-                    self.dp_outside_status_code_end = DpsUnpackFns.status_code(last)
-                    self.dp_outside_status_symbol_end = DpsUnpackFns.status_symbol(last)
-            except AttributeError:
-                raise NotImplementedError("String datapoints do not yet support 'include_status'") from None
+            if first is not None:
+                self.dp_outside_status_code_start = DpsUnpackFns.status_code(first)
+                self.dp_outside_status_symbol_start = DpsUnpackFns.status_symbol(first)
+            if last is not None:
+                self.dp_outside_status_code_end = DpsUnpackFns.status_code(last)
+                self.dp_outside_status_symbol_end = DpsUnpackFns.status_symbol(last)
 
 
 class SerialLimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, SerialTaskOrchestratorMixin):
