@@ -656,17 +656,32 @@ class DpsUnpackFns:
     @staticmethod
     def extract_aggregates(
         dps: AggregateDatapoints,
+        aggregates: list[str],
         unpack_fn: Callable[[AggregateDatapoint], tuple[float, ...]],
     ) -> list:
-        return list(map(unpack_fn, dps))
+        try:
+            # Fast method uses multi-key unpacking:
+            return list(map(unpack_fn, dps))
+        except AttributeError:
+            # An aggregate is missing, fallback to slower `getattr`:
+            if len(aggregates) == 1:
+                return [getattr(dp, aggregates[0], None) for dp in dps]
+            else:
+                return [tuple(getattr(dp, agg, None) for agg in aggregates) for dp in dps]
 
     @staticmethod
     def extract_aggregates_numpy(
         dps: AggregateDatapoints,
+        aggregates: list[str],
         unpack_fn: Callable[[AggregateDatapoint], tuple[float, ...]],
         dtype: np.dtype[Any],
     ) -> npt.NDArray[np.float64]:
-        return np.fromiter(map(unpack_fn, dps), dtype=dtype, count=len(dps))
+        try:
+            # Fast method uses multi-key unpacking:
+            return np.fromiter(map(unpack_fn, dps), dtype=dtype, count=len(dps))
+        except AttributeError:
+            # An aggregate is missing, fallback to slower `getattr`:
+            return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
 
 
 def ensure_int(val: float, change_nan_to: int = 0) -> int:
@@ -1337,6 +1352,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
             if self.single_agg:
                 self.dtype_aggs: np.dtype[Any] = np.dtype(np.float64)
             else:  # (.., 1) is deprecated for some reason
+                # We are storing all (2 -> 16) aggregates in one block of memory:
                 self.dtype_aggs = np.dtype((np.float64, len(self.all_aggregates)))
 
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
@@ -1388,24 +1404,12 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
-        try:  # Fast method uses multi-key unpacking:
-            arr = DpsUnpackFns.extract_aggregates_numpy(dps, self.agg_unpack_fn, self.dtype_aggs)
-        except AttributeError:  # An aggregate is missing, fallback to slower `getattr`:
-            arr = np.array(
-                [tuple(getattr(dp, agg, math.nan) for agg in self.all_aggregates) for dp in dps],
-                dtype=np.float64,
-            )
+        arr = DpsUnpackFns.extract_aggregates_numpy(dps, self.all_aggregates, self.agg_unpack_fn, self.dtype_aggs)
         self.dps_data[idx].append(arr.reshape(len(dps), len(self.all_aggregates)))
 
     def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
-        try:  # Fast method uses multi-key unpacking:
-            lst: list[Any] = DpsUnpackFns.extract_aggregates(dps, self.agg_unpack_fn)
-        except AttributeError:  # An aggregate is missing, fallback to slower `getattr`:
-            if self.single_agg:
-                lst = [getattr(dp, self.first_agg, None) for dp in dps]
-            else:
-                lst = [tuple(getattr(dp, agg, None) for agg in self.all_aggregates) for dp in dps]
+        lst: list[Any] = DpsUnpackFns.extract_aggregates(dps, self.all_aggregates, self.agg_unpack_fn)
         self.dps_data[idx].append(lst)
 
 
