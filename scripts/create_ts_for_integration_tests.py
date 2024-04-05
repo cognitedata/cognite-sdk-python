@@ -33,7 +33,9 @@ NAMES = [
         "119: hourly normally distributed (0,1) data, 2020-2024 numeric",
         "120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
         "121: mixed status codes, daily values, 2023-2024, numeric",
-        "122: only bad status codes, daily values, 2023-2024, numeric",
+        "122: mixed status codes, daily values, 2023-2024, string",
+        "123: only bad status codes, daily values, 2023-2024, numeric",
+        "124: only bad status codes, daily values, 2023-2024, string",
     ]
 ]
 SPARSE_NAMES = [
@@ -284,19 +286,26 @@ def create_status_code_ts(client: CogniteClient) -> None:
         c = random.choice(BAD_STATUS_CODES_COMPRESSED)
         return v, c << 16
 
-    dps, dps_all_bad = [], []
+    dps, dps_str, dps_all_bad, dps_all_bad_str = [], [], [], []
     idx = pd.date_range("2023", "2024", freq="d", inclusive="left").astype("datetime64[ms]").astype(np.int64)
     for ts in idx:
         v, c = get_bad()
         dps_all_bad.append({"timestamp": ts, "value": v, "status": {"code": c}})
+        dps_all_bad_str.append({"timestamp": ts, "value": f"str-{v}", "status": {"code": c}})
+
         v, c = random.choice([get_good, get_uncertain, get_bad])()
         dps.append({"timestamp": ts, "value": v, "status": {"code": c}})
+        dps_str.append({"timestamp": ts, "value": f"str-{v}", "status": {"code": c}})
 
-    mixed_ts, bad_ts = NAMES[118:120]
+    mixed_ts, mixed_ts_str, bad_ts, bad_ts_str = NAMES[118:122]
     client.time_series.upsert(
         [
             TimeSeries(name=mixed_ts, external_id=mixed_ts, is_string=False, metadata={"delta": UNIT_IN_MS["d"]}),
+            TimeSeries(
+                name=mixed_ts_str, external_id=mixed_ts_str, is_string=True, metadata={"delta": UNIT_IN_MS["d"]}
+            ),
             TimeSeries(name=bad_ts, external_id=bad_ts, is_string=False, metadata={"delta": UNIT_IN_MS["d"]}),
+            TimeSeries(name=bad_ts_str, external_id=bad_ts_str, is_string=True, metadata={"delta": UNIT_IN_MS["d"]}),
         ]
     )
     # TODO: Insert normally when supported by SDK
@@ -305,7 +314,9 @@ def create_status_code_ts(client: CogniteClient) -> None:
         json={
             "items": [
                 {"externalId": mixed_ts, "datapoints": dps},
+                {"externalId": mixed_ts_str, "datapoints": dps_str},
                 {"externalId": bad_ts, "datapoints": dps_all_bad},
+                {"externalId": bad_ts_str, "datapoints": dps_all_bad_str},
             ]
         },
         headers={"cdf-version": "20230101-beta"},

@@ -103,7 +103,9 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
             f"{TEST_PREFIX} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
             f"{TEST_PREFIX} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
             f"{TEST_PREFIX} 121: mixed status codes, daily values, 2023-2024, numeric",
-            f"{TEST_PREFIX} 122: only bad status codes, daily values, 2023-2024, numeric",
+            f"{TEST_PREFIX} 122: mixed status codes, daily values, 2023-2024, string",
+            f"{TEST_PREFIX} 123: only bad status codes, daily values, 2023-2024, numeric",
+            f"{TEST_PREFIX} 124: only bad status codes, daily values, 2023-2024, string",
         ]
     )
 
@@ -145,7 +147,7 @@ def minutely_normal_dist(all_test_time_series) -> TimeSeries:
 
 @pytest.fixture
 def ts_status_codes(all_test_time_series) -> TimeSeriesList:
-    return all_test_time_series[120:122]
+    return all_test_time_series[120:124]
 
 
 @pytest.fixture(scope="session")
@@ -696,8 +698,13 @@ class TestRetrieveRawDatapointsAPI:
         assert type(dp_dumped["timestamp"]) is int  # noqa: E721
         assert type(dp_dumped["value"]) is str  # noqa: E721
 
-    def test_n_dps_retrieved_with_without_uncertain_and_bad(self, retrieve_endpoints, ts_status_codes):
-        mixed_ts, bad_ts = ts_status_codes
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_n_dps_retrieved_with_without_uncertain_and_bad(self, retrieve_endpoints, ts_status_codes, test_is_string):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
         q1 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True)
         q2 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True)
         q3 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=True)
@@ -706,9 +713,12 @@ class TestRetrieveRawDatapointsAPI:
         q6 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False)
 
         for endpoint in retrieve_endpoints:
-            mix1, mix2, mix3, bad1, bad2, bad3 = endpoint(
+            mix1, mix2, mix3, bad1, bad2, bad3 = dps_lst = endpoint(
                 id=[q1, q3, q5], external_id=[q2, q4, q6], include_status=False
             )
+            for dps in dps_lst:
+                assert dps.is_string is test_is_string
+
             assert mix1.status_code is mix1.status_symbol is bad1.status_code is bad1.status_symbol is None
             assert len(mix1) == 117  # good
             assert len(mix2) == 239  # good + uncertain
@@ -718,8 +728,12 @@ class TestRetrieveRawDatapointsAPI:
             assert len(bad2) == 0
             assert len(bad3) == 365
 
-    def test_outside_points_with_bad_and_uncertain(self, retrieve_endpoints, ts_status_codes):
-        mixed_ts, bad_ts = ts_status_codes
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_outside_points_with_bad_and_uncertain(self, retrieve_endpoints, ts_status_codes, test_is_string):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
 
         for endpoint in retrieve_endpoints:
             mix1, mix2, bad1, bad2, mix3, bad3, mix4, bad4 = endpoint(
@@ -753,7 +767,7 @@ class TestRetrieveRawDatapointsAPI:
             assert len(bad4) == 352
 
     def test_status_codes_and_symbols(self, retrieve_endpoints, ts_status_codes):
-        mixed_ts, bad_ts = ts_status_codes
+        mixed_ts, _, bad_ts, _ = ts_status_codes
         for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
             dps_lst = endpoint(
                 id=[
