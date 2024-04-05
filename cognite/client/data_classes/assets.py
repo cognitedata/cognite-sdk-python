@@ -741,7 +741,7 @@ class AssetHierarchy:
     @staticmethod
     def _convert_to_read(assets: Sequence[Asset | AssetWrite]) -> Sequence[Asset]:
         # TODO: AssetHierarchy doesn't work with AssetWrite (or more correctly, _AssetHierarchyCreator...)
-        #       and as don't have a reverse of "as_write", we dump-load the write into a read:
+        #       and as we don't have a reverse of "as_write", we dump-load the write into a read:
         return [
             Asset._load(asset.dump(camel_case=True)) if isinstance(asset, AssetWrite) else asset for asset in assets
         ]
@@ -902,16 +902,9 @@ class AssetHierarchy:
             self._invalid or self._unsure_parents or self._duplicates or (self._orphans and not self._ignore_orphans)
         )
 
-    def _inspect_attributes(
-        self,
-    ) -> tuple[
-        list[Asset],
-        list[Asset],
-        list[Asset],
-        list[Asset],
-        dict[str, list[Asset]],
-    ]:
-        invalid, orphans, roots, unsure_parents, duplicates = [], [], [], [], defaultdict(list)
+    def _inspect_attributes(self) -> tuple[list[Asset], list[Asset], list[Asset], list[Asset], dict[str, list[Asset]]]:
+        invalid, orphans, roots, unsure_parents = [], [], [], []  # type: tuple[list[Asset], list[Asset], list[Asset], list[Asset]]
+        duplicates: defaultdict[str, list[Asset]] = defaultdict(list)
         xid_count = Counter(a.external_id for a in self._assets)
 
         for asset in self._assets:

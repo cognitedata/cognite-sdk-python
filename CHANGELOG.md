@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.32.5] - 2024-04-4
+## [7.32.6] - 2024-04-05
+### Fixed
+- `AssetsAPI.create_hierarchy` now properly supports `AssetWrite`.
+
+## [7.32.5] - 2024-04-04
 ### Improved
 - Type validation of identifiers
 
