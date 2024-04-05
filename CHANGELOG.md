@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.32.7] - 2024-04-05
+### Fixed
+- Inserting sequence data using `insert_dataframe` would by default drop all rows that contained at least one missing value.
+  This has now been fixed to only remove rows where all values are missing.
+
 ## [7.32.6] - 2024-04-05
 ### Fixed
 - `AssetsAPI.create_hierarchy` now properly supports `AssetWrite`.
