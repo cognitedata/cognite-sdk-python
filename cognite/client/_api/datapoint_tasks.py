@@ -587,7 +587,7 @@ class DpsUnpackFns:
 
     # Status is a nested object in the response (code+symbol). Since most dps is expected to be good
     # (code 0), status is not returned for these:
-    status_code: Callable[[NumericDatapoint], int] = op.attrgetter("status.code")  # Gives 0 by default when missing
+    status_code: Callable[[DatapointRaw], int] = op.attrgetter("status.code")  # Gives 0 by default when missing
 
     @staticmethod
     def status_symbol(dp: DatapointRaw) -> str:
@@ -638,19 +638,19 @@ class DpsUnpackFns:
         return arr, missing
 
     @staticmethod
-    def extract_status_code(dps: NumericDatapoints) -> list[int]:
+    def extract_status_code(dps: DatapointsRaw) -> list[int]:
         return list(map(DpsUnpackFns.status_code, dps))
 
     @staticmethod
-    def extract_status_code_numpy(dps: NumericDatapoints) -> npt.NDArray[np.uint32]:
+    def extract_status_code_numpy(dps: DatapointsRaw) -> npt.NDArray[np.uint32]:
         return np.fromiter(map(DpsUnpackFns.status_code, dps), dtype=np.uint32, count=len(dps))
 
     @staticmethod
-    def extract_status_symbol(dps: NumericDatapoints) -> list[str]:
+    def extract_status_symbol(dps: DatapointsRaw) -> list[str]:
         return list(map(DpsUnpackFns.status_symbol, dps))
 
     @staticmethod
-    def extract_status_symbol_numpy(dps: NumericDatapoints) -> npt.NDArray[np.object_]:
+    def extract_status_symbol_numpy(dps: DatapointsRaw) -> npt.NDArray[np.object_]:
         return np.fromiter(map(DpsUnpackFns.status_symbol, dps), dtype=np.object_, count=len(dps))
 
     @staticmethod
@@ -1208,7 +1208,6 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 assert self.raw_dtype_numpy is not None
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
             else:
-                dps = cast(NumericDatapoints, dps)
                 # After this step, missing values (represented with None) will become NaNs and thus become
                 # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
                 # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
@@ -1225,7 +1224,6 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             if not self.query.include_status:
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
             else:
-                dps = cast(NumericDatapoints, dps)
                 self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
                 self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
                 self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
@@ -1403,13 +1401,13 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
             self._unpack_and_store_basic(idx, dps)
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
-        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
         arr = DpsUnpackFns.extract_aggregates_numpy(dps, self.all_aggregates, self.agg_unpack_fn, self.dtype_aggs)
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
         self.dps_data[idx].append(arr.reshape(len(dps), len(self.all_aggregates)))
 
     def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
-        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
         lst: list[Any] = DpsUnpackFns.extract_aggregates(dps, self.all_aggregates, self.agg_unpack_fn)
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
         self.dps_data[idx].append(lst)
 
 
