@@ -1335,37 +1335,64 @@ class DatapointsAPI(APIClient):
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
 
+        Note:
+            All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
+            either the status code (int) or status symbol (str). Only one of code and symbol is required. If both are given,
+            they must match or an API error will be raised.
+
+            Datapoints marked bad can, in addition to the normal numeric range [-1e100, 1e100], take on any of the following
+            values: None (missing), NaN, and +/- Infinity.
+
         Examples:
 
-            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value::
+            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value.
+            The third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
-                >>> # With datetime objects:
                 >>> datapoints = [
                 ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
                 ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000),
+                ...     (datetime(2018,1,3, tzinfo=timezone.utc), 3000, 1073741824),  # code: Uncertain
+                ...     (datetime(2018,1,4, tzinfo=timezone.utc), None, 2147483648),  # code: Bad
                 ... ]
                 >>> client.time_series.data.insert(datapoints, id=1)
-                >>> # With ms since epoch:
-                >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
+
+            The timestamp can be given by datetime as above, or in milliseconds since epoch:
+
+                >>> datapoints = [
+                ...     (150000000000, 1000),
+                ...     (160000000000, 2000, 0),  # code: Good
+                ... ]
                 >>> client.time_series.data.insert(datapoints, id=2)
 
-            Or they can be a list of dictionaries (status codes are not supported yet):
+            Or they can be a list of dictionaries:
 
+                >>> import math
                 >>> datapoints = [
                 ...     {"timestamp": 150000000000, "value": 1000},
                 ...     {"timestamp": 160000000000, "value": 2000},
+                ...     {"timestamp": 170000000000, "value": 3000, "status": {"code": 0}},
+                ...     {"timestamp": 180000000000, "value": 4000, "status": {"symbol": "Uncertain"}},
+                ...     {"timestamp": 190000000000, "value": math.nan, "status": {"code": 2147483648, "symbol": "Bad"}},
                 ... ]
                 >>> client.time_series.data.insert(datapoints, external_id="abcd")
 
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
-            `external_id="foo"`:
+            `external_id="foo"`.
 
-                >>> data = client.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
+            If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:
+
+                >>> data = client.time_series.data.retrieve(
+                ...     external_id="abc",
+                ...     start="1w-ago",
+                ...     end="now",
+                ...     include_status=True,
+                ...     ignore_bad_datapoints=False,
+                ... )
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
