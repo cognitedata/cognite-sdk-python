@@ -1399,9 +1399,12 @@ class DatapointsAPI(APIClient):
         dps_to_post: (
             Sequence[dict[str, int | float | str | datetime]]
             | Sequence[tuple[int | float | datetime, int | float | str]]
+            | Sequence[tuple[int | float | datetime, int | float | str, int]]
         )
-        if isinstance(datapoints, (Datapoints, DatapointsArray)):
-            dps_to_post = DatapointsPoster._extract_raw_data_from_dps_container(datapoints)
+        if isinstance(datapoints, Datapoints):
+            dps_to_post = DatapointsPoster._extract_raw_data_from_datapoints(datapoints)
+        elif isinstance(datapoints, DatapointsArray):
+            dps_to_post = DatapointsPoster._extract_raw_data_from_datapoints_array(datapoints)
         else:
             dps_to_post = datapoints
 
@@ -1442,9 +1445,13 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.insert_multiple(datapoints)
         """
         for dps_dct in datapoints:
+            if not isinstance(dps_dct, Mapping):
+                continue
             # Extract data inplace for any Datapoints and/or DatapointsArray:
-            if isinstance(dps_dct, Mapping) and isinstance(dps_dct["datapoints"], (Datapoints, DatapointsArray)):
-                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_dps_container(dps_dct["datapoints"])
+            if isinstance(dps_dct["datapoints"], Datapoints):
+                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints(dps_dct["datapoints"])
+            elif isinstance(dps_dct["datapoints"], DatapointsArray):
+                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints_array(dps_dct["datapoints"])
         dps_poster = DatapointsPoster(self)
         dps_poster.insert(datapoints)
 
@@ -1593,23 +1600,53 @@ class DatapointsPoster:
         self._insert_datapoints_concurrently(binned_dps_object_lists)
 
     @staticmethod
-    def _extract_raw_data_from_dps_container(
-        dps: Datapoints | DatapointsArray,
-    ) -> list[tuple[int, str]] | list[tuple[int, float]]:
+    def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> tuple:  # TODO: fix sloppy return type
         if dps.value is None:
-            raise ValueError(
-                "Only raw datapoints are supported when inserting data from ``Datapoints`` or ``DatapointsArray``"
-            )
-        if dps.status_code is not None or dps.status_symbol is not None:
-            raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
+            raise ValueError(f"Only raw datapoints are supported when inserting data from ``{type(dps).__name__}``")
         if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
             raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
 
-        if isinstance(dps, Datapoints):
-            return cast(List[Tuple[int, Any]], list(zip(dps.timestamp, dps.value)))
-        ts = dps.timestamp.astype("datetime64[ms]").astype("int64")
+        if dps.status_code is not None and dps.status_symbol is not None:
+            if n_ts != (n_codes := len(dps.status_code)):
+                raise ValueError(
+                    f"Number of status codes ({n_codes}) does not match the number of datapoints ({n_ts}) to insert"
+                )
+        elif None in (dps.status_code, dps.status_symbol):
+            # Let's not silently ignore someone that have manually instantiated a dps object with just one status:
+            raise ValueError("One of status code/symbol is missing on datapoints object")
+
+        return dps.timestamp, dps.value, dps.status_code
+
+    @classmethod
+    def _extract_raw_data_from_datapoints(
+        cls,
+        dps: Datapoints,
+    ) -> list[tuple[int, str]] | list[tuple[int, float]] | list[tuple[int, str, int]] | list[tuple[int, float, int]]:
+        timestamps, values, status_code = cls._verify_dps_object_for_insertion(dps)
+
+        if status_code is None:
+            return list(zip(timestamps, values))
+        return list(zip(timestamps, values, status_code))
+
+    @classmethod
+    def _extract_raw_data_from_datapoints_array(
+        cls,
+        dps: DatapointsArray,
+    ) -> list[tuple[int, str]] | list[tuple[int, float]] | list[tuple[int, str, int]] | list[tuple[int, float, int]]:
+        timestamps, values, status_code = cls._verify_dps_object_for_insertion(dps)
+
         # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
-        return list(zip(ts.tolist(), dps.value.tolist()))
+        values = values.tolist()
+        ts = timestamps.astype("datetime64[ms]").astype("int64").tolist()
+
+        if dps.null_timestamps:
+            # 'Missing' and NaN can not be differentiated when we read from numpy arrays:
+            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(ts, values)]
+
+        if status_code is None:
+            return list(zip(ts, values))
+        else:
+            return list(zip(ts, values, status_code.tolist()))
 
     @staticmethod
     def _validate_dps_objects(dps_object_list: list[dict[str, Any]]) -> list[dict]:
