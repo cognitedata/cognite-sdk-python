@@ -17,6 +17,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.32.8] - 2024-03-21
+### Fixed
+- When using TimeSeries objects without `external_id` as part of the `variables` parameter in a synthetic datapoints
+  query, a `CogniteNotFoundError` would most likely be raised, due to `None` being silently cast to a string. It now
+  raises a friendly `ValueError`.
+- An invalid expression could be created when using multiple variables in a synthetic datapoints query. This happened
+  while substituting the variables into the expression; this was done one at a time, leading to later replacements
+  possibly affecting earlier ones. Now all variables are substituted at the same time/in a single call.
+### Improved
+- Passing sympy symbols as part of the variables mapping (in synthetic datapoints queries) is now documented properly
+  and "officially supported".
+
 ## [7.32.7] - 2024-04-05
 ### Fixed
 - Inserting sequence data using `insert_dataframe` would by default drop all rows that contained at least one missing value.
@@ -58,16 +70,14 @@ Changes are grouped as follows
 ### Added
 - Retrieve method for session, `client.iam.session.retrieve`
 - The parameter `limit` to the method `client.iam.session.list`.
-
 ### Fixed
 - The method `client.iam.session.revoke` is now overloaded correctly and returns a `Session` for single id
   and a `SessionList` for multiple ids.
 
 ## [7.30.1] - 2024-03-23
 ### Fixed
-- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` would raise
-  an `AttributeError: 'dict' object has no attribute '_repr_html_'`, i.e., the HTML representation of `SequenceRowsList`
-  was failing. This is now fixed.
+- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` no longer raises
+  `AttributeError: 'dict' object has no attribute '_repr_html_'` (the HTML representation of `SequenceRowsList` was failing).
 
 ## [7.30.0] - 2024-03-20
 ### Added
@@ -80,8 +90,7 @@ Changes are grouped as follows
 
 ## [7.28.2] - 2024-03-14
 ### Fixed
-- Retrieving more than 100 containers, views, data models, or spaces would raise a
-   `CogniteAPIError`. This is now fixed.
+- Retrieving more than 100 containers, views, data models, or spaces no longer raises a `CogniteAPIError`.
 
 ## [7.28.1] - 2024-03-13
 ### Fixed
