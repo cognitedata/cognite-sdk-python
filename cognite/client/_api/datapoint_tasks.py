@@ -1154,12 +1154,13 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     status_code=create_array_from_dps_container(self.status_code),
                     status_symbol=create_array_from_dps_container(self.status_symbol),
                 )
+            if not self.query.ignore_bad_datapoints:
+                status_columns["null_timestamps"] = self.null_timestamps
             return DatapointsArray._load_from_arrays(
                 {
                     **self.ts_info_dct,
                     "timestamp": create_array_from_dps_container(self.ts_data),
                     "value": create_array_from_dps_container(self.dps_data),
-                    "null_timestamps": self.null_timestamps,
                     **status_columns,
                 }
             )
