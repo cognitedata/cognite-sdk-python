@@ -820,6 +820,11 @@ class DatapointsAPI(APIClient):
         Note:
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
+            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
+            missing a value (due to being stored in a numpy array). To solve this, all missing values have their timestamp recorded in a set you may access:
+            ``dps.null_timestamps``. If you chose to pass a ``DatapointsArray`` to an insert method, this will be inspected automatically to replicate correctly
+            (inserting status codes will soon be supported).
+
         Examples:
 
             Get weekly ``min`` and ``max`` aggregates for a time series with id=42 since the year 2000, then compute the range of values:
@@ -942,6 +947,10 @@ class DatapointsAPI(APIClient):
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+
+        Warning:
+            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
+            missing a value (due to being stored in a numpy array); all will become NaNs in the dataframe.
 
         Examples:
 
@@ -1097,6 +1106,10 @@ class DatapointsAPI(APIClient):
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given time zone.
+
+        Warning:
+            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
+            missing a value (due to being stored in a numpy array); all will become NaNs in the dataframe.
 
         Examples:
 
@@ -1462,7 +1475,7 @@ class DatapointsAPI(APIClient):
             external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
 
-        Note:
+        Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
             to use the :py:meth:`~DatapointsAPI.insert` method instead (once support is added in an upcoming release).
 

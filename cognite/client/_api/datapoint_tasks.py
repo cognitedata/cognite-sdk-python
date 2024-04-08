@@ -181,7 +181,6 @@ class _FullDatapointsQueryValidator:
         self.full_query = full_query
         self.dps_limit_raw = dps_limit_raw
         self.dps_limit_agg = dps_limit_agg
-        self._full_query_is_valid = False
 
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
@@ -195,7 +194,6 @@ class _FullDatapointsQueryValidator:
         if self.full_query.external_id is not None:
             queries.extend(self._validate_multiple_xid(self.full_query.external_id))
         if queries:
-            self._full_query_is_valid = True
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 

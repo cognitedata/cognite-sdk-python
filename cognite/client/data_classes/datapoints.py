@@ -810,7 +810,7 @@ class Datapoints(CogniteResource):
                 continue  # Keep string (object) column non-numeric
 
             data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
-            if attr.startswith("count") or attr.startswith("duration"):
+            if to_camel_case(attr) in _INT_AGGREGATES:
                 data_lists.append(data.astype("int64"))
             else:
                 data_lists.append(data.astype("float64"))

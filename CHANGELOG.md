@@ -32,7 +32,7 @@ Changes are grouped as follows
 ### Deprecated
 - Passing *custom* datapoints queries using dictionaries is deprecated and will be removed in the next major release.
   Consider refactoring already to `DatapointsQuery`. Example: `{"id": 12, "aggregates" : "min", "granularity": "6h"} ->
-  DatapointsQuery(id=12, aggregates=min", granularity="6h")`.
+  DatapointsQuery(id=12, aggregates="min", granularity="6h")`.
 
 ## [7.32.8] - 2024-04-08
 ### Fixed
