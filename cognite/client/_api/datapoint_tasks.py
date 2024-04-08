@@ -949,10 +949,11 @@ class BaseTaskOrchestrator(ABC):
         self.dps_data: _DataContainer = defaultdict(list)
         self.subtasks: list[BaseDpsFetchSubtask] = []
 
-        if self.query.is_raw_query and self.query.include_status:
-            self.status_code: _DataContainer = defaultdict(list)
-            self.status_symbol: _DataContainer = defaultdict(list)
-            if self.use_numpy:
+        if self.query.is_raw_query:
+            if self.query.include_status:
+                self.status_code: _DataContainer = defaultdict(list)
+                self.status_symbol: _DataContainer = defaultdict(list)
+            if self.use_numpy and not self.query.ignore_bad_datapoints:
                 self.null_timestamps: set[int] = set()
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
@@ -1150,7 +1151,6 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if self.use_numpy:
             if self.query.include_status:
                 status_columns.update(
-                    null_timestamps=self.null_timestamps,
                     status_code=create_array_from_dps_container(self.status_code),
                     status_symbol=create_array_from_dps_container(self.status_symbol),
                 )
@@ -1159,6 +1159,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     **self.ts_info_dct,
                     "timestamp": create_array_from_dps_container(self.ts_data),
                     "value": create_array_from_dps_container(self.dps_data),
+                    "null_timestamps": self.null_timestamps,
                     **status_columns,
                 }
             )
@@ -1189,6 +1190,8 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             if self.use_numpy:
                 ts = np.array(ts, dtype=np.int64)
                 value = np.array(value, dtype=self.raw_dtype_numpy)
+                if dp[1] is None:  # Only None if self.query.ignore_bad_datapoints=False
+                    self.null_timestamps.add(dp[0])
             self.ts_data[(idx,)].append(ts)
             self.dps_data[(idx,)].append(value)
 
@@ -1200,9 +1203,9 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 self.status_symbol[(idx,)].append(status_symbol)
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
-        if self.use_numpy:  # Faster than feeding listcomp to np.array:
+        if self.use_numpy:
             self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
-            if not self.query.include_status:
+            if self.query.ignore_bad_datapoints:
                 assert self.raw_dtype_numpy is not None
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
             else:
@@ -1213,16 +1216,18 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps)
                 self.dps_data[idx].append(arr)
                 if missing_idxs:
-                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs])
+                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
+            if self.query.include_status:
                 self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
                 self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
 
         else:
             self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
-            if not self.query.include_status:
+            if self.query.ignore_bad_datapoints:
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
             else:
                 self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
+            if self.query.include_status:
                 self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
                 self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
 
@@ -1239,15 +1244,15 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if dps[0].timestamp < self.query.start:
             # We got a dp before `start`, this (and 'after') should not impact our count towards `limit`,
             # so we pop to remove it from dps:
-            first = cast(NumericDatapoint, dps.pop(0))
-            if self.query.include_status:
+            first = dps.pop(0)
+            if not self.query.ignore_bad_datapoints:
                 self.dp_outside_start = DpsUnpackFns.ts(first), DpsUnpackFns.nullable_raw_dp(first)
             else:
                 self.dp_outside_start = DpsUnpackFns.ts(first), DpsUnpackFns.raw_dp(first)
 
         if dps and dps[-1].timestamp >= self.query.end:  # >= because `end` is exclusive
-            last = cast(NumericDatapoint, dps.pop(-1))
-            if self.query.include_status:
+            last = dps.pop(-1)
+            if not self.query.ignore_bad_datapoints:
                 self.dp_outside_end = DpsUnpackFns.ts(last), DpsUnpackFns.nullable_raw_dp(last)
             else:
                 self.dp_outside_end = DpsUnpackFns.ts(last), DpsUnpackFns.raw_dp(last)
