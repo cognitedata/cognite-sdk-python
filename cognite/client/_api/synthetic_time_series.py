@@ -116,7 +116,7 @@ class SyntheticDatapointsAPI(APIClient):
             query["limit"] = min(limit, self._DPS_LIMIT_SYNTH)
             resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
-            datapoints._extend(Datapoints._load(data, expected_fields=["value", "error"]))
+            datapoints._extend(Datapoints._load_from_synthetic(data))
             limit -= (n_fetched := len(data["datapoints"]))
             if n_fetched < self._DPS_LIMIT_SYNTH or limit <= 0:
                 break

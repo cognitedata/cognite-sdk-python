@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 import typing
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, fields
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -37,7 +38,13 @@ Aggregate = Literal[
     "average",
     "continuous_variance",
     "count",
+    "count_bad",
+    "count_good",
+    "count_uncertain",
     "discrete_variance",
+    "duration_bad",
+    "duration_good",
+    "duration_uncertain",
     "interpolation",
     "max",
     "min",
@@ -45,7 +52,33 @@ Aggregate = Literal[
     "sum",
     "total_variation",
 ]
-
+_AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hits GA
+    [
+        "count_bad",
+        "count_good",
+        "count_uncertain",
+        "duration_bad",
+        "duration_good",
+        "duration_uncertain",
+        "countBad",
+        "countGood",
+        "countUncertain",
+        "durationBad",
+        "durationGood",
+        "durationUncertain",
+    ]
+)
+_INT_AGGREGATES = frozenset(
+    {
+        "count",
+        "countBad",
+        "countGood",
+        "countUncertain",
+        "durationBad",
+        "durationGood",
+        "durationUncertain",
+    }
+)
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
 
 try:
@@ -63,6 +96,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
     NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
+    NumpyUInt32Array = npt.NDArray[np.uint32]
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
@@ -77,6 +111,47 @@ def numpy_dtype_fix(element: np.float64 | str) -> float | str:
         if isinstance(element, str):
             return element
         raise
+
+
+_NOT_SET = object()
+
+
+@dataclass(frozen=True)
+class DatapointsQuery:
+    """Represent a user request for datapoints for a single time series"""
+
+    id: InitVar[int | None] = None
+    external_id: InitVar[str | None] = None
+    start: int | str | datetime = _NOT_SET  # type: ignore [assignment]
+    end: int | str | datetime = _NOT_SET  # type: ignore [assignment]
+    aggregates: Aggregate | str | list[Aggregate | str] = _NOT_SET  # type: ignore [assignment]
+    granularity: str = _NOT_SET  # type: ignore [assignment]
+    target_unit: str = _NOT_SET  # type: ignore [assignment]
+    target_unit_system: str = _NOT_SET  # type: ignore [assignment]
+    limit: int | None = _NOT_SET  # type: ignore [assignment]
+    include_outside_points: bool = _NOT_SET  # type: ignore [assignment]
+    ignore_unknown_ids: bool = _NOT_SET  # type: ignore [assignment]
+    include_status: bool = _NOT_SET  # type: ignore [assignment]
+    ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
+    treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
+
+    def __post_init__(self, id: int | None, external_id: str | None) -> None:
+        # Ensure user have just specified one of id/xid:
+        object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id))
+
+    @property
+    def identifier(self) -> Identifier:
+        return self._identifier  # type: ignore [attr-defined]
+
+    def __repr__(self) -> str:
+        return json.dumps(self.dump(), indent=4)
+
+    def dump(self) -> dict[str, Any]:
+        # We need to dump only those fields specifically passed by the user:
+        return {
+            **self.identifier.as_dict(camel_case=False),
+            **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not _NOT_SET),
+        }
 
 
 @dataclass(frozen=True)
@@ -110,17 +185,25 @@ class Datapoint(CogniteResource):
 
     Args:
         timestamp (int | None): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (str | float | None): The data value. Can be string or numeric
-        average (float | None): The integral average value in the aggregate period
-        max (float | None): The maximum value in the aggregate period
-        min (float | None): The minimum value in the aggregate period
-        count (int | None): The number of datapoints in the aggregate period
-        sum (float | None): The sum of the datapoints in the aggregate period
-        interpolation (float | None): The interpolated value of the series in the beginning of the aggregate
-        step_interpolation (float | None): The last value before or at the beginning of the aggregate.
+        value (str | float | None): The raw data value. Can be string or numeric.
+        average (float | None): The time-weighted average value in the aggregate interval.
+        max (float | None): The maximum value in the aggregate interval.
+        min (float | None): The minimum value in the aggregate interval.
+        count (int | None): The number of raw datapoints in the aggregate interval.
+        sum (float | None): The sum of the raw datapoints in the aggregate interval.
+        interpolation (float | None): The interpolated value at the beginning of the aggregate interval.
+        step_interpolation (float | None): The interpolated value at the beginning of the aggregate interval using stepwise interpretation.
         continuous_variance (float | None): The variance of the interpolated underlying function.
         discrete_variance (float | None): The variance of the datapoint values.
         total_variation (float | None): The total variation of the interpolated underlying function.
+        count_bad (int | None): The number of raw datapoints with a bad status code, in the aggregate interval.
+        count_good (int | None): The number of raw datapoints with a good status code, in the aggregate interval.
+        count_uncertain (int | None): The number of raw datapoints with a uncertain status code, in the aggregate interval.
+        duration_bad (int | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
+        duration_good (int | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
+        duration_uncertain (int | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        status_code (int | None): The status code for the raw datapoint.
+        status_symbol (str | None): The status symbol for the raw datapoint.
     """
 
     def __init__(
@@ -137,6 +220,14 @@ class Datapoint(CogniteResource):
         continuous_variance: float | None = None,
         discrete_variance: float | None = None,
         total_variation: float | None = None,
+        count_bad: int | None = None,
+        count_good: int | None = None,
+        count_uncertain: int | None = None,
+        duration_bad: int | None = None,
+        duration_good: int | None = None,
+        duration_uncertain: int | None = None,
+        status_code: int | None = None,
+        status_symbol: str | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.value = value
@@ -150,6 +241,14 @@ class Datapoint(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
@@ -192,6 +291,15 @@ class DatapointsArray(CogniteResource):
         continuous_variance: NumpyFloat64Array | None = None,
         discrete_variance: NumpyFloat64Array | None = None,
         total_variation: NumpyFloat64Array | None = None,
+        count_bad: NumpyInt64Array | None = None,
+        count_good: NumpyInt64Array | None = None,
+        count_uncertain: NumpyInt64Array | None = None,
+        duration_bad: NumpyInt64Array | None = None,
+        duration_good: NumpyInt64Array | None = None,
+        duration_uncertain: NumpyInt64Array | None = None,
+        status_code: NumpyUInt32Array | None = None,
+        status_symbol: NumpyObjArray | None = None,
+        null_timestamps: set[int] | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -212,6 +320,15 @@ class DatapointsArray(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
+        self.null_timestamps = null_timestamps
 
     @property
     def _ts_info(self) -> dict[str, Any]:
@@ -226,29 +343,41 @@ class DatapointsArray(CogniteResource):
         }
 
     @classmethod
-    @typing.no_type_check
-    def _load(
+    def _load_from_arrays(
         cls,
-        dps_dct: dict[str, int | str | bool | npt.NDArray],
+        dps_dct: dict[str, Any],
         cognite_client: CogniteClient | None = None,
     ) -> DatapointsArray:
-        if "timestamp" in dps_dct:
-            assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
-            # Since pandas always uses nanoseconds for datetime, we stick with the same
-            # (also future-proofs the SDK; ns is coming!):
-            dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
-            return cls(**convert_all_keys_to_snake_case(dps_dct))
+        assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
+        # Since pandas always uses nanoseconds for datetime, we stick with the same
+        # (also future-proofs the SDK; ns may be coming!):
+        dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
+        return cls(**convert_all_keys_to_snake_case(dps_dct))
 
+    @classmethod
+    def _load(
+        cls,
+        dps_dct: dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+    ) -> DatapointsArray:
         array_by_attr = {}
         if "datapoints" in dps_dct:
             datapoints_by_attr = defaultdict(list)
             for row in dps_dct["datapoints"]:
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
+            status = datapoints_by_attr.pop("status", None)
             for attr, values in datapoints_by_attr.items():
-                array_by_attr[attr] = np.array(values)
                 if attr == "timestamp":
-                    dps_dct[attr] = array_by_attr[attr].astype("datetime64[ms]").astype("datetime64[ns]")
+                    array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
+                elif attr in _INT_AGGREGATES:
+                    array_by_attr[attr] = np.array(values, dtype=np.int64)
+                else:
+                    array_by_attr[attr] = np.array(values, dtype=np.float64)
+            if status is not None:
+                array_by_attr["status_code"] = np.array([s["code"] for s in status], dtype=np.uint32)
+                array_by_attr["status_symbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
+
         return cls(
             id=dps_dct.get("id"),
             external_id=dps_dct.get("externalId"),
@@ -265,10 +394,10 @@ class DatapointsArray(CogniteResource):
         sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
         if len(sort_by_time) == 0:
             return arrays[0]
-        elif len(sort_by_time) == 1:
-            return sort_by_time[0]
 
         first = sort_by_time[0]
+        if len(sort_by_time) == 1:
+            return first
 
         arrays_by_attribute = defaultdict(list)
         for array in sort_by_time:
@@ -276,7 +405,12 @@ class DatapointsArray(CogniteResource):
                 arrays_by_attribute[attr].append(arr)
         arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
 
-        return cls(**first._ts_info, **arrays_by_attribute)  # type: ignore [arg-type]
+        all_null_ts = set().union(*(arr.null_timestamps for arr in sort_by_time if arr.null_timestamps))
+        return cls(
+            **first._ts_info,
+            **arrays_by_attribute,  # type: ignore [arg-type]
+            null_timestamps=all_null_ts,
+        )
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -336,9 +470,10 @@ class DatapointsArray(CogniteResource):
         )
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
+        # Note: Does not return status-related fields
         data_field_tuples = [
             (attr, arr)
-            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first!
+            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
@@ -365,7 +500,24 @@ class DatapointsArray(CogniteResource):
         if camel_case:
             attrs = list(map(to_camel_case, attrs))
 
-        dumped = {**self._ts_info, "datapoints": [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]}
+        dumped = self._ts_info
+        datapoints = [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]
+
+        if self.status_code is not None or self.status_symbol is not None:
+            if (
+                self.status_code is None
+                or self.status_symbol is None
+                or not len(self.status_symbol) == len(datapoints) == len(self.status_code)
+            ):
+                raise ValueError("The number of status codes/symbols does not match the number of datapoints")
+
+            for dp, code, symbol in zip(datapoints, map(numpy_dtype_fix, self.status_code), self.status_symbol):
+                dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
+                # When we're dealing with status codes, NaN might be either one of [<missing>, nan]:
+                if dp["timestamp"] in (self.null_timestamps or ()):  # ...luckily, we know :3
+                    dp["value"] = None  # type: ignore [assignment]
+        dumped["datapoints"] = datapoints
+
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {k: v for k, v in dumped.items() if v is not None}
@@ -375,6 +527,7 @@ class DatapointsArray(CogniteResource):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
@@ -382,6 +535,7 @@ class DatapointsArray(CogniteResource):
             column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -410,16 +564,22 @@ class DatapointsArray(CogniteResource):
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
 
         if self.value is not None:
-            return pd.DataFrame({identifier: self.value}, index=self.timestamp, copy=False)
+            raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
+            if include_status:
+                if self.status_code is not None:
+                    raw_columns[f"{identifier}|status_code"] = self.status_code
+                if self.status_symbol is not None:
+                    raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
+            return pd.DataFrame(raw_columns, index=self.timestamp, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
-        columns = [
+        aggregate_columns = [
             str(identifier) + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
             for agg in agg_names
         ]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = columns
+        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = aggregate_columns
         return df
 
 
@@ -427,26 +587,34 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int | None): Id of the timeseries the datapoints belong to
-        external_id (str | None): External id of the timeseries the datapoints belong to
-        is_string (bool | None): Whether the time series is string valued or not.
-        is_step (bool | None): Whether the time series is a step series or not.
-        unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted.
+        id (int | None): Id of the time series the datapoints belong to
+        external_id (str | None): External id of the time series the datapoints belong to
+        is_string (bool | None): Whether the time series contains numerical or string data.
+        is_step (bool | None): Whether the time series is stepwise or continuous.
+        unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (SequenceNotStr[str] | Sequence[float] | None): The data values. Can be string or numeric
-        average (list[float] | None): The integral average values in the aggregate period
-        max (list[float] | None): The maximum values in the aggregate period
-        min (list[float] | None): The minimum values in the aggregate period
-        count (list[int] | None): The number of datapoints in the aggregate periods
-        sum (list[float] | None): The sum of the datapoints in the aggregate periods
-        interpolation (list[float] | None): The interpolated values of the series in the beginning of the aggregates
-        step_interpolation (list[float] | None): The last values before or at the beginning of the aggregates.
+        value (SequenceNotStr[str] | Sequence[float] | None): The raw data values. Can be string or numeric.
+        average (list[float] | None): The time-weighted average values per aggregate interval.
+        max (list[float] | None): The maximum values per aggregate interval.
+        min (list[float] | None): The minimum values per aggregate interval.
+        count (list[int] | None): The number of raw datapoints per aggregate interval.
+        sum (list[float] | None): The sum of the raw datapoints per aggregate interval.
+        interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval.
+        step_interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval using stepwise interpretation.
         continuous_variance (list[float] | None): The variance of the interpolated underlying function.
         discrete_variance (list[float] | None): The variance of the datapoint values.
         total_variation (list[float] | None): The total variation of the interpolated underlying function.
-        error (list[None | str] | None): No description.
+        count_bad (list[int] | None): The number of raw datapoints with a bad status code, per aggregate interval.
+        count_good (list[int] | None): The number of raw datapoints with a good status code, per aggregate interval.
+        count_uncertain (list[int] | None): The number of raw datapoints with a uncertain status code, per aggregate interval.
+        duration_bad (list[int] | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
+        duration_good (list[int] | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
+        duration_uncertain (list[int] | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        status_code (list[int] | None): The status codes for the raw datapoints.
+        status_symbol (list[str] | None): The status symbols for the raw datapoints.
+        error (list[None | str] | None): Human readable strings with description of what went wrong (returned by synthetic datapoints queries).
     """
 
     def __init__(
@@ -470,6 +638,14 @@ class Datapoints(CogniteResource):
         continuous_variance: list[float] | None = None,
         discrete_variance: list[float] | None = None,
         total_variation: list[float] | None = None,
+        count_bad: list[int] | None = None,
+        count_good: list[int] | None = None,
+        count_uncertain: list[int] | None = None,
+        duration_bad: list[int] | None = None,
+        duration_good: list[int] | None = None,
+        duration_uncertain: list[int] | None = None,
+        status_code: list[int] | None = None,
+        status_symbol: list[str] | None = None,
         error: list[None | str] | None = None,
     ) -> None:
         self.id = id
@@ -491,6 +667,14 @@ class Datapoints(CogniteResource):
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.count_bad = count_bad
+        self.count_good = count_good
+        self.count_uncertain = count_uncertain
+        self.duration_bad = duration_bad
+        self.duration_good = duration_good
+        self.duration_uncertain = duration_uncertain
+        self.status_code = status_code
+        self.status_symbol = status_symbol
         self.error = error
 
         self.__datapoint_objects: list[Datapoint] | None = None
@@ -537,15 +721,30 @@ class Datapoints(CogniteResource):
         Returns:
             dict[str, Any]: A dictionary representing the instance.
         """
-        dumped = {
+        dumped: dict[str, Any] = {
             "id": self.id,
             "external_id": self.external_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
-            "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
+        datapoints = [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()]
+        if self.status_code is not None or self.status_symbol is not None:
+            if (
+                self.status_code is None
+                or self.status_symbol is None
+                or not len(self.status_symbol) == len(datapoints) == len(self.status_code)
+            ):
+                raise ValueError("The number of status codes/symbols does not match the number of datapoints")
+
+            for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
+                dp["status"] = {"code": code, "symbol": symbol}
+                # When we're dealing with status codes, bad can have missing values:
+                if "value" not in dp:
+                    dp["value"] = None
+        dumped["datapoints"] = datapoints
+
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {key: value for key, value in dumped.items() if value is not None}
@@ -556,6 +755,7 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_errors: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
@@ -564,6 +764,7 @@ class Datapoints(CogniteResource):
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -591,6 +792,13 @@ class Datapoints(CogniteResource):
             if attr == "value":
                 field_names.append(id_col_name)
                 data_lists.append(data)
+                if include_status:
+                    if self.status_code is not None:
+                        field_names.append(f"{identifier}|status_code")
+                        data_lists.append(self.status_code)
+                    if self.status_symbol is not None:
+                        field_names.append(f"{identifier}|status_symbol")
+                        data_lists.append(self.status_symbol)
                 continue
             if include_aggregate_name:
                 id_col_name += f"|{attr}"
@@ -600,8 +808,9 @@ class Datapoints(CogniteResource):
             if attr == "error":
                 data_lists.append(data)
                 continue  # Keep string (object) column non-numeric
+
             data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
-            if attr == "count":
+            if to_camel_case(attr) in _INT_AGGREGATES:
                 data_lists.append(data.astype("int64"))
             else:
                 data_lists.append(data.astype("float64"))
@@ -610,6 +819,24 @@ class Datapoints(CogniteResource):
         (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
         return df
 
+    @classmethod
+    def _load_from_synthetic(
+        cls,
+        dps_object: dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+    ) -> Datapoints:
+        if dps := dps_object["datapoints"]:
+            for dp in dps:
+                dp.setdefault("error", None)
+                dp.setdefault("value", None)
+            return cls._load(dps_object, cognite_client=cognite_client)
+
+        instance = cls._load(dps_object, cognite_client=cognite_client)
+        instance.error, instance.value = [], []
+        return instance
+
+    # TODO: remove 'expected_fields' in the next major version:
+    #       the method should not need to be told what to load...
     @classmethod
     def _load(  # type: ignore [override]
         cls,
@@ -631,11 +858,19 @@ class Datapoints(CogniteResource):
             for key in expected_fields:
                 snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
-        else:
-            for key in expected_fields:
-                data = [dp.get(key) for dp in dps_object["datapoints"]]
-                snake_key = to_snake_case(key)
-                setattr(instance, snake_key, data)
+            return instance
+
+        data_lists = defaultdict(list)
+        for row in dps_object["datapoints"]:
+            for attr, value in row.items():
+                data_lists[attr].append(value)
+        if (status := data_lists.pop("status", None)) is not None:
+            data_lists["status_code"] = [s["code"] for s in status]
+            data_lists["status_symbol"] = [s["symbol"] for s in status]
+
+        for key, data in data_lists.items():
+            snake_key = to_snake_case(key)
+            setattr(instance, snake_key, data)
         return instance
 
     def _extend(self, other_dps: Datapoints) -> None:
@@ -658,7 +893,17 @@ class Datapoints(CogniteResource):
         self, get_empty_lists: bool = False, get_error: bool = True
     ) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
-        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "unit_external_id", "granularity"}
+        skip_attrs = {
+            "id",
+            "external_id",
+            "is_string",
+            "is_step",
+            "unit",
+            "unit_external_id",
+            "granularity",
+            "status_code",
+            "status_symbol",
+        }
         for attr, value in self.__dict__.copy().items():
             if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
                 if value is not None or attr == "timestamp":
@@ -680,7 +925,14 @@ class Datapoints(CogniteResource):
         return self.__datapoint_objects
 
     def _slice(self, slice: slice) -> Datapoints:
-        truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
+        truncated_datapoints = Datapoints(
+            id=self.id,
+            external_id=self.external_id,
+            is_string=self.is_string,
+            is_step=self.is_step,
+            unit=self.unit,
+            unit_external_id=self.unit_external_id,
+        )
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
         return truncated_datapoints
@@ -777,6 +1029,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
@@ -784,12 +1037,21 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
             column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
         pd = local_import("pandas")
-        dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
+        dfs = [
+            dps.to_pandas(
+                column_names=column_names,
+                include_aggregate_name=include_aggregate_name,
+                include_granularity_name=include_granularity_name,
+                include_status=include_status,
+            )
+            for dps in self
+        ]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
 
@@ -859,6 +1121,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
@@ -866,12 +1129,21 @@ class DatapointsList(CogniteResourceList[Datapoints]):
             column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_status (bool): Include status code and status symbol as separate columns, if available.
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         pd = local_import("pandas")
-        dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
+        dfs = [
+            dps.to_pandas(
+                column_names=column_names,
+                include_aggregate_name=include_aggregate_name,
+                include_granularity_name=include_granularity_name,
+                include_status=include_status,
+            )
+            for dps in self
+        ]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
 

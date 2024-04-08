@@ -32,12 +32,16 @@ class NumericDatapoints(_message.Message):
     def __init__(self, datapoints: _Optional[_Iterable[_Union[NumericDatapoint, _Mapping]]] = ...) -> None: ...
 
 class StringDatapoint(_message.Message):
-    __slots__ = ("timestamp", "value")
+    __slots__ = ("timestamp", "value", "status", "nullValue")
     TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     VALUE_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    NULLVALUE_FIELD_NUMBER: _ClassVar[int]
     timestamp: int
     value: str
-    def __init__(self, timestamp: _Optional[int] = ..., value: _Optional[str] = ...) -> None: ...
+    status: Status
+    nullValue: bool
+    def __init__(self, timestamp: _Optional[int] = ..., value: _Optional[str] = ..., status: _Optional[_Union[Status, _Mapping]] = ..., nullValue: bool = ...) -> None: ...
 
 class StringDatapoints(_message.Message):
     __slots__ = ("datapoints",)
