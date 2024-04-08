@@ -68,7 +68,7 @@ class TestSyntheticDatapointsAPI:
 
     def test_query_using_time_series_objs__missing_external_id(self, cognite_client, test_time_series):
         (whoopsie_ts := test_time_series[1].as_write()).external_id = None
-        # Before SDK version 7.30.1, when a passed TimeSeries missing external_id was passed, None
+        # Before SDK version 7.32.8, when a passed TimeSeries missing external_id was passed, None
         # was just cast to string and passed to the API, most likely leading to a "not found" error
         with pytest.raises(
             ValueError, match="^TimeSeries passed in 'variables' is missing required field 'external_id'"
