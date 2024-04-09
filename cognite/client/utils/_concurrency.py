@@ -15,7 +15,7 @@ from typing import (
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import no_op
+from cognite.client.utils._auxiliary import find_duplicates, no_op
 
 
 class TasksSummary:
