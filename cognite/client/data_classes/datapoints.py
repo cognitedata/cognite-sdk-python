@@ -177,9 +177,9 @@ class LatestDatapointQuery:
     before: None | int | str | datetime = None
     target_unit: str | None = None
     target_unit_system: str | None = None
-    include_status: bool = False
-    ignore_bad_datapoints: bool = True
-    treat_uncertain_as_bad: bool = True
+    include_status: bool | None = None
+    ignore_bad_datapoints: bool | None = None
+    treat_uncertain_as_bad: bool | None = None
 
     def __post_init__(self, id: int | None, external_id: str | None) -> None:
         # Ensure user have just specified one of id/xid:
