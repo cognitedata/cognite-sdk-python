@@ -1674,9 +1674,9 @@ class RetrieveLatestDpsFetcher:
         self.settings_before: dict[tuple[str, int], None | int | str | datetime] = {}
         self.settings_target_unit: dict[tuple[str, int], None | str] = {}
         self.settings_target_unit_system: dict[tuple[str, int], None | str] = {}
-        self.settings_include_status: dict[tuple[str, int], bool] = {}
-        self.settings_ignore_bad_datapoints: dict[tuple[str, int], bool] = {}
-        self.settings_treat_uncertain_as_bad: dict[tuple[str, int], bool] = {}
+        self.settings_include_status: dict[tuple[str, int], bool | None] = {}
+        self.settings_ignore_bad_datapoints: dict[tuple[str, int], bool | None] = {}
+        self.settings_treat_uncertain_as_bad: dict[tuple[str, int], bool | None] = {}
 
         self.ignore_unknown_ids = ignore_unknown_ids
         self.dps_client = dps_client
@@ -1775,14 +1775,49 @@ class RetrieveLatestDpsFetcher:
                 if i_target_unit_system is not None:
                     dct["targetUnitSystem"] = i_target_unit_system
 
-                if (self.settings_include_status.get(idx) or self.default_include_status) is True:
+                # Careful logic: "Not given" vs "given" vs "default" with "truthy/falsy":
+                if (
+                    self.settings_include_status.get(idx) is True
+                    or self.settings_include_status.get(idx) is None
+                    and self.default_include_status is True
+                ):
                     dct["includeStatus"] = True
-                if (self.settings_ignore_bad_datapoints.get(idx) or self.default_ignore_bad_datapoints) is False:
+
+                if (
+                    self.settings_ignore_bad_datapoints.get(idx) is False
+                    or self.settings_ignore_bad_datapoints.get(idx) is None
+                    and self.default_ignore_bad_datapoints is False
+                ):
                     dct["ignoreBadDataPoints"] = False
-                if (self.settings_treat_uncertain_as_bad.get(idx) or self.default_treat_uncertain_as_bad) is False:
+
+                if (
+                    self.settings_treat_uncertain_as_bad.get(idx) is False
+                    or self.settings_treat_uncertain_as_bad.get(idx) is None
+                    and self.default_treat_uncertain_as_bad is False
+                ):
                     dct["treatUncertainAsBad"] = False
+
         all_ids.extend(all_xids)
         return all_ids
+
+    @staticmethod
+    def _json_float_translation(value: float | Literal["Infinity", "-Infinity", "NaN"] | None) -> float | None:
+        # As opposed to protobuf, retrieve_latest uses JSON and it returns out-of-range float values as strings:
+        return {"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan}.get(value, value)  # type: ignore [arg-type]
+
+    def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        assert not self.ignore_unknown_ids, "Not implemented yet"
+
+        for query, res in zip(self._all_identifiers, result):
+            if not (dps := res["datapoints"]):
+                continue
+            (dp,) = dps
+            if query.get("includeStatus") is True:
+                dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
+            if query.get("ignoreBadDataPoints") is False:
+                # Bad data can have value missing (we translate to None explicitly):
+                dp["value"] = self._json_float_translation(dp.get("value", None))
+        return result
 
     def fetch_datapoints(self) -> list[dict[str, Any]]:
         tasks = [
@@ -1798,4 +1833,5 @@ class RetrieveLatestDpsFetcher:
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
-        return tasks_summary.joined_results(lambda res: res.json()["items"])
+        result = tasks_summary.joined_results(lambda res: res.json()["items"])
+        return self._post_fix_status_codes_and_stringified_floats(result)
