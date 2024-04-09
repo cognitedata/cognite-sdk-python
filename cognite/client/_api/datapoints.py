@@ -1806,8 +1806,18 @@ class RetrieveLatestDpsFetcher:
         return {"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan}.get(value, value)  # type: ignore [arg-type]
 
     def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        assert not self.ignore_unknown_ids, "Not implemented yet"
-
+        # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
+        if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
+            ids_exists = (
+                {("id", r["id"]) for r in result}
+                .union({("xid", r["externalId"]) for r in result})
+                .difference({("xid", None)})
+            )  # fmt: skip
+            self._all_identifiers = [
+                query
+                for query in self._all_identifiers
+                if ids_exists.intersection((("id", query.get("id")), ("xid", query.get("externalId"))))
+            ]
         for query, res in zip(self._all_identifiers, result):
             if not (dps := res["datapoints"]):
                 continue
