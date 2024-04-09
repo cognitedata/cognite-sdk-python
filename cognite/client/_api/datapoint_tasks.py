@@ -622,7 +622,9 @@ class DpsUnpackFns:
         return list(map(DpsUnpackFns.nullable_raw_dp, dps))
 
     @staticmethod
-    def extract_nullable_raw_dps_numpy(dps: DatapointsRaw) -> tuple[npt.NDArray[np.float64], list[int]]:
+    def extract_nullable_raw_dps_numpy(
+        dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]
+    ) -> tuple[npt.NDArray[Any], list[int]]:
         # This is a very hot loop, thus we make some ugly optimizations:
         values = [None] * len(dps)
         missing: list[int] = []
@@ -632,7 +634,7 @@ class DpsUnpackFns:
             values[i] = dp  # type: ignore [call-overload]
             if dp is None:
                 add_missing(i)
-        arr = np.array(values, dtype=np.float64)
+        arr = np.array(values, dtype=dtype)
         return arr, missing
 
     @staticmethod
@@ -1206,15 +1208,15 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:
             self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
+            assert self.raw_dtype_numpy is not None
             if self.query.ignore_bad_datapoints:
-                assert self.raw_dtype_numpy is not None
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
             else:
                 # After this step, missing values (represented with None) will become NaNs and thus become
                 # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
                 # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
                 # use the DatapointsArray to replicate datapoints (exactly).
-                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps)
+                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
                 self.dps_data[idx].append(arr)
                 if missing_idxs:
                     self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
