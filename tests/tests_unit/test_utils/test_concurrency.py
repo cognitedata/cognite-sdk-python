@@ -37,7 +37,7 @@ class TestExecutor:
 
     @pytest.mark.parametrize(
         "executor",
-        (ConcurrencySettings.get_mainthread_executor(), ConcurrencySettings.get_thread_pool_executor(10)),
+        (ConcurrencySettings.get_mainthread_executor(), ConcurrencySettings.get_thread_pool_executor(5)),
     )
     def test_executors__results_ordering_match_tasks(self, executor) -> None:
         assert ConcurrencySettings.executor_type == "threadpool"
@@ -54,7 +54,7 @@ class TestExecutor:
         assert task_summary.results == list(range(50))
 
     def test_executors__results_ordering_match_tasks_even_with_failures(self) -> None:
-        executor = ConcurrencySettings.get_thread_pool_executor(10)
+        executor = ConcurrencySettings.get_thread_pool_executor(5)
 
         def test_fn(i: int) -> int:
             time.sleep(random.random() / 50)
@@ -96,7 +96,7 @@ class TestExecutor:
         assert ConcurrencySettings.executor_type == "threadpool"
         task_summary = execute_tasks(
             i_dont_like_5,
-            list(zip(range(10))),
+            list(zip(range(15))),
             max_workers=3,
             fail_fast=fail_fast,
         )
@@ -106,7 +106,7 @@ class TestExecutor:
         assert err.value.failed == [(5,)]
         if fail_fast:
             assert err.value.skipped
-            assert 9 == len(err.value.successful) + len(err.value.skipped)
+            assert 14 == len(err.value.successful) + len(err.value.skipped)
         else:
             assert not err.value.skipped
-            assert 9 == len(err.value.successful)
+            assert 14 == len(err.value.successful)
