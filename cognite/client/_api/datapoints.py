@@ -1292,7 +1292,7 @@ class DatapointsAPI(APIClient):
                 ...     "foo",
                 ...     LatestDatapointQuery(external_id="abc", before="3h-ago", target_unit_system="Imperial"),
                 ...     LatestDatapointQuery(external_id="def", include_status=True),
-                ...     LatestDatapointQuery(external_id="ghi", treat_uncertain_as_bad=False)]
+                ...     LatestDatapointQuery(external_id="ghi", treat_uncertain_as_bad=False),
                 ...     LatestDatapointQuery(external_id="jkl", include_status=True, ignore_bad_datapoints=False)]
                 >>> res = client.time_series.data.retrieve_latest(
                 ...     id=id_queries, external_id=xid_queries)
