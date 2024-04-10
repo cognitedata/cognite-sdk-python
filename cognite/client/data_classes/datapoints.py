@@ -939,7 +939,7 @@ class Datapoints(CogniteResource):
                 dp_args[attr] = value[i]
                 if self.status_code is not None:
                     dp_args.update(
-                        status_code=self.status_code[i],  # type: ignore [index]
+                        status_code=self.status_code[i],
                         status_symbol=self.status_symbol[i],  # type: ignore [index]
                     )
             new_dps_objects.append(Datapoint(**dp_args))
