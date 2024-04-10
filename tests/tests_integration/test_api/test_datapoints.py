@@ -2169,7 +2169,7 @@ class TestRetrieveLatestDatapointsAPI:
         assert 4 == cognite_client.time_series.data._post.call_count
 
         res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
-        assert len(res) == 4  # Only 4 real identifiers
+        assert len(res) == 4  # Only 2 real identifiers (duplicated twice)
 
         m1, b1, m2, b2 = res
         assert m1.id == m2.id == mixed_ts.id
@@ -2186,7 +2186,9 @@ class TestRetrieveLatestDatapointsAPI:
         assert b1.status_symbol == ["BadDuplicateReferenceNotAllowed"]
 
     @pytest.mark.parametrize("test_is_string", (True, False))
-    def test_effect_of_uncertain_and_bad_settings(self, cognite_client, ts_status_codes, test_is_string):
+    def test_effect_of_uncertain_and_bad_settings_using_same_before_setting(
+        self, cognite_client, ts_status_codes, test_is_string
+    ):
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
         else:
@@ -2222,29 +2224,30 @@ class TestRetrieveLatestDatapointsAPI:
             assert math.isclose(b3.value[0], -1e100)
 
     @pytest.mark.parametrize("test_is_string", (True, False))
-    def test_return_status_codes(self, cognite_client, ts_status_codes, test_is_string):
+    def test_json_float_translation(self, cognite_client, ts_status_codes, test_is_string):
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
         else:
             mixed_ts, _, bad_ts, _ = ts_status_codes
 
-        m1, m2, m3, b1, b2, b3 = cognite_client.time_series.data.retrieve_latest(
-            id=[
-                mixed_ts.id,
-                LatestDatapointQuery(id=mixed_ts.id, treat_uncertain_as_bad=False),
-                LatestDatapointQuery(id=mixed_ts.id, ignore_bad_datapoints=False),
-            ],
-            external_id=[
-                bad_ts.external_id,
-                LatestDatapointQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False),
-                LatestDatapointQuery(external_id=bad_ts.external_id, ignore_bad_datapoints=False),
-            ],
-            include_status=False,
-            ignore_bad_datapoints=True,
-            treat_uncertain_as_bad=True,
-            ignore_unknown_ids=True,
-            before=ts_to_ms("2023-08-05 12:00:00"),
+        exp_timestamps = [1691625600000, 1691798400000, 1691884800000, 1692403200000, 1692576000000, 1692835200000]
+        dps_lst = cognite_client.time_series.data.retrieve_latest(
+            id=[LatestDatapointQuery(id=bad_ts.id, before=ts + 1) for ts in exp_timestamps],
+            ignore_bad_datapoints=False,
         )
+        for dps, exp_ts in zip(dps_lst, exp_timestamps):
+            assert dps.timestamp == [exp_ts]
+
+        if test_is_string:
+            for dps in dps_lst:
+                # assert dps[3].value[0] is None # TODO: Once missing/None is supported, ensure it is translated correctly
+                assert isinstance(dps.value[0], str)
+        else:
+            assert math.isclose(dps_lst[0].value[0], 2.71)
+            assert math.isclose(dps_lst[2].value[0], -5e-324)
+            assert math.isnan(dps_lst[4].value[0])
+            assert dps_lst[1].value[0] == -math.inf
+            assert dps_lst[5].value[0] == math.inf
 
 
 class TestInsertDatapointsAPI:
