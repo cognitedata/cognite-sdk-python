@@ -261,7 +261,8 @@ class Datapoint(CogniteResource):
         """
         pd = local_import("pandas")
 
-        dumped = self.dump(camel_case=camel_case)
+        # Keep value even if None (bad status codes support missing):
+        dumped = {"value": self.value, **self.dump(camel_case=camel_case)}
         timestamp = dumped.pop("timestamp")
 
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms")])
@@ -433,13 +434,23 @@ class DatapointsArray(CogniteResource):
         if isinstance(item, slice):
             return self._slice(item)
         attrs, arrays = self._data_fields()
-        return Datapoint(
-            timestamp=arrays[0][item].item() // 1_000_000,
-            **{attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])},  # type: ignore [arg-type]
-        )
+        timestamp = arrays[0][item].item() // 1_000_000
+        data = {attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])}
+
+        if self.status_code is not None:
+            data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
+        if self.null_timestamps and timestamp in self.null_timestamps:
+            data["value"] = None  # type: ignore [assignment]
+        return Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
     def _slice(self, part: slice) -> DatapointsArray:
         data: dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
+        if self.status_code is not None:
+            data.update(status_code=self.status_code[part], status_symbol=self.status_symbol[part])  # type: ignore [index]
+        if self.null_timestamps is not None:
+            data["null_timestamps"] = self.null_timestamps.intersection(
+                data["timestamp"].astype("datetime64[ms]").astype(np.int64).tolist()
+            )
         return DatapointsArray(**self._ts_info, **data)
 
     def __iter__(self) -> Iterator[Datapoint]:
@@ -461,13 +472,15 @@ class DatapointsArray(CogniteResource):
         )
         attrs, arrays = self._data_fields()
         # Let's not create a single Datapoint more than we have too:
-        yield from (
-            Datapoint(
-                timestamp=row[0].item() // 1_000_000,
-                **dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:]))),  # type: ignore [arg-type]
-            )
-            for row in zip(*arrays)
-        )
+        for i, row in enumerate(zip(*arrays)):
+            timestamp = row[0].item() // 1_000_000
+            data = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
+            if self.status_code is not None:
+                data.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])  # type: ignore [index]
+            if self.null_timestamps and timestamp in self.null_timestamps:
+                data["value"] = None  # type: ignore [assignment]
+
+            yield Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         # Note: Does not return status-related fields
