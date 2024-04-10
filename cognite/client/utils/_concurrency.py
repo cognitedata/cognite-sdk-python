@@ -15,7 +15,7 @@ from typing import (
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import find_duplicates, no_op
+from cognite.client.utils._auxiliary import no_op
 
 
 class TasksSummary:
@@ -248,7 +248,7 @@ def execute_tasks_serially(
             elif isinstance(task, tuple):
                 results.append(func(*task))
             else:
-                continue
+                raise TypeError(f"invalid task type: {type(task)}")
             successful_tasks.append(task)
 
         except Exception as err:
@@ -283,7 +283,6 @@ def execute_tasks(
 
     executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
     task_order = [id(task) for task in tasks]
-    assert not find_duplicates(task_order)  # this would mean the exact same object is passed > 1 times
 
     futures_dct: dict[Future, tuple | dict] = {}
     for task in tasks:
