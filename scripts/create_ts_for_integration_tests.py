@@ -291,11 +291,16 @@ def create_status_code_ts(client: CogniteClient) -> None:
     for ts in idx:
         v, c = get_bad()
         dps_all_bad.append({"timestamp": ts, "value": v, "status": {"code": c}})
-        dps_all_bad_str.append({"timestamp": ts, "value": f"str-{v}", "status": {"code": c}})
+        # ~50/50 values that can be interpreted as floats (for tests ensuring not converted to float):
+        # TODO: insert as NULL once API support it!!
+        string_value = str(v) if v is None else f"str-{v}" if ts % 23 % 2 else str(v)
+        dps_all_bad_str.append({"timestamp": ts, "value": string_value, "status": {"code": c}})
 
         v, c = random.choice([get_good, get_uncertain, get_bad])()
         dps.append({"timestamp": ts, "value": v, "status": {"code": c}})
-        dps_str.append({"timestamp": ts, "value": f"str-{v}", "status": {"code": c}})
+        # TODO: insert as NULL once API support it!!
+        string_value = str(v) if v is None else f"str-{v}" if ts % 23 % 2 else str(v)
+        dps_str.append({"timestamp": ts, "value": string_value, "status": {"code": c}})
 
     mixed_ts, mixed_ts_str, bad_ts, bad_ts_str = NAMES[118:122]
     client.time_series.upsert(
