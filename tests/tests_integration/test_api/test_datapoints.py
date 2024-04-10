@@ -698,8 +698,7 @@ class TestRetrieveRawDatapointsAPI:
         assert type(dp_dumped["timestamp"]) is int  # noqa: E721
         assert type(dp_dumped["value"]) is str  # noqa: E721
 
-    # @pytest.mark.parametrize("test_is_string", (True, False))
-    @pytest.mark.parametrize("test_is_string", (False,))  # TODO: Add string dps tests once feature hits greenfield
+    @pytest.mark.parametrize("test_is_string", (True, False))
     def test_n_dps_retrieved_with_without_uncertain_and_bad(self, retrieve_endpoints, ts_status_codes, test_is_string):
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
@@ -729,8 +728,7 @@ class TestRetrieveRawDatapointsAPI:
             assert len(bad2) == 0
             assert len(bad3) == 365
 
-    # @pytest.mark.parametrize("test_is_string", (True, False))
-    @pytest.mark.parametrize("test_is_string", (False,))  # TODO: Add string dps tests once feature hits greenfield
+    @pytest.mark.parametrize("test_is_string", (True, False))
     def test_outside_points_with_bad_and_uncertain(self, retrieve_endpoints, ts_status_codes, test_is_string):
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
@@ -1334,13 +1332,8 @@ class TestRetrieveAggregateDatapointsAPI:
             res = DatapointsArray(max=res.values)
         assert math.isclose(res.max[0], 212)
 
-    # @pytest.mark.parametrize("test_is_string", (True, False))
-    @pytest.mark.parametrize("test_is_string", (False,))  # TODO: Add string dps tests once feature hits greenfield
-    def test_status_codes_affect_aggregate_calculations(self, retrieve_endpoints, ts_status_codes, test_is_string):
-        if test_is_string:
-            _, mixed_ts, _, bad_ts = ts_status_codes
-        else:
-            mixed_ts, _, bad_ts, _ = ts_status_codes
+    def test_status_codes_affect_aggregate_calculations(self, retrieve_endpoints, ts_status_codes):
+        mixed_ts, _, bad_ts, _ = ts_status_codes  # No aggregates for string dps
         bad_xid = bad_ts.external_id
         for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
             dps_lst = endpoint(
