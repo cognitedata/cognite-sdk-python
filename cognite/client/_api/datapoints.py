@@ -1825,8 +1825,10 @@ class RetrieveLatestDpsFetcher:
             if query.get("includeStatus") is True:
                 dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
             if query.get("ignoreBadDataPoints") is False:
-                # Bad data can have value missing (we translate to None explicitly):
-                dp["value"] = self._json_float_translation(dp.get("value", None))
+                # Bad data can have value missing (we translate to None):
+                dp.setdefault("value", None)
+                if not res["isString"]:
+                    dp["value"] = self._json_float_translation(dp["value"])
         return result
 
     def fetch_datapoints(self) -> list[dict[str, Any]]:
