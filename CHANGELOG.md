@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.33.1] - 2024-04-10
+### Fixed
+- Ordering of elements from calls to `retrieve_multiple` now match the requested elements. For SDK versions between
+  7.0.0 and 7.33.1, the ordering has been broken when >> 1k elements has been requested (the more requests used, the
+  more likely that a chunk was out of order).
+
 ## [7.33.0] - 2024-04-08
 ### Added
 - All datapoints retrieve methods (except `retrieve_latest`) now support status codes. Note: Support for *inserting*
