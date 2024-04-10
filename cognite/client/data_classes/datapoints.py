@@ -261,11 +261,14 @@ class Datapoint(CogniteResource):
         """
         pd = local_import("pandas")
 
-        # Keep value even if None (bad status codes support missing):
-        dumped = {"value": self.value, **self.dump(camel_case=camel_case)}
+        dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
 
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms")])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        # Keep value even if None (bad status codes support missing):
+        return {"value": self.value, **super().dump(camel_case=camel_case)}
 
 
 class DatapointsArray(CogniteResource):
@@ -720,6 +723,10 @@ class Datapoints(CogniteResource):
         dp_args = {}
         for attr, values in self._get_non_empty_data_fields():
             dp_args[attr] = values[item]
+
+        if self.status_code is not None:
+            dp_args.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
+
         return Datapoint(**dp_args)
 
     def __iter__(self) -> Iterator[Datapoint]:
@@ -753,9 +760,6 @@ class Datapoints(CogniteResource):
 
             for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
                 dp["status"] = {"code": code, "symbol": symbol}
-                # When we're dealing with status codes, bad can have missing values:
-                if "value" not in dp:
-                    dp["value"] = None
         dumped["datapoints"] = datapoints
 
         if camel_case:
@@ -933,6 +937,11 @@ class Datapoints(CogniteResource):
             dp_args = {}
             for attr, value in fields:
                 dp_args[attr] = value[i]
+                if self.status_code is not None:
+                    dp_args.update(
+                        status_code=self.status_code[i],  # type: ignore [index]
+                        status_symbol=self.status_symbol[i],  # type: ignore [index]
+                    )
             new_dps_objects.append(Datapoint(**dp_args))
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
@@ -945,9 +954,13 @@ class Datapoints(CogniteResource):
             is_step=self.is_step,
             unit=self.unit,
             unit_external_id=self.unit_external_id,
+            granularity=self.granularity,
         )
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
+        if self.status_code is not None:
+            truncated_datapoints.status_code = self.status_code[slice]
+            truncated_datapoints.status_symbol = self.status_symbol[slice]  # type: ignore [index]
         return truncated_datapoints
 
     def _repr_html_(self) -> str:
