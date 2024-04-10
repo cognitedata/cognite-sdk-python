@@ -1249,8 +1249,8 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint will
-            be the first element (note: status codes are not supported or returned yet):
+            Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint
+            (if it exists) will be the first element:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1292,7 +1292,8 @@ class DatapointsAPI(APIClient):
                 ...     "foo",
                 ...     LatestDatapointQuery(external_id="abc", before="3h-ago", target_unit_system="Imperial"),
                 ...     LatestDatapointQuery(external_id="def", include_status=True),
-                ...     LatestDatapointQuery(external_id="ghi", include_status=True, ignore_bad_datapoints=False)]
+                ...     LatestDatapointQuery(external_id="ghi", treat_uncertain_as_bad=False)]
+                ...     LatestDatapointQuery(external_id="jkl", include_status=True, ignore_bad_datapoints=False)]
                 >>> res = client.time_series.data.retrieve_latest(
                 ...     id=id_queries, external_id=xid_queries)
         """
