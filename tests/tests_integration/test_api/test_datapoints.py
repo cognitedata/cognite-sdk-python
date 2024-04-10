@@ -2143,8 +2143,86 @@ class TestRetrieveLatestDatapointsAPI:
             assert isinstance(res, Datapoints)
             assert 1 == len(res)
 
+    @pytest.mark.usefixtures("post_spy")
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_ignore_unknown_ids_true_good_status_codes_are_populated(
+        self, cognite_client, ts_status_codes, test_is_string, monkeypatch
+    ):
+        # We test result ordering by ensuring multiple splits of identifiers:
+        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 4)
+
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        kwargs = dict(
+            id=[mixed_ts.id, *random_cognite_ids(3), bad_ts.id, *random_cognite_ids(4)],
+            external_id=[mixed_ts.external_id, *random_cognite_external_ids(4), bad_ts.external_id],
+            before=1698537600000 + 1,  # 2023-10-29
+            include_status=True,
+            ignore_bad_datapoints=False,
+        )
+        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[\{"):
+            cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=False)
+
+        assert 4 == cognite_client.time_series.data._post.call_count
+
+        res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
+        assert len(res) == 4  # Only 4 real identifiers
+
+        m1, b1, m2, b2 = res
+        assert m1.id == m2.id == mixed_ts.id
+        assert b1.id == b2.id == bad_ts.id
+        assert m1.is_string is test_is_string
+        assert b1.is_string is test_is_string
+
+        assert m1.timestamp == [1698537600000]
+        assert m1.status_code == [0]  # This is empty in the JSON response
+        assert m1.status_symbol == ["Good"]  # This is empty in the JSON response
+
+        assert b1.timestamp == [1698537600000]
+        assert b1.status_code == [2154168320]
+        assert b1.status_symbol == ["BadDuplicateReferenceNotAllowed"]
+
     @pytest.mark.parametrize("test_is_string", (True, False))
     def test_effect_of_uncertain_and_bad_settings(self, cognite_client, ts_status_codes, test_is_string):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        m1, m2, m3, b1, b2, b3 = cognite_client.time_series.data.retrieve_latest(
+            id=[
+                mixed_ts.id,
+                LatestDatapointQuery(id=mixed_ts.id, treat_uncertain_as_bad=False),
+                LatestDatapointQuery(id=mixed_ts.id, ignore_bad_datapoints=False),
+            ],
+            external_id=[
+                bad_ts.external_id,
+                LatestDatapointQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False),
+                LatestDatapointQuery(external_id=bad_ts.external_id, ignore_bad_datapoints=False),
+            ],
+            include_status=False,
+            ignore_bad_datapoints=True,
+            treat_uncertain_as_bad=True,
+            before=ts_to_ms("2023-08-05 12:00:00"),
+        )
+        assert m1.timestamp == [1691020800000]  # 2023-08-03
+        assert m2.timestamp == [1691107200000]  # 2023-08-04 newer because uncertain is treated as good
+        assert m3.timestamp == [1691193600000]  # 2023-08-05 even newer because bad is not ignored
+        assert b3.timestamp == [1691193600000]
+        assert not b1.timestamp and not b1.value
+        assert not b2.timestamp and not b2.value
+
+        if not test_is_string:
+            assert math.isclose(m1.value[0], -443.7838445173604)
+            assert math.isclose(m2.value[0], 792804.310084)
+            assert math.isclose(m3.value[0], 1e100)
+            assert math.isclose(b3.value[0], -1e100)
+
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_return_status_codes(self, cognite_client, ts_status_codes, test_is_string):
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
         else:
@@ -2167,18 +2245,6 @@ class TestRetrieveLatestDatapointsAPI:
             ignore_unknown_ids=True,
             before=ts_to_ms("2023-08-05 12:00:00"),
         )
-        assert m1.timestamp == [1691020800000]  # 2023-08-03
-        assert m2.timestamp == [1691107200000]  # 2023-08-04 newer because uncertain is treated as good
-        assert m3.timestamp == [1691193600000]  # 2023-08-05 even newer because bad is not ignored
-        assert b3.timestamp == [1691193600000]
-        assert not b1.timestamp and not b1.value
-        assert not b2.timestamp and not b2.value
-
-        if not test_is_string:
-            assert math.isclose(m1.value[0], -443.7838445173604)
-            assert math.isclose(m2.value[0], 792804.310084)
-            assert math.isclose(m3.value[0], 1e100)
-            assert math.isclose(b3.value[0], -1e100)
 
 
 class TestInsertDatapointsAPI:
