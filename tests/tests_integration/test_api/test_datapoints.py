@@ -2108,6 +2108,43 @@ class TestRetrieveLatestDatapointsAPI:
             assert isinstance(res, Datapoints)
             assert 1 == len(res)
 
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_effect_of_uncertain_and_bad_settings(self, cognite_client, ts_status_codes, test_is_string):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        m1, m2, m3, b1, b2, b3 = cognite_client.time_series.data.retrieve_latest(
+            id=[
+                mixed_ts.id,
+                LatestDatapointQuery(id=mixed_ts.id, treat_uncertain_as_bad=False),
+                LatestDatapointQuery(id=mixed_ts.id, ignore_bad_datapoints=False),
+            ],
+            external_id=[
+                bad_ts.external_id,
+                LatestDatapointQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False),
+                LatestDatapointQuery(external_id=bad_ts.external_id, ignore_bad_datapoints=False),
+            ],
+            include_status=False,
+            ignore_bad_datapoints=True,
+            treat_uncertain_as_bad=True,
+            ignore_unknown_ids=True,
+            before=ts_to_ms("2023-08-05 12:00:00"),
+        )
+        assert m1.timestamp == [1691020800000]  # 2023-08-03
+        assert m2.timestamp == [1691107200000]  # 2023-08-04 newer because uncertain is treated as good
+        assert m3.timestamp == [1691193600000]  # 2023-08-05 even newer because bad is not ignored
+        assert b3.timestamp == [1691193600000]
+        assert not b1.timestamp and not b1.value
+        assert not b2.timestamp and not b2.value
+
+        if not test_is_string:
+            assert math.isclose(m1.value[0], -443.7838445173604)
+            assert math.isclose(m2.value[0], 792804.310084)
+            assert math.isclose(m3.value[0], 1e100)
+            assert math.isclose(b3.value[0], -1e100)
+
 
 class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
