@@ -2238,9 +2238,11 @@ class TestRetrieveLatestDatapointsAPI:
         for dps, exp_ts in zip(dps_lst, exp_timestamps):
             assert dps.timestamp == [exp_ts]
 
+        assert dps_lst[3].value[0] is None
         if test_is_string:
-            for dps in dps_lst:
-                # assert dps[3].value[0] is None # TODO: Once missing/None is supported, ensure it is translated correctly
+            for i, dps in enumerate(dps_lst):
+                if i == 3:
+                    continue  # None aka missing, checked above
                 assert isinstance(dps.value[0], str)
         else:
             assert math.isclose(dps_lst[0].value[0], 2.71)

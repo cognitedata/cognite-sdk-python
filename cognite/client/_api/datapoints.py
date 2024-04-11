@@ -1288,14 +1288,14 @@ class DatapointsAPI(APIClient):
                 ...     LatestDatapointQuery(id=456, before="1w-ago"),
                 ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc)),
                 ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f")]
-                >>> xid_queries = [
+                >>> ext_id_queries = [
                 ...     "foo",
                 ...     LatestDatapointQuery(external_id="abc", before="3h-ago", target_unit_system="Imperial"),
                 ...     LatestDatapointQuery(external_id="def", include_status=True),
                 ...     LatestDatapointQuery(external_id="ghi", treat_uncertain_as_bad=False),
                 ...     LatestDatapointQuery(external_id="jkl", include_status=True, ignore_bad_datapoints=False)]
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     id=id_queries, external_id=xid_queries)
+                ...     id=id_queries, external_id=ext_id_queries)
         """
         fetcher = RetrieveLatestDpsFetcher(
             id=id,
