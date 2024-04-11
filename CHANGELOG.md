@@ -17,9 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.34.0] - 2024-04-10
+## [7.34.0] - 2024-04-11
 ### Added
 - Datapoints method `retrieve_latest` now supports status codes.
+- Slicing or indexing a `Datapoints` or `DatapointsArray` instance, now propagates status codes (when present).
 
 ## [7.33.1] - 2024-04-10
 ### Fixed
