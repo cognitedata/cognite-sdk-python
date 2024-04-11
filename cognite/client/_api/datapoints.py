@@ -1583,7 +1583,7 @@ class _InsertDatapoint(NamedTuple):
     @classmethod
     def from_dict(cls, dct: dict[str, Any]) -> Self:
         if status := dct.get("status"):
-            return cls(dct["timestamp"], dct["value"], **status)
+            return cls(dct["timestamp"], dct["value"], status.get("code"), status.get("symbol"))
         return cls(dct["timestamp"], dct["value"])
 
     def dump(self) -> dict[str, Any]:
@@ -1596,6 +1596,9 @@ class _InsertDatapoint(NamedTuple):
             dumped["value"] = _json.to_str_translation(dumped["value"])
         return dumped
 
+    def requires_api_subversion_beta(self) -> bool:
+        return bool(self.status_code or self.status_symbol and self.status_symbol.lower() != "good")
+
 
 class DatapointsPoster:
     def __init__(self, dps_client: DatapointsAPI) -> None:
@@ -1603,6 +1606,8 @@ class DatapointsPoster:
         self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
         self.max_workers = self.dps_client._config.max_workers
+
+        self.api_subversion: str | None = None  # TODO: remove once status codes is GA
 
     def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
@@ -1622,6 +1627,13 @@ class DatapointsPoster:
         for obj in dps_object_lst:
             validated: dict[str, Any] = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
             validated_dps = self._parse_and_validate_dps(obj["datapoints"])
+
+            # If features related to status codes are used, use beta:
+            # TODO: Remove once status codes -> GA, this check is expensive!
+            if self.api_subversion is None and any(dp.requires_api_subversion_beta() for dp in validated_dps):
+                self.api_subversion = self.dps_client._api_subversion + "-beta"
+                self.dps_client._status_codes_warning.warn()
+
             # Concatenate datapoints using identifier as key:
             if (xid := validated.get("externalId")) is not None:
                 dps_to_insert["externalId", xid].extend(validated_dps)
@@ -1675,7 +1687,11 @@ class DatapointsPoster:
             self.__insert(payload)
 
     def __insert(self, payload: list[dict[str, Any]]) -> None:
-        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": payload})
+        self.dps_client._post(
+            url_path=self.dps_client._RESOURCE_PATH,
+            json={"items": payload},
+            api_subversion=self.api_subversion,  # TODO: remove once status codes is GA
+        )
 
     @staticmethod
     def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:
