@@ -51,6 +51,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.datapoints import Aggregate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
     find_duplicates,
@@ -1592,6 +1593,8 @@ class _InsertDatapoint(NamedTuple):
             dumped["status"] = {"code": self.status_code}
         if self.status_symbol and self.status_symbol.lower() != "good":
             dumped.setdefault("status", {})["symbol"] = self.status_symbol
+            # Out-of-range float values must be passed as strings:
+            dumped["value"] = _json.to_str_translation(dumped["value"])
         return dumped
 
 
@@ -1884,11 +1887,6 @@ class RetrieveLatestDpsFetcher:
         all_ids.extend(all_xids)
         return all_ids
 
-    @staticmethod
-    def _json_float_translation(value: float | Literal["Infinity", "-Infinity", "NaN"] | None) -> float | None:
-        # As opposed to protobuf, retrieve_latest uses JSON and it returns out-of-range float values as strings:
-        return {"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan}.get(value, value)  # type: ignore [arg-type]
-
     def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
         # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
         if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
@@ -1912,7 +1910,7 @@ class RetrieveLatestDpsFetcher:
                 # Bad data can have value missing (we translate to None):
                 dp.setdefault("value", None)
                 if not res["isString"]:
-                    dp["value"] = self._json_float_translation(dp["value"])
+                    dp["value"] = _json.to_float_translation(dp["value"])
         return result
 
     def fetch_datapoints(self) -> list[dict[str, Any]]:
