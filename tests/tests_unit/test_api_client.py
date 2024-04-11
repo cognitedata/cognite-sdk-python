@@ -510,14 +510,14 @@ class TestStandardList:
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 method="POST",
-                partitions=10,
+                partitions=15,
                 limit=None,
             )
         assert 503 == exc.value.code
-        assert exc.value.unknown == [("3/10",)]
+        assert exc.value.unknown == [("3/15",)]
         assert exc.value.skipped
         assert exc.value.successful
-        assert 9 == len(exc.value.successful) + len(exc.value.skipped)
+        assert 14 == len(exc.value.successful) + len(exc.value.skipped)
         assert 1 < len(rsps.calls)
 
     @pytest.fixture

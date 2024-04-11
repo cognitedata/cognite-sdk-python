@@ -266,6 +266,10 @@ class Datapoint(CogniteResource):
 
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms")])
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        # Keep value even if None (bad status codes support missing):
+        return {"value": self.value, **super().dump(camel_case=camel_case)}
+
 
 class DatapointsArray(CogniteResource):
     """An object representing datapoints using numpy arrays."""
@@ -433,13 +437,23 @@ class DatapointsArray(CogniteResource):
         if isinstance(item, slice):
             return self._slice(item)
         attrs, arrays = self._data_fields()
-        return Datapoint(
-            timestamp=arrays[0][item].item() // 1_000_000,
-            **{attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])},  # type: ignore [arg-type]
-        )
+        timestamp = arrays[0][item].item() // 1_000_000
+        data = {attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])}
+
+        if self.status_code is not None:
+            data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
+        if self.null_timestamps and timestamp in self.null_timestamps:
+            data["value"] = None  # type: ignore [assignment]
+        return Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
     def _slice(self, part: slice) -> DatapointsArray:
         data: dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
+        if self.status_code is not None:
+            data.update(status_code=self.status_code[part], status_symbol=self.status_symbol[part])  # type: ignore [index]
+        if self.null_timestamps is not None:
+            data["null_timestamps"] = self.null_timestamps.intersection(
+                data["timestamp"].astype("datetime64[ms]").astype(np.int64).tolist()
+            )
         return DatapointsArray(**self._ts_info, **data)
 
     def __iter__(self) -> Iterator[Datapoint]:
@@ -461,13 +475,15 @@ class DatapointsArray(CogniteResource):
         )
         attrs, arrays = self._data_fields()
         # Let's not create a single Datapoint more than we have too:
-        yield from (
-            Datapoint(
-                timestamp=row[0].item() // 1_000_000,
-                **dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:]))),  # type: ignore [arg-type]
-            )
-            for row in zip(*arrays)
-        )
+        for i, row in enumerate(zip(*arrays)):
+            timestamp = row[0].item() // 1_000_000
+            data = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
+            if self.status_code is not None:
+                data.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])  # type: ignore [index]
+            if self.null_timestamps and timestamp in self.null_timestamps:
+                data["value"] = None  # type: ignore [assignment]
+
+            yield Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         # Note: Does not return status-related fields
@@ -707,6 +723,10 @@ class Datapoints(CogniteResource):
         dp_args = {}
         for attr, values in self._get_non_empty_data_fields():
             dp_args[attr] = values[item]
+
+        if self.status_code is not None:
+            dp_args.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
+
         return Datapoint(**dp_args)
 
     def __iter__(self) -> Iterator[Datapoint]:
@@ -740,9 +760,6 @@ class Datapoints(CogniteResource):
 
             for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
                 dp["status"] = {"code": code, "symbol": symbol}
-                # When we're dealing with status codes, bad can have missing values:
-                if "value" not in dp:
-                    dp["value"] = None
         dumped["datapoints"] = datapoints
 
         if camel_case:
@@ -920,6 +937,11 @@ class Datapoints(CogniteResource):
             dp_args = {}
             for attr, value in fields:
                 dp_args[attr] = value[i]
+                if self.status_code is not None:
+                    dp_args.update(
+                        status_code=self.status_code[i],
+                        status_symbol=self.status_symbol[i],  # type: ignore [index]
+                    )
             new_dps_objects.append(Datapoint(**dp_args))
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
@@ -932,9 +954,13 @@ class Datapoints(CogniteResource):
             is_step=self.is_step,
             unit=self.unit,
             unit_external_id=self.unit_external_id,
+            granularity=self.granularity,
         )
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
+        if self.status_code is not None:
+            truncated_datapoints.status_code = self.status_code[slice]
+            truncated_datapoints.status_symbol = self.status_symbol[slice]  # type: ignore [index]
         return truncated_datapoints
 
     def _repr_html_(self) -> str:
