@@ -1413,8 +1413,7 @@ class DatapointsAPI(APIClient):
             dps_to_post = datapoints
 
         post_dps_object["datapoints"] = dps_to_post
-        dps_poster = DatapointsPoster(self)
-        dps_poster.insert([post_dps_object])
+        DatapointsPoster(self).insert([post_dps_object])
 
     def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
@@ -1622,7 +1621,8 @@ class DatapointsPoster:
         dps_to_insert = defaultdict(list)
         for obj in dps_object_lst:
             validated: dict[str, Any] = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
-            validated_dps = self._parse_and_validate_dps(validated["datapoints"])
+            validated_dps = self._parse_and_validate_dps(obj["datapoints"])
+            # Concatenate datapoints using identifier as key:
             if (xid := validated.get("externalId")) is not None:
                 dps_to_insert["externalId", xid].extend(validated_dps)
             else:
