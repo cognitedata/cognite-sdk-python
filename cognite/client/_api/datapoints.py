@@ -6,6 +6,7 @@ import itertools
 import math
 import time
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime
 from itertools import chain
@@ -13,18 +14,20 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Iterable,
     Iterator,
     List,
     Literal,
     MutableSequence,
+    NamedTuple,
     Sequence,
     Tuple,
     TypeVar,
     Union,
     cast,
 )
+
+from typing_extensions import Self, TypeGuard
 
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
@@ -67,7 +70,7 @@ from cognite.client.utils._time import (
     to_pandas_freq,
     validate_timezone,
 )
-from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
+from cognite.client.utils._validation import validate_user_input_dict_with_identifier
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -1571,33 +1574,115 @@ class DatapointsAPI(APIClient):
         self.insert_multiple(dps)
 
 
-class DatapointsBin:
-    def __init__(self, dps_objects_limit: int, dps_limit: int) -> None:
-        self.dps_objects_limit = dps_objects_limit
-        self.dps_limit = dps_limit
-        self.current_num_datapoints = 0
-        self.dps_object_list: list[dict] = []
+class _InsertDatapoint(NamedTuple):
+    ts: int | datetime
+    value: str | float
+    status_code: int | None = None
+    status_symbol: str | None = None
 
-    def add(self, dps_object: dict[str, Any]) -> None:
-        self.current_num_datapoints += len(dps_object["datapoints"])
-        self.dps_object_list.append(dps_object)
+    @classmethod
+    def from_dict(cls, dct: dict[str, Any]) -> Self:
+        if status := dct.get("status"):
+            return cls(dct["timestamp"], dct["value"], **status)
+        return cls(dct["timestamp"], dct["value"])
 
-    def will_fit(self, number_of_dps: int) -> bool:
-        will_fit_dps = (self.current_num_datapoints + number_of_dps) <= self.dps_limit
-        will_fit_dps_objects = (len(self.dps_object_list) + 1) <= self.dps_objects_limit
-        return will_fit_dps and will_fit_dps_objects
+    def dump(self) -> dict[str, Any]:
+        dumped: dict[str, Any] = {"timestamp": timestamp_to_ms(self.ts), "value": self.value}
+        if self.status_code:  # also skip if 0
+            dumped["status"] = {"code": self.status_code}
+        if self.status_symbol and self.status_symbol.lower() != "good":
+            dumped.setdefault("status", {})["symbol"] = self.status_symbol
+        return dumped
 
 
 class DatapointsPoster:
     def __init__(self, dps_client: DatapointsAPI) -> None:
         self.dps_client = dps_client
-        self.limit = self.dps_client._DPS_INSERT_LIMIT
-        self.bins: list[DatapointsBin] = []
+        self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
+        self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
+        self.max_workers = self.dps_client._config.max_workers
 
-    def insert(self, dps_object_list: list[dict[str, Any]]) -> None:
-        valid_dps_object_list = self._validate_dps_objects(dps_object_list)
-        binned_dps_object_lists = self._bin_datapoints(valid_dps_object_list)
-        self._insert_datapoints_concurrently(binned_dps_object_lists)
+    def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
+        to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
+        n_parts = max(self.max_workers, math.ceil(len(to_insert) / self.ts_limit))
+        tasks = tuple(zip(split_into_chunks(to_insert, n_parts)))  # execute_tasks demands tuples
+
+        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.max_workers)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda x: x[0],
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
+        )
+
+    def _verify_and_prepare_dps_objects(
+        self, dps_object_lst: list[dict[str, Any]]
+    ) -> list[tuple[tuple[str, int], list[_InsertDatapoint]]]:
+        dps_to_insert = defaultdict(list)
+        for obj in dps_object_lst:
+            validated: dict[str, Any] = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
+            validated_dps = self._parse_and_validate_dps(validated["datapoints"])
+            if (xid := validated.get("externalId")) is not None:
+                dps_to_insert["externalId", xid].extend(validated_dps)
+            else:
+                dps_to_insert["id", validated["id"]].extend(validated_dps)
+        return list(dps_to_insert.items())
+
+    def _parse_and_validate_dps(self, dps: list[tuple | dict]) -> list[_InsertDatapoint]:
+        if not isinstance(dps, SequenceNotStr):
+            raise TypeError(f"Datapoints to be inserted must be a list, not {type(dps)}")
+        elif not dps:
+            raise ValueError("No datapoints provided")
+
+        if self._dps_are_tuples(dps):
+            return [_InsertDatapoint(*tpl) for tpl in dps]
+
+        elif self._dps_are_dicts(dps):
+            try:
+                return [_InsertDatapoint.from_dict(dp) for dp in dps]
+            except KeyError:
+                raise KeyError(
+                    "A datapoint is missing one or both keys ['value', 'timestamp']. Note: 'status' is optional."
+                )
+        raise TypeError(f"Datapoints to be inserted must contain tuples or dicts, not {type(dps[0])}")
+
+    @staticmethod
+    def _dps_are_tuples(dps: list[Any]) -> TypeGuard[list[tuple]]:
+        # Not a real type guard, but we don't want to make millions of isinstance checks when
+        # the documentation is clear on what types we accept:
+        return isinstance(dps[0], tuple)
+
+    @staticmethod
+    def _dps_are_dicts(dps: list[Any]) -> TypeGuard[list[dict]]:
+        # Not a real type guard, see '_dps_are_tuples'.
+        return isinstance(dps[0], dict)
+
+    def _insert_datapoints(self, post_dps_objects: list[tuple[tuple[str, int], list[_InsertDatapoint]]]) -> None:
+        payload = []
+        n_left = self.dps_limit
+        for (id_name, ident), dps in post_dps_objects:
+            for next_chunk, is_full in self._split_datapoints(dps, n_left, self.dps_limit):
+                # Convert to memory intensive format as late as possible (and clean up after insert)
+                payload.append({id_name: ident, "datapoints": [dp.dump() for dp in next_chunk]})
+                if is_full:
+                    self.__insert(payload)
+                    payload.clear()
+                    n_left = self.dps_limit
+                else:
+                    n_left -= len(next_chunk)
+        if payload:
+            self.__insert(payload)
+
+    def __insert(self, payload: list[dict[str, Any]]) -> None:
+        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": payload})
+
+    @staticmethod
+    def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:
+        # Returns chunks with a boolean answering "are we there yet"
+        chunk = lst[:n_first]
+        yield chunk, len(chunk) == n_first
+
+        for i in range(n_first, len(lst), n):
+            chunk = lst[i : i + n]
+            yield lst[i : i + n], len(chunk) == n
 
     @staticmethod
     def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> tuple:  # TODO: fix sloppy return type
@@ -1647,72 +1732,6 @@ class DatapointsPoster:
             return list(zip(ts, values))
         else:
             return list(zip(ts, values, status_code.tolist()))
-
-    @staticmethod
-    def _validate_dps_objects(dps_object_list: list[dict[str, Any]]) -> list[dict]:
-        valid_dps_objects = []
-        for dps_object in dps_object_list:
-            valid_dps_object = cast(
-                Dict[str, Union[int, str, List[Tuple[int, Any]]]],
-                validate_user_input_dict_with_identifier(dps_object, required_keys={"datapoints"}),
-            )
-            valid_dps_object["datapoints"] = DatapointsPoster._validate_and_format_datapoints(dps_object["datapoints"])
-            valid_dps_objects.append(valid_dps_object)
-        return valid_dps_objects
-
-    @staticmethod
-    def _validate_and_format_datapoints(
-        datapoints: list[dict[str, Any]] | list[tuple[int | float | datetime, int | float | str]],
-    ) -> list[tuple[int, Any]]:
-        assert_type(datapoints, "datapoints", [list])
-        if not datapoints:
-            raise ValueError("No datapoints provided")
-        assert_type(datapoints[0], "datapoints element", [tuple, dict])
-
-        if isinstance(datapoints[0], tuple):
-            return [(timestamp_to_ms(t), v) for t, v in datapoints]
-        datapoints = cast(List[Dict[str, Any]], datapoints)
-        try:
-            if any("status" in dp for dp in datapoints):
-                raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
-            return [(timestamp_to_ms(dp["timestamp"]), dp["value"]) for dp in datapoints]
-        except KeyError:
-            raise KeyError("A datapoint is missing one or both keys ['value', 'timestamp'].")
-
-    def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
-        for dps_object in dps_object_list:
-            for i in range(0, len(dps_object["datapoints"]), self.limit):
-                dps_object_chunk: dict[str, Any] = IdentifierSequenceCore.extract_identifiers(dps_object)
-                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.limit]
-                # Try to fit into any existing bin for dense packing:
-                for bin in self.bins:  # Note: O(N^2), first bins will be tried again and again...
-                    if bin.will_fit(len(dps_object_chunk["datapoints"])):
-                        bin.add(dps_object_chunk)
-                        break
-                else:
-                    bin = DatapointsBin(self.limit, self.dps_client._POST_DPS_OBJECTS_LIMIT)
-                    bin.add(dps_object_chunk)
-                    self.bins.append(bin)
-        binned_dps_object_list = []
-        for bin in self.bins:
-            binned_dps_object_list.append(bin.dps_object_list)
-        return binned_dps_object_list
-
-    def _insert_datapoints_concurrently(self, dps_object_lists: list[list[dict[str, Any]]]) -> None:
-        tasks = [(dps_object_list,) for dps_object_list in dps_object_lists]
-        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.dps_client._config.max_workers)
-        summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda x: x[0],
-            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
-        )
-
-    def _insert_datapoints(self, post_dps_objects: list[dict[str, Any]]) -> None:
-        # convert to memory intensive format as late as possible and clean up after
-        for it in post_dps_objects:
-            it["datapoints"] = [{"timestamp": t, "value": v} for t, v in it["datapoints"]]
-        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": post_dps_objects})
-        for it in post_dps_objects:
-            del it["datapoints"]
 
 
 class RetrieveLatestDpsFetcher:
