@@ -153,7 +153,15 @@ def ts_status_codes(all_test_time_series) -> TimeSeriesList:
 
 @pytest.fixture(scope="session")
 def new_ts(cognite_client):
-    ts = cognite_client.time_series.create(TimeSeries())
+    ts = cognite_client.time_series.create(TimeSeries(is_string=False))
+    yield ts
+    cognite_client.time_series.delete(id=ts.id)
+    assert cognite_client.time_series.retrieve(ts.id) is None
+
+
+@pytest.fixture(scope="session")
+def new_ts_string(cognite_client):
+    ts = cognite_client.time_series.create(TimeSeries(is_string=True))
     yield ts
     cognite_client.time_series.delete(id=ts.id)
     assert cognite_client.time_series.retrieve(ts.id) is None
@@ -2308,3 +2316,110 @@ class TestInsertDatapointsAPI:
 
     def test_delete_ranges(self, cognite_client, new_ts):
         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
+
+    def test_tuples_and_dps_objects_with_status_codes__numeric_ts(self, cognite_client, new_ts):
+        ts_kwargs = dict(id=new_ts.id, start=-123, limit=50, include_status=True, ignore_bad_datapoints=False)
+        cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        actual_timestamp = [0, 123, 1234, 12345, 123456, 1234567, 12345678, 123456789, 1234567890]
+        accepted_insert_values = [0, None, "NaN", math.nan, "-Infinity", -math.inf, "Infinity", math.inf, 1]
+        actual_value = [0, None, math.nan, math.nan, -math.inf, -math.inf, math.inf, math.inf, 1]
+        actual_status_codes = [
+            0, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 1073741824
+        ]  # fmt: skip
+
+        cognite_client.time_series.data.insert(
+            id=new_ts.id,
+            datapoints=[
+                (-123, -1),  # no status code
+                *zip(actual_timestamp, accepted_insert_values, actual_status_codes),
+            ],
+        )
+
+        def assert_correct_data(to_check):
+            assert to_check.value[0] == -1
+            assert to_check.value[1] == actual_value[0]
+            assert math.isnan(to_check.value[3]) and math.isnan(to_check.value[4])
+            if isinstance(to_check, Datapoints):
+                assert to_check.value[2] is None
+            else:
+                bad_ts = to_check.timestamp[2].item() // 1_000_000
+                assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
+            assert list(to_check.value[5:]) == actual_value[4:]
+            assert list(to_check.timestamp[1:]) == actual_timestamp
+            exp_status_symbols = ["Good", "Good", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Uncertain"]
+            assert list(to_check.status_symbol) == exp_status_symbols
+
+        dps1 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps1)
+
+        cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert Datapoints object:
+        cognite_client.time_series.data.insert(id=new_ts.id, datapoints=dps1)
+        dps2 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps2)
+
+        dps_array1 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert DatapointsArray object:
+        cognite_client.time_series.data.insert(id=new_ts.id, datapoints=dps_array1)
+        dps_array2 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        assert_correct_data(dps_array2)
+
+    def test_tuples_and_dps_objects_with_status_codes__string_ts(self, cognite_client, new_ts_string):
+        ts_kwargs = dict(id=new_ts_string.id, start=-123, limit=50, include_status=True, ignore_bad_datapoints=False)
+        cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        sassy = "Negative, really? Where's my status code, huh"
+        actual_timestamp = [0, 123, 1234, 12345, 123456, 1234567, 12345678]
+        actual_value = ["0", None, "NaN", "Infinity", "-Infinity", "good-yes?", "uncertain-yes?"]
+        actual_status_codes = [0, 2147483648, 2147483648, 2147483648, 2147483648, 1024, 1073741824]  # fmt: skip
+
+        cognite_client.time_series.data.insert(
+            id=new_ts_string.id,
+            datapoints=[
+                (-123, sassy),  # no status code
+                *zip(actual_timestamp, actual_value, actual_status_codes),
+            ],
+        )
+
+        def assert_correct_data(to_check):
+            assert to_check.value[0] == sassy
+            if isinstance(to_check, DatapointsArray):
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
+            assert list(to_check.timestamp[1:]) == actual_timestamp
+            assert list(to_check.value[1:]) == actual_value
+            assert list(to_check.status_symbol) == ["Good", "Good", "Bad", "Bad", "Bad", "Bad", "Good", "Uncertain"]
+
+        dps1 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps1)
+
+        cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert Datapoints object:
+        cognite_client.time_series.data.insert(id=new_ts_string.id, datapoints=dps1)
+        dps2 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps2)
+
+        dps_array1 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert DatapointsArray object:
+        cognite_client.time_series.data.insert(id=new_ts_string.id, datapoints=dps_array1)
+        dps_array2 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        assert_correct_data(dps_array2)
