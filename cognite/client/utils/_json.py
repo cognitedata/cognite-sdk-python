@@ -66,3 +66,8 @@ def convert_nonfinite_float_to_str(value: float | str | None) -> float | str | N
         if value.__class__ is str or value is None:
             return value
         raise
+    except KeyError:
+        # Depending on numpy and python version, dict lookup may fail for NaN.. thanks IEEE :wink:
+        if math.isnan(value):  # type: ignore [arg-type]
+            return "NaN"
+        raise
