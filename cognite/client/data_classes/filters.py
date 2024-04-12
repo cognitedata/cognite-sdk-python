@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequenc
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConversionPropertyList
+from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
@@ -55,12 +56,15 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, (EnumProperty, NoCaseConversionPropertyList)):
+    if isinstance(property_, EnumProperty):
         return property_.as_reference()
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):
-        return type(property_)(map(to_camel_case, property_)) if camel_case else property_
+        if len(property_) == 1:
+            return [to_camel_case(property_[0])] if camel_case else property_
+        else:
+            return property_
     else:
         raise ValueError(f"Invalid property format {property_}")
 
@@ -753,7 +757,7 @@ class SpaceFilter(FilterWithPropertyAndValueList):
     """Filters instances based on the space.
 
     Args:
-        space (str | Sequence[str]): The space (or spaces) to filter on.
+        space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
         instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
 
     Example:
@@ -769,7 +773,7 @@ class SpaceFilter(FilterWithPropertyAndValueList):
 
     _filter_name = In._filter_name
 
-    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node") -> None:
+    def __init__(self, space: str | SequenceNotStr[str], instance_type: Literal["node", "edge"] = "node") -> None:
         space_list = [space] if isinstance(space, str) else list(space)
         super().__init__(property=[instance_type, "space"], values=space_list)
 

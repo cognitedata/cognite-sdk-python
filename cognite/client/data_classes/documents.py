@@ -14,7 +14,6 @@ from cognite.client.data_classes._base import (
     EnumProperty,
     Geometry,
     IdTransformerMixin,
-    NoCaseConversionPropertyList,
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
@@ -370,7 +369,7 @@ class SourceFileProperty(EnumProperty):
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["sourceFile", "metadata", key])
+        return ["sourceFile", "metadata", key]
 
     def as_reference(self) -> list[str]:
         return ["sourceFile", self.value]

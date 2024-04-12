@@ -45,12 +45,6 @@ def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:
     return tuple(modules)
 
 
-def import_legacy_protobuf() -> bool:
-    from google.protobuf import __version__ as pb_version
-
-    return 4 > int(pb_version.split(".")[0])
-
-
 def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T]]]:
     from cognite.client._constants import _RUNNING_IN_BROWSER
 

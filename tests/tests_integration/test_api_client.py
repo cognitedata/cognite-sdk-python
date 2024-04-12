@@ -3,6 +3,7 @@ This file contains integration tests for the logic in the generic API client. Ho
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
 
+import random
 from unittest.mock import patch
 
 import pytest
@@ -385,6 +386,17 @@ class TestAPIClientRetrieveMultiple:
         res = cognite_client.events.retrieve_multiple(external_ids=[])
         assert isinstance(res, EventList)
         assert len(res) == 0
+
+    def test_retrieve_multiple__ordering_matches_input(
+        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
+        # Between SDK version 7.0.0 and 7.33.1, ordering of results was broken when >> 1k elements
+        # was requested (meaning multiple requests were used):
+        event_ids = cognite_client.events.list(limit=1000).as_ids()
+        random.shuffle(event_ids)
+        monkeypatch.setattr(cognite_client.events, "_RETRIEVE_LIMIT", 80)
+        res = cognite_client.events.retrieve_multiple(ids=event_ids)
+        assert res.as_ids() == event_ids
 
 
 class TestAPIClientDelete:

@@ -156,6 +156,12 @@ class IAMAPI(APIClient):
                 ...     existing_capabilities=my_groups,
                 ...     desired_capabilities=to_check)
 
+            You may also load capabilities from a dict-representation directly into ACLs (access-control list)
+            by using ``Capability.load``. This will also ensure that the capabilities are valid.
+
+                >>> from cognite.client.data_classes.capabilities import Capability
+                >>> acls = [Capability.load(cap) for cap in to_check]
+
         Tip:
             If you just want to check against your existing capabilities, you may use the helper method
             ``client.iam.verify_capabilities`` instead.
@@ -226,10 +232,17 @@ class IAMAPI(APIClient):
 
             Capabilities can also be passed as dictionaries:
 
-                >>> missing = client.iam.verify_capabilities([
+                >>> to_check = [
                 ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
                 ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
-                ... ])
+                ... ]
+                >>> missing = client.iam.verify_capabilities(to_check)
+
+            You may also load capabilities from a dict-representation directly into ACLs (access-control list)
+            by using ``Capability.load``. This will also ensure that the capabilities are valid.
+
+                >>> from cognite.client.data_classes.capabilities import Capability
+                >>> acls = [Capability.load(cap) for cap in to_check]
         """
         existing_capabilities = self.token.inspect().capabilities
         return self.compare_capabilities(existing_capabilities, desired_capabilities)
@@ -280,7 +293,7 @@ class GroupsAPI(APIClient):
 
         Example:
 
-            Create group::
+            Create group:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GroupWrite
@@ -291,6 +304,18 @@ class GroupsAPI(APIClient):
                 ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
+
+            Capabilities are often defined in configuration files, like YAML or JSON. You may convert capabilities
+            from a dict-representation directly into ACLs (access-control list) by using ``Capability.load``.
+            This will also ensure that the capabilities are valid.
+
+                >>> from cognite.client.data_classes.capabilities import Capability
+                >>> unparsed_capabilities = [
+                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
+                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ... ]
+                >>> acls = [Capability.load(cap) for cap in unparsed_capabilities]
+                >>> group = GroupWrite(name="Another group", capabilities=acls)
         """
         return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
 

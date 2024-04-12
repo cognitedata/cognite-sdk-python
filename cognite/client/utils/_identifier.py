@@ -29,6 +29,8 @@ class IdentifierCore(Protocol):
 
 class Identifier(Generic[T_ID]):
     def __init__(self, value: T_ID) -> None:
+        if not isinstance(value, (int, str)):
+            raise TypeError(f"Expected id/external_id to be of type int or str, got {value} of type {type(id)}")
         self.__value: T_ID = value
 
     @classmethod
@@ -38,8 +40,12 @@ class Identifier(Generic[T_ID]):
         elif id is not None:
             if external_id is not None:
                 raise ValueError("Exactly one of id or external id must be specified, got both")
+            elif not isinstance(id, int):
+                raise TypeError(f"Invalid id, expected int, got {type(id)}")
             elif not 1 <= id <= MAX_VALID_INTERNAL_ID:
                 raise ValueError(f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}")
+        elif not isinstance(external_id, str):
+            raise TypeError(f"Invalid external_id, expected str, got {type(external_id)}")
         return Identifier(id or external_id)
 
     @classmethod

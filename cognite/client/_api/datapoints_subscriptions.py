@@ -46,22 +46,28 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> client = CogniteClient()
-                >>> sub = DataPointSubscriptionWrite("mySubscription", partition_count=1, time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"], name="My subscription")
+                >>> sub = DataPointSubscriptionWrite(
+                ...     external_id="my_subscription",
+                ...     name="My subscription",
+                ...     partition_count=1,
+                ...     time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"])
                 >>> created = client.time_series.subscriptions.create(sub)
 
-            Create a filter defined subscription for all numeric time series:
+            Create a filter defined subscription for all numeric time series that are stepwise:
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes import filters as flt
-                >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionFilterProperties
+                >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionProperty
                 >>> client = CogniteClient()
-                >>> prop = DatapointSubscriptionFilterProperties.is_string
-                >>> numeric_timeseries = flt.Equals(prop, False)
+                >>> is_numeric_stepwise = flt.And(
+                ...     flt.Equals(DatapointSubscriptionProperty.is_string, False),
+                ...     flt.Equals(DatapointSubscriptionProperty.is_step, True))
                 >>> sub = DataPointSubscriptionWrite(
-                ...     "mySubscription",
+                ...     external_id="my_subscription",
+                ...     name="My subscription for numeric, stepwise time series",
                 ...     partition_count=1,
-                ...     filter=numeric_timeseries,
-                ...     name="My subscription for Numeric time series")
+                ...     filter=is_numeric_stepwise)
                 >>> created = client.time_series.subscriptions.create(sub)
         """
 

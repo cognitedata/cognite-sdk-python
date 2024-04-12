@@ -13,7 +13,7 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, filters
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
-    DatapointSubscriptionFilterProperties,
+    DatapointSubscriptionProperty,
     DataPointSubscriptionUpdate,
     DataPointSubscriptionWrite,
 )
@@ -134,7 +134,7 @@ class TestDatapointSubscriptions:
 
     def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):
         f = filters
-        p = DatapointSubscriptionFilterProperties
+        p = DatapointSubscriptionProperty
         numerical_timeseries = f.And(f.Equals(p.is_string, False))
 
         new_subscription = DataPointSubscriptionWrite(
@@ -295,7 +295,7 @@ class TestDatapointSubscriptions:
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         f = filters
-        p = DatapointSubscriptionFilterProperties
+        p = DatapointSubscriptionProperty
         numerical_timeseries = f.And(
             f.Equals(p.is_string, False), f.Prefix(p.external_id, "PYSDK DataPoint Subscription Test")
         )

@@ -2,6 +2,7 @@ import inspect
 from pathlib import Path
 
 import pytest
+import requests
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -93,3 +94,14 @@ def test_all_base_api_paths_have_retry_or_specifically_no_set(
     # If the below check fails, it means an API that has been specifically except from POST retries now have
     # been given a retry regex anyway. Please update 'apis_that_should_not_have_post_retry_rule' above!
     assert not (has_retry and no_retry_needed)
+
+
+@pytest.mark.xfail  # updated .proto-files not merged yet (StringDatapoint missing status)
+def test_verify_proto_files(tmpdir):
+    proto_url = "https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries"
+
+    remote_file1 = requests.get(f"{proto_url}/data_points.proto").text.splitlines()
+    remote_file2 = requests.get(f"{proto_url}/data_point_list_response.proto").text.splitlines()
+
+    assert remote_file1 == Path("cognite/client/_proto/data_points.proto").read_text().splitlines()
+    assert remote_file2 == Path("cognite/client/_proto/data_point_list_response.proto").read_text().splitlines()

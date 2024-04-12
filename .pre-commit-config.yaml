@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.3.5
     hooks:
       - id: ruff
         args:
@@ -13,14 +13,14 @@ repos:
           - --select=E,W,F,I,T,RUF,TID,UP
           - --fixable=E,W,F,I,T,RUF,TID,UP
           - --target-version=py38
-          - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
+          - --exclude=cognite/client/_proto
       - id: ruff-format
         args:
           - --line-length=120
           - --exclude=cognite/client/_proto*
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: debug-statements
       - id: check-docstring-first

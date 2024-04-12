@@ -238,7 +238,7 @@ T_WriteClass = TypeVar("T_WriteClass", bound=CogniteResource)
 class WriteableCogniteResource(CogniteResource, Generic[T_WriteClass]):
     @abstractmethod
     def as_write(self) -> T_WriteClass:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
@@ -402,7 +402,7 @@ class WriteableCogniteResourceList(
 ):
     @abstractmethod
     def as_write(self) -> CogniteResourceList[T_WriteClass]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass
@@ -599,11 +599,6 @@ class CogniteFilter(ABC):
 
 
 T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
-
-
-class NoCaseConversionPropertyList(list):
-    def as_reference(self) -> list[str]:
-        return list(self)
 
 
 class EnumProperty(Enum):
