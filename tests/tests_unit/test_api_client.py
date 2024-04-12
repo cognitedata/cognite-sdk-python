@@ -498,7 +498,7 @@ class TestStandardList:
             if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
-                time.sleep(0.001)  # ensures bad luck race condition where 503 above executes last
+                time.sleep(0.05)  # ensures bad luck race condition where 503 above executes last
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
 
         rsps.add_callback(

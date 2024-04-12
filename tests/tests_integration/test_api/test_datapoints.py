@@ -24,6 +24,7 @@ from numpy.testing import assert_allclose
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
+    Datapoint,
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
@@ -697,6 +698,40 @@ class TestRetrieveRawDatapointsAPI:
         assert dp_dumped == {"timestamp": 0, "value": "2"}
         assert type(dp_dumped["timestamp"]) is int  # noqa: E721
         assert type(dp_dumped["value"]) is str  # noqa: E721
+
+    def test_getitem_and_iter_preserves_status_codes(self, cognite_client, ts_status_codes, retrieve_endpoints):
+        mixed_ts, *_ = ts_status_codes
+        for endpoint in retrieve_endpoints:
+            dps_res = endpoint(
+                id=mixed_ts.id, include_status=True, ignore_bad_datapoints=False, start=ts_to_ms("2023-02-11"), limit=5
+            )
+            # Test object itself, plus slice of object:
+            for dps in [dps_res, dps_res[:5]]:
+                for dp, code, symbol in zip(dps, dps.status_code, dps.status_symbol):
+                    assert isinstance(dp, Datapoint)
+                    assert code is not None and code == dp.status_code
+                    assert symbol is not None and symbol == dp.status_symbol
+
+                assert math.isclose(dps.value[0], dps[0].value)
+                assert math.isclose(dps.value[4], dps[4].value)
+                assert math.isclose(dps.value[0], 432.9514228031592)
+                assert math.isclose(dps.value[4], 143.05065712951188)
+
+                assert dps.value[1] == dps[1].value == math.inf
+                assert math.isnan(dps.value[2]) and math.isnan(dps[2].value)
+
+                if isinstance(dps, Datapoints):
+                    assert dps.value[3] is None
+                elif isinstance(dps, DatapointsArray):
+                    assert math.isnan(dps.value[3])
+                    bad_ts = dps.timestamp[3].item() // 1_000_000
+                    assert dps.null_timestamps == {bad_ts}
+
+                    # Test slicing a part without a missing value:
+                    dps_slice = dps[:3]
+                    assert not dps_slice.null_timestamps
+                else:
+                    assert False
 
     @pytest.mark.parametrize("test_is_string", (True, False))
     def test_n_dps_retrieved_with_without_uncertain_and_bad(self, retrieve_endpoints, ts_status_codes, test_is_string):
@@ -2203,9 +2238,11 @@ class TestRetrieveLatestDatapointsAPI:
         for dps, exp_ts in zip(dps_lst, exp_timestamps):
             assert dps.timestamp == [exp_ts]
 
+        assert dps_lst[3].value[0] is None
         if test_is_string:
-            for dps in dps_lst:
-                # assert dps[3].value[0] is None # TODO: Once missing/None is supported, ensure it is translated correctly
+            for i, dps in enumerate(dps_lst):
+                if i == 3:
+                    continue  # None aka missing, checked above
                 assert isinstance(dps.value[0], str)
         else:
             assert math.isclose(dps_lst[0].value[0], 2.71)
