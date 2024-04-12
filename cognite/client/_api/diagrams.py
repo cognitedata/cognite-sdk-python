@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import urllib.request
 from math import ceil
 from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast, overload
 
@@ -358,3 +359,55 @@ class DiagramsAPI(APIClient):
         items = response.json()["items"]
         assert isinstance(items, list)
         return items
+
+    def create_ocr_svg(self, file_id: int, output_path: str):
+        """
+        Get ocr text for a single page pdf and create an SVG that overlays it as rectangles on top of a raster image
+        Args:
+            file_id (int): The file id of the file to create an ocr svg for.
+            output_path (str): File path where the output svg is stored.
+        Returns None
+
+        """
+
+        # Verify one page, and also make sure ocr exists.
+        detect_job = self.detect(
+            [{"name": "dummy"}], file_references=FileReference(file_id=file_id, first_page=1, last_page=1)
+        )
+        detect_result = detect_job.result
+
+        file_result = detect_result["items"][0]
+        if file_result["pageCount"] != 1:
+            raise Exception("The file must have one page")
+
+        ocr_result = self.ocr(file_id, 1, 1)[0]["annotations"]
+
+        input_items = [
+            {
+                "fileId": file_id,
+                "annotations": [self.ocr_annotation_to_detect_annotation(a) for a in ocr_result][
+                    :1000
+                ],  # For now a limit of the API
+            }
+        ]
+
+        job = self._run_job(
+            job_path="/convert",
+            status_path="/convert/",
+            items=input_items,
+            job_cls=DiagramConvertResults,
+        )
+
+        res = job.result
+
+        svg_link = res["items"][0]["results"][0]["svgUrl"]
+        urllib.request.urlretrieve(svg_link, output_path)
+
+    def ocr_annotation_to_detect_annotation(self, ocr_annotation: dict[str, any]) -> dict[str, any]:
+        bounding_box = ocr_annotation["boundingBox"]
+        vertices = [
+            {"x": x, "y": y}
+            for x in [bounding_box["xMin"], bounding_box["xMax"]]
+            for y in [bounding_box["yMin"], bounding_box["yMax"]]
+        ]
+        return {"text": ocr_annotation["text"], "region": {"shape": "rectangle", "page": 1, "vertices": vertices}}
