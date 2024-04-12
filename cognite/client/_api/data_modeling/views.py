@@ -101,7 +101,7 @@ class ViewsAPI(APIClient):
         Args:
             ids (ViewIdentifier | Sequence[ViewIdentifier]): The view identifier(s). This can be given as a tuple of
                 strings or a ViewId object. For example, ("my_space", "my_view"), ("my_space", "my_view", "my_version"),
-                or ViewId("my_space", "my_view", "my_version"). Note version is optinal, if not provided, all versions
+                or ViewId("my_space", "my_view", "my_version"). Note version is optional, if not provided, all versions
                 will be returned.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
