@@ -16,6 +16,7 @@ from typing import (
     overload,
 )
 
+from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates
@@ -81,13 +82,8 @@ _INT_AGGREGATES = frozenset(
 )
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
 
-try:
+if NUMPY_IS_AVAILABLE:
     import numpy as np
-
-    NUMPY_IS_AVAILABLE = True
-
-except ImportError:  # pragma no cover
-    NUMPY_IS_AVAILABLE = False
 
 if TYPE_CHECKING:
     import numpy.typing as npt
