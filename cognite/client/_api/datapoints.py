@@ -1679,15 +1679,15 @@ class DatapointsPoster:
                 # Convert to memory intensive format as late as possible (and clean up after insert)
                 payload.append({id_name: ident, "datapoints": [dp.dump() for dp in next_chunk]})
                 if is_full:
-                    self.__insert(payload)
+                    self._insert(payload)
                     payload.clear()
                     n_left = self.dps_limit
                 else:
                     n_left -= len(next_chunk)
         if payload:
-            self.__insert(payload)
+            self._insert(payload)
 
-    def __insert(self, payload: list[dict[str, Any]]) -> None:
+    def _insert(self, payload: list[dict[str, Any]]) -> None:
         self.dps_client._post(
             url_path=self.dps_client._RESOURCE_PATH,
             json={"items": payload},
