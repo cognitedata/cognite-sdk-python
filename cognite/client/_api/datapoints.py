@@ -1451,10 +1451,11 @@ class DatapointsAPI(APIClient):
             if not isinstance(dps_dct, Mapping):
                 continue
             # Extract data inplace for any Datapoints and/or DatapointsArray:
-            if isinstance(dps_dct["datapoints"], Datapoints):
-                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints(dps_dct["datapoints"])
-            elif isinstance(dps_dct["datapoints"], DatapointsArray):
-                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints_array(dps_dct["datapoints"])
+            dps = dps_dct.get("datapoints")
+            if isinstance(dps, Datapoints):
+                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints(dps)
+            elif isinstance(dps, DatapointsArray):
+                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints_array(dps)
         dps_poster = DatapointsPoster(self)
         dps_poster.insert(datapoints)
 
@@ -1592,8 +1593,8 @@ class _InsertDatapoint(NamedTuple):
             dumped["status"] = {"code": self.status_code}
         if self.status_symbol and self.status_symbol.lower() != "good":
             dumped.setdefault("status", {})["symbol"] = self.status_symbol
-            # Out-of-range float values must be passed as strings:
-            dumped["value"] = _json.to_str_translation(dumped["value"])
+        # Out-of-range float values must be passed as strings:
+        dumped["value"] = _json.convert_nonfinite_float_to_str(dumped["value"])
         return dumped
 
     def requires_api_subversion_beta(self) -> bool:
@@ -1926,7 +1927,7 @@ class RetrieveLatestDpsFetcher:
                 # Bad data can have value missing (we translate to None):
                 dp.setdefault("value", None)
                 if not res["isString"]:
-                    dp["value"] = _json.to_float_translation(dp["value"])
+                    dp["value"] = _json.convert_to_float(dp["value"])
         return result
 
     def fetch_datapoints(self) -> list[dict[str, Any]]:

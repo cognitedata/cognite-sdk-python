@@ -7,7 +7,7 @@ from decimal import Decimal
 from types import MappingProxyType
 from typing import Any
 
-__all__ = ["dumps", "loads", "to_float_translation", "to_str_translation"]
+__all__ = ["dumps", "loads", "convert_to_float", "convert_nonfinite_float_to_str"]
 
 
 def _default_json_encoder(obj: Any) -> Any:
@@ -44,14 +44,25 @@ def dumps(
 
 loads = json.loads
 
+# As opposed to protobuf, datapoints in JSON returns out-of-range float values as strings. This means
+# we're forced to do a lookup for every single datapoint we try to insert (and read in retrieve_latest
+# when not ignoring bad)... so we allow some ugly optimizations in the translation code:
 _FLOAT_API_MAPPING = MappingProxyType({"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan})
 _FLOAT_API_MAPPING_REVERSE = MappingProxyType({math.inf: "Infinity", -math.inf: "-Infinity", math.nan: "NaN"})
 
 
-def to_float_translation(value: float | str | None) -> float | None:
-    # As opposed to protobuf, retrieve_latest uses JSON and it returns out-of-range float values as strings:
-    return _FLOAT_API_MAPPING.get(value, value)  # type: ignore [arg-type]
+def convert_to_float(value: float | str | None) -> float | None:
+    if value.__class__ is str:  # like this abomination; faster than float(value)
+        return _FLOAT_API_MAPPING[value]  # type: ignore [index]
+    return value  # type: ignore [return-value]
 
 
-def to_str_translation(value: float | None) -> float | str | None:
-    return _FLOAT_API_MAPPING_REVERSE.get(value, value)  # type: ignore [arg-type]
+def convert_nonfinite_float_to_str(value: float | str | None) -> float | str | None:
+    # We accept str because when a user is trying to insert datapoints - we have no idea if the
+    # time series to insert into is string or numeric
+    try:
+        return value if math.isfinite(value) else _FLOAT_API_MAPPING_REVERSE[value]  # type: ignore [arg-type, index]
+    except TypeError:
+        if value.__class__ is str or value is None:
+            return value
+        raise
