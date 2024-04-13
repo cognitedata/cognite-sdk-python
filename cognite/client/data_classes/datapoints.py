@@ -449,7 +449,7 @@ class DatapointsArray(CogniteResource):
         if self.status_code is not None:
             data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
         if self.null_timestamps and timestamp in self.null_timestamps:
-            data["value"] = None  # type: ignore [assignment]
+            data["value"] = None
         return Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
     def _slice(self, part: slice) -> DatapointsArray:
@@ -487,7 +487,7 @@ class DatapointsArray(CogniteResource):
             if self.status_code is not None:
                 data.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])  # type: ignore [index]
             if self.null_timestamps and timestamp in self.null_timestamps:
-                data["value"] = None  # type: ignore [assignment]
+                data["value"] = None
 
             yield Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
@@ -537,7 +537,7 @@ class DatapointsArray(CogniteResource):
                 dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
                 # When we're dealing with status codes, NaN might be either one of [<missing>, nan]:
                 if dp["timestamp"] in (self.null_timestamps or ()):  # ...luckily, we know :3
-                    dp["value"] = None  # type: ignore [assignment]
+                    dp["value"] = None
         dumped["datapoints"] = datapoints
 
         if camel_case:
