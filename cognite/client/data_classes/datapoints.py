@@ -537,8 +537,11 @@ class DatapointsArray(CogniteResource):
 
             for dp, code, symbol in zip(datapoints, map(numpy_dtype_fix, self.status_code), self.status_symbol):
                 dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
-                # When we're dealing with status codes, NaN might be either one of [<missing>, nan]:
-                if dp["timestamp"] in (self.null_timestamps or ()):  # ...luckily, we know :3
+
+        # When we're dealing with datapoints with bad status codes, NaN might be either one of [<missing>, nan]:
+        if self.null_timestamps:
+            for dp in datapoints:
+                if dp["timestamp"] in self.null_timestamps:  # ...luckily, we know :3
                     dp["value"] = None  # type: ignore [assignment]
         dumped["datapoints"] = datapoints
 
