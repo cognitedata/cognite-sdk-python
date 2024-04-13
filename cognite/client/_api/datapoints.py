@@ -1418,8 +1418,6 @@ class DatapointsAPI(APIClient):
 
             Datapoints marked bad can, in addition to the normal numeric range [-1e100, 1e100], take on any of the following
             values: None (missing), NaN, and +/- Infinity.
-            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value.
-            The third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
 
         Examples:
 
