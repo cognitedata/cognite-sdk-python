@@ -98,13 +98,13 @@ if TYPE_CHECKING:
     NumpyObjArray = npt.NDArray[np.object_]
 
 
-def numpy_dtype_fix(element: np.float64 | str) -> float | str:
+def numpy_dtype_fix(element: np.float64 | str | None) -> float | str | None:
     try:
         # Using .item() on numpy scalars gives us vanilla python types:
         return element.item()  # type: ignore [union-attr]
     except AttributeError:
         # Return no-op as array contains just references to vanilla python objects:
-        if isinstance(element, str):
+        if isinstance(element, str) or element is None:
             return element
         raise
 

@@ -7,7 +7,6 @@ import math
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Mapping
 from datetime import datetime
 from itertools import chain
 from typing import (
@@ -1357,7 +1356,7 @@ class DatapointsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> datapoints = [
                 ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
-                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000),
+                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000, 0),  # code: Good
                 ...     (datetime(2018,1,3, tzinfo=timezone.utc), 3000, 1073741824),  # code: Uncertain
                 ...     (datetime(2018,1,4, tzinfo=timezone.utc), None, 2147483648),  # code: Bad
                 ... ]
@@ -1400,64 +1399,67 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
-        dps_to_post: (
-            Sequence[dict[str, int | float | str | datetime]]
-            | Sequence[tuple[int | float | datetime, int | float | str]]
-            | Sequence[tuple[int | float | datetime, int | float | str, int]]
-        )
-        if isinstance(datapoints, Datapoints):
-            dps_to_post = DatapointsPoster._extract_raw_data_from_datapoints(datapoints)
-        elif isinstance(datapoints, DatapointsArray):
-            dps_to_post = DatapointsPoster._extract_raw_data_from_datapoints_array(datapoints)
-        else:
-            dps_to_post = datapoints
-
-        post_dps_object["datapoints"] = dps_to_post
+        post_dps_object["datapoints"] = datapoints
         DatapointsPoster(self).insert([post_dps_object])
 
     def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
+        Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
+        are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
+
         Args:
             datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+
+        Note:
+            All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
+            either the status code (int) or status symbol (str). Only one of code and symbol is required. If both are given,
+            they must match or an API error will be raised.
+
+            Datapoints marked bad can, in addition to the normal numeric range [-1e100, 1e100], take on any of the following
+            values: None (missing), NaN, and +/- Infinity.
+            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value.
+            The third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
 
         Examples:
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
             must have the key "datapoints" (containing the data) specified as a ``Datapoints`` object, a ``DatapointsArray`` object, or list of either
-            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}` (status codes not yet supported):
+            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}`.
+
+            When passing tuples, the third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
+
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
-
-                >>> datapoints = []
-                >>> # With datetime objects and id
-                >>> datapoints.append(
+                >>> to_insert = [
                 ...     {"id": 1, "datapoints": [
-                ...         (datetime(2018,1,1,tzinfo=timezone.utc), 1000),
-                ...         (datetime(2018,1,2,tzinfo=timezone.utc), 2000),
+                ...         (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
+                ...         (datetime(2018,1,2, tzinfo=timezone.utc), 2000, 0),  # code: Good
+                ...         (datetime(2018,1,3, tzinfo=timezone.utc), 3000, 1073741824),  # code: Uncertain
+                ...         (datetime(2018,1,4, tzinfo=timezone.utc), None, 2147483648),  # code: Bad
+                ... ]}]
+
+            Passing datapoints using the dictionary format with timestamp given in milliseconds since epoch:
+
+                >>> import math
+                >>> to_insert.append(
+                ...     {"external_id": "foo", "datapoints": [
+                ...         {"timestamp": 170000000, "value": 4000},
+                ...         {"timestamp": 180000000, "value": 5000, "status": {"symbol": "Uncertain"}},
+                ...         {"timestamp": 190000000, "value": None, "status": {"code": 2147483648}},
+                ...         {"timestamp": 190000000, "value": math.inf, "status": {"code": 2147483648, "symbol": "Bad"}},
                 ... ]})
 
-                >>> # With ms since epoch and external_id:
-                >>> datapoints.append({"external_id": "foo", "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
+            If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:
 
-                >>> # With raw data in a Datapoints object (or DatapointsArray):
-                >>> data_to_clone = client.time_series.data.retrieve(external_id="bar")
-                >>> datapoints.append({"external_id": "bar-clone", "datapoints": data_to_clone})
-                >>> client.time_series.data.insert_multiple(datapoints)
+                >>> data_to_clone = client.time_series.data.retrieve(
+                ...     external_id="bar", include_status=True, ignore_bad_datapoints=False)
+                >>> to_insert.append({"external_id": "bar-clone", "datapoints": data_to_clone})
+                >>> client.time_series.data.insert_multiple(to_insert)
         """
-        for dps_dct in datapoints:
-            if not isinstance(dps_dct, Mapping):
-                continue
-            # Extract data inplace for any Datapoints and/or DatapointsArray:
-            dps = dps_dct.get("datapoints")
-            if isinstance(dps, Datapoints):
-                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints(dps)
-            elif isinstance(dps, DatapointsArray):
-                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_datapoints_array(dps)
-        dps_poster = DatapointsPoster(self)
-        dps_poster.insert(datapoints)
+        DatapointsPoster(self).insert(datapoints)
 
     def delete_range(
         self,
@@ -1642,15 +1644,21 @@ class DatapointsPoster:
                 dps_to_insert["id", validated["id"]].extend(validated_dps)
         return list(dps_to_insert.items())
 
-    def _parse_and_validate_dps(self, dps: list[tuple | dict]) -> list[_InsertDatapoint]:
-        if not isinstance(dps, SequenceNotStr):
-            raise TypeError(f"Datapoints to be inserted must be a list, not {type(dps)}")
-        elif not dps:
+    def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
+        if not dps:
             raise ValueError("No datapoints provided")
 
+        if isinstance(dps, Datapoints):
+            self._verify_dps_object_for_insertion(dps)
+            return self._extract_raw_data_from_datapoints(dps)
+        elif isinstance(dps, DatapointsArray):
+            self._verify_dps_object_for_insertion(dps)
+            return self._extract_raw_data_from_datapoints_array(dps)
+
+        if not isinstance(dps, SequenceNotStr):
+            raise TypeError(f"Datapoints to be inserted must be a list, not {type(dps)}")
         if self._dps_are_tuples(dps):
             return [_InsertDatapoint(*tpl) for tpl in dps]
-
         elif self._dps_are_dicts(dps):
             try:
                 return [_InsertDatapoint.from_dict(dp) for dp in dps]
@@ -1658,7 +1666,10 @@ class DatapointsPoster:
                 raise KeyError(
                     "A datapoint is missing one or both keys ['value', 'timestamp']. Note: 'status' is optional."
                 )
-        raise TypeError(f"Datapoints to be inserted must contain tuples or dicts, not {type(dps[0])}")
+        raise TypeError(
+            "Datapoints to be inserted must be of type Datapoints or DatapointsArray (with raw datapoints), "
+            f"or be a list containing tuples or dicts, not {type(dps[0])}"
+        )
 
     @staticmethod
     def _dps_are_tuples(dps: list[Any]) -> TypeGuard[list[tuple]]:
@@ -1705,7 +1716,7 @@ class DatapointsPoster:
             yield lst[i : i + n], len(chunk) == n
 
     @staticmethod
-    def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> tuple:  # TODO: fix sloppy return type
+    def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> None:
         if dps.value is None:
             raise ValueError(f"Only raw datapoints are supported when inserting data from ``{type(dps).__name__}``")
         if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
@@ -1716,42 +1727,27 @@ class DatapointsPoster:
                 raise ValueError(
                     f"Number of status codes ({n_codes}) does not match the number of datapoints ({n_ts}) to insert"
                 )
-        elif None in (dps.status_code, dps.status_symbol):
+        elif exactly_one_is_not_none(dps.status_code, dps.status_symbol):
             # Let's not silently ignore someone that have manually instantiated a dps object with just one status:
             raise ValueError("One of status code/symbol is missing on datapoints object")
 
-        return dps.timestamp, dps.value, dps.status_code
+    def _extract_raw_data_from_datapoints(self, dps: Datapoints) -> list[_InsertDatapoint]:
+        if dps.status_code is None:
+            return list(map(_InsertDatapoint, dps.timestamp, dps.value))  # type: ignore [arg-type]
+        return list(map(_InsertDatapoint, dps.timestamp, dps.value, dps.status_code))  # type: ignore [arg-type]
 
-    @classmethod
-    def _extract_raw_data_from_datapoints(
-        cls,
-        dps: Datapoints,
-    ) -> list[tuple[int, str]] | list[tuple[int, float]] | list[tuple[int, str, int]] | list[tuple[int, float, int]]:
-        timestamps, values, status_code = cls._verify_dps_object_for_insertion(dps)
-
-        if status_code is None:
-            return list(zip(timestamps, values))
-        return list(zip(timestamps, values, status_code))
-
-    @classmethod
-    def _extract_raw_data_from_datapoints_array(
-        cls,
-        dps: DatapointsArray,
-    ) -> list[tuple[int, str]] | list[tuple[int, float]] | list[tuple[int, str, int]] | list[tuple[int, float, int]]:
-        timestamps, values, status_code = cls._verify_dps_object_for_insertion(dps)
-
+    def _extract_raw_data_from_datapoints_array(self, dps: DatapointsArray) -> list[_InsertDatapoint]:
         # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
-        values = values.tolist()
-        ts = timestamps.astype("datetime64[ms]").astype("int64").tolist()
+        values = dps.value.tolist()  # type: ignore [union-attr]
+        timestamps = dps.timestamp.astype("datetime64[ms]").astype("int64").tolist()
 
         if dps.null_timestamps:
             # 'Missing' and NaN can not be differentiated when we read from numpy arrays:
-            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(ts, values)]
+            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(timestamps, values)]
 
-        if status_code is None:
-            return list(zip(ts, values))
-        else:
-            return list(zip(ts, values, status_code.tolist()))
+        if dps.status_code is None:
+            return list(map(_InsertDatapoint, timestamps, values))
+        return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
 
 
 class RetrieveLatestDpsFetcher:
