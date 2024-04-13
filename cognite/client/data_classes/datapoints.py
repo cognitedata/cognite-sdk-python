@@ -98,13 +98,13 @@ if TYPE_CHECKING:
     NumpyObjArray = npt.NDArray[np.object_]
 
 
-def numpy_dtype_fix(element: np.float64 | str | None) -> float | str | None:
+def numpy_dtype_fix(element: np.float64 | str) -> float | str:
     try:
         # Using .item() on numpy scalars gives us vanilla python types:
         return element.item()  # type: ignore [union-attr]
     except AttributeError:
         # Return no-op as array contains just references to vanilla python objects:
-        if isinstance(element, str) or element is None:
+        if isinstance(element, str):
             return element
         raise
 
@@ -444,7 +444,9 @@ class DatapointsArray(CogniteResource):
             return self._slice(item)
         attrs, arrays = self._data_fields()
         timestamp = arrays[0][item].item() // 1_000_000
-        data = {attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])}
+        data: dict[str, float | str | None] = {
+            attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])
+        }
 
         if self.status_code is not None:
             data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
@@ -483,7 +485,7 @@ class DatapointsArray(CogniteResource):
         # Let's not create a single Datapoint more than we have too:
         for i, row in enumerate(zip(*arrays)):
             timestamp = row[0].item() // 1_000_000
-            data = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
+            data: dict[str, float | str | None] = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
             if self.status_code is not None:
                 data.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])  # type: ignore [index]
             if self.null_timestamps and timestamp in self.null_timestamps:
@@ -537,7 +539,7 @@ class DatapointsArray(CogniteResource):
                 dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
                 # When we're dealing with status codes, NaN might be either one of [<missing>, nan]:
                 if dp["timestamp"] in (self.null_timestamps or ()):  # ...luckily, we know :3
-                    dp["value"] = None
+                    dp["value"] = None  # type: ignore [assignment]
         dumped["datapoints"] = datapoints
 
         if camel_case:
