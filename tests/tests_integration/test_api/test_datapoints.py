@@ -2423,3 +2423,54 @@ class TestInsertDatapointsAPI:
         cognite_client.time_series.data.insert(id=new_ts_string.id, datapoints=dps_array1)
         dps_array2 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
         assert_correct_data(dps_array2)
+
+    def test_dict_format_with_status_codes_using_insert_multiple(self, cognite_client, new_ts, new_ts_string):
+        cognite_client.time_series.data.delete_ranges(
+            [{"id": new_ts.id, "start": 0, "end": 20}, {"id": new_ts_string.id, "start": 0, "end": 20}]
+        )
+        cognite_client.time_series.data.insert_multiple(
+            [
+                {
+                    "id": new_ts.id,
+                    "datapoints": [
+                        {"timestamp": 0, "value": 0},
+                        {"timestamp": 1, "value": 1, "status": {}},
+                        {"timestamp": 2, "value": 2, "status": {"code": 0}},
+                        {"timestamp": 3, "value": 3, "status": {"symbol": "Good"}},
+                        {"timestamp": 4, "value": 4, "status": {"code": 0, "symbol": "Good"}},
+                        {"timestamp": 5, "value": 5, "status": {"code": 1073741824}},
+                        {"timestamp": 6, "value": 6, "status": {"symbol": "Uncertain"}},
+                        {"timestamp": 7, "value": 7, "status": {"code": 1073741824, "symbol": "Uncertain"}},
+                        {"timestamp": 8, "value": 8, "status": {"symbol": "Bad"}},
+                        {"timestamp": 9, "value": 9, "status": {"code": 2147483648, "symbol": "Bad"}},
+                        {"timestamp": 10, "value": None, "status": {"code": 2147483648}},
+                    ],
+                },
+                {
+                    "id": new_ts_string.id,
+                    "datapoints": [
+                        {"timestamp": 0, "value": "s0"},
+                        {"timestamp": 1, "value": "s1", "status": {}},
+                        {"timestamp": 2, "value": "s2", "status": {"code": 0}},
+                        {"timestamp": 3, "value": "s3", "status": {"symbol": "Good"}},
+                        {"timestamp": 4, "value": "s4", "status": {"code": 0, "symbol": "Good"}},
+                        {"timestamp": 5, "value": "s5", "status": {"code": 1073741824}},
+                        {"timestamp": 6, "value": "s6", "status": {"symbol": "Uncertain"}},
+                        {"timestamp": 7, "value": "s7", "status": {"code": 1073741824, "symbol": "Uncertain"}},
+                        {"timestamp": 8, "value": "s9", "status": {"symbol": "Bad"}},
+                        {"timestamp": 9, "value": "s10", "status": {"code": 2147483648, "symbol": "Bad"}},
+                        {"timestamp": 10, "value": None, "status": {"code": 2147483648}},
+                    ],
+                },
+            ]
+        )
+        dps_numeric, dps_str = cognite_client.time_series.data.retrieve(
+            id=[new_ts.id, new_ts_string.id], end=20, include_status=True, ignore_bad_datapoints=False
+        )
+        # Superficial tests here; well covered elsewhere:
+        assert dps_numeric.timestamp == dps_str.timestamp == list(range(11))
+        assert dps_numeric.value and dps_str.value
+        assert None in dps_numeric.value and None in dps_str.value
+        assert dps_numeric.status_code == dps_str.status_code
+        assert dps_numeric.status_symbol == dps_str.status_symbol
+        assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
