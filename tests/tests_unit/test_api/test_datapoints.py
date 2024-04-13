@@ -5,16 +5,18 @@ import re
 import unittest
 from copy import deepcopy
 from datetime import datetime, timezone
-from random import random
+from random import randint, random, shuffle
 
 import pytest
 
+import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import CogniteClient
+from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
 from cognite.client.utils._time import granularity_to_ms, import_zoneinfo
-from tests.utils import jsgz_load
+from tests.utils import jsgz_load, random_gamma_dist_integer
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 
@@ -287,7 +289,10 @@ class TestInsertDatapoints:
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.calls)
 
-    def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, cognite_client, mock_post_datapoints):
+    def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(
+        self, cognite_client, mock_post_datapoints, monkeypatch
+    ):
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 10_000)
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
         dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 11)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
@@ -691,7 +696,7 @@ class TestPandasIntegration:
 d, t, v = "datapoints", "timestamp", "value"
 
 
-class TestDataPoster:
+class TestDatapointsPoster:
     @pytest.mark.parametrize(
         "limits, insert_dps, exp_calls",
         (
@@ -706,15 +711,15 @@ class TestDataPoster:
                 ],
                 [
                     [
-                        {"id": 1, d: [{t: 10, v: 1}, {t: 20, v: 2}]},
-                        {"externalId": "a", d: [{t: 30, v: 3}]},
-                        {"id": 2, d: [{t: 40, v: 4}]},
+                        {"id": 1, "datapoints": [(10, 1), (20, 2)]},
+                        {"externalId": "a", "datapoints": [(30, 3)]},
+                        {"id": 2, "datapoints": [(40, 4)]},
                     ],
                     [
-                        {"id": 2, d: [{t: 50, v: 5}, {t: 60, v: 6}]},
-                        {"externalId": "b", d: [{t: 70, v: 7}, {t: 80, v: 8}]},
+                        {"id": 2, "datapoints": [(50, 5), (60, 6)]},
+                        {"externalId": "b", "datapoints": [(70, 7), (80, 8)]},
                     ],
-                    [{"externalId": "b", d: [{t: 90, v: 9}, {t: 100, v: 10}, {t: 110, v: 11}, {t: 120, v: 12}]}],
+                    [{"externalId": "b", "datapoints": [(90, 9), (100, 10), (110, 11), (120, 12)]}],
                 ],
             ),
             (
@@ -726,9 +731,9 @@ class TestDataPoster:
                     {"id": 2, d: [(30, 3), (40, 4), (50, 5)]},
                 ],
                 [
-                    [{"id": 1, d: [{t: 10, v: 1}]}, {"externalId": "a", d: [{t: 20, v: 2}]}],
-                    [{"id": 2, d: [{t: 30, v: 3}, {t: 40, v: 4}]}],
-                    [{"id": 2, d: [{t: 50, v: 5}]}],
+                    [{"id": 1, "datapoints": [(10, 1)]}, {"externalId": "a", "datapoints": [(20, 2)]}],
+                    [{"id": 2, "datapoints": [(30, 3), (40, 4)]}],
+                    [{"id": 2, "datapoints": [(50, 5)]}],
                 ],
             ),
             (
@@ -736,8 +741,8 @@ class TestDataPoster:
                 (5, 3, 5),
                 [{"id": i, d: [(j, j) for j in range(10)]} for i in range(1, 5)],
                 [
-                    *([{"id": i, d: [{t: j, v: j} for j in range(5)]}] for i in range(1, 5)),
-                    *([{"id": i, d: [{t: j, v: j} for j in range(5, 10)]}] for i in range(1, 5)),
+                    *([{"id": i, d: [(j, j) for j in range(5)]}] for i in range(1, 5)),
+                    *([{"id": i, d: [(j, j) for j in range(5, 10)]}] for i in range(1, 5)),
                 ],
             ),
             (
@@ -755,29 +760,34 @@ class TestDataPoster:
                 ],
                 [
                     [
-                        {"id": 1, d: [{t: 10, v: 1}, {t: 30, v: 3}, {t: 50, v: 5}]},
-                        {"externalId": "a", d: [{t: 20, v: 2}]},
+                        {"id": 1, "datapoints": [(10, 1), (30, 3), (50, 5)]},
+                        {"externalId": "a", "datapoints": [(20, 2)]},
                     ],
-                    [{"externalId": "a", d: [{t: 40, v: 4}, {t: 50, v: 5}, {t: 60, v: 6}, {t: 70, v: 7}]}],
-                    [{"externalId": "x", d: [{t: -10, v: -1}]}],
+                    [{"externalId": "a", "datapoints": [(40, 4), (50, 5), (60, 6), (70, 7)]}],
+                    [{"externalId": "x", "datapoints": [(-10, -1)]}],
                 ],
             ),
             (
                 # Way above ts limit x max_workers, exactly at dps limit
                 (10, 10, 7),
                 [{"id": i, d: [(i * 2, i)]} for i in range(1, 98)],
-                [[{"id": i, d: [{t: i * 2, v: i}]} for i in range(i, min(98, i + 10))] for i in range(1, 98, 10)],
+                [[{"id": i, d: [(i * 2, i)]} for i in range(i, min(98, i + 10))] for i in range(1, 98, 10)],
             ),
         ),
     )
-    def test_datapoints_splitter(self, cognite_client, monkeypatch, limits, insert_dps, exp_calls):
+    def test_full_insert_flow(self, cognite_client, monkeypatch, limits, insert_dps, exp_calls):
+        # To keep parametrized tests readable, we convert to the expected nametuple _InsertDatapoint here:
+        for call_list in exp_calls:
+            for call in call_list:
+                call["datapoints"] = [_InsertDatapoint(*tpl) for tpl in call["datapoints"]]
+
         # A bit of mocking since we clear payloads inplace after insertion and thus need to copy
         # the content before it is garbage collected:
-        import cognite.client._api.datapoints as dps_api
-
         calls = []
         dps_client = cognite_client.time_series.data
-        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert", lambda self, payload: calls.append(deepcopy(payload)))
+        monkeypatch.setattr(
+            dps_api.DatapointsPoster, "_insert_datapoints", lambda self, payload: calls.append(deepcopy(payload))
+        )
         dps_limit, ts_limit, last_chunk_size = limits
         monkeypatch.setattr(dps_client, "_DPS_INSERT_LIMIT", dps_limit)
         monkeypatch.setattr(dps_client, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
@@ -795,6 +805,44 @@ class TestDataPoster:
         assert all(dps_limit == n_dps for n_dps in to_check_n_dps[:-1])
         assert last_chunk_size == to_check_n_dps[-1]
         unittest.TestCase().assertCountEqual(calls, exp_calls)
+
+    def test_split_logic_adheres_to_limits(self, cognite_client, monkeypatch):
+        calls = []
+        dps_client = cognite_client.time_series.data
+        monkeypatch.setattr(
+            dps_api.DatapointsPoster, "_insert_datapoints", lambda self, payload: calls.append(deepcopy(payload))
+        )
+        dps_limit, ts_limit = randint(200, 2000), randint(2, 20)
+        dps_client = cognite_client.time_series.data
+        monkeypatch.setattr(dps_client, "_DPS_INSERT_LIMIT", dps_limit)
+        monkeypatch.setattr(dps_client, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
+        monkeypatch.setattr(dps_client._config, "max_workers", 4)
+
+        insert_dps = [
+            {
+                "id": identifier,
+                "datapoints": [{"timestamp": i, "value": i} for i in range(random_gamma_dist_integer(4000))],
+            }
+            for identifier in range(1, randint(2, 5))
+        ]
+        insert_dps.extend(
+            {"id": identifier, "datapoints": [(i * 1000, i) for i in range(random_gamma_dist_integer(200))]}
+            for identifier in range(1, randint(10, 50))
+        )
+        insert_dps.extend(
+            {"id": identifier, "datapoints": [(i * 1000, i) for i in range(random_gamma_dist_integer(20))]}
+            for identifier in range(1, randint(50, 100))
+        )
+        shuffle(insert_dps)
+        expected_n_dps = sum(len(dct["datapoints"]) for dct in insert_dps)
+        dps_client.insert_multiple(insert_dps)
+
+        tot_n_dps = 0
+        for call in calls:
+            tot_n_dps += (n_dps := sum(len(d["datapoints"]) for d in call))
+            assert 0 < n_dps <= dps_limit
+            assert 0 < len(call) <= ts_limit
+        assert expected_n_dps == tot_n_dps
 
 
 class TestRetrieveDataPointsInTz:

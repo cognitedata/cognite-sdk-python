@@ -1535,7 +1535,7 @@ class DatapointsAPI(APIClient):
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
-            to use the :py:meth:`~DatapointsAPI.insert` method instead (once support is added in an upcoming release).
+            to use the :py:meth:`~DatapointsAPI.insert` method instead!
 
         Examples:
             Post a dataframe with white noise:
@@ -1612,12 +1612,15 @@ class DatapointsPoster:
 
     def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
-        n_parts = max(self.max_workers, math.ceil(len(to_insert) / self.ts_limit))
-        tasks = tuple(zip(split_into_chunks(to_insert, n_parts)))  # execute_tasks demands tuples
-
+        # To ensure we stay below the max limit on objects per request, we first chunk based on it:
+        # (with 10k limit this is almost always just one chunk)
+        tasks = [
+            (task,)  # execute_tasks demands tuples
+            for chunk in split_into_chunks(to_insert, self.ts_limit)
+            for task in self._create_payload_tasks(chunk)
+        ]
         summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda x: x[0],
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
 
@@ -1680,28 +1683,33 @@ class DatapointsPoster:
         # Not a real type guard, see '_dps_are_tuples'.
         return isinstance(dps[0], dict)
 
-    def _insert_datapoints(self, post_dps_objects: list[tuple[tuple[str, int], list[_InsertDatapoint]]]) -> None:
+    def _create_payload_tasks(
+        self, post_dps_objects: list[tuple[tuple[str, int], list[_InsertDatapoint]]]
+    ) -> Iterator[list[dict[str, Any]]]:
         payload = []
         n_left = self.dps_limit
         for (id_name, ident), dps in post_dps_objects:
             for next_chunk, is_full in self._split_datapoints(dps, n_left, self.dps_limit):
-                # Convert to memory intensive format as late as possible (and clean up after insert)
-                payload.append({id_name: ident, "datapoints": [dp.dump() for dp in next_chunk]})
+                payload.append({id_name: ident, "datapoints": next_chunk})
                 if is_full:
-                    self._insert(payload)
-                    payload.clear()
+                    yield payload
+                    payload = []
                     n_left = self.dps_limit
                 else:
                     n_left -= len(next_chunk)
         if payload:
-            self._insert(payload)
+            yield payload
 
-    def _insert(self, payload: list[dict[str, Any]]) -> None:
+    def _insert_datapoints(self, payload: list[dict[str, Any]]) -> None:
+        # Convert to memory intensive format as late as possible (and clean up after insert)
+        for dct in payload:
+            dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
         self.dps_client._post(
             url_path=self.dps_client._RESOURCE_PATH,
             json={"items": payload},
             api_subversion=self.api_subversion,  # TODO: remove once status codes is GA
         )
+        payload.clear()
 
     @staticmethod
     def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:
