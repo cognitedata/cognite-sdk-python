@@ -48,7 +48,7 @@ Retrieve function call logs
 Function schedules
 ------------------
 Retrieve function schedule
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.retrieve
 
 List function schedules
@@ -64,7 +64,7 @@ Delete function schedule
 .. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
 
 Get function schedule input data
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.get_input_data
 
 Data classes
