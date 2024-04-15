@@ -1535,7 +1535,7 @@ class DatapointsAPI(APIClient):
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
-            to use the :py:meth:`~DatapointsAPI.insert` method instead!
+            to use the :py:meth:`~DatapointsAPI.insert` method instead (or :py:meth:`~DatapointsAPI.insert_multiple`)!
 
         Examples:
             Post a dataframe with white noise:
@@ -1543,7 +1543,6 @@ class DatapointsAPI(APIClient):
                 >>> import numpy as np
                 >>> import pandas as pd
                 >>> from cognite.client import CogniteClient
-                >>>
                 >>> client = CogniteClient()
                 >>> ts_xid = "my-foo-ts"
                 >>> idx = pd.date_range(start="2018-01-01", periods=100, freq="1d")
@@ -1565,7 +1564,7 @@ class DatapointsAPI(APIClient):
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
         for column_id, col in df.items():
             mask = col.notna()
-            datapoints = list(zip(idx[mask], col[mask]))
+            datapoints = list(map(_InsertDatapoint, idx[mask], col[mask]))
             if not datapoints:
                 continue
             if external_id_headers:
@@ -1658,7 +1657,9 @@ class DatapointsPoster:
 
         if not isinstance(dps, SequenceNotStr):
             raise TypeError(f"Datapoints to be inserted must be a list, not {type(dps)}")
-        if self._dps_are_tuples(dps):
+        if self._dps_are_insert_ready(dps):
+            return dps  # Internal SDK shortcut to avoid casting
+        elif self._dps_are_tuples(dps):
             return [_InsertDatapoint(*tpl) for tpl in dps]
         elif self._dps_are_dicts(dps):
             try:
@@ -1673,14 +1674,19 @@ class DatapointsPoster:
         )
 
     @staticmethod
-    def _dps_are_tuples(dps: list[Any]) -> TypeGuard[list[tuple]]:
+    def _dps_are_insert_ready(dps: list[Any]) -> TypeGuard[list[_InsertDatapoint]]:
         # Not a real type guard, but we don't want to make millions of isinstance checks when
         # the documentation is clear on what types we accept:
+        return isinstance(dps[0], _InsertDatapoint)
+
+    @staticmethod
+    def _dps_are_tuples(dps: list[Any]) -> TypeGuard[list[tuple]]:
+        # Not a real type guard, see '_dps_are_insert_ready'.
         return isinstance(dps[0], tuple)
 
     @staticmethod
     def _dps_are_dicts(dps: list[Any]) -> TypeGuard[list[dict]]:
-        # Not a real type guard, see '_dps_are_tuples'.
+        # Not a real type guard, see '_dps_are_insert_ready'.
         return isinstance(dps[0], dict)
 
     def _create_payload_tasks(
