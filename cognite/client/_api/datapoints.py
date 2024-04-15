@@ -567,8 +567,11 @@ class DatapointsAPI(APIClient):
 
             1. For best speed, and significantly lower memory usage, consider using ``retrieve_arrays(...)`` which uses ``numpy.ndarrays`` for data storage.
             2. Unlimited queries (``limit=None``) are most performant as they are always fetched in parallel, for any number of requested time series.
-            3. Limited queries, (e.g. ``limit=200_000``) are much less performant, at least for large limits, as each individual time series is fetched serially (we can't predict where on the timeline the datapoints are). Thus parallelisation is only used when asking for multiple "limited" time series.
+            3. Limited queries, (e.g. ``limit=500_000``) are much less performant, at least for large limits, as each individual time series is fetched serially (we can't predict where on the timeline the datapoints are). Thus parallelisation is only used when asking for multiple "limited" time series.
             4. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't use start=0 (1970).
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -592,7 +595,7 @@ class DatapointsAPI(APIClient):
         Examples:
 
             You can specify the identifiers of the datapoints you wish to retrieve in a number of ways. In this example
-            we are using the time-ago format to get raw data for the time series with id=42 from 2 weeks ago up until now::
+            we are using the time-ago format to get raw data for the time series with id=42 from 2 weeks ago up until now:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -600,7 +603,7 @@ class DatapointsAPI(APIClient):
 
             You can also get aggregated values, such as `max` or `average`. You may also fetch more than one time series simultaneously. Here we are
             getting daily averages and maximum values for all of 2018, for two different time series, where we're specifying `start` and `end` as integers
-            (milliseconds after epoch). Note that we are fetching them using their external ids::
+            (milliseconds after epoch). Note that we are fetching them using their external ids:
 
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    external_id=["foo", "bar"],
@@ -612,7 +615,7 @@ class DatapointsAPI(APIClient):
             In the two code examples above, we have a `dps` object (an instance of ``Datapoints``), and a `dps_lst` object (an instance of ``DatapointsList``).
             On `dps`, which in this case contains raw datapoints, you may access the underlying data directly by using the `.value` attribute. This works for
             both numeric and string (raw) datapoints, but not aggregates - they must be accessed by their respective names, because you're allowed to fetch up
-            to 10 aggregates simultaneously, and they are stored on the same object::
+            all available aggregates simultaneously, and they are stored on the same object:
 
                 >>> raw_data = dps.value
                 >>> first_dps = dps_lst[0]  # optionally: `dps_lst.get(external_id="foo")`
@@ -628,12 +631,12 @@ class DatapointsAPI(APIClient):
                 >>> for dp in dps_slice:
                 ...     pass  # do something!
 
-            All parameters can be individually set if you use and pass DatapointsQuery objects (even `ignore_unknown_ids`, contrary to the API).
+            All parameters can be individually set if you use and pass ``DatapointsQuery`` objects (even ``ignore_unknown_ids``, contrary to the API).
             If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
             mix any kind of ids and external ids: Single identifiers, single DatapointsQuery objects and (mixed) lists of these.
 
             Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
-            the string directly for convenience)::
+            the string directly for convenience):
 
                 >>> from cognite.client.data_classes import DatapointsQuery
                 >>> dps_lst = client.time_series.data.retrieve(
@@ -801,6 +804,9 @@ class DatapointsAPI(APIClient):
         Note:
             This method requires ``numpy`` to be installed.
 
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
@@ -924,6 +930,9 @@ class DatapointsAPI(APIClient):
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Note:
             If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
@@ -1070,6 +1079,9 @@ class DatapointsAPI(APIClient):
         This is a convenience method extending the Time Series API capabilities to make timezone-aware datapoints
         fetching easy with daylight saving time (DST) transitions taken care of automatically. It builds on top
         of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Tip:
             The additional granularity settings are: **week(s)**, **month(s)**, **quarter(s)** and **year(s)**. You may
@@ -1236,6 +1248,9 @@ class DatapointsAPI(APIClient):
     ) -> Datapoints | DatapointsList | None:
         """`Get the latest datapoint for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getLatest>`_
 
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+
         Args:
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
@@ -1333,6 +1348,9 @@ class DatapointsAPI(APIClient):
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime]] | Sequence[tuple[int | float | datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
@@ -1407,6 +1425,9 @@ class DatapointsAPI(APIClient):
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
             datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
