@@ -2317,6 +2317,17 @@ class TestInsertDatapointsAPI:
     def test_delete_ranges(self, cognite_client, new_ts):
         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
 
+    def test_bad_status_symbols_and_codes(self, cognite_client, new_ts):
+        with pytest.raises(CogniteAPIError, match="^Invalid status code"):
+            # code=1 is not allowed: When info type is 00, all info bits must be 0
+            cognite_client.time_series.data.insert(datapoints=[(1, 3.1, 1)], id=new_ts.id)
+
+        symbol = random.choice(("good", "uncertain", "bad"))  # should be PascalCased
+        with pytest.raises(CogniteAPIError, match="^Invalid status code symbol"):
+            cognite_client.time_series.data.insert(
+                datapoints=[{"timestamp": 0, "value": 2.3, "status": {"symbol": symbol}}], id=new_ts.id
+            )
+
     def test_tuples_and_dps_objects_with_status_codes__numeric_ts(self, cognite_client, new_ts):
         ts_kwargs = dict(id=new_ts.id, start=-123, limit=50, include_status=True, ignore_bad_datapoints=False)
         cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
