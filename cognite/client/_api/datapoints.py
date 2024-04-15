@@ -1590,14 +1590,14 @@ class _InsertDatapoint(NamedTuple):
         dumped: dict[str, Any] = {"timestamp": timestamp_to_ms(self.ts), "value": self.value}
         if self.status_code:  # also skip if 0
             dumped["status"] = {"code": self.status_code}
-        if self.status_symbol and self.status_symbol.lower() != "Good":
+        if self.status_symbol and self.status_symbol != "Good":
             dumped.setdefault("status", {})["symbol"] = self.status_symbol
         # Out-of-range float values must be passed as strings:
         dumped["value"] = _json.convert_nonfinite_float_to_str(dumped["value"])
         return dumped
 
     def requires_api_subversion_beta(self) -> bool:
-        return bool(self.status_code or self.status_symbol and self.status_symbol.lower() != "Good")
+        return bool(self.status_code or self.status_symbol and self.status_symbol != "Good")
 
 
 class DatapointsPoster:
