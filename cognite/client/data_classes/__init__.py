@@ -46,6 +46,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsList,
     DatapointsQuery,
     LatestDatapointQuery,
+    StatusCode,
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
@@ -505,6 +506,7 @@ __all__ = [
     "DatapointsArrayList",
     "DatapointsQuery",
     "LatestDatapointQuery",
+    "StatusCode",
     "Function",
     "FunctionWrite",
     "FunctionFilter",
