@@ -36,5 +36,11 @@ class TestCogniteClient:
 def test_cognite_client_is_picklable(cognite_client):
     if isinstance(cognite_client.config.credentials, (Token, OAuthClientCertificate)):
         pytest.skip()
-    roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
+    try:
+        roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
+    except TypeError:
+        print(cognite_client)  # noqa T201
+        print(type(cognite_client))  # noqa T201
+        print(vars(cognite_client))  # noqa T201
+        raise
     assert roundtrip_client.iam.token.inspect().projects

@@ -724,19 +724,27 @@ class AssetHierarchy:
     """
 
     def __init__(self, assets: Sequence[Asset | AssetWrite], ignore_orphans: bool = False) -> None:
-        self._assets = assets
-        self._roots: list[Asset | AssetWrite] | None = None
-        self._orphans: list[Asset | AssetWrite] | None = None
+        self._assets = self._convert_to_read(assets)
+        self._roots: list[Asset] | None = None
+        self._orphans: list[Asset] | None = None
         self._ignore_orphans = ignore_orphans
-        self._invalid: list[Asset | AssetWrite] | None = None
-        self._unsure_parents: list[Asset | AssetWrite] | None = None
-        self._duplicates: dict[str, list[Asset | AssetWrite]] | None = None
+        self._invalid: list[Asset] | None = None
+        self._unsure_parents: list[Asset] | None = None
+        self._duplicates: dict[str, list[Asset]] | None = None
         self._cycles: list[list[str]] | None = None
 
         self.__validation_has_run = False
 
     def __len__(self) -> int:
         return len(self._assets)
+
+    @staticmethod
+    def _convert_to_read(assets: Sequence[Asset | AssetWrite]) -> Sequence[Asset]:
+        # TODO: AssetHierarchy doesn't work with AssetWrite (or more correctly, _AssetHierarchyCreator...)
+        #       and as we don't have a reverse of "as_write", we dump-load the write into a read:
+        return [
+            Asset._load(asset.dump(camel_case=True)) if isinstance(asset, AssetWrite) else asset for asset in assets
+        ]
 
     def is_valid(self, on_error: Literal["ignore", "warn", "raise"] = "ignore") -> bool:
         if not self.__validation_has_run:
@@ -774,7 +782,7 @@ class AssetHierarchy:
         return AssetList(self._unsure_parents)
 
     @property
-    def duplicates(self) -> dict[str, list[Asset | AssetWrite]]:
+    def duplicates(self) -> dict[str, list[Asset]]:
         if self._duplicates is None:
             raise RuntimeError("Unable to list duplicate assets before validation has run")
         # NB: Do not return AssetList (as it does not handle duplicates well):
@@ -814,7 +822,7 @@ class AssetHierarchy:
     def validate_and_report(self, output_file: Path | None = None) -> AssetHierarchy:
         return self.validate(verbose=True, output_file=output_file, on_error="ignore")
 
-    def groupby_parent_xid(self) -> dict[str | None, list[Asset | AssetWrite]]:
+    def groupby_parent_xid(self) -> dict[str | None, list[Asset]]:
         """Returns a mapping from parent external ID to a list of its direct children.
 
         Note:
@@ -824,14 +832,14 @@ class AssetHierarchy:
             The same is true for all assets linking its parent by ID.
 
         Returns:
-            dict[str | None, list[Asset | AssetWrite]]: No description."""
+            dict[str | None, list[Asset]]: No description."""
         self.is_valid(on_error="raise")
 
         # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,
         # and can't simply hash it because of the possibility of collisions. Further, the empty string is a valid
         # external ID leaving no other choice than to prepend all strings with ' ' before comparison:
 
-        def parent_sort_fn(asset: Asset | AssetWrite) -> str:
+        def parent_sort_fn(asset: Asset) -> str:
             # All assets using 'parent_id' will be grouped together with the root assets:
             if (pxid := asset.parent_external_id) is None:
                 return ""
@@ -855,11 +863,11 @@ class AssetHierarchy:
         )
         return mapping
 
-    def count_subtree(self, mapping: dict[str | None, list[Asset | AssetWrite]]) -> dict[str, int]:
+    def count_subtree(self, mapping: dict[str | None, list[Asset]]) -> dict[str, int]:
         """Returns a mapping from asset external ID to the size of its subtree (children and children of children etc.).
 
         Args:
-            mapping (dict[str | None, list[Asset | AssetWrite]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+            mapping (dict[str | None, list[Asset]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
 
         Returns:
             dict[str, int]: Lookup from external ID to descendant count.
@@ -894,23 +902,13 @@ class AssetHierarchy:
             self._invalid or self._unsure_parents or self._duplicates or (self._orphans and not self._ignore_orphans)
         )
 
-    def _inspect_attributes(
-        self,
-    ) -> tuple[
-        list[Asset | AssetWrite],
-        list[Asset | AssetWrite],
-        list[Asset | AssetWrite],
-        list[Asset | AssetWrite],
-        dict[str, list[Asset | AssetWrite]],
-    ]:
-        invalid, orphans, roots, unsure_parents, duplicates = [], [], [], [], defaultdict(list)
+    def _inspect_attributes(self) -> tuple[list[Asset], list[Asset], list[Asset], list[Asset], dict[str, list[Asset]]]:
+        invalid, orphans, roots, unsure_parents = [], [], [], []  # type: tuple[list[Asset], list[Asset], list[Asset], list[Asset]]
+        duplicates: defaultdict[str, list[Asset]] = defaultdict(list)
         xid_count = Counter(a.external_id for a in self._assets)
 
         for asset in self._assets:
-            if isinstance(asset, AssetWrite):
-                id_, xid, name = None, asset.external_id, asset.name
-            else:
-                id_, xid, name = asset.id, asset.external_id, asset.name
+            id_, xid, name = asset.id, asset.external_id, asset.name
             if xid is None or name is None or len(name) < 1 or id_ is not None:
                 invalid.append(asset)
                 continue  # Don't report invalid as part of any other group
@@ -1005,7 +1003,7 @@ class AssetHierarchy:
                 DrawTables.XLINE.join(DrawTables.HLINE * 20 for _ in columns),
             )
 
-        def print_table(lst: list[Asset | AssetWrite], columns: list[str]) -> None:
+        def print_table(lst: list[Asset], columns: list[str]) -> None:
             for entry in lst:
                 cols = (f"{shorten(getattr(entry, col)):<20}" for col in columns)
                 print_fn(DrawTables.VLINE.join(cols))

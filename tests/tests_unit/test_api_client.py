@@ -498,7 +498,7 @@ class TestStandardList:
             if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
-                time.sleep(0.001)  # ensures bad luck race condition where 503 above executes last
+                time.sleep(0.05)  # ensures bad luck race condition where 503 above executes last
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
 
         rsps.add_callback(
@@ -510,14 +510,14 @@ class TestStandardList:
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 method="POST",
-                partitions=10,
+                partitions=15,
                 limit=None,
             )
         assert 503 == exc.value.code
-        assert exc.value.unknown == [("3/10",)]
+        assert exc.value.unknown == [("3/15",)]
         assert exc.value.skipped
         assert exc.value.successful
-        assert 9 == len(exc.value.successful) + len(exc.value.skipped)
+        assert 14 == len(exc.value.successful) + len(exc.value.skipped)
         assert 1 < len(rsps.calls)
 
     @pytest.fixture

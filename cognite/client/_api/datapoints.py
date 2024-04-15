@@ -31,21 +31,22 @@ from cognite.client._api.datapoint_tasks import (
     BaseTaskOrchestrator,
     DatapointsPayload,
     DatapointsPayloadItem,
-    _DatapointsQuery,
+    _FullDatapointsQuery,
+    _FullDatapointsQueryValidator,
     _SingleTSQueryBase,
-    _SingleTSQueryValidator,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
-from cognite.client.data_classes.datapoints import (
-    Aggregate,
+from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
     DatapointsList,
+    DatapointsQuery,
     LatestDatapointQuery,
 )
+from cognite.client.data_classes.datapoints import Aggregate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
@@ -55,6 +56,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
@@ -86,16 +88,18 @@ _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
-def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
-    validator = _SingleTSQueryValidator(
-        user_query,
-        dps_limit_raw=dps_client._DPS_LIMIT_RAW,
-        dps_limit_agg=dps_client._DPS_LIMIT_AGG,
+def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapointsQuery) -> DpsFetchStrategy:
+    validator = _FullDatapointsQueryValidator(
+        full_query, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG
     )
     all_queries = validator.validate_and_create_single_queries()
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
     api_subversion = None
+    # If status codes or new aggregates are requested, use beta:
+    if any(query.requires_api_subversion_beta for query in all_queries):
+        api_subversion = dps_client._api_subversion + "-beta"
+        dps_client._status_codes_warning.warn()
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
@@ -529,12 +533,17 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
+        self._status_codes_warning = FeaturePreviewWarning("beta", "alpha", feature_name="Datapoints Status Codes")
 
     def retrieve(
         self,
         *,
-        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
+        id: None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]] = None,
+        external_id: None
+        | str
+        | DatapointsQuery
+        | dict[str, Any]
+        | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -544,6 +553,9 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> Datapoints | DatapointsList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
@@ -556,17 +568,20 @@ class DatapointsAPI(APIClient):
             4. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't use start=0 (1970).
 
         Args:
-            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
             Datapoints | DatapointsList | None: A ``Datapoints`` object containing the requested data, or a ``DatapointsList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -610,20 +625,21 @@ class DatapointsAPI(APIClient):
                 >>> for dp in dps_slice:
                 ...     pass  # do something!
 
-            All parameters can be individually set if you pass (one or more) dictionaries (even `ignore_unknown_ids`, contrary to the API).
+            All parameters can be individually set if you use and pass DatapointsQuery objects (even `ignore_unknown_ids`, contrary to the API).
             If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
-            mix any kind of ids and external ids: Single identifiers, single dictionaries and (mixed) lists of these.
+            mix any kind of ids and external ids: Single identifiers, single DatapointsQuery objects and (mixed) lists of these.
 
             Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
             the string directly for convenience)::
 
+                >>> from cognite.client.data_classes import DatapointsQuery
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
-                ...         {"id": 42, "end": "1d-ago", "aggregates": "average"},
-                ...         {"id": 69, "end": "2d-ago", "aggregates": ["average"]},
-                ...         {"id": 96, "end": "3d-ago", "aggregates": ["min", "max", "count"]},
+                ...         DatapointsQuery(id=42, end="1d-ago", aggregates= "average"),
+                ...         DatapointsQuery(id=69, end="2d-ago", aggregates=["average"]),
+                ...         DatapointsQuery(id=96, end="3d-ago", aggregates=["min", "max", "count"]),
                 ...     ],
-                ...     external_id={"external_id": "foo", "aggregates": "max"},
+                ...     external_id=DatapointsQuery(external_id="foo", aggregates="max"),
                 ...     start="5d-ago",
                 ...     granularity="1h")
 
@@ -653,7 +669,7 @@ class DatapointsAPI(APIClient):
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[42, 43, 44],
                 ...     external_id=[
-                ...         {"external_id": sensor_xid, "start": ev.start_time, "end": ev.end_time}
+                ...         DatapointsQuery(external_id=sensor_xid, start=ev.start_time, end=ev.end_time)
                 ...         for ev in periods
                 ...     ])
                 >>> ts_44 = dps_lst.get(id=44)  # Single ``Datapoints`` object
@@ -668,7 +684,7 @@ class DatapointsAPI(APIClient):
                 ...     datetime(year, month, 1, tzinfo=utc)
                 ...     for year, month in itertools.product(range(2000, 2011), range(1, 13))]
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...     external_id=[{"external_id": "foo", "start": start} for start in month_starts],
+                ...     external_id=[DatapointsQuery(external_id="foo", start=start) for start in month_starts],
                 ...     limit=1)
 
             To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
@@ -681,40 +697,56 @@ class DatapointsAPI(APIClient):
                 ...     start=MIN_TIMESTAMP_MS,
                 ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
 
-            Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
+            Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query:
 
                 >>> ts1 = 1337
-                >>> ts2 = {
-                ...     "id": 42,
-                ...     "start": -12345,  # Overrides `start` arg. below
-                ...     "end": "1h-ago",
-                ...     "limit": 1000,  # Overrides `limit` arg. below
-                ...     "include_outside_points": True,
-                ... }
-                >>> ts3 = {
-                ...     "id": 11,
-                ...     "end": "1h-ago",
-                ...     "aggregates": ["max"],
-                ...     "granularity": "42h",
-                ...     "include_outside_points": False,
-                ...     "ignore_unknown_ids": True,  # Overrides `ignore_unknown_ids` arg. below
-                ... }
+                >>> ts2 = DatapointsQuery(
+                ...     id=42,
+                ...     start=-12345,  # Overrides `start` arg. below
+                ...     end="1h-ago",
+                ...     limit=1000,  # Overrides `limit` arg. below
+                ...     include_outside_points=True,
+                ... )
+                >>> ts3 = DatapointsQuery(
+                ...     id=11,
+                ...     end="1h-ago",
+                ...     aggregates="max",
+                ...     granularity="42h",
+                ...     include_outside_points=False,
+                ...     ignore_unknown_ids=True,  # Overrides `ignore_unknown_ids` arg. below
+                ... )
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False)
 
-            If we have created a timeseries set with 'unit_external_id' we can use the 'target_unit' parameter to convert the datapoints to the desired unit.
-            In the example below, we assume that the timeseries is set with unit_external_id 'temperature:deg_c' and id='42'.
+            If you have a time series with 'unit_external_id' set, you can use the 'target_unit' parameter to convert the datapoints
+            to the desired unit. In the example below, we are converting temperature readings from a sensor measured and stored in Celsius,
+            to Fahrenheit (we're assuming that the time series has e.g. ``unit_external_id='temperature:deg_c'``):
 
                 >>> client.time_series.data.retrieve(
-                ...   id=42, start="2w-ago", limit=None, target_unit="temperature:deg_f")
+                ...   id=42, start="2w-ago", target_unit="temperature:deg_f")
 
-            Or alternatively, we can use the 'target_unit_system' parameter to convert the datapoints to the desired unit system.
+            Or alternatively, you can use the 'target_unit_system' parameter to convert the datapoints to the desired unit system:
 
                 >>> client.time_series.data.retrieve(
-                ...   id=42, start="2w-ago", limit=None, target_unit_system="Imperial")
+                ...   id=42, start="2w-ago", target_unit_system="Imperial")
 
+            To retrieve status codes for a time series, pass ``include_status=True``. This is only possible for raw datapoint queries.
+            You would typically also pass ``ignore_bad_datapoints=False`` to not hide all the datapoints that are marked as uncertain or bad,
+            which is the API's default behaviour. You may also use ``treat_uncertain_as_bad`` to control how uncertain values are interpreted.
+
+                >>> dps = client.time_series.data.retrieve(
+                ...   id=42, include_status=True, ignore_bad_datapoints=False)
+                >>> dps.status_code  # list of integer codes, e.g.: [0, 1073741824, 2147483648]
+                >>> dps.status_symbol  # list of symbolic representations, e.g. [Good, Uncertain, Bad]
+
+            There are six aggregates directly related to status codes, three for count: 'count_good', 'count_uncertain' and 'count_bad', and
+            three for duration: 'duration_good', 'duration_uncertain' and 'duration_bad'. These may be fetched as any other aggregate.
+            It is important to note that status codes may influence how other aggregates are computed: Aggregates will in general omit the
+            time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good
+            datapoint will be considered constant. To put simply, what 'average' may return depends on your setting for 'ignore_bad_datapoints'
+            and 'treat_uncertain_as_bad' (in the presence of uncertain/bad datapoints).
         """
-        query = _DatapointsQuery(
+        query = _FullDatapointsQuery(
             start=start,
             end=end,
             id=id,
@@ -726,8 +758,11 @@ class DatapointsAPI(APIClient):
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_datapoints=ignore_bad_datapoints,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        fetcher = select_dps_fetch_strategy(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, full_query=query)
 
         dps_lst = fetcher.fetch_all_datapoints()
         if not query.is_single_identifier:
@@ -739,8 +774,12 @@ class DatapointsAPI(APIClient):
     def retrieve_arrays(
         self,
         *,
-        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
+        id: None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]] = None,
+        external_id: None
+        | str
+        | DatapointsQuery
+        | dict[str, Any]
+        | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -750,30 +789,43 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> DatapointsArray | DatapointsArrayList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
-        **Note**: This method requires ``numpy`` to be installed.
+        Note:
+            This method requires ``numpy`` to be installed.
 
         Args:
-            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
             DatapointsArray | DatapointsArrayList | None: A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
-        Examples:
+        Note:
+            For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
-            **Note:** For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
+            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
+            missing a value (due to being stored in a numpy array). To solve this, all missing values have their timestamp recorded in a set you may access:
+            ``dps.null_timestamps``. If you chose to pass a ``DatapointsArray`` to an insert method, this will be inspected automatically to replicate correctly
+            (inserting status codes will soon be supported).
+
+        Examples:
 
             Get weekly ``min`` and ``max`` aggregates for a time series with id=42 since the year 2000, then compute the range of values:
 
@@ -817,7 +869,7 @@ class DatapointsAPI(APIClient):
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """
         local_import("numpy")  # Verify that numpy is available or raise CogniteImportError
-        query = _DatapointsQuery(
+        query = _FullDatapointsQuery(
             start=start,
             end=end,
             id=id,
@@ -829,8 +881,11 @@ class DatapointsAPI(APIClient):
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_datapoints=ignore_bad_datapoints,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        fetcher = select_dps_fetch_strategy(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, full_query=query)
 
         dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
@@ -842,8 +897,12 @@ class DatapointsAPI(APIClient):
     def retrieve_dataframe(
         self,
         *,
-        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
-        external_id: None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]] = None,
+        id: None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]] = None,
+        external_id: None
+        | str
+        | DatapointsQuery
+        | dict[str, Any]
+        | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -853,6 +912,9 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
@@ -860,20 +922,24 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
 
-        **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
+        Note:
+            If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
 
         Args:
-            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | dict[str, Any] | SequenceNotStr[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
             uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
@@ -881,6 +947,10 @@ class DatapointsAPI(APIClient):
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+
+        Warning:
+            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
+            missing a value (due to being stored in a numpy array); all will become NaNs in the dataframe.
 
         Examples:
 
@@ -899,10 +969,11 @@ class DatapointsAPI(APIClient):
             individually specified aggregates, from 1990 through 2020:
 
                 >>> from datetime import datetime, timezone
+                >>> from cognite.client.data_classes import DatapointsQuery
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id=[
-                ...         {"external_id": "foo", "aggregates": ["discrete_variance"]},
-                ...         {"external_id": "bar", "aggregates": ["total_variation", "continuous_variance"]},
+                ...     external_id=[
+                ...         DatapointsQuery(external_id="foo", aggregates="discrete_variance"),
+                ...         DatapointsQuery(external_id="bar", aggregates=["total_variation", "continuous_variance"]),
                 ...     ],
                 ...     granularity="1d",
                 ...     start=datetime(1990, 1, 1, tzinfo=timezone.utc),
@@ -914,26 +985,23 @@ class DatapointsAPI(APIClient):
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
-                ...     aggregates=["average"],
+                ...     aggregates="average",
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
 
-            Remember that pandas.Timestamp is a subclass of datetime, so you can use Timestamps as start and
-            end arguments:
+            You may also use ``pandas.Timestamp`` to define start and end:
 
                 >>> import pandas as pd
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id="foo",
                 ...     start=pd.Timestamp("2023-01-01"),
-                ...     end=pd.Timestamp("2023-02-01"),
-                ...     )
-
+                ...     end=pd.Timestamp("2023-02-01"))
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
-        query = _DatapointsQuery(
+        query = _FullDatapointsQuery(
             start=start,
             end=end,
             id=id,
@@ -945,8 +1013,11 @@ class DatapointsAPI(APIClient):
             limit=limit,
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_datapoints=ignore_bad_datapoints,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        fetcher = select_dps_fetch_strategy(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, full_query=query)
 
         if not uniform_index:
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
@@ -958,7 +1029,7 @@ class DatapointsAPI(APIClient):
         if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
             raise ValueError(
                 "Cannot return a uniform index when asking for aggregates with multiple granularities "
-                f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
+                f"({grans_given or []}) OR when (partly) querying raw datapoints OR when a finite limit is used."
             )
 
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
@@ -983,6 +1054,9 @@ class DatapointsAPI(APIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
@@ -1019,9 +1093,12 @@ class DatapointsAPI(APIClient):
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
-            target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
@@ -1029,6 +1106,10 @@ class DatapointsAPI(APIClient):
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given time zone.
+
+        Warning:
+            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
+            missing a value (due to being stored in a numpy array); all will become NaNs in the dataframe.
 
         Examples:
 
@@ -1075,6 +1156,7 @@ class DatapointsAPI(APIClient):
         if aggregates is None and granularity is None:
             # For raw data, we only need to convert the timezone:
             return (
+                # TODO: include_outside_points is missing
                 self.retrieve_dataframe(
                     id=id,
                     external_id=external_id,
@@ -1085,6 +1167,9 @@ class DatapointsAPI(APIClient):
                     target_unit=target_unit,
                     target_unit_system=target_unit_system,
                     ignore_unknown_ids=ignore_unknown_ids,
+                    include_status=include_status,
+                    ignore_bad_datapoints=ignore_bad_datapoints,
+                    treat_uncertain_as_bad=treat_uncertain_as_bad,
                     uniform_index=uniform_index,
                     include_aggregate_name=include_aggregate_name,
                     include_granularity_name=include_granularity_name,
@@ -1109,6 +1194,9 @@ class DatapointsAPI(APIClient):
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_datapoints=ignore_bad_datapoints,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
             **{identifiers[0].name(): queries},  # type: ignore [arg-type]
@@ -1126,6 +1214,7 @@ class DatapointsAPI(APIClient):
         )
         if uniform_index:
             freq = to_pandas_freq(granularity, start)
+            # TODO: Bug, "small" granularities like s/m/h raise here:
             start, end = align_large_granularity(start, end, granularity)
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
         return df
@@ -1137,6 +1226,9 @@ class DatapointsAPI(APIClient):
         before: None | int | str | datetime = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
     ) -> Datapoints | DatapointsList | None:
         """`Get the latest datapoint for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getLatest>`_
@@ -1145,8 +1237,11 @@ class DatapointsAPI(APIClient):
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
             before (None | int | str | datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
-            target_unit (str | None): The unit_external_id of the data point returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the data point returned. Cannot be used with target_unit.
+            target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response.
+            ignore_bad_datapoints (bool): Prevent datapoints with a bad status code to be returned. Default: True.
+            treat_uncertain_as_bad (bool): Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -1154,8 +1249,8 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint will
-            be the first element::
+            Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint
+            (if it exists) will be the first element:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1182,8 +1277,10 @@ class DatapointsAPI(APIClient):
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
 
-            If you need to specify a different value of 'before' for each time series, or different values for
-            unit or unit system, you may pass several LatestDatapointQuery objects::
+            If you for example need to specify a different value of 'before' for each time series, you may pass several
+            LatestDatapointQuery objects. These will override any parameter passed directly to the function and also allows
+            for individual customisation of 'target_unit', 'target_unit_system', 'include_status', 'ignore_bad_datapoints'
+            and 'treat_uncertain_as_bad'.
 
                 >>> from datetime import datetime, timezone
                 >>> id_queries = [
@@ -1191,14 +1288,26 @@ class DatapointsAPI(APIClient):
                 ...     LatestDatapointQuery(id=456, before="1w-ago"),
                 ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc)),
                 ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f")]
+                >>> ext_id_queries = [
+                ...     "foo",
+                ...     LatestDatapointQuery(external_id="abc", before="3h-ago", target_unit_system="Imperial"),
+                ...     LatestDatapointQuery(external_id="def", include_status=True),
+                ...     LatestDatapointQuery(external_id="ghi", treat_uncertain_as_bad=False),
+                ...     LatestDatapointQuery(external_id="jkl", include_status=True, ignore_bad_datapoints=False)]
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     id=id_queries,
-                ...     external_id=LatestDatapointQuery(
-                ...         external_id="abc", before="3h-ago", target_unit_system="Imperial")
-                ... )
+                ...     id=id_queries, external_id=ext_id_queries)
         """
         fetcher = RetrieveLatestDpsFetcher(
-            id, external_id, before, target_unit, target_unit_system, ignore_unknown_ids, self
+            id=id,
+            external_id=external_id,
+            before=before,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
+            include_status=include_status,
+            ignore_bad_datapoints=ignore_bad_datapoints,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
+            ignore_unknown_ids=ignore_unknown_ids,
+            dps_client=self,
         )
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
@@ -1218,7 +1327,8 @@ class DatapointsAPI(APIClient):
     ) -> None:
         """Insert datapoints into a time series
 
-        Timestamps can be represented as milliseconds since epoch or datetime objects.
+        Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
+        are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime]] | Sequence[tuple[int | float | datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
@@ -1242,7 +1352,7 @@ class DatapointsAPI(APIClient):
                 >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
                 >>> client.time_series.data.insert(datapoints, id=2)
 
-            Or they can be a list of dictionaries::
+            Or they can be a list of dictionaries (status codes are not supported yet):
 
                 >>> datapoints = [
                 ...     {"timestamp": 150000000000, "value": 1000},
@@ -1253,7 +1363,7 @@ class DatapointsAPI(APIClient):
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
-            `external_id="foo"`::
+            `external_id="foo"`:
 
                 >>> data = client.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
                 >>> client.time_series.data.insert(data, external_id="foo")
@@ -1282,7 +1392,7 @@ class DatapointsAPI(APIClient):
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
             must have the key "datapoints" (containing the data) specified as a ``Datapoints`` object, a ``DatapointsArray`` object, or list of either
-            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}`::
+            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}` (status codes not yet supported):
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
@@ -1385,8 +1495,12 @@ class DatapointsAPI(APIClient):
             external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
 
+        Warning:
+            You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
+            to use the :py:meth:`~DatapointsAPI.insert` method instead (once support is added in an upcoming release).
+
         Examples:
-            Post a dataframe with white noise::
+            Post a dataframe with white noise:
 
                 >>> import numpy as np
                 >>> import pandas as pd
@@ -1459,6 +1573,8 @@ class DatapointsPoster:
             raise ValueError(
                 "Only raw datapoints are supported when inserting data from ``Datapoints`` or ``DatapointsArray``"
             )
+        if dps.status_code is not None or dps.status_symbol is not None:
+            raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
         if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
             raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
 
@@ -1493,6 +1609,8 @@ class DatapointsPoster:
             return [(timestamp_to_ms(t), v) for t, v in datapoints]
         datapoints = cast(List[Dict[str, Any]], datapoints)
         try:
+            if any("status" in dp for dp in datapoints):
+                raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
             return [(timestamp_to_ms(dp["timestamp"]), dp["value"]) for dp in datapoints]
         except KeyError:
             raise KeyError("A datapoint is missing one or both keys ['value', 'timestamp'].")
@@ -1541,15 +1659,26 @@ class RetrieveLatestDpsFetcher:
         before: None | int | str | datetime,
         target_unit: None | str,
         target_unit_system: None | str,
+        include_status: bool,
+        ignore_bad_datapoints: bool,
+        treat_uncertain_as_bad: bool,
         ignore_unknown_ids: bool,
         dps_client: DatapointsAPI,
     ) -> None:
-        self.before_settings: dict[tuple[str, int], None | int | str | datetime] = {}
         self.default_before = before
         self.default_unit = target_unit
         self.default_unit_system = target_unit_system
-        self.target_unit_settings: dict[tuple[str, int], None | str] = {}
-        self.target_unit_system_settings: dict[tuple[str, int], None | str] = {}
+        self.default_include_status = include_status
+        self.default_ignore_bad_datapoints = ignore_bad_datapoints
+        self.default_treat_uncertain_as_bad = treat_uncertain_as_bad
+
+        self.settings_before: dict[tuple[str, int], None | int | str | datetime] = {}
+        self.settings_target_unit: dict[tuple[str, int], None | str] = {}
+        self.settings_target_unit_system: dict[tuple[str, int], None | str] = {}
+        self.settings_include_status: dict[tuple[str, int], bool | None] = {}
+        self.settings_ignore_bad_datapoints: dict[tuple[str, int], bool | None] = {}
+        self.settings_treat_uncertain_as_bad: dict[tuple[str, int], bool | None] = {}
+
         self.ignore_unknown_ids = ignore_unknown_ids
         self.dps_client = dps_client
 
@@ -1558,18 +1687,33 @@ class RetrieveLatestDpsFetcher:
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
 
+        # If features related to status codes are requested, use beta:
+        # TODO: Remove once status codes -> GA
+        self.api_subversion = None
+        if self.requires_api_subversion_beta():
+            self.api_subversion = dps_client._api_subversion + "-beta"
+            dps_client._status_codes_warning.warn()
+
     @property
     def input_is_singleton(self) -> bool:
         return self._is_singleton
+
+    def requires_api_subversion_beta(self) -> bool:
+        return any(
+            query.get("includeStatus") is True
+            or query.get("ignoreBadDataPoints") is False
+            or query.get("treatUncertainAsBad") is False
+            for query in self._all_identifiers
+        )
 
     @staticmethod
     def _get_and_check_identifier(
         query: LatestDatapointQuery,
         identifier_type: Literal["id", "external_id"],
     ) -> int | str:
-        if (as_primitive := getattr(query, identifier_type)) is None:
+        if query.identifier.name() != identifier_type:
             raise ValueError(f"Missing '{identifier_type}' from: '{query}'")
-        return as_primitive
+        return query.identifier.as_primitive()
 
     def _parse_user_input(
         self,
@@ -1582,18 +1726,26 @@ class RetrieveLatestDpsFetcher:
         # memorize the individual 'before'-settings when/where given:
         elif isinstance(user_input, LatestDatapointQuery):
             as_primitive = self._get_and_check_identifier(user_input, identifier_type)
-            self.before_settings[(identifier_type, 0)] = user_input.before
-            self.target_unit_settings[(identifier_type, 0)] = user_input.target_unit
-            self.target_unit_system_settings[(identifier_type, 0)] = user_input.target_unit_system
+            idx = (identifier_type, 0)
+            self.settings_before[idx] = user_input.before
+            self.settings_target_unit[idx] = user_input.target_unit
+            self.settings_target_unit_system[idx] = user_input.target_unit_system
+            self.settings_include_status[idx] = user_input.include_status
+            self.settings_ignore_bad_datapoints[idx] = user_input.ignore_bad_datapoints
+            self.settings_treat_uncertain_as_bad[idx] = user_input.treat_uncertain_as_bad
             return as_primitive
         elif isinstance(user_input, MutableSequence):
             user_input = user_input[:]  # Modify a shallow copy to avoid side effects
             for i, inp in enumerate(user_input):
                 if isinstance(inp, LatestDatapointQuery):
                     as_primitive = self._get_and_check_identifier(inp, identifier_type)
-                    self.before_settings[(identifier_type, i)] = inp.before
-                    self.target_unit_settings[(identifier_type, i)] = inp.target_unit
-                    self.target_unit_system_settings[(identifier_type, i)] = inp.target_unit_system
+                    idx = (identifier_type, i)
+                    self.settings_before[idx] = inp.before
+                    self.settings_target_unit[idx] = inp.target_unit
+                    self.settings_target_unit_system[idx] = inp.target_unit_system
+                    self.settings_include_status[idx] = inp.include_status
+                    self.settings_ignore_bad_datapoints[idx] = inp.ignore_bad_datapoints
+                    self.settings_treat_uncertain_as_bad[idx] = inp.treat_uncertain_as_bad
                     user_input[i] = as_primitive  # mutating while iterating like a boss
         return user_input
 
@@ -1610,27 +1762,82 @@ class RetrieveLatestDpsFetcher:
         # specify a particular timestamp for 'now' in order to possibly get a datapoint a few hundred ms fresher:
         for identifiers, identifier_type in zip([all_ids, all_xids], ["id", "external_id"]):
             for i, dct in enumerate(identifiers):
-                i_before = self.before_settings.get((identifier_type, i)) or self.default_before
+                idx = (identifier_type, i)
+                i_before = self.settings_before.get(idx) or self.default_before
                 if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
-                i_target_unit = self.target_unit_settings.get((identifier_type, i)) or self.default_unit
-                i_target_unit_system = (
-                    self.target_unit_system_settings.get((identifier_type, i)) or self.default_unit_system
-                )
+
+                i_target_unit = self.settings_target_unit.get(idx) or self.default_unit
+                i_target_unit_system = self.settings_target_unit_system.get(idx) or self.default_unit_system
                 if i_target_unit is not None and i_target_unit_system is not None:
                     raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
                 if i_target_unit is not None:
                     dct["targetUnit"] = i_target_unit
                 if i_target_unit_system is not None:
                     dct["targetUnitSystem"] = i_target_unit_system
+
+                # Careful logic: "Not given" vs "given" vs "default" with "truthy/falsy":
+                if (
+                    self.settings_include_status.get(idx) is True
+                    or self.settings_include_status.get(idx) is None
+                    and self.default_include_status is True
+                ):
+                    dct["includeStatus"] = True
+
+                if (
+                    self.settings_ignore_bad_datapoints.get(idx) is False
+                    or self.settings_ignore_bad_datapoints.get(idx) is None
+                    and self.default_ignore_bad_datapoints is False
+                ):
+                    dct["ignoreBadDataPoints"] = False
+
+                if (
+                    self.settings_treat_uncertain_as_bad.get(idx) is False
+                    or self.settings_treat_uncertain_as_bad.get(idx) is None
+                    and self.default_treat_uncertain_as_bad is False
+                ):
+                    dct["treatUncertainAsBad"] = False
+
         all_ids.extend(all_xids)
         return all_ids
+
+    @staticmethod
+    def _json_float_translation(value: float | Literal["Infinity", "-Infinity", "NaN"] | None) -> float | None:
+        # As opposed to protobuf, retrieve_latest uses JSON and it returns out-of-range float values as strings:
+        return {"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan}.get(value, value)  # type: ignore [arg-type]
+
+    def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
+        if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
+            ids_exists = (
+                {("id", r["id"]) for r in result}
+                .union({("xid", r["externalId"]) for r in result})
+                .difference({("xid", None)})
+            )  # fmt: skip
+            self._all_identifiers = [
+                query
+                for query in self._all_identifiers
+                if ids_exists.intersection((("id", query.get("id")), ("xid", query.get("externalId"))))
+            ]
+        for query, res in zip(self._all_identifiers, result):
+            if not (dps := res["datapoints"]):
+                continue
+            (dp,) = dps
+            if query.get("includeStatus") is True:
+                dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
+            if query.get("ignoreBadDataPoints") is False:
+                # Bad data can have value missing (we translate to None):
+                dp.setdefault("value", None)
+                if not res["isString"]:
+                    dp["value"] = self._json_float_translation(dp["value"])
+        return result
 
     def fetch_datapoints(self) -> list[dict[str, Any]]:
         tasks = [
             {
                 "url_path": self.dps_client._RESOURCE_PATH + "/latest",
                 "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
+                "api_subversion": self.api_subversion,  # TODO: remove once status codes -> GA
             }
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
@@ -1639,4 +1846,5 @@ class RetrieveLatestDpsFetcher:
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
-        return tasks_summary.joined_results(lambda res: res.json()["items"])
+        result = tasks_summary.joined_results(lambda res: res.json()["items"])
+        return self._post_fix_status_codes_and_stringified_floats(result)

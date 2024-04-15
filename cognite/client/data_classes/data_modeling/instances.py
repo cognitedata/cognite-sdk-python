@@ -412,7 +412,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     @abstractmethod
     def as_apply(self) -> InstanceApply:
         """Convert the instance to an apply instance."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class InstanceApplyResult(InstanceCore, ABC):
@@ -999,7 +999,7 @@ class InstancesResult:
 
     @classmethod
     def load(cls, data: str | dict) -> InstancesResult:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass

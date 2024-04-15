@@ -20,13 +20,16 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_allclose
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
+    Datapoint,
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
     DatapointsList,
+    DatapointsQuery,
     LatestDatapointQuery,
     TimeSeries,
     TimeSeriesList,
@@ -96,8 +99,14 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
             f"{TEST_PREFIX} 114: 1mill dps, random distribution, 1950-2020, numeric",
             f"{TEST_PREFIX} 115: 1mill dps, random distribution, 1950-2020, string",
             f"{TEST_PREFIX} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{TEST_PREFIX} 117: single dp at 1900-01-01 00:00:00, numeric",
+            f"{TEST_PREFIX} 118: single dp at 2099-12-31 23:59:59.999, numeric",
             f"{TEST_PREFIX} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
             f"{TEST_PREFIX} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
+            f"{TEST_PREFIX} 121: mixed status codes, daily values, 2023-2024, numeric",
+            f"{TEST_PREFIX} 122: mixed status codes, daily values, 2023-2024, string",
+            f"{TEST_PREFIX} 123: only bad status codes, daily values, 2023-2024, numeric",
+            f"{TEST_PREFIX} 124: only bad status codes, daily values, 2023-2024, string",
         ]
     )
 
@@ -127,14 +136,19 @@ def ms_bursty_ts(all_test_time_series):
     return all_test_time_series[115]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def hourly_normal_dist(all_test_time_series) -> TimeSeries:
-    return all_test_time_series[116]
+    return all_test_time_series[118]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def minutely_normal_dist(all_test_time_series) -> TimeSeries:
-    return all_test_time_series[117]
+    return all_test_time_series[119]
+
+
+@pytest.fixture
+def ts_status_codes(all_test_time_series) -> TimeSeriesList:
+    return all_test_time_series[120:124]
 
 
 @pytest.fixture(scope="session")
@@ -162,7 +176,7 @@ def convert_any_ts_to_integer(ts):
     if isinstance(ts, int):
         return ts
     elif isinstance(ts, np.datetime64):
-        return ts.astype("datetime64[ms]").astype(int)
+        return ts.astype("datetime64[ms]").astype(np.int64).item()
     raise ValueError
 
 
@@ -192,15 +206,6 @@ def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
         assert np.all(np.diff(values) == delta)
 
     return index, values
-
-
-def get_test_series(test_series_no: str, available_test_series: TimeSeriesList) -> TimeSeries:
-    time_series = next(
-        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX} {test_series_no}")), None
-    )
-    if time_series is None:
-        raise ValueError(f"Invalid test data, test case {test_series_no} does not exists")
-    return time_series
 
 
 PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
@@ -322,14 +327,14 @@ def parametrized_values_uniform_index_fails(testrun_uid):
 
 @pytest.fixture(scope="module")
 def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeries:
-    timeseries = TimeSeries(
+    ts = TimeSeries(
         external_id="test_retrieve_datapoints_in_target_unit",
         name="test_retrieve_datapoints_in_target_unit",
         is_string=False,
         unit_external_id="temperature:deg_c",
     )
-    created_timeseries = cognite_client.time_series.upsert(timeseries, mode="patch")
-    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=timeseries.external_id)
+    created_timeseries = cognite_client.time_series.upsert(ts, mode="patch")
+    cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=ts.external_id)
     return created_timeseries
 
 
@@ -638,10 +643,10 @@ class TestRetrieveRawDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
 
-        res = retrieve_method(external_id=timeseries.external_id, end=3, **kwargs)
+        res = retrieve_method(external_id=ts.external_id, end=3, **kwargs)
 
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(value=res.values)
@@ -654,20 +659,20 @@ class TestRetrieveRawDatapointsAPI:
     def test_unit_external_id__is_overridden_if_converted(
         self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries, retrieve_method_name: str
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
-        assert timeseries.unit_external_id == "temperature:deg_c"
+        ts = timeseries_degree_c_minus40_0_100
+        assert ts.unit_external_id == "temperature:deg_c"
 
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
         res = retrieve_method(
             id=[
-                {"id": timeseries.id},
-                {"id": timeseries.id, "target_unit": "temperature:deg_f"},
-                {"id": timeseries.id, "target_unit": "temperature:k"},
+                {"id": ts.id},
+                {"id": ts.id, "target_unit": "temperature:deg_f"},
+                {"id": ts.id, "target_unit": "temperature:k"},
             ],
             end=3,
         )
         # Ensure unit_external_id is unchanged (Celsius):
-        assert res[0].unit_external_id == timeseries.unit_external_id
+        assert res[0].unit_external_id == ts.unit_external_id
         # ...and ensure it has changed for converted units (Fahrenheit or Kelvin):
         assert res[1].unit_external_id == "temperature:deg_f"
         assert res[2].unit_external_id == "temperature:k"
@@ -693,6 +698,173 @@ class TestRetrieveRawDatapointsAPI:
         assert dp_dumped == {"timestamp": 0, "value": "2"}
         assert type(dp_dumped["timestamp"]) is int  # noqa: E721
         assert type(dp_dumped["value"]) is str  # noqa: E721
+
+    def test_getitem_and_iter_preserves_status_codes(self, cognite_client, ts_status_codes, retrieve_endpoints):
+        mixed_ts, *_ = ts_status_codes
+        for endpoint in retrieve_endpoints:
+            dps_res = endpoint(
+                id=mixed_ts.id, include_status=True, ignore_bad_datapoints=False, start=ts_to_ms("2023-02-11"), limit=5
+            )
+            # Test object itself, plus slice of object:
+            for dps in [dps_res, dps_res[:5]]:
+                for dp, code, symbol in zip(dps, dps.status_code, dps.status_symbol):
+                    assert isinstance(dp, Datapoint)
+                    assert code is not None and code == dp.status_code
+                    assert symbol is not None and symbol == dp.status_symbol
+
+                assert math.isclose(dps.value[0], dps[0].value)
+                assert math.isclose(dps.value[4], dps[4].value)
+                assert math.isclose(dps.value[0], 432.9514228031592)
+                assert math.isclose(dps.value[4], 143.05065712951188)
+
+                assert dps.value[1] == dps[1].value == math.inf
+                assert math.isnan(dps.value[2]) and math.isnan(dps[2].value)
+
+                if isinstance(dps, Datapoints):
+                    assert dps.value[3] is None
+                elif isinstance(dps, DatapointsArray):
+                    assert math.isnan(dps.value[3])
+                    bad_ts = dps.timestamp[3].item() // 1_000_000
+                    assert dps.null_timestamps == {bad_ts}
+
+                    # Test slicing a part without a missing value:
+                    dps_slice = dps[:3]
+                    assert not dps_slice.null_timestamps
+                else:
+                    assert False
+
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_n_dps_retrieved_with_without_uncertain_and_bad(self, retrieve_endpoints, ts_status_codes, test_is_string):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        q1 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True)
+        q2 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True)
+        q3 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=True)
+        q4 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False, ignore_bad_datapoints=True)
+        q5 = DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False)
+        q6 = DatapointsQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False)
+
+        for endpoint in retrieve_endpoints:
+            mix1, mix2, mix3, bad1, bad2, bad3 = dps_lst = endpoint(
+                id=[q1, q3, q5], external_id=[q2, q4, q6], include_status=False
+            )
+            for dps in dps_lst:
+                assert dps.is_string is test_is_string
+
+            assert mix1.status_code is mix1.status_symbol is bad1.status_code is bad1.status_symbol is None
+            assert len(mix1) == 117  # good
+            assert len(mix2) == 239  # good + uncertain
+            assert len(mix3) == 365  # good + uncertain + bad
+
+            assert len(bad1) == 0
+            assert len(bad2) == 0
+            assert len(bad3) == 365
+
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_outside_points_with_bad_and_uncertain(self, retrieve_endpoints, ts_status_codes, test_is_string):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        for endpoint in retrieve_endpoints:
+            mix1, mix2, bad1, bad2, mix3, bad3, mix4, bad4 = endpoint(
+                id=[
+                    DatapointsQuery(id=mixed_ts.id, include_outside_points=False),
+                    DatapointsQuery(id=mixed_ts.id, include_outside_points=False, treat_uncertain_as_bad=False),
+                    DatapointsQuery(id=bad_ts.id, include_outside_points=False),
+                    DatapointsQuery(id=bad_ts.id, include_outside_points=False, ignore_bad_datapoints=False),
+                ],
+                external_id=[
+                    mixed_ts.external_id,
+                    bad_ts.external_id,
+                    DatapointsQuery(external_id=mixed_ts.external_id, treat_uncertain_as_bad=False),
+                    DatapointsQuery(external_id=bad_ts.external_id, ignore_bad_datapoints=False),
+                ],
+                include_outside_points=True,
+                start=ts_to_ms("2023-01-10") + 1,  # first good dp
+                end=ts_to_ms("2023-12-27"),  # last good dp
+                include_status=False,
+                treat_uncertain_as_bad=True,
+                ignore_bad_datapoints=True,
+            )
+            assert len(mix1) == 115  # good only, no outside
+            assert len(mix3) == 117  # good only, with outside
+            assert len(mix2) == 233  # good+uncertain, no outside
+            assert len(mix4) == 235  # good+uncertain, with outside
+
+            assert len(bad1) == 0
+            assert len(bad3) == 0
+            assert len(bad2) == 350
+            assert len(bad4) == 352
+
+    def test_status_codes_and_symbols(self, retrieve_endpoints, ts_status_codes):
+        mixed_ts, _, bad_ts, _ = ts_status_codes
+        for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
+            dps_lst = endpoint(
+                id=[
+                    DatapointsQuery(id=mixed_ts.id),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                    DatapointsQuery(id=bad_ts.id),
+                    DatapointsQuery(id=bad_ts.id, treat_uncertain_as_bad=False),
+                    DatapointsQuery(id=bad_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                ],
+                start=ts_to_ms("2023-08-08"),
+                include_status=True,
+                limit=10,
+            )
+            for dps in dps_lst:
+                # Some of these are empty, make sure they are still initiated to a container:
+                assert dps.status_code is not None
+                assert dps.status_symbol is not None
+
+            m1, m2, m3, b1, b2, b3 = dps_lst
+            assert math.isclose(m1.value[0], 686.4757694370811)
+            assert math.isclose(m1.value[-1], 611.7573455502195)
+            assert m1.status_code[0] == 10682368
+            assert m1.status_code[-1] == m2.status_code[-1] == 3145728
+            assert m1.status_symbol[-1] == m2.status_symbol[-1] == "GoodClamped"
+
+            assert math.isclose(m2.value[0], -371525.6348704161)
+            assert math.isclose(m2.value[-1], -538.1994761772598)
+            assert m2.status_code[0] == 1083244544
+
+            assert math.isclose(m3.value[0], 420)
+            assert math.isnan(m3.value[2])  # actual nan returned
+            if uses_numpy:
+                assert math.isnan(m3.value[4])  # cant store 'missing' in numpy array
+                assert convert_any_ts_to_integer(m3.timestamp[4]) in m3.null_timestamps
+            else:
+                assert m3.value[4] is None  # missing, nothing returned
+            assert math.isclose(m3.value[-1], 1227.6332936465685)
+            assert m3.status_code[0] == 2149122048
+            assert m3.status_code[2] == 2152071168
+            assert m3.status_code[4] == 2149777408
+            assert m3.status_code[-1] == 67239936
+            assert list(m3.status_symbol[5:8]) == [
+                "BadWaitingForResponse",
+                "GoodEntryReplaced",
+                "UncertainReferenceOutOfServer",
+            ]
+            assert not b1.value and not b2.value
+            assert not b1.status_code and not b2.status_code
+            assert not b1.status_symbol and not b2.status_symbol
+
+            assert b3.value[0] == -math.inf
+            if uses_numpy:
+                assert math.isnan(b3.value[1])
+                assert convert_any_ts_to_integer(b3.timestamp[1]) in b3.null_timestamps
+            else:
+                assert b3.value[1] is None
+            assert math.isclose(b3.value[-1], 2.71)
+            assert b3.status_code[0] == 2148335616
+            assert b3.status_code[1] == 2152267776
+            assert b3.status_code[-1] == 2165309440
+            assert b3.status_symbol[-1] == "BadLicenseNotAvailable"
 
 
 class TestRetrieveAggregateDatapointsAPI:
@@ -1187,25 +1359,101 @@ class TestRetrieveAggregateDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
 
-        res = retrieve_method(external_id=timeseries.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
+        res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
         if isinstance(res, pd.DataFrame):
             res = DatapointsArray(max=res.values)
         assert math.isclose(res.max[0], 212)
 
+    def test_status_codes_affect_aggregate_calculations(self, retrieve_endpoints, ts_status_codes):
+        mixed_ts, _, bad_ts, _ = ts_status_codes  # No aggregates for string dps
+        bad_xid = bad_ts.external_id
+        for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
+            dps_lst = endpoint(
+                id=[
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=True, ignore_bad_datapoints=True),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=True),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=True, ignore_bad_datapoints=False),
+                    DatapointsQuery(id=mixed_ts.id, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                ],
+                external_id=[
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=True, ignore_bad_datapoints=True),
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=False, ignore_bad_datapoints=True),
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=True, ignore_bad_datapoints=False),
+                    DatapointsQuery(external_id=bad_xid, treat_uncertain_as_bad=False, ignore_bad_datapoints=False),
+                ],
+                start=ts_to_ms("2023-01-01"),
+                end=ts_to_ms("2024-01-01"),
+                aggregates=ALL_SORTED_DP_AGGS,
+                granularity="30d",
+            )
+            # Ensure all are not just empty, but not set:
+            for dps in dps_lst:
+                assert dps.status_code is None
+                assert dps.status_symbol is None
 
-@pytest.fixture(scope="session")
-def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
-    utc = ZoneInfo("UTC")
-    # Adding a day to ensure we get the entire 2023 when converting to specific time zone later
-    start = datetime(2022, 12, 31, tzinfo=utc)
-    end = datetime(2024, 1, 1, hour=23, minute=59, second=59, tzinfo=utc)
+            # Count and duration of specific status should be invariant:
+            for dps in [dps_lst[:4], dps_lst[4:]]:
+                for agg in "count", "duration":
+                    for status in f"{agg}_good", f"{agg}_uncertain", f"{agg}_bad":
+                        l1, l2, l3, l4 = (getattr(x, status) for x in dps)
+                        assert list(l1) == list(l2) == list(l3) == list(l4)
 
-    return cognite_client.time_series.data.retrieve_dataframe(
-        external_id=hourly_normal_dist.external_id, start=start, end=end
-    ).tz_localize(utc)
+                # Normal count may count uncertain depending on treat_uncertain_as_bad:
+                assert list(dps[0].count) == list(dps[2].count)  # note: ignores treat_uncertain_as_bad
+                assert list(dps[1].count) == list(dps[3].count)
+
+            m1, m2, m3, m4, b1, b2, b3, b4 = dps_lst
+            assert sum(m1.count) < sum(m2.count)
+            assert sum(b1.count) == sum(b2.count) == sum(b3.count) == sum(b4.count) == 0  # bad is never counted
+
+            for bad in b1, b2, b3, b4:
+                assert np.isnan(bad.average).all()
+                assert np.isnan(bad.interpolation).all()
+                assert np.isnan(bad.total_variation).all()
+
+            # Last aggregation period contains good only:
+            assert_allclose(-543.501385, [m1.average[-1], m2.average[-1], m3.average[-1], m4.average[-1]])
+            assert_allclose(
+                -543.501385, [m1.interpolation[-1], m2.interpolation[-1], m3.interpolation[-1], m4.interpolation[-1]]
+            )
+            assert_allclose(
+                0.0, [m1.total_variation[-1], m2.total_variation[-1], m3.total_variation[-1], m4.total_variation[-1]]
+            )
+            # The following aggregates do not care about the 'ignore_bad_datapoints' setting, only 'treat_uncertain_as_bad':
+            for agg in ["min", "max", "sum", "interpolation", "discrete_variance", "total_variation"]:
+                m1_agg, m2_agg, m3_agg, m4_agg = (getattr(m, agg) for m in (m1, m2, m3, m4))
+                assert_allclose(m1_agg, m3_agg)  # both treat_uncertain_as_bad=True
+                assert_allclose(m2_agg, m4_agg)  # both treat_uncertain_as_bad=False
+                with pytest.raises(AssertionError, match=r"^\nNot equal to tolerance"):
+                    assert_allclose(m1_agg, m2_agg)
+            # The following aggregates varies with both settings, 'average', 'step_interpolation' and 'continuous_variance':
+            assert_allclose(m1.average[:4], [-100.266803, 180.102903, 709.306477, -342.590187])
+            assert_allclose(m2.average[:4], [-166855.089388, 113784.358276, 13372.243630, -65191.492671])
+            assert_allclose(m3.average[:4], [-283.850509, 205.634247, 881.584739, -91.393828])
+            assert_allclose(m4.average[:4], [-264471.559047, 117022.569448, -38772.339529, 47902.527674])
+
+            assert_allclose(m1.step_interpolation[:4], [math.nan, -1138.57277, 274.866615, 651.621005])
+            assert_allclose(
+                m2.step_interpolation[:4], [math.nan, -1355647.5886087606, -110240.71105459922, 651.6210049165213]
+            )
+            assert_allclose(m3.step_interpolation[:4], [math.nan, math.nan, math.nan, 651.621005])
+            assert_allclose(m4.step_interpolation[:4], [math.nan, math.nan, -110240.711055, 651.621005])
+
+            assert_allclose(m1.continuous_variance[:4], [642800.685332, 426005.553231, 435043.668454, 622115.239423])
+            assert_allclose(
+                m2.continuous_variance[:4],
+                [284755948510.1042, 375008672701.96277, 148584225325.00912, 375298973299.39276],
+            )
+            assert_allclose(
+                m3.continuous_variance[:4], [625723.5820629946, 638941.7823122272, 675739.8119564621, 1583061.859119803]
+            )
+            assert_allclose(
+                m4.continuous_variance[:4],
+                [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
+            )
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
@@ -1272,7 +1520,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
     # "106: every minute, 1969-12-31 - 1970-01-02, numeric",
     oslo = ZoneInfo("Europe/Oslo")
     yield pytest.param(
-        "106",
+        106,
         datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
         datetime(1970, 1, 2, 0, 0, 0, tzinfo=oslo),
         "6hours",
@@ -1285,7 +1533,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         id="6 hour granularities on minute raw data",
     )
     yield pytest.param(
-        "106",
+        106,
         datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
         datetime(1970, 1, 1, 0, 30, 0, tzinfo=oslo),
         "10minutes",
@@ -1298,7 +1546,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         id="10 minutes granularities on minute raw data",
     )
     yield pytest.param(
-        "106",
+        106,
         datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
         datetime(1970, 1, 1, 0, 0, 2, tzinfo=oslo),
         "1second",
@@ -1312,7 +1560,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
 def retrieve_dataframe_in_tz_uniform_data():
     oslo = ZoneInfo("Europe/Oslo")
     yield pytest.param(
-        "119",
+        119,
         datetime(2019, 12, 23, tzinfo=oslo),
         datetime(2020, 1, 14, tzinfo=oslo),
         "1week",
@@ -1324,7 +1572,7 @@ def retrieve_dataframe_in_tz_uniform_data():
     )
 
     yield pytest.param(
-        "119",
+        119,
         datetime(2019, 11, 23, tzinfo=oslo),
         datetime(2020, 1, 14, tzinfo=oslo),
         "2quarters",
@@ -1354,15 +1602,15 @@ class TestRetrieveTimezoneDatapointsAPI:
     @pytest.mark.parametrize(
         "test_series_no, start, end, aggregation, granularity",
         (
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
-            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "count", "5h"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
-            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "count", "38m"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
+            (119, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "count", "5h"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
+            (120, "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "count", "38m"),
         ),
     )
     def test_cdf_aggregate_equal_to_cdf(
@@ -1374,21 +1622,19 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client: CogniteClient,
         all_test_time_series: TimeSeriesList,
     ):
-        time_series = get_test_series(test_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
-        raw_df = cognite_client.time_series.data.retrieve_dataframe(
-            external_id=time_series.external_id, start=start, end=end
-        )
+        raw_df = cognite_client.time_series.data.retrieve_dataframe(external_id=ts.external_id, start=start, end=end)
         expected_aggregate = cognite_client.time_series.data.retrieve_dataframe(
             start=start,
             end=end,
-            external_id=time_series.external_id,
+            external_id=ts.external_id,
             aggregates=aggregation,
             granularity=granularity,
             include_aggregate_name=False,
             include_granularity_name=False,
         )
-        actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
+        actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, ts.is_step)
 
         # Pandas adds the correct frequency to the index, while the SDK does not when uniform is not True.
         # The last point is not compared as the raw data might be missing information to do the correct aggregate.
@@ -1410,12 +1656,19 @@ class TestRetrieveTimezoneDatapointsAPI:
         granularity: str,
         tz_name: str,
         cognite_client: CogniteClient,
-        hourly_2023: pd.DataFrame,
+        hourly_normal_dist: TimeSeries,
     ):
         tz = ZoneInfo(tz_name)
         start = datetime(2023, 1, 1, tzinfo=tz)
         end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
-        raw_df = hourly_2023.tz_convert(tz_name).loc[str(start) : str(end)].copy()
+        raw_df = (
+            cognite_client.time_series.data.retrieve_dataframe(
+                external_id=hourly_normal_dist.external_id, start=start, end=end
+            )
+            .tz_localize("UTC")
+            .tz_convert(tz_name)
+            .loc[str(start) : str(end)]
+        )
         expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity)
 
         actual_aggregate = cognite_client.time_series.data.retrieve_dataframe_in_tz(
@@ -1450,11 +1703,11 @@ class TestRetrieveTimezoneDatapointsAPI:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "time_series_no, start, end, granularity, expected_df",
+        "test_series_no, start, end, granularity, expected_df",
         list(retrieve_dataframe_in_tz_count_small_granularities_data()),
     )
     def test_retrieve_dataframe_in_tz_count_small_granularities(
-        time_series_no: str,
+        test_series_no: str,
         start: datetime,
         end: datetime,
         granularity: str,
@@ -1462,9 +1715,9 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client,
         all_test_time_series,
     ):
-        time_series = get_test_series(time_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=time_series.external_id,
+            external_id=ts.external_id,
             start=start,
             end=end,
             aggregates="count",
@@ -1475,11 +1728,11 @@ class TestRetrieveTimezoneDatapointsAPI:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "time_series_no, start, end, granularity, expected_index",
+        "test_series_no, start, end, granularity, expected_index",
         list(retrieve_dataframe_in_tz_uniform_data()),
     )
     def test_retrieve_dataframe_in_tz_uniform(
-        time_series_no: str,
+        test_series_no: str,
         start: datetime,
         end: datetime,
         granularity: str,
@@ -1487,9 +1740,9 @@ class TestRetrieveTimezoneDatapointsAPI:
         cognite_client,
         all_test_time_series,
     ):
-        time_series = get_test_series(time_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=time_series.external_id,
+            external_id=ts.external_id,
             start=start,
             end=end,
             aggregates="count",
@@ -1503,24 +1756,24 @@ class TestRetrieveTimezoneDatapointsAPI:
     @pytest.mark.parametrize(
         "test_series_no, start, end, tz_name",
         [
-            ("119", "2023-01-01", "2023-02-01", "Europe/Oslo"),
-            ("120", "2023-01-01", "2023-02-01", "Europe/Oslo"),
+            (119, "2023-01-01", "2023-02-01", "Europe/Oslo"),
+            (120, "2023-01-01", "2023-02-01", "Europe/Oslo"),
         ],
     )
     def test_retrieve_dataframe_in_tz_raw_data(
         test_series_no: str, start: str, end: str, tz_name: str, cognite_client, all_test_time_series
     ):
-        timeseries = get_test_series(test_series_no, all_test_time_series)
+        ts = all_test_time_series[test_series_no - 1]
         start, end = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
         tz = ZoneInfo(tz_name)
         start, end = start.replace(tzinfo=tz), end.replace(tzinfo=tz)
         expected_df = (
-            cognite_client.time_series.data.retrieve_dataframe(external_id=timeseries.external_id, start=start, end=end)
+            cognite_client.time_series.data.retrieve_dataframe(external_id=ts.external_id, start=start, end=end)
             .tz_localize("utc")
             .tz_convert(tz_name)
         )
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=timeseries.external_id, start=start, end=end
+            external_id=ts.external_id, start=start, end=end
         )
         pd.testing.assert_frame_equal(actual_df, expected_df)
 
@@ -1695,7 +1948,10 @@ class TestRetrieveDataFrameAPI:
                 "external_id": ts_numeric.external_id,
                 "granularity": random_granularity(upper_lim=120),
                 # Exclude count (only non-float agg) and (step_)interpolation which might yield nans:
-                "aggregates": random_aggregates(exclude={"count", "interpolation", "step_interpolation"}),
+                "aggregates": random_aggregates(
+                    exclude={"interpolation", "step_interpolation"},
+                    exclude_integer_aggregates=True,
+                ),
             },
             start=random.randint(YEAR_MS[1950], YEAR_MS[2000]),
             end=ts_to_ms("2019-12-01"),
@@ -1827,11 +2083,9 @@ class TestRetrieveLatestDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
 
-        res = cognite_client.time_series.data.retrieve_latest(
-            external_id=timeseries.external_id, before="now", **kwargs
-        )
+        res = cognite_client.time_series.data.retrieve_latest(external_id=ts.external_id, before="now", **kwargs)
         assert math.isclose(res.value[0], 212)
         assert res.unit_external_id == "temperature:deg_f"
 
@@ -1845,10 +2099,10 @@ class TestRetrieveLatestDatapointsAPI:
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
-        timeseries = timeseries_degree_c_minus40_0_100
+        ts = timeseries_degree_c_minus40_0_100
 
         res = cognite_client.time_series.data.retrieve_latest(
-            external_id=LatestDatapointQuery(external_id=timeseries.external_id, before="now", **kwargs)
+            external_id=LatestDatapointQuery(external_id=ts.external_id, before="now", **kwargs)
         )
         assert math.isclose(res.value[0], 212)
         assert res.unit_external_id == "temperature:deg_f"
@@ -1888,6 +2142,114 @@ class TestRetrieveLatestDatapointsAPI:
         else:
             assert isinstance(res, Datapoints)
             assert 1 == len(res)
+
+    @pytest.mark.usefixtures("post_spy")
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_ignore_unknown_ids_true_good_status_codes_are_populated(
+        self, cognite_client, ts_status_codes, test_is_string, monkeypatch
+    ):
+        # We test result ordering by ensuring multiple splits of identifiers:
+        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 4)
+
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        kwargs = dict(
+            id=[mixed_ts.id, *random_cognite_ids(3), bad_ts.id, *random_cognite_ids(4)],
+            external_id=[mixed_ts.external_id, *random_cognite_external_ids(4), bad_ts.external_id],
+            before=1698537600000 + 1,  # 2023-10-29
+            include_status=True,
+            ignore_bad_datapoints=False,
+        )
+        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[\{"):
+            cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=False)
+
+        assert 4 == cognite_client.time_series.data._post.call_count
+
+        res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
+        assert len(res) == 4  # Only 2 real identifiers (duplicated twice)
+
+        m1, b1, m2, b2 = res
+        assert m1.id == m2.id == mixed_ts.id
+        assert b1.id == b2.id == bad_ts.id
+        assert m1.is_string is test_is_string
+        assert b1.is_string is test_is_string
+
+        assert m1.timestamp == [1698537600000]
+        assert m1.status_code == [0]  # This is empty in the JSON response
+        assert m1.status_symbol == ["Good"]  # This is empty in the JSON response
+
+        assert b1.timestamp == [1698537600000]
+        assert b1.status_code == [2154168320]
+        assert b1.status_symbol == ["BadDuplicateReferenceNotAllowed"]
+
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_effect_of_uncertain_and_bad_settings_using_same_before_setting(
+        self, cognite_client, ts_status_codes, test_is_string
+    ):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        m1, m2, m3, b1, b2, b3 = cognite_client.time_series.data.retrieve_latest(
+            id=[
+                mixed_ts.id,
+                LatestDatapointQuery(id=mixed_ts.id, treat_uncertain_as_bad=False),
+                LatestDatapointQuery(id=mixed_ts.id, ignore_bad_datapoints=False),
+            ],
+            external_id=[
+                bad_ts.external_id,
+                LatestDatapointQuery(external_id=bad_ts.external_id, treat_uncertain_as_bad=False),
+                LatestDatapointQuery(external_id=bad_ts.external_id, ignore_bad_datapoints=False),
+            ],
+            include_status=False,
+            ignore_bad_datapoints=True,
+            treat_uncertain_as_bad=True,
+            before=ts_to_ms("2023-08-05 12:00:00"),
+        )
+        assert m1.timestamp == [1691020800000]  # 2023-08-03
+        assert m2.timestamp == [1691107200000]  # 2023-08-04 newer because uncertain is treated as good
+        assert m3.timestamp == [1691193600000]  # 2023-08-05 even newer because bad is not ignored
+        assert b3.timestamp == [1691193600000]
+        assert not b1.timestamp and not b1.value
+        assert not b2.timestamp and not b2.value
+
+        if not test_is_string:
+            assert math.isclose(m1.value[0], -443.7838445173604)
+            assert math.isclose(m2.value[0], 792804.310084)
+            assert math.isclose(m3.value[0], 1e100)
+            assert math.isclose(b3.value[0], -1e100)
+
+    @pytest.mark.parametrize("test_is_string", (True, False))
+    def test_json_float_translation(self, cognite_client, ts_status_codes, test_is_string):
+        if test_is_string:
+            _, mixed_ts, _, bad_ts = ts_status_codes
+        else:
+            mixed_ts, _, bad_ts, _ = ts_status_codes
+
+        exp_timestamps = [1691625600000, 1691798400000, 1691884800000, 1692403200000, 1692576000000, 1692835200000]
+        dps_lst = cognite_client.time_series.data.retrieve_latest(
+            id=[LatestDatapointQuery(id=bad_ts.id, before=ts + 1) for ts in exp_timestamps],
+            ignore_bad_datapoints=False,
+        )
+        for dps, exp_ts in zip(dps_lst, exp_timestamps):
+            assert dps.timestamp == [exp_ts]
+
+        assert dps_lst[3].value[0] is None
+        if test_is_string:
+            for i, dps in enumerate(dps_lst):
+                if i == 3:
+                    continue  # None aka missing, checked above
+                assert isinstance(dps.value[0], str)
+        else:
+            assert math.isclose(dps_lst[0].value[0], 2.71)
+            assert math.isclose(dps_lst[2].value[0], -5e-324)
+            assert math.isnan(dps_lst[4].value[0])
+            assert dps_lst[1].value[0] == -math.inf
+            assert dps_lst[5].value[0] == math.inf
 
 
 class TestInsertDatapointsAPI:
