@@ -31,6 +31,7 @@ from cognite.client.data_classes import (
     DatapointsList,
     DatapointsQuery,
     LatestDatapointQuery,
+    StatusCode,
     TimeSeries,
     TimeSeriesList,
 )
@@ -2338,7 +2339,7 @@ class TestInsertDatapointsAPI:
         accepted_insert_values = [0, None, "NaN", math.nan, "-Infinity", -math.inf, "Infinity", math.inf, 1]
         actual_value = [0, None, math.nan, math.nan, -math.inf, -math.inf, math.inf, math.inf, 1]
         actual_status_codes = [
-            0, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 1073741824
+            0, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, StatusCode.Uncertain
         ]  # fmt: skip
 
         cognite_client.time_series.data.insert(
@@ -2395,7 +2396,7 @@ class TestInsertDatapointsAPI:
         sassy = "Negative, really? Where's my status code, huh"
         actual_timestamp = [0, 123, 1234, 12345, 123456, 1234567, 12345678]
         actual_value = ["0", None, "NaN", "Infinity", "-Infinity", "good-yes?", "uncertain-yes?"]
-        actual_status_codes = [0, 2147483648, 2147483648, 2147483648, 2147483648, 1024, 1073741824]  # fmt: skip
+        actual_status_codes = [0, 2147483648, StatusCode.Bad, 2147483648, 2147483648, 1024, 1073741824]  # fmt: skip
 
         cognite_client.time_series.data.insert(
             id=new_ts_string.id,
@@ -2446,14 +2447,14 @@ class TestInsertDatapointsAPI:
                     "datapoints": [
                         {"timestamp": 0, "value": 0},
                         {"timestamp": 1, "value": 1, "status": {}},
-                        {"timestamp": 2, "value": 2, "status": {"code": 0}},
+                        {"timestamp": 2, "value": 2, "status": {"code": StatusCode.Good}},
                         {"timestamp": 3, "value": 3, "status": {"symbol": "Good"}},
                         {"timestamp": 4, "value": 4, "status": {"code": 0, "symbol": "Good"}},
                         {"timestamp": 5, "value": 5, "status": {"code": 1073741824}},
                         {"timestamp": 6, "value": 6, "status": {"symbol": "Uncertain"}},
-                        {"timestamp": 7, "value": 7, "status": {"code": 1073741824, "symbol": "Uncertain"}},
+                        {"timestamp": 7, "value": 7, "status": {"code": StatusCode.Uncertain, "symbol": "Uncertain"}},
                         {"timestamp": 8, "value": 8, "status": {"symbol": "Bad"}},
-                        {"timestamp": 9, "value": 9, "status": {"code": 2147483648, "symbol": "Bad"}},
+                        {"timestamp": 9, "value": 9, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                         {"timestamp": 10, "value": None, "status": {"code": 2147483648}},
                     ],
                 },
@@ -2462,15 +2463,15 @@ class TestInsertDatapointsAPI:
                     "datapoints": [
                         {"timestamp": 0, "value": "s0"},
                         {"timestamp": 1, "value": "s1", "status": {}},
-                        {"timestamp": 2, "value": "s2", "status": {"code": 0}},
+                        {"timestamp": 2, "value": "s2", "status": {"code": StatusCode.Good}},
                         {"timestamp": 3, "value": "s3", "status": {"symbol": "Good"}},
                         {"timestamp": 4, "value": "s4", "status": {"code": 0, "symbol": "Good"}},
-                        {"timestamp": 5, "value": "s5", "status": {"code": 1073741824}},
+                        {"timestamp": 5, "value": "s5", "status": {"code": StatusCode.Uncertain}},
                         {"timestamp": 6, "value": "s6", "status": {"symbol": "Uncertain"}},
                         {"timestamp": 7, "value": "s7", "status": {"code": 1073741824, "symbol": "Uncertain"}},
                         {"timestamp": 8, "value": "s9", "status": {"symbol": "Bad"}},
                         {"timestamp": 9, "value": "s10", "status": {"code": 2147483648, "symbol": "Bad"}},
-                        {"timestamp": 10, "value": None, "status": {"code": 2147483648}},
+                        {"timestamp": 10, "value": None, "status": {"code": StatusCode.Bad}},
                     ],
                 },
             ]

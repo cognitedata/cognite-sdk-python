@@ -695,7 +695,7 @@ class DatapointsAPI(APIClient):
 
             To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
             constants: `MIN_TIMESTAMP_MS` and `MAX_TIMESTAMP_MS`, to make sure you do not miss any. Performance warning: This pattern of
-            fetching datapoints from the entire valid time domain is slower and shouldn't be used for regular "day-to-day" queries::
+            fetching datapoints from the entire valid time domain is slower and shouldn't be used for regular "day-to-day" queries:
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
                 >>> dps_backup = client.time_series.data.retrieve(
@@ -1370,21 +1370,24 @@ class DatapointsAPI(APIClient):
             The third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import StatusCode
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> datapoints = [
                 ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
-                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000, 0),  # code: Good
-                ...     (datetime(2018,1,3, tzinfo=timezone.utc), 3000, 1073741824),  # code: Uncertain
-                ...     (datetime(2018,1,4, tzinfo=timezone.utc), None, 2147483648),  # code: Bad
+                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good),
+                ...     (datetime(2018,1,3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
+                ...     (datetime(2018,1,4, tzinfo=timezone.utc), None, StatusCode.Bad),
                 ... ]
                 >>> client.time_series.data.insert(datapoints, id=1)
 
-            The timestamp can be given by datetime as above, or in milliseconds since epoch:
+            The timestamp can be given by datetime as above, or in milliseconds since epoch. Status codes can also be
+            passed as normal integers; this is necessary if a subcategory or modifier flag is needed, e.g. 3145728: 'GoodClamped':
 
                 >>> datapoints = [
                 ...     (150000000000, 1000),
-                ...     (160000000000, 2000, 0),  # code: Good
+                ...     (160000000000, 2000, 3145728),
+                ...     (160000000000, 2000, 2147483648),  # Same as StatusCode.Bad
                 ... ]
                 >>> client.time_series.data.insert(datapoints, id=2)
 
@@ -1396,7 +1399,7 @@ class DatapointsAPI(APIClient):
                 ...     {"timestamp": 160000000000, "value": 2000},
                 ...     {"timestamp": 170000000000, "value": 3000, "status": {"code": 0}},
                 ...     {"timestamp": 180000000000, "value": 4000, "status": {"symbol": "Uncertain"}},
-                ...     {"timestamp": 190000000000, "value": math.nan, "status": {"code": 2147483648, "symbol": "Bad"}},
+                ...     {"timestamp": 190000000000, "value": math.nan, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]
                 >>> client.time_series.data.insert(datapoints, external_id="abcd")
 
@@ -1450,14 +1453,15 @@ class DatapointsAPI(APIClient):
 
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import StatusCode
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> to_insert = [
                 ...     {"id": 1, "datapoints": [
                 ...         (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
-                ...         (datetime(2018,1,2, tzinfo=timezone.utc), 2000, 0),  # code: Good
-                ...         (datetime(2018,1,3, tzinfo=timezone.utc), 3000, 1073741824),  # code: Uncertain
-                ...         (datetime(2018,1,4, tzinfo=timezone.utc), None, 2147483648),  # code: Bad
+                ...         (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good),
+                ...         (datetime(2018,1,3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
+                ...         (datetime(2018,1,4, tzinfo=timezone.utc), None, StatusCode.Bad),
                 ... ]}]
 
             Passing datapoints using the dictionary format with timestamp given in milliseconds since epoch:
@@ -1467,8 +1471,8 @@ class DatapointsAPI(APIClient):
                 ...     {"external_id": "foo", "datapoints": [
                 ...         {"timestamp": 170000000, "value": 4000},
                 ...         {"timestamp": 180000000, "value": 5000, "status": {"symbol": "Uncertain"}},
-                ...         {"timestamp": 190000000, "value": None, "status": {"code": 2147483648}},
-                ...         {"timestamp": 190000000, "value": math.inf, "status": {"code": 2147483648, "symbol": "Bad"}},
+                ...         {"timestamp": 190000000, "value": None, "status": {"code": StatusCode.Bad}},
+                ...         {"timestamp": 190000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]})
 
             If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:

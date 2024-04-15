@@ -6,6 +6,7 @@ import warnings
 from collections import defaultdict
 from dataclasses import InitVar, dataclass, fields
 from datetime import datetime
+from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -34,6 +35,13 @@ from cognite.client.utils._text import (
 )
 from cognite.client.utils._time import convert_and_isoformat_time_attrs
 from cognite.client.utils.useful_types import SequenceNotStr
+
+
+class StatusCode(IntEnum):
+    Good = 0x0
+    Uncertain = 0x40000000  # aka 1 << 30 aka 1073741824
+    Bad = 0x80000000  # aka 1 << 31 aka 2147483648
+
 
 Aggregate = Literal[
     "average",
