@@ -176,6 +176,11 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
     }
     yield pytest.param(snake_cased_property, expected, id="And range filter with snake cased property")
 
+    yield pytest.param(
+        f.InvalidFilter([["some", "old", "prop"]], "overlaps"),
+        {"invalid": {"previously_referenced_properties": [["some", "old", "prop"]], "filter_type": "overlaps"}},
+    )
+
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
 def test_dump_filter(user_filter: Filter, expected: dict) -> None:
@@ -187,6 +192,7 @@ def test_dump_filter(user_filter: Filter, expected: dict) -> None:
 def test_unknown_filter_type() -> None:
     unknown = Filter.load({"unknown": {}})
     assert isinstance(unknown, f.UnknownFilter)
+    assert unknown.dump() == {"unknown": {}}
 
 
 @pytest.mark.parametrize("property_cls", filter(lambda cls: hasattr(cls, "metadata_key"), all_subclasses(EnumProperty)))

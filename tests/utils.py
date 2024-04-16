@@ -432,6 +432,7 @@ class FakeCogniteResourceGenerator:
             if type_ is Filter:
                 # Remove filters which are only used by data modeling classes
                 implementations.remove(filters.HasData)
+                implementations.remove(filters.InvalidFilter)
                 implementations.remove(filters.Nested)
                 implementations.remove(filters.GeoJSONWithin)
                 implementations.remove(filters.GeoJSONDisjoint)
