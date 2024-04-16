@@ -185,8 +185,8 @@ def test_dump_filter(user_filter: Filter, expected: dict) -> None:
 
 
 def test_unknown_filter_type() -> None:
-    with pytest.raises(ValueError, match="Unknown filter type: unknown"):
-        Filter.load({"unknown": {}})
+    unknown = Filter.load({"unknown": {}})
+    assert isinstance(unknown, f.UnknownFilter)
 
 
 @pytest.mark.parametrize("property_cls", filter(lambda cls: hasattr(cls, "metadata_key"), all_subclasses(EnumProperty)))

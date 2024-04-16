@@ -186,7 +186,7 @@ class Filter(ABC):
                 value=_load_filter_value(filter_body["value"]),
             )
         else:
-            raise ValueError(f"Unknown filter type: {filter_name}")
+            return UnknownFilter(filter_name, filter_body)
 
     @abstractmethod
     def _filter_body(self, camel_case_property: bool) -> list | dict: ...
@@ -197,6 +197,18 @@ class Filter(ABC):
             for filter_ in self._filters:
                 output.update(filter_._involved_filter_types())
         return output
+
+
+class UnknownFilter(Filter):
+    def __init__(self, filter_name: str, filter_body: dict[str, Any]) -> None:
+        self.__actual_filter_name = filter_name
+        self.__actual_filter_body = filter_body
+
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        return self.__actual_filter_body
+
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        return {self.__actual_filter_name: self.__actual_filter_body}
 
 
 def _validate_filter(
