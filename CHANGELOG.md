@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.36.0] - 2024-04-16
+### Fixed
+- Now handle unknown filter types
+- Add support for the "invalid" filter type in DMS
+
 ## [7.35.0] - 2024-04-16
 ### Added
 - Datapoints insert methods `insert` and `insert_multiple` now support ingesting (optional) status codes.
