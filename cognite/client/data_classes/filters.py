@@ -8,7 +8,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
-from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -185,6 +185,11 @@ class Filter(ABC):
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
+        elif filter_name == InvalidFilter._filter_name:
+            return InvalidFilter(
+                previously_referenced_properties=filter_body["previouslyReferencedProperties"],
+                filter_type=filter_body["filterType"],
+            )
         else:
             return UnknownFilter(filter_name, filter_body)
 
@@ -205,10 +210,34 @@ class UnknownFilter(Filter):
         self.__actual_filter_body = filter_body
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
-        return self.__actual_filter_body
+        if camel_case_property:
+            return convert_all_keys_to_camel_case(self.__actual_filter_body)
+        else:
+            return self.__actual_filter_body
 
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
-        return {self.__actual_filter_name: self.__actual_filter_body}
+        return {self.__actual_filter_name: self._filter_body(camel_case_property)}
+
+
+class InvalidFilter(Filter):
+    _filter_name = "invalid"
+
+    def __init__(self, previously_referenced_properties: list[list[str]], filter_type: str) -> None:
+        self.__previously_reference_properties = previously_referenced_properties
+        self.__filter_type = filter_type
+
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        body = {
+            "previously_referenced_properties": self.__previously_reference_properties,
+            "filter_type": self.__filter_type,
+        }
+        if camel_case_property:
+            return convert_all_keys_to_camel_case(body)
+        else:
+            return body
+
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        return {self._filter_name: self._filter_body(camel_case_property)}
 
 
 def _validate_filter(
