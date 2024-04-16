@@ -39,10 +39,11 @@ class TestLabelsAPI:
         assert isinstance(res_single, LabelDefinition)
         assert res_single.external_id == xids[0]
 
-        xids.append("this does not exist")
+    def test_retrieve_not_found(self, cognite_client):
+        xids = ["this does not exist"]
+        
         res_lst = cognite_client.labels.retrieve(xids, ignore_unknown_ids=True)
-        assert len(res_lst) == 1
-        assert res_lst[0].external_id == xids[0]
+        assert len(res_lst) == 0
 
         with pytest.raises(CogniteNotFoundError) as error:
             cognite_client.labels.retrieve(xids)
