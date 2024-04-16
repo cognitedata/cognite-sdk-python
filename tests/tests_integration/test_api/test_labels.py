@@ -3,6 +3,8 @@ from unittest import mock
 import pytest
 
 from cognite.client.data_classes import Asset, AssetUpdate, Label, LabelDefinition
+from cognite.client.data_classes.labels import LabelDefinitionList
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
 
@@ -24,6 +26,28 @@ class TestLabelsAPI:
         res = cognite_client.labels.list(limit=100)
         assert 0 < len(res) <= 100
         assert 1 == cognite_client.labels._post.call_count
+
+    def test_retrieve(self, cognite_client):
+        res = cognite_client.labels.list(limit=1)
+        assert 1 == len(res)
+        xids = res.as_external_ids()
+        res_lst = cognite_client.labels.retrieve(xids)
+        assert isinstance(res_lst, LabelDefinitionList)
+        assert res_lst.as_external_ids() == xids
+
+        res_single = cognite_client.labels.retrieve(xids[0])
+        assert isinstance(res_single, LabelDefinition)
+        assert res_single.external_id == xids[0]
+
+    def test_retrieve_not_found(self, cognite_client):
+        xids = ["this does not exist"]
+
+        res_lst = cognite_client.labels.retrieve(xids, ignore_unknown_ids=True)
+        assert len(res_lst) == 0
+
+        with pytest.raises(CogniteNotFoundError) as error:
+            cognite_client.labels.retrieve(xids)
+        assert error.value.code == 400
 
     def test_create_asset_with_label(self, cognite_client, new_label):
         ac = cognite_client.assets.create(Asset(name="any", labels=[Label(external_id=new_label.external_id)]))
