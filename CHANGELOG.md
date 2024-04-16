@@ -17,10 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.37.0] - 2024-04-16
+### Fixed
+- Now handle unknown data types in DM
+
 ## [7.36.0] - 2024-04-16
 ### Fixed
-- Now handle unknown filter types
-- Add support for the "invalid" filter type in DMS
+- Now handle unknown filter types in DM
+- Add support for the "invalid" filter type in DM
 
 ## [7.35.0] - 2024-04-16
 ### Added
