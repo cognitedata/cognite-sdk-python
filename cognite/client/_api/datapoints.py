@@ -6,25 +6,27 @@ import itertools
 import math
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections import defaultdict
 from datetime import datetime
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Iterable,
     Iterator,
     List,
     Literal,
     MutableSequence,
+    NamedTuple,
     Sequence,
     Tuple,
     TypeVar,
     Union,
     cast,
 )
+
+from typing_extensions import Self, TypeGuard
 
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
@@ -48,6 +50,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.datapoints import Aggregate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
     find_duplicates,
@@ -67,7 +70,7 @@ from cognite.client.utils._time import (
     to_pandas_freq,
     validate_timezone,
 )
-from cognite.client.utils._validation import assert_type, validate_user_input_dict_with_identifier
+from cognite.client.utils._validation import validate_user_input_dict_with_identifier
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -564,8 +567,11 @@ class DatapointsAPI(APIClient):
 
             1. For best speed, and significantly lower memory usage, consider using ``retrieve_arrays(...)`` which uses ``numpy.ndarrays`` for data storage.
             2. Unlimited queries (``limit=None``) are most performant as they are always fetched in parallel, for any number of requested time series.
-            3. Limited queries, (e.g. ``limit=200_000``) are much less performant, at least for large limits, as each individual time series is fetched serially (we can't predict where on the timeline the datapoints are). Thus parallelisation is only used when asking for multiple "limited" time series.
+            3. Limited queries, (e.g. ``limit=500_000``) are much less performant, at least for large limits, as each individual time series is fetched serially (we can't predict where on the timeline the datapoints are). Thus parallelisation is only used when asking for multiple "limited" time series.
             4. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't use start=0 (1970).
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -589,7 +595,7 @@ class DatapointsAPI(APIClient):
         Examples:
 
             You can specify the identifiers of the datapoints you wish to retrieve in a number of ways. In this example
-            we are using the time-ago format to get raw data for the time series with id=42 from 2 weeks ago up until now::
+            we are using the time-ago format to get raw data for the time series with id=42 from 2 weeks ago up until now:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -597,7 +603,7 @@ class DatapointsAPI(APIClient):
 
             You can also get aggregated values, such as `max` or `average`. You may also fetch more than one time series simultaneously. Here we are
             getting daily averages and maximum values for all of 2018, for two different time series, where we're specifying `start` and `end` as integers
-            (milliseconds after epoch). Note that we are fetching them using their external ids::
+            (milliseconds after epoch). Note that we are fetching them using their external ids:
 
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    external_id=["foo", "bar"],
@@ -609,7 +615,7 @@ class DatapointsAPI(APIClient):
             In the two code examples above, we have a `dps` object (an instance of ``Datapoints``), and a `dps_lst` object (an instance of ``DatapointsList``).
             On `dps`, which in this case contains raw datapoints, you may access the underlying data directly by using the `.value` attribute. This works for
             both numeric and string (raw) datapoints, but not aggregates - they must be accessed by their respective names, because you're allowed to fetch up
-            to 10 aggregates simultaneously, and they are stored on the same object::
+            all available aggregates simultaneously, and they are stored on the same object:
 
                 >>> raw_data = dps.value
                 >>> first_dps = dps_lst[0]  # optionally: `dps_lst.get(external_id="foo")`
@@ -625,12 +631,12 @@ class DatapointsAPI(APIClient):
                 >>> for dp in dps_slice:
                 ...     pass  # do something!
 
-            All parameters can be individually set if you use and pass DatapointsQuery objects (even `ignore_unknown_ids`, contrary to the API).
+            All parameters can be individually set if you use and pass ``DatapointsQuery`` objects (even ``ignore_unknown_ids``, contrary to the API).
             If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
             mix any kind of ids and external ids: Single identifiers, single DatapointsQuery objects and (mixed) lists of these.
 
             Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
-            the string directly for convenience)::
+            the string directly for convenience):
 
                 >>> from cognite.client.data_classes import DatapointsQuery
                 >>> dps_lst = client.time_series.data.retrieve(
@@ -689,7 +695,7 @@ class DatapointsAPI(APIClient):
 
             To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
             constants: `MIN_TIMESTAMP_MS` and `MAX_TIMESTAMP_MS`, to make sure you do not miss any. Performance warning: This pattern of
-            fetching datapoints from the entire valid time domain is slower and shouldn't be used for regular "day-to-day" queries::
+            fetching datapoints from the entire valid time domain is slower and shouldn't be used for regular "day-to-day" queries:
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
                 >>> dps_backup = client.time_series.data.retrieve(
@@ -797,6 +803,9 @@ class DatapointsAPI(APIClient):
 
         Note:
             This method requires ``numpy`` to be installed.
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -921,6 +930,9 @@ class DatapointsAPI(APIClient):
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Note:
             If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
@@ -1067,6 +1079,9 @@ class DatapointsAPI(APIClient):
         This is a convenience method extending the Time Series API capabilities to make timezone-aware datapoints
         fetching easy with daylight saving time (DST) transitions taken care of automatically. It builds on top
         of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Tip:
             The additional granularity settings are: **week(s)**, **month(s)**, **quarter(s)** and **year(s)**. You may
@@ -1233,6 +1248,9 @@ class DatapointsAPI(APIClient):
     ) -> Datapoints | DatapointsList | None:
         """`Get the latest datapoint for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getLatest>`_
 
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+
         Args:
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
@@ -1330,96 +1348,141 @@ class DatapointsAPI(APIClient):
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime]] | Sequence[tuple[int | float | datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
 
+        Note:
+            All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
+            either the status code (int) or status symbol (str). Only one of code and symbol is required. If both are given,
+            they must match or an API error will be raised.
+
+            Datapoints marked bad can, in addition to the normal numeric range [-1e100, 1e100], take on any of the following
+            values: None (missing), NaN, and +/- Infinity.
+
         Examples:
 
-            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value::
+            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value.
+            The third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import StatusCode
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
-                >>> # With datetime objects:
                 >>> datapoints = [
                 ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
-                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000),
+                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good),
+                ...     (datetime(2018,1,3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
+                ...     (datetime(2018,1,4, tzinfo=timezone.utc), None, StatusCode.Bad),
                 ... ]
                 >>> client.time_series.data.insert(datapoints, id=1)
-                >>> # With ms since epoch:
-                >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
+
+            The timestamp can be given by datetime as above, or in milliseconds since epoch. Status codes can also be
+            passed as normal integers; this is necessary if a subcategory or modifier flag is needed, e.g. 3145728: 'GoodClamped':
+
+                >>> datapoints = [
+                ...     (150000000000, 1000),
+                ...     (160000000000, 2000, 3145728),
+                ...     (160000000000, 2000, 2147483648),  # Same as StatusCode.Bad
+                ... ]
                 >>> client.time_series.data.insert(datapoints, id=2)
 
-            Or they can be a list of dictionaries (status codes are not supported yet):
+            Or they can be a list of dictionaries:
 
+                >>> import math
                 >>> datapoints = [
                 ...     {"timestamp": 150000000000, "value": 1000},
                 ...     {"timestamp": 160000000000, "value": 2000},
+                ...     {"timestamp": 170000000000, "value": 3000, "status": {"code": 0}},
+                ...     {"timestamp": 180000000000, "value": 4000, "status": {"symbol": "Uncertain"}},
+                ...     {"timestamp": 190000000000, "value": math.nan, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]
                 >>> client.time_series.data.insert(datapoints, external_id="abcd")
 
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
-            `external_id="foo"`:
+            `external_id="foo"`.
 
-                >>> data = client.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
+            If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:
+
+                >>> data = client.time_series.data.retrieve(
+                ...     external_id="abc",
+                ...     start="1w-ago",
+                ...     end="now",
+                ...     include_status=True,
+                ...     ignore_bad_datapoints=False,
+                ... )
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
-        dps_to_post: (
-            Sequence[dict[str, int | float | str | datetime]]
-            | Sequence[tuple[int | float | datetime, int | float | str]]
-        )
-        if isinstance(datapoints, (Datapoints, DatapointsArray)):
-            dps_to_post = DatapointsPoster._extract_raw_data_from_dps_container(datapoints)
-        else:
-            dps_to_post = datapoints
-
-        post_dps_object["datapoints"] = dps_to_post
-        dps_poster = DatapointsPoster(self)
-        dps_poster.insert([post_dps_object])
+        post_dps_object["datapoints"] = datapoints
+        DatapointsPoster(self).insert([post_dps_object])
 
     def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
+        Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
+        are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
+
+        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
+        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+
         Args:
             datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+
+        Note:
+            All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
+            either the status code (int) or status symbol (str). Only one of code and symbol is required. If both are given,
+            they must match or an API error will be raised.
+
+            Datapoints marked bad can, in addition to the normal numeric range [-1e100, 1e100], take on any of the following
+            values: None (missing), NaN, and +/- Infinity.
 
         Examples:
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
             must have the key "datapoints" (containing the data) specified as a ``Datapoints`` object, a ``DatapointsArray`` object, or list of either
-            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}` (status codes not yet supported):
+            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}`.
+
+            When passing tuples, the third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
+
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import StatusCode
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
-
-                >>> datapoints = []
-                >>> # With datetime objects and id
-                >>> datapoints.append(
+                >>> to_insert = [
                 ...     {"id": 1, "datapoints": [
-                ...         (datetime(2018,1,1,tzinfo=timezone.utc), 1000),
-                ...         (datetime(2018,1,2,tzinfo=timezone.utc), 2000),
+                ...         (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
+                ...         (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good),
+                ...         (datetime(2018,1,3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
+                ...         (datetime(2018,1,4, tzinfo=timezone.utc), None, StatusCode.Bad),
+                ... ]}]
+
+            Passing datapoints using the dictionary format with timestamp given in milliseconds since epoch:
+
+                >>> import math
+                >>> to_insert.append(
+                ...     {"external_id": "foo", "datapoints": [
+                ...         {"timestamp": 170000000, "value": 4000},
+                ...         {"timestamp": 180000000, "value": 5000, "status": {"symbol": "Uncertain"}},
+                ...         {"timestamp": 190000000, "value": None, "status": {"code": StatusCode.Bad}},
+                ...         {"timestamp": 190000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]})
 
-                >>> # With ms since epoch and external_id:
-                >>> datapoints.append({"external_id": "foo", "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
+            If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:
 
-                >>> # With raw data in a Datapoints object (or DatapointsArray):
-                >>> data_to_clone = client.time_series.data.retrieve(external_id="bar")
-                >>> datapoints.append({"external_id": "bar-clone", "datapoints": data_to_clone})
-                >>> client.time_series.data.insert_multiple(datapoints)
+                >>> data_to_clone = client.time_series.data.retrieve(
+                ...     external_id="bar", include_status=True, ignore_bad_datapoints=False)
+                >>> to_insert.append({"external_id": "bar-clone", "datapoints": data_to_clone})
+                >>> client.time_series.data.insert_multiple(to_insert)
         """
-        for dps_dct in datapoints:
-            # Extract data inplace for any Datapoints and/or DatapointsArray:
-            if isinstance(dps_dct, Mapping) and isinstance(dps_dct["datapoints"], (Datapoints, DatapointsArray)):
-                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_dps_container(dps_dct["datapoints"])
-        dps_poster = DatapointsPoster(self)
-        dps_poster.insert(datapoints)
+        DatapointsPoster(self).insert(datapoints)
 
     def delete_range(
         self,
@@ -1497,7 +1560,7 @@ class DatapointsAPI(APIClient):
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
-            to use the :py:meth:`~DatapointsAPI.insert` method instead (once support is added in an upcoming release).
+            to use the :py:meth:`~DatapointsAPI.insert` method instead (or :py:meth:`~DatapointsAPI.insert_multiple`)!
 
         Examples:
             Post a dataframe with white noise:
@@ -1505,7 +1568,6 @@ class DatapointsAPI(APIClient):
                 >>> import numpy as np
                 >>> import pandas as pd
                 >>> from cognite.client import CogniteClient
-                >>>
                 >>> client = CogniteClient()
                 >>> ts_xid = "my-foo-ts"
                 >>> idx = pd.date_range(start="2018-01-01", periods=100, freq="1d")
@@ -1527,7 +1589,7 @@ class DatapointsAPI(APIClient):
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
         for column_id, col in df.items():
             mask = col.notna()
-            datapoints = list(zip(idx[mask], col[mask]))
+            datapoints = list(map(_InsertDatapoint, idx[mask], col[mask]))
             if not datapoints:
                 continue
             if external_id_headers:
@@ -1537,118 +1599,192 @@ class DatapointsAPI(APIClient):
         self.insert_multiple(dps)
 
 
-class DatapointsBin:
-    def __init__(self, dps_objects_limit: int, dps_limit: int) -> None:
-        self.dps_objects_limit = dps_objects_limit
-        self.dps_limit = dps_limit
-        self.current_num_datapoints = 0
-        self.dps_object_list: list[dict] = []
+class _InsertDatapoint(NamedTuple):
+    ts: int | datetime
+    value: str | float
+    status_code: int | None = None
+    status_symbol: str | None = None
 
-    def add(self, dps_object: dict[str, Any]) -> None:
-        self.current_num_datapoints += len(dps_object["datapoints"])
-        self.dps_object_list.append(dps_object)
+    @classmethod
+    def from_dict(cls, dct: dict[str, Any]) -> Self:
+        if status := dct.get("status"):
+            return cls(dct["timestamp"], dct["value"], status.get("code"), status.get("symbol"))
+        return cls(dct["timestamp"], dct["value"])
 
-    def will_fit(self, number_of_dps: int) -> bool:
-        will_fit_dps = (self.current_num_datapoints + number_of_dps) <= self.dps_limit
-        will_fit_dps_objects = (len(self.dps_object_list) + 1) <= self.dps_objects_limit
-        return will_fit_dps and will_fit_dps_objects
+    def dump(self) -> dict[str, Any]:
+        dumped: dict[str, Any] = {"timestamp": timestamp_to_ms(self.ts), "value": self.value}
+        if self.status_code:  # also skip if 0
+            dumped["status"] = {"code": self.status_code}
+        if self.status_symbol and self.status_symbol != "Good":
+            dumped.setdefault("status", {})["symbol"] = self.status_symbol
+        # Out-of-range float values must be passed as strings:
+        dumped["value"] = _json.convert_nonfinite_float_to_str(dumped["value"])
+        return dumped
+
+    def requires_api_subversion_beta(self) -> bool:
+        return bool(self.status_code or self.status_symbol and self.status_symbol != "Good")
 
 
 class DatapointsPoster:
     def __init__(self, dps_client: DatapointsAPI) -> None:
         self.dps_client = dps_client
-        self.limit = self.dps_client._DPS_INSERT_LIMIT
-        self.bins: list[DatapointsBin] = []
+        self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
+        self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
+        self.max_workers = self.dps_client._config.max_workers
 
-    def insert(self, dps_object_list: list[dict[str, Any]]) -> None:
-        valid_dps_object_list = self._validate_dps_objects(dps_object_list)
-        binned_dps_object_lists = self._bin_datapoints(valid_dps_object_list)
-        self._insert_datapoints_concurrently(binned_dps_object_lists)
+        self.api_subversion: str | None = None  # TODO: remove once status codes is GA
 
-    @staticmethod
-    def _extract_raw_data_from_dps_container(
-        dps: Datapoints | DatapointsArray,
-    ) -> list[tuple[int, str]] | list[tuple[int, float]]:
-        if dps.value is None:
-            raise ValueError(
-                "Only raw datapoints are supported when inserting data from ``Datapoints`` or ``DatapointsArray``"
-            )
-        if dps.status_code is not None or dps.status_symbol is not None:
-            raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
-        if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
-            raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
-
-        if isinstance(dps, Datapoints):
-            return cast(List[Tuple[int, Any]], list(zip(dps.timestamp, dps.value)))
-        ts = dps.timestamp.astype("datetime64[ms]").astype("int64")
-        # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
-        return list(zip(ts.tolist(), dps.value.tolist()))
-
-    @staticmethod
-    def _validate_dps_objects(dps_object_list: list[dict[str, Any]]) -> list[dict]:
-        valid_dps_objects = []
-        for dps_object in dps_object_list:
-            valid_dps_object = cast(
-                Dict[str, Union[int, str, List[Tuple[int, Any]]]],
-                validate_user_input_dict_with_identifier(dps_object, required_keys={"datapoints"}),
-            )
-            valid_dps_object["datapoints"] = DatapointsPoster._validate_and_format_datapoints(dps_object["datapoints"])
-            valid_dps_objects.append(valid_dps_object)
-        return valid_dps_objects
-
-    @staticmethod
-    def _validate_and_format_datapoints(
-        datapoints: list[dict[str, Any]] | list[tuple[int | float | datetime, int | float | str]],
-    ) -> list[tuple[int, Any]]:
-        assert_type(datapoints, "datapoints", [list])
-        if not datapoints:
-            raise ValueError("No datapoints provided")
-        assert_type(datapoints[0], "datapoints element", [tuple, dict])
-
-        if isinstance(datapoints[0], tuple):
-            return [(timestamp_to_ms(t), v) for t, v in datapoints]
-        datapoints = cast(List[Dict[str, Any]], datapoints)
-        try:
-            if any("status" in dp for dp in datapoints):
-                raise NotImplementedError("Inserting datapoints with status codes is not yet supported")
-            return [(timestamp_to_ms(dp["timestamp"]), dp["value"]) for dp in datapoints]
-        except KeyError:
-            raise KeyError("A datapoint is missing one or both keys ['value', 'timestamp'].")
-
-    def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
-        for dps_object in dps_object_list:
-            for i in range(0, len(dps_object["datapoints"]), self.limit):
-                dps_object_chunk: dict[str, Any] = IdentifierSequenceCore.extract_identifiers(dps_object)
-                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.limit]
-                # Try to fit into any existing bin for dense packing:
-                for bin in self.bins:  # Note: O(N^2), first bins will be tried again and again...
-                    if bin.will_fit(len(dps_object_chunk["datapoints"])):
-                        bin.add(dps_object_chunk)
-                        break
-                else:
-                    bin = DatapointsBin(self.limit, self.dps_client._POST_DPS_OBJECTS_LIMIT)
-                    bin.add(dps_object_chunk)
-                    self.bins.append(bin)
-        binned_dps_object_list = []
-        for bin in self.bins:
-            binned_dps_object_list.append(bin.dps_object_list)
-        return binned_dps_object_list
-
-    def _insert_datapoints_concurrently(self, dps_object_lists: list[list[dict[str, Any]]]) -> None:
-        tasks = [(dps_object_list,) for dps_object_list in dps_object_lists]
-        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.dps_client._config.max_workers)
+    def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
+        to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
+        # To ensure we stay below the max limit on objects per request, we first chunk based on it:
+        # (with 10k limit this is almost always just one chunk)
+        tasks = [
+            (task,)  # execute_tasks demands tuples
+            for chunk in split_into_chunks(to_insert, self.ts_limit)
+            for task in self._create_payload_tasks(chunk)
+        ]
+        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda x: x[0],
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
 
-    def _insert_datapoints(self, post_dps_objects: list[dict[str, Any]]) -> None:
-        # convert to memory intensive format as late as possible and clean up after
-        for it in post_dps_objects:
-            it["datapoints"] = [{"timestamp": t, "value": v} for t, v in it["datapoints"]]
-        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": post_dps_objects})
-        for it in post_dps_objects:
-            del it["datapoints"]
+    def _verify_and_prepare_dps_objects(
+        self, dps_object_lst: list[dict[str, Any]]
+    ) -> list[tuple[tuple[str, int], list[_InsertDatapoint]]]:
+        dps_to_insert = defaultdict(list)
+        for obj in dps_object_lst:
+            validated: dict[str, Any] = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
+            validated_dps = self._parse_and_validate_dps(obj["datapoints"])
+
+            # If features related to status codes are used, use beta:
+            # TODO: Remove once status codes -> GA, this check is expensive!
+            if self.api_subversion is None and any(dp.requires_api_subversion_beta() for dp in validated_dps):
+                self.api_subversion = self.dps_client._api_subversion + "-beta"
+                self.dps_client._status_codes_warning.warn()
+
+            # Concatenate datapoints using identifier as key:
+            if (xid := validated.get("externalId")) is not None:
+                dps_to_insert["externalId", xid].extend(validated_dps)
+            else:
+                dps_to_insert["id", validated["id"]].extend(validated_dps)
+        return list(dps_to_insert.items())
+
+    def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
+        if not dps:
+            raise ValueError("No datapoints provided")
+
+        if isinstance(dps, Datapoints):
+            self._verify_dps_object_for_insertion(dps)
+            return self._extract_raw_data_from_datapoints(dps)
+        elif isinstance(dps, DatapointsArray):
+            self._verify_dps_object_for_insertion(dps)
+            return self._extract_raw_data_from_datapoints_array(dps)
+
+        if not isinstance(dps, SequenceNotStr):
+            raise TypeError(f"Datapoints to be inserted must be a list, not {type(dps)}")
+        if self._dps_are_insert_ready(dps):
+            return dps  # Internal SDK shortcut to avoid casting
+        elif self._dps_are_tuples(dps):
+            return [_InsertDatapoint(*tpl) for tpl in dps]
+        elif self._dps_are_dicts(dps):
+            try:
+                return [_InsertDatapoint.from_dict(dp) for dp in dps]
+            except KeyError:
+                raise KeyError(
+                    "A datapoint is missing one or both keys ['value', 'timestamp']. Note: 'status' is optional."
+                )
+        raise TypeError(
+            "Datapoints to be inserted must be of type Datapoints or DatapointsArray (with raw datapoints), "
+            f"or be a list containing tuples or dicts, not {type(dps[0])}"
+        )
+
+    @staticmethod
+    def _dps_are_insert_ready(dps: list[Any]) -> TypeGuard[list[_InsertDatapoint]]:
+        # Not a real type guard, but we don't want to make millions of isinstance checks when
+        # the documentation is clear on what types we accept:
+        return isinstance(dps[0], _InsertDatapoint)
+
+    @staticmethod
+    def _dps_are_tuples(dps: list[Any]) -> TypeGuard[list[tuple]]:
+        # Not a real type guard, see '_dps_are_insert_ready'.
+        return isinstance(dps[0], tuple)
+
+    @staticmethod
+    def _dps_are_dicts(dps: list[Any]) -> TypeGuard[list[dict]]:
+        # Not a real type guard, see '_dps_are_insert_ready'.
+        return isinstance(dps[0], dict)
+
+    def _create_payload_tasks(
+        self, post_dps_objects: list[tuple[tuple[str, int], list[_InsertDatapoint]]]
+    ) -> Iterator[list[dict[str, Any]]]:
+        payload = []
+        n_left = self.dps_limit
+        for (id_name, ident), dps in post_dps_objects:
+            for next_chunk, is_full in self._split_datapoints(dps, n_left, self.dps_limit):
+                payload.append({id_name: ident, "datapoints": next_chunk})
+                if is_full:
+                    yield payload
+                    payload = []
+                    n_left = self.dps_limit
+                else:
+                    n_left -= len(next_chunk)
+        if payload:
+            yield payload
+
+    def _insert_datapoints(self, payload: list[dict[str, Any]]) -> None:
+        # Convert to memory intensive format as late as possible (and clean up after insert)
+        for dct in payload:
+            dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
+        self.dps_client._post(
+            url_path=self.dps_client._RESOURCE_PATH,
+            json={"items": payload},
+            api_subversion=self.api_subversion,  # TODO: remove once status codes is GA
+        )
+        payload.clear()
+
+    @staticmethod
+    def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:
+        # Returns chunks with a boolean answering "are we there yet"
+        chunk = lst[:n_first]
+        yield chunk, len(chunk) == n_first
+
+        for i in range(n_first, len(lst), n):
+            chunk = lst[i : i + n]
+            yield lst[i : i + n], len(chunk) == n
+
+    @staticmethod
+    def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> None:
+        if dps.value is None:
+            raise ValueError(f"Only raw datapoints are supported when inserting data from ``{type(dps).__name__}``")
+        if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
+            raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
+
+        if dps.status_code is not None and dps.status_symbol is not None:
+            if n_ts != (n_codes := len(dps.status_code)):
+                raise ValueError(
+                    f"Number of status codes ({n_codes}) does not match the number of datapoints ({n_ts}) to insert"
+                )
+        elif exactly_one_is_not_none(dps.status_code, dps.status_symbol):
+            # Let's not silently ignore someone that have manually instantiated a dps object with just one status:
+            raise ValueError("One of status code/symbol is missing on datapoints object")
+
+    def _extract_raw_data_from_datapoints(self, dps: Datapoints) -> list[_InsertDatapoint]:
+        if dps.status_code is None:
+            return list(map(_InsertDatapoint, dps.timestamp, dps.value))  # type: ignore [arg-type]
+        return list(map(_InsertDatapoint, dps.timestamp, dps.value, dps.status_code))  # type: ignore [arg-type]
+
+    def _extract_raw_data_from_datapoints_array(self, dps: DatapointsArray) -> list[_InsertDatapoint]:
+        # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
+        values = dps.value.tolist()  # type: ignore [union-attr]
+        timestamps = dps.timestamp.astype("datetime64[ms]").astype("int64").tolist()
+
+        if dps.null_timestamps:
+            # 'Missing' and NaN can not be differentiated when we read from numpy arrays:
+            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(timestamps, values)]
+
+        if dps.status_code is None:
+            return list(map(_InsertDatapoint, timestamps, values))
+        return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
 
 
 class RetrieveLatestDpsFetcher:
@@ -1801,11 +1937,6 @@ class RetrieveLatestDpsFetcher:
         all_ids.extend(all_xids)
         return all_ids
 
-    @staticmethod
-    def _json_float_translation(value: float | Literal["Infinity", "-Infinity", "NaN"] | None) -> float | None:
-        # As opposed to protobuf, retrieve_latest uses JSON and it returns out-of-range float values as strings:
-        return {"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan}.get(value, value)  # type: ignore [arg-type]
-
     def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
         # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
         if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
@@ -1829,7 +1960,7 @@ class RetrieveLatestDpsFetcher:
                 # Bad data can have value missing (we translate to None):
                 dp.setdefault("value", None)
                 if not res["isString"]:
-                    dp["value"] = self._json_float_translation(dp["value"])
+                    dp["value"] = _json.convert_to_float(dp["value"])
         return result
 
     def fetch_datapoints(self) -> list[dict[str, Any]]:

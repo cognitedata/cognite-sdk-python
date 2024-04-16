@@ -17,9 +17,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.34.1] - 2024-04-15
+## [7.37.0] - 2024-04-16
 ### Added
 - Support for retrieving labels using their external ids
+
+## [7.36.0] - 2024-04-16
+### Fixed
+- Now handle unknown filter types
+- Add support for the "invalid" filter type in DMS
+
+## [7.35.0] - 2024-04-16
+### Added
+- Datapoints insert methods `insert` and `insert_multiple` now support ingesting (optional) status codes.
 
 ## [7.34.0] - 2024-04-11
 ### Added
