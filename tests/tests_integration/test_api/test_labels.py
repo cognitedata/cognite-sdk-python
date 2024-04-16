@@ -41,7 +41,7 @@ class TestLabelsAPI:
 
     def test_retrieve_not_found(self, cognite_client):
         xids = ["this does not exist"]
-        
+
         res_lst = cognite_client.labels.retrieve(xids, ignore_unknown_ids=True)
         assert len(res_lst) == 0
 
