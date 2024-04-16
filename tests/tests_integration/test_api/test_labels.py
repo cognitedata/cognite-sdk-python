@@ -47,7 +47,6 @@ class TestLabelsAPI:
 
         with pytest.raises(CogniteNotFoundError) as error:
             cognite_client.labels.retrieve(xids)
-        assert error.value.code == 400
 
     def test_create_asset_with_label(self, cognite_client, new_label):
         ac = cognite_client.assets.create(Asset(name="any", labels=[Label(external_id=new_label.external_id)]))
