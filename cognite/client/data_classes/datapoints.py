@@ -6,6 +6,7 @@ import warnings
 from collections import defaultdict
 from dataclasses import InitVar, dataclass, fields
 from datetime import datetime
+from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,6 +17,7 @@ from typing import (
     overload,
 )
 
+from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates
@@ -33,6 +35,13 @@ from cognite.client.utils._text import (
 )
 from cognite.client.utils._time import convert_and_isoformat_time_attrs
 from cognite.client.utils.useful_types import SequenceNotStr
+
+
+class StatusCode(IntEnum):
+    Good = 0x0
+    Uncertain = 0x40000000  # aka 1 << 30 aka 1073741824
+    Bad = 0x80000000  # aka 1 << 31 aka 2147483648
+
 
 Aggregate = Literal[
     "average",
@@ -81,13 +90,8 @@ _INT_AGGREGATES = frozenset(
 )
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
 
-try:
+if NUMPY_IS_AVAILABLE:
     import numpy as np
-
-    NUMPY_IS_AVAILABLE = True
-
-except ImportError:  # pragma no cover
-    NUMPY_IS_AVAILABLE = False
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -448,12 +452,14 @@ class DatapointsArray(CogniteResource):
             return self._slice(item)
         attrs, arrays = self._data_fields()
         timestamp = arrays[0][item].item() // 1_000_000
-        data = {attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])}
+        data: dict[str, float | str | None] = {
+            attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])
+        }
 
         if self.status_code is not None:
             data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
         if self.null_timestamps and timestamp in self.null_timestamps:
-            data["value"] = None  # type: ignore [assignment]
+            data["value"] = None
         return Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
     def _slice(self, part: slice) -> DatapointsArray:
@@ -487,11 +493,11 @@ class DatapointsArray(CogniteResource):
         # Let's not create a single Datapoint more than we have too:
         for i, row in enumerate(zip(*arrays)):
             timestamp = row[0].item() // 1_000_000
-            data = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
+            data: dict[str, float | str | None] = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
             if self.status_code is not None:
                 data.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])  # type: ignore [index]
             if self.null_timestamps and timestamp in self.null_timestamps:
-                data["value"] = None  # type: ignore [assignment]
+                data["value"] = None
 
             yield Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
 
@@ -539,8 +545,11 @@ class DatapointsArray(CogniteResource):
 
             for dp, code, symbol in zip(datapoints, map(numpy_dtype_fix, self.status_code), self.status_symbol):
                 dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
-                # When we're dealing with status codes, NaN might be either one of [<missing>, nan]:
-                if dp["timestamp"] in (self.null_timestamps or ()):  # ...luckily, we know :3
+
+        # When we're dealing with datapoints with bad status codes, NaN might be either one of [<missing>, nan]:
+        if self.null_timestamps:
+            for dp in datapoints:
+                if dp["timestamp"] in self.null_timestamps:  # ...luckily, we know :3
                     dp["value"] = None  # type: ignore [assignment]
         dumped["datapoints"] = datapoints
 

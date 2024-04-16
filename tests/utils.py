@@ -430,8 +430,12 @@ class FakeCogniteResourceGenerator:
         elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
             implementations = all_concrete_subclasses(type_)
             if type_ is Filter:
+                # Remove filters not supported by dps subscriptions
+                implementations.remove(filters.Overlaps)
+
                 # Remove filters which are only used by data modeling classes
                 implementations.remove(filters.HasData)
+                implementations.remove(filters.InvalidFilter)
                 implementations.remove(filters.Nested)
                 implementations.remove(filters.GeoJSONWithin)
                 implementations.remove(filters.GeoJSONDisjoint)
