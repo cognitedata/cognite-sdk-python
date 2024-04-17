@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.37.1] - 2024-04-17
+### Fixed
+- Updating data set ID now works as expected for `ThreeDModelUpdate`.
+
 ## [7.37.0] - 2024-04-16
 ### Fixed
 - Now handle unknown data types in DM
