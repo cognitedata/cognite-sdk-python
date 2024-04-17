@@ -9,7 +9,7 @@ from abc import ABC
 from dataclasses import asdict, dataclass, field
 from itertools import product
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Literal, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Literal, NamedTuple, NoReturn, Sequence, cast
 
 from typing_extensions import Self
 
@@ -26,6 +26,24 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 logger = logging.getLogger(__name__)
+
+
+class CapabilityTuple(NamedTuple):
+    acl_name: str
+    action: str
+    scope_name: str
+    scope_id: int | str | None = None
+    scope_extra: str | None = None
+
+    @property
+    def database(self) -> str:
+        assert self.acl_name == RawAcl._capability_name and isinstance(self.scope_id, str)
+        return self.scope_id
+
+    @property
+    def table(self) -> str:
+        assert self.acl_name == RawAcl._capability_name and isinstance(self.scope_extra, str)
+        return self.scope_extra
 
 
 @dataclass
@@ -122,27 +140,27 @@ class Capability(ABC):
                 data = convert_all_keys_to_camel_case(data)
             return {self._scope_name: data}
 
-        def as_tuples(self) -> set[tuple]:
+        def as_tuples(
+            self,
+        ) -> set[tuple[str]] | set[tuple[str, str]] | set[tuple[str, str, str]] | set[tuple[str, int]]:
             # Basic implementation for all simple Scopes (e.g. all or currentuser)
             return {(self._scope_name,)}
 
     @classmethod
-    def from_tuple(cls, tpl: tuple) -> Self:
-        acl_name, action, scope_name, *scope_params = tpl
-        capability_cls = _CAPABILITY_CLASS_BY_NAME[acl_name]
-        scope_cls = _SCOPE_CLASS_BY_NAME[scope_name]
+    def from_tuple(cls, tpl: CapabilityTuple) -> Self:
+        capability_cls = _CAPABILITY_CLASS_BY_NAME[tpl.acl_name]
+        scope_cls = _SCOPE_CLASS_BY_NAME[tpl.scope_name]
 
-        if not scope_params:
+        if tpl.scope_id is None:
             scope = scope_cls()
-        elif len(scope_params) == 1:
-            scope = scope_cls(scope_params)  # type: ignore [call-arg]
-        elif len(scope_params) == 2 and scope_cls is TableScope:
-            db, tbl = scope_params
-            scope = scope_cls({db: [tbl] if tbl else []})  # type: ignore [call-arg]
+        elif tpl.scope_extra is None:
+            scope = scope_cls([tpl.scope_id])  # type: ignore [call-arg]
+        elif scope_cls is TableScope:
+            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})  # type: ignore [call-arg]
         else:
-            raise ValueError(f"tuple not understood as capability: {tpl}")
+            raise ValueError(f"CapabilityTuple not understood: {tpl}")
 
-        return cast(Self, capability_cls(actions=[capability_cls.Action(action)], scope=scope))  # type: ignore [call-arg]
+        return cast(Self, capability_cls(actions=[capability_cls.Action(tpl.action)], scope=scope, allow_unknown=False))
 
     @classmethod
     def load(cls, resource: dict | str, allow_unknown: bool = False) -> Self:
@@ -189,9 +207,9 @@ class Capability(ABC):
         capability_name = self._capability_name
         return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[CapabilityTuple]:
         return set(
-            (acl, action, *scope_tpl)
+            CapabilityTuple(acl, action, *scope_tpl)  # type: ignore [arg-type]
             for acl, action, scope_tpl in product(
                 [self._capability_name], [action.value for action in self.actions], self.scope.as_tuples()
             )
@@ -284,10 +302,10 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
             return self._cognite_client.config.project
         return project
 
-    def as_tuples(self, project: str | None = None) -> set[tuple]:
+    def as_tuples(self, project: str | None = None) -> set[CapabilityTuple]:
         project = self._infer_project(project)
 
-        output: set[tuple] = set()
+        output: set[CapabilityTuple] = set()
         for proj_cap in self:
             cap = proj_cap.capability
             if isinstance(cap, UnknownAcl):
@@ -323,7 +341,7 @@ class IDScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -337,7 +355,7 @@ class IDScopeLowerCase(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -349,7 +367,7 @@ class ExtractionPipelineScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -361,7 +379,7 @@ class DataSetScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -385,7 +403,7 @@ class TableScope(Capability.Scope):
         key = "dbsToTables" if camel_case else "dbs_to_tables"
         return {self._scope_name: {key: {k: {"tables": v} for k, v in self.dbs_to_tables.items()}}}
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str, str]]:
         # When the scope contains no tables, it means all tables... since database name must be at least 1
         # character, we represent this internally with the empty string:
         return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables or [""]}
@@ -399,7 +417,7 @@ class AssetRootIDScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "root_ids", [int(i) for i in self.root_ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.root_ids}
 
 
@@ -408,7 +426,7 @@ class ExperimentsScope(Capability.Scope):
     _scope_name = "experimentscope"
     experiments: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.experiments}
 
 
@@ -417,7 +435,7 @@ class SpaceIDScope(Capability.Scope):
     _scope_name = "spaceIdScope"
     space_ids: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.space_ids}
 
 
@@ -429,7 +447,7 @@ class PartitionScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "partition_ids", [int(i) for i in self.partition_ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.partition_ids}
 
 
@@ -438,7 +456,7 @@ class LegacySpaceScope(Capability.Scope):
     _scope_name = "spaceScope"
     external_ids: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.external_ids}
 
 
@@ -447,7 +465,7 @@ class LegacyDataModelScope(Capability.Scope):
     _scope_name = "dataModelScope"
     external_ids: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.external_ids}
 
 
@@ -464,7 +482,7 @@ class UnknownScope(Capability.Scope):
     def __getitem__(self, item: str) -> Any:
         return self.data[item]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> NoReturn:
         raise NotImplementedError("Unknown scope cannot be converted to tuples (needed for comparisons)")
 
 

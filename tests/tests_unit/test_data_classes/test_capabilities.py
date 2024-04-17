@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 import re
 from typing import Any
 
@@ -250,13 +249,14 @@ class TestCapabilities:
 
         assert Capability.load(dumped, allow_unknown=True)
 
-    @pytest.mark.parametrize(
-        "has_write_allscope, has_write_props_allscope, has_write_in_same_scope",
-        itertools.product(*itertools.repeat([True, False], 3)),
-    )
+    @pytest.mark.parametrize("has_write_allscope", (True, False))
+    @pytest.mark.parametrize("has_write_props_allscope", (True, False))
+    @pytest.mark.parametrize("has_write_in_same_scope", (True, False))
     def test_load_data_model_instances__with_write_properties(
         self, cognite_client, has_write_allscope, has_write_props_allscope, has_write_in_same_scope
     ):
+        # WRITE_PROPERTIES grants a subset of capabilities of WRITE, so we ensure that having just WRITE
+        # won't cause WRITE_PROPERTIES to be reported as missing.
         existing = [
             DataModelInstancesAcl([DataModelInstancesAcl.Action.Write], SpaceIDScope(["foo", "this"])),
             DataModelInstancesAcl([DataModelInstancesAcl.Action.Write_Properties], SpaceIDScope(["bar"])),
