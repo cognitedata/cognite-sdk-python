@@ -27,6 +27,7 @@ class TestViewPropertyDefinition:
             "type": {
                 "type": "direct",
                 "source": {"type": "view", "space": "mySpace", "externalId": "myExternalId", "version": "myVersion"},
+                "list": False,
             },
             "container": {"space": "mySpace", "externalId": "myExternalId", "type": "container"},
             "containerPropertyIdentifier": "name",
@@ -51,6 +52,7 @@ class TestViewPropertyDefinition:
             "type": {
                 "type": "direct",
                 "source": {"external_id": "myExternalId", "space": "mySpace", "version": "myVersion"},
+                "list": False,
             },
         }
 

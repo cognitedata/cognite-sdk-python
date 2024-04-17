@@ -31,7 +31,7 @@ class TestContainerProperty:
     @pytest.mark.parametrize(
         "data",
         [
-            {"type": {"type": "direct"}},
+            {"type": {"type": "direct", "list": False}},
             # List is not required, but gets set and thus will be dumped
             {"type": {"type": "int32", "list": False}},
             {"type": {"type": "text", "list": False, "collation": "ucs_basic"}},
