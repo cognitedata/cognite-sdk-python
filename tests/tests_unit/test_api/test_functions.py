@@ -78,7 +78,6 @@ EXAMPLE_FUNCTION = {
     "runtime": "py38",
     "runtimeVersion": "Python 3.8.13",
 }
-
 CALL_RUNNING = {
     "id": CALL_ID,
     "startTime": 1585925306822,
@@ -810,7 +809,7 @@ def mock_function_schedules_response(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_function_schedules_response_xid_not_valid_with_oidc(rsps, cognite_client):
+def mock_function_schedules_response_with_xid(rsps, cognite_client):
     # Creating a new schedule first needs a session (to pass the nonce):
     rsps.add(
         rsps.POST,
@@ -818,17 +817,15 @@ def mock_function_schedules_response_xid_not_valid_with_oidc(rsps, cognite_clien
         status=200,
         json={"items": [{"nonce": "very noncy", "id": 123, "status": "mocky"}]},
     )
-    rsps.add(
-        rsps.POST,
-        full_url(cognite_client, "/functions/schedules"),
-        status=400,
-        json={
-            "error": {
-                "message": "When creating a schedule with OIDC-tokens, you must use 'function_id' and not 'function_external_id'",
-                "code": 400,
-            }
-        },
-    )
+
+    schedule_url = full_url(cognite_client, "/functions/schedules")
+    rsps.assert_all_requests_are_fired = False
+    rsps.add(rsps.GET, schedule_url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
+    rsps.add(rsps.POST, schedule_url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
+
+    retrieve_url = full_url(cognite_client, "/functions/byids")
+    rsps.add(rsps.POST, retrieve_url, status=200, json={"items": [EXAMPLE_FUNCTION]})
+
     yield rsps
 
 
@@ -909,6 +906,17 @@ class TestFunctionSchedulesAPI:
             "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
             == excinfo.value.args[0]
         )
+
+    @pytest.mark.usefixtures("mock_function_schedules_response_with_xid")
+    def test_create_schedules_with_function_external_id(self, cognite_client):
+        res = cognite_client.functions.schedules.create(
+            name="my-schedule",
+            function_external_id="my-func",
+            cron_expression="*/5 * * * *",
+            description="Hi",
+        )
+
+        assert isinstance(res, FunctionSchedule)
 
     def test_create_schedules_with_function_id_and_client_credentials(
         self, mock_function_schedules_response_oidc_client_credentials, cognite_client

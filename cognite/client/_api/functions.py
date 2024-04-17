@@ -985,7 +985,8 @@ class FunctionSchedulesAPI(APIClient):
         self,
         name: str,
         cron_expression: str,
-        function_id: int,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
         client_credentials: dict | ClientCredentials | None = None,
         description: str = "",
         data: dict | None = None,
@@ -995,7 +996,8 @@ class FunctionSchedulesAPI(APIClient):
         Args:
             name (str): Name of the schedule.
             cron_expression (str): Cron expression.
-            function_id (int): Id of the function to attach the schedule to.
+            function_id (int | None): Id of the function to attach the schedule to.
+            function_external_id (str | None): External id of the function to attach the schedule to. It will be attached and fixed to the function's internal id on creation. Remark, this is different from how the API works, in that external id is not used when creating schedules with a session.
             client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
@@ -1037,6 +1039,8 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
+        identifier = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, identifier)
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
         )
