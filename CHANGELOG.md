@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.38.1] - 2024-04-17
+### Added
+- Added external_id to Function when creating Function schedule.
+
 ## [7.37.1] - 2024-04-17
 ### Fixed
 - Updating data set ID now works as expected for `ThreeDModelUpdate`.
