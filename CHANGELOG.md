@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.37.2] - 2024-04-18
+### Fixed
+- Datapoints inserted into non-existent time series, no longer hides (bug introduced in 7.35.0) them from the `failed`
+  attribute on the raised `CogniteNotFoundError` that is raised.
+
 ## [7.37.1] - 2024-04-17
 ### Fixed
 - Updating data set ID now works as expected for `ThreeDModelUpdate`.
