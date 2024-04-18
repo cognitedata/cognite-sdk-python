@@ -410,3 +410,5 @@ class TestWorkflowExecutions:
 
         async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
         assert async_task.status == "completed"
+
+    # TODO add cancel and retry test once the retry endpoint is available

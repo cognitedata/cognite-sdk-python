@@ -293,6 +293,38 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
         return [WorkflowExecution._load(execution) for execution in response.json()["items"]]
 
+    def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
+        # TODO add correct reference to api docs when available. Update links to beta docs instead of pr preview docs.
+        """`Retry a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/RetryRunOfSpecificExecution>`_
+
+        Args:
+            id (str): The server-generated id of the workflow execution.
+            client_credentials (ClientCredentials | None): Specific credentials that should be used to retry the workflow execution. When passed will take precedence over the current credentials.
+
+        Returns:
+            WorkflowExecution: The retried workflow execution.
+
+        Examples:
+            Retry a workflow execution that has been cancelled or failed:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import CancelExecution
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.trigger("foo", "1")
+                >>> client.workflows.executions.cancel([CancelExecution(res.id, "test cancellation")])
+                >>> client.workflows.executions.retry(res.id)
+        """
+        self._warning.warn()
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
+        )
+        body = {"authentication": {"nonce": nonce}}
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/{id}/retry",
+            json=body,
+        )
+        return WorkflowExecution._load(response.json())
+
 
 class WorkflowVersionAPI(BetaWorkflowAPIClient):
     _RESOURCE_PATH = "/workflows/versions"
