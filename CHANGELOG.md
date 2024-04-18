@@ -19,8 +19,8 @@ Changes are grouped as follows
 
 ## [7.37.2] - 2024-04-18
 ### Fixed
-- Datapoints inserted into non-existent time series, no longer hides (bug introduced in 7.35.0) them from the `failed`
-  attribute on the raised `CogniteNotFoundError` that is raised.
+- Datapoints inserted into non-existent time series, no longer get their identifier hidden in the `failed` attribute
+  on the raised `CogniteNotFoundError`. Any `successful` now also gets reported correctly.
 
 ## [7.37.1] - 2024-04-17
 ### Fixed
