@@ -25,10 +25,13 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.capabilities import (
     AllScope,
     Capability,
+    CapabilityTuple,
+    DataModelInstancesAcl,
     LegacyCapability,
     ProjectCapability,
     ProjectCapabilityList,
     RawAcl,
+    SpaceIDScope,
     UnknownAcl,
 )
 from cognite.client.data_classes.iam import GroupWrite, SecurityCategoryWrite, SessionStatus, TokenInspection
@@ -50,7 +53,9 @@ ComparableCapability: TypeAlias = Union[
 ]
 
 
-def _convert_capability_to_tuples(capabilities: ComparableCapability, project: str | None = None) -> set[tuple]:
+def _convert_capability_to_tuples(
+    capabilities: ComparableCapability, project: str | None = None
+) -> set[CapabilityTuple]:
     if isinstance(capabilities, ProjectCapability):
         return ProjectCapabilityList([capabilities]).as_tuples(project)
     if isinstance(capabilities, ProjectCapabilityList):
@@ -63,7 +68,7 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
     elif isinstance(capabilities, GroupList):
         capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
     if isinstance(capabilities, Sequence):
-        tpls: set[tuple] = set()
+        tpls: set[CapabilityTuple] = set()
         has_skipped = False
         for cap in capabilities:
             if isinstance(cap, dict):
@@ -174,27 +179,41 @@ class IAMAPI(APIClient):
         to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
 
         missing.clear()
-        raw_group, raw_check_grp = set(), set()
-        for key, check_grp in to_check_lookup.items():
+        raw_group, raw_check_group = set(), set()
+        for key, check_group in to_check_lookup.items():
             group = has_capabilties_lookup.get(key, set())
-            if any(AllScope._scope_name == grp[2] for grp in group):
+            if any(AllScope._scope_name == tpl.scope_name for tpl in group):
                 continue  # If allScope exists for capability, we safely skip ahead
-            elif RawAcl._capability_name == next(iter(check_grp))[0]:
+
+            cap_name, _ = key
+            if cap_name == RawAcl._capability_name:
+                # rawAcl needs specialized handling (below):
                 raw_group.update(group)
-                raw_check_grp.update(check_grp)
+                raw_check_group.update(check_group)
+            elif key == (DataModelInstancesAcl._capability_name, DataModelInstancesAcl.Action.Write_Properties.value):
+                # For dataModelInstancesAcl, 'WRITE_PROPERTIES' may covered by 'WRITE', so we must check AllScope:
+                write_grp = has_capabilties_lookup.get((cap_name, DataModelInstancesAcl.Action.Write.value), set())
+                if any(AllScope._scope_name == grp.scope_name for grp in write_grp):
+                    continue
+                # ...and if no AllScope, check individual SpaceIDScope:
+                for check_tpl in check_group:
+                    to_find = (SpaceIDScope._scope_name, check_tpl.scope_id)
+                    if any(to_find == (tpl.scope_name, tpl.scope_id) for tpl in write_grp):
+                        continue
+                    missing.add(check_tpl)
             else:
-                missing.update(check_grp)
+                missing.update(check_group)
 
         # Special handling of rawAcl which has a "hidden" database scope between "all" and "tables":
-        raw_to_check = {k: sorted(grp) for k, grp in groupby(sorted(raw_check_grp), key=itemgetter(slice(4)))}
+        raw_to_check = {k: sorted(grp) for k, grp in groupby(sorted(raw_check_group), key=itemgetter(slice(4)))}
         raw_has_capabs = {k: sorted(grp) for k, grp in groupby(sorted(raw_group), key=itemgetter(slice(4)))}
         for key, check_db_grp in raw_to_check.items():
-            if (db_group := raw_has_capabs.get(key)) and not db_group[0][-1]:
-                # [0] because empty string sorts first; [-1] is table; if no table -> db scope -> skip ahead
+            if (db_group := raw_has_capabs.get(key)) and not db_group[0].table:
+                # [0] because empty string sorts first; if no table -> db scope -> skip ahead
                 continue
             missing.update(check_db_grp)
 
-        return [Capability.from_tuple(tpl) for tpl in missing]
+        return [Capability.from_tuple(tpl) for tpl in sorted(missing)]
 
     def verify_capabilities(
         self,

@@ -22,6 +22,11 @@ Changes are grouped as follows
 ### Added
 - Added external_id to Function when creating Function schedule.
 
+## [7.37.3] - 2024-04-18
+### Improved
+- Minor quality of life change for comparing capabilities involving `DataModelInstancesAcl.WRITE_PROPERTIES`; any
+  ACL already covered by `WRITE` will not be reported as missing.
+
 ## [7.37.2] - 2024-04-18
 ### Fixed
 - Datapoints inserted into non-existent time series, no longer get their identifier hidden in the `failed` attribute
