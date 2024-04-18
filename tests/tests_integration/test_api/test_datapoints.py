@@ -2298,7 +2298,6 @@ class TestInsertDatapointsAPI:
         with pytest.raises(ValueError, match="Only raw datapoints are supported when inserting data from"):
             cognite_client.time_series.data.insert(data, id=new_ts.id)
 
-    # @pytest.mark.usefixtures("post_spy")
     def test_insert_not_found_ts(self, cognite_client, new_ts, monkeypatch):
         # From 7.35.0 to 7.37.1, 'CogniteNotFoundError.[failed, successful]' was not reported correctly:
         xid = random_cognite_external_ids(1)[0]
