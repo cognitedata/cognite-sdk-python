@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from itertools import chain
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1645,6 +1646,7 @@ class DatapointsPoster:
         ]
         summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=itemgetter(0),
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
 
@@ -1740,7 +1742,8 @@ class DatapointsPoster:
             json={"items": payload},
             api_subversion=self.api_subversion,  # TODO: remove once status codes is GA
         )
-        payload.clear()
+        for dct in payload:
+            dct["datapoints"].clear()
 
     @staticmethod
     def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:

@@ -17,9 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
 ## [7.38.1] - 2024-04-17
 ### Added
 - Added external_id to Function when creating Function schedule.
+
+## [7.37.2] - 2024-04-18
+### Fixed
+- Datapoints inserted into non-existent time series, no longer get their identifier hidden in the `failed` attribute
+  on the raised `CogniteNotFoundError`. Any `successful` now also gets reported correctly.
 
 ## [7.37.1] - 2024-04-17
 ### Fixed
