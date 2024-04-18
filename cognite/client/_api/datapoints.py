@@ -1742,7 +1742,8 @@ class DatapointsPoster:
             json={"items": payload},
             api_subversion=self.api_subversion,  # TODO: remove once status codes is GA
         )
-        payload.clear()
+        for dct in payload:
+            dct["datapoints"].clear()
 
     @staticmethod
     def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:
