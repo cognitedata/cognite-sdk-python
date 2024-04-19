@@ -61,7 +61,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
     def update(
         self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None
     ) -> WorkflowTaskExecution:
-        """`Update status of async task. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Tasks/operation/UpdateTaskStatus>`_
+        """`Update status of async task. <https://api-docs.cognite.com/20230101-beta/tag/Tasks/operation/UpdateTaskStatus>`_
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed' or 'failed'.
 
@@ -112,7 +112,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
-        """`Retrieve a workflow execution with detailed information. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/ExecutionOfSpecificRunOfWorkflow>`_
+        """`Retrieve a workflow execution with detailed information. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_
 
         Args:
             id (str): The server-generated id of the workflow execution.
@@ -153,7 +153,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
-        """`Trigger a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+        """`Trigger a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
         Args:
             workflow_external_id (str): External id of the workflow.
@@ -215,7 +215,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         created_time_end: int | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
-        """`List workflow executions in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/ListWorkflowExecutions>`_
+        """`List workflow executions in the project. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
 
         Args:
             workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
@@ -263,7 +263,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         )
 
     def cancel(self, executions: Sequence[CancelExecution]) -> Sequence[WorkflowExecution]:
-        """`cancel a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/CancelationOfSpecificRunsOfWorkflow>`_
+        """`cancel a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
 
         Args:
             executions (Sequence[CancelExecution]): List of executions to cancel.
@@ -294,8 +294,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         return [WorkflowExecution._load(execution) for execution in response.json()["items"]]
 
     def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
-        # TODO add correct reference to api docs when available. Update links to beta docs instead of pr preview docs.
-        """`Retry a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/RetryRunOfSpecificExecution>`_
+        """`Retry a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
 
         Args:
             id (str): The server-generated id of the workflow execution.
@@ -334,7 +333,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         self._DELETE_LIMIT = 100
 
     def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
-        """`Create a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+        """`Create a workflow version. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
 
         Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
 
@@ -388,7 +387,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         workflow_version_id: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier],
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete a workflow version(s). <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/DeleteSpecificVersionsOfWorkflow>`_
+        """`Delete a workflow version(s). <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
 
         Args:
             workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]): Workflow version id or list of workflow version ids to delete.
@@ -419,7 +418,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         )
 
     def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
-        """`Retrieve a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/GetSpecificVersion>`_
+        """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/GetSpecificVersion>`_
 
         Args:
             workflow_external_id (str): External id of the workflow.
@@ -453,7 +452,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
-        """`List workflow versions in the project <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/ListWorkflowVersions>`_
+        """`List workflow versions in the project <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/ListWorkflowVersions>`_
 
         Args:
             workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
@@ -515,7 +514,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         self._DELETE_LIMIT = 100
 
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
-        """`Create a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+        """`Create a workflow. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
 
@@ -546,7 +545,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         return Workflow._load(response.json()["items"][0])
 
     def retrieve(self, external_id: str) -> Workflow | None:
-        """`Retrieve a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+        """`Retrieve a workflow. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
         Args:
             external_id (str): Identifier for a Workflow. Must be unique for the project.
@@ -594,7 +593,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         )
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> WorkflowList:
-        """`List all workflows in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/FetchAllWorkflows>`_
+        """`List all workflows in the project. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/FetchAllWorkflows>`_
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
