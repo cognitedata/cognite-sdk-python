@@ -1,5 +1,6 @@
 import pytest
 
+from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
     Container,
@@ -58,6 +59,12 @@ class TestConstraint:
         actual = Constraint.load(data).dump(camel_case=True)
         assert data == actual
 
+    def test_load_unknown_type(self) -> None:
+        data = {"someUnknownConstraint": {"wawa": "wiwa"}, "constraintType": "unknown"}
+        obj = Constraint.load(data)
+        assert isinstance(obj, UnknownCogniteObject)
+        assert obj.dump() == data
+
 
 class TestIndex:
     @pytest.mark.parametrize(
@@ -89,6 +96,12 @@ class TestIndex:
     def test_load_dump__only_required(self, data: dict) -> None:
         actual = Index.load(data).dump(camel_case=True)
         assert data == actual
+
+    def test_load_unknown_type(self) -> None:
+        data = {"someUnknownIndexType": {"wawa": "wiwa"}, "indexType": "someUnknownIndexType"}
+        obj = Index.load(data)
+        assert isinstance(obj, UnknownCogniteObject)
+        assert obj.dump() == data
 
 
 class TestConstraints:
