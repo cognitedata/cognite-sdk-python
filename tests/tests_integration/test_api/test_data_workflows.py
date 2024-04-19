@@ -7,6 +7,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
+    CancelExecution,
     CDFTaskParameters,
     FunctionTaskParameters,
     SubworkflowTaskParameters,
@@ -411,4 +412,22 @@ class TestWorkflowExecutions:
         async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
         assert async_task.status == "completed"
 
-    # TODO add cancel and retry test once the retry endpoint is available
+    @pytest.mark.usefixtures("clean_created_sessions")
+    def test_trigger_cancel_retry_workflow(
+        self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
+    ) -> None:
+        workflow_execution = cognite_client.workflows.executions.trigger(
+            add_multiply_workflow.workflow_external_id,
+            add_multiply_workflow.version,
+        )
+
+        cancelled_workflow_executions = cognite_client.workflows.executions.cancel(
+            [CancelExecution(id=workflow_execution.id, reason="test")]
+        )
+        assert len(cancelled_workflow_executions) == 1
+        cancelled_workflow_execution = cancelled_workflow_executions[0]
+        assert cancelled_workflow_execution.status == "terminated"
+        assert cancelled_workflow_execution.reason_for_incompletion == "test"
+
+        retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
+        assert retried_workflow_execution.status == "running"
