@@ -8,6 +8,34 @@ from cognite.client.data_classes import Group, GroupList
 from cognite.client.data_classes.capabilities import DataModelInstancesAcl
 
 
+@pytest.fixture
+def group_with_members():
+    return {
+        "id": 168183,
+        "isDeleted": False,
+        "deletedTime": -1,
+        "sourceId": "",
+        "name": "internal list of users",
+        "capabilities": [{"assetsAcl": {"actions": ["READ"], "scope": {"all": {}}}}],
+        "metadata": {},
+        "members": ["H6bM9ldQjDg", "XRO3mTIK0Lo"],
+    }
+
+
+@pytest.fixture
+def group_with_all_members():
+    return {
+        "name": "internal all user",
+        "sourceId": "",
+        "capabilities": [{"assetsAcl": {"actions": ["READ"], "scope": {"all": {}}}}],
+        "metadata": {},
+        "members": "allUserAccounts",
+        "id": 4961547,
+        "isDeleted": False,
+        "deletedTime": -1,
+    }
+
+
 def raw_groups():
     yield {
         "name": "entitymatching",
@@ -48,6 +76,12 @@ class TestGroups:
     def test_load_dump_unknown_group(self, raw: dict[str, Any]) -> None:
         group = Group.load(raw)
         assert group.dump(camel_case=True) == raw
+
+    def test_load_dump__cdf_managed_groups(self, group_with_members, group_with_all_members) -> None:
+        for raw in (group_with_members, group_with_all_members):
+            group = Group.load(raw)
+            assert group.dump(camel_case=True) == raw
+            assert group.is_managed_in_cdf
 
     @pytest.mark.dsl
     def test_to_pandas__deleted_time(self):
