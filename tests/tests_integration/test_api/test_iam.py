@@ -38,7 +38,7 @@ class TestGroupsAPI:
             )
             assert "bla" == group.name
             assert metadata == group.metadata
-            assert group.source_id or "" == source_id
+            assert group.source_id == (source_id or "")
             assert group.members == members
         finally:
             if group:

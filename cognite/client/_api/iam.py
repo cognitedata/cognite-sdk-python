@@ -330,7 +330,7 @@ class GroupsAPI(APIClient):
 
                 >>> grp = GroupWrite(
                 ...     name="Externally managed group",
-                ...     capabilities=my_capabilities
+                ...     capabilities=my_capabilities,
                 ...     source_id="b7c9a5a4...")
                 >>> res = client.iam.groups.create(grp)
 
@@ -342,12 +342,12 @@ class GroupsAPI(APIClient):
                 >>> from cognite.client.data_classes import ALL_USER_ACCOUNTS
                 >>> all_group = GroupWrite(
                 ...     name="Everyone is welcome!",
-                ...     capabilities=my_capabilities
+                ...     capabilities=my_capabilities,
                 ...     members=ALL_USER_ACCOUNTS,
                 ... )
                 >>> user_list_group = GroupWrite(
                 ...     name="Specfic users only",
-                ...     capabilities=my_capabilities
+                ...     capabilities=my_capabilities,
                 ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"])
                 >>> res = client.iam.groups.create([user_list_group, all_group])
 
