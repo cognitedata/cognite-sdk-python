@@ -24,6 +24,11 @@ def _default_json_encoder(obj: Any) -> Any:
 
     if isinstance(obj, CogniteFilter):
         return obj.dump(camel_case=True)
+
+    from cognite.client.data_classes._base import CogniteResourceList
+
+    if isinstance(obj, CogniteResourceList):
+        return obj.dump(camel_case=True)
     raise TypeError(f"Object {obj} of type {obj.__class__} can't be serialized by the JSON encoder")
 
 
