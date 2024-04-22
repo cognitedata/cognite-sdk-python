@@ -36,6 +36,7 @@ from cognite.client.utils._pandas_helpers import (
     convert_nullable_int_cols,
     convert_timestamp_columns_to_datetime,
     notebook_display_with_fallback,
+    convert_nan_to_none_for_object_cols,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
@@ -342,6 +343,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
         convert_timestamps: bool = True,
+        convert_nan_to_none: bool = False, # switch to True in next major realase?
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame. Note that if the metadata column is expanded and there are
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
@@ -358,6 +360,9 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         pd = local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
         df = convert_nullable_int_cols(df)
+
+        if convert_nan_to_none:
+            convert_nan_to_none_for_object_cols(df)
 
         if convert_timestamps:
             df = convert_timestamp_columns_to_datetime(df)

@@ -98,3 +98,12 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     else:
         df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))  # They actually fixed it :D
     return df
+
+
+def convert_nan_to_none_for_object_cols(df: pd.DataFrame) -> None:
+    """
+    Convert np.nan (or other NA values) to None for columns with object dtype.
+    """
+    for col_name, d_type in df.dtypes.items():
+        if "object" == str(d_type):
+            df[col_name].mask(df[col_name].isna(), None, inplace=True)
