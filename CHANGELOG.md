@@ -21,6 +21,8 @@ Changes are grouped as follows
 ### Added
 - Added new parameter `function_external_id` to `FunctionScheduleAPI.create` as a convenience to the user. Note
   that schedules must be attached to a Function by (internal) ID, so a lookup is first done on behalf of the user.
+### Improved
+- Enabled automatic retries on Data Workflows POST endpoints
 
 ## [7.37.3] - 2024-04-18
 ### Improved
