@@ -195,10 +195,18 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
     ) -> Properties:
         props: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]] = {}
         for space, view_properties in data.items():
+            if not isinstance(view_properties, dict):
+                warnings.warn(f"Unknown type of view properties: {view_properties}. Skipping...", stacklevel=2)
+                continue
             for view_id_str, properties in view_properties.items():
                 view_tuple = tuple(view_id_str.split("/", 1))
                 if len(view_tuple) != 2:
-                    raise ValueError(f"View id must be in the format <external_id>/<version>, not {view_id_str!r}")
+                    warnings.warn(
+                        f"Unknown type of view id: {view_id_str}, expected format <external_id>/<version>. "
+                        "Skipping...",
+                        stacklevel=2,
+                    )
+                    continue
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
         return cls(props)
