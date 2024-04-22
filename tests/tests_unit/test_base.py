@@ -283,8 +283,18 @@ class TestCogniteObject:
                 to_check.extend(case)
 
         loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+        loaded_dump = loaded.dump()
+        # Clean the key from above
+        to_check = [loaded_dump]
+        while to_check:
+            case = to_check.pop()
+            if isinstance(case, dict):
+                to_check.extend(case.values())
+                case.pop("some-new-unknown-key", None)
+            elif isinstance(case, list):
+                to_check.extend(case)
 
-        assert loaded.dump() == instance.dump()
+        assert loaded_dump == instance.dump()
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
