@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
     CogniteResourceList,
+    UnknownCogniteObject,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -288,7 +289,7 @@ class Constraint(CogniteObject, ABC):
             return cast(Self, RequiresConstraint.load(resource))
         elif resource["constraintType"] == "uniqueness":
             return cast(Self, UniquenessConstraint.load(resource))
-        raise ValueError(f"Invalid constraint type {resource['constraintType']}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -337,7 +338,7 @@ class Index(CogniteObject, ABC):
             return cast(Self, BTreeIndex.load(resource))
         if resource["indexType"] == "inverted":
             return cast(Self, InvertedIndex.load(resource))
-        raise ValueError(f"Invalid index type {resource['indexType']}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
