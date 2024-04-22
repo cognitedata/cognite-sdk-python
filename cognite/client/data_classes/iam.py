@@ -201,8 +201,9 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
         expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
         convert_timestamps: bool = True,
+        convert_nan_to_none: bool = False,
     ) -> pd.DataFrame:
-        df = super().to_pandas(camel_case, expand_metadata, metadata_prefix, convert_timestamps)
+        df = super().to_pandas(camel_case, expand_metadata, metadata_prefix, convert_timestamps, convert_nan_to_none)
 
         # The API uses -1 to represent "no deleted time". It looks weird if deleted = False,
         # but deleted_time = 1969-12-31 23:59:59.999:
