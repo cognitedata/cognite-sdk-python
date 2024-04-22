@@ -540,12 +540,12 @@ class TestCogniteResourceList:
 
         mime_type_expected = ["text/plain", "text/plain", None]
         metadata_expected = [{"catchphrase": "ni!"}, None, None]
-        lables_expected = [None, None, [{"external_id": "interesting"}]]
+        labels_expected = [None, None, [{"external_id": "interesting"}]]
 
         # frame_equal ignores missing value type differences, so converting to list
         assert list(df_converted["mime_type"]) == mime_type_expected
         assert list(df_converted["metadata"]) == metadata_expected
-        assert list(df_converted["labels"]) == lables_expected
+        assert list(df_converted["labels"]) == labels_expected
 
     def test_load(self):
         resource_list = MyResourceList.load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])

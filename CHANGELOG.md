@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.37.4] - 2024-04-22
+### Added
+- Added `convert_nan_to_none` parameter to `CogniteResourceList.to_pandas` method. If set to `True` all columns of dtype object (e.g. metadata, lables, string columns etc.) will now consistently use `None` in place of missing values (instead of `numpy.nan` or other).
+
 ## [7.37.3] - 2024-04-18
 ### Improved
 - Minor quality of life change for comparing capabilities involving `DataModelInstancesAcl.WRITE_PROPERTIES`; any

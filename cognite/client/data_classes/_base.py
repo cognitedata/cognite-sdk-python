@@ -353,7 +353,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             expand_metadata (bool): Expand the metadata column into separate columns.
             metadata_prefix (str): Prefix to use for metadata columns.
             convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
-            convert_nan_to_none (bool): Convert any missing value type (such as NaN) to None for each column with object dtype.
+            convert_nan_to_none (bool): Convert any missing value type (such as NaN) to None for each column with object dtype (e.g. metadata).
 
         Returns:
             pandas.DataFrame: The Cognite resource as a dataframe.
