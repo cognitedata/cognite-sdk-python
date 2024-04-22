@@ -317,10 +317,9 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
-        body = {"authentication": {"nonce": nonce}}
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/retry",
-            json=body,
+            json={"authentication": {"nonce": nonce}},
         )
         return WorkflowExecution._load(response.json())
 
