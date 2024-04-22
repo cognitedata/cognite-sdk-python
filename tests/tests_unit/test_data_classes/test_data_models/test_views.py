@@ -1,3 +1,4 @@
+from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
 from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply
 
@@ -212,3 +213,27 @@ class TestViewPropertyDefinition:
             "direction": "outwards",
             "connectionType": "multi_edge_connection",
         }
+
+    def test_load_unknown_connection_type(self) -> None:
+        # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
+        # the property. This test ensures that the old format is still supported.
+        input = {
+            "whatever": "whatever",
+            "connectionType": "UNKNOWN",
+        }
+
+        actual = ViewProperty.load(input)
+        assert isinstance(actual, UnknownCogniteObject)
+        assert actual.dump() == input
+
+    def test_load_unknown_connection_type_apply(self) -> None:
+        # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
+        # the property. This test ensures that the old format is still supported.
+        input = {
+            "whatever": "whatever",
+            "connectionType": "UNKNOWN",
+        }
+
+        actual = ViewPropertyApply.load(input)
+        assert isinstance(actual, UnknownCogniteObject)
+        assert actual.dump() == input
