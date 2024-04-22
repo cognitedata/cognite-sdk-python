@@ -212,7 +212,11 @@ class Bucket:
 
 class Buckets(UserList, MutableSequence[Bucket]):
     def __init__(self, items: Collection[dict | Bucket]) -> None:
-        super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
+        buckets = [
+            Bucket(start=bucket["start"], count=bucket["count"]) if isinstance(bucket, dict) else bucket
+            for bucket in items
+        ]
+        super().__init__(buckets)
 
     def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
         return [bucket.dump(camel_case) for bucket in self.data]
