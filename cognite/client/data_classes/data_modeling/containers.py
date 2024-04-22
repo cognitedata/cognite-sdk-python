@@ -57,11 +57,15 @@ class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.constraints:
-            output["constraints"] = {k: v.dump(camel_case) for k, v in self.constraints.items()}
+            output["constraints"] = {
+                k: v.dump(camel_case) for k, v in self.constraints.items() if isinstance(v, Constraint)
+            }
         if self.indexes:
-            output["indexes"] = {k: v.dump(camel_case) for k, v in self.indexes.items()}
+            output["indexes"] = {k: v.dump(camel_case) for k, v in self.indexes.items() if isinstance(v, Index)}
         if self.properties:
-            output["properties"] = {k: v.dump(camel_case) for k, v in self.properties.items()}
+            output["properties"] = {
+                k: v.dump(camel_case) for k, v in self.properties.items() if isinstance(v, ContainerProperty)
+            }
 
         return output
 
@@ -256,7 +260,7 @@ class ContainerProperty(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if "type" not in resource:
-            raise ValueError("Type not specified")
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
         if resource["type"].get("type") == "direct":
             type_: PropertyType = DirectRelation.load(resource["type"])
         else:
@@ -285,10 +289,11 @@ class ContainerProperty(CogniteObject):
 class Constraint(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if resource["constraintType"] == "requires":
-            return cast(Self, RequiresConstraint.load(resource))
-        elif resource["constraintType"] == "uniqueness":
-            return cast(Self, UniquenessConstraint.load(resource))
+        if isinstance(resource, dict):
+            if resource["constraintType"] == "requires":
+                return cast(Self, RequiresConstraint.load(resource))
+            elif resource["constraintType"] == "uniqueness":
+                return cast(Self, UniquenessConstraint.load(resource))
         return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
@@ -334,10 +339,11 @@ class UniquenessConstraint(Constraint):
 class Index(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if resource["indexType"] == "btree":
-            return cast(Self, BTreeIndex.load(resource))
-        if resource["indexType"] == "inverted":
-            return cast(Self, InvertedIndex.load(resource))
+        if isinstance(resource, dict):
+            if resource["indexType"] == "btree":
+                return cast(Self, BTreeIndex.load(resource))
+            if resource["indexType"] == "inverted":
+                return cast(Self, InvertedIndex.load(resource))
         return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
