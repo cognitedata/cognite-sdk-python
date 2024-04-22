@@ -964,7 +964,7 @@ class Datapoints(CogniteResource):
                         status_code=self.status_code[i],
                         status_symbol=self.status_symbol[i],  # type: ignore [index]
                     )
-            new_dps_objects.append(Datapoint(**dp_args))
+            new_dps_objects.append(Datapoint())
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
 
