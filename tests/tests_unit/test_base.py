@@ -271,7 +271,17 @@ class TestCogniteObject:
         instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
-        dumped["some-new-unknown-key"] = "im-gonna-getcha"
+        to_check = [dumped]
+        # Add a new key to all dicts in the dumped structure
+        # these should be ignored when loading
+        while to_check:
+            case = to_check.pop()
+            if isinstance(case, dict):
+                to_check.extend(case.values())
+                case["some-new-unknown-key"] = "im-gonna-getcha"
+            elif isinstance(case, list):
+                to_check.extend(case)
+
         loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
