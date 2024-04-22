@@ -497,6 +497,7 @@ class TestCogniteResourceList:
         actual_df = event_list.to_pandas(expand_metadata=True)
         pd.testing.assert_frame_equal(expected_df, actual_df)
 
+    @pytest.mark.dsl
     def test_to_pandas_nan(self):
         resources = FileMetadataList(
             [
