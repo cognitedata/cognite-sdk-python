@@ -819,8 +819,6 @@ def mock_function_schedules_response_with_xid(rsps, cognite_client):
     )
 
     schedule_url = full_url(cognite_client, "/functions/schedules")
-    rsps.assert_all_requests_are_fired = False
-    rsps.add(rsps.GET, schedule_url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
     rsps.add(rsps.POST, schedule_url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
 
     retrieve_url = full_url(cognite_client, "/functions/byids")
