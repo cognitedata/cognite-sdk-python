@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, Sequence, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteObject
+from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
@@ -98,6 +98,8 @@ class Select(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if not isinstance(resource, dict):
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
         return cls(
             sources=[SourceSelector.load(source) for source in resource.get("sources", [])],
             sort=[InstanceSort.load(s) for s in resource.get("sort", [])],
@@ -226,7 +228,7 @@ class ResultSetExpression(CogniteObject, ABC):
                 Self, EdgeResultSetExpression(**edge, sort=sort, post_sort=post_sort, limit=resource.get("limit"))
             )
         else:
-            raise NotImplementedError(f"Unknown query type: {resource}")
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and self.dump() == other.dump()

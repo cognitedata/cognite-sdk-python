@@ -126,7 +126,9 @@ class ViewApply(ViewCore):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
-            output["properties"] = {k: v.dump(camel_case) for k, v in output["properties"].items()}
+            output["properties"] = {
+                k: v.dump(camel_case) for k, v in output["properties"].items() if isinstance(v, ViewPropertyApply)
+            }
 
         return output
 
@@ -219,7 +221,9 @@ class View(ViewCore):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
-            output["properties"] = {k: v.dump(camel_case) for k, v in output["properties"].items()}
+            output["properties"] = {
+                k: v.dump(camel_case) for k, v in output["properties"].items() if isinstance(v, ViewProperty)
+            }
 
         return output
 
@@ -405,6 +409,8 @@ class MappedPropertyApply(ViewPropertyApply):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if not isinstance(resource, dict):
+            return UnknownCogniteObject.load(resource)
         return cls(
             container=ContainerId.load(resource["container"]),
             container_property_identifier=resource["containerPropertyIdentifier"],
@@ -443,6 +449,8 @@ class MappedProperty(ViewProperty):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if not isinstance(resource, dict):
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
         type_ = resource["type"]
         source = type_.get("source", None) or resource.get("source")
 
