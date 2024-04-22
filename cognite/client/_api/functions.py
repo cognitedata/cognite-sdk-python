@@ -997,7 +997,7 @@ class FunctionSchedulesAPI(APIClient):
             name (str): Name of the schedule.
             cron_expression (str): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
-            function_external_id (str | None): External id of the function to attach the schedule to. It will be attached and fixed to the function's internal id on creation. Remark, this is different from how the API works, in that external id is not used when creating schedules with a session.
+            function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
             client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
