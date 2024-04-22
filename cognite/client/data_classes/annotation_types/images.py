@@ -49,6 +49,7 @@ class ObjectDetection(VisionResource):
             attributes={
                 key: Attribute._load(attribute, cognite_client)
                 for key, attribute in resource.get("attributes", {}).items()
+                if isinstance(attribute, dict)
             }
             or None,
             bounding_box=load_resource(resource, BoundingBox, "boundingBox"),
@@ -122,7 +123,7 @@ class KeypointCollection(VisionResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
-            keypoints={k: Keypoint._load(v) for k, v in resource["keypoints"].items()},
+            keypoints={k: Keypoint._load(v) for k, v in resource["keypoints"].items() if isinstance(v, dict)},
             attributes=resource.get("attributes"),
             confidence=resource.get("confidence"),
         )
@@ -130,9 +131,13 @@ class KeypointCollection(VisionResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.attributes is not None:
-            dumped["attributes"] = {k: v.dump(camel_case=camel_case) for k, v in self.attributes.items()}
+            dumped["attributes"] = {
+                k: v.dump(camel_case=camel_case) for k, v in self.attributes.items() if isinstance(v, Attribute)
+            }
         if self.keypoints is not None:
-            dumped["keypoints"] = {k: v.dump(camel_case=camel_case) for k, v in self.keypoints.items()}
+            dumped["keypoints"] = {
+                k: v.dump(camel_case=camel_case) for k, v in self.keypoints.items() if isinstance(v, Keypoint)
+            }
         return dumped
 
 

@@ -391,7 +391,10 @@ class DatapointsArray(CogniteResource):
                 elif attr in _INT_AGGREGATES:
                     array_by_attr[attr] = np.array(values, dtype=np.int64)
                 else:
-                    array_by_attr[attr] = np.array(values, dtype=np.float64)
+                    try:
+                        array_by_attr[attr] = np.array(values, dtype=np.float64)
+                    except ValueError:
+                        array_by_attr[attr] = np.array(values, dtype=np.object_)
             if status is not None:
                 array_by_attr["status_code"] = np.array([s["code"] for s in status], dtype=np.uint32)
                 array_by_attr["status_symbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
