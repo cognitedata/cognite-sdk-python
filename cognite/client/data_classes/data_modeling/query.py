@@ -142,8 +142,8 @@ class Query(CogniteObject):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
-            "with": {k: v.dump(camel_case) for k, v in self.with_.items()},
-            "select": {k: v.dump(camel_case) for k, v in self.select.items()},
+            "with": {k: v.dump(camel_case) for k, v in self.with_.items() if isinstance(v, ResultSetExpression)},
+            "select": {k: v.dump(camel_case) for k, v in self.select.items() if isinstance(v, Select)},
         }
         if self.parameters:
             output["parameters"] = dict(self.parameters.items())
