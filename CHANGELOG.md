@@ -17,9 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.38.0] - 2024-04-18
+## [7.38.4] - 2024-04-22
 ### Improved
 - Enabled automatic retries on Data Workflows POST endpoints
+
+## [7.37.3] - 2024-04-18
+### Improved
+- Minor quality of life change for comparing capabilities involving `DataModelInstancesAcl.WRITE_PROPERTIES`; any
+  ACL already covered by `WRITE` will not be reported as missing.
+
+## [7.37.2] - 2024-04-18
+### Fixed
+- Datapoints inserted into non-existent time series, no longer get their identifier hidden in the `failed` attribute
+  on the raised `CogniteNotFoundError`. Any `successful` now also gets reported correctly.
 
 ## [7.37.1] - 2024-04-17
 ### Fixed
