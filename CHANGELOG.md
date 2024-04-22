@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.38.0] - 2024-04-22
+### Added
+- Support for `workflows.executions.retry`
+
 ## [7.37.4] - 2024-04-22
 ### Added
 - Added new parameter `function_external_id` to `FunctionScheduleAPI.create` as a convenience to the user. Note
