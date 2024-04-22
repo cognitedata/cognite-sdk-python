@@ -34,7 +34,9 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling import EdgeListWithCursor, NodeListWithCursor
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
+from cognite.client.data_classes.files import FileMetadata, FileMetadataList
 from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
+from cognite.client.data_classes.labels import Label
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -494,6 +496,55 @@ class TestCogniteResourceList:
 
         actual_df = event_list.to_pandas(expand_metadata=True)
         pd.testing.assert_frame_equal(expected_df, actual_df)
+
+    def test_to_pandas_nan(self):
+        resources = FileMetadataList(
+            [
+                FileMetadata(
+                    id=1,
+                    name="1.txt",
+                    data_set_id=123,
+                    source_created_time=1713777000000,
+                    mime_type="text/plain",
+                    metadata={"catchphrase": "ni!"},
+                    labels=None,
+                ),
+                FileMetadata(
+                    id=2,
+                    name="2.txt",
+                    data_set_id=123,
+                    source_created_time=None,
+                    mime_type="text/plain",
+                    metadata=None,
+                    labels=None,
+                ),
+                FileMetadata(
+                    id=3,
+                    name="3.txt",
+                    data_set_id=None,
+                    source_created_time=1713777000000,
+                    mime_type=None,
+                    metadata=None,
+                    labels=[Label("interesting")],
+                ),
+            ]
+        )
+        df_0 = resources.to_pandas(convert_nan_to_none=False)
+        df_converted = resources.to_pandas(convert_nan_to_none=True)
+
+        # check this doesn't affect missing values in fields we don't expect
+        unaffected_col_names = ["id", "name", "data_set_id", "source_created_time"]
+        for col in unaffected_col_names:
+            assert list(df_0[col]) == list(df_converted[col])
+
+        mime_type_expected = ["text/plain", "text/plain", None]
+        metadata_expected = [{"catchphrase": "ni!"}, None, None]
+        lables_expected = [None, None, [{"external_id": "interesting"}]]
+
+        # frame_equal ignores missing value type differences, so converting to list
+        assert list(df_converted["mime_type"]) == mime_type_expected
+        assert list(df_converted["metadata"]) == metadata_expected
+        assert list(df_converted["labels"]) == lables_expected
 
     def test_load(self):
         resource_list = MyResourceList.load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
