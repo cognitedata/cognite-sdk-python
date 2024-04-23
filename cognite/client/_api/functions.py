@@ -1009,6 +1009,10 @@ class FunctionSchedulesAPI(APIClient):
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
             ``secrets`` argument in FunctionsAPI.create() for this purpose.
 
+            Passing the reference to the Function by ``function_external_id`` is just here as a convenience to the user.
+            The API require that all schedules *must* be attached to a Function by (internal) ID for authentication-
+            and security purposes. This means that the lookup to get the ID is first done on behalf of the user.
+
         Examples:
 
             Create a function schedule that runs using specified client credentials (**recommended**)::

@@ -905,6 +905,17 @@ class TestFunctionSchedulesAPI:
             == excinfo.value.args[0]
         )
 
+    def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
+        with pytest.raises(ValueError) as excinfo:
+            cognite_client.functions.schedules.create(function_id=123, 
+                                                      function_external_id="my-func",
+                                                      name="my-schedule",
+                                                      cron_expression="*/5 * * * *",)
+        assert (
+            "Exactly one of function_id and function_external_id must be specified"
+            == excinfo.value.args[0]
+        )
+
     @pytest.mark.usefixtures("mock_function_schedules_response_with_xid")
     def test_create_schedules_with_function_external_id(self, cognite_client):
         res = cognite_client.functions.schedules.create(
