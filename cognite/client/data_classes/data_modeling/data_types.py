@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
-from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
+from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +48,7 @@ class DirectRelationReference:
 
 
 @dataclass
-class PropertyType(ABC):
+class PropertyType(CogniteObject, ABC):
     _type: ClassVar[str]
     is_list: bool = False
 
@@ -65,50 +69,46 @@ class PropertyType(ABC):
         return unit
 
     @classmethod
-    def load(cls, data: dict) -> Self:
-        type_ = data["type"]
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        type_ = resource["type"]
         obj: Any
         if type_ == "text":
-            obj = Text(is_list=data["list"], collation=data["collation"])
+            obj = Text(is_list=resource["list"], collation=resource["collation"])
         elif type_ == "boolean":
-            obj = Boolean(is_list=data["list"])
+            obj = Boolean(is_list=resource["list"])
         elif type_ == "float32":
-            obj = Float32(is_list=data["list"], unit=cls.__load_unit_ref(data))
+            obj = Float32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "float64":
-            obj = Float64(is_list=data["list"], unit=cls.__load_unit_ref(data))
+            obj = Float64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "int32":
-            obj = Int32(is_list=data["list"], unit=cls.__load_unit_ref(data))
+            obj = Int32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "int64":
-            obj = Int64(is_list=data["list"], unit=cls.__load_unit_ref(data))
+            obj = Int64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "timestamp":
-            obj = Timestamp(is_list=data["list"])
+            obj = Timestamp(is_list=resource["list"])
         elif type_ == "date":
-            obj = Date(is_list=data["list"])
+            obj = Date(is_list=resource["list"])
         elif type_ == "json":
-            obj = Json(is_list=data["list"])
+            obj = Json(is_list=resource["list"])
         elif type_ == "timeseries":
-            obj = TimeSeriesReference(is_list=data["list"])
+            obj = TimeSeriesReference(is_list=resource["list"])
         elif type_ == "file":
-            obj = FileReference(is_list=data["list"])
+            obj = FileReference(is_list=resource["list"])
         elif type_ == "sequence":
-            obj = SequenceReference(is_list=data["list"])
+            obj = SequenceReference(is_list=resource["list"])
         elif type_ == "direct":
             obj = DirectRelation(
-                container=ContainerId.load(container) if (container := data.get("container")) else None,
-                is_list=data["list"],
+                container=ContainerId.load(container) if (container := resource.get("container")) else None,
+                is_list=resource["list"],
             )
         else:
             logger.warning(f"Unknown property type: {type_}")
-            obj = UnknownPropertyType(_data=data)
+            obj = UnknownCogniteObject(resource)
         return obj
 
 
-@dataclass
-class UnknownPropertyType:
-    _data: dict[str, Any] = field(default_factory=dict)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return convert_all_keys_recursive(self._data, camel_case=camel_case)
+# Kept around for backwards compatibility
+UnknownPropertyType: TypeAlias = UnknownCogniteObject
 
 
 @dataclass

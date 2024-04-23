@@ -37,7 +37,7 @@ from cognite.client.utils._pandas_helpers import (
     convert_timestamp_columns_to_datetime,
     notebook_display_with_fallback,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
+from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
 if TYPE_CHECKING:
@@ -180,6 +180,18 @@ class CogniteObject:
             Self: The loaded resource.
         """
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
+
+
+class UnknownCogniteObject(CogniteObject):
+    def __init__(self, data: dict[str, Any]) -> None:
+        self.__data = data
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(resource)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return convert_all_keys_recursive(self.__data, camel_case=camel_case)
 
 
 T_CogniteObject = TypeVar("T_CogniteObject", bound=CogniteObject)

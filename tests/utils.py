@@ -30,6 +30,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
+from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -270,7 +271,7 @@ def dict_without(input_dict: Mapping[K, V], without_keys: set[str]) -> dict[K, V
     return {k: v for k, v in input_dict.items() if k not in without_keys}
 
 
-T_Object = TypeVar("T_Object", bound=object)
+T_Object = TypeVar("T_Object")
 
 
 class FakeCogniteResourceGenerator:
@@ -322,8 +323,7 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
             else:
                 keyword_arguments.pop("filter", None)
-
-        if resource_cls is Query:
+        elif resource_cls is Query:
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
             # by making sure that the list of equal length, so we make both to length 1.
             with_key, with_value = next(iter(keyword_arguments["with_"].items()))
@@ -404,6 +404,8 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is NodeResultSetExpression and not skip_defaulted_args:
             # Through has a special format.
             keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
+        elif resource_cls is Buckets:
+            keyword_arguments = {"items": [{"start": 1, "count": 1}]}
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
@@ -605,6 +607,8 @@ class FakeCogniteResourceGenerator:
             return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("Sequence[") and annotation.endswith("]"):
             return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("Collection[") and annotation.endswith("]"):
+            return typing.Collection[cls._create_type_hint_3_10(annotation[11:-1], resource_module_vars, local_vars)]
         raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod
