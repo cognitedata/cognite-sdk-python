@@ -176,7 +176,7 @@ class Container(ContainerCore):
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
-            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items()},
+            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items() if isinstance(v, dict)},
             is_global=resource["isGlobal"],
             last_updated_time=resource["lastUpdatedTime"],
             created_time=resource["createdTime"],

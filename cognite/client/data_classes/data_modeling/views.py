@@ -106,11 +106,15 @@ class ViewApply(ViewCore):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         properties = (
-            {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()}
+            {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items() if isinstance(v, dict)} or None
             if "properties" in resource
             else None
         )
-        implements = [ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None
+        implements = (
+            [ViewId.load(v) for v in resource["implements"] if isinstance(v, dict)]
+            if "implements" in resource
+            else None
+        )
         filter = Filter.load(resource["filter"]) if "filter" in resource else None
         return cls(
             space=resource["space"],
@@ -126,9 +130,7 @@ class ViewApply(ViewCore):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
-            output["properties"] = {
-                k: v.dump(camel_case) for k, v in output["properties"].items() if isinstance(v, ViewPropertyApply)
-            }
+            output["properties"] = {k: v.dump(camel_case) for k, v in output["properties"].items()}
 
         return output
 
@@ -211,19 +213,21 @@ class View(ViewCore):
             last_updated_time=resource["lastUpdatedTime"],
             created_time=resource["createdTime"],
             filter=Filter.load(resource["filter"]) if "filter" in resource else None,
-            implements=[ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None,
+            implements=[ViewId.load(v) for v in resource["implements"] if isinstance(v, dict)] or None
+            if "implements" in resource
+            else None,
             writable=resource["writable"],
             used_for=resource["usedFor"],
             is_global=resource["isGlobal"],
-            properties={k: ViewProperty.load(v) for k, v in resource.get("properties", {}).items()},
+            properties={
+                k: ViewProperty.load(v) for k, v in resource.get("properties", {}).items() if isinstance(v, dict)
+            },
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
-            output["properties"] = {
-                k: v.dump(camel_case) for k, v in output["properties"].items() if isinstance(v, ViewProperty)
-            }
+            output["properties"] = {k: v.dump(camel_case) for k, v in output["properties"].items()}
 
         return output
 
@@ -409,8 +413,6 @@ class MappedPropertyApply(ViewPropertyApply):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if not isinstance(resource, dict):
-            return UnknownCogniteObject.load(resource)
         return cls(
             container=ContainerId.load(resource["container"]),
             container_property_identifier=resource["containerPropertyIdentifier"],
@@ -449,8 +451,6 @@ class MappedProperty(ViewProperty):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if not isinstance(resource, dict):
-            return UnknownCogniteObject.load(resource)
         type_ = resource["type"]
         source = type_.get("source", None) or resource.get("source")
 
