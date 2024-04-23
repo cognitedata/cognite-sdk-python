@@ -99,11 +99,11 @@ class Filter(ABC):
             return Or(*(Filter.load(filter_) for filter_ in filter_body))
         elif filter_body := filter_.get(Not._filter_name):
             return Not(Filter.load(filter_body))
-        elif filter_body := filter_.get(Range._filter_name):
+        elif filter_body := filter_.get(Nested._filter_name):
             return Nested(scope=filter_body["scope"], filter=Filter.load(filter_body["filter"]))
         elif MatchAll._filter_name in filter_:
             return MatchAll()
-        elif filter_body := filter_.get(Range._filter_name):
+        elif filter_body := filter_.get(HasData._filter_name):
             containers = []
             views = []
             for view_or_space in filter_body:
