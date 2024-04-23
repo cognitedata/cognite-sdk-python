@@ -29,7 +29,7 @@ class TestFunctionsAPI:
 
     def test_create_schedule_with_bad_external_id(self, cognite_client: CogniteClient):
         xid = "bad_xid"
-        with pytest.raises(ValueError, match=f"Function with external ID {xid} is not found"):
+        with pytest.raises(ValueError, match=f'Function with external ID "{xid}" is not found'):
             cognite_client.functions.schedules.create(
                 function_external_id=xid,
                 cron_expression="* * * * *",
