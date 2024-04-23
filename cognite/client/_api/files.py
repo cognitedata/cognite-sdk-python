@@ -67,6 +67,7 @@ class FilesAPI(APIClient):
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
         limit: int | None = None,
+        partitions: int | None = None,
     ) -> Iterator[FileMetadata] | Iterator[FileMetadataList]:
         """Iterate over files
 
@@ -95,6 +96,7 @@ class FilesAPI(APIClient):
             directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int | None): Maximum number of files to return. Defaults to return all items.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
 
         Returns:
             Iterator[FileMetadata] | Iterator[FileMetadataList]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
@@ -129,6 +131,7 @@ class FilesAPI(APIClient):
             chunk_size=chunk_size,
             filter=filter,
             limit=limit,
+            partitions=partitions,
         )
 
     def __iter__(self) -> Iterator[FileMetadata]:
@@ -1021,6 +1024,7 @@ class FilesAPI(APIClient):
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
     ) -> FileMetadataList:
         """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 
@@ -1046,6 +1050,7 @@ class FilesAPI(APIClient):
             directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int | None): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
 
         Returns:
             FileMetadataList: The requested files.
@@ -1113,5 +1118,10 @@ class FilesAPI(APIClient):
         ).dump(camel_case=True)
 
         return self._list(
-            list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            partitions=partitions,
         )

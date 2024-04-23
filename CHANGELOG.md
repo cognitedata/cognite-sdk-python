@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.38.1] - 2024-04-23
+### Added
+- Added missing `partitions` parameter to `list()` and `__call__()` methods for `FilesAPI`.
+
 ## [7.38.0] - 2024-04-22
 ### Added
 - Support for `workflows.executions.retry`
