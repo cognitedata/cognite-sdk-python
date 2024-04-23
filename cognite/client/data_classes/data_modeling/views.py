@@ -450,7 +450,7 @@ class MappedProperty(ViewProperty):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if not isinstance(resource, dict):
-            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
+            return UnknownCogniteObject.load(resource)
         type_ = resource["type"]
         source = type_.get("source", None) or resource.get("source")
 

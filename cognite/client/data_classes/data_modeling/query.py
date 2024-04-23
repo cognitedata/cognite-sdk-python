@@ -99,7 +99,7 @@ class Select(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if not isinstance(resource, dict):
-            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
+            return UnknownCogniteObject.load(resource)
         return cls(
             sources=[SourceSelector.load(source) for source in resource.get("sources", [])],
             sort=[InstanceSort.load(s) for s in resource.get("sort", [])],
