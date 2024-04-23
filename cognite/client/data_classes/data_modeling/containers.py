@@ -57,15 +57,11 @@ class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.constraints:
-            output["constraints"] = {
-                k: v.dump(camel_case) for k, v in self.constraints.items() if isinstance(v, Constraint)
-            }
+            output["constraints"] = {k: v.dump(camel_case) for k, v in self.constraints.items()}
         if self.indexes:
-            output["indexes"] = {k: v.dump(camel_case) for k, v in self.indexes.items() if isinstance(v, Index)}
+            output["indexes"] = {k: v.dump(camel_case) for k, v in self.indexes.items()}
         if self.properties:
-            output["properties"] = {
-                k: v.dump(camel_case) for k, v in self.properties.items() if isinstance(v, ContainerProperty)
-            }
+            output["properties"] = {k: v.dump(camel_case) for k, v in self.properties.items()}
 
         return output
 
@@ -110,14 +106,15 @@ class ContainerApply(ContainerCore):
         return ContainerApply(
             space=resource["space"],
             external_id=resource["externalId"],
-            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items()},
+            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items() if isinstance(v, dict)},
             description=resource.get("description"),
             name=resource.get("name"),
             used_for=resource.get("usedFor"),
-            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()}
+            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items() if isinstance(v, dict)}
+            or None
             if "constraints" in resource
             else None,
-            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} or None
+            indexes={k: Index.load(v) for k, v in resource["indexes"].items() if isinstance(v, dict)} or None
             if "indexes" in resource
             else None,
         )
@@ -167,9 +164,15 @@ class Container(ContainerCore):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         constraints = (
-            {k: Constraint.load(v) for k, v in resource["constraints"].items()} if "constraints" in resource else None
+            {k: Constraint.load(v) for k, v in resource["constraints"].items() if isinstance(v, dict)}
+            if "constraints" in resource
+            else None
         )
-        indexes = {k: Index.load(v) for k, v in resource["indexes"].items()} if "indexes" in resource else None
+        indexes = (
+            {k: Index.load(v) for k, v in resource["indexes"].items() if isinstance(v, dict)}
+            if "indexes" in resource
+            else None
+        )
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -289,11 +292,10 @@ class ContainerProperty(CogniteObject):
 class Constraint(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if isinstance(resource, dict):
-            if resource["constraintType"] == "requires":
-                return cast(Self, RequiresConstraint.load(resource))
-            elif resource["constraintType"] == "uniqueness":
-                return cast(Self, UniquenessConstraint.load(resource))
+        if resource["constraintType"] == "requires":
+            return cast(Self, RequiresConstraint.load(resource))
+        elif resource["constraintType"] == "uniqueness":
+            return cast(Self, UniquenessConstraint.load(resource))
         return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
@@ -339,11 +341,10 @@ class UniquenessConstraint(Constraint):
 class Index(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if isinstance(resource, dict):
-            if resource["indexType"] == "btree":
-                return cast(Self, BTreeIndex.load(resource))
-            if resource["indexType"] == "inverted":
-                return cast(Self, InvertedIndex.load(resource))
+        if resource["indexType"] == "btree":
+            return cast(Self, BTreeIndex.load(resource))
+        if resource["indexType"] == "inverted":
+            return cast(Self, InvertedIndex.load(resource))
         return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
