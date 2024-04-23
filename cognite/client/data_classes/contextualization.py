@@ -1061,6 +1061,15 @@ class NestableDiagramDetectConfig:
 
 
 class DirectionWeights(NestableDiagramDetectConfig):
+    """Config for direction weights in diagram detection.
+
+    Args:
+        left (float | None): explanation
+        right (float | None): explanation
+        up (float | None): explanation
+        down (float | None): explanation
+    """
+
     def __init__(
         self,
         left: float | None = None,
@@ -1087,6 +1096,12 @@ class CustomizeFuzziness(NestableDiagramDetectConfig):
 
 
 class ConnectionFlags:
+    """
+    Args:
+        no_text_inbetween (bool): explanation
+        natural_reading_order (bool): explanation
+        flags (bool): extra undocumented flags
+    """
     def __init__(
         self,
         no_text_inbetween: bool = False,
@@ -1104,18 +1119,33 @@ class ConnectionFlags:
 
 
 class DiagramDetectConfig(NestableDiagramDetectConfig):
+    """Configuration options for the diagrams.detect endpoint.
+
+    Args:
+        read_embedded_text (bool | None): explanation
+        min_fuzzy_score (float | None): explanation
+        direction_weights (DirectionWeights | dict | None): explanation
+        remove_leading_zeros (bool | None): explanation
+        case_sensitive (bool | None): explanation
+        annotation_extract (bool | None): read SHX text embedded in the diagram file if available. Cannot be used at the same time as read_embedded_text.
+        customize_fuzziness (CustomizeFuzziness | dict | None): explanation
+        connection_flags (ConnectionFlags | list[str] | None): token graph connection options
+        direction_delta (float | None): explanation
+
+    """
+
     def __init__(
         self,
         read_embedded_text: bool | None = None,
         min_fuzzy_score: float | None = None,
-        direction_weights: DirectionWeights | dict | None = None,
+        direction_weights: DirectionWeights | dict[str, Any] | None = None,
         remove_leading_zeros: bool | None = None,
         case_sensitive: bool | None = None,
-        annotation_extract: bool | None = None,  # SHX text, not possible at the same time as read_embedded_text
-        refresh_ocr: bool | None = None,
-        customize_fuzziness: CustomizeFuzziness | dict | None = None,
+        annotation_extract: bool | None = None,
+        customize_fuzziness: CustomizeFuzziness | dict[str, Any] | None = None,
         connection_flags: ConnectionFlags | list[str] | None = None,
         direction_delta: float | None = None,
+        **params: Any,
     ) -> None:
         self.read_embedded_text = read_embedded_text
         self.min_fuzzy_score = min_fuzzy_score
@@ -1123,7 +1153,9 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
         self.remove_leading_zeros = remove_leading_zeros
         self.case_sensitive = case_sensitive
         self.annotation_extract = annotation_extract
-        self.refresh_ocr = refresh_ocr
         self.customize_fuzziness = customize_fuzziness
         self.connection_flags = connection_flags
         self.direction_delta = direction_delta
+
+        for param_name, value in params.items():
+            setattr(self, param_name, value)
