@@ -33,10 +33,16 @@ class TestCogniteClient:
         assert e.value.code == 404
 
 
+__SEEN = set()
+
+
 def find_mappingproxy(obj):
     # Of course this test only fails in CI, so after investigation of where the test pollution
     # comes from, we may delete this entirely:
     for k, v in vars(obj).items():
+        if v in __SEEN:
+            continue
+        __SEEN.add(v)
         try:
             pickle.dumps(v)
         except TypeError as e:
