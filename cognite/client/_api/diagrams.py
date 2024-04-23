@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     DetectJobBundle,
     DiagramConvertResults,
+    DiagramDetectConfig,
     DiagramDetectResults,
     FileReference,
     T_ContextualizationJob,
@@ -128,7 +129,7 @@ class DiagramsAPI(APIClient):
         file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
-        configuration: dict[str, Any] | None = None,
+        configuration: DiagramDetectConfig | dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[True],
     ) -> tuple[DetectJobBundle | None, list[dict[str, Any]]]: ...
@@ -144,7 +145,7 @@ class DiagramsAPI(APIClient):
         file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
-        configuration: dict[str, Any] | None = None,
+        configuration: DiagramDetectConfig | dict[str, Any] | None = None,
     ) -> DiagramDetectResults: ...
 
     def detect(
@@ -157,7 +158,7 @@ class DiagramsAPI(APIClient):
         file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool | None = None,
-        configuration: dict[str, Any] | None = None,
+        configuration: DiagramDetectConfig | dict[str, Any] | None = None,
         *,
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]:
@@ -176,7 +177,7 @@ class DiagramsAPI(APIClient):
             file_external_ids (str | SequenceNotStr[str] | None): File external ids, alternative to file_ids and file_references.
             file_references (list[FileReference] | FileReference | None): File references (id or external_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
             pattern_mode (bool | None): Only in beta. If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
-            configuration (dict[str, Any] | None): Only in beta. Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
+            configuration (DiagramDetectConfig | dict[str, Any] | None): Only in beta. Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
             DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
@@ -237,7 +238,8 @@ class DiagramsAPI(APIClient):
         ]
         beta_parameters = {}
         if pattern_mode is not None or configuration is not None:
-            beta_parameters = dict(pattern_mode=pattern_mode, configuration=configuration)
+            config = configuration.dump() if isinstance(configuration, DiagramDetectConfig) else configuration
+            beta_parameters = dict(pattern_mode=pattern_mode, configuration=config)
 
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
