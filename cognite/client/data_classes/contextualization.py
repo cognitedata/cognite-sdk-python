@@ -1096,12 +1096,14 @@ class CustomizeFuzziness(NestableDiagramDetectConfig):
 
 
 class ConnectionFlags:
-    """
+    """Connection flags for token graph.
+
     Args:
-        no_text_inbetween (bool): explanation
-        natural_reading_order (bool): explanation
-        flags (bool): extra undocumented flags
+        no_text_inbetween (bool): Only connect text regions that are not separated by other text regions.
+        natural_reading_order (bool): Only connect text regions that are in natural reading order (i.e. top to bottom and left to right).
+        **flags (bool): No description.
     """
+
     def __init__(
         self,
         no_text_inbetween: bool = False,
@@ -1119,18 +1121,43 @@ class ConnectionFlags:
 
 
 class DiagramDetectConfig(NestableDiagramDetectConfig):
-    """Configuration options for the diagrams.detect endpoint.
+    """Configuration options for the diagrams/detect endpoint.
 
     Args:
-        read_embedded_text (bool | None): explanation
-        min_fuzzy_score (float | None): explanation
-        direction_weights (DirectionWeights | dict | None): explanation
-        remove_leading_zeros (bool | None): explanation
-        case_sensitive (bool | None): explanation
-        annotation_extract (bool | None): read SHX text embedded in the diagram file if available. Cannot be used at the same time as read_embedded_text.
-        customize_fuzziness (CustomizeFuzziness | dict | None): explanation
+        read_embedded_text (bool | None): Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
+        min_fuzzy_score (float | None): For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
+        direction_weights (DirectionWeights | dict[str, Any] | None): explanation
+        remove_leading_zeros (bool | None): Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
+        case_sensitive (bool | None): Case sensitive text matching.
+        annotation_extract (bool | None): Read SHX text embedded in the diagram file. If present, this text will override overlapping OCR text. Cannot be used at the same time as read_embedded_text.
+        customize_fuzziness (CustomizeFuzziness | dict[str, Any] | None): explanation
         connection_flags (ConnectionFlags | list[str] | None): token graph connection options
         direction_delta (float | None): explanation
+        **params (Any): No description.
+
+    Example:
+
+        Configure a call to digrams detect endpoint:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+            >>> client = CogniteClient()
+            >>> config = DiagramDetectConfig(
+            ...     remove_leading_zeros=True,
+            ...     connection_flags=ConnectionFlags(
+            ...         no_text_inbetween=True,
+            ...         natural_reading_order=True,
+            ...     )
+            ... )
+            >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
+
+        If you want to use an undocumented parameter, you can pass it as a keyword argument:
+
+            >>> config_with_undoducmented_params = DiagramDetectConfig(
+            ...     remove_leading_zeros=True,
+            ...     connection_flags=ConnectionFlags(new_undocumented_flag=True),
+            ...     new_undocumented_param={"can_be_anything": True},
+            ... )
 
     """
 
