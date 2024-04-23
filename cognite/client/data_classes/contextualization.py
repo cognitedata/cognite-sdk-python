@@ -1084,6 +1084,14 @@ class DirectionWeights(NestableDiagramDetectConfig):
 
 
 class CustomizeFuzziness(NestableDiagramDetectConfig):
+    """Fuzzy matching configuration for diagram detection.
+
+    Args:
+        min_chars (int | None): Minimum number of characters in a text region for fuzzy matching to be applied.
+        max_boxes (int | None): Maximum number of text regions in a box for fuzzy matching to be applied.
+        fuzzy_score (float | None): Fuzzy score threshold for fuzzy matching to be applied.
+    """
+
     def __init__(
         self,
         min_chars: int | None = None,
@@ -1096,12 +1104,12 @@ class CustomizeFuzziness(NestableDiagramDetectConfig):
 
 
 class ConnectionFlags:
-    """Connection flags for token graph.
+    """Connection flags for token graph. These are passed as an array of strings to the API. Only flags set to True are included in the array. There is no need to set any flags to False.
 
     Args:
         no_text_inbetween (bool): Only connect text regions that are not separated by other text regions.
         natural_reading_order (bool): Only connect text regions that are in natural reading order (i.e. top to bottom and left to right).
-        **flags (bool): No description.
+        **flags (bool): Other flags.
     """
 
     def __init__(
@@ -1126,14 +1134,14 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
     Args:
         read_embedded_text (bool | None): Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
         min_fuzzy_score (float | None): For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
-        direction_weights (DirectionWeights | dict[str, Any] | None): explanation
+        direction_weights (DirectionWeights | dict[str, Any] | None):
         remove_leading_zeros (bool | None): Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
         case_sensitive (bool | None): Case sensitive text matching.
         annotation_extract (bool | None): Read SHX text embedded in the diagram file. If present, this text will override overlapping OCR text. Cannot be used at the same time as read_embedded_text.
-        customize_fuzziness (CustomizeFuzziness | dict[str, Any] | None): explanation
-        connection_flags (ConnectionFlags | list[str] | None): token graph connection options
-        direction_delta (float | None): explanation
-        **params (Any): No description.
+        customize_fuzziness (CustomizeFuzziness | dict[str, Any] | None):
+        connection_flags (ConnectionFlags | list[str] | None): token graph connection options.
+        direction_delta (float | None):
+        **params (Any): Other parameters. The parameter name will be converted to camel case but the value will be passed as is.
 
     Example:
 
@@ -1158,7 +1166,6 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
             ...     connection_flags=ConnectionFlags(new_undocumented_flag=True),
             ...     new_undocumented_param={"can_be_anything": True},
             ... )
-
     """
 
     def __init__(
