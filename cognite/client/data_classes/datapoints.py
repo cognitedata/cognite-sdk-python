@@ -916,8 +916,7 @@ class Datapoints(CogniteResource):
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
                 snake_key = to_snake_case(key)
-                if hasattr(instance, snake_key):
-                    setattr(instance, snake_key, [])
+                setattr(instance, snake_key, [])
             return instance
 
         data_lists = defaultdict(list)
@@ -930,8 +929,7 @@ class Datapoints(CogniteResource):
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
-            if hasattr(instance, snake_key):
-                setattr(instance, snake_key, data)
+            setattr(instance, snake_key, data)
         return instance
 
     def _extend(self, other_dps: Datapoints) -> None:
