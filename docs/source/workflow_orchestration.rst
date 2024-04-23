@@ -65,6 +65,10 @@ Cancel Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.cancel
 
+Retry Workflow Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retry
+
 Workflow Tasks
 ------------------
 Update Status of Async Task
