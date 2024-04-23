@@ -407,7 +407,27 @@ class DatapointsArray(CogniteResource):
             unit=dps_dct.get("unit"),
             granularity=dps_dct.get("granularity"),
             unit_external_id=dps_dct.get("unitExternalId"),
-            **convert_all_keys_to_snake_case(array_by_attr),
+            timestamp=array_by_attr.get("timestamp"),
+            value=array_by_attr.get("value"),
+            average=array_by_attr.get("average"),
+            max=array_by_attr.get("max"),
+            min=array_by_attr.get("min"),
+            count=array_by_attr.get("count"),
+            sum=array_by_attr.get("sum"),
+            interpolation=array_by_attr.get("interpolation"),
+            step_interpolation=array_by_attr.get("stepInterpolation"),
+            continuous_variance=array_by_attr.get("continuousVariance"),
+            discrete_variance=array_by_attr.get("discreteVariance"),
+            total_variation=array_by_attr.get("totalVariation"),
+            count_bad=array_by_attr.get("countBad"),
+            count_good=array_by_attr.get("countGood"),
+            count_uncertain=array_by_attr.get("countUncertain"),
+            duration_bad=array_by_attr.get("durationBad"),
+            duration_good=array_by_attr.get("durationGood"),
+            duration_uncertain=array_by_attr.get("durationUncertain"),
+            status_code=array_by_attr.get("statusCode"),
+            status_symbol=array_by_attr.get("statusSymbol"),
+            null_timestamps=set(dps_dct["nullTimestamps"]) if "nullTimestamps" in dps_dct else None,
         )
 
     @classmethod
@@ -896,7 +916,8 @@ class Datapoints(CogniteResource):
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
                 snake_key = to_snake_case(key)
-                setattr(instance, snake_key, [])
+                if hasattr(instance, snake_key):
+                    setattr(instance, snake_key, [])
             return instance
 
         data_lists = defaultdict(list)
@@ -909,7 +930,8 @@ class Datapoints(CogniteResource):
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
-            setattr(instance, snake_key, data)
+            if hasattr(instance, snake_key):
+                setattr(instance, snake_key, data)
         return instance
 
     def _extend(self, other_dps: Datapoints) -> None:
@@ -964,7 +986,7 @@ class Datapoints(CogniteResource):
                         status_code=self.status_code[i],
                         status_symbol=self.status_symbol[i],  # type: ignore [index]
                     )
-            new_dps_objects.append(Datapoint())
+            new_dps_objects.append(Datapoint.load(dp_args))
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
 
