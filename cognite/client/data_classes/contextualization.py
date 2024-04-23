@@ -15,6 +15,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    basic_instance_dump,
 )
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,
@@ -25,6 +26,7 @@ from cognite.client.data_classes.annotation_types.images import (
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
 from cognite.client.utils._text import to_snake_case
 
@@ -1036,3 +1038,92 @@ class ResourceReference(CogniteResource):
 
 class ResourceReferenceList(CogniteResourceList[ResourceReference]):
     _RESOURCE = ResourceReference
+
+
+class NestableDiagramDetectConfig:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = basic_instance_dump(self, camel_case=camel_case)
+        for k, v in dumped.items():
+            if isinstance(v, NestableDiagramDetectConfig):
+                dumped[k] = v.dump(camel_case=camel_case)
+            elif isinstance(v, ConnectionFlags):
+                dumped[k] = v.dump()
+        return dumped
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) is type(other) and self.dump() == other.dump()
+
+    def __str__(self) -> str:
+        return _json.dumps(self.dump(), indent=4)
+
+    def __repr__(self) -> str:
+        return str(self)
+
+
+class DirectionWeights(NestableDiagramDetectConfig):
+    def __init__(
+        self,
+        left: float | None = None,
+        right: float | None = None,
+        up: float | None = None,
+        down: float | None = None,
+    ) -> None:
+        self.left = left
+        self.right = right
+        self.up = up
+        self.down = down
+
+
+class CustomizeFuzziness(NestableDiagramDetectConfig):
+    def __init__(
+        self,
+        min_chars: int | None = None,
+        max_boxes: int | None = None,
+        fuzzy_score: float | None = None,
+    ) -> None:
+        self.min_chars = min_chars
+        self.max_boxes = max_boxes
+        self.fuzzy_score = fuzzy_score
+
+
+class ConnectionFlags:
+    def __init__(
+        self,
+        no_text_inbetween: bool = False,
+        natural_reading_order: bool = False,
+        **flags: bool,
+    ) -> None:
+        self._flags = {
+            "no_text_inbetween": no_text_inbetween,
+            "natural_reading_order": natural_reading_order,
+            **flags,
+        }
+
+    def dump(self, camel_case: bool = False) -> list[str]:
+        return [k for k, v in self._flags.items() if v]
+
+
+class DiagramDetectConfig(NestableDiagramDetectConfig):
+    def __init__(
+        self,
+        read_embedded_text: bool | None = None,
+        min_fuzzy_score: float | None = None,
+        direction_weights: DirectionWeights | dict | None = None,
+        remove_leading_zeros: bool | None = None,
+        case_sensitive: bool | None = None,
+        annotation_extract: bool | None = None,  # SHX text, not possible at the same time as read_embedded_text
+        refresh_ocr: bool | None = None,
+        customize_fuzziness: CustomizeFuzziness | dict | None = None,
+        connection_flags: ConnectionFlags | list[str] | None = None,
+        direction_delta: float | None = None,
+    ) -> None:
+        self.read_embedded_text = read_embedded_text
+        self.min_fuzzy_score = min_fuzzy_score
+        self.direction_weights = direction_weights
+        self.remove_leading_zeros = remove_leading_zeros
+        self.case_sensitive = case_sensitive
+        self.annotation_extract = annotation_extract
+        self.refresh_ocr = refresh_ocr
+        self.customize_fuzziness = customize_fuzziness
+        self.connection_flags = connection_flags
+        self.direction_delta = direction_delta
