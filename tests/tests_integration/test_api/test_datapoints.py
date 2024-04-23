@@ -31,6 +31,7 @@ from cognite.client.data_classes import (
     DatapointsList,
     DatapointsQuery,
     LatestDatapointQuery,
+    StatusCode,
     TimeSeries,
     TimeSeriesList,
 )
@@ -153,7 +154,15 @@ def ts_status_codes(all_test_time_series) -> TimeSeriesList:
 
 @pytest.fixture(scope="session")
 def new_ts(cognite_client):
-    ts = cognite_client.time_series.create(TimeSeries())
+    ts = cognite_client.time_series.create(TimeSeries(is_string=False))
+    yield ts
+    cognite_client.time_series.delete(id=ts.id)
+    assert cognite_client.time_series.retrieve(ts.id) is None
+
+
+@pytest.fixture(scope="session")
+def new_ts_string(cognite_client):
+    ts = cognite_client.time_series.create(TimeSeries(is_string=True))
     yield ts
     cognite_client.time_series.delete(id=ts.id)
     assert cognite_client.time_series.retrieve(ts.id) is None
@@ -2289,6 +2298,23 @@ class TestInsertDatapointsAPI:
         with pytest.raises(ValueError, match="Only raw datapoints are supported when inserting data from"):
             cognite_client.time_series.data.insert(data, id=new_ts.id)
 
+    def test_insert_not_found_ts(self, cognite_client, new_ts, monkeypatch):
+        # From 7.35.0 to 7.37.1, 'CogniteNotFoundError.[failed, successful]' was not reported correctly:
+        xid = random_cognite_external_ids(1)[0]
+        dps = [
+            {"id": new_ts.id, "datapoints": [(123456789, 1111111)]},
+            {"external_id": xid, "datapoints": [(123456789, 6666666)]},
+        ]
+        # Let's make sure these two go in separate requests:
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 1)
+        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{") as err:
+            cognite_client.time_series.data.insert_multiple(dps)
+
+        assert isinstance(err.value, CogniteNotFoundError)
+        assert err.value.successful == [{"id": new_ts.id}]
+        assert err.value.not_found == [{"externalId": xid}]
+        assert err.value.failed == [{"externalId": xid}]
+
     @pytest.mark.usefixtures("post_spy")
     def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy, monkeypatch):
         df = pd.DataFrame(
@@ -2308,3 +2334,173 @@ class TestInsertDatapointsAPI:
 
     def test_delete_ranges(self, cognite_client, new_ts):
         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
+
+    def test_invalid_status_code(self, cognite_client, new_ts):
+        with pytest.raises(CogniteAPIError, match="^Invalid status code"):
+            # code=1 is not allowed: When info type is 00, all info bits must be 0
+            cognite_client.time_series.data.insert(datapoints=[(1, 3.1, 1)], id=new_ts.id)
+
+    def test_invalid_status_symbol(self, cognite_client, new_ts):
+        symbol = random.choice(("good", "uncertain", "bad"))  # should be PascalCased
+        with pytest.raises(CogniteAPIError, match="^Invalid status code symbol"):
+            cognite_client.time_series.data.insert(
+                datapoints=[{"timestamp": 0, "value": 2.3, "status": {"symbol": symbol}}], id=new_ts.id
+            )
+
+    def test_tuples_and_dps_objects_with_status_codes__numeric_ts(self, cognite_client, new_ts):
+        ts_kwargs = dict(id=new_ts.id, start=-123, limit=50, include_status=True, ignore_bad_datapoints=False)
+        cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        actual_timestamp = [0, 123, 1234, 12345, 123456, 1234567, 12345678, 123456789, 1234567890]
+        accepted_insert_values = [0, None, "NaN", math.nan, "-Infinity", -math.inf, "Infinity", math.inf, 1]
+        actual_value = [0, None, math.nan, math.nan, -math.inf, -math.inf, math.inf, math.inf, 1]
+        actual_status_codes = [
+            0, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, 2147483648, StatusCode.Uncertain
+        ]  # fmt: skip
+
+        cognite_client.time_series.data.insert(
+            id=new_ts.id,
+            datapoints=[
+                (-123, -1),  # no status code
+                *zip(actual_timestamp, accepted_insert_values, actual_status_codes),
+            ],
+        )
+
+        def assert_correct_data(to_check):
+            assert to_check.value[0] == -1
+            assert to_check.value[1] == actual_value[0]
+            assert math.isnan(to_check.value[3]) and math.isnan(to_check.value[4])
+            if isinstance(to_check, Datapoints):
+                assert to_check.value[2] is None
+            else:
+                bad_ts = to_check.timestamp[2].item() // 1_000_000
+                assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
+            assert list(to_check.value[5:]) == actual_value[4:]
+            assert list(to_check.timestamp[1:]) == actual_timestamp
+            exp_status_symbols = ["Good", "Good", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Uncertain"]
+            assert list(to_check.status_symbol) == exp_status_symbols
+
+        dps1 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps1)
+
+        cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert Datapoints object:
+        cognite_client.time_series.data.insert(id=new_ts.id, datapoints=dps1)
+        dps2 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps2)
+
+        dps_array1 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert DatapointsArray object:
+        cognite_client.time_series.data.insert(id=new_ts.id, datapoints=dps_array1)
+        dps_array2 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        assert_correct_data(dps_array2)
+
+    def test_tuples_and_dps_objects_with_status_codes__string_ts(self, cognite_client, new_ts_string):
+        ts_kwargs = dict(id=new_ts_string.id, start=-123, limit=50, include_status=True, ignore_bad_datapoints=False)
+        cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        sassy = "Negative, really? Where's my status code, huh"
+        actual_timestamp = [0, 123, 1234, 12345, 123456, 1234567, 12345678]
+        actual_value = ["0", None, "NaN", "Infinity", "-Infinity", "good-yes?", "uncertain-yes?"]
+        actual_status_codes = [0, 2147483648, StatusCode.Bad, 2147483648, 2147483648, 1024, 1073741824]  # fmt: skip
+
+        cognite_client.time_series.data.insert(
+            id=new_ts_string.id,
+            datapoints=[
+                (-123, sassy),  # no status code
+                *zip(actual_timestamp, actual_value, actual_status_codes),
+            ],
+        )
+
+        def assert_correct_data(to_check):
+            assert to_check.value[0] == sassy
+            if isinstance(to_check, DatapointsArray):
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
+            assert list(to_check.timestamp[1:]) == actual_timestamp
+            assert list(to_check.value[1:]) == actual_value
+            assert list(to_check.status_symbol) == ["Good", "Good", "Bad", "Bad", "Bad", "Bad", "Good", "Uncertain"]
+
+        dps1 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps1)
+
+        cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert Datapoints object:
+        cognite_client.time_series.data.insert(id=new_ts_string.id, datapoints=dps1)
+        dps2 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert_correct_data(dps2)
+
+        dps_array1 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
+        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
+
+        # Test insert DatapointsArray object:
+        cognite_client.time_series.data.insert(id=new_ts_string.id, datapoints=dps_array1)
+        dps_array2 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        assert_correct_data(dps_array2)
+
+    def test_dict_format_with_status_codes_using_insert_multiple(self, cognite_client, new_ts, new_ts_string):
+        cognite_client.time_series.data.delete_ranges(
+            [{"id": new_ts.id, "start": 0, "end": 20}, {"id": new_ts_string.id, "start": 0, "end": 20}]
+        )
+        cognite_client.time_series.data.insert_multiple(
+            [
+                {
+                    "id": new_ts.id,
+                    "datapoints": [
+                        {"timestamp": 0, "value": 0},
+                        {"timestamp": 1, "value": 1, "status": {}},
+                        {"timestamp": 2, "value": 2, "status": {"code": StatusCode.Good}},
+                        {"timestamp": 3, "value": 3, "status": {"symbol": "Good"}},
+                        {"timestamp": 4, "value": 4, "status": {"code": 0, "symbol": "Good"}},
+                        {"timestamp": 5, "value": 5, "status": {"code": 1073741824}},
+                        {"timestamp": 6, "value": 6, "status": {"symbol": "Uncertain"}},
+                        {"timestamp": 7, "value": 7, "status": {"code": StatusCode.Uncertain, "symbol": "Uncertain"}},
+                        {"timestamp": 8, "value": 8, "status": {"symbol": "Bad"}},
+                        {"timestamp": 9, "value": 9, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
+                        {"timestamp": 10, "value": None, "status": {"code": 2147483648}},
+                    ],
+                },
+                {
+                    "id": new_ts_string.id,
+                    "datapoints": [
+                        {"timestamp": 0, "value": "s0"},
+                        {"timestamp": 1, "value": "s1", "status": {}},
+                        {"timestamp": 2, "value": "s2", "status": {"code": StatusCode.Good}},
+                        {"timestamp": 3, "value": "s3", "status": {"symbol": "Good"}},
+                        {"timestamp": 4, "value": "s4", "status": {"code": 0, "symbol": "Good"}},
+                        {"timestamp": 5, "value": "s5", "status": {"code": StatusCode.Uncertain}},
+                        {"timestamp": 6, "value": "s6", "status": {"symbol": "Uncertain"}},
+                        {"timestamp": 7, "value": "s7", "status": {"code": 1073741824, "symbol": "Uncertain"}},
+                        {"timestamp": 8, "value": "s9", "status": {"symbol": "Bad"}},
+                        {"timestamp": 9, "value": "s10", "status": {"code": 2147483648, "symbol": "Bad"}},
+                        {"timestamp": 10, "value": None, "status": {"code": StatusCode.Bad}},
+                    ],
+                },
+            ]
+        )
+        dps_numeric, dps_str = cognite_client.time_series.data.retrieve(
+            id=[new_ts.id, new_ts_string.id], end=20, include_status=True, ignore_bad_datapoints=False
+        )
+        # Superficial tests here; well covered elsewhere:
+        assert dps_numeric.timestamp == dps_str.timestamp == list(range(11))
+        assert dps_numeric.value and dps_str.value
+        assert None in dps_numeric.value and None in dps_str.value
+        assert dps_numeric.status_code == dps_str.status_code
+        assert dps_numeric.status_symbol == dps_str.status_symbol
+        assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}

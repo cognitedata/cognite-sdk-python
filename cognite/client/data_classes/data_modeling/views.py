@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
     CogniteResourceList,
+    UnknownCogniteObject,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -493,7 +494,7 @@ class ConnectionDefinition(ViewProperty, ABC):
         if connection_type == "multi_reverse_direct_relation":
             return cast(Self, MultiReverseDirectRelation.load(resource))
 
-        raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -695,7 +696,7 @@ class ConnectionDefinitionApply(ViewPropertyApply, ABC):
             return cast(Self, SingleReverseDirectRelationApply.load(resource))
         if connection_type == "multi_reverse_direct_relation":
             return cast(Self, MultiReverseDirectRelationApply.load(resource))
-        raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

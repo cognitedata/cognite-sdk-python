@@ -28,6 +28,7 @@ from cognite.client.data_classes._base import (
     HasInternalId,
     HasName,
     PropertySpec,
+    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -257,7 +258,13 @@ class TestCogniteObject:
     def test_handle_unknown_arguments_when_loading(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
-        if cognite_object_subclass in {Feature, FeatureWrite, FeatureAggregate, GeospatialComputedItem}:
+        if cognite_object_subclass in {
+            Feature,
+            FeatureWrite,
+            FeatureAggregate,
+            GeospatialComputedItem,
+            UnknownCogniteObject,
+        }:
             # ignore these as they are not compatible
             return
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)

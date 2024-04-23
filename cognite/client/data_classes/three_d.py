@@ -205,7 +205,7 @@ class ThreeDModelUpdate(CogniteUpdate):
 
     @property
     def data_set_id(self) -> _ObjectThreeDModelUpdate:
-        return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "data_set_id")
+        return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "dataSetId")
 
     @classmethod
     def _get_update_properties(cls) -> list[PropertySpec]:

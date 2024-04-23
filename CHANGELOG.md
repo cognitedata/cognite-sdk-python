@@ -17,6 +17,45 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.38.1] - 2024-04-23
+### Added
+- Added missing `partitions` parameter to `list()` and `__call__()` methods for `FilesAPI`.
+
+## [7.38.0] - 2024-04-22
+### Added
+- Support for `workflows.executions.retry`
+
+## [7.37.4] - 2024-04-22
+### Improved
+- Enabled automatic retries on Data Workflows POST endpoints
+
+## [7.37.3] - 2024-04-18
+### Improved
+- Minor quality of life change for comparing capabilities involving `DataModelInstancesAcl.WRITE_PROPERTIES`; any
+  ACL already covered by `WRITE` will not be reported as missing.
+
+## [7.37.2] - 2024-04-18
+### Fixed
+- Datapoints inserted into non-existent time series, no longer get their identifier hidden in the `failed` attribute
+  on the raised `CogniteNotFoundError`. Any `successful` now also gets reported correctly.
+
+## [7.37.1] - 2024-04-17
+### Fixed
+- Updating data set ID now works as expected for `ThreeDModelUpdate`.
+
+## [7.37.0] - 2024-04-16
+### Fixed
+- Now handle unknown data types in DM
+
+## [7.36.0] - 2024-04-16
+### Fixed
+- Now handle unknown filter types in DM
+- Add support for the "invalid" filter type in DM
+
+## [7.35.0] - 2024-04-16
+### Added
+- Datapoints insert methods `insert` and `insert_multiple` now support ingesting (optional) status codes.
+
 ## [7.34.0] - 2024-04-11
 ### Added
 - Datapoints method `retrieve_latest` now supports status codes.

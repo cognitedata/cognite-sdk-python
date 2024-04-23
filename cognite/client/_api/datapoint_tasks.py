@@ -33,6 +33,7 @@ from typing import (
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from typing_extensions import NotRequired, TypeAlias
 
+from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
 from cognite.client._proto.data_points_pb2 import (
     AggregateDatapoint,
@@ -43,7 +44,6 @@ from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.datapoints import (
     _AGGREGATES_IN_BETA,
     _INT_AGGREGATES,
-    NUMPY_IS_AVAILABLE,
     Aggregate,
     Datapoints,
     DatapointsArray,

@@ -7,6 +7,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
+    CancelExecution,
     CDFTaskParameters,
     FunctionTaskParameters,
     SubworkflowTaskParameters,
@@ -184,10 +185,12 @@ def add_multiply_workflow(
             ],
         ),
     )
-    # Delete existing workflow and versions
-    cognite_client.workflows.delete(workflow_id, ignore_unknown_ids=True)
-    yield cognite_client.workflows.versions.upsert(version)
-    cognite_client.workflows.delete(workflow_id, ignore_unknown_ids=True)
+
+    retrieved = cognite_client.workflows.versions.retrieve(version.workflow_external_id, version.version)
+    if retrieved is not None:
+        return retrieved
+    else:
+        return cognite_client.workflows.versions.upsert(version)
 
 
 @pytest.fixture(scope="session")
@@ -360,6 +363,7 @@ class TestWorkflowExecutions:
     ) -> None:
         workflow_ids = set(w.as_workflow_id() for w in workflow_execution_list)
 
+        assert workflow_ids, "There should be at least one workflow execution to test list with"
         listed = cognite_client.workflows.executions.list(
             workflow_version_ids=list(workflow_ids), limit=len(workflow_execution_list)
         )
@@ -372,6 +376,7 @@ class TestWorkflowExecutions:
         cognite_client: CogniteClient,
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
+        assert workflow_execution_list, "There should be at least one workflow execution to test retrieve detailed with"
         retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
 
         assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
@@ -406,3 +411,23 @@ class TestWorkflowExecutions:
 
         async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
         assert async_task.status == "completed"
+
+    @pytest.mark.usefixtures("clean_created_sessions")
+    def test_trigger_cancel_retry_workflow(
+        self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
+    ) -> None:
+        workflow_execution = cognite_client.workflows.executions.trigger(
+            add_multiply_workflow.workflow_external_id,
+            add_multiply_workflow.version,
+        )
+
+        cancelled_workflow_executions = cognite_client.workflows.executions.cancel(
+            [CancelExecution(id=workflow_execution.id, reason="test")]
+        )
+        assert len(cancelled_workflow_executions) == 1
+        cancelled_workflow_execution = cancelled_workflow_executions[0]
+        assert cancelled_workflow_execution.status == "terminated"
+        assert cancelled_workflow_execution.reason_for_incompletion == "test"
+
+        retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
+        assert retried_workflow_execution.status == "running"
