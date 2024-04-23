@@ -396,8 +396,8 @@ class DatapointsArray(CogniteResource):
                     except ValueError:
                         array_by_attr[attr] = np.array(values, dtype=np.object_)
             if status is not None:
-                array_by_attr["status_code"] = np.array([s["code"] for s in status], dtype=np.uint32)
-                array_by_attr["status_symbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
+                array_by_attr["statusCode"] = np.array([s["code"] for s in status], dtype=np.uint32)
+                array_by_attr["statusSymbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
 
         return cls(
             id=dps_dct.get("id"),
