@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.38.2] - 2024-04-23
+### Added
+- Added new parameter `function_external_id` to `FunctionScheduleAPI.create` as a convenience to the user. Note
+  that schedules must be attached to a Function by (internal) ID, so a lookup is first done on behalf of the user.
+
 ## [7.38.1] - 2024-04-23
 ### Added
 - Added missing `partitions` parameter to `list()` and `__call__()` methods for `FilesAPI`.
