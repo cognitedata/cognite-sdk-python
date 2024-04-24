@@ -917,8 +917,9 @@ class TestFunctionSchedulesAPI:
 
     @pytest.mark.usefixtures("mock_function_schedules_response_with_xid")
     def test_create_schedules_with_function_external_id(self, cognite_client):
-        
-        with patch.object(cognite_client.functions.schedules, '_post', wraps=cognite_client.functions.schedules._post) as post_mock:
+        with patch.object(
+            cognite_client.functions.schedules, "_post", wraps=cognite_client.functions.schedules._post
+        ) as post_mock:
             res = cognite_client.functions.schedules.create(
                 name="my-schedule",
                 function_external_id="my-func",
@@ -926,8 +927,9 @@ class TestFunctionSchedulesAPI:
                 description="Hi",
             )
 
-        assert 'functionId' in post_mock.call_args[1]['json']['items'][0]
-        assert 'functionExternalId' not in post_mock.call_args[1]['json']['items'][0]
+        call_args = post_mock.call_args[1]["json"]["items"][0]
+        assert "functionId" in call_args
+        assert "functionExternalId" not in call_args
         assert isinstance(res, FunctionSchedule)
 
     def test_create_schedules_with_function_id_and_client_credentials(
