@@ -1061,7 +1061,9 @@ class NestableDiagramDetectConfig:
 
 
 class DirectionWeights(NestableDiagramDetectConfig):
-    """Config for direction weights in diagram detection.
+    """Direction weights for the text graph that control how far text boxes can be one from another
+    in a particular direction before they are no longer connected in the same graph. Lower value means
+    larger distance is allowed.
 
     Args:
         left (float | None): explanation
@@ -1084,43 +1086,43 @@ class DirectionWeights(NestableDiagramDetectConfig):
 
 
 class CustomizeFuzziness(NestableDiagramDetectConfig):
-    """Fuzzy matching configuration for diagram detection.
+    """Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
 
     Args:
-        min_chars (int | None): Minimum number of characters in a text region for fuzzy matching to be applied.
-        max_boxes (int | None): Maximum number of text regions in a box for fuzzy matching to be applied.
-        fuzzy_score (float | None): Fuzzy score threshold for fuzzy matching to be applied.
+        fuzzy_score (float | None): The minimum fuzzy score of the candidate match.
+        max_boxes (int | None): Maximum number of text boxes the potential match is composed of.
+        min_chars (int | None): The minimum number of characters that must be present in the candidate match string.
     """
 
     def __init__(
         self,
-        min_chars: int | None = None,
-        max_boxes: int | None = None,
         fuzzy_score: float | None = None,
+        max_boxes: int | None = None,
+        min_chars: int | None = None,
     ) -> None:
-        self.min_chars = min_chars
-        self.max_boxes = max_boxes
         self.fuzzy_score = fuzzy_score
+        self.max_boxes = max_boxes
+        self.min_chars = min_chars
 
 
 class ConnectionFlags:
     """Connection flags for token graph. These are passed as an array of strings to the API. Only flags set to True are included in the array. There is no need to set any flags to False.
 
     Args:
-        no_text_inbetween (bool): Only connect text regions that are not separated by other text regions.
         natural_reading_order (bool): Only connect text regions that are in natural reading order (i.e. top to bottom and left to right).
+        no_text_inbetween (bool): Only connect text regions that are not separated by other text regions.
         **flags (bool): Other flags.
     """
 
     def __init__(
         self,
-        no_text_inbetween: bool = False,
         natural_reading_order: bool = False,
+        no_text_inbetween: bool = False,
         **flags: bool,
     ) -> None:
         self._flags = {
-            "no_text_inbetween": no_text_inbetween,
             "natural_reading_order": natural_reading_order,
+            "no_text_inbetween": no_text_inbetween,
             **flags,
         }
 
@@ -1132,15 +1134,16 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
     """Configuration options for the diagrams/detect endpoint.
 
     Args:
-        read_embedded_text (bool | None): Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
-        min_fuzzy_score (float | None): For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
-        direction_weights (DirectionWeights | dict[str, Any] | None):
-        remove_leading_zeros (bool | None): Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
-        case_sensitive (bool | None): Case sensitive text matching.
         annotation_extract (bool | None): Read SHX text embedded in the diagram file. If present, this text will override overlapping OCR text. Cannot be used at the same time as read_embedded_text.
-        customize_fuzziness (CustomizeFuzziness | dict[str, Any] | None):
-        connection_flags (ConnectionFlags | list[str] | None): token graph connection options.
-        direction_delta (float | None):
+        case_sensitive (bool | None): Case sensitive text matching. Defaults to True.
+        connection_flags (ConnectionFlags | list[str] | None): Connection flags for token graph. Two flags are supported thus far: `no_text_inbetween` and `natural_reading_order`.
+        customize_fuzziness (CustomizeFuzziness | dict[str, Any] | None): Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
+        direction_delta (float | None): Maximum angle between the direction of two text boxes for them to be connected. Directions are currently multiples of 90 degrees.
+        direction_weights (DirectionWeights | dict[str, Any] | None): Direction weights that control how far subsequent ocr text boxes can be from another in a particular direction and still be combined into the same detection. Lower value means larger distance is allowed. The direction is relative to the text orientation.
+        min_fuzzy_score (float | None): For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
+        read_embedded_text (bool | None): Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
+        remove_leading_zeros (bool | None): Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
+        substitutions (dict[str, list[str]] | None): Override the default mapping of characters to an array of allowed substitute characters. The default mapping contains characters commonly confused by OCR (1 and I, 3 and B etc.). Provide your custom mapping in the format like so: {"0": ["0", "O", "Q"], "1": ["1", "l", "I"]}. This means: 0 (zero) is allowed to be replaced by uppercase letter O or Q, and 1 (one) is allowed to be replaced by lowercase letter l or uppercase letter I. No other replacements are allowed.
         **params (Any): Other parameters. The parameter name will be converted to camel case but the value will be passed as is.
 
     Example:
@@ -1170,26 +1173,28 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
 
     def __init__(
         self,
-        read_embedded_text: bool | None = None,
-        min_fuzzy_score: float | None = None,
-        direction_weights: DirectionWeights | dict[str, Any] | None = None,
-        remove_leading_zeros: bool | None = None,
-        case_sensitive: bool | None = None,
         annotation_extract: bool | None = None,
-        customize_fuzziness: CustomizeFuzziness | dict[str, Any] | None = None,
+        case_sensitive: bool | None = None,
         connection_flags: ConnectionFlags | list[str] | None = None,
+        customize_fuzziness: CustomizeFuzziness | dict[str, Any] | None = None,
         direction_delta: float | None = None,
+        direction_weights: DirectionWeights | dict[str, Any] | None = None,
+        min_fuzzy_score: float | None = None,
+        read_embedded_text: bool | None = None,
+        remove_leading_zeros: bool | None = None,
+        substitutions: dict[str, list[str]] | None = None,
         **params: Any,
     ) -> None:
-        self.read_embedded_text = read_embedded_text
-        self.min_fuzzy_score = min_fuzzy_score
-        self.direction_weights = direction_weights
-        self.remove_leading_zeros = remove_leading_zeros
-        self.case_sensitive = case_sensitive
         self.annotation_extract = annotation_extract
-        self.customize_fuzziness = customize_fuzziness
+        self.case_sensitive = case_sensitive
         self.connection_flags = connection_flags
+        self.customize_fuzziness = customize_fuzziness
         self.direction_delta = direction_delta
+        self.direction_weights = direction_weights
+        self.min_fuzzy_score = min_fuzzy_score
+        self.read_embedded_text = read_embedded_text
+        self.remove_leading_zeros = remove_leading_zeros
+        self.substitutions = substitutions
 
         for param_name, value in params.items():
             setattr(self, param_name, value)
