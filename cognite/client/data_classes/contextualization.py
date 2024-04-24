@@ -28,7 +28,7 @@ from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
-from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._text import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -1043,11 +1043,18 @@ class ResourceReferenceList(CogniteResourceList[ResourceReference]):
 class NestableDiagramDetectConfig:
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = basic_instance_dump(self, camel_case=camel_case)
+        remove_keys = []
         for k, v in dumped.items():
             if isinstance(v, NestableDiagramDetectConfig):
                 dumped[k] = v.dump(camel_case=camel_case)
             elif isinstance(v, ConnectionFlags):
-                dumped[k] = v.dump()
+                cf = v.dump()
+                if cf:
+                    dumped[k] = cf
+                else:
+                    remove_keys.append(k)
+        for k in remove_keys:
+            del dumped[k]
         return dumped
 
     def __eq__(self, other: Any) -> bool:
@@ -1196,5 +1203,11 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
         self.remove_leading_zeros = remove_leading_zeros
         self.substitutions = substitutions
 
+        _known_params = {to_camel_case(k): k for k in vars(self)}
         for param_name, value in params.items():
-            setattr(self, param_name, value)
+            if known := _known_params.get(to_camel_case(param_name)):
+                raise ValueError(
+                    f"Provided parameter name `{param_name}` collides with a known parameter `{known}`. Please use it insead."
+                )
+            else:
+                setattr(self, param_name, value)

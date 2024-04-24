@@ -6,7 +6,14 @@ from unittest.mock import Mock, patch
 import pytest
 
 from cognite.client.data_classes import ContextualizationJob
-from cognite.client.data_classes.contextualization import VISION_FEATURE_MAP, DetectJobBundle, VisionExtractPredictions
+from cognite.client.data_classes.contextualization import (
+    VISION_FEATURE_MAP,
+    ConnectionFlags,
+    DetectJobBundle,
+    DiagramDetectConfig,
+    DirectionWeights,
+    VisionExtractPredictions,
+)
 from cognite.client.testing import monkeypatch_cognite_client
 
 
@@ -181,3 +188,62 @@ class TestJobBundle:
             # With no job_ids
             with pytest.raises(ValueError):
                 res = DetectJobBundle(cognite_client=mock_client, job_ids=[])
+
+
+class TestDiagramDetectConfig:
+    def test_connection_flags(self) -> None:
+        cf = ConnectionFlags(
+            natural_reading_order=True,
+            no_text_inbetween=True,
+            new_parameter=True,
+            excluded_parameter=False,
+            newCamelCaseParameter=True,
+        )
+        expected = [
+            "natural_reading_order",
+            "no_text_inbetween",
+            "new_parameter",
+            "newCamelCaseParameter",
+        ]
+        assert cf.dump() == expected
+
+    def test_nested_config(self) -> None:
+        config = DiagramDetectConfig(
+            annotation_extract=True,
+            case_sensitive=False,
+            connection_flags=ConnectionFlags(
+                natural_reading_order=False,
+            ),
+            direction_weights=DirectionWeights(
+                right=0.1,
+                down=0.1,
+            ),
+            min_fuzzy_score=0.95,
+            remove_leading_zeros=True,
+            new_parameter_str="something",
+            new_paramater_dict={"my_key": "my_value"},
+        )
+
+        expected = {
+            "annotationExtract": True,
+            "caseSensitive": False,
+            "directionWeights": {"right": 0.1, "down": 0.1},
+            "minFuzzyScore": 0.95,
+            "removeLeadingZeros": True,
+            "newParameterStr": "something",
+            "newParamaterDict": {"my_key": "my_value"},
+        }
+        assert config.dump() == expected
+
+    @pytest.mark.parametrize(
+        "param_name",
+        [
+            "annotationExtract",
+            "annotation_Extract",
+            "minFuzzyScore",
+        ],
+    )
+    def test_overlapping_parameter_name(self, param_name: str):
+        kwargs = {param_name: True}
+        with pytest.raises(ValueError):
+            DiagramDetectConfig(**kwargs)
