@@ -231,6 +231,20 @@ class DiagramsAPI(APIClient):
                     ]
                 }
                 </code>
+
+            To use beta configuration options you can use a dictionary or `DiagramDetectConfig` object for convenience:
+
+                >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+                >>> config = DiagramDetectConfig(
+                ...     remove_leading_zeros=True,
+                ...     connection_flags=ConnectionFlags(
+                ...         no_text_inbetween=True,
+                ...         natural_reading_order=True,
+                ...     )
+                ... )
+                >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
+
+            Check the documentations for `DiagramDetectConfig` for more information on the available options.
         """
         items = self._process_file_ids(file_ids, file_external_ids, file_references)
         entities = [
