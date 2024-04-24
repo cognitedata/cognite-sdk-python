@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.38.2] - 2024-04-24
+### Added
+- Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
+- `DiagramsAPI.detect()` method's parameter `configuration` now also accepts `DiagramDetectConfig` instances.
+
 ## [7.38.1] - 2024-04-23
 ### Added
 - Added missing `partitions` parameter to `list()` and `__call__()` methods for `FilesAPI`.
