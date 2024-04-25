@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
-from typing import Any
+from typing import Any, ClassVar
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +11,7 @@ import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
-from cognite.client.data_classes import Feature, FeatureAggregate
+from cognite.client.data_classes import Feature, FeatureAggregate, TemplateInstance
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -32,10 +32,27 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling import EdgeListWithCursor, NodeListWithCursor
+from cognite.client.data_classes.annotation_types.images import (
+    KeypointCollection,
+    KeypointCollectionWithObjectDetection,
+    ObjectDetection,
+)
+from cognite.client.data_classes.contextualization import VisionExtractPredictions
+from cognite.client.data_classes.data_modeling import (
+    Container,
+    ContainerApply,
+    Edge,
+    EdgeListWithCursor,
+    Node,
+    NodeListWithCursor,
+    View,
+    ViewApply,
+)
+from cognite.client.data_classes.data_modeling.query import Query
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
+from cognite.client.data_classes.templates import TemplateInstanceWrite
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -250,6 +267,44 @@ class TestCogniteObject:
         # Ensure no part of load mutates the input dict:
         assert dumped == original_dumped
 
+    # These properties are guaranteed to not change from object in the API,
+    # and thus the test below will not inject any new keys to simulate new parameters in the API.
+    EXCEPTION_PROPERTIES: ClassVar[tuple] = {
+        (Container, "constraints"),
+        (Container, "indexes"),
+        (Container, "properties"),
+        (ContainerApply, "constraints"),
+        (ContainerApply, "indexes"),
+        (ContainerApply, "properties"),
+        (Edge, "properties"),
+        (KeypointCollection, "attributes"),
+        (KeypointCollection, "keypoints"),
+        (KeypointCollectionWithObjectDetection, "objectDetection", "attributes"),
+        (KeypointCollectionWithObjectDetection, "keypointCollection", "attributes"),
+        (KeypointCollectionWithObjectDetection, "keypointCollection", "keypoints"),
+        (Node, "properties"),
+        (ObjectDetection, "attributes"),
+        (TemplateInstance, "fieldResolvers"),
+        (TemplateInstanceWrite, "fieldResolvers"),
+        (View, "properties"),
+        (ViewApply, "properties"),
+        (VisionExtractPredictions, "industrialObjectPredictions", "[]", "attributes"),
+        (VisionExtractPredictions, "peoplePredictions", "[]", "attributes"),
+        (VisionExtractPredictions, "personalProtectiveEquipmentPredictions", "[]", "attributes"),
+        (VisionExtractPredictions, "digitalGaugePredictions", "[]", "attributes"),
+        (VisionExtractPredictions, "dialGaugePredictions", "[]", "objectDetection", "attributes"),
+        (VisionExtractPredictions, "dialGaugePredictions", "[]", "keypointCollection", "attributes"),
+        (VisionExtractPredictions, "dialGaugePredictions", "[]", "keypointCollection", "keypoints"),
+        (VisionExtractPredictions, "levelGaugePredictions", "[]", "objectDetection", "attributes"),
+        (VisionExtractPredictions, "levelGaugePredictions", "[]", "keypointCollection", "attributes"),
+        (VisionExtractPredictions, "levelGaugePredictions", "[]", "keypointCollection", "keypoints"),
+        (VisionExtractPredictions, "valvePredictions", "[]", "objectDetection", "attributes"),
+        (VisionExtractPredictions, "valvePredictions", "[]", "keypointCollection", "attributes"),
+        (VisionExtractPredictions, "valvePredictions", "[]", "keypointCollection", "keypoints"),
+        (Query, "with"),
+        (Query, "select"),
+    }
+
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
@@ -271,16 +326,17 @@ class TestCogniteObject:
         instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
-        to_check = [dumped]
+        to_check = [((cognite_object_subclass,), dumped)]
         # Add a new key to all dicts in the dumped structure
         # these should be ignored when loading
         while to_check:
-            case = to_check.pop()
+            name_path, case = to_check.pop()
             if isinstance(case, dict):
-                to_check.extend(case.values())
-                case["some-new-unknown-key"] = "im-gonna-getcha"
+                to_check.extend(((*name_path, key), value) for key, value in case.items())
+                if name_path not in self.EXCEPTION_PROPERTIES:
+                    case["some-new-unknown-key"] = "im-gonna-getcha"
             elif isinstance(case, list):
-                to_check.extend(case)
+                to_check.extend(((*name_path, "[]"), value) for value in case)
 
         loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
         loaded_dump = loaded.dump()
