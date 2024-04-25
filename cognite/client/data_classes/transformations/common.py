@@ -281,7 +281,7 @@ class Nodes(TransformationDestination):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            view=ViewInfo._load(resource["view"]) if "view" in resource else None,
+            view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
             instance_space=resource.get("instanceSpace"),
         )
 
@@ -301,9 +301,9 @@ class Edges(TransformationDestination):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            view=ViewInfo._load(resource["view"]) if "view" in resource else None,
+            view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
             instance_space=resource.get("instanceSpace"),
-            edge_type=EdgeType._load(resource["edgeType"]) if "edgeType" in resource else None,
+            edge_type=EdgeType._load(resource["edgeType"]) if resource.get("edgeType") is not None else None,
         )
 
 
@@ -320,7 +320,7 @@ class Instances(TransformationDestination):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            data_model=DataModelInfo._load(resource["dataModel"]) if "dataModel" in resource else None,
+            data_model=DataModelInfo._load(resource["dataModel"]) if resource.get("dataModel") is not None else None,
             instance_space=resource.get("instanceSpace"),
         )
 
