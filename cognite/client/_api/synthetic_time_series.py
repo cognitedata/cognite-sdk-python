@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from functools import cached_property
-from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
@@ -20,6 +18,23 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
+
+
+def _supported_sympy_infix_ops(operation: type[sympy.Basic]) -> str | None:
+    sympy = local_import("sympy")
+    return {sympy.Add: "+", sympy.Mul: "*"}.get(operation)
+
+
+def _supported_sympy_functions(operation: type[sympy.Basic]) -> str | None:
+    sympy = local_import("sympy")
+    return {
+        sympy.cos: "cos",
+        sympy.sin: "sin",
+        sympy.sqrt: "sqrt",
+        sympy.log: "ln",
+        sympy.exp: "exp",
+        sympy.Abs: "abs",
+    }.get(operation)
 
 
 class SyntheticDatapointsAPI(APIClient):
@@ -176,25 +191,6 @@ class SyntheticDatapointsAPI(APIClient):
         expression_with_ts = pattern.sub(lambda match: to_substitute[match[0]], expression_str)
         return expression_with_ts, expression_str
 
-    @cached_property
-    def _supported_sympy_infix_ops(self) -> MappingProxyType[type[sympy.Basic], str]:
-        sympy = local_import("sympy")
-        return MappingProxyType({sympy.Add: "+", sympy.Mul: "*"})
-
-    @cached_property
-    def _supported_sympy_functions(self) -> MappingProxyType[type[sympy.Basic], str]:
-        sympy = local_import("sympy")
-        return MappingProxyType(
-            {
-                sympy.cos: "cos",
-                sympy.sin: "sin",
-                sympy.sqrt: "sqrt",
-                sympy.log: "ln",
-                sympy.exp: "exp",
-                sympy.Abs: "abs",
-            }
-        )
-
     def _process_sympy_expression(self, expression: sympy.Basic) -> str:
         sympy = local_import("sympy")
 
@@ -205,7 +201,7 @@ class SyntheticDatapointsAPI(APIClient):
                 return str(expression).rstrip("0")
 
         expr_cls = type(expression)
-        if infix_op := self._supported_sympy_infix_ops.get(expr_cls):
+        if infix_op := _supported_sympy_infix_ops(expr_cls):
             return "(" + infix_op.join(self._process_sympy_expression(s) for s in expression.args) + ")"
 
         if isinstance(expression, sympy.Pow):
@@ -213,6 +209,6 @@ class SyntheticDatapointsAPI(APIClient):
                 return f"(1/{self._process_sympy_expression(expression.args[0])})"
             return f"pow({','.join(map(self._process_sympy_expression, expression.args))})"
 
-        if fn_op := self._supported_sympy_functions.get(expr_cls):
+        if fn_op := _supported_sympy_functions(expr_cls):
             return f"{fn_op}({','.join(map(self._process_sympy_expression, expression.args))})"
         raise TypeError(f"Unsupported sympy class {expr_cls} encountered in expression")
