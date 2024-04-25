@@ -20,7 +20,7 @@ Changes are grouped as follows
 ## [7.38.3] - 2024-04-23
 ### Improved
 - The classes `WorkflowUpsert`, `Filter`, `DatapointsArray`, `Query`, `Node`, `Edge`, `Container` which are used
-  for parsing API responses were not handling adding new parameters of the API correctly. This is now fixed.
+  for parsing API responses were not handling adding new parameters in the API correctly. This is now fixed.
 
 ## [7.38.2] - 2024-04-23
 ### Added
