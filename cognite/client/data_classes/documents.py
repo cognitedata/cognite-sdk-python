@@ -175,7 +175,7 @@ class SourceFile(CogniteObject):
             asset_ids=resource.get("assetIds"),
             labels=Label._load_list(resource.get("labels")),  # type: ignore[arg-type]
             geo_location=DocumentsGeoJsonGeometry._load(resource["geoLocation"]) if "geoLocation" in resource else None,
-            dataset_id=resource.get("dataSetId"),
+            dataset_id=resource.get("datasetId"),
             security_categories=resource.get("securityCategories"),
             metadata=resource.get("metadata"),
             cognite_client=cognite_client,

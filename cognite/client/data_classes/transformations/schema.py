@@ -33,6 +33,17 @@ class TransformationSchemaMapType(TransformationSchemaType):
         self.value_type = value_type
         self.value_contains_null = value_contains_null
 
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> TransformationSchemaMapType:
+        return cls(
+            type=resource["type"],
+            key_type=resource.get("keyType"),
+            value_type=resource.get("valueType"),
+            value_contains_null=resource.get("valueContainsNull"),  # type: ignore[arg-type]
+        )
+
 
 class TransformationSchemaColumn(CogniteResource):
     """Represents a column of the expected sql structure for a destination type.

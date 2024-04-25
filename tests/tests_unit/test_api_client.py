@@ -240,6 +240,10 @@ class SomeAggregation(CogniteResource):
     def __init__(self, count):
         self.count = count
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SomeAggregation:
+        return cls(count=resource["count"])
+
 
 class TestStandardRetrieve:
     def test_standard_retrieve_OK(self, api_client_with_token, rsps):
