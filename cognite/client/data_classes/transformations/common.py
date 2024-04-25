@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from cognite.client.credentials import OAuthClientCredentials
+from cognite.client.data_classes._base import CogniteObject
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.utils._auxiliary import basic_obj_dump
 from cognite.client.utils._text import convert_all_keys_to_snake_case, iterable_to_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TransformationDestination:
@@ -175,7 +179,7 @@ class SequenceRowsDestination(TransformationDestination):
         return hash((self.type, self.external_id))
 
 
-class ViewInfo:
+class ViewInfo(CogniteObject):
     def __init__(self, space: str, external_id: str, version: str) -> None:
         self.space = space
         self.external_id = external_id
@@ -184,17 +188,32 @@ class ViewInfo:
     def __hash__(self) -> int:
         return hash((self.space, self.external_id, self.version))
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ViewInfo:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+        )
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
-class EdgeType:
+class EdgeType(CogniteObject):
     def __init__(self, space: str, external_id: str) -> None:
         self.space = space
         self.external_id = external_id
 
     def __hash__(self) -> int:
         return hash((self.space, self.external_id))
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> EdgeType:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
@@ -231,10 +250,10 @@ class Nodes(TransformationDestination):
 
     @classmethod
     def load(cls, resource: dict[str, Any]) -> Nodes:
-        inst = cls(**resource)
-        if isinstance(inst.view, dict):
-            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
-        return inst
+        return cls(
+            view=ViewInfo._load(resource["viewInfo"]) if "viewInfo" in resource else None,
+            instance_space=resource.get("instanceSpace"),
+        )
 
 
 class Edges(TransformationDestination):
@@ -251,12 +270,11 @@ class Edges(TransformationDestination):
 
     @classmethod
     def load(cls, resource: dict[str, Any]) -> Edges:
-        inst = cls(**resource)
-        if isinstance(inst.view, dict):
-            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
-        if isinstance(inst.edge_type, dict):
-            inst.edge_type = EdgeType(**convert_all_keys_to_snake_case(inst.edge_type))
-        return inst
+        return cls(
+            view=ViewInfo._load(resource["viewInfo"]) if "viewInfo" in resource else None,
+            instance_space=resource.get("instanceSpace"),
+            edge_type=EdgeType._load(resource["edgeType"]) if "edgeType" in resource else None,
+        )
 
 
 class Instances(TransformationDestination):
