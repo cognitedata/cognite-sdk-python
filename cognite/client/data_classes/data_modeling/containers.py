@@ -254,7 +254,7 @@ class ContainerProperty(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if "type" not in resource:
-            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
+            raise ValueError("Type not specified")
         if resource["type"].get("type") == "direct":
             type_: PropertyType = DirectRelation.load(resource["type"])
         else:
