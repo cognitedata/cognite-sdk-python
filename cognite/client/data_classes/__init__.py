@@ -134,6 +134,7 @@ from cognite.client.data_classes.geospatial import (
     FeatureWriteList,
 )
 from cognite.client.data_classes.iam import (
+    ALL_USER_ACCOUNTS,
     ClientCredentials,
     CreatedSession,
     Group,
@@ -382,6 +383,7 @@ __all__ = [
     "DocumentHighlight",
     "DocumentHighlightList",
     "ClientCredentials",
+    "ALL_USER_ACCOUNTS",
     "CreatedSession",
     "Group",
     "GroupWrite",
