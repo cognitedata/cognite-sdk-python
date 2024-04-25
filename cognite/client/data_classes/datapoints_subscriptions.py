@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes import Datapoints, filters
+from cognite.client.data_classes import Datapoints
 from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CognitePrimitiveUpdate,
@@ -21,6 +21,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.filters import _BASIC_FILTERS as _FILTERS_SUPPORTED
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
@@ -29,21 +30,6 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 ExternalId: TypeAlias = str
-
-_DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-    }
-)
 
 
 class DatapointSubscriptionCore(WriteableCogniteResource["DataPointSubscriptionWrite"], ABC):
@@ -157,7 +143,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     ) -> None:
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
-        _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
+        _validate_filter(filter, _FILTERS_SUPPORTED, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_ids = time_series_ids
 

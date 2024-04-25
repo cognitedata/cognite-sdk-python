@@ -64,7 +64,7 @@ from cognite.client.data_classes.data_modeling.query import (
     SourceSelector,
 )
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.utils._auxiliary import load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
@@ -75,23 +75,8 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-_DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-        filters.Nested,
-        filters.HasData,
-        filters.MatchAll,
-        filters.Overlaps,
-    }
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
+    {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps}
 )
 
 logger = logging.getLogger(__name__)
@@ -1197,7 +1182,7 @@ class InstancesAPI(APIClient):
         )
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
-        _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
     @staticmethod
     def _merge_space_into_filter(
