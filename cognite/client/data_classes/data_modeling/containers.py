@@ -110,7 +110,7 @@ class ContainerApply(ContainerCore):
             description=resource.get("description"),
             name=resource.get("name"),
             used_for=resource.get("usedFor"),
-            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()} or None
+            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()}
             if "constraints" in resource
             else None,
             indexes={k: Index.load(v) for k, v in resource["indexes"].items()} if "indexes" in resource else None,
