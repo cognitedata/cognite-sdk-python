@@ -191,9 +191,7 @@ class UnknownCogniteObject(CogniteObject):
         return cls(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if isinstance(self.__data, dict):
-            return convert_all_keys_recursive(self.__data, camel_case=camel_case)
-        return self.__data
+        return convert_all_keys_recursive(self.__data, camel_case=camel_case)
 
 
 T_CogniteObject = TypeVar("T_CogniteObject", bound=CogniteObject)

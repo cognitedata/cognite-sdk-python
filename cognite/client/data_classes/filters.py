@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequence, Tuple, Union, cast, final
@@ -90,9 +89,6 @@ class Filter(ABC):
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
-        if len(filter_) > 1:
-            warnings.warn(f"Filter {filter_} has more than one key, only the first key will be used", stacklevel=2)
-
         if filter_body := filter_.get(And._filter_name):
             return And(*(Filter.load(filter_) for filter_ in filter_body))
         elif filter_body := filter_.get(Or._filter_name):

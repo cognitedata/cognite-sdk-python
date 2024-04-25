@@ -385,7 +385,6 @@ class TemplateInstance(TemplateInstanceCore):
             field_resolvers={
                 key: cls._field_resolver_load(field_resolver)
                 for key, field_resolver in resource.get("fieldResolvers", {}).items()
-                if isinstance(field_resolver, dict)
             }
             or None,
             data_set_id=resource.get("dataSetId"),
@@ -425,7 +424,6 @@ class TemplateInstanceWrite(TemplateInstanceCore):
             field_resolvers={
                 key: cls._field_resolver_load(field_resolver)
                 for key, field_resolver in resource.get("fieldResolvers", {}).items()
-                if isinstance(field_resolver, dict)
             }
             or None,
             data_set_id=resource.get("dataSetId"),

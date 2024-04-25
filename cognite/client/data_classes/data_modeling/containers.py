@@ -106,17 +106,14 @@ class ContainerApply(ContainerCore):
         return ContainerApply(
             space=resource["space"],
             external_id=resource["externalId"],
-            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items() if isinstance(v, dict)},
+            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items()},
             description=resource.get("description"),
             name=resource.get("name"),
             used_for=resource.get("usedFor"),
-            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items() if isinstance(v, dict)}
-            or None
+            constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()} or None
             if "constraints" in resource
             else None,
-            indexes={k: Index.load(v) for k, v in resource["indexes"].items() if isinstance(v, dict)} or None
-            if "indexes" in resource
-            else None,
+            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} if "indexes" in resource else None,
         )
 
     def as_write(self) -> ContainerApply:
@@ -164,19 +161,13 @@ class Container(ContainerCore):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         constraints = (
-            {k: Constraint.load(v) for k, v in resource["constraints"].items() if isinstance(v, dict)}
-            if "constraints" in resource
-            else None
+            {k: Constraint.load(v) for k, v in resource["constraints"].items()} if "constraints" in resource else None
         )
-        indexes = (
-            {k: Index.load(v) for k, v in resource["indexes"].items() if isinstance(v, dict)}
-            if "indexes" in resource
-            else None
-        )
+        indexes = {k: Index.load(v) for k, v in resource["indexes"].items()} if "indexes" in resource else None
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
-            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items() if isinstance(v, dict)},
+            properties={k: ContainerProperty.load(v) for k, v in resource["properties"].items()},
             is_global=resource["isGlobal"],
             last_updated_time=resource["lastUpdatedTime"],
             created_time=resource["createdTime"],
