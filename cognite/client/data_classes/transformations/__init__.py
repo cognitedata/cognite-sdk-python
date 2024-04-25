@@ -24,7 +24,6 @@ from cognite.client.data_classes.transformations.common import (
     OidcCredentials,
     TransformationBlockedInfo,
     TransformationDestination,
-    _load_destination_dct,
 )
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
@@ -521,7 +520,7 @@ class TransformationWrite(TransformationCore):
             name=resource["name"],
             ignore_null_fields=resource["ignoreNullFields"],
             query=resource.get("query"),
-            destination=_load_destination_dct(resource["destination"]) if "destination" in resource else None,
+            destination=TransformationDestination._load(resource["destination"]) if "destination" in resource else None,
             conflict_mode=resource.get("conflictMode"),
             is_public=resource.get("isPublic", True),
             source_oidc_credentials=OidcCredentials.load(resource["sourceOidcCredentials"])

@@ -8,7 +8,7 @@ from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.utils._auxiliary import basic_obj_dump
-from cognite.client.utils._text import convert_all_keys_to_snake_case, iterable_to_case
+from cognite.client.utils._text import iterable_to_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -464,27 +464,3 @@ class TransformationBlockedInfo:
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
-
-
-def _load_destination_dct(
-    dct: dict[str, Any],
-) -> RawTable | Nodes | Edges | SequenceRowsDestination | TransformationDestination:
-    """Helper function to load destination from dictionary"""
-    snake_dict = convert_all_keys_to_snake_case(dct)
-    destination_type = snake_dict.pop("type")
-    simple = {
-        "raw": RawTable,
-        "sequence_rows": SequenceRowsDestination,
-    }
-    if destination_type in simple:
-        return simple[destination_type](**snake_dict)
-
-    nested: dict[str, type[Nodes] | type[Edges] | type[Instances]] = {
-        "nodes": Nodes,
-        "edges": Edges,
-        "instances": Instances,
-    }
-    if destination_type in nested:
-        return nested[destination_type].load(snake_dict)
-
-    return TransformationDestination(destination_type)
