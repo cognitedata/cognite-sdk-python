@@ -117,9 +117,10 @@ class Capability(ABC):
         @classmethod
         def load(cls, resource: dict | str) -> Self:
             resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
-            ((name, data),) = resource.items()
-            data = convert_all_keys_to_snake_case(data)
-            if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
+            for cls_name, scope_cls in _SCOPE_CLASS_BY_NAME.items():
+                if cls_name not in resource:
+                    continue
+                data = convert_all_keys_to_snake_case(resource[cls_name])
                 try:
                     return cast(Self, scope_cls(**data))
                 except TypeError:
@@ -129,6 +130,10 @@ class Capability(ABC):
                         "Try updating to the latest SDK version, or create an issue on Github!"
                     )
                     return cast(Self, scope_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
+
+            # We infer this as an unknown scope not yet added to the SDK:
+            name, data = next(iter(resource.items()))
+            data = convert_all_keys_to_snake_case(data)
             return cast(Self, UnknownScope(name=name, data=data))
 
         def dump(self, camel_case: bool = True) -> dict[str, Any]:

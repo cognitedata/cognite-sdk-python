@@ -16,7 +16,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -297,8 +297,13 @@ class CDFTaskParameters(WorkflowTaskParameters):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
-        arguments = convert_all_keys_to_snake_case(cdf_request)
-        return cls(**arguments)
+        return cls(
+            cdf_request["resourcePath"],
+            cdf_request["method"],
+            cdf_request.get("queryParameters"),
+            cdf_request.get("body"),
+            cdf_request.get("requestTimeoutInMillis", 10000),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
