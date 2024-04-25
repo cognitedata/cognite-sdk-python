@@ -312,7 +312,7 @@ class GroupsAPI(APIClient):
 
         Example:
 
-            Create an group without any members:
+            Create a group without any members:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GroupWrite
