@@ -428,7 +428,7 @@ class Transformation(TransformationCore):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Transformation:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
-            instance.destination = _load_destination_dct(instance.destination)
+            instance.destination = TransformationDestination._load(instance.destination)
 
         if isinstance(instance.running_job, dict):
             instance.running_job = TransformationJob._load(instance.running_job, cognite_client=cognite_client)
