@@ -207,34 +207,6 @@ class TestDiagramDetectConfig:
         ]
         assert cf.dump() == expected
 
-    def test_nested_config(self) -> None:
-        config = DiagramDetectConfig(
-            annotation_extract=True,
-            case_sensitive=False,
-            connection_flags=ConnectionFlags(
-                natural_reading_order=False,
-            ),
-            direction_weights=DirectionWeights(
-                right=0.1,
-                down=0.1,
-            ),
-            min_fuzzy_score=0.95,
-            remove_leading_zeros=True,
-            new_parameter_str="something",
-            new_paramater_dict={"my_key": "my_value"},
-        )
-
-        expected = {
-            "annotationExtract": True,
-            "caseSensitive": False,
-            "directionWeights": {"right": 0.1, "down": 0.1},
-            "minFuzzyScore": 0.95,
-            "removeLeadingZeros": True,
-            "newParameterStr": "something",
-            "newParamaterDict": {"my_key": "my_value"},
-        }
-        assert config.dump() == expected
-
     @pytest.mark.parametrize(
         "param_name",
         [

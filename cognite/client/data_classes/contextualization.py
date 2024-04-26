@@ -1245,5 +1245,6 @@ class DiagramDetectConfig(CogniteObject):
         return cls(
             connection_flags=con_flg,
             customize_fuzziness=cus_fuz,
+            direction_weights=dir_wgt,
             **snake_cased,
         )
