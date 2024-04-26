@@ -1132,7 +1132,7 @@ class ConnectionFlags:
 
 
 class DiagramDetectConfig(CogniteObject):
-    """Configuration options for the diagrams/detect endpoint.
+    """`Configuration options for the diagrams/detect endpoint <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
 
     Args:
         annotation_extract (bool | None): Read SHX text embedded in the diagram file. If present, this text will override overlapping OCR text. Cannot be used at the same time as read_embedded_text.
