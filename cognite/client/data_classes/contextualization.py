@@ -1144,7 +1144,7 @@ class DiagramDetectConfig(CogniteObject):
         min_fuzzy_score (float | None): For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
         read_embedded_text (bool | None): Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
         remove_leading_zeros (bool | None): Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
-        substitutions (dict[str, list[str]] | None): Override the default mapping of characters to an array of allowed substitute characters. The default mapping contains characters commonly confused by OCR (1 and I, 3 and B etc.). Provide your custom mapping in the format like so: {"0": ["0", "O", "Q"], "1": ["1", "l", "I"]}. This means: 0 (zero) is allowed to be replaced by uppercase letter O or Q, and 1 (one) is allowed to be replaced by lowercase letter l or uppercase letter I. No other replacements are allowed.
+        substitutions (dict[str, list[str]] | None): Override the default mapping of characters to an array of allowed substitute characters. The default mapping contains characters commonly confused by OCR. Provide your custom mapping in the format like so: {"0": ["O", "Q"], "1": ["l", "I"]}. This means: 0 (zero) is allowed to be replaced by uppercase letter O or Q, and 1 (one) is allowed to be replaced by lowercase letter l or uppercase letter I. No other replacements are allowed.
         **params (Any): Other parameters. The parameter name will be converted to camel case but the value will be passed as is.
 
     Example:

@@ -168,7 +168,7 @@ class DiagramsAPI(APIClient):
         *,
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]:
-        """Detect entities in a PNID. The results are not written to CDF.
+        """`Detect annotations in engineering diagrams <https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect>`_
 
         Note:
             All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
@@ -187,6 +187,9 @@ class DiagramsAPI(APIClient):
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
             DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
+
+        Note:
+            The results are not written to CDF, to create annotations based on detected entities use `AnnotationsAPI`.
 
         Examples:
                 >>> from cognite.client import CogniteClient
