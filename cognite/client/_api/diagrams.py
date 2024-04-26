@@ -16,6 +16,7 @@ from cognite.client.data_classes.contextualization import (
     T_ContextualizationJob,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -34,6 +35,11 @@ class DiagramsAPI(APIClient):
         # https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50
         self._DETECT_API_STATUS_JOB_LIMIT = 1000
+        self._detect_beta_params_warning = FeaturePreviewWarning(
+            api_maturity="beta",
+            sdk_maturity="beta",
+            feature_name="Support for diagram detect 'configuration' and 'pattern_mode' parameters",
+        )
 
     def _camel_post(
         self,
@@ -254,6 +260,8 @@ class DiagramsAPI(APIClient):
         if pattern_mode is not None or configuration is not None:
             config = configuration.dump() if isinstance(configuration, DiagramDetectConfig) else configuration
             beta_parameters = dict(pattern_mode=pattern_mode, configuration=config)
+            self._detect_beta_params_warning.warn()
+            self._api_subversion = "beta"
 
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
