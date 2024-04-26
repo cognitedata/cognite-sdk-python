@@ -264,7 +264,8 @@ class DiagramsAPI(APIClient):
             config = configuration.dump() if isinstance(configuration, DiagramDetectConfig) else configuration
             beta_parameters = dict(pattern_mode=pattern_mode, configuration=config)
             self._detect_beta_params_warning.warn()
-            self._api_subversion = "beta"
+            if self._api_subversion and not self._api_subversion.endswith("-beta"):
+                self._api_subversion += "-beta"
 
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
