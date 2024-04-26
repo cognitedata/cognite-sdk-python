@@ -33,25 +33,8 @@ class TestCogniteClient:
         assert e.value.code == 404
 
 
-def find_mappingproxy(obj):
-    # Of course this test only fails in CI, so after investigation of where the test pollution
-    # comes from, we may delete this entirely:
-    for k, v in vars(obj).items():
-        try:
-            pickle.dumps(v)
-        except TypeError as e:
-            print(f"failed dumping attribute {k}: {e}")  # noqa T201
-            # We have to go deeper:
-            find_mappingproxy(v)
-
-
 def test_cognite_client_is_picklable(cognite_client):
     if isinstance(cognite_client.config.credentials, (Token, OAuthClientCertificate)):
         pytest.skip()
-    # TODO: Test pollution makes this flaky
-    try:
-        roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
-    except TypeError:
-        find_mappingproxy(cognite_client)
-        raise
+    roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
     assert roundtrip_client.iam.token.inspect().projects

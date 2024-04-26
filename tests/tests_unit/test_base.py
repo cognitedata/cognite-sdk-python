@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +11,6 @@ import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
-from cognite.client.data_classes import Feature, FeatureAggregate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -28,14 +27,15 @@ from cognite.client.data_classes._base import (
     HasInternalId,
     HasName,
     PropertySpec,
-    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling import EdgeListWithCursor, NodeListWithCursor
+from cognite.client.data_classes.data_modeling import (
+    EdgeListWithCursor,
+    NodeListWithCursor,
+)
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
-from cognite.client.data_classes.geospatial import FeatureWrite, GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -258,23 +258,37 @@ class TestCogniteObject:
     def test_handle_unknown_arguments_when_loading(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
-        if cognite_object_subclass in {
-            Feature,
-            FeatureWrite,
-            FeatureAggregate,
-            GeospatialComputedItem,
-            UnknownCogniteObject,
-        }:
-            # ignore these as they are not compatible
-            return
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
-        dumped["some-new-unknown-key"] = "im-gonna-getcha"
-        loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
 
-        assert loaded.dump() == instance.dump()
+        def _add_unknown_key(obj: dict) -> None:
+            other_value = next(iter(obj.values())) if len(obj) > 0 else None
+            obj["some-new-unknown-key"] = other_value
+
+        def _remove_unknown_key(obj: dict) -> None:
+            obj.pop("some-new-unknown-key", None)
+
+        self._for_all_nested_dicts(dumped, _add_unknown_key)
+
+        loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+        loaded_dump = loaded.dump()
+
+        self._for_all_nested_dicts(loaded_dump, _remove_unknown_key)
+
+        assert loaded_dump == instance.dump()
+
+    @staticmethod
+    def _for_all_nested_dicts(obj: dict, func: Callable[[dict], None]) -> None:
+        to_check = [obj]
+        while to_check:
+            case = to_check.pop()
+            if isinstance(case, dict):
+                to_check.extend(case.values())
+                func(case)
+            elif isinstance(case, list):
+                to_check.extend(case)
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
