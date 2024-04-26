@@ -11,7 +11,6 @@ from cognite.client.data_classes.contextualization import (
     ConnectionFlags,
     DetectJobBundle,
     DiagramDetectConfig,
-    DirectionWeights,
     VisionExtractPredictions,
 )
 from cognite.client.testing import monkeypatch_cognite_client
