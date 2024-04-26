@@ -7,15 +7,16 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Sequence, Type, TypeVar, Union, cast
 
 from requests.utils import CaseInsensitiveDict
+from typing_extensions import Self
 
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
-    basic_instance_dump,
 )
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,
@@ -26,9 +27,8 @@ from cognite.client.data_classes.annotation_types.images import (
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
-from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
-from cognite.client.utils._text import to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -1040,34 +1040,7 @@ class ResourceReferenceList(CogniteResourceList[ResourceReference]):
     _RESOURCE = ResourceReference
 
 
-class NestableDiagramDetectConfig:
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        dumped = basic_instance_dump(self, camel_case=camel_case)
-        remove_keys = []
-        for k, v in dumped.items():
-            if isinstance(v, NestableDiagramDetectConfig):
-                dumped[k] = v.dump(camel_case=camel_case)
-            elif isinstance(v, ConnectionFlags):
-                cf = v.dump()
-                if cf:
-                    dumped[k] = cf
-                else:
-                    remove_keys.append(k)
-        for k in remove_keys:
-            del dumped[k]
-        return dumped
-
-    def __eq__(self, other: Any) -> bool:
-        return type(self) is type(other) and self.dump() == other.dump()
-
-    def __str__(self) -> str:
-        return _json.dumps(self.dump(), indent=4)
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-class DirectionWeights(NestableDiagramDetectConfig):
+class DirectionWeights(CogniteObject):
     """Direction weights for the text graph that control how far text boxes can be one from another
     in a particular direction before they are no longer connected in the same graph. Lower value means
     larger distance is allowed.
@@ -1091,8 +1064,17 @@ class DirectionWeights(NestableDiagramDetectConfig):
         self.up = up
         self.down = down
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            left=resource.get("left", None),
+            right=resource.get("right", None),
+            up=resource.get("up", None),
+            down=resource.get("down", None),
+        )
 
-class CustomizeFuzziness(NestableDiagramDetectConfig):
+
+class CustomizeFuzziness(CogniteObject):
     """Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
 
     Args:
@@ -1110,6 +1092,14 @@ class CustomizeFuzziness(NestableDiagramDetectConfig):
         self.fuzzy_score = fuzzy_score
         self.max_boxes = max_boxes
         self.min_chars = min_chars
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            fuzzy_score=resource.get("fuzzyScore", None),
+            max_boxes=resource.get("maxBoxes", None),
+            min_chars=resource.get("minChars", None),
+        )
 
 
 class ConnectionFlags:
@@ -1136,8 +1126,12 @@ class ConnectionFlags:
     def dump(self, camel_case: bool = False) -> list[str]:
         return [k for k, v in self._flags.items() if v]
 
+    @classmethod
+    def load(cls, resource: list[str], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(**{flag: True for flag in resource})
 
-class DiagramDetectConfig(NestableDiagramDetectConfig):
+
+class DiagramDetectConfig(CogniteObject):
     """Configuration options for the diagrams/detect endpoint.
 
     Args:
@@ -1202,6 +1196,7 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
         self.read_embedded_text = read_embedded_text
         self.remove_leading_zeros = remove_leading_zeros
         self.substitutions = substitutions
+        self._extra_params = {}
 
         _known_params = {to_camel_case(k): k for k in vars(self)}
         for param_name, value in params.items():
@@ -1210,4 +1205,45 @@ class DiagramDetectConfig(NestableDiagramDetectConfig):
                     f"Provided parameter name `{param_name}` collides with a known parameter `{known}`. Please use it insead."
                 )
             else:
-                setattr(self, param_name, value)
+                self._extra_params[param_name] = value
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+
+        for param_name, v in self._extra_params.items():
+            dumped[to_camel_case(param_name) if camel_case else param_name] = v
+
+        remove_keys: list[str] = []
+        for param_name, v in dumped.items():
+            if isinstance(v, CogniteObject):
+                dumped[param_name] = v.dump(camel_case=camel_case)
+            elif isinstance(v, ConnectionFlags):
+                cf = v.dump()
+                if cf:
+                    dumped[param_name] = cf
+                else:
+                    remove_keys.append(param_name)
+
+        for param_name in remove_keys:
+            del dumped[param_name]
+
+        return dumped
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        resouce_copy = resource.copy()
+
+        if con_flg := resouce_copy.pop("connectionFlags", None):
+            con_flg = ConnectionFlags.load(con_flg)
+        if cus_fuz := resouce_copy.pop("customizeFuzziness", None):
+            cus_fuz = CustomizeFuzziness.load(cus_fuz)
+        if dir_wgt := resouce_copy.pop("directionWeights", None):
+            dir_wgt = DirectionWeights.load(dir_wgt)
+
+        snake_cased = convert_all_keys_to_snake_case(resouce_copy)
+
+        return cls(
+            connection_flags=con_flg,
+            customize_fuzziness=cus_fuz,
+            **snake_cased,
+        )
