@@ -554,7 +554,7 @@ class FunctionCall(CogniteResource):
         start_time (int | None): Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int | None): End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         scheduled_time (int | None): Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (str | None): Status of the function call ("Running", "Completed" or "Failed").
+        status (str | None): Status of the function call ("Running", "Completed", "Timeout" or "Failed").
         schedule_id (int | None): The schedule id belonging to the call.
         error (dict | None): Error from the function call. It contains an error message and the stack trace.
         function_id (int | None): No description.
