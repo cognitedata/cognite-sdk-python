@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import random
 import time
 from contextlib import contextmanager
@@ -289,6 +290,47 @@ class TestDatapointSubscriptions:
             if not batch.has_next:
                 break
         assert added_last_minute == 0, "There should be no timeseries added in the last minute"
+
+    def test_iterate_data__using_status_codes(self, cognite_client: CogniteClient, subscription: DatapointSubscription):
+        no_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
+            subscription.external_id,
+            start="1m-ago",
+            include_status=True,
+            treat_uncertain_as_bad=False,
+            ignore_bad_datapoints=True,
+        )
+        has_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
+            subscription.external_id,
+            start="1m-ago",
+            include_status=True,
+            ignore_bad_datapoints=False,
+        )
+        ts, *_ = cognite_client.time_series.subscriptions.list_member_time_series(subscription.external_id)
+        cognite_client.time_series.data.insert(
+            external_id=ts.external_id,
+            datapoints=[
+                {"timestamp": -99, "value": None, "status": {"symbol": "Bad"}},
+                {"timestamp": -98, "value": math.nan, "status": {"symbol": "Bad"}},
+                {"timestamp": -97, "value": math.inf, "status": {"symbol": "Bad"}},
+                {"timestamp": -96, "value": -math.inf, "status": {"symbol": "Bad"}},
+                {"timestamp": -95, "value": -95, "status": {"symbol": "Uncertain"}},
+                {"timestamp": -94, "value": -94, "status": {"code": 1024}},
+                {"timestamp": -93, "value": -93, "status": {"symbol": "Good"}},
+                {"timestamp": -92, "value": -92},
+            ],
+        )
+        no_bad = next(no_bad_iter).updates
+        has_bad = next(has_bad_iter).updates
+
+        assert len(no_bad) == 1
+        assert len(has_bad) == 1
+        assert ts.id == no_bad[0].time_series.id == no_bad[0].time_series.id
+
+        assert no_bad[0].upserts.timestamp == list(range(-95, -91))
+        assert has_bad[0].upserts.timestamp == list(range(-99, -91))
+        assert has_bad[0].upserts.value[0] is None
+        assert all(isinstance(v, float) for v in has_bad[0].upserts.value[1:])
+        assert no_bad[0].upserts.status_symbol == ["Uncertain", "Good", "Good", "Good"]
 
     @pytest.mark.skip(reason="Using a filter (as opposed to specific identifiers) is eventually consistent")
     def test_update_filter_subscription_added_times_series(
