@@ -179,7 +179,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         return self
 
 
-# Todo: Remove this in next major release
+# TODO: Remove this in next major release
 DataPointSubscriptionCreate = DataPointSubscriptionWrite
 
 
@@ -323,15 +323,15 @@ class SubscriptionTimeSeriesUpdate:
     @classmethod
     def load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
         return cls(
-            added=[TimeSeriesID._load(added) for added in data.get("added", [])],
-            removed=[TimeSeriesID._load(added) for added in data.get("removed", [])],
+            added=[TimeSeriesID._load(ts_id) for ts_id in data.get("added", [])],
+            removed=[TimeSeriesID._load(ts_id) for ts_id in data.get("removed", [])],
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        resource: dict[str, Any] = {}
-        resource["added"] = [id_.dump() for id_ in self.added]
-        resource["removed"] = [id_.dump() for id_ in self.removed]
-        return resource
+    def dump(self, camel_case: bool = True) -> dict[str, list[dict[str, Any]]]:
+        return {
+            "added": [ts_id.dump() for ts_id in self.added],
+            "removed": [ts_id.dump() for ts_id in self.removed],
+        }
 
 
 @dataclass

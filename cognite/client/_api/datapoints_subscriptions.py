@@ -270,7 +270,7 @@ class DatapointsSubscriptionAPI(APIClient):
             }
             if start is not None:
                 body["initializeCursors"] = start
-            start = None
+                start = None
 
             res = self._post(
                 url_path=self._RESOURCE_PATH + "/data/list", json=body, api_subversion=f"{self._api_subversion}-beta"
