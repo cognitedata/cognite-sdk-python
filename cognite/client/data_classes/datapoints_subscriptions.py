@@ -340,18 +340,8 @@ class DatapointSubscriptionPartition:
     cursor: str | None = None
 
     @classmethod
-    def create(
-        cls, data: tuple[int, str | None] | int | DatapointSubscriptionPartition
-    ) -> DatapointSubscriptionPartition:
-        if isinstance(data, DatapointSubscriptionPartition):
-            return data
-        if isinstance(data, tuple):
-            return cls(*data)
-        return cls(data)
-
-    @classmethod
     def load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
-        return cls(index=data["index"], cursor=data.get("cursor") or data.get("nextCursor"))
+        return cls(index=data["index"], cursor=data.get("nextCursor") or data.get("cursor"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"index": self.index}

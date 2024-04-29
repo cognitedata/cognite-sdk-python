@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -259,7 +259,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
                 ...     pass  # do someting
         """
-        current_partitions = [DatapointSubscriptionPartition.create((partition, cursor))]
+        current_partitions = [DatapointSubscriptionPartition(partition, cursor)]
         while True:
             body = {
                 "externalId": external_id,
@@ -280,8 +280,7 @@ class DatapointsSubscriptionAPI(APIClient):
             batch = _DatapointSubscriptionBatchWithPartitions.load(
                 res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
             )
-            cursor = batch.partitions[0].cursor
-            assert cursor is not None
+            cursor = cast(str, batch.partitions[0].cursor)
 
             yield DatapointSubscriptionBatch(batch.updates, batch.subscription_changes, batch.has_next, cursor)
 
