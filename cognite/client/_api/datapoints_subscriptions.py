@@ -228,9 +228,9 @@ class DatapointsSubscriptionAPI(APIClient):
             partition (int): The partition to iterate over. Defaults to 0.
             poll_timeout (int): How many seconds to wait for new data, until an empty response is sent. Defaults to 5.
             cursor (str | None): Optional cursor to start iterating from.
-            include_status (bool): No description.
-            ignore_bad_datapoints (bool): No description.
-            treat_uncertain_as_bad (bool): No description.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response.
+            ignore_bad_datapoints (bool): Do not return bad datapoints. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Default: True.
 
         Yields:
             DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
@@ -242,21 +242,23 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription"):
+                ...     # Changes to the subscription itself:
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     # Changes to datapoints for time series in the subscription:
+                ...     for update in batch.updates:
+                ...         upserts.time_series  # The time series the update belongs to
+                ...         upserts.upserts  # The upserted datapoints, if any
+                ...         upserts.deletes  # Ranges of deleted periods, if any
                 ...     if not batch.has_next:
                 ...         break
 
             Iterate continuously over all changes to the subscription newer than 3 days:
 
-                >>> import time
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
-                ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
-                ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
-                ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     pass  # do someting
         """
-
         current_partitions = [DatapointSubscriptionPartition.create((partition, cursor))]
         while True:
             body = {
