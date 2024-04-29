@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.40.0] - 2024-04-30
+### Added
+- Datapoint Subscriptions now support status codes.
+
 ## [7.39.0] - 2024-04-25
 ### Added
 - Support for internally managed groups (inside CDF, as opposed to the external identity provider).
