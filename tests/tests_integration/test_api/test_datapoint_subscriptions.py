@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import platform
 import random
 import time
 from contextlib import contextmanager
@@ -62,7 +63,7 @@ def time_series_external_ids(all_time_series_external_ids):
 
 @pytest.fixture(scope="session")
 def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
-    external_id = "PYSDKDataPointSubscriptionTest"
+    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}"
     sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub
@@ -326,6 +327,8 @@ class TestDatapointSubscriptions:
         assert len(has_bad) == 1
         assert ts.id == no_bad[0].time_series.id == no_bad[0].time_series.id
 
+        assert no_bad[0].upserts.is_string is False
+        assert has_bad[0].upserts.is_string is False
         assert no_bad[0].upserts.timestamp == list(range(-95, -91))
         assert has_bad[0].upserts.timestamp == list(range(-99, -91))
         assert has_bad[0].upserts.value[0] is None

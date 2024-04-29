@@ -39,7 +39,7 @@ class TestGroupsAPI:
             assert "bla" == group.name
             assert metadata == group.metadata
             assert group.source_id == (source_id or "")
-            assert group.members == members
+            assert sorted(group.members) == members
         finally:
             if group:
                 cognite_client.iam.groups.delete(group.id)
