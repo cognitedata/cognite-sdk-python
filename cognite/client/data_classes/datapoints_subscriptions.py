@@ -22,6 +22,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
 if TYPE_CHECKING:
@@ -249,6 +250,9 @@ class TimeSeriesID(CogniteResource):
         self.id = id
         self.external_id = external_id
 
+    def __repr__(self) -> str:
+        return f"TimeSeriesID(id={self.id}, external_id={self.external_id})"
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
         return cls(id=resource["id"], external_id=resource.get("externalId"))
@@ -283,21 +287,23 @@ class DatapointsUpdate:
     deletes: list[DataDeletion]
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> DatapointsUpdate:
-        datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
-        if (values := data["upserts"]) and ("value" in values[0]):
-            datapoints["upserts"] = Datapoints._load(
-                {
-                    "id": data["timeSeries"]["id"],
-                    "externalId": data["timeSeries"].get("externalId"),
-                    "datapoints": values,
-                }
-            )
-        if values := data["deletes"]:
-            datapoints["deletes"] = [DataDeletion.load(value) for value in values]
+    def load(
+        cls, data: dict[str, Any], include_status: bool = False, ignore_bad_datapoints: bool = True
+    ) -> DatapointsUpdate:
+        identifier = TimeSeriesID._load(data["timeSeries"])
+        is_string = data["timeSeries"]["isString"]
+        for dp in data["upserts"]:
+            if include_status:
+                dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
+            if not ignore_bad_datapoints:
+                # Bad data can have value missing (we translate to None):
+                dp.setdefault("value", None)
+                if not is_string:
+                    dp["value"] = _json.convert_to_float(dp["value"])
         return cls(
-            time_series=TimeSeriesID._load(data["timeSeries"], None),
-            **datapoints,
+            time_series=identifier,
+            upserts=Datapoints._load({**identifier.dump(), "isString": is_string, "datapoints": data["upserts"]}),
+            deletes=[DataDeletion.load(value) for value in data["deletes"]],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -379,9 +385,14 @@ class _DatapointSubscriptionBatchWithPartitions:
     partitions: list[DatapointSubscriptionPartition]
 
     @classmethod
-    def load(cls, resource: dict) -> _DatapointSubscriptionBatchWithPartitions:
+    def load(
+        cls, resource: dict, include_status: bool = False, ignore_bad_datapoints: bool = True
+    ) -> _DatapointSubscriptionBatchWithPartitions:
         return cls(
-            updates=[DatapointsUpdate.load(u) for u in resource["updates"]],
+            updates=[
+                DatapointsUpdate.load(upd, include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints)
+                for upd in resource["updates"]
+            ],
             partitions=[DatapointSubscriptionPartition.load(p) for p in resource["partitions"]],
             has_next=resource["hasNext"],
             subscription_changes=SubscriptionTimeSeriesUpdate.load(resource.get("subscriptionChanges", [])),

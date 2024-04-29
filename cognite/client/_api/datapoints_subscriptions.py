@@ -208,6 +208,9 @@ class DatapointsSubscriptionAPI(APIClient):
         partition: int = 0,
         poll_timeout: int = 5,
         cursor: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> Iterator[DatapointSubscriptionBatch]:
         """`Iterate over data from a given subscription. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
@@ -225,6 +228,9 @@ class DatapointsSubscriptionAPI(APIClient):
             partition (int): The partition to iterate over. Defaults to 0.
             poll_timeout (int): How many seconds to wait for new data, until an empty response is sent. Defaults to 5.
             cursor (str | None): Optional cursor to start iterating from.
+            include_status (bool): No description.
+            ignore_bad_datapoints (bool): No description.
+            treat_uncertain_as_bad (bool): No description.
 
         Yields:
             DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
@@ -258,14 +264,20 @@ class DatapointsSubscriptionAPI(APIClient):
                 "partitions": [p.dump(camel_case=True) for p in current_partitions],
                 "limit": limit,
                 "pollTimeoutSeconds": poll_timeout,
+                "includeStatus": include_status,
+                "ignoreBadDataPoints": ignore_bad_datapoints,
+                "treatUncertainAsBad": treat_uncertain_as_bad,
             }
             if start is not None:
                 body["initializeCursors"] = start
             start = None
 
-            res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-            batch = _DatapointSubscriptionBatchWithPartitions.load(res.json())
-
+            res = self._post(
+                url_path=self._RESOURCE_PATH + "/data/list", json=body, api_subversion=f"{self._api_subversion}-beta"
+            )
+            batch = _DatapointSubscriptionBatchWithPartitions.load(
+                res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
+            )
             cursor = batch.partitions[0].cursor
             assert cursor is not None
 
