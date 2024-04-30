@@ -87,7 +87,7 @@ def another_subscription(
     new_sub = DataPointSubscriptionWrite(
         external_id=external_id,
         name=f"{external_id}_1ts",
-        time_series_ids=all_time_series_external_ids[-1],
+        time_series_ids=all_time_series_external_ids[-1:],
         partition_count=1,
     )
     return cognite_client.time_series.subscriptions.create(new_sub)
