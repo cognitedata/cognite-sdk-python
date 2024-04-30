@@ -62,7 +62,7 @@ def time_series_external_ids(all_time_series_external_ids):
 
 
 @pytest.fixture(scope="session")
-def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
+def subscription(cognite_client: CogniteClient, time_series_external_ids: list[str]) -> DatapointSubscription:
     external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}"
     sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
@@ -70,7 +70,22 @@ def subscription(cognite_client: CogniteClient, all_time_series_external_ids: li
     new_sub = DataPointSubscriptionWrite(
         external_id=external_id,
         name=f"{external_id}_3ts",
-        time_series_ids=all_time_series_external_ids[:3],
+        time_series_ids=time_series_external_ids[:3],
+        partition_count=1,
+    )
+    return cognite_client.time_series.subscriptions.create(new_sub)
+
+
+@pytest.fixture(scope="session")
+def another_subscription(cognite_client: CogniteClient, time_series_external_ids: list[str]) -> DatapointSubscription:
+    external_id = f"PYSDKDataPointSubscriptionTest-2-{platform.system()}"
+    sub = cognite_client.time_series.subscriptions.retrieve(external_id)
+    if sub is not None:
+        return sub
+    new_sub = DataPointSubscriptionWrite(
+        external_id=external_id,
+        name=f"{external_id}_1ts",
+        time_series_ids=time_series_external_ids[0],
         partition_count=1,
     )
     return cognite_client.time_series.subscriptions.create(new_sub)
@@ -292,21 +307,23 @@ class TestDatapointSubscriptions:
                 break
         assert added_last_minute == 0, "There should be no timeseries added in the last minute"
 
-    def test_iterate_data__using_status_codes(self, cognite_client: CogniteClient, subscription: DatapointSubscription):
+    def test_iterate_data__using_status_codes(
+        self, cognite_client: CogniteClient, another_subscription: DatapointSubscription
+    ):
         no_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
-            subscription.external_id,
+            another_subscription.external_id,
             start="1m-ago",
             include_status=True,
             treat_uncertain_as_bad=False,
             ignore_bad_datapoints=True,
         )
         has_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
-            subscription.external_id,
+            another_subscription.external_id,
             start="1m-ago",
             include_status=True,
             ignore_bad_datapoints=False,
         )
-        ts, *_ = cognite_client.time_series.subscriptions.list_member_time_series(subscription.external_id)
+        ts, *_ = cognite_client.time_series.subscriptions.list_member_time_series(another_subscription.external_id)
         cognite_client.time_series.data.insert(
             external_id=ts.external_id,
             datapoints=[

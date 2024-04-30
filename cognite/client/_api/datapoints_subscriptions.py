@@ -257,7 +257,7 @@ class DatapointsSubscriptionAPI(APIClient):
             Iterate continuously over all changes to the subscription newer than 3 days:
 
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
-                ...     pass  # do someting
+                ...     pass  # do something
         """
         current_partitions = [DatapointSubscriptionPartition(partition, cursor)]
         while True:
