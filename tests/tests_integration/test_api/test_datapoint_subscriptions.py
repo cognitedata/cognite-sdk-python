@@ -76,21 +76,17 @@ def subscription(cognite_client: CogniteClient, all_time_series_external_ids: li
     return cognite_client.time_series.subscriptions.create(new_sub)
 
 
-@pytest.fixture(scope="session")
-def another_subscription(
-    cognite_client: CogniteClient, all_time_series_external_ids: list[str]
-) -> DatapointSubscription:
-    external_id = f"PYSDKDataPointSubscriptionTest-2-{platform.system()}"
-    sub = cognite_client.time_series.subscriptions.retrieve(external_id)
-    if sub is not None:
-        return sub
+@pytest.fixture
+def sub_for_status_codes(cognite_client: CogniteClient, time_series_external_ids: list[str]) -> DatapointSubscription:
+    external_id = f"PYSDKDataPointSubscriptionTestWithStatusCodes-{random_string(5)}"
     new_sub = DataPointSubscriptionWrite(
         external_id=external_id,
         name=f"{external_id}_1ts",
-        time_series_ids=all_time_series_external_ids[-1:],
+        time_series_ids=time_series_external_ids[:1],
         partition_count=1,
     )
-    return cognite_client.time_series.subscriptions.create(new_sub)
+    with create_subscription_with_cleanup(cognite_client, new_sub) as created:
+        yield created
 
 
 class TestDatapointSubscriptions:
@@ -310,22 +306,22 @@ class TestDatapointSubscriptions:
         assert added_last_minute == 0, "There should be no timeseries added in the last minute"
 
     def test_iterate_data__using_status_codes(
-        self, cognite_client: CogniteClient, another_subscription: DatapointSubscription
+        self, cognite_client: CogniteClient, sub_for_status_codes: DatapointSubscription
     ):
         no_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
-            another_subscription.external_id,
-            start="1m-ago",
+            sub_for_status_codes.external_id,
+            poll_timeout=0,
             include_status=True,
             treat_uncertain_as_bad=False,
             ignore_bad_datapoints=True,
         )
         has_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
-            another_subscription.external_id,
-            start="1m-ago",
+            sub_for_status_codes.external_id,
+            poll_timeout=0,
             include_status=True,
             ignore_bad_datapoints=False,
         )
-        ts, *_ = cognite_client.time_series.subscriptions.list_member_time_series(another_subscription.external_id)
+        ts, *_ = cognite_client.time_series.subscriptions.list_member_time_series(sub_for_status_codes.external_id)
         cognite_client.time_series.data.insert(
             external_id=ts.external_id,
             datapoints=[
