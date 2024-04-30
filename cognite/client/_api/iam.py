@@ -285,11 +285,11 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.iam.groups.list()
+                >>> my_groups = client.iam.groups.list()
 
             List all groups:
 
-                >>> res = client.iam.groups.list(all=True)
+                >>> all_groups = client.iam.groups.list(all=True)
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
@@ -312,7 +312,7 @@ class GroupsAPI(APIClient):
 
         Example:
 
-            Create group:
+            Create a group without any members:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GroupWrite
@@ -323,6 +323,33 @@ class GroupsAPI(APIClient):
                 ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
+
+            Create a group whose members are managed externally (by your company's identity provider (IdP)).
+            This is done by using the ``source_id`` field. If this is the same ID as a group in the IdP,
+            a user in that group will implicitly be a part of this group as well.
+
+                >>> grp = GroupWrite(
+                ...     name="Externally managed group",
+                ...     capabilities=my_capabilities,
+                ...     source_id="b7c9a5a4...")
+                >>> res = client.iam.groups.create(grp)
+
+            Create a group whose members are managed internally by Cognite. This group may grant access through
+            listing specific users or include them all. This is done by passing the ``members`` field, either a
+            list of strings with the unique user identifiers or as the constant ``ALL_USER_ACCOUNTS``. To find the
+            user identifiers, you may use the UserProfilesAPI: ``client.iam.user_profiles.list()``.
+
+                >>> from cognite.client.data_classes import ALL_USER_ACCOUNTS
+                >>> all_group = GroupWrite(
+                ...     name="Everyone is welcome!",
+                ...     capabilities=my_capabilities,
+                ...     members=ALL_USER_ACCOUNTS,
+                ... )
+                >>> user_list_group = GroupWrite(
+                ...     name="Specfic users only",
+                ...     capabilities=my_capabilities,
+                ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"])
+                >>> res = client.iam.groups.create([user_list_group, all_group])
 
             Capabilities are often defined in configuration files, like YAML or JSON. You may convert capabilities
             from a dict-representation directly into ACLs (access-control list) by using ``Capability.load``.

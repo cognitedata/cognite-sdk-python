@@ -22,7 +22,8 @@ class TestGroupsAPI:
         loaded = GroupList.load(group_list.dump(camel_case=True))
         assert group_list.dump() == loaded.dump()
 
-    def test_create(self, cognite_client):
+    @pytest.mark.parametrize("source_id, members", (("abc-123", None), (None, ["user1", "user2"])))
+    def test_create(self, cognite_client, source_id, members):
         metadata = {"haha": "blabla"}
         group: Group | None = None
         try:
@@ -31,10 +32,17 @@ class TestGroupsAPI:
                     name="bla",
                     capabilities=[EventsAcl([EventsAcl.Action.Read], EventsAcl.Scope.All())],
                     metadata=metadata,
+                    source_id=source_id,
+                    members=members,
                 )
             )
             assert "bla" == group.name
             assert metadata == group.metadata
+            assert group.source_id == (source_id or "")
+            if members is None:
+                assert group.members is None
+            else:
+                assert sorted(group.members) == members
         finally:
             if group:
                 cognite_client.iam.groups.delete(group.id)

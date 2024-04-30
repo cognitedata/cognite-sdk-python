@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._text import convert_all_keys_to_snake_case
+from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class TransformationSchemaType:
+class TransformationSchemaType(CogniteObject):
     def __init__(self, type: str | None = None) -> None:
         self.type = type
 
@@ -33,6 +32,17 @@ class TransformationSchemaMapType(TransformationSchemaType):
         self.key_type = key_type
         self.value_type = value_type
         self.value_contains_null = value_contains_null
+
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> TransformationSchemaMapType:
+        return cls(
+            type=resource["type"],
+            key_type=resource.get("keyType"),
+            value_type=resource.get("valueType"),
+            value_contains_null=resource.get("valueContainsNull"),  # type: ignore[arg-type]
+        )
 
 
 class TransformationSchemaColumn(CogniteResource):
@@ -70,12 +80,11 @@ class TransformationSchemaColumn(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationSchemaColumn:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.type, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.type)
             instance_type = instance.type.get("type")
             if instance_type == "array":
-                instance.type = TransformationSchemaArrayType(**snake_dict)
+                instance.type = TransformationSchemaArrayType._load(instance.type)
             elif instance_type == "map":
-                instance.type = TransformationSchemaMapType(**snake_dict)
+                instance.type = TransformationSchemaMapType._load(instance.type)
         elif isinstance(instance.type, str):
             instance.type = TransformationSchemaType(type=instance.type)
         return instance

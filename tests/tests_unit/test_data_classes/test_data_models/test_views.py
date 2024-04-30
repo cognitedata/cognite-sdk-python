@@ -78,7 +78,7 @@ class TestViewPropertyDefinition:
         input = {
             "connectionType": "single_reverse_direct_relation",
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
@@ -101,7 +101,7 @@ class TestViewPropertyDefinition:
     def test_load_dump_single_reverse_direct_relation_property_with_container_for_apply(self) -> None:
         input = {
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
@@ -125,7 +125,7 @@ class TestViewPropertyDefinition:
         input = {
             "connectionType": "multi_reverse_direct_relation",
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
@@ -148,7 +148,7 @@ class TestViewPropertyDefinition:
     def test_load_dump_multi_reverse_direct_relation_property_for_apply(self) -> None:
         input = {
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
