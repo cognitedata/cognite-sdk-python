@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.40.1] - 2024-04-30
+### Fixed
+- Deleting multiple Datapoint Subscriptions now work as expected.
+
 ## [7.40.0] - 2024-04-30
 ### Added
 - Datapoint Subscriptions now support status codes.
