@@ -1067,10 +1067,10 @@ class DirectionWeights(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            left=resource.get("left", None),
-            right=resource.get("right", None),
-            up=resource.get("up", None),
-            down=resource.get("down", None),
+            left=resource.get("left"),
+            right=resource.get("right"),
+            up=resource.get("up"),
+            down=resource.get("down"),
         )
 
 
@@ -1096,9 +1096,9 @@ class CustomizeFuzziness(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            fuzzy_score=resource.get("fuzzyScore", None),
-            max_boxes=resource.get("maxBoxes", None),
-            min_chars=resource.get("minChars", None),
+            fuzzy_score=resource.get("fuzzyScore"),
+            max_boxes=resource.get("maxBoxes"),
+            min_chars=resource.get("minChars"),
         )
 
 
@@ -1196,16 +1196,15 @@ class DiagramDetectConfig(CogniteObject):
         self.read_embedded_text = read_embedded_text
         self.remove_leading_zeros = remove_leading_zeros
         self.substitutions = substitutions
-        self._extra_params = {}
 
         _known_params = {to_camel_case(k): k for k in vars(self)}
+        self._extra_params = {}
         for param_name, value in params.items():
             if known := _known_params.get(to_camel_case(param_name)):
                 raise ValueError(
                     f"Provided parameter name `{param_name}` collides with a known parameter `{known}`. Please use it insead."
                 )
-            else:
-                self._extra_params[param_name] = value
+            self._extra_params[param_name] = value
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
