@@ -274,9 +274,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 body["initializeCursors"] = start
                 start = None
 
-            res = self._post(
-                url_path=self._RESOURCE_PATH + "/data/list", json=body, api_subversion=f"{self._api_subversion}-beta"
-            )
+            res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
             batch = _DatapointSubscriptionBatchWithPartitions.load(
                 res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
             )
