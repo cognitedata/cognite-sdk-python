@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.40.2] - 2024-04-30
+### Fixed
+- `InAssetSubtree` is no longer (mistakenly) accepted as a time series filter.
+
 ## [7.40.1] - 2024-04-30
 ### Fixed
 - Deleting multiple Datapoint Subscriptions now work as expected.

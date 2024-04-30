@@ -782,6 +782,11 @@ class Search(FilterWithPropertyAndValue):
     _filter_name = "search"
 
 
+_BASIC_FILTERS: frozenset[type[Filter]] = frozenset(
+    {And, Or, Not, In, Equals, Exists, Range, Prefix, ContainsAny, ContainsAll}
+)
+
+
 # ######################################################### #
 # Custom filters below (custom meaning 'no API equivalent') #
 # ######################################################### #
