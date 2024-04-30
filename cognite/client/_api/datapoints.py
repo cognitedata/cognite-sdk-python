@@ -1351,8 +1351,8 @@ class DatapointsAPI(APIClient):
             either the status code (int) or status symbol (str). Only one of code and symbol is required. If both are given,
             they must match or an API error will be raised.
 
-            Datapoints marked bad can, in addition to the normal numeric range [-1e100, 1e100], take on any of the following
-            values: None (missing), NaN, and +/- Infinity.
+            Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
+            restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
         Examples:
 
@@ -1430,8 +1430,8 @@ class DatapointsAPI(APIClient):
             either the status code (int) or status symbol (str). Only one of code and symbol is required. If both are given,
             they must match or an API error will be raised.
 
-            Datapoints marked bad can, in addition to the normal numeric range [-1e100, 1e100], take on any of the following
-            values: None (missing), NaN, and +/- Infinity.
+            Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
+            restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
         Examples:
 
