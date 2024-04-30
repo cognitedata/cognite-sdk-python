@@ -1046,10 +1046,10 @@ class DirectionWeights(CogniteObject):
     larger distance is allowed.
 
     Args:
-        left (float | None): explanation
-        right (float | None): explanation
-        up (float | None): explanation
-        down (float | None): explanation
+        left (float | None): Weight for the connection towards text boxes to the left.
+        right (float | None): Weight for the connection towards text boxes to the right.
+        up (float | None): Weight for the connection towards text boxes above.
+        down (float | None): Weight for the connection towards text boxes below.
     """
 
     def __init__(
