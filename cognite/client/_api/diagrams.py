@@ -256,7 +256,7 @@ class DiagramsAPI(APIClient):
                 ... )
                 >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
 
-            Check the documentations for `DiagramDetectConfig` for more information on the available options.
+            Check the documentation for `DiagramDetectConfig` for more information on the available options.
         """
         items = self._process_file_ids(file_ids, file_external_ids, file_references)
         entities = [
