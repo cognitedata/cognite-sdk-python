@@ -1231,16 +1231,16 @@ class DiagramDetectConfig(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        resouce_copy = resource.copy()
+        resource_copy = resource.copy()
 
-        if con_flg := resouce_copy.pop("connectionFlags", None):
+        if con_flg := resource_copy.pop("connectionFlags", None):
             con_flg = ConnectionFlags.load(con_flg)
-        if cus_fuz := resouce_copy.pop("customizeFuzziness", None):
+        if cus_fuz := resource_copy.pop("customizeFuzziness", None):
             cus_fuz = CustomizeFuzziness.load(cus_fuz)
-        if dir_wgt := resouce_copy.pop("directionWeights", None):
+        if dir_wgt := resource_copy.pop("directionWeights", None):
             dir_wgt = DirectionWeights.load(dir_wgt)
 
-        snake_cased = convert_all_keys_to_snake_case(resouce_copy)
+        snake_cased = convert_all_keys_to_snake_case(resource_copy)
 
         return cls(
             connection_flags=con_flg,

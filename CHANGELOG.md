@@ -18,7 +18,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [7.39.1] - 2024-04-26
+## [7.40.0] - 2024-04-30
 ### Added
 - Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
 - `DiagramsAPI.detect()` method's parameter `configuration` now also accepts `DiagramDetectConfig` instances.
