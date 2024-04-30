@@ -47,12 +47,14 @@ class DiagramsAPI(APIClient):
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
     ) -> Response:
         return self._post(
             self._RESOURCE_PATH + context_path,
             json={to_camel_case(k): v for k, v in (json or {}).items() if v is not None},
             params=params,
             headers=headers,
+            api_subversion=api_subversion,
         )
 
     def _run_job(
@@ -61,11 +63,12 @@ class DiagramsAPI(APIClient):
         job_path: str,
         status_path: str | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
-        response = self._camel_post(job_path, json=kwargs, headers=headers)
+        response = self._camel_post(job_path, json=kwargs, headers=headers, api_subversion=api_subversion)
         return job_cls._load_with_status(
             data=response.json(),
             headers=response.headers,
@@ -259,13 +262,15 @@ class DiagramsAPI(APIClient):
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
+        api_subversion = None
         beta_parameters = {}
         if pattern_mode is not None or configuration is not None:
             config = configuration.dump() if isinstance(configuration, DiagramDetectConfig) else configuration
             beta_parameters = dict(pattern_mode=pattern_mode, configuration=config)
+
             self._detect_beta_params_warning.warn()
-            if self._api_subversion and not self._api_subversion.endswith("-beta"):
-                self._api_subversion += "-beta"
+            if self._api_subversion and not self._api_subversion.endswith("beta"):
+                api_subversion = f"{self._api_subversion}-beta"
 
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
@@ -289,6 +294,7 @@ class DiagramsAPI(APIClient):
                         search_field=search_field,
                         min_tokens=min_tokens,
                         job_cls=DiagramDetectResults,
+                        api_subversion=api_subversion,
                         **beta_parameters,  # type: ignore[arg-type]
                     )
                     jobs.append(posted_job)
@@ -311,6 +317,7 @@ class DiagramsAPI(APIClient):
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
+            api_subversion=api_subversion,
             **beta_parameters,  # type: ignore[arg-type]
         )
 
