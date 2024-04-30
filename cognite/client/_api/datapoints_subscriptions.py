@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -208,6 +208,9 @@ class DatapointsSubscriptionAPI(APIClient):
         partition: int = 0,
         poll_timeout: int = 5,
         cursor: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> Iterator[DatapointSubscriptionBatch]:
         """`Iterate over data from a given subscription. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
@@ -225,6 +228,9 @@ class DatapointsSubscriptionAPI(APIClient):
             partition (int): The partition to iterate over. Defaults to 0.
             poll_timeout (int): How many seconds to wait for new data, until an empty response is sent. Defaults to 5.
             cursor (str | None): Optional cursor to start iterating from.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response.
+            ignore_bad_datapoints (bool): Do not return bad datapoints. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Default: True.
 
         Yields:
             DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
@@ -236,38 +242,43 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription"):
+                ...     # Changes to the subscription itself:
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     # Changes to datapoints for time series in the subscription:
+                ...     for update in batch.updates:
+                ...         upserts.time_series  # The time series the update belongs to
+                ...         upserts.upserts  # The upserted datapoints, if any
+                ...         upserts.deletes  # Ranges of deleted periods, if any
                 ...     if not batch.has_next:
                 ...         break
 
             Iterate continuously over all changes to the subscription newer than 3 days:
 
-                >>> import time
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
-                ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
-                ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
-                ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     pass  # do something
         """
-
-        current_partitions = [DatapointSubscriptionPartition.create((partition, cursor))]
+        current_partitions = [DatapointSubscriptionPartition(partition, cursor)]
         while True:
             body = {
                 "externalId": external_id,
                 "partitions": [p.dump(camel_case=True) for p in current_partitions],
                 "limit": limit,
                 "pollTimeoutSeconds": poll_timeout,
+                "includeStatus": include_status,
+                "ignoreBadDataPoints": ignore_bad_datapoints,
+                "treatUncertainAsBad": treat_uncertain_as_bad,
             }
             if start is not None:
                 body["initializeCursors"] = start
-            start = None
+                start = None
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-            batch = _DatapointSubscriptionBatchWithPartitions.load(res.json())
-
-            cursor = batch.partitions[0].cursor
-            assert cursor is not None
+            batch = _DatapointSubscriptionBatchWithPartitions.load(
+                res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
+            )
+            cursor = cast(str, batch.partitions[0].cursor)
 
             yield DatapointSubscriptionBatch(batch.updates, batch.subscription_changes, batch.has_next, cursor)
 

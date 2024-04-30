@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import platform
 import random
 import time
 from contextlib import contextmanager
@@ -61,7 +63,7 @@ def time_series_external_ids(all_time_series_external_ids):
 
 @pytest.fixture(scope="session")
 def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
-    external_id = "PYSDKDataPointSubscriptionTest"
+    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}"
     sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub
@@ -72,6 +74,19 @@ def subscription(cognite_client: CogniteClient, all_time_series_external_ids: li
         partition_count=1,
     )
     return cognite_client.time_series.subscriptions.create(new_sub)
+
+
+@pytest.fixture
+def sub_for_status_codes(cognite_client: CogniteClient, time_series_external_ids: list[str]) -> DatapointSubscription:
+    external_id = f"PYSDKDataPointSubscriptionTestWithStatusCodes-{random_string(5)}"
+    new_sub = DataPointSubscriptionWrite(
+        external_id=external_id,
+        name=f"{external_id}_1ts",
+        time_series_ids=time_series_external_ids[:1],
+        partition_count=1,
+    )
+    with create_subscription_with_cleanup(cognite_client, new_sub) as created:
+        yield created
 
 
 class TestDatapointSubscriptions:
@@ -289,6 +304,51 @@ class TestDatapointSubscriptions:
             if not batch.has_next:
                 break
         assert added_last_minute == 0, "There should be no timeseries added in the last minute"
+
+    def test_iterate_data__using_status_codes(
+        self, cognite_client: CogniteClient, sub_for_status_codes: DatapointSubscription
+    ):
+        no_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
+            sub_for_status_codes.external_id,
+            poll_timeout=0,
+            include_status=True,
+            treat_uncertain_as_bad=False,
+            ignore_bad_datapoints=True,
+        )
+        has_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
+            sub_for_status_codes.external_id,
+            poll_timeout=0,
+            include_status=True,
+            ignore_bad_datapoints=False,
+        )
+        ts, *_ = cognite_client.time_series.subscriptions.list_member_time_series(sub_for_status_codes.external_id)
+        cognite_client.time_series.data.insert(
+            external_id=ts.external_id,
+            datapoints=[
+                {"timestamp": -99, "value": None, "status": {"symbol": "Bad"}},
+                {"timestamp": -98, "value": math.nan, "status": {"symbol": "Bad"}},
+                {"timestamp": -97, "value": math.inf, "status": {"symbol": "Bad"}},
+                {"timestamp": -96, "value": -math.inf, "status": {"symbol": "Bad"}},
+                {"timestamp": -95, "value": -95, "status": {"symbol": "Uncertain"}},
+                {"timestamp": -94, "value": -94, "status": {"code": 1024}},
+                {"timestamp": -93, "value": -93, "status": {"symbol": "Good"}},
+                {"timestamp": -92, "value": -92},
+            ],
+        )
+        no_bad = next(no_bad_iter).updates
+        has_bad = next(has_bad_iter).updates
+
+        assert len(no_bad) == 1
+        assert len(has_bad) == 1
+        assert ts.id == no_bad[0].time_series.id == no_bad[0].time_series.id
+
+        assert no_bad[0].upserts.is_string is False
+        assert has_bad[0].upserts.is_string is False
+        assert no_bad[0].upserts.timestamp == list(range(-95, -91))
+        assert has_bad[0].upserts.timestamp == list(range(-99, -91))
+        assert has_bad[0].upserts.value[0] is None
+        assert all(isinstance(v, float) for v in has_bad[0].upserts.value[1:])
+        assert no_bad[0].upserts.status_symbol == ["Uncertain", "Good", "Good", "Good"]
 
     @pytest.mark.skip(reason="Using a filter (as opposed to specific identifiers) is eventually consistent")
     def test_update_filter_subscription_added_times_series(
