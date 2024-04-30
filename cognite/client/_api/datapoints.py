@@ -60,7 +60,6 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
@@ -99,19 +98,13 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapo
     all_queries = validator.validate_and_create_single_queries()
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
-    api_subversion = None
-    # If status codes or new aggregates are requested, use beta:
-    if any(query.requires_api_subversion_beta for query in all_queries):
-        api_subversion = dps_client._api_subversion + "-beta"
-        dps_client._status_codes_warning.warn()
-
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
         # Start shooting requests from the hip immediately:
-        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
+        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
     # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
     # guesstimation of dps density - then chunk away:
-    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
+    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
 
 
 def split_queries_into_raw_and_aggs(all_queries: _TSQueryList) -> tuple[_TSQueryList, _TSQueryList]:
@@ -129,14 +122,12 @@ class DpsFetchStrategy(ABC):
         agg_queries: _TSQueryList,
         raw_queries: _TSQueryList,
         max_workers: int,
-        api_subversion: str | None,
     ) -> None:
         self.dps_client = dps_client
         self.all_queries = all_queries
         self.agg_queries = agg_queries
         self.raw_queries = raw_queries
         self.max_workers = max_workers
-        self.api_subversion = api_subversion
         self.n_queries = len(all_queries)
 
     def fetch_all_datapoints(self) -> DatapointsList:
@@ -161,7 +152,6 @@ class DpsFetchStrategy(ABC):
                 url_path=f"{self.dps_client._RESOURCE_PATH}/list",
                 accept="application/protobuf",
                 timeout=self.dps_client._config.timeout,
-                api_subversion=self.api_subversion,
             ).content
         )
         return res.items
@@ -537,7 +527,6 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
-        self._status_codes_warning = FeaturePreviewWarning("beta", "alpha", feature_name="Datapoints Status Codes")
 
     def retrieve(
         self,
@@ -1622,9 +1611,6 @@ class _InsertDatapoint(NamedTuple):
         dumped["value"] = _json.convert_nonfinite_float_to_str(dumped["value"])
         return dumped
 
-    def requires_api_subversion_beta(self) -> bool:
-        return bool(self.status_code or self.status_symbol and self.status_symbol != "Good")
-
 
 class DatapointsPoster:
     def __init__(self, dps_client: DatapointsAPI) -> None:
@@ -1632,8 +1618,6 @@ class DatapointsPoster:
         self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
         self.max_workers = self.dps_client._config.max_workers
-
-        self.api_subversion: str | None = None  # TODO: remove once status codes is GA
 
     def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
@@ -1657,12 +1641,6 @@ class DatapointsPoster:
         for obj in dps_object_lst:
             validated: dict[str, Any] = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
             validated_dps = self._parse_and_validate_dps(obj["datapoints"])
-
-            # If features related to status codes are used, use beta:
-            # TODO: Remove once status codes -> GA, this check is expensive!
-            if self.api_subversion is None and any(dp.requires_api_subversion_beta() for dp in validated_dps):
-                self.api_subversion = self.dps_client._api_subversion + "-beta"
-                self.dps_client._status_codes_warning.warn()
 
             # Concatenate datapoints using identifier as key:
             if (xid := validated.get("externalId")) is not None:
@@ -1737,11 +1715,7 @@ class DatapointsPoster:
         # Convert to memory intensive format as late as possible (and clean up after insert)
         for dct in payload:
             dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
-        self.dps_client._post(
-            url_path=self.dps_client._RESOURCE_PATH,
-            json={"items": payload},
-            api_subversion=self.api_subversion,  # TODO: remove once status codes is GA
-        )
+        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": payload})
         for dct in payload:
             dct["datapoints"].clear()
 
@@ -1826,24 +1800,9 @@ class RetrieveLatestDpsFetcher:
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
 
-        # If features related to status codes are requested, use beta:
-        # TODO: Remove once status codes -> GA
-        self.api_subversion = None
-        if self.requires_api_subversion_beta():
-            self.api_subversion = dps_client._api_subversion + "-beta"
-            dps_client._status_codes_warning.warn()
-
     @property
     def input_is_singleton(self) -> bool:
         return self._is_singleton
-
-    def requires_api_subversion_beta(self) -> bool:
-        return any(
-            query.get("includeStatus") is True
-            or query.get("ignoreBadDataPoints") is False
-            or query.get("treatUncertainAsBad") is False
-            for query in self._all_identifiers
-        )
 
     @staticmethod
     def _get_and_check_identifier(
@@ -1971,7 +1930,6 @@ class RetrieveLatestDpsFetcher:
             {
                 "url_path": self.dps_client._RESOURCE_PATH + "/latest",
                 "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
-                "api_subversion": self.api_subversion,  # TODO: remove once status codes -> GA
             }
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
