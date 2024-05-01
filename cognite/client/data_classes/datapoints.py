@@ -61,22 +61,6 @@ Aggregate = Literal[
     "sum",
     "total_variation",
 ]
-_AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hits GA
-    [
-        "count_bad",
-        "count_good",
-        "count_uncertain",
-        "duration_bad",
-        "duration_good",
-        "duration_uncertain",
-        "countBad",
-        "countGood",
-        "countUncertain",
-        "durationBad",
-        "durationGood",
-        "durationUncertain",
-    ]
-)
 _INT_AGGREGATES = frozenset(
     {
         "count",
@@ -799,9 +783,8 @@ class Datapoints(CogniteResource):
                 or not len(self.status_symbol) == len(datapoints) == len(self.status_code)
             ):
                 raise ValueError("The number of status codes/symbols does not match the number of datapoints")
-
-            for dp, code, symbol in zip(datapoints, self.status_code, self.status_symbol):
-                dp["status"] = {"code": code, "symbol": symbol}
+            for dp in datapoints:
+                dp["status"] = {"code": dp.pop("statusCode"), "symbol": dp.pop("statusSymbol")}
         dumped["datapoints"] = datapoints
 
         if camel_case:

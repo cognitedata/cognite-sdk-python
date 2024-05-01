@@ -18,10 +18,27 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [7.40.0] - 2024-04-30
+## [7.42.0] - 2024-05-02
 ### Added
 - Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
 - `DiagramsAPI.detect()` method's parameter `configuration` now also accepts `DiagramDetectConfig` instances.
+
+## [7.41.0] - 2024-04-30
+### Added
+- Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).
+  - You can read more in the Cognite Data Fusion developer documentation: [Status Codes reference](https://developer.cognite.com/dev/concepts/reference/quality_codes/).
+
+## [7.40.2] - 2024-04-30
+### Fixed
+- `InAssetSubtree` is no longer (mistakenly) accepted as a time series filter.
+
+## [7.40.1] - 2024-04-30
+### Fixed
+- Deleting multiple Datapoint Subscriptions now work as expected.
+
+## [7.40.0] - 2024-04-30
+### Added
+- Datapoint Subscriptions now support status codes.
 
 ## [7.39.0] - 2024-04-25
 ### Added

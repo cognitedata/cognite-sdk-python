@@ -19,7 +19,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.events import EventPropertyLike, EventSort, EventWrite, SortableEventProperty
-from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -32,21 +32,7 @@ SortSpec: TypeAlias = Union[
     Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
 ]
 
-_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-        filters.Search,
-    }
-)
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
 class EventsAPI(APIClient):

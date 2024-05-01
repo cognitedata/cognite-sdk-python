@@ -51,7 +51,7 @@ from cognite.client.data_classes.assets import (
     AssetWrite,
     SortableAssetProperty,
 )
-from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
@@ -81,21 +81,7 @@ SortSpec: TypeAlias = Union[
     Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
 ]
 
-_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-        filters.Search,
-    }
-)
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
 class AssetsAPI(APIClient):
