@@ -268,7 +268,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             id (str): The server-generated id of the workflow execution.
             reason (str | None): The reason for the cancellation, this will be put within the executions' `reasonForIncompletion` field. It is defaulted to 'cancelled' if not provided.
 
-        Tip:
+        Note:
             Cancelling a workflow will immediately cancel the `in_progress` tasks, but not their spawned work in
             other services (like transformations and functions).
 
