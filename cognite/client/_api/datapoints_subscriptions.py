@@ -27,6 +27,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 1
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_

@@ -17,6 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.41.0] - 2024-04-30
+### Added
+- Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).
+  - You can read more in the Cognite Data Fusion developer documentation: [Status Codes reference](https://developer.cognite.com/dev/concepts/reference/quality_codes/).
+
+## [7.40.2] - 2024-04-30
+### Fixed
+- `InAssetSubtree` is no longer (mistakenly) accepted as a time series filter.
+
+## [7.40.1] - 2024-04-30
+### Fixed
+- Deleting multiple Datapoint Subscriptions now work as expected.
+
 ## [7.40.0] - 2024-04-30
 ### Added
 - Datapoint Subscriptions now support status codes.

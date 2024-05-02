@@ -61,22 +61,6 @@ Aggregate = Literal[
     "sum",
     "total_variation",
 ]
-_AGGREGATES_IN_BETA = frozenset(  # TODO: Remove once datapoints status codes hits GA
-    [
-        "count_bad",
-        "count_good",
-        "count_uncertain",
-        "duration_bad",
-        "duration_good",
-        "duration_uncertain",
-        "countBad",
-        "countGood",
-        "countUncertain",
-        "durationBad",
-        "durationGood",
-        "durationUncertain",
-    ]
-)
 _INT_AGGREGATES = frozenset(
     {
         "count",
