@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.42.0] - 2024-05-03
+### Changed
+- Breaking change: the `workflows.executions.cancel` method now only allows cancelling one execution at a time to reflect its non-atomic operation.
+
 ## [7.41.0] - 2024-04-30
 ### Added
 - Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).
