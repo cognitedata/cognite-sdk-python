@@ -1,15 +1,26 @@
 from __future__ import annotations
 
-from typing import List, MutableSequence, cast, overload
+from typing import List, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
+from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList, UserProfilesConfiguration
 from cognite.client.utils._identifier import UserIdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class UserProfilesAPI(APIClient):
     _RESOURCE_PATH = "/profiles"
+
+    def enable(self) -> UserProfilesConfiguration:
+        """Enable user profiles for the project"""
+        res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
+        return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
+
+    def disable(self) -> UserProfilesConfiguration:
+        """Disable user profiles for the project"""
+        res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
+        return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
     def me(self) -> UserProfile:
         """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
@@ -27,28 +38,24 @@ class UserProfilesAPI(APIClient):
             Get your own user profile:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.me()
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.me()
         """
-        return UserProfile.load(self._get(self._RESOURCE_PATH + "/me").json())
+        return UserProfile._load(self._get(self._RESOURCE_PATH + "/me").json())
 
     @overload
-    def retrieve(self, user_identifier: str) -> UserProfile | None:
-        ...
+    def retrieve(self, user_identifier: str) -> UserProfile | None: ...
 
-    @overload  # Note, can't use Sequence[str], as str itself matches this requirement...
-    def retrieve(self, user_identifier: MutableSequence[str] | tuple[str, ...]) -> UserProfileList:
-        ...
+    @overload
+    def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList: ...
 
-    def retrieve(
-        self, user_identifier: str | MutableSequence[str] | tuple[str, ...]
-    ) -> UserProfile | UserProfileList | None:
+    def retrieve(self, user_identifier: str | SequenceNotStr[str]) -> UserProfile | UserProfileList | None:
         """`Retrieve user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/operation/getUserProfilesByIds>`_
 
         Retrieves one or more user profiles indexed by the user identifier in the same CDF project.
 
         Args:
-            user_identifier (str | MutableSequence[str] | tuple[str, ...]): The single user identifier (or sequence of) to retrieve profile(s) for.
+            user_identifier (str | SequenceNotStr[str]): The single user identifier (or sequence of) to retrieve profile(s) for.
 
         Returns:
             UserProfile | UserProfileList | None: UserProfileList if a sequence of user identifier were requested, else UserProfile. If a single user identifier is requested and it is not found, None is returned.
@@ -61,12 +68,12 @@ class UserProfilesAPI(APIClient):
             Get a single user profile:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.retrieve("foo")
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.retrieve("foo")
 
             Get multiple user profiles:
 
-                >>> res = c.iam.user_profiles.retrieve(["bar", "baz"])
+                >>> res = client.iam.user_profiles.retrieve(["bar", "baz"])
         """
         identifiers = UserIdentifierSequence.load(user_identifier)
         profiles = self._retrieve_multiple(
@@ -96,8 +103,8 @@ class UserProfilesAPI(APIClient):
             Search for users with first (or second...) name starting with "Alex":
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.search(name="Alex")
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.search(name="Alex")
         """
         return self._search(
             list_cls=UserProfileList,
@@ -122,8 +129,8 @@ class UserProfilesAPI(APIClient):
             List all user profiles:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.list(limit=None)
+                >>> client = CogniteClient()
+                >>> res = client.iam.user_profiles.list(limit=None)
         """
         return self._list(
             "GET",

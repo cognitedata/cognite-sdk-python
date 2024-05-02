@@ -15,6 +15,7 @@ from cognite.client.data_classes import (
     Asset,
     AssetHierarchy,
     AssetList,
+    AssetWrite,
     Event,
     EventList,
     FileMetadata,
@@ -80,28 +81,28 @@ class TestAssetList:
         cognite_client.events.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.events()
-        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.events.list.call_count == 1
 
     def test_get_time_series(self, cognite_client):
         cognite_client.time_series.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.time_series()
-        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.time_series.list.call_count == 1
 
     def test_get_sequences(self, cognite_client):
         cognite_client.sequences.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.sequences()
-        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.sequences.list.call_count == 1
 
     def test_get_files(self, cognite_client):
         cognite_client.files.list = mock.MagicMock()
         a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.files()
-        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=None)
         assert cognite_client.files.list.call_count == 1
 
     @pytest.mark.parametrize(
@@ -118,12 +119,19 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_method = getattr(cognite_client, method)
+        mock_method = mock.Mock()
+        setattr(cognite_client, method, mock_method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
 
         assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=cognite_client)
-        assets._retrieve_chunk_size = 1
+        assets._actual_method = assets._retrieve_related_resources
+
+        def override_chunk_size(*a, **kw):
+            kw["chunk_size"] = 1
+            return assets._actual_method(*a, **kw)
+
+        assets._retrieve_related_resources = override_chunk_size
 
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]
@@ -145,15 +153,15 @@ def basic_issue_assets():
         Asset(name="a1", external_id="i am groot", parent_external_id=None),
         # Duplicated XIDs:
         Asset(name="a2", external_id="a", parent_external_id="i am groot"),
-        Asset(name="a3", external_id="a", parent_external_id="i am groot"),
+        AssetWrite(name="a3", external_id="a", parent_external_id="i am groot"),
         # Duplicated AND orphan:
         Asset(name="a4", external_id="a", parent_external_id="i am orphan"),
         # Orphan:
-        Asset(name="a5", external_id="b", parent_external_id="i am orphan"),
+        AssetWrite(name="a5", external_id="b", parent_external_id="i am orphan"),
         # Invalid (missing XIDs):
         Asset(name="a6", external_id=None, parent_external_id="i am groot"),
         # Doubly defined parent asset:
-        Asset(name="a7", external_id="c", parent_external_id="i am groot", parent_id=42),
+        AssetWrite(name="a7", external_id="c", parent_external_id="i am groot", parent_id=42),
     ]
 
 
@@ -230,9 +238,9 @@ class TestAssetHierarchy:
         (
             # Invalid name:
             Asset(name="", external_id="foo"),
-            Asset(name=None, external_id="foo"),
+            AssetWrite(name=None, external_id="foo"),
             # Invalid external_id (empty str allowed):
-            Asset(name="a", external_id=None),
+            AssetWrite(name="a", external_id=None),
             # Id given:
             Asset(name="a", external_id="", id=123),
         ),
@@ -246,7 +254,7 @@ class TestAssetHierarchy:
     def test_validate_asset_hierarchy__orphans_given_ignore_false(self):
         assets = [
             Asset(name="a", parent_external_id="1", external_id="2"),
-            Asset(name="a", parent_external_id="2", external_id="3"),
+            AssetWrite(name="a", parent_external_id="2", external_id="3"),
         ]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
         assert len(hierarchy.orphans) == 1
@@ -344,7 +352,8 @@ class TestAssetHierarchy:
             AssetHierarchy(assets).validate_and_report()
         # Cycle output does not have deterministic ordering due to extensive set usage
         # (correctness tested separately):
-        assert exp_output == (output := stdout.getvalue()) or output.startswith(exp_output)
+        output = stdout.getvalue()
+        assert exp_output == output or output.startswith(exp_output)
 
     @pytest.mark.parametrize(
         "assets, exp_output",
@@ -361,7 +370,8 @@ class TestAssetHierarchy:
 
         # Try again with Path instead of str:
         AssetHierarchy(assets).validate_and_report(output_file=tmp_path)
-        assert exp_output == (output := tmp_path.read_text(encoding="utf-8")) or output.startswith(exp_output)
+        output = tmp_path.read_text(encoding="utf-8")
+        assert exp_output == output or output.startswith(exp_output)
 
     @pytest.mark.parametrize(
         "assets, exp_output",
@@ -374,7 +384,9 @@ class TestAssetHierarchy:
         outfile = Path(tmp_path) / "report.txt"
         with outfile.open("w", encoding="utf-8") as file:
             AssetHierarchy(assets).validate_and_report(output_file=file)
-        assert exp_output == (output := outfile.read_text(encoding="utf-8")) or output.startswith(exp_output)
+
+        output = outfile.read_text(encoding="utf-8")
+        assert exp_output == output or output.startswith(exp_output)
 
         with io.StringIO() as file_like:
             AssetHierarchy(assets).validate_and_report(output_file=file_like)

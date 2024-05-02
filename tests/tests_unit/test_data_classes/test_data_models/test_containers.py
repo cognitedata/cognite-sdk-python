@@ -1,13 +1,38 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling.containers import Constraint, ContainerProperty, Index
+from cognite.client.data_classes._base import UnknownCogniteObject
+from cognite.client.data_classes.data_modeling.containers import (
+    Constraint,
+    Container,
+    ContainerApply,
+    ContainerProperty,
+    Index,
+)
+
+
+class TestContainer:
+    def test_as_property_ref(self) -> None:
+        params = dict(
+            space="sp",
+            externalId="ex",
+            properties={},
+            isGlobal=False,
+            lastUpdatedTime=123,
+            createdTime=12,
+            usedFor="node",
+        )
+        cont = Container.load(params)
+        cont_apply = ContainerApply.load(params)
+
+        assert cont.as_property_ref("foo") == ("sp", "ex", "foo")
+        assert cont_apply.as_property_ref("foo") == ("sp", "ex", "foo")
 
 
 class TestContainerProperty:
     @pytest.mark.parametrize(
         "data",
         [
-            {"type": {"type": "direct"}},
+            {"type": {"type": "direct", "list": False}},
             # List is not required, but gets set and thus will be dumped
             {"type": {"type": "int32", "list": False}},
             {"type": {"type": "text", "list": False, "collation": "ucs_basic"}},
@@ -33,6 +58,12 @@ class TestConstraint:
     def test_load_dump(self, data: dict) -> None:
         actual = Constraint.load(data).dump(camel_case=True)
         assert data == actual
+
+    def test_load_unknown_type(self) -> None:
+        data = {"someUnknownConstraint": {"wawa": "wiwa"}, "constraintType": "unknown"}
+        obj = Constraint.load(data)
+        assert isinstance(obj, UnknownCogniteObject)
+        assert obj.dump() == data
 
 
 class TestIndex:
@@ -65,6 +96,12 @@ class TestIndex:
     def test_load_dump__only_required(self, data: dict) -> None:
         actual = Index.load(data).dump(camel_case=True)
         assert data == actual
+
+    def test_load_unknown_type(self) -> None:
+        data = {"someUnknownIndexType": {"wawa": "wiwa"}, "indexType": "someUnknownIndexType"}
+        obj = Index.load(data)
+        assert isinstance(obj, UnknownCogniteObject)
+        assert obj.dump() == data
 
 
 class TestConstraints:

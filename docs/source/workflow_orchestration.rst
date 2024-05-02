@@ -1,8 +1,8 @@
-Workflow Orchestration
+Data Workflows
 ======================
 
 .. warning::
-    Workflow Orchestration is a new feature:
+    Data Workflows is a new feature:
       * The API specification is in beta.
       * The SDK implementation is in alpha.
 
@@ -65,6 +65,10 @@ Cancel Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.cancel
 
+Retry Workflow Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retry
+
 Workflow Tasks
 ------------------
 Update Status of Async Task
@@ -72,7 +76,7 @@ Update Status of Async Task
 .. automethod:: cognite.client._api.workflows.WorkflowTaskAPI.update
 
 
-Workflow Orchestration data classes
+Data Workflows data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.workflows
     :members:

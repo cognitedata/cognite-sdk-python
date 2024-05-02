@@ -1,3 +1,5 @@
+import random
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -22,7 +24,7 @@ class TestRawDatabasesAPI:
         assert len(dbs) > 0
 
     def test_create_and_delete_database(self, new_database_with_table):
-        pass
+        assert True
 
 
 class TestRawTablesAPI:
@@ -55,19 +57,26 @@ class TestRawRowsAPI:
         assert 2000 == len(rows)
         assert 10 == len(rows[0].columns.keys())
 
-    def test_list_rows_w_parallel_cursors(self, cognite_client):
+    def test_rows_with_parallel_cursors(self, cognite_client):
         randstr = random_string(32)
-        num_rows = 30000
+        num_rows = random.randint(15000, 30000)
         rows_to_insert = [Row(key=str(i), columns={"a": 1}) for i in range(num_rows)]
-        cognite_client.raw.rows.insert(randstr, randstr, row=rows_to_insert, ensure_parent=True)
+        try:
+            cognite_client.raw.rows.insert(randstr, randstr, row=rows_to_insert, ensure_parent=True)
 
-        rows = cognite_client.raw.rows.list(db_name=randstr, table_name=randstr, limit=num_rows)
-        rows_par = cognite_client.raw.rows.list(db_name=randstr, table_name=randstr, limit=-1)
+            rows = cognite_client.raw.rows.list(randstr, randstr, limit=num_rows)
+            rows_par = cognite_client.raw.rows.list(randstr, randstr, limit=None, partitions=2)
+            rows_iter = list(cognite_client.raw.rows(randstr, randstr, limit=None, partitions=3, chunk_size=5000))
 
-        assert num_rows == len(rows) == len(rows_par)
-        assert 1 == len(rows[0].columns.keys()) == len(rows_par[0].columns.keys())
+            assert num_rows == len(rows) == len(rows_par)
+            assert 1 == len(rows[0].columns) == len(rows_par[0].columns) == len(rows_iter[0][0].columns)
 
-        assert {row.key for row in rows} == {row.key for row in rows_par}
+            keys = {row.key for row in rows}
+            keys_par = {row.key for row in rows_par}
+            keys_iter = {row.key for row_list in rows_iter for row in row_list}
+            assert keys == keys_par == keys_iter
+        finally:
+            cognite_client.raw.databases.delete(randstr, recursive=True)
 
     def test_list_rows_cols(self, cognite_client):
         rows_list = cognite_client.raw.rows.list(
@@ -122,3 +131,12 @@ class TestRawRowsAPI:
 
         pd.testing.assert_frame_equal(df.sort_index(), retrieved_df.sort_index())
         assert retrieved_df.to_dict() == data
+
+    @pytest.mark.dsl
+    def test_insert_dataframe__index_has_duplicates(self, cognite_client):
+        import pandas as pd
+
+        df = pd.DataFrame({"aa": range(4), "bb": "value"}, index=list("abca"))
+
+        with pytest.raises(ValueError, match="^Dataframe index is not unique"):
+            cognite_client.raw.rows.insert_dataframe("db", "table", df)

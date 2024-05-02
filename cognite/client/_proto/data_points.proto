@@ -4,9 +4,16 @@ package com.cognite.v1.timeseries.proto;
 
 option java_multiple_files = true;
 
+message Status {
+    int64 code = 1;
+    string symbol = 2;
+}
+
 message NumericDatapoint {
     int64 timestamp = 1;
     double value = 2;
+    Status status = 3;
+    bool nullValue = 4;
 }
 
 message NumericDatapoints {
@@ -16,6 +23,8 @@ message NumericDatapoints {
 message StringDatapoint {
     int64 timestamp = 1;
     string value = 2;
+    Status status = 3;
+    bool nullValue = 4;
 }
 
 message StringDatapoints {
@@ -34,6 +43,12 @@ message AggregateDatapoint {
     double continuousVariance = 9;
     double discreteVariance = 10;
     double totalVariation = 11;
+    double countGood = 12;
+    double countUncertain = 13;
+    double countBad = 14;
+    double durationGood = 15;
+    double durationUncertain = 16;
+    double durationBad = 17;
 }
 
 message AggregateDatapoints {

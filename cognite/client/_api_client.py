@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import gzip
-import json as _json
 import logging
 import re
 import warnings
@@ -33,22 +32,25 @@ from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteObject,
     CogniteResource,
     CogniteUpdate,
     EnumProperty,
     PropertySpec,
     T_CogniteResource,
     T_CogniteResourceList,
+    T_WritableCogniteResource,
+    WriteableCogniteResource,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
     get_current_sdk_version,
     get_user_agent,
     interpolate_and_url_encode,
     is_unlimited,
-    json_dump_default,
     split_into_chunks,
     unpack_items_in_payload,
 )
@@ -62,6 +64,7 @@ from cognite.client.utils._identifier import (
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 from cognite.client.utils._validation import assert_type, verify_limit
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -71,25 +74,40 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
+T = TypeVar("T", bound=CogniteObject)
 
 
 class APIClient:
     _RESOURCE_PATH: str
+    # TODO: When Cognite Experimental SDK is deprecated, remove frozenset in favour of re.compile:
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
-        rf"^{path}(\?.*)?$"
-        for path in (
-            "/(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
-            "/files/downloadlink",
-            "/timeseries/data(/(list|latest|delete))?",
-            "/timeseries/synthetic/query",
-            "/sequences/data(/(list|delete))?",
-            "/raw/dbs/[^/]+/tables/[^/]+/rows/.*",
-            "/context/entitymatching/(byids|list|jobs)",
-            "/sessions/revoke",
-            "/models/.*",
-            "/units/.*",
-        )
+        [
+            r"|".join(
+                rf"^/{path}(\?.*)?$"
+                for path in (
+                    "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
+                    "files/downloadlink",
+                    "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
+                    "sequences/data(/(list|delete))?",
+                    "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
+                    "context/entitymatching/(byids|list|jobs)",
+                    "sessions/revoke",
+                    "models/.*",
+                    ".*/graphql",
+                    "units/.*",
+                    "annotations/(list|byids|reverselookup)",
+                    r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
+                    r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
+                    "documents/(aggregate|list|search)",
+                    "profiles/(byids|search)",
+                    "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
+                    "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
+                    "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
+                    "extpipes/(list|byids|runs/list)",
+                    "workflows/.*",
+                )
+            )
+        ]
     )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
@@ -186,7 +204,7 @@ class APIClient:
 
         if json_payload:
             try:
-                data = _json.dumps(json_payload, default=json_dump_default, allow_nan=False)
+                data = _json.dumps(json_payload, allow_nan=False)
             except ValueError as e:
                 # A lot of work to give a more human friendly error message when nans and infs are present:
                 msg = "Out of range float values are not JSON compliant"
@@ -267,9 +285,7 @@ class APIClient:
     @classmethod
     @functools.lru_cache(64)
     def _url_is_retryable(cls, url: str) -> bool:
-        valid_url_pattern = (
-            r"^(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-        )
+        valid_url_pattern = r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
         match = re.match(valid_url_pattern, url)
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
@@ -281,8 +297,8 @@ class APIClient:
         identifier: IdentifierCore,
         cls: type[T_CogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
@@ -310,8 +326,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResource | None:
-        ...
+    ) -> T_CogniteResource | None: ...
 
     @overload
     def _retrieve_multiple(
@@ -326,8 +341,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList:
-        ...
+    ) -> T_CogniteResourceList: ...
 
     def _retrieve_multiple(
         self,
@@ -396,7 +410,7 @@ class APIClient:
         limit: int | None = None,
         chunk_size: int | None = None,
         filter: dict[str, Any] | None = None,
-        sort: Sequence[str | dict[str, Any]] | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
         partitions: int | None = None,
         headers: dict[str, Any] | None = None,
@@ -485,11 +499,11 @@ class APIClient:
         resource_path: str | None = None,
         url_path: str | None = None,
         limit: int | None = None,
-        filter: dict | None = None,
-        other_params: dict | None = None,
+        filter: dict[str, Any] | None = None,
+        other_params: dict[str, Any] | None = None,
         partitions: int | None = None,
-        sort: Sequence[str | dict[str, Any]] | None = None,
-        headers: dict | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
+        headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
@@ -506,6 +520,7 @@ class APIClient:
                 list_cls=list_cls,
                 resource_path=resource_path,
                 filter=filter,
+                advanced_filter=advanced_filter,
                 other_params=other_params,
                 headers=headers,
             )
@@ -537,9 +552,9 @@ class APIClient:
         method: Literal["POST", "GET"],
         list_cls: type[T_CogniteResourceList],
         resource_path: str | None = None,
-        filter: dict | None = None,
-        other_params: dict | None = None,
-        headers: dict | None = None,
+        filter: dict[str, Any] | None = None,
+        other_params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         advanced_filter: dict | Filter | None = None,
     ) -> T_CogniteResourceList:
         def get_partition(partition: int) -> list[dict[str, Any]]:
@@ -590,11 +605,11 @@ class APIClient:
         self,
         cls: type[T],
         resource_path: str | None = None,
-        filter: CogniteFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
         aggregate: str | None = None,
-        fields: Sequence[str] | None = None,
-        keys: Sequence[str] | None = None,
-        headers: dict | None = None,
+        fields: SequenceNotStr[str] | None = None,
+        keys: SequenceNotStr[str] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> list[T]:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         assert_type(fields, "fields", [list], allow_none=True)
@@ -613,7 +628,7 @@ class APIClient:
         if keys is not None:
             body["keys"] = keys
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
-        return [cls(**agg) for agg in res.json()["items"]]
+        return [cls._load(agg) for agg in res.json()["items"]]
 
     @overload
     def _advanced_aggregate(
@@ -626,13 +641,12 @@ class APIClient:
         | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
-        filter: CogniteFilter | dict | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
-    ) -> int:
-        ...
+    ) -> int: ...
 
     @overload
     def _advanced_aggregate(
@@ -645,13 +659,12 @@ class APIClient:
         | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
-        filter: CogniteFilter | dict | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
-    ) -> UniqueResultList:
-        ...
+    ) -> UniqueResultList: ...
 
     def _advanced_aggregate(
         self,
@@ -663,9 +676,9 @@ class APIClient:
         | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
-        filter: CogniteFilter | dict | None = None,
-        advanced_filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int | None = None,
         api_subversion: str | None = None,
     ) -> int | UniqueResultList:
@@ -741,59 +754,62 @@ class APIClient:
     @overload
     def _create_multiple(
         self,
-        items: Sequence[CogniteResource] | Sequence[dict[str, Any]],
+        items: Sequence[WriteableCogniteResource] | Sequence[dict[str, Any]],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
-        extra_body_fields: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList:
-        ...
+    ) -> T_CogniteResourceList: ...
 
     @overload
     def _create_multiple(
         self,
-        items: CogniteResource | dict[str, Any],
+        items: WriteableCogniteResource | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
-        extra_body_fields: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResource:
-        ...
+    ) -> T_WritableCogniteResource: ...
 
     def _create_multiple(
         self,
-        items: Sequence[CogniteResource] | Sequence[dict[str, Any]] | CogniteResource | dict[str, Any],
+        items: Sequence[WriteableCogniteResource]
+        | Sequence[dict[str, Any]]
+        | WriteableCogniteResource
+        | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
-        extra_body_fields: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList | T_CogniteResource:
+    ) -> T_CogniteResourceList | T_WritableCogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
-            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], [items])
+            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
-            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], items)
+            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], items)
+
+        items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
 
         tasks = [
             (resource_path, task_items, params, headers)
@@ -879,12 +895,11 @@ class APIClient:
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
-    ) -> T_CogniteResource:
-        ...
+    ) -> T_CogniteResource: ...
 
     @overload
     def _update_multiple(
@@ -894,12 +909,11 @@ class APIClient:
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
-    ) -> T_CogniteResourceList:
-        ...
+    ) -> T_CogniteResourceList: ...
 
     def _update_multiple(
         self,
@@ -908,8 +922,8 @@ class APIClient:
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
         resource_path: str | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
@@ -955,18 +969,18 @@ class APIClient:
 
     def _upsert_multiple(
         self,
-        items: CogniteResource | Sequence[CogniteResource],
+        items: WriteableCogniteResource | Sequence[WriteableCogniteResource],
         list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_CogniteResource],
+        resource_cls: type[T_WritableCogniteResource],
         update_cls: type[CogniteUpdate],
         mode: Literal["patch", "replace"],
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
-    ) -> T_CogniteResource | T_CogniteResourceList:
+    ) -> T_WritableCogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
-        is_single = isinstance(items, CogniteResource)
-        items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
+        is_single = isinstance(items, WriteableCogniteResource)
+        items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
         try:
             result = self._update_multiple(
                 items, list_cls, resource_cls, update_cls, mode=mode, api_subversion=api_subversion
@@ -1088,7 +1102,7 @@ class APIClient:
     def _prepare_item_chunks(
         items: Sequence[T_CogniteResource] | Sequence[dict[str, Any]],
         limit: int,
-        extra_body_fields: dict | None,
+        extra_body_fields: dict[str, Any] | None,
     ) -> list[dict[str, Any]]:
         return [
             {"items": chunk, **(extra_body_fields or {})}
@@ -1226,7 +1240,7 @@ class APIClient:
         return "<binary>"
 
     @staticmethod
-    def _sanitize_headers(headers: dict | None) -> None:
+    def _sanitize_headers(headers: dict[str, Any] | None) -> None:
         if headers is None:
             return None
         if "api-key" in headers:

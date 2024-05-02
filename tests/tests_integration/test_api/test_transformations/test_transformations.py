@@ -23,7 +23,6 @@ from cognite.client.data_classes.transformations.common import (
     SequenceRowsDestination,
     ViewInfo,
 )
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
 
@@ -95,11 +94,10 @@ class TestTransformationsAPI:
         xid = f"{random_string(6, string.ascii_letters)}-transformation"
         transform_without_name = Transformation(external_id=xid, destination=TransformationDestination.assets())
 
-        with pytest.raises(CogniteAPIError, match="^Invalid value for: body") as exc:
+        with pytest.raises(
+            ValueError, match="^External ID, name and ignore null fields are required to create a transformation."
+        ):
             cognite_client.transformations.create(transform_without_name)
-
-        assert exc.value.code == 400
-        assert exc.value.failed == [transform_without_name]
 
     def test_create_asset_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)

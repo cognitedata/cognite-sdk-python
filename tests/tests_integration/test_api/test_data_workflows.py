@@ -7,6 +7,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
+    CancelExecution,
     CDFTaskParameters,
     FunctionTaskParameters,
     SubworkflowTaskParameters,
@@ -153,9 +154,9 @@ def cdf_function_multiply(cognite_client: CogniteClient) -> Function:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def add_multiply_workflow(
-    cognite_client: CogniteClient, cdf_function_add: Function, cdf_function_multiply
+    cognite_client: CogniteClient, cdf_function_add: Function, cdf_function_multiply: Function
 ) -> WorkflowVersion:
     workflow_id = "integration_test-workflow-add_multiply"
     version = WorkflowVersionUpsert(
@@ -184,13 +185,15 @@ def add_multiply_workflow(
             ],
         ),
     )
-    retrieved = cognite_client.workflows.versions.retrieve(workflow_id, version.version)
+
+    retrieved = cognite_client.workflows.versions.retrieve(version.workflow_external_id, version.version)
     if retrieved is not None:
         return retrieved
-    return cognite_client.workflows.versions.upsert(version)
+    else:
+        return cognite_client.workflows.versions.upsert(version)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def workflow_execution_list(
     cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
 ) -> WorkflowExecutionList:
@@ -206,11 +209,27 @@ def workflow_execution_list(
     t0 = time.time()
     while result.status != "completed":
         result = cognite_client.workflows.executions.retrieve_detailed(result.id)
-        cognite_client.workflows.tasks.update(result.executed_tasks[1].id, "completed")
-        time.sleep(5)
+        if result.status != "running":
+            break
+        try:
+            cognite_client.workflows.tasks.update(result.executed_tasks[1].id, "completed")
+        except CogniteAPIError as e:
+            if e.message == f"Task with id {result.executed_tasks[1].id} is already in a terminal state":
+                break
+        time.sleep(0.5)
         if time.time() - t0 > 60:
             raise TimeoutError("Workflow execution did not complete in time")
     return cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=5)
+
+
+@pytest.fixture()
+def clean_created_sessions(cognite_client: CogniteClient) -> None:
+    existing_active_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
+    yield None
+    current_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
+    existing_ids = {session.id for session in existing_active_sessions}
+    to_revoked = [session.id for session in current_sessions if session.id not in existing_ids]
+    cognite_client.iam.sessions.revoke(to_revoked)
 
 
 class TestWorkflows:
@@ -344,6 +363,7 @@ class TestWorkflowExecutions:
     ) -> None:
         workflow_ids = set(w.as_workflow_id() for w in workflow_execution_list)
 
+        assert workflow_ids, "There should be at least one workflow execution to test list with"
         listed = cognite_client.workflows.executions.list(
             workflow_version_ids=list(workflow_ids), limit=len(workflow_execution_list)
         )
@@ -356,6 +376,7 @@ class TestWorkflowExecutions:
         cognite_client: CogniteClient,
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
+        assert workflow_execution_list, "There should be at least one workflow execution to test retrieve detailed with"
         retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
 
         assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
@@ -368,9 +389,13 @@ class TestWorkflowExecutions:
 
         assert non_existing is None
 
-    @pytest.mark.skip("Bad test: CogniteAPIError: There can be only 10000 sessions")
+    # Each trigger creates a new execution, so we need to clean up after each test to avoid
+    # running out of quota
+    @pytest.mark.usefixtures("clean_created_sessions")
     def test_trigger_retrieve_detailed_update_update_task(
-        self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
+        self,
+        cognite_client: CogniteClient,
+        add_multiply_workflow: WorkflowVersion,
     ) -> None:
         workflow_execution = cognite_client.workflows.executions.trigger(
             add_multiply_workflow.workflow_external_id,
@@ -386,3 +411,23 @@ class TestWorkflowExecutions:
 
         async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
         assert async_task.status == "completed"
+
+    @pytest.mark.usefixtures("clean_created_sessions")
+    def test_trigger_cancel_retry_workflow(
+        self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
+    ) -> None:
+        workflow_execution = cognite_client.workflows.executions.trigger(
+            add_multiply_workflow.workflow_external_id,
+            add_multiply_workflow.version,
+        )
+
+        cancelled_workflow_executions = cognite_client.workflows.executions.cancel(
+            [CancelExecution(id=workflow_execution.id, reason="test")]
+        )
+        assert len(cancelled_workflow_executions) == 1
+        cancelled_workflow_execution = cancelled_workflow_executions[0]
+        assert cancelled_workflow_execution.status == "terminated"
+        assert cancelled_workflow_execution.reason_for_incompletion == "test"
+
+        retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
+        assert retried_workflow_execution.status == "running"

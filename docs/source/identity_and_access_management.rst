@@ -56,6 +56,10 @@ Create a session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SessionsAPI.create
 
+Retrieve a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.retrieve
+
 Revoke a session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SessionsAPI.revoke
@@ -63,6 +67,14 @@ Revoke a session
 
 User Profiles
 ^^^^^^^^^^^^^^^^^^^
+Enable user profiles for project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.UserProfilesAPI.enable
+
+Disable user profiles for project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.UserProfilesAPI.disable
+
 Get my own user profile
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.UserProfilesAPI.me

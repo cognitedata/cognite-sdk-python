@@ -6,7 +6,6 @@ import enum
 import gzip
 import importlib
 import inspect
-import json
 import math
 import os
 import random
@@ -19,18 +18,24 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
-    DataPointSubscriptionCreate,
+    DataPointSubscriptionWrite,
     EndTimeFilter,
     Relationship,
+    SequenceColumn,
+    SequenceColumnList,
     SequenceData,
+    SequenceRow,
     SequenceRows,
     Transformation,
     filters,
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
-from cognite.client.data_classes.data_modeling.query import Query
-from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
+from cognite.client.data_classes.aggregations import Buckets
+from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
+from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
+from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.workflows import (
     FunctionTaskOutput,
     FunctionTaskParameters,
@@ -38,8 +43,9 @@ from cognite.client.data_classes.workflows import (
     WorkflowTaskParameters,
 )
 from cognite.client.testing import CogniteClientMock
+from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import random_string
+from cognite.client.utils._text import random_string, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -107,13 +113,18 @@ def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
     return f"{unit}{gran}"
 
 
-def random_aggregates(n=None, exclude=None):
+INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
+
+
+def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False):
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
     agg_lst = ALL_SORTED_DP_AGGS
     if exclude:
         agg_lst = [a for a in agg_lst if a not in exclude]
+    if exclude_integer_aggregates:
+        agg_lst = [a for a in agg_lst if a not in INTEGER_AGGREGATES]
     n = n or random.randint(1, len(agg_lst))
     return random.sample(agg_lst, k=n)
 
@@ -147,7 +158,7 @@ def tmp_set_envvar(envvar: str, value: str):
 
 
 def jsgz_load(s):
-    return json.loads(gzip.decompress(s).decode())
+    return _json.loads(gzip.decompress(s).decode())
 
 
 @contextmanager
@@ -196,7 +207,7 @@ def cdf_aggregate(
         raw_freq (str): The frequency of the raw data. If it is not given, it is attempted inferred from raw_df.
     """
     if is_step:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     pd = cast(Any, local_import("pandas"))
     granularity_pd = granularity.replace("m", "T")
@@ -260,7 +271,7 @@ def dict_without(input_dict: Mapping[K, V], without_keys: set[str]) -> dict[K, V
     return {k: v for k, v in input_dict.items() if k not in without_keys}
 
 
-T_Object = TypeVar("T_Object", bound=object)
+T_Object = TypeVar("T_Object")
 
 
 class FakeCogniteResourceGenerator:
@@ -270,7 +281,7 @@ class FakeCogniteResourceGenerator:
         self._random = random.Random(seed)
         self._cognite_client = cognite_client or CogniteClientMock()
 
-    def create_instance(self, resource_cls: type[T_Object]) -> T_Object:
+    def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
         signature = inspect.signature(resource_cls.__init__)
         try:
             type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
@@ -291,6 +302,8 @@ class FakeCogniteResourceGenerator:
                 continue
             elif parameter.annotation is inspect.Parameter.empty:
                 raise ValueError(f"Parameter {name} of {resource_cls.__name__} is missing annotation")
+            elif skip_defaulted_args and parameter.default is not inspect.Parameter.empty:
+                continue
 
             if resource_cls is Geometry and name == "geometries":
                 # Special case for Geometry to avoid recursion.
@@ -304,21 +317,24 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments[name] = value
 
         # Special cases
-        if resource_cls is DataPointSubscriptionCreate:
-            # DataPointSubscriptionCreate requires either timeseries_ids or filter
-            keyword_arguments.pop("filter", None)
-        if resource_cls is Query:
+        if resource_cls is DataPointSubscriptionWrite:
+            # DataPointSubscriptionWrite requires either timeseries_ids or filter
+            if skip_defaulted_args:
+                keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
+            else:
+                keyword_arguments.pop("filter", None)
+        elif resource_cls is Query:
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
             # by making sure that the list of equal length, so we make both to length 1.
             with_key, with_value = next(iter(keyword_arguments["with_"].items()))
             select_value = next(iter(keyword_arguments["select"].values()))
             keyword_arguments["with_"] = {with_key: with_value}
             keyword_arguments["select"] = {with_key: select_value}
-        elif resource_cls is Relationship:
+        elif resource_cls is Relationship and not skip_defaulted_args:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
             keyword_arguments["target_type"] = type(keyword_arguments["target"]).__name__
-        elif resource_cls is Datapoints:
+        elif resource_cls is Datapoints and not skip_defaulted_args:
             # All lists have to be equal in length and only value and timestamp
             keyword_arguments["timestamp"] = keyword_arguments["timestamp"][:1]
             keyword_arguments["value"] = keyword_arguments["value"][:1]
@@ -326,29 +342,71 @@ class FakeCogniteResourceGenerator:
                 if isinstance(keyword_arguments[key], list) and key not in {"timestamp", "value"}:
                     keyword_arguments.pop(key)
         elif resource_cls is DatapointsArray:
-            keyword_arguments["is_string"] = False
+            # Datapoints(Array) does either have raw dps or aggregates, never both. We flip a coin:
+            is_string = keyword_arguments["is_string"] = self._random.choice([True, False])
+            if is_string:
+                # This DatapointsArray will be a [value, status_code, status_symbol]:
+                for aggregate in ALL_SORTED_DP_AGGS:
+                    keyword_arguments.pop(aggregate, None)
+            else:
+                for raw in ["value", "status_code", "status_symbol"]:
+                    keyword_arguments.pop(raw, None)
         elif resource_cls is SequenceRows:
             # All row values must match the number of columns
             # Reducing to one column, and one value for each row
+            if skip_defaulted_args:
+                keyword_arguments["external_id"] = "my_sequence_rows"
             keyword_arguments["columns"] = keyword_arguments["columns"][:1]
             for row in keyword_arguments["rows"]:
                 row.values = row.values[:1]
         elif resource_cls is SequenceData:
-            # All row values must match the number of columns
-            keyword_arguments.pop("rows", None)
-            keyword_arguments["columns"] = keyword_arguments["columns"][:1]
-            keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
-            keyword_arguments["values"] = keyword_arguments["values"][:1]
-            keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
+            if skip_defaulted_args:
+                # At least external_id or id must be set
+                keyword_arguments["external_id"] = "my_sequence"
+                keyword_arguments["rows"] = [
+                    SequenceRow(
+                        row_number=1,
+                        values=[
+                            1,
+                        ],
+                    )
+                ]
+                keyword_arguments["columns"] = SequenceColumnList(
+                    [
+                        SequenceColumn("my_column"),
+                    ]
+                )
+            else:
+                # All row values must match the number of columns
+                keyword_arguments.pop("rows", None)
+                keyword_arguments["columns"] = keyword_arguments["columns"][:1]
+                keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
+                keyword_arguments["values"] = keyword_arguments["values"][:1]
+                keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
         elif resource_cls is EndTimeFilter:
             # EndTimeFilter requires either is null or (max and/or min)
             keyword_arguments.pop("is_null", None)
-        elif resource_cls is Transformation:
+        elif resource_cls is Transformation and not skip_defaulted_args:
             # schedule and jobs must match external id and id
             keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
             keyword_arguments["schedule"].id = keyword_arguments["id"]
             keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
             keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
+        elif resource_cls is TransformationScheduleWrite:
+            # TransformationScheduleWrite requires either id or external_id
+            keyword_arguments.pop("id", None)
+        elif resource_cls is TransformationNotificationWrite:
+            # TransformationNotificationWrite requires either transformation_id or transformation_external_id
+            if skip_defaulted_args:
+                keyword_arguments["transformation_external_id"] = "my_transformation"
+            else:
+                keyword_arguments.pop("transformation_id", None)
+        elif resource_cls is NodeResultSetExpression and not skip_defaulted_args:
+            # Through has a special format.
+            keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
+        elif resource_cls is Buckets:
+            keyword_arguments = {"items": [{"start": 1, "count": 1}]}
+
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
@@ -374,9 +432,16 @@ class FakeCogniteResourceGenerator:
         elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
             implementations = all_concrete_subclasses(type_)
             if type_ is Filter:
+                # Remove filters not supported by dps subscriptions
+                implementations.remove(filters.Overlaps)
+
                 # Remove filters which are only used by data modeling classes
                 implementations.remove(filters.HasData)
+                implementations.remove(filters.InvalidFilter)
                 implementations.remove(filters.Nested)
+                implementations.remove(filters.GeoJSONWithin)
+                implementations.remove(filters.GeoJSONDisjoint)
+                implementations.remove(filters.GeoJSONIntersects)
             if type_ is WorkflowTaskOutput:
                 # For Workflow Output has to match the input type
                 selected = FunctionTaskOutput
@@ -403,12 +468,16 @@ class FakeCogniteResourceGenerator:
 
             if type_ == NDArray[np.float64]:
                 return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
+            elif type_ == NDArray[np.uint32]:
+                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.uint32)
             elif type_ == NDArray[np.int64]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
             elif type_ == NDArray[np.datetime64]:
-                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ms]")
+                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ns]")
+            elif type_ == NDArray[np.object_]:
+                return np.array([self._random_string(10) for _ in range(3)], dtype=np.object_)
             else:
-                raise ValueError(f"Unknown type {type_} {type(type_)}. {self._error_msg}")
+                raise ValueError(f"Unknown type {type_} {type(type_)}, {var_name=}. {self._error_msg}")
 
         # Handle containers
         args = get_args(type_)
@@ -432,6 +501,8 @@ class FakeCogniteResourceGenerator:
             return {
                 self.create_value(key_type): self.create_value(value_type) for _ in range(self._random.randint(1, 3))
             }
+        elif container_type in [typing.Set, set]:
+            return set(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
         elif container_type in [typing.Tuple, tuple]:
             if any(arg is ... for arg in args):
                 return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
@@ -448,7 +519,7 @@ class FakeCogniteResourceGenerator:
         return "".join(self._random.choices(sample_from, k=k))
 
     @classmethod
-    def _type_checking(cls) -> dict[str, Any]:
+    def _type_checking(cls) -> dict[str, type]:
         """
         When calling the get_type_hints function, it imports the module with the function TYPE_CHECKING is set to False.
 
@@ -460,16 +531,13 @@ class FakeCogniteResourceGenerator:
 
         from cognite.client import CogniteClient
 
-        NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
-        NumpyInt64Array = npt.NDArray[np.int64]
-        NumpyFloat64Array = npt.NDArray[np.float64]
-        NumpyObjArray = npt.NDArray[np.object_]
         return {
             "CogniteClient": CogniteClient,
-            "NumpyDatetime64NSArray": NumpyDatetime64NSArray,
-            "NumpyInt64Array": NumpyInt64Array,
-            "NumpyFloat64Array": NumpyFloat64Array,
-            "NumpyObjArray": NumpyObjArray,
+            "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
+            "NumpyUInt32Array": npt.NDArray[np.uint32],
+            "NumpyInt64Array": npt.NDArray[np.int64],
+            "NumpyFloat64Array": npt.NDArray[np.float64],
+            "NumpyObjArray": npt.NDArray[np.object_],
         }
 
     @classmethod
@@ -488,6 +556,7 @@ class FakeCogniteResourceGenerator:
     ) -> Any:
         if annotation.endswith(" | None"):
             annotation = annotation[:-7]
+        annotation = annotation.replace("SequenceNotStr", "Sequence")
         try:
             return eval(annotation, resource_module_vars, local_vars)
         except TypeError:
@@ -531,9 +600,15 @@ class FakeCogniteResourceGenerator:
             return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("tuple[") and annotation.endswith("]"):
             return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("set[") and annotation.endswith("]"):
+            return typing.Set[cls._create_type_hint_3_10(annotation[4:-1], resource_module_vars, local_vars)]
         elif annotation.startswith("typing.Sequence[") and annotation.endswith("]"):
             # This is used in the Sequence data class file to avoid name collision
             return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("Sequence[") and annotation.endswith("]"):
+            return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
+        elif annotation.startswith("Collection[") and annotation.endswith("]"):
+            return typing.Collection[cls._create_type_hint_3_10(annotation[11:-1], resource_module_vars, local_vars)]
         raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod

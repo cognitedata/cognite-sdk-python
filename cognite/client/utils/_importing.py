@@ -11,23 +11,19 @@ _T = TypeVar("_T")
 
 
 @overload
-def local_import(m1: str, /) -> ModuleType:
-    ...
+def local_import(m1: str, /) -> ModuleType: ...
 
 
 @overload
-def local_import(m1: str, m2: str, /) -> tuple[ModuleType, ModuleType]:
-    ...
+def local_import(m1: str, m2: str, /) -> tuple[ModuleType, ModuleType]: ...
 
 
 @overload
-def local_import(m1: str, m2: str, m3: str, /) -> tuple[ModuleType, ModuleType, ModuleType]:
-    ...
+def local_import(m1: str, m2: str, m3: str, /) -> tuple[ModuleType, ModuleType, ModuleType]: ...
 
 
 @overload
-def local_import(m1: str, m2: str, m3: str, m4: str, /) -> tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
-    ...
+def local_import(m1: str, m2: str, m3: str, m4: str, /) -> tuple[ModuleType, ModuleType, ModuleType, ModuleType]: ...
 
 
 def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:
@@ -49,12 +45,6 @@ def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:
     return tuple(modules)
 
 
-def import_legacy_protobuf() -> bool:
-    from google.protobuf import __version__ as pb_version
-
-    return 4 > int(pb_version.split(".")[0])
-
-
 def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T]]]:
     from cognite.client._constants import _RUNNING_IN_BROWSER
 
@@ -63,7 +53,7 @@ def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T
     else:
         from copy import copy
 
-        def as_completed(fs: Iterable[Future[_T]], timeout: float | None = None) -> Iterator[Future[_T]]:
+        def as_completed(fs: Iterable[Future[_T]], timeout: float | None = None) -> Iterator[Future[_T]]:  # type: ignore [misc]
             return iter(copy(fs))
 
     return as_completed

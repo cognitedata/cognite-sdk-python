@@ -30,6 +30,7 @@ from cognite.client.utils._identifier import (
     WorkflowVersionIdentifierSequence,
 )
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -60,7 +61,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
     def update(
         self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None
     ) -> WorkflowTaskExecution:
-        """`Update status of async task. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Tasks/operation/UpdateTaskStatus>`_
+        """`Update status of async task. <https://api-docs.cognite.com/20230101-beta/tag/Tasks/operation/UpdateTaskStatus>`_
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed' or 'failed'.
 
@@ -77,22 +78,22 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
             Update task with UUID '000560bc-9080-4286-b242-a27bb4819253' to status 'completed':
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
+                >>> client = CogniteClient()
+                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
 
             Update task with UUID '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
+                >>> client = CogniteClient()
+                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
 
             Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.trigger("my workflow", "1")
-                >>> res = c.workflows.executions.retrieve_detailed(res.id)
-                >>> res = c.workflows.tasks.update(res.tasks[1].id, "completed")
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.trigger("my workflow", "1")
+                >>> res = client.workflows.executions.retrieve_detailed(res.id)
+                >>> res = client.workflows.tasks.update(res.tasks[1].id, "completed")
 
         """
         self._warning.warn()
@@ -111,7 +112,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
-        """`Retrieve a workflow execution with detailed information. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/ExecutionOfSpecificRunOfWorkflow>`_
+        """`Retrieve a workflow execution with detailed information. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_
 
         Args:
             id (str): The server-generated id of the workflow execution.
@@ -124,15 +125,15 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             Retrieve workflow execution with UUID '000560bc-9080-4286-b242-a27bb4819253':
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
 
             List workflow executions and retrieve detailed information for the first one:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.list()
-                >>> res = c.workflows.executions.retrieve_detailed(res[0].id)
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.list()
+                >>> res = client.workflows.executions.retrieve_detailed(res[0].id)
 
         """
         self._warning.warn()
@@ -142,7 +143,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             if e.code == 400:
                 return None
             raise
-        return WorkflowExecutionDetailed.load(response.json())
+        return WorkflowExecutionDetailed._load(response.json())
 
     def trigger(
         self,
@@ -152,7 +153,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
-        """`Trigger a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+        """`Trigger a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
         Args:
             workflow_external_id (str): External id of the workflow.
@@ -180,19 +181,19 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             Trigger a workflow execution for the workflow "foo", version 1:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.trigger("foo", "1")
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.trigger("foo", "1")
 
             Trigger a workflow execution with input data:
 
-                >>> res = c.workflows.executions.trigger("foo", "1", input={"a": 1, "b": 2})
+                >>> res = client.workflows.executions.trigger("foo", "1", input={"a": 1, "b": 2})
 
             Trigger a workflow execution using a specific set of client credentials (i.e. not your current credentials):
 
                 >>> import os
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
-                >>> res = c.workflows.executions.trigger("foo", "1", client_credentials=credentials)
+                >>> res = client.workflows.executions.trigger("foo", "1", client_credentials=credentials)
         """
         self._warning.warn()
         nonce = create_session_and_return_nonce(
@@ -205,7 +206,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             body["metadata"] = metadata
 
         response = self._post(url_path=f"/workflows/{workflow_external_id}/versions/{version}/run", json=body)
-        return WorkflowExecution.load(response.json())
+        return WorkflowExecution._load(response.json())
 
     def list(
         self,
@@ -214,7 +215,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         created_time_end: int | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
-        """`List workflow executions in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/ListWorkflowExecutions>`_
+        """`List workflow executions in the project. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
 
         Args:
             workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
@@ -231,15 +232,15 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             Get all workflow executions for workflows 'my_workflow' version '1':
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.list(("my_workflow", "1"))
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.list(("my_workflow", "1"))
 
             Get all workflow executions for workflows after last 24 hours:
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timedelta
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.list(created_time_start=int((datetime.now() - timedelta(days=1)).timestamp() * 1000))
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.list(created_time_start=int((datetime.now() - timedelta(days=1)).timestamp() * 1000))
 
         """
         self._warning.warn()
@@ -262,7 +263,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         )
 
     def cancel(self, executions: Sequence[CancelExecution]) -> Sequence[WorkflowExecution]:
-        """`cancel a workflow execution. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Execution/operation/CancelationOfSpecificRunsOfWorkflow>`_
+        """`cancel a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
 
         Args:
             executions (Sequence[CancelExecution]): List of executions to cancel.
@@ -280,9 +281,9 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import CancelExecution
-                >>> c = CogniteClient()
-                >>> res = c.workflows.executions.trigger("foo", "1")
-                >>> c.workflows.executions.cancel([CancelExecution(res.id, "test cancelation")])
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.trigger("foo", "1")
+                >>> client.workflows.executions.cancel([CancelExecution(res.id, "test cancelation")])
         """
         self._warning.warn()
         response = self._post(
@@ -290,7 +291,37 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             json={"items": [execution.dump(camel_case=True) for execution in executions]},
         )
 
-        return [WorkflowExecution.load(execution) for execution in response.json()["items"]]
+        return [WorkflowExecution._load(execution) for execution in response.json()["items"]]
+
+    def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
+        """`Retry a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
+
+        Args:
+            id (str): The server-generated id of the workflow execution.
+            client_credentials (ClientCredentials | None): Specific credentials that should be used to retry the workflow execution. When passed will take precedence over the current credentials.
+
+        Returns:
+            WorkflowExecution: The retried workflow execution.
+
+        Examples:
+            Retry a workflow execution that has been cancelled or failed:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import CancelExecution
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.trigger("foo", "1")
+                >>> client.workflows.executions.cancel([CancelExecution(res.id, "test cancellation")])
+                >>> client.workflows.executions.retry(res.id)
+        """
+        self._warning.warn()
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
+        )
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/{id}/retry",
+            json={"authentication": {"nonce": nonce}},
+        )
+        return WorkflowExecution._load(response.json())
 
 
 class WorkflowVersionAPI(BetaWorkflowAPIClient):
@@ -301,7 +332,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         self._DELETE_LIMIT = 100
 
     def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
-        """`Create a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+        """`Create a workflow version. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
 
         Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
 
@@ -320,7 +351,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionUpsert, WorkflowDefinitionUpsert, WorkflowTask, FunctionTaskParameters
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> new_version = WorkflowVersionUpsert(
                 ...    workflow_external_id="my_workflow",
                 ...    version="1",
@@ -337,7 +368,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 ...        description="This workflow has one step",
                 ...    ),
                 ... )
-                >>> res = c.workflows.versions.upsert(new_version)
+                >>> res = client.workflows.versions.upsert(new_version)
         """
         self._warning.warn()
         if mode != "replace":
@@ -348,14 +379,14 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             json={"items": [version.dump(camel_case=True)]},
         )
 
-        return WorkflowVersion.load(response.json()["items"][0])
+        return WorkflowVersion._load(response.json()["items"][0])
 
     def delete(
         self,
         workflow_version_id: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier],
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete a workflow version(s). <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/DeleteSpecificVersionsOfWorkflow>`_
+        """`Delete a workflow version(s). <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
 
         Args:
             workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]): Workflow version id or list of workflow version ids to delete.
@@ -366,15 +397,15 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             Delete workflow version "1" of workflow "my workflow" specified by using a tuple:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.workflows.versions.delete(("my workflow", "1"))
+                >>> client = CogniteClient()
+                >>> client.workflows.versions.delete(("my workflow", "1"))
 
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
-                >>> c = CogniteClient()
-                >>> c.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
+                >>> client = CogniteClient()
+                >>> client.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
 
         """
         self._warning.warn()
@@ -386,7 +417,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         )
 
     def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
-        """`Retrieve a workflow version. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/GetSpecificVersion>`_
+        """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/GetSpecificVersion>`_
 
         Args:
             workflow_external_id (str): External id of the workflow.
@@ -400,8 +431,8 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             Retrieve workflow version 1 of workflow my workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.versions.retrieve("my workflow", "1")
+                >>> client = CogniteClient()
+                >>> res = client.workflows.versions.retrieve("my workflow", "1")
         """
         self._warning.warn()
         try:
@@ -413,14 +444,14 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
                 return None
             raise e
 
-        return WorkflowVersion.load(response.json())
+        return WorkflowVersion._load(response.json())
 
     def list(
         self,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
-        """`List workflow versions in the project <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflow-Version/operation/ListWorkflowVersions>`_
+        """`List workflow versions in the project <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/ListWorkflowVersions>`_
 
         Args:
             workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
@@ -434,21 +465,21 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
             Get all workflow version for workflows 'my_workflow' and 'my_workflow_2':
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.versions.list(["my_workflow", "my_workflow_2"])
+                >>> client = CogniteClient()
+                >>> res = client.workflows.versions.list(["my_workflow", "my_workflow_2"])
 
             Get all workflow versions for workflows 'my_workflow' and 'my_workflow_2' using the WorkflowVersionId class:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
-                >>> c = CogniteClient()
-                >>> res = c.workflows.versions.list([WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
+                >>> client = CogniteClient()
+                >>> res = client.workflows.versions.list([WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
 
             Get all workflow versions for workflows 'my_workflow' version '1' and 'my_workflow_2' version '2' using tuples:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
+                >>> client = CogniteClient()
+                >>> res = client.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
         self._warning.warn()
@@ -482,7 +513,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         self._DELETE_LIMIT = 100
 
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
-        """`Create a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+        """`Create a workflow. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
 
@@ -499,8 +530,8 @@ class WorkflowAPI(BetaWorkflowAPIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
-                >>> c = CogniteClient()
-                >>> res = c.workflows.upsert(WorkflowUpsert(external_id="my workflow", description="my workflow description"))
+                >>> client = CogniteClient()
+                >>> res = client.workflows.upsert(WorkflowUpsert(external_id="my workflow", description="my workflow description"))
         """
         self._warning.warn()
         if mode != "replace":
@@ -510,10 +541,10 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
         )
-        return Workflow.load(response.json()["items"][0])
+        return Workflow._load(response.json()["items"][0])
 
     def retrieve(self, external_id: str) -> Workflow | None:
-        """`Retrieve a workflow. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/CreateOrUpdateWorkflow>`_
+        """`Retrieve a workflow. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
         Args:
             external_id (str): Identifier for a Workflow. Must be unique for the project.
@@ -526,8 +557,8 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             Retrieve workflow my workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.retrieve("my workflow")
+                >>> client = CogniteClient()
+                >>> res = client.workflows.retrieve("my workflow")
         """
         self._warning.warn()
         try:
@@ -536,13 +567,13 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             if e.code == 404:
                 return None
             raise e
-        return Workflow.load(response.json())
+        return Workflow._load(response.json())
 
-    def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_
 
         Args:
-            external_id (str | Sequence[str]): External id or list of external ids to delete.
+            external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.
             ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
 
         Examples:
@@ -550,8 +581,8 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             Delete workflow my workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.workflows.delete("my workflow")
+                >>> client = CogniteClient()
+                >>> client.workflows.delete("my workflow")
         """
         self._warning.warn()
         self._delete_multiple(
@@ -561,7 +592,7 @@ class WorkflowAPI(BetaWorkflowAPIClient):
         )
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> WorkflowList:
-        """`List all workflows in the project. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/FetchAllWorkflows>`_
+        """`List all workflows in the project. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-versions/operation/FetchAllWorkflows>`_
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
@@ -573,8 +604,8 @@ class WorkflowAPI(BetaWorkflowAPIClient):
             List all workflows:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.workflows.list()
+                >>> client = CogniteClient()
+                >>> res = client.workflows.list()
         """
         self._warning.warn()
 

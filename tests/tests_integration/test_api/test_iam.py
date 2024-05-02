@@ -5,7 +5,7 @@ import os
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Group, GroupList, SecurityCategory
+from cognite.client.data_classes import CreatedSession, Group, GroupList, SecurityCategory
 from cognite.client.data_classes.capabilities import EventsAcl, ProjectCapabilityList
 from cognite.client.utils._text import random_string
 
@@ -22,7 +22,8 @@ class TestGroupsAPI:
         loaded = GroupList.load(group_list.dump(camel_case=True))
         assert group_list.dump() == loaded.dump()
 
-    def test_create(self, cognite_client):
+    @pytest.mark.parametrize("source_id, members", (("abc-123", None), (None, ["user1", "user2"])))
+    def test_create(self, cognite_client, source_id, members):
         metadata = {"haha": "blabla"}
         group: Group | None = None
         try:
@@ -31,10 +32,17 @@ class TestGroupsAPI:
                     name="bla",
                     capabilities=[EventsAcl([EventsAcl.Action.Read], EventsAcl.Scope.All())],
                     metadata=metadata,
+                    source_id=source_id,
+                    members=members,
                 )
             )
             assert "bla" == group.name
             assert metadata == group.metadata
+            assert group.source_id == (source_id or "")
+            if members is None:
+                assert group.members is None
+            else:
+                assert sorted(group.members) == members
         finally:
             if group:
                 cognite_client.iam.groups.delete(group.id)
@@ -59,12 +67,20 @@ class TestSecurityCategoriesAPI:
         assert res.id not in {s.id for s in cognite_client.iam.security_categories.list()}
 
 
+@pytest.mark.skipif(
+    os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+)
 class TestSessionsAPI:
-    @pytest.mark.skip("Bad test: CogniteAPIError: There can be only 10000 sessions")
-    @pytest.mark.skipif(
-        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
-    )
-    def test_create_and_revoke(self, cognite_client):
-        res = cognite_client.iam.sessions.create()
-        assert res.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
-        assert res.id in {s.id for s in cognite_client.iam.sessions.revoke(res.id) if s.status == "REVOKED"}
+    def test_create_retrieve_and_revoke(self, cognite_client: CogniteClient) -> None:
+        created: CreatedSession | None = None
+        try:
+            created = cognite_client.iam.sessions.create()
+
+            retrieved = cognite_client.iam.sessions.retrieve(created.id)
+
+            assert retrieved.id == created.id
+            assert created.id in {s.id for s in cognite_client.iam.sessions.list("READY", limit=-1)}
+        finally:
+            if created:
+                revoked = cognite_client.iam.sessions.revoke(created.id)
+                assert created.id == revoked.id

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import functools
-import json
 import math
-import numbers
 import platform
 import warnings
-from decimal import Decimal
+from threading import Thread
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +17,9 @@ from typing import (
 )
 from urllib.parse import quote
 
+from typing_extensions import TypeGuard
+
+from cognite.client.utils import _json
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -37,6 +38,10 @@ THashable = TypeVar("THashable", bound=Hashable)
 
 def no_op(x: T) -> T:
     return x
+
+
+def is_finite(limit: Any) -> TypeGuard[int]:
+    return isinstance(limit, int) and limit >= 0
 
 
 def is_unlimited(limit: float | int | None) -> bool:
@@ -72,7 +77,7 @@ def load_yaml_or_json(resource: str) -> Any:
 
         return yaml.safe_load(resource)
     except ImportError:
-        return json.loads(resource)
+        return _json.loads(resource)
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
@@ -114,16 +119,6 @@ def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name
     return handle_renamed_argument(new_arg, new_arg_name, old_arg_name, fn_name, kw_dct)
 
 
-def json_dump_default(x: Any) -> Any:
-    if isinstance(x, numbers.Integral):
-        return int(x)
-    if isinstance(x, (Decimal, numbers.Real)):
-        return float(x)
-    if hasattr(x, "__dict__"):
-        return x.__dict__
-    raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
-
-
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
     return path.format(*[quote(str(arg), safe="") for arg in args])
 
@@ -149,27 +144,30 @@ def get_user_agent() -> str:
     return f"{sdk_version} {python_version} {operating_system}"
 
 
+# Wrap in a cache to ensure we only ever run the version check once.
+@functools.lru_cache(1)
 def _check_client_has_newest_major_version() -> None:
-    version = get_current_sdk_version()
-    newest_version = get_newest_version_in_major_release("cognite-sdk", version)
-    if newest_version != version:
-        warnings.warn(
-            f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
-            "To suppress this warning, either upgrade or do the following:\n"
-            ">>> from cognite.client.config import global_config\n"
-            ">>> global_config.disable_pypi_version_check = True",
-            stacklevel=3,
-        )
+    def run() -> None:
+        version = get_current_sdk_version()
+        newest_version = get_newest_version_in_major_release("cognite-sdk", version)
+        if newest_version != version:
+            warnings.warn(
+                f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
+                "To suppress this warning, either upgrade or do the following:\n"
+                ">>> from cognite.client.config import global_config\n"
+                ">>> global_config.disable_pypi_version_check = True",
+                stacklevel=3,
+            )
+
+    Thread(target=run, daemon=True).start()
 
 
 @overload
-def split_into_n_parts(seq: list[T], *, n: int) -> Iterator[list[T]]:
-    ...
+def split_into_n_parts(seq: list[T], *, n: int) -> Iterator[list[T]]: ...
 
 
 @overload
-def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
-    ...
+def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]: ...
 
 
 def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
@@ -178,16 +176,17 @@ def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
 
 
 @overload
-def split_into_chunks(collection: list, chunk_size: int) -> list[list]:
-    ...
+def split_into_chunks(collection: set | list, chunk_size: int) -> list[list]: ...
 
 
 @overload
-def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]:
-    ...
+def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]: ...
 
 
-def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list] | list[dict]:
+def split_into_chunks(collection: set | list | dict, chunk_size: int) -> list[list] | list[dict]:
+    if isinstance(collection, set):
+        collection = list(collection)
+
     if isinstance(collection, list):
         return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
 
@@ -217,6 +216,12 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
     seen: set[THashable] = set()
     add = seen.add  # skip future attr lookups for perf
     return {x for x in seq if x in seen or add(x)}
+
+
+def remove_duplicates_keep_order(seq: Sequence[THashable]) -> list[THashable]:
+    seen: set[THashable] = set()
+    add = seen.add
+    return [x for x in seq if x not in seen and not add(x)]
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:

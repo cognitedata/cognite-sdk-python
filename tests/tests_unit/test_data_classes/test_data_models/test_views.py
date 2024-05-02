@@ -1,5 +1,25 @@
-from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes._base import UnknownCogniteObject
+from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
 from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply
+
+
+class TestView:
+    def test_as_property_ref(self) -> None:
+        params = dict(
+            space="spa",
+            externalId="de",
+            version="69",
+            lastUpdatedTime=123,
+            createdTime=12,
+            writable=False,
+            usedFor="node",
+            isGlobal=False,
+        )
+        cont = View.load(params)
+        cont_apply = ViewApply.load(params)
+
+        assert cont.as_property_ref("bar") == ("spa", "de/69", "bar")
+        assert cont_apply.as_property_ref("bar") == ("spa", "de/69", "bar")
 
 
 class TestViewPropertyDefinition:
@@ -8,6 +28,7 @@ class TestViewPropertyDefinition:
             "type": {
                 "type": "direct",
                 "source": {"type": "view", "space": "mySpace", "externalId": "myExternalId", "version": "myVersion"},
+                "list": False,
             },
             "container": {"space": "mySpace", "externalId": "myExternalId", "type": "container"},
             "containerPropertyIdentifier": "name",
@@ -32,6 +53,7 @@ class TestViewPropertyDefinition:
             "type": {
                 "type": "direct",
                 "source": {"external_id": "myExternalId", "space": "mySpace", "version": "myVersion"},
+                "list": False,
             },
         }
 
@@ -56,7 +78,7 @@ class TestViewPropertyDefinition:
         input = {
             "connectionType": "single_reverse_direct_relation",
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
@@ -79,7 +101,7 @@ class TestViewPropertyDefinition:
     def test_load_dump_single_reverse_direct_relation_property_with_container_for_apply(self) -> None:
         input = {
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
@@ -103,7 +125,7 @@ class TestViewPropertyDefinition:
         input = {
             "connectionType": "multi_reverse_direct_relation",
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
@@ -126,7 +148,7 @@ class TestViewPropertyDefinition:
     def test_load_dump_multi_reverse_direct_relation_property_for_apply(self) -> None:
         input = {
             "through": {
-                "source": {"external_id": "myContainer", "space": "mySpace", "type": "container"},
+                "source": {"externalId": "myContainer", "space": "mySpace", "type": "container"},
                 "identifier": "myIdentifier",
             },
             "source": {"type": "view", "space": "mySpace", "externalId": "mySourceView", "version": "myVersion"},
@@ -191,3 +213,27 @@ class TestViewPropertyDefinition:
             "direction": "outwards",
             "connectionType": "multi_edge_connection",
         }
+
+    def test_load_unknown_connection_type(self) -> None:
+        # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
+        # the property. This test ensures that the old format is still supported.
+        input = {
+            "whatever": "whatever",
+            "connectionType": "UNKNOWN",
+        }
+
+        actual = ViewProperty.load(input)
+        assert isinstance(actual, UnknownCogniteObject)
+        assert actual.dump() == input
+
+    def test_load_unknown_connection_type_apply(self) -> None:
+        # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
+        # the property. This test ensures that the old format is still supported.
+        input = {
+            "whatever": "whatever",
+            "connectionType": "UNKNOWN",
+        }
+
+        actual = ViewPropertyApply.load(input)
+        assert isinstance(actual, UnknownCogniteObject)
+        assert actual.dump() == input

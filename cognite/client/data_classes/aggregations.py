@@ -9,6 +9,7 @@ from typing import (
     Any,
     ClassVar,
     Iterator,
+    MutableSequence,
     Sequence,
     SupportsIndex,
     TypeVar,
@@ -18,12 +19,11 @@ from typing import (
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResourceList
+from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, UnknownCogniteObject
 from cognite.client.data_classes.labels import Label
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
-from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -46,28 +46,26 @@ class CountAggregate(CogniteObject):
 
 
 @dataclass
-class Aggregation(ABC):
+class Aggregation(CogniteObject, ABC):
     _aggregation_name: ClassVar[str]
 
     property: str
 
     @classmethod
-    def load(cls, aggregation: dict[str, Any]) -> Aggregation:
-        (aggregation_name,) = aggregation
-        body = convert_all_keys_to_snake_case(aggregation[aggregation_name])
-        if aggregation_name == "avg":
-            return Avg(**body)
-        elif aggregation_name == "count":
-            return Count(**body)
-        elif aggregation_name == "max":
-            return Max(**body)
-        elif aggregation_name == "min":
-            return Min(**body)
-        elif aggregation_name == "sum":
-            return Sum(**body)
-        elif aggregation_name == "histogram":
-            return Histogram(**body)
-        raise ValueError(f"Unknown aggregation: {aggregation_name}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Aggregation:
+        if "avg" in resource:
+            return Avg(property=resource["avg"]["property"])
+        elif "count" in resource:
+            return Count(property=resource["count"]["property"])
+        elif "max" in resource:
+            return Max(property=resource["max"]["property"])
+        elif "min" in resource:
+            return Min(property=resource["min"]["property"])
+        elif "sum" in resource:
+            return Sum(property=resource["sum"]["property"])
+        elif "histogram" in resource:
+            return Histogram(property=resource["histogram"]["property"], interval=resource["histogram"]["interval"])
+        return cast(Aggregation, UnknownCogniteObject(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {self._aggregation_name: {"property": self.property}}
@@ -77,8 +75,7 @@ class Aggregation(ABC):
 
 
 @dataclass
-class MetricAggregation(Aggregation):
-    ...
+class MetricAggregation(Aggregation, ABC): ...
 
 
 @final
@@ -124,38 +121,35 @@ class Histogram(Aggregation):
         return output
 
 
-T_AggregatedValue = TypeVar("T_AggregatedValue", bound="AggregatedValue")
-
-
 @dataclass
-class AggregatedValue(ABC):
+class AggregatedValue(CogniteObject, ABC):
     _aggregate: ClassVar[str] = field(init=False)
 
     property: str
 
     @classmethod
-    def load(cls: type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
-        if "aggregate" not in aggregated_value:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "aggregate" not in resource:
             raise ValueError("Missing aggregate, this is required")
-        aggregate = aggregated_value["aggregate"]
-        aggregated_value = rename_and_exclude_keys(aggregated_value, exclude={"aggregate"})
-        body = convert_all_keys_to_snake_case(aggregated_value)
+        aggregate = resource["aggregate"]
 
         if aggregate == "avg":
-            deserialized: AggregatedValue = AvgValue(**body)
+            deserialized: Any = AvgValue(property=resource["property"], value=resource["value"])
         elif aggregate == "count":
-            deserialized = CountValue(**body)
+            deserialized = CountValue(property=resource["property"], value=resource["value"])
         elif aggregate == "max":
-            deserialized = MaxValue(**body)
+            deserialized = MaxValue(property=resource["property"], value=resource["value"])
         elif aggregate == "min":
-            deserialized = MinValue(**body)
+            deserialized = MinValue(property=resource["property"], value=resource["value"])
         elif aggregate == "sum":
-            deserialized = SumValue(**body)
+            deserialized = SumValue(property=resource["property"], value=resource["value"])
         elif aggregate == "histogram":
-            deserialized = HistogramValue(**body)
+            deserialized = HistogramValue(
+                property=resource["property"], interval=resource["interval"], buckets=resource["buckets"]
+            )
         else:
-            raise ValueError(f"Unknown aggregation: {aggregate}")
-        return cast(T_AggregatedValue, deserialized)
+            deserialized = UnknownCogniteObject(resource)
+        return cast(Self, deserialized)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {"aggregate": self._aggregate, "property": self.property}
@@ -216,9 +210,13 @@ class Bucket:
         return {"start": self.start, "count": self.count}
 
 
-class Buckets(UserList):
-    def __init__(self, items: Collection[Any]) -> None:
-        super().__init__([Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in items])
+class Buckets(UserList, MutableSequence[Bucket]):
+    def __init__(self, items: Collection[dict | Bucket]) -> None:
+        buckets = [
+            Bucket(start=bucket["start"], count=bucket["count"]) if isinstance(bucket, dict) else bucket
+            for bucket in items
+        ]
+        super().__init__(buckets)
 
     def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
         return [bucket.dump(camel_case) for bucket in self.data]
@@ -239,12 +237,10 @@ class Buckets(UserList):
         return super().__iter__()
 
     @overload
-    def __getitem__(self, item: SupportsIndex) -> Bucket:
-        ...
+    def __getitem__(self, item: SupportsIndex) -> Bucket: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Buckets:
-        ...
+    def __getitem__(self, item: slice) -> Buckets: ...
 
     def __getitem__(self, item: SupportsIndex | slice) -> Bucket | Buckets:
         value = self.data[item]

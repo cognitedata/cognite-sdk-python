@@ -26,17 +26,6 @@ jobs:
       - name: Linting and static code checks
         run: pre-commit run --all-files
 
-      - name: Verify proto files
-        env:
-          TMPDIR: latest_proto
-          PROTO_URL: https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries
-        run: |
-          mkdir $TMPDIR
-          curl --silent $PROTO_URL/data_points.proto --output $TMPDIR/data_points.proto
-          curl --silent $PROTO_URL/data_point_list_response.proto --output $TMPDIR/data_point_list_response.proto
-          diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
-          diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
-
   build_docs:
     runs-on: ubuntu-latest
     steps:

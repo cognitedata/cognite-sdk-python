@@ -44,9 +44,9 @@ class DataModelingId(AbstractDataclass):
         if isinstance(data, cls):
             return data
         elif isinstance(data, tuple):
-            return cls(*data)
+            return cls(space=data[0], external_id=data[1])
         elif isinstance(data, dict):
-            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+            return cls(space=data["space"], external_id=data["externalId"])
         raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
@@ -77,9 +77,9 @@ class VersionedDataModelingId(AbstractDataclass):
         if isinstance(data, cls):
             return data
         elif isinstance(data, tuple):
-            return cls(*data)
+            return cls(space=data[0], external_id=data[1], version=data[2] if len(data) == 3 else None)
         elif isinstance(data, dict):
-            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+            return cls(space=data["space"], external_id=data["externalId"], version=data.get("version"))
         raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
@@ -108,6 +108,9 @@ class InstanceId:
     def instance_type(self) -> Literal["node", "edge"]:
         return self._instance_type
 
+    def as_tuple(self) -> tuple[str, str]:
+        return self.space, self.external_id
+
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
@@ -129,7 +132,7 @@ class ContainerId(DataModelingId):
     def as_source_identifier(self) -> str:
         return self.external_id
 
-    def as_property_ref(self, property: str) -> tuple[str, ...]:
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
         return (self.space, self.as_source_identifier(), property)
 
 
@@ -140,7 +143,7 @@ class ViewId(VersionedDataModelingId):
     def as_source_identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
 
-    def as_property_ref(self, property: str) -> tuple[str, ...]:
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
         return (self.space, self.as_source_identifier(), property)
 
 
@@ -178,18 +181,15 @@ class DataModelId(VersionedDataModelingId):
 
 class IdLike(Protocol):
     @property
-    def space(self) -> str:
-        ...
+    def space(self) -> str: ...
 
     @property
-    def external_id(self) -> str:
-        ...
+    def external_id(self) -> str: ...
 
 
 class VersionedIdLike(IdLike, Protocol):
     @property
-    def version(self) -> str | None:
-        ...
+    def version(self) -> str | None: ...
 
 
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]

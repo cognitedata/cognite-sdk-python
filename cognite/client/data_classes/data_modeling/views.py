@@ -11,6 +11,8 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
     CogniteResourceList,
+    UnknownCogniteObject,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource
@@ -27,7 +29,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ViewCore(DataModelingSchemaResource, ABC):
+class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
     def __init__(
         self,
         space: str,
@@ -59,6 +61,9 @@ class ViewCore(DataModelingSchemaResource, ABC):
             external_id=self.external_id,
             version=self.version,
         )
+
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
+        return self.as_id().as_property_ref(property)
 
 
 class ViewApply(ViewCore):
@@ -125,6 +130,22 @@ class ViewApply(ViewCore):
 
         return output
 
+    def as_write(self) -> ViewApply:
+        """Returns this ViewApply instance."""
+        return self
+
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for prop in (self.properties or {}).values():
+            if isinstance(prop, MappedPropertyApply):
+                referenced_containers.add(prop.container)
+        return referenced_containers
+
 
 class View(ViewCore):
     """A group of properties. Read only version.
@@ -142,7 +163,7 @@ class View(ViewCore):
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
         writable (bool): Whether the view supports write operations.
         used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
-        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
+        is_global (bool): Whether this is a global view.
     """
 
     def __init__(
@@ -238,8 +259,46 @@ class View(ViewCore):
             properties=properties,
         )
 
+    def as_write(self) -> ViewApply:
+        return self.as_apply()
 
-class ViewList(CogniteResourceList[View]):
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for prop in self.properties.values():
+            if isinstance(prop, MappedProperty):
+                referenced_containers.add(prop.container)
+        return referenced_containers
+
+
+class ViewApplyList(CogniteResourceList[ViewApply]):
+    _RESOURCE = ViewApply
+
+    def as_ids(self) -> list[ViewId]:
+        """Returns the list of ViewIds
+
+        Returns:
+            list[ViewId]: The list of ViewIds
+        """
+        return [v.as_id() for v in self]
+
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for view in self:
+            referenced_containers.update(view.referenced_containers())
+        return referenced_containers
+
+
+class ViewList(WriteableCogniteResourceList[ViewApply, View]):
     _RESOURCE = View
 
     def as_apply(self) -> ViewApplyList:
@@ -258,17 +317,19 @@ class ViewList(CogniteResourceList[View]):
         """
         return [v.as_id() for v in self]
 
+    def as_write(self) -> ViewApplyList:
+        return self.as_apply()
 
-class ViewApplyList(CogniteResourceList[ViewApply]):
-    _RESOURCE = ViewApply
-
-    def as_ids(self) -> list[ViewId]:
-        """Returns the list of ViewIds
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
 
         Returns:
-            list[ViewId]: The list of ViewIds
+            set[ContainerId]: The set of containers referenced by this view.
         """
-        return [v.as_id() for v in self]
+        referenced_containers = set()
+        for view in self:
+            referenced_containers.update(view.referenced_containers())
+        return referenced_containers
 
 
 class ViewFilter(CogniteFilter):
@@ -301,7 +362,7 @@ class ViewProperty(CogniteObject, ABC):
             return cast(Self, ConnectionDefinition.load(resource))
         elif "direction" in resource:
             warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
                 "This will be required in the next major version",
                 DeprecationWarning,
             )
@@ -321,7 +382,7 @@ class ViewPropertyApply(CogniteObject, ABC):
             return cast(Self, ConnectionDefinitionApply.load(resource))
         elif "direction" in resource:
             warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection."
+                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
                 "This will be required in the next major version",
                 DeprecationWarning,
             )
@@ -353,11 +414,10 @@ class MappedPropertyApply(ViewPropertyApply):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "containerPropertyIdentifier" if camel_case else "container_property_identifier"
         output: dict[str, Any] = {
             "container": self.container.dump(camel_case, include_type=True),
-            (
-                "containerPropertyIdentifier" if camel_case else "container_property_identifier"
-            ): self.container_property_identifier,
+            key: self.container_property_identifier,
         }
         if self.name is not None:
             output["name"] = self.name
@@ -434,7 +494,7 @@ class ConnectionDefinition(ViewProperty, ABC):
         if connection_type == "multi_reverse_direct_relation":
             return cast(Self, MultiReverseDirectRelation.load(resource))
 
-        raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -636,7 +696,7 @@ class ConnectionDefinitionApply(ViewPropertyApply, ABC):
             return cast(Self, SingleReverseDirectRelationApply.load(resource))
         if connection_type == "multi_reverse_direct_relation":
             return cast(Self, MultiReverseDirectRelationApply.load(resource))
-        raise ValueError(f"Cannot load {cls.__name__}: Unknown connection type {connection_type}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

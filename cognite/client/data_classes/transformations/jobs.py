@@ -6,7 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
-from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
+from cognite.client.data_classes.transformations.common import TransformationDestination
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -146,21 +146,21 @@ class TransformationJob(CogniteResource):
             run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
-                >>> job1 = c.transformations.run(id = 1, wait = False)
-                >>> job2 = c.transformations.run(id = 2, wait = False)
+                >>> job1 = client.transformations.run(id = 1, wait = False)
+                >>> job2 = client.transformations.run(id = 2, wait = False)
                 >>> job1.wait()
                 >>> job2.wait()
                 >>> if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
-                >>>     c.transformations.run(id = 3, wait = False)
+                >>>     client.transformations.run(id = 3, wait = False)
 
             wait transformation for 5 minutes and do something if still running:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
-                >>> job = c.transformations.run(id = 1, wait = False)
+                >>> job = client.transformations.run(id = 1, wait = False)
                 >>> job.wait(timeout = 5.0*60)
                 >>> if job.status == TransformationJobStatus.FAILED:
                 >>>     # do something if job failed
@@ -200,15 +200,15 @@ class TransformationJob(CogniteResource):
 
                 >>> from asyncio import ensure_future
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
                 >>> async def run_successive_transformations():
-                >>>     job1 = c.transformations.run(id = 1, wait = False)
-                >>>     job2 = c.transformations.run(id = 2, wait = False)
+                >>>     job1 = client.transformations.run(id = 1, wait = False)
+                >>>     job2 = client.transformations.run(id = 2, wait = False)
                 >>>     await job1.wait_async()
                 >>>     await job2.wait_async()
                 >>>     if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
-                >>>         c.transformations.run(id = 3, wait = False)
+                >>>         client.transformations.run(id = 3, wait = False)
                 >>>
                 >>> ensure_future(run_successive_transformations())
 
@@ -216,10 +216,10 @@ class TransformationJob(CogniteResource):
 
                 >>> from asyncio import ensure_future
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>>
                 >>> async def run_successive_transformations():
-                >>>     job = c.transformations.run(id = 1, wait = False)
+                >>>     job = client.transformations.run(id = 1, wait = False)
                 >>>     await job.wait_async(timeout = 5.0*60)
                 >>>     if job.status == TransformationJobStatus.FAILED:
                 >>>         # do something if job failed
@@ -257,7 +257,7 @@ class TransformationJob(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationJob:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
-            instance.destination = _load_destination_dct(instance.destination)
+            instance.destination = TransformationDestination._load(instance.destination)
         elif isinstance(instance.destination, str):
             instance.destination = TransformationDestination(type=instance.destination)
         if isinstance(instance.status, str):

@@ -27,6 +27,7 @@ from cognite.client.data_classes.data_modeling.views import (
     SingleReverseDirectRelationApply,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -63,7 +64,7 @@ class TestViewsAPI:
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         new_view = ViewApply(
             space=integration_test_space.space,
-            external_id="IntegrationTestView",
+            external_id="IntegrationTestView" + random_string(5),
             version="v1",
             description="Integration test, should not persist",
             name="Create and delete view",

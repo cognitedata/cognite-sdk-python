@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Iterable
@@ -23,12 +22,14 @@ from typing import (
     cast,
     final,
     overload,
+    runtime_checkable,
 )
 
 from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, load_yaml_or_json
+from cognite.client.utils import _json
+from cognite.client.utils._auxiliary import fast_dict_load, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -36,7 +37,7 @@ from cognite.client.utils._pandas_helpers import (
     convert_timestamp_columns_to_datetime,
     notebook_display_with_fallback,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
+from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
 if TYPE_CHECKING:
@@ -59,7 +60,7 @@ def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
 class CogniteResponse:
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -124,7 +125,7 @@ class CogniteObject:
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -181,6 +182,18 @@ class CogniteObject:
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
 
+class UnknownCogniteObject(CogniteObject):
+    def __init__(self, data: dict[str, Any]) -> None:
+        self.__data = data
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(resource)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return convert_all_keys_recursive(self.__data, camel_case=camel_case)
+
+
 T_CogniteObject = TypeVar("T_CogniteObject", bound=CogniteObject)
 
 
@@ -231,7 +244,17 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
         return notebook_display_with_fallback(self)
 
 
+T_WriteClass = TypeVar("T_WriteClass", bound=CogniteResource)
+
+
+class WriteableCogniteResource(CogniteResource, Generic[T_WriteClass]):
+    @abstractmethod
+    def as_write(self) -> T_WriteClass:
+        raise NotImplementedError
+
+
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
+T_WritableCogniteResource = TypeVar("T_WritableCogniteResource", bound=WriteableCogniteResource)
 
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
@@ -263,12 +286,10 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return super().__iter__()
 
     @overload
-    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource:
-        ...
+    def __getitem__(self: T_CogniteResourceList, item: SupportsIndex) -> T_CogniteResource: ...
 
     @overload
-    def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList:
-        ...
+    def __getitem__(self: T_CogniteResourceList, item: slice) -> T_CogniteResourceList: ...
 
     def __getitem__(
         self: T_CogniteResourceList, item: SupportsIndex | slice
@@ -280,7 +301,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
     def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
@@ -363,8 +384,8 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
 
-    @classmethod
     @final
+    @classmethod
     def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or iterable of dict."""
         if isinstance(resource, str):
@@ -388,6 +409,14 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
 
+class WriteableCogniteResourceList(
+    CogniteResourceList[T_WritableCogniteResource], Generic[T_WriteClass, T_WritableCogniteResource]
+):
+    @abstractmethod
+    def as_write(self) -> CogniteResourceList[T_WriteClass]:
+        raise NotImplementedError
+
+
 @dataclass
 class PropertySpec:
     name: str
@@ -407,7 +436,7 @@ class CogniteUpdate:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=json_dump_default, indent=4)
+        return _json.dumps(self.dump(), indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -558,13 +587,13 @@ class CogniteLabelUpdate(Generic[T_CogniteUpdate]):
         return external_ids if isinstance(external_ids, list) else [external_ids]
 
 
-class CogniteFilter:
+class CogniteFilter(ABC):
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return json.dumps(item, default=json_dump_default, indent=4)
+        return _json.dumps(item, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -582,11 +611,6 @@ class CogniteFilter:
 
 
 T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
-
-
-class NoCaseConversionPropertyList(list):
-    def as_reference(self) -> list[str]:
-        return list(self)
 
 
 class EnumProperty(Enum):
@@ -691,7 +715,7 @@ class CogniteSort:
         self.nulls = nulls
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(camel_case=False), default=json_dump_default, indent=4)
+        return _json.dumps(self.dump(camel_case=False), indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -722,6 +746,9 @@ class CogniteSort:
                 order=data[1],
                 nulls=data[2],
             )
+        elif isinstance(data, str) and (prop_order := data.split(":", 1))[-1] in ("asc", "desc"):
+            # Syntax "<fieldname>:asc|desc" is depreacted but handled for compatibility
+            return cls(property=prop_order[0], order=cast(Literal["asc", "desc"], prop_order[1]))
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)
         else:
@@ -747,20 +774,31 @@ class CogniteSort:
 T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
+@runtime_checkable
 class HasExternalId(Protocol):
     @property
-    def external_id(self) -> str | None:
-        ...
+    def external_id(self) -> str | None: ...
 
 
+@runtime_checkable
+class HasName(Protocol):
+    @property
+    def name(self) -> str | None: ...
+
+
+@runtime_checkable
+class HasInternalId(Protocol):
+    @property
+    def id(self) -> int: ...
+
+
+@runtime_checkable
 class HasExternalAndInternalId(Protocol):
     @property
-    def external_id(self) -> str | None:
-        ...
+    def external_id(self) -> str | None: ...
 
     @property
-    def id(self) -> int | None:
-        ...
+    def id(self) -> int: ...
 
 
 class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
@@ -782,24 +820,26 @@ class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
         return external_ids
 
 
-class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
-    def as_external_ids(self) -> list[str]:
+class NameTransformerMixin(Sequence[HasName], ABC):
+    def as_names(self) -> list[str]:
         """
-        Returns the external ids of all resources.
+        Returns the names of all resources.
 
         Raises:
-            ValueError: If any resource in the list does not have an external id.
+            ValueError: If any resource in the list does not have a name.
 
         Returns:
-            list[str]: The external ids of all resources in the list.
+            list[str]: The names of all resources in the list.
         """
-        external_ids: list[str] = []
+        names: list[str] = []
         for x in self:
-            if x.external_id is None:
-                raise ValueError(f"All {type(x).__name__} must have external_id")
-            external_ids.append(x.external_id)
-        return external_ids
+            if x.name is None:
+                raise ValueError(f"All {type(x).__name__} must have name")
+            names.append(x.name)
+        return names
 
+
+class InternalIdTransformerMixin(Sequence[HasInternalId], ABC):
     def as_ids(self) -> list[int]:
         """
         Returns the ids of all resources.
@@ -816,3 +856,6 @@ class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
                 raise ValueError(f"All {type(x).__name__} must have id")
             ids.append(x.id)
         return ids
+
+
+class IdTransformerMixin(ExternalIDTransformerMixin, InternalIdTransformerMixin): ...

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -17,10 +17,18 @@ from cognite.client.data_classes import (
     ExtractionPipelineUpdate,
     TimestampRange,
 )
-from cognite.client.data_classes.extractionpipelines import StringFilter
+from cognite.client.data_classes.extractionpipelines import (
+    ExtractionPipelineConfigWrite,
+    ExtractionPipelineCore,
+    ExtractionPipelineRunCore,
+    ExtractionPipelineRunWrite,
+    ExtractionPipelineWrite,
+    StringFilter,
+)
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -53,14 +61,14 @@ class ExtractionPipelinesAPI(APIClient):
             Get extraction pipeline by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.retrieve(id=1)
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.retrieve(id=1)
 
             Get extraction pipeline by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.retrieve(external_id="1")
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.retrieve(external_id="1")
         """
 
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -71,14 +79,14 @@ class ExtractionPipelinesAPI(APIClient):
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
-        external_ids: Sequence[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> ExtractionPipelineList:
         """`Retrieve multiple extraction pipelines by ids and external ids. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/byidsExtPipes>`_
 
         Args:
             ids (Sequence[int] | None): IDs
-            external_ids (Sequence[str] | None): External IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -89,14 +97,14 @@ class ExtractionPipelinesAPI(APIClient):
             Get ExtractionPipelines by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.retrieve_multiple(ids=[1, 2, 3])
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.retrieve_multiple(ids=[1, 2, 3])
 
             Get assets by external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -120,29 +128,33 @@ class ExtractionPipelinesAPI(APIClient):
             List ExtractionPipelines::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> ep_list = c.extraction_pipelines.list(limit=5)
+                >>> client = CogniteClient()
+                >>> ep_list = client.extraction_pipelines.list(limit=5)
         """
 
         return self._list(list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, method="GET", limit=limit)
 
     @overload
-    def create(self, extraction_pipeline: ExtractionPipeline) -> ExtractionPipeline:
-        ...
+    def create(self, extraction_pipeline: ExtractionPipeline | ExtractionPipelineWrite) -> ExtractionPipeline: ...
 
     @overload
-    def create(self, extraction_pipeline: Sequence[ExtractionPipeline]) -> ExtractionPipelineList:
-        ...
+    def create(
+        self, extraction_pipeline: Sequence[ExtractionPipeline] | Sequence[ExtractionPipelineWrite]
+    ) -> ExtractionPipelineList: ...
 
     def create(
-        self, extraction_pipeline: ExtractionPipeline | Sequence[ExtractionPipeline]
+        self,
+        extraction_pipeline: ExtractionPipeline
+        | ExtractionPipelineWrite
+        | Sequence[ExtractionPipeline]
+        | Sequence[ExtractionPipelineWrite],
     ) -> ExtractionPipeline | ExtractionPipelineList:
         """`Create one or more extraction pipelines. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/createExtPipes>`_
 
         You can create an arbitrary number of extraction pipelines, and the SDK will split the request into multiple requests if necessary.
 
         Args:
-            extraction_pipeline (ExtractionPipeline | Sequence[ExtractionPipeline]): Extraction pipeline or list of extraction pipelines to create.
+            extraction_pipeline (ExtractionPipeline | ExtractionPipelineWrite | Sequence[ExtractionPipeline] | Sequence[ExtractionPipelineWrite]): Extraction pipeline or list of extraction pipelines to create.
 
         Returns:
             ExtractionPipeline | ExtractionPipelineList: Created extraction pipeline(s)
@@ -152,49 +164,60 @@ class ExtractionPipelinesAPI(APIClient):
             Create new extraction pipeline::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ExtractionPipeline
-                >>> c = CogniteClient()
-                >>> extpipes = [ExtractionPipeline(name="extPipe1",...), ExtractionPipeline(name="extPipe2",...)]
-                >>> res = c.extraction_pipelines.create(extpipes)
+                >>> from cognite.client.data_classes import ExtractionPipelineWrite
+                >>> client = CogniteClient()
+                >>> extpipes = [ExtractionPipelineWrite(name="extPipe1",...), ExtractionPipelineWrite(name="extPipe2",...)]
+                >>> res = client.extraction_pipelines.create(extpipes)
         """
-        assert_type(extraction_pipeline, "extraction_pipeline", [ExtractionPipeline, Sequence])
+        assert_type(extraction_pipeline, "extraction_pipeline", [ExtractionPipelineCore, Sequence])
+
         return self._create_multiple(
-            list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extraction_pipeline
+            list_cls=ExtractionPipelineList,
+            resource_cls=ExtractionPipeline,
+            items=extraction_pipeline,
+            input_resource_cls=ExtractionPipelineWrite,
         )
 
-    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
+    def delete(
+        self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
+    ) -> None:
         """`Delete one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/deleteExtPipes>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | Sequence[str] | None): External ID or list of external ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
 
         Examples:
 
             Delete extraction pipelines by id or external id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.extraction_pipelines.delete(id=[1,2,3], external_id="3")
+                >>> client = CogniteClient()
+                >>> client.extraction_pipelines.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(id, external_id), wrap_ids=True, extra_body_fields={})
 
     @overload
-    def update(self, item: ExtractionPipeline | ExtractionPipelineUpdate) -> ExtractionPipeline:
-        ...
+    def update(
+        self, item: ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate
+    ) -> ExtractionPipeline: ...
 
     @overload
-    def update(self, item: Sequence[ExtractionPipeline | ExtractionPipelineUpdate]) -> ExtractionPipelineList:
-        ...
+    def update(
+        self, item: Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate]
+    ) -> ExtractionPipelineList: ...
 
     def update(
         self,
-        item: ExtractionPipeline | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineUpdate],
+        item: ExtractionPipeline
+        | ExtractionPipelineWrite
+        | ExtractionPipelineUpdate
+        | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate],
     ) -> ExtractionPipeline | ExtractionPipelineList:
         """`Update one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/updateExtPipes>`_
 
         Args:
-            item (ExtractionPipeline | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineUpdate]): Extraction pipeline(s) to update
+            item (ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate]): Extraction pipeline(s) to update
 
         Returns:
             ExtractionPipeline | ExtractionPipelineList: Updated extraction pipeline(s)
@@ -204,10 +227,10 @@ class ExtractionPipelinesAPI(APIClient):
             Update an extraction pipeline that you have fetched. This will perform a full update of the extraction pipeline::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> update = ExtractionPipelineUpdate(id=1)
                 >>> update.description.set("Another new extpipe")
-                >>> res = c.extraction_pipelines.update(update)
+                >>> res = client.extraction_pipelines.update(update)
         """
         return self._update_multiple(
             list_cls=ExtractionPipelineList,
@@ -223,7 +246,7 @@ class ExtractionPipelineRunsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        statuses: RunStatus | Sequence[RunStatus] | Sequence[str] | None = None,
+        statuses: RunStatus | Sequence[RunStatus] | SequenceNotStr[str] | None = None,
         message_substring: str | None = None,
         created_time: dict[str, Any] | TimestampRange | str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -232,7 +255,7 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (RunStatus | Sequence[RunStatus] | Sequence[str] | None): One or more among "success" / "failure" / "seen".
+            statuses (RunStatus | Sequence[RunStatus] | SequenceNotStr[str] | None): One or more among "success" / "failure" / "seen".
             message_substring (str | None): Failure message part.
             created_time (dict[str, Any] | TimestampRange | str | None): Range between two timestamps. Possible keys are `min` and `max`, with values given as timestamps in ms.
                 If a string is passed, it is assumed to be the minimum value.
@@ -251,21 +274,21 @@ class ExtractionPipelineRunsAPI(APIClient):
             List extraction pipeline runs::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> runsList = c.extraction_pipelines.runs.list(external_id="test ext id", limit=5)
+                >>> client = CogniteClient()
+                >>> runsList = client.extraction_pipelines.runs.list(external_id="test ext id", limit=5)
 
             Filter extraction pipeline runs on a given status::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> runsList = c.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], statuslimit=5)
+                >>> client = CogniteClient()
+                >>> runsList = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], statuslimit=5)
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
         """
         if isinstance(created_time, str):
             created_time = TimestampRange(min=timestamp_to_ms(created_time))
@@ -273,7 +296,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         if statuses is not None or message_substring is not None or created_time is not None:
             filter = ExtractionPipelineRunFilter(
                 external_id=external_id,
-                statuses=[statuses] if isinstance(statuses, str) else statuses,
+                statuses=cast(Union[SequenceNotStr[str], None], [statuses] if isinstance(statuses, str) else statuses),
                 message=StringFilter(substring=message_substring),
                 created_time=created_time,
             ).dump(camel_case=True)
@@ -294,22 +317,26 @@ class ExtractionPipelineRunsAPI(APIClient):
         return res
 
     @overload
-    def create(self, run: ExtractionPipelineRun) -> ExtractionPipelineRun:
-        ...
+    def create(self, run: ExtractionPipelineRun | ExtractionPipelineRunWrite) -> ExtractionPipelineRun: ...
 
     @overload
-    def create(self, run: Sequence[ExtractionPipelineRun]) -> ExtractionPipelineRunList:
-        ...
+    def create(
+        self, run: Sequence[ExtractionPipelineRun] | Sequence[ExtractionPipelineRunWrite]
+    ) -> ExtractionPipelineRunList: ...
 
     def create(
-        self, run: ExtractionPipelineRun | Sequence[ExtractionPipelineRun]
+        self,
+        run: ExtractionPipelineRun
+        | ExtractionPipelineRunWrite
+        | Sequence[ExtractionPipelineRun]
+        | Sequence[ExtractionPipelineRunWrite],
     ) -> ExtractionPipelineRun | ExtractionPipelineRunList:
         """`Create one or more extraction pipeline runs. <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/createRuns>`_
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 
         Args:
-            run (ExtractionPipelineRun | Sequence[ExtractionPipelineRun]): Extraction pipeline or list of extraction pipeline runs to create.
+            run (ExtractionPipelineRun | ExtractionPipelineRunWrite | Sequence[ExtractionPipelineRun] | Sequence[ExtractionPipelineRunWrite]): ExtractionPipelineRun| ExtractionPipelineRunWrite | Sequence[ExtractionPipelineRun]  | Sequence[ExtractionPipelineRunWrite]): Extraction pipeline or list of extraction pipeline runs to create.
 
         Returns:
             ExtractionPipelineRun | ExtractionPipelineRunList: Created extraction pipeline run(s)
@@ -319,13 +346,18 @@ class ExtractionPipelineRunsAPI(APIClient):
             Report a new extraction pipeline run::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.create(
-                ...     ExtractionPipelineRun(status="success", extpipe_external_id="extId"))
+                >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.runs.create(
+                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
         """
-        assert_type(run, "run", [ExtractionPipelineRun, Sequence])
-        return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)
+        assert_type(run, "run", [ExtractionPipelineRunCore, Sequence])
+        return self._create_multiple(
+            list_cls=ExtractionPipelineRunList,
+            resource_cls=ExtractionPipelineRun,
+            items=run,
+            input_resource_cls=ExtractionPipelineRunWrite,
+        )
 
 
 class ExtractionPipelineConfigsAPI(APIClient):
@@ -351,13 +383,14 @@ class ExtractionPipelineConfigsAPI(APIClient):
             Retrieve latest config revision::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.config.retrieve("extId")
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.config.retrieve("extId")
         """
         response = self._get(
-            "/extpipes/config", params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision}
+            self._RESOURCE_PATH,
+            params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision},
         )
-        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
+        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
 
     def list(self, external_id: str) -> ExtractionPipelineConfigRevisionList:
         """`Retrieve all configuration revisions from an extraction pipeline <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/listExtPipeConfigRevisions>`
@@ -373,17 +406,17 @@ class ExtractionPipelineConfigsAPI(APIClient):
             Retrieve a list of config revisions::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.config.list("extId")
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.config.list("extId")
         """
-        response = self._get("/extpipes/config/revisions", params={"externalId": external_id})
-        return ExtractionPipelineConfigRevisionList.load(response.json()["items"], cognite_client=self._cognite_client)
+        response = self._get(f"{self._RESOURCE_PATH}/revisions", params={"externalId": external_id})
+        return ExtractionPipelineConfigRevisionList._load(response.json()["items"], cognite_client=self._cognite_client)
 
-    def create(self, config: ExtractionPipelineConfig) -> ExtractionPipelineConfig:
+    def create(self, config: ExtractionPipelineConfig | ExtractionPipelineConfigWrite) -> ExtractionPipelineConfig:
         """`Create a new configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/createExtPipeConfig>`
 
         Args:
-            config (ExtractionPipelineConfig): Configuration revision to create.
+            config (ExtractionPipelineConfig | ExtractionPipelineConfigWrite): Configuration revision to create.
 
         Returns:
             ExtractionPipelineConfig: Created extraction pipeline configuration revision
@@ -393,12 +426,14 @@ class ExtractionPipelineConfigsAPI(APIClient):
             Create a config revision::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import ExtractionPipelineConfig
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.config.create(ExtractionPipelineConfig(external_id="extId", config="my config contents"))
+                >>> from cognite.client.data_classes import ExtractionPipelineConfigWrite
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.config.create(ExtractionPipelineConfigWrite(external_id="extId", config="my config contents"))
         """
-        response = self._post("/extpipes/config", json=config.dump(camel_case=True))
-        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
+        if isinstance(config, ExtractionPipelineConfig):
+            config = config.as_write()
+        response = self._post(self._RESOURCE_PATH, json=config.dump(camel_case=True))
+        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
 
     def revert(self, external_id: str, revision: int) -> ExtractionPipelineConfig:
         """`Revert to a previous configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/revertExtPipeConfigRevision>`
@@ -415,8 +450,8 @@ class ExtractionPipelineConfigsAPI(APIClient):
             Revert a config revision::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.config.revert("extId", 5)
+                >>> client = CogniteClient()
+                >>> res = client.extraction_pipelines.config.revert("extId", 5)
         """
-        response = self._post("/extpipes/config/revert", json={"externalId": external_id, "revision": revision})
-        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
+        response = self._post(f"{self._RESOURCE_PATH}/revert", json={"externalId": external_id, "revision": revision})
+        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)

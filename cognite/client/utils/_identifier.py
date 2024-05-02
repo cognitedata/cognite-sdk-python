@@ -22,15 +22,15 @@ T_ID = TypeVar("T_ID", int, str)
 
 
 class IdentifierCore(Protocol):
-    def as_dict(self, camel_case: bool = True) -> dict:
-        ...
+    def as_dict(self, camel_case: bool = True) -> dict: ...
 
-    def as_primitive(self) -> str | int:
-        ...
+    def as_primitive(self) -> str | int: ...
 
 
 class Identifier(Generic[T_ID]):
     def __init__(self, value: T_ID) -> None:
+        if not isinstance(value, (int, str)):
+            raise TypeError(f"Expected id/external_id to be of type int or str, got {value} of type {type(id)}")
         self.__value: T_ID = value
 
     @classmethod
@@ -40,8 +40,12 @@ class Identifier(Generic[T_ID]):
         elif id is not None:
             if external_id is not None:
                 raise ValueError("Exactly one of id or external id must be specified, got both")
+            elif not isinstance(id, int):
+                raise TypeError(f"Invalid id, expected int, got {type(id)}")
             elif not 1 <= id <= MAX_VALID_INTERNAL_ID:
                 raise ValueError(f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}")
+        elif not isinstance(external_id, str):
+            raise TypeError(f"Invalid external_id, expected str, got {type(external_id)}")
         return Identifier(id or external_id)
 
     @classmethod
@@ -132,12 +136,10 @@ class DataModelingIdentifier:
         raise AttributeError(f"Not supported for {type(self).__name__} implementation")
 
 
-class ExternalId(Identifier[str]):
-    ...
+class ExternalId(Identifier[str]): ...
 
 
-class InternalId(Identifier[int]):
-    ...
+class InternalId(Identifier[int]): ...
 
 
 T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
@@ -204,13 +206,11 @@ T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierS
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @overload
     @classmethod
-    def of(cls, *ids: list[int | str]) -> IdentifierSequence:
-        ...
+    def of(cls, *ids: list[int | str]) -> IdentifierSequence: ...
 
     @overload
     @classmethod
-    def of(cls, *ids: int | str) -> IdentifierSequence:
-        ...
+    def of(cls, *ids: int | str) -> IdentifierSequence: ...
 
     @classmethod
     def of(cls, *ids: int | str | Sequence[int | str]) -> IdentifierSequence:
@@ -223,7 +223,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     def load(
         cls,
         ids: int | Sequence[int] | None = None,
-        external_ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
+        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
         *,
         id_name: str = "",
     ) -> IdentifierSequence:
@@ -249,32 +249,30 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
                 all_identifiers.extend([str(extid) for extid in external_ids])
             else:
                 raise TypeError(
-                    f"{id_name}external_ids must be of type str or Sequence[str]. Found {type(external_ids)}"
+                    f"{id_name}external_ids must be of type str or SequenceNotStr[str]. Found {type(external_ids)}"
                 )
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
 
 
-class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]):
-    ...
+class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]): ...
 
 
-class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
-    ...
+class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]): ...
 
 
 class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
     # TODO: Inferred type from inherited methods 'as_dicts' and 'as_primitives' wrongly include 'int'
     @classmethod
-    def load(cls, user_identifiers: str | Sequence[str]) -> UserIdentifierSequence:
+    def load(cls, user_identifiers: str | SequenceNotStr[str]) -> UserIdentifierSequence:
         if isinstance(user_identifiers, str):
             return cls([UserIdentifier(user_identifiers)], is_singleton=True)
 
         elif isinstance(user_identifiers, Sequence):
             return cls(list(map(UserIdentifier, map(str, user_identifiers))), is_singleton=False)
 
-        raise TypeError(f"user_identifiers must be of type str or Sequence[str]. Found {type(user_identifiers)}")
+        raise TypeError(f"user_identifiers must be of type str or SequenceNotStr[str]. Found {type(user_identifiers)}")
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():

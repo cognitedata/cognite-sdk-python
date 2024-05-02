@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,7 +11,6 @@ import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
-from cognite.client.data_classes import Feature, FeatureAggregate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -24,13 +22,23 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteResponse,
     CogniteUpdate,
+    HasExternalAndInternalId,
+    HasExternalId,
+    HasInternalId,
+    HasName,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
+)
+from cognite.client.data_classes.data_modeling import (
+    EdgeListWithCursor,
+    NodeListWithCursor,
 )
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
-from cognite.client.data_classes.geospatial import GeospatialComputedItem
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
+from cognite.client.utils import _json
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
 
 
@@ -151,20 +159,71 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
-        json_serialised = json.dumps(dumped)
+        json_serialised = _json.dumps(dumped)
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_object_subclass",
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+    )
+    def test_dump_load_only_required(
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
+    ):
+        instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_object_subclass, skip_defaulted_args=True)
+
+        dumped = instance.dump()
+        loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+
+        assert loaded.dump() == instance.dump()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "cognite_writable_cls",
+        [
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(WriteableCogniteResource)
+        ],
+    )
+    def test_writable_as_write(
+        self, cognite_writable_cls: type[WriteableCogniteResource], cognite_mock_client_placeholder
+    ):
+        instance_generator = FakeCogniteResourceGenerator(seed=69_1337, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(cognite_writable_cls)
+
+        write_format = instance.as_write()
+        assert isinstance(write_format, CogniteResource)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "writable_list",
+        [
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(WriteableCogniteResourceList)
+            if cls not in [EdgeListWithCursor, NodeListWithCursor]
+        ],
+    )
+    def test_writable_list_as_write(
+        self, writable_list: type[WriteableCogniteResourceList], cognite_mock_client_placeholder
+    ):
+        resource_cls = writable_list._RESOURCE
+        instance_generator = FakeCogniteResourceGenerator(seed=53, cognite_client=cognite_mock_client_placeholder)
+        instance = instance_generator.create_instance(resource_cls)
+        # Setting the cognite_client to None as the `as_write` should not fail if the client is not set.
+        instance_list = writable_list([instance], cognite_client=None)
+
+        write_format = instance_list.as_write()
+        assert isinstance(write_format, CogniteResourceList)
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
@@ -194,37 +253,51 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_handle_unknown_arguments_when_loading(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
-        if cognite_object_subclass in {Feature, FeatureAggregate, GeospatialComputedItem}:
-            # ignore these as they are not compatible
-            return
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
-        dumped["some-new-unknown-key"] = "im-gonna-getcha"
-        loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
 
-        assert loaded.dump() == instance.dump()
+        def _add_unknown_key(obj: dict) -> None:
+            other_value = next(iter(obj.values())) if len(obj) > 0 else None
+            obj["some-new-unknown-key"] = other_value
+
+        def _remove_unknown_key(obj: dict) -> None:
+            obj.pop("some-new-unknown-key", None)
+
+        self._for_all_nested_dicts(dumped, _add_unknown_key)
+
+        loaded = instance.load(dumped, cognite_client=cognite_mock_client_placeholder)
+        loaded_dump = loaded.dump()
+
+        self._for_all_nested_dicts(loaded_dump, _remove_unknown_key)
+
+        assert loaded_dump == instance.dump()
+
+    @staticmethod
+    def _for_all_nested_dicts(obj: dict, func: Callable[[dict], None]) -> None:
+        to_check = [obj]
+        while to_check:
+            case = to_check.pop()
+            if isinstance(case, dict):
+                to_check.extend(case.values())
+                func(case)
+            elif isinstance(case, list):
+                to_check.extend(case)
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_yaml_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
-            seed=66, cognite_client=cognite_mock_client_placeholder
+            seed=65, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
 
         dumped = instance.dump(camel_case=True)
@@ -236,10 +309,7 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteObject)
-        ],
+        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_dump_default_camel_case_false(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
@@ -280,8 +350,8 @@ class TestCogniteResource:
         assert MyResource(1, "s") != MyResource(2, "t")
 
     def test_str_repr(self):
-        assert json.dumps({"var_a": 1}, indent=4) == str(MyResource(1))
-        assert json.dumps({"var_a": 1.0}, indent=4) == str(MyResource(Decimal(1)))
+        assert _json.dumps({"var_a": 1}, indent=4) == str(MyResource(1))
+        assert _json.dumps({"var_a": 1.0}, indent=4) == str(MyResource(Decimal(1)))
 
     @pytest.mark.dsl
     def test_to_pandas(self):
@@ -321,10 +391,10 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_use_method_which_requires_cognite_client__client_not_set(self):
         mr = MyResource()
@@ -335,8 +405,8 @@ class TestCogniteResource:
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteResource)
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
     def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
@@ -345,7 +415,7 @@ class TestCogniteResource:
         ).create_instance(cognite_resource_subclass)
 
         dumped = instance.dump(camel_case=True)
-        json_serialised = json.dumps(dumped)
+        json_serialised = _json.dumps(dumped)
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
@@ -354,13 +424,13 @@ class TestCogniteResource:
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteResource)
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
     def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
-            seed=66, cognite_client=cognite_mock_client_placeholder
+            seed=64, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
 
         yaml_serialised = instance.dump_yaml()
@@ -372,8 +442,8 @@ class TestCogniteResource:
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
         [
-            pytest.param(class_, id=f"{class_.__name__} in {class_.__module__}")
-            for class_ in all_concrete_subclasses(CogniteResource)
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
     def test_dump_default_camel_case_false(self, cognite_resource_subclass: type[CogniteResource]):
@@ -537,8 +607,8 @@ class TestCogniteResourceList:
         assert MyResource(id=2, external_id="2") == resource_list.get(id=2)
 
     def test_str_repr(self):
-        assert json.dumps([{"var_a": 1}], indent=4) == str(MyResourceList([MyResource(1)]))
-        assert json.dumps([{"var_a": 1.0}], indent=4) == str(MyResourceList([MyResource(Decimal(1))]))
+        assert _json.dumps([{"var_a": 1}], indent=4) == str(MyResourceList([MyResource(1)]))
+        assert _json.dumps([{"var_a": 1.0}], indent=4) == str(MyResourceList([MyResource(Decimal(1))]))
 
     def test_get_item_by_external_id(self):
         resource_list = MyResourceList([MyResource(id=1, external_id="1"), MyResource(id=2, external_id="2")])
@@ -550,10 +620,10 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_use_method_which_requires_cognite_client__client_not_set(self):
         mr = MyResourceList([])
@@ -603,11 +673,11 @@ class TestCogniteFilter:
         assert MyFilter() == MyFilter()
 
     def test_str(self):
-        assert json.dumps({"var_a": 1}, indent=4) == str(MyFilter(1))
-        assert json.dumps({"var_a": 1.0}, indent=4) == str(MyFilter(Decimal(1)))
+        assert _json.dumps({"var_a": 1}, indent=4) == str(MyFilter(1))
+        assert _json.dumps({"var_a": 1.0}, indent=4) == str(MyFilter(Decimal(1)))
 
     def test_repr(self):
-        assert json.dumps({"var_a": 1}, indent=4) == repr(MyFilter(1))
+        assert _json.dumps({"var_a": 1}, indent=4) == repr(MyFilter(1))
 
 
 class TestCogniteUpdate:
@@ -628,9 +698,9 @@ class TestCogniteUpdate:
         assert MyUpdate(1) != MyUpdate(1).string.set("1")
 
     def test_str(self):
-        assert json.dumps(MyUpdate(1).dump(), indent=4) == str(MyUpdate(1))
-        assert json.dumps(MyUpdate(1.0).dump(), indent=4) == str(MyUpdate(Decimal(1)))
-        assert json.dumps(MyUpdate(1).string.set("1").dump(), indent=4) == str(MyUpdate(1).string.set("1"))
+        assert _json.dumps(MyUpdate(1).dump(), indent=4) == str(MyUpdate(1))
+        assert _json.dumps(MyUpdate(1.0).dump(), indent=4) == str(MyUpdate(Decimal(1)))
+        assert _json.dumps(MyUpdate(1).string.set("1").dump(), indent=4) == str(MyUpdate(1).string.set("1"))
 
     def test_set_string(self):
         assert {"id": 1, "update": {"string": {"set": "bla"}}} == MyUpdate(1).string.set("bla").dump()
@@ -695,17 +765,12 @@ class TestCogniteUpdate:
 
     @pytest.mark.parametrize("cognite_update_subclass", all_subclasses(CogniteUpdate))
     def test_correct_implementation_get_update_properties(self, cognite_update_subclass: CogniteUpdate):
-        # Arrange
         expected = sorted(
             key
             for key in cognite_update_subclass.__dict__
             if not key.startswith("_") and key not in {"columns", "dump"}
         )
-
-        # Act
         actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
-
-        # Assert
         assert expected == actual
 
 
@@ -722,13 +787,13 @@ class TestCogniteResponse:
         assert {} == MyResponse().dump()
 
     def test_str(self):
-        assert json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == str(MyResponse(1))
-        assert json.dumps(MyResponse(1.0).dump(camel_case=False), indent=4, sort_keys=True) == str(
+        assert _json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == str(MyResponse(1))
+        assert _json.dumps(MyResponse(1.0).dump(camel_case=False), indent=4, sort_keys=True) == str(
             MyResponse(Decimal(1))
         )
 
     def test_repr(self):
-        assert json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == repr(MyResponse(1))
+        assert _json.dumps(MyResponse(1).dump(camel_case=False), indent=4, sort_keys=True) == repr(MyResponse(1))
 
     def test_eq(self):
         assert MyResponse(1) == MyResponse(1)
@@ -736,12 +801,37 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        client = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+        assert MyResource(1, cognite_client=client)._cognite_client == client
 
     def test_response_no_cogclient_ref(self):
         # CogniteResponse does not have a reference to the cognite client:
         with pytest.raises(AttributeError):
             MyResponse(1)._cognite_client
+
+
+class TestHasIdProtocols:
+    class WithIdAndExternalId:
+        def __init__(self):
+            self.id: int = 1
+            self.external_id: str | None = None
+
+    class WithName:
+        def __init__(self):
+            self.name: str = "name"
+
+    def test_has_id_protocols(self) -> None:
+        obj = self.WithIdAndExternalId()
+        assert isinstance(obj, HasInternalId)
+        assert isinstance(obj, HasExternalId)
+        assert isinstance(obj, HasExternalAndInternalId)
+        assert not isinstance(obj, HasName)
+
+    def test_has_name_protocol(self) -> None:
+        obj = self.WithName()
+        assert not isinstance(obj, HasInternalId)
+        assert not isinstance(obj, HasExternalId)
+        assert not isinstance(obj, HasExternalAndInternalId)
+        assert isinstance(obj, HasName)

@@ -18,29 +18,33 @@ from typing import (
     Literal,
     Mapping,
     MutableMapping,
+    NoReturn,
     TypeVar,
     Union,
     ValuesView,
     cast,
+    final,
     overload,
 )
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteResourceList
+from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, T_CogniteResource
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
     DataModelingInstancesList,
     DataModelingResource,
     DataModelingSort,
+    WritableDataModelingResource,
 )
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
+    UnitReference,
+    UnitSystemReference,
 )
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
-    ContainerIdentifier,
     EdgeId,
     NodeId,
     ViewId,
@@ -73,7 +77,7 @@ PropertyIdentifier: TypeAlias = str
 
 
 @dataclass
-class NodeOrEdgeData:
+class NodeOrEdgeData(CogniteObject):
     """This represents the data values of a node or edge.
 
     Args:
@@ -85,21 +89,21 @@ class NodeOrEdgeData:
     properties: Mapping[str, PropertyValue]
 
     @classmethod
-    def load(cls, data: dict) -> NodeOrEdgeData:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         try:
-            source_type = data["source"]["type"]
+            source_type = resource["source"]["type"]
         except KeyError as e:
             raise ValueError("source must be a dict with a type key") from e
         source: ContainerId | ViewId
         if source_type == "container":
-            source = ContainerId.load(data["source"])
+            source = ContainerId.load(resource["source"])
         elif source_type == "view":
-            source = ViewId.load(data["source"])
+            source = ViewId.load(resource["source"])
         else:
             raise ValueError(f"source type must be container or view, but was {source_type}")
         return cls(
             source=source,
-            properties=data["properties"],
+            properties=resource["properties"],
         )
 
     def dump(self, camel_case: bool = True) -> dict:
@@ -137,7 +141,14 @@ class InstanceCore(DataModelingResource, ABC):
         self.external_id = external_id
 
 
-class InstanceApply(InstanceCore, ABC):
+class WritableInstanceCore(WritableDataModelingResource[T_CogniteResource], ABC):
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
+        super().__init__(space=space)
+        self.instance_type = instance_type
+        self.external_id = external_id
+
+
+class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the write version of the instance.
 
     Args:
@@ -187,7 +198,12 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
             for view_id_str, properties in view_properties.items():
                 view_tuple = tuple(view_id_str.split("/", 1))
                 if len(view_tuple) != 2:
-                    raise ValueError("View id must be in the format <external_id>/<version>")
+                    warnings.warn(
+                        f"Unknown type of view id: {view_id_str}, expected format <external_id>/<version>. "
+                        "Skipping...",
+                        stacklevel=2,
+                    )
+                    continue
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
         return cls(props)
@@ -221,14 +237,12 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         return view_id in self.data
 
     @overload
-    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None:
-        ...
+    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None: ...
 
     @overload
     def get(
         self, view: ViewIdentifier, default: MutableMapping[PropertyIdentifier, PropertyValue] | _T
-    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T:
-        ...
+    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T: ...
 
     def get(
         self,
@@ -249,8 +263,21 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         view_id = ViewId.load(view)
         self.data[view_id] = properties
 
+    def _repr_html_(self) -> str:
+        pd = local_import("pandas")
+        index_names = "space", "view", "version"
+        if not self:
+            df = pd.DataFrame(index=pd.MultiIndex(levels=([], [], []), codes=([], [], []), names=index_names))
+        else:
+            df = pd.DataFrame.from_dict(
+                {view_id.as_tuple(): props for view_id, props in self.data.items()},
+                orient="index",
+            )
+            df.index.names = index_names
+        return df._repr_html_()
 
-class Instance(InstanceCore, ABC):
+
+class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -281,6 +308,54 @@ class Instance(InstanceCore, ABC):
         self.created_time = created_time
         self.deleted_time = deleted_time
         self.properties: Properties = properties or Properties({})
+
+        if len(self.properties) == 1:
+            (self._prop_lookup,) = self.properties.values()
+        else:
+            # For speed, we want this to fail (to avoid LBYL pattern):
+            self._prop_lookup = None  # type: ignore [assignment]
+
+    def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
+        err_msg = "Quick property access is only possible on instances from a single source."
+        if len(self.properties) > 1:
+            err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
+        raise RuntimeError(err_msg) from None
+
+    @overload
+    def get(self, attr: str) -> PropertyValue | None: ...
+
+    @overload
+    def get(self, attr: str, default: _T) -> PropertyValue | _T: ...
+
+    def get(self, attr: str, default: Any = None) -> Any:
+        try:
+            return self._prop_lookup.get(attr, default)
+        except AttributeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __getitem__(self, attr: str) -> PropertyValue:
+        try:
+            return self._prop_lookup[attr]
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __setitem__(self, attr: str, value: PropertyValue) -> None:
+        try:
+            self._prop_lookup[attr] = value
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __delitem__(self, attr: str) -> None:
+        try:
+            del self._prop_lookup[attr]
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
+
+    def __contains__(self, attr: str) -> bool:
+        try:
+            return attr in self._prop_lookup
+        except TypeError:
+            self.__raise_if_non_singular_source(attr)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
@@ -327,7 +402,7 @@ class Instance(InstanceCore, ABC):
         pd = local_import("pandas")
         col = df.squeeze()
         prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
-        if remove_property_prefix:
+        if remove_property_prefix and not prop_df.empty:
             # We only do/allow this if we have a single source:
             view_id, *extra = self.properties.keys()
             if not extra:
@@ -340,9 +415,9 @@ class Instance(InstanceCore, ABC):
         return pd.concat((col, prop_df.T.squeeze())).to_frame(name="value")
 
     @abstractmethod
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> InstanceApply:
+    def as_apply(self) -> InstanceApply:
         """Convert the instance to an apply instance."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class InstanceApplyResult(InstanceCore, ABC):
@@ -426,7 +501,7 @@ class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResul
     _RESOURCE = InstanceAggregationResult
 
 
-class NodeApply(InstanceApply):
+class NodeApply(InstanceApply["NodeApply"]):
     """A node. This is the write version of the node.
 
     Args:
@@ -465,15 +540,20 @@ class NodeApply(InstanceApply):
             space=resource["space"],
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
-            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])],
+            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
+    def as_write(self) -> NodeApply:
+        """Returns this NodeApply instance"""
+        return self
 
-class Node(Instance):
+
+@final
+class Node(Instance["NodeApply"]):
     """A node. This is the read version of the node.
 
     Args:
@@ -501,16 +581,12 @@ class Node(Instance):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
         self.type = type
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> NodeApply:
+    def as_apply(self) -> NodeApply:
         """
         This is a convenience function for converting the read to a write node.
 
         It makes the simplifying assumption that all properties are from the same view. Note that this
         is not true in general.
-
-        Args:
-            source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
             NodeApply: A write node, NodeApply
@@ -519,13 +595,16 @@ class Node(Instance):
         return NodeApply(
             space=self.space,
             external_id=self.external_id,
-            existing_version=existing_version,
+            existing_version=self.version,
             sources=[
                 NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
             ]
-            if self.properties
-            else None,
+            or None,
+            type=self.type,
         )
+
+    def as_write(self) -> NodeApply:
+        return self.as_apply()
 
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
@@ -590,7 +669,7 @@ class NodeApplyResult(InstanceApplyResult):
         return NodeId(space=self.space, external_id=self.external_id)
 
 
-class EdgeApply(InstanceApply):
+class EdgeApply(InstanceApply["EdgeApply"]):
     """An Edge. This is the write version of the edge.
 
     Args:
@@ -643,14 +722,19 @@ class EdgeApply(InstanceApply):
             space=resource["space"],
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
-            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])],
+            sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
             type=DirectRelationReference.load(resource["type"]),
             start_node=DirectRelationReference.load(resource["startNode"]),
             end_node=DirectRelationReference.load(resource["endNode"]),
         )
 
+    def as_write(self) -> EdgeApply:
+        """Returns this EdgeApply instance"""
+        return self
 
-class Edge(Instance):
+
+@final
+class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 
     Args:
@@ -684,16 +768,12 @@ class Edge(Instance):
         self.start_node = start_node
         self.end_node = end_node
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int | None = None) -> EdgeApply:
+    def as_apply(self) -> EdgeApply:
         """
         This is a convenience function for converting the read to a write edge.
 
         It makes the simplifying assumption that all properties are from the same view. Note that this
         is not true in general.
-
-        Args:
-            source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
             EdgeApply: A write edge, EdgeApply
@@ -704,12 +784,15 @@ class Edge(Instance):
             type=self.type,
             start_node=self.start_node,
             end_node=self.end_node,
-            existing_version=existing_version or None,
+            existing_version=self.version,
             sources=[
                 NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
             ]
             or None,
         )
+
+    def as_write(self) -> EdgeApply:
+        return self.as_apply()
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
@@ -806,7 +889,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[Node]):
+class NodeList(DataModelingInstancesList[NodeApply, Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -817,6 +900,10 @@ class NodeList(DataModelingInstancesList[Node]):
             list[NodeId]: A list of node ids.
         """
         return [node.as_id() for node in self]
+
+    def as_write(self) -> NodeApplyList:
+        """Returns this NodeList as a NodeApplyList"""
+        return NodeApplyList([node.as_write() for node in self])
 
 
 class NodeListWithCursor(NodeList):
@@ -853,7 +940,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[Edge]):
+class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
@@ -864,6 +951,10 @@ class EdgeList(DataModelingInstancesList[Edge]):
             list[EdgeId]: A list of edge ids.
         """
         return [edge.as_id() for edge in self]
+
+    def as_write(self) -> EdgeApplyList:
+        """Returns this EdgeList as a EdgeApplyList"""
+        return EdgeApplyList([edge.as_write() for edge in self], cognite_client=self._get_cognite_client())
 
 
 class EdgeListWithCursor(EdgeList):
@@ -893,7 +984,7 @@ class InstanceSort(DataModelingSort):
         self,
         property: list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
-        nulls_first: bool = False,
+        nulls_first: bool | None = None,
     ) -> None:
         super().__init__(property, direction, nulls_first)
 
@@ -910,10 +1001,6 @@ class InstancesResult:
 
     nodes: NodeList
     edges: EdgeList
-
-    @classmethod
-    def load(cls, data: str | dict) -> InstancesResult:
-        raise NotImplementedError()
 
 
 @dataclass
@@ -956,3 +1043,21 @@ class SubscriptionContext:
 
     def is_alive(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
+
+
+@dataclass
+class TargetUnit(CogniteObject):
+    property: str
+    unit: UnitReference | UnitSystemReference
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"property": self.property, "unit": self.unit.dump(camel_case)}
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TargetUnit:
+        return cls(
+            property=resource["property"],
+            unit=UnitReference.load(resource["unit"])
+            if "externalId" in resource["unit"]
+            else UnitSystemReference.load(resource["unit"]),
+        )

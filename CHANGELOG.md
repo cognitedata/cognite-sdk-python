@@ -17,6 +17,464 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.41.0] - 2024-04-30
+### Added
+- Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).
+  - You can read more in the Cognite Data Fusion developer documentation: [Status Codes reference](https://developer.cognite.com/dev/concepts/reference/quality_codes/).
+
+## [7.40.2] - 2024-04-30
+### Fixed
+- `InAssetSubtree` is no longer (mistakenly) accepted as a time series filter.
+
+## [7.40.1] - 2024-04-30
+### Fixed
+- Deleting multiple Datapoint Subscriptions now work as expected.
+
+## [7.40.0] - 2024-04-30
+### Added
+- Datapoint Subscriptions now support status codes.
+
+## [7.39.0] - 2024-04-25
+### Added
+- Support for internally managed groups (inside CDF, as opposed to the external identity provider).
+
+## [7.38.3] - 2024-04-25
+### Improved
+- The classes `WorkflowUpsert`, `Filter`, `Query`, `Node`, `Edge`, `Container`, `Document`, and
+  `Transformation` which are used for parsing API responses were not handling adding new parameters in
+  the API correctly. These are now future-proofed.
+
+## [7.38.2] - 2024-04-24
+### Added
+- Added new parameter `function_external_id` to `FunctionScheduleAPI.create` as a convenience to the user. Note
+  that schedules must be attached to a Function by (internal) ID, so a lookup is first done on behalf of the user.
+
+## [7.38.1] - 2024-04-23
+### Added
+- Added missing `partitions` parameter to `list()` and `__call__()` methods for `FilesAPI`.
+
+## [7.38.0] - 2024-04-22
+### Added
+- Support for `workflows.executions.retry`
+
+## [7.37.4] - 2024-04-22
+### Improved
+- Enabled automatic retries on Data Workflows POST endpoints
+
+## [7.37.3] - 2024-04-18
+### Improved
+- Minor quality of life change for comparing capabilities involving `DataModelInstancesAcl.WRITE_PROPERTIES`; any
+  ACL already covered by `WRITE` will not be reported as missing.
+
+## [7.37.2] - 2024-04-18
+### Fixed
+- Datapoints inserted into non-existent time series, no longer get their identifier hidden in the `failed` attribute
+  on the raised `CogniteNotFoundError`. Any `successful` now also gets reported correctly.
+
+## [7.37.1] - 2024-04-17
+### Fixed
+- Updating data set ID now works as expected for `ThreeDModelUpdate`.
+
+## [7.37.0] - 2024-04-16
+### Fixed
+- Now handle unknown data types in DM
+
+## [7.36.0] - 2024-04-16
+### Fixed
+- Now handle unknown filter types in DM
+- Add support for the "invalid" filter type in DM
+
+## [7.35.0] - 2024-04-16
+### Added
+- Datapoints insert methods `insert` and `insert_multiple` now support ingesting (optional) status codes.
+
+## [7.34.0] - 2024-04-11
+### Added
+- Datapoints method `retrieve_latest` now supports status codes.
+- Slicing or indexing a `Datapoints` or `DatapointsArray` instance, now propagates status codes (when present).
+
+## [7.33.1] - 2024-04-10
+### Fixed
+- Ordering of elements from calls to `retrieve_multiple` now match the requested elements. For SDK versions between
+  7.0.0 and 7.33.1, the ordering has been broken when >> 1k elements has been requested (the more requests used, the
+  more likely that a chunk was out of order).
+
+## [7.33.0] - 2024-04-08
+### Added
+- All datapoints retrieve methods (except `retrieve_latest`) now support status codes. Note: Support for *inserting*
+  datapoints with status codes will be released shortly. There are three new arguments:
+    * `include_status (bool)`: Toggle the return of status code and -symbol on/off, only valid for raw datapoints.
+    * `ignore_bad_datapoints (bool)`: For raw datapoints: Whether to return those marked bad (or not).
+      For aggregates: Whether the time periods of bad datapoints should affect aggregate calculations (or not).
+    * `treat_uncertain_as_bad (bool)`: Toggle whether datapoints marked uncertain should be regarded as good or bad.
+- The `to_pandas` method for `Datapoints`, `DatapointsList`, `DatapointsArray` and `DatapointsArrayList` now accepts
+  a new parameter, `include_status (bool)`, that controls whether to include status codes & -symbols as separate columns.
+- New datapoints query class, `DatapointsQuery`, to make writing custom queries easier, type-safe and more robust,
+  as opposed to passing dictionaries (of settings).
+### Deprecated
+- Passing *custom* datapoints queries using dictionaries is deprecated and will be removed in the next major release.
+  Consider refactoring already to `DatapointsQuery`. Example: `{"id": 12, "aggregates" : "min", "granularity": "6h"} ->
+  DatapointsQuery(id=12, aggregates="min", granularity="6h")`.
+
+## [7.32.8] - 2024-04-08
+### Fixed
+- When using TimeSeries objects without `external_id` as part of the `variables` parameter in a synthetic datapoints
+  query, a `CogniteNotFoundError` would most likely be raised, due to `None` being silently cast to a string. It now
+  raises a friendly `ValueError`.
+- An invalid expression could be created when using multiple variables in a synthetic datapoints query. This happened
+  while substituting the variables into the expression; this was done one at a time, leading to later replacements
+  possibly affecting earlier ones. Now all variables are substituted at the same time/in a single call.
+### Improved
+- Passing sympy symbols as part of the variables mapping (in synthetic datapoints queries) is now documented properly
+  and "officially supported".
+
+## [7.32.7] - 2024-04-05
+### Fixed
+- Inserting sequence data using `insert_dataframe` would by default drop all rows that contained at least one missing value.
+  This has now been fixed to only remove rows where all values are missing.
+
+## [7.32.6] - 2024-04-05
+### Fixed
+- `AssetsAPI.create_hierarchy` now properly supports `AssetWrite`.
+
+## [7.32.5] - 2024-04-04
+### Improved
+- Type validation of identifiers
+
+## [7.32.4] - 2024-03-28
+### Fixed
+- Several methods for `DatapointsArray` that previously failed for string datapoints due to bad handling
+  of numpy `dtype`-to-native conversion.
+
+## [7.32.3] - 2024-03-27
+### Removed
+- Support for `protobuf==3.*` was dropped.
+
+## [7.32.2] - 2024-03-26
+### Added
+- Missing filterable properties `unit_external_id` and `unit_quantity` to `DatapointSubscriptionProperty`.
+  Note: was renamed from `DatapointSubscriptionFilterProperties`, which is now a deprecated alias.
+
+## [7.32.1] - 2024-03-25
+### Fixed
+- Fix type hints for functions data classes Function/FunctionSchedule/FunctionCall
+
+## [7.32.0] - 2024-03-25
+### Changed
+- Type hint for `id`, `last_updated_time`, and `create_time` attributes are no longer `Optional` on
+  subclasses of `CogniteResource`. This is to reflect that these attributes are always set when the
+  object is returned by the SDK.
+
+## [7.31.0] - 2024-03-24
+### Added
+- Retrieve method for session, `client.iam.session.retrieve`
+- The parameter `limit` to the method `client.iam.session.list`.
+### Fixed
+- The method `client.iam.session.revoke` is now overloaded correctly and returns a `Session` for single id
+  and a `SessionList` for multiple ids.
+
+## [7.30.1] - 2024-03-23
+### Fixed
+- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` no longer raises
+  `AttributeError: 'dict' object has no attribute '_repr_html_'` (the HTML representation of `SequenceRowsList` was failing).
+
+## [7.30.0] - 2024-03-20
+### Added
+- `Properties` class, as used on e.g. `Node` and `Edge`, now renders in Jupyter Notebooks (`_repr_html_` added).
+
+## [7.29.0] - 2024-03-20
+### Added
+- Direct access to the columns/data stored on raw rows have been added (alongside a `.get` method). Example usage:
+  `row["my_col"]` (short-cut for: `row.columns["my_col"]`).
+
+## [7.28.2] - 2024-03-14
+### Fixed
+- Retrieving more than 100 containers, views, data models, or spaces no longer raises a `CogniteAPIError`.
+
+## [7.28.1] - 2024-03-13
+### Fixed
+- Fixed issue causing multipart file upload to fail when mime-type was set.
+
+## [7.28.0] - 2024-03-13
+### Added
+- Added support for advanced filter query in the `list()` (and `__call__()`) method of `assets`, `events`, `sequences`,
+  and `time_series` APIs. Now you are able to use advanced filter (like in `filter()`) at the same time as the simple
+  filter properties, allowing for more complex requests.
+- Added missing `sort` parameter to `list()` and `__call__()` methods for `AssetsAPI`.
+- Added missing `sort` parameter to `list()` and `__call__()` methods for `TimeSeriesAPI`.
+- Added missing `sort` and `partitions` parameters to `list()` and `__call__()` methods for `SequencesAPI`.
+### Deprecated
+- Added a deprecation warning on the `filter()` method of `assets`, `events`, `sequences`, and `time_series` APIs as
+  its functionality is fully covered by the `list()` method.
+
+## [7.27.2] - 2024-03-08
+### Added
+- Retry 429s on graphql endpoints
+
+## [7.27.1] - 2024-03-08
+### Improved
+- When iterating raw rows concurrently, a max queue size for pending results have been added to keep a stable low
+  bounded memory usage profile (for when the caller's code isn't processing fast enough to keep up). Worth noting
+  that this has no effect on the total retrieval time.
+
+## [7.27.0] - 2024-03-04
+### Added
+- Added support for multipart file uploads using the `client.files.multipart_upload_session` method.
+
+## [7.26.2] - 2024-03-05
+### Fixed
+- Fixed a regression from 7.26.1 in the logic for when to refresh token.
+
+## [7.26.1] - 2024-03-05
+### Fixed
+- The `CredentialProvider` class for client credentials, `OAuthClientCredentials`, was switched from using the non-standard
+  field `expires_at` to `expires_in` that's part of the OAuth 2.0 standard (RFC 6749).
+
+## [7.26.0] - 2024-02-29
+### Added
+- In data modeling, added support for setting floats with units in containers. In addition, added support for retrieving,
+  listing, searching, aggregating, querying and syncing nodes/edges with a target unit or target unit system.
+
+## [7.25.0] - 2024-02-29
+### Added
+- Support for sorting on `client.data_modeling.instances.search`
+
+## [7.24.4] - 2024-02-28
+### Fixed
+- Unknown ACLs, actions or scopes no longer causes `IAMAPI.[groups.list(...), token.inspect()]` to raise.
+### Added
+- New action for `DataModelInstancesAcl` added: `Write_Properties`.
+
+## [7.24.3] - 2024-02-28
+### Fixed
+- Fix handling of GeometryCollection objects in the Documents API.
+
+## [7.24.2] - 2024-02-25
+### Fixed
+- [Pyodide/WASM only] The list method for raw rows now works for non-finite queries (got broken in `7.24.1`).
+
+## [7.24.1] - 2024-02-25
+### Fixed
+- [Pyodide/WASM only] The iteration method for raw rows now yields rows _while running_ (instead of waiting for tasks to finish first).
+
+## [7.24.0] - 2024-02-25
+### Added
+- New parameter for `client.raw.rows(...)`: `partitions`. This enables greater throughput thorough concurrent reads when using
+  the generator method (while still keeping a low memory impact). For backwards compatibility, the default is _no concurrency_.
+  When specified, can be used together with a finite limit, as opposed to most (if not all) other resources/APIs.
+- New parameter for `client.raw.rows.list(...)`: `partitions`. For backwards compatibility, the default is _no concurrency_ when
+  a finite `limit` is given, and _"max" concurrency_ (`partitions=max_workers`) otherwise. Partitions can be used with finite limits.
+  With this change it is easy to set an appropriate level of concurrency without messing with the global client configuration.
+### Changed
+- Default configuration setting of `max_workers` has been changed from 10 to 5 (to match the documentation).
+
+## [7.23.1] - 2024-02-23
+### Fixed
+- Add missing `partition` scope to `seismicAcl`.
+
+## [7.23.0] - 2024-02-23
+### Added
+- Make properties on instances (`Node`, `Edge`) easier to work with, by implementing support for direct indexing (and a `.get` method).
+  If the instances have properties from no source or multiple sources, an error is raised instead. Example usage: `instance["my_prop"]`
+  (short-cut for: `instance.properties[ViewId("space", "ext.id", "version")]["my_prop"]`)
+
+## [7.22.0] - 2024-02-21
+### Added
+- Data point subscriptions reaches General Availability (GA).
+  - Use the new [Data point subscriptions](https://developer.cognite.com/dev/concepts/data_point_subscriptions/)
+    feature to configure a subscription to listen to changes in one or more time series (in ingestion order).
+    The feature is intended to be used where data points consumers need to keep up to date with
+    changes to one or more time series without the need to read the entire time series again.
+### Changed
+- Removed the `ignore_unknown_ids` flag from `client.time_series.subscriptions.retrieve()` to stay consistent with other resource types.
+
+## [7.21.1] - 2024-02-20
+### Fixed
+- Data Workflows: mark parameter `jobId` as optional in `TransformationTaskOutput`, as it may not be populated in case of a failure.
+
+## [7.21.0] - 2024-02-10
+### Added
+- Parameter `sort` to `client.documents.list`.
+
+## [7.20.1] - 2024-02-19
+### Fixed
+- `DMLApplyResult` no longer fails when converted to a string (representation).
+
+## [7.20.0] - 2024-02-13
+### Fixed
+- internal json encoder now understands CogniteObject and CogniteFilter objects, so that they are
+  correctly serialized when used in nested structures.
+
+## [7.19.2] - 2024-02-13
+### Fixed
+- Addressed `FutureWarning` coming from pandas dependency (granularity to pandas frequency translation of sec/min/hour and 'year start')
+- Fixed `granularity` setting in `DatapointsAPI.retrieve_dataframe_in_tz` showing up as number of hours instead of e.g. week or year.
+
+## [7.19.1] - 2024-02-12
+### Fixed
+- Calls to ... are now retried automatically:
+    * Functions API: `list`, `retrieve`, `retrieve_multiple`, `activate`
+    * FunctionCalls API: `list`, `retrieve`
+    * FunctionSchedules API: `list`, `retrieve`
+    * ExtractionPipelines API: `retrieve_multiple`
+    * ExtractionPipelineRuns API: `list`
+    * Transformations API: `list`, `retrieve`, `retrieve_multiple`, `preview`
+    * TransformationJobs API: `retrieve`, `retrieve_multiple`
+    * TransformationSchedules API: `retrieve`, `retrieve_multiple`
+    * Geospatial API:  `list_feature_types`, `retrieve_feature_types`, `retrieve_features`, `list_features`,
+      `search_features`, `stream_features`, `aggregate_features`, `get_coordinate_reference_systems`, `get_raster`, `compute`,
+    * UserProfiles API: `retrieve`, `search`
+    * Documents API: `search`, `list`, `__call__`, `aggregate_count`, `aggregate_cardinality_values`, `aggregate_cardinality_properties`,
+      `aggregate_unique_values`, `aggregate_unique_properties`
+    * ThreeDRevisions API: `filter_nodes`
+
+## [7.19.0] - 2024-02-12
+### Added
+- Helper methods to `View`, `ViewApply`, `ViewList` and `ViewApplyList` `referenced_containers` which returns the
+  containers referenced by in the view(s).
+
+## [7.18.0] - 2024-02-08
+### Added
+- Support for `target_unit` and `target_unit_system` in synthetic time series.
+
+## [7.17.4] - 2024-02-07
+### Added
+- Allow using container property reference in `NodeResultSetExpression.through` in addition to view property reference
+
+## [7.17.3] - 2024-02-06
+### Fixed
+- Creating a Cognite Function from a directory with `skip_folder_validation=False` no longer raises `ModuleNotFoundError`
+  for Pyodide (WASM) users.
+
+## [7.17.2] - 2024-02-04
+### Fixed
+- Uploading files now accepts Labels again as part of file metadata. This addresses a bug introduced in v7, which caused
+  a `ValueError` to be raised.
+
+## [7.17.1] - 2024-02-02
+### Fixed
+- An (extreme) edge case where an empty, unnecessary API request for datapoints would be sent leading to a `CogniteAPIError`.
+- Certain granularity inputs (when using the `DatapointsAPI`) no longer cause a `ValueError` to be raised with confusing/wrong wording.
+
+## [7.17.0] - 2024-02-01
+### Fixed
+- Calls to `AnnotationsAPI.[list|retrieve|retrieve_multiple|reverse_lookup]` are now retried automatically.
+- Calls to `AnnotationsAPI.reverse_lookup` now also accept the standard values (`-1, inf`) to indicate 'no limit'.
+### Improved
+- Calls to `AnnotationsAPI.list` with more than 1000 `annotated_resource_ids` are now batched automatically for the user.
+  Previously these would raise an API error.
+
+## [7.16.0] - 2024-01-30
+### Added
+- When listing instances (and when using `search`, `aggregate` and `histogram`), a new `space` parameter has been added;
+  you may pass either a single space identifier (or a list of several). Note that this is just for convenience, using
+  `filter` still works (and is necessary for more complex queries).
+- New convenience filter, `SpaceFilter`, makes filtering on space simpler.
+
+## [7.15.1] - 2024-01-23
+### Fixed
+- When calling `to_pandas` with `expand_properties=True` on an instance or instance list with no properties, the SDK will
+  no longer raise ValueError, but drop the empty properties row/column.
+
+## [7.15.0] - 2024-01-22
+### Improved
+- Only run pypi version check once, despite instantiating multiple clients. And make it async too.
+
+## [7.14.0] - 2024-01-22
+### Changed
+- Helper methods to get related resources on `Asset` class now accept `asset_ids` as part of keyword arguments.
+### Added
+- Helper methods to get related resources on `AssetList` class now accept keyword arguments that are passed on to
+  the list endpoint (for server-side filtering).
+
+## [7.13.8] - 2024-01-19
+### Fixed
+- `FilesAPI.upload` when using `geo_location` (serialize error).
+
+## [7.13.7] - 2024-01-19
+### Fixed
+- Type hints for all `.update` and `.upsert` methods accept Write classes in addition to Read and Update classes.
+- Missing overloading of the `.update` methods on `client.three_d.models.update`, `client.transformations.update`,
+  `client.transformations.schedules.update`, `client.relationships.update`, and `client.data_sets.update`.
+
+## [7.13.6] - 2024-01-18
+### Added
+- Helper method `as_tuple` to `NodeId` and `EdgeId`.
+
+## [7.13.5] - 2024-01-16
+### Added
+- EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`.
+
+## [7.13.4] - 2024-01-11
+### Fixed
+- When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+- When calling `Datapoints.load` not having a `isString` would raise a `KeyError` even though it is optional. This is now fixed.
+- Most `CogniteResourceList.as_write()` would raise a `CogniteMissingClientError` when called from a class with missing cognite_client. This is now fixed.
+
+## [7.13.3] - 2024-01-12
+### Added
+- `View.as_property_ref` and `Container.as_property_ref` to make it easier to create property references
+  (used to only be available on `ViewId` and `ContainerId`).
+
+## [7.13.2] - 2024-01-11
+### Fixed
+- When calling `ExtractionPipeline.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
+
+## [7.13.1] - 2024-01-10
+### Improved
+- Respect the `isAutoRetryable` flag on error responses from the API when retrying requests.
+
+## [7.13.0] - 2024-01-09
+### Changed
+- Units on Time Series (including unit conversion) is out of beta and will no longer issue warnings on usage.
+
+## [7.12.0] - 2024-01-09
+### Added
+- `DatapointsAPI.retrieve_latest` now accepts `target_unit` or `target_unit_system` parameter.
+### Fixed
+- `DatapointsAPI.retrieve_latest` when given `LatestDatapointQuery`(s) without a setting for `before`, now correctly use
+  the (default) `before` setting as specified in the method call.
+
+## [7.11.0] - 2024-01-09
+### Added
+- All Cognite resources now have write-version. For example, we have `Asset` and `AssetWrite`, `Event` and `EventWrite`, and so on.
+  The new write class reflects the required/optional fields in the API, and is now recommended when creating resources. In addition,
+  all read classes and list classes now have a convenience method `as_write` that returns the write class with the same data.
+  For example, if you have a `assets` of type `AssetList` you can call `assets.as_write()` which will return a `AssetWriteList`,
+  and thus removing all server set fields (like `created_time` and `last_updated_time`). This is useful if you want to
+  compare a resource from CDF with a local configuration. In addition, this makes it easier to create a new resource
+  using an existing resource as a template.
+- Missing overloading of the `.create` methods on `client.iam.security_categories.create`, `client.iam.groups.create`,
+  `client.labels.create`, `client.three_d.models.create`, `client.three_d.revisions.create`, `client.three_d.asset_mappings.create`,
+  `client.transformations.create`, `client.transformations.schedules.create`, and `client.relationships.create`.
+### Changed
+- The class `DatapointSubscriptionCreate` has been renamed to `DatapointSubscriptionWrite` to be consistent with the other write classes.
+  This is not a breaking change, as the old class is still available for backwards compatibility, but will be removed in the next major version.
+### Fixed
+- The `node.type` was not set when calling `.as_apply()` or `.as_write()` on a `Node` or `NodeList`. This is now fixed.
+
+## [7.10.1] - 2024-01-08
+### Added
+- Fix retries for `POST /raw/rows`.
+
+## [7.10.0] - 2024-01-08
+### Added
+- `geospatial.search_features` and `geospatial.stream_features` now accept the `allow_dimensionality_mismatch` parameter.
+
+## [7.9.0] - 2024-01-05
+### Added
+- You can now enable or disable user profiles for your CDF project with `client.iam.user_profiles.[enable/disable]`.
+
+## [7.8.10] - 2024-01-04
+### Changed
+- When using `OidcCredentials` to create a transformation, `cdf_project_name` is no longer optional as required
+  by the API.
+
+## [7.8.9] - 2024-01-04
+### Fixed
+- Pyodide-users of the SDK can now create Transformations with non-nonce credentials without a `pyodide.JsException`
+  exception being raised.
+
 ## [7.8.8] - 2024-01-03
 ### Added
 - Support for `workflows.cancel`.
@@ -65,7 +523,7 @@ Changes are grouped as follows
 
 ## [7.7.1] - 2023-12-20
 ### Fixed
-- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.  
+- Missing legacy capability ACLs: `modelHostingAcl` and `genericsAcl`.
 - The `IAMAPI.compare_capabilities` fails with a `AttributeError: 'UnknownAcl' object has no attribute '_capability_name'`
   if the user has an unknwon ACL. This is now fixed by skipping comparison of unknown ACLs and issuing a warning.
 
@@ -238,7 +696,7 @@ with no easy way to add a prefix. Also, it no longer expands metadata by default
 - Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
   `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
   `dict` but classes with attributes matching the API.
-- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `cababilities` of type `ProjectCapabilityList`
+- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `capabilities` of type `ProjectCapabilityList`
   instead of `list[dict]`
 - In data class `Transformation` the attribute `schedule`, `running_job`, and `last_running_job`, `external_id` and `id`
   are set to the `Transformation` `id` and `external_id` if not set. If they are set to a different value, a `ValueError` is raised
@@ -1987,11 +2445,11 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
   ```python
   # using a single string
   my_update = AssetUpdate(id=1).labels.add("PUMP").labels.remove("VALVE")
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
 
   # using a list of strings
   my_update = AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
   ```
 
 ## [2.0.0] - 2020-07-21
@@ -2022,7 +2480,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 
   # attach/detach labels to/from assets
   my_update = AssetUpdate(id=1).labels.add(["PUMP"]).labels.remove(["VALVE"])
-  res = c.assets.update(my_update)
+  res = client.assets.update(my_update)
   ```
 
 ### Fixed

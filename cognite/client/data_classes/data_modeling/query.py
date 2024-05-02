@@ -3,12 +3,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, Mapping, cast
+from typing import TYPE_CHECKING, Any, Literal, Mapping, Sequence, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteObject
-from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
     EdgeListWithCursor,
@@ -16,7 +16,9 @@ from cognite.client.data_classes.data_modeling.instances import (
     Node,
     NodeListWithCursor,
     PropertyValue,
+    TargetUnit,
 )
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._importing import local_import
 
@@ -27,20 +29,55 @@ if TYPE_CHECKING:
 @dataclass
 class SourceSelector(CogniteObject):
     source: ViewId
-    properties: list[str]
+    properties: list[str] | None = None
+    target_units: list[TargetUnit] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "source": self.source.dump(camel_case),
-            "properties": self.properties,
-        }
+        output: dict[str, Any] = {"source": self.source.dump(camel_case)}
+        if self.properties is not None:
+            output["properties"] = self.properties
+        if self.target_units:
+            output["targetUnits" if camel_case else "target_units"] = [
+                unit.dump(camel_case) for unit in self.target_units
+            ]
+        return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            source=ViewId.load(resource["source"]),
-            properties=resource["properties"],
-        )
+    def _load(
+        cls,
+        resource: dict[str, Any] | SourceSelector | ViewIdentifier | View,
+        cognite_client: CogniteClient | None = None,
+    ) -> Self:
+        if isinstance(resource, cls):
+            return resource
+        elif isinstance(resource, dict):
+            if "source" in resource:
+                view_id = ViewId.load(resource["source"])
+            else:
+                # This is in case only a ViewId is passed in.
+                view_id = ViewId.load(resource)
+            return cls(
+                source=view_id,
+                properties=resource.get("properties"),
+                target_units=[TargetUnit.load(unit) for unit in resource.get("targetUnits", [])] or None,
+            )
+
+        if isinstance(resource, View):
+            view_id = resource.as_id()
+        else:
+            view_id = ViewId.load(resource)  # type: ignore[arg-type]
+        return cls(source=view_id)
+
+    @classmethod
+    def _load_list(
+        cls, data: ViewIdentifier | View | SourceSelector | Sequence[ViewIdentifier | View | SourceSelector]
+    ) -> list[SourceSelector]:
+        if isinstance(data, (View, SourceSelector, ViewId)) or (
+            isinstance(data, tuple) and 2 <= len(data) <= 3 and all(isinstance(v, str) for v in data)
+        ):
+            data = [data]
+
+        return [cls._load(v) for v in data]  # type: ignore[arg-type]
 
 
 @dataclass
@@ -52,9 +89,7 @@ class Select(CogniteObject):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.sources:
-            output["sources"] = [
-                {"source": source.source.dump(camel_case), "properties": source.properties} for source in self.sources
-            ]
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
         if self.sort:
             output["sort"] = [s.dump(camel_case) for s in self.sort]
         if self.limit:
@@ -71,7 +106,7 @@ class Select(CogniteObject):
 
 
 class Query(CogniteObject):
-    """Query allows you to do advanced queries on the data model.
+    r"""Query allows you to do advanced queries on the data model.
 
     Args:
         with_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
@@ -121,19 +156,14 @@ class Query(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if not (with_ := resource.get("with")):
-            raise ValueError("The query must contain a with key")
-
-        loaded: dict[str, Any] = {"with_": {k: ResultSetExpression.load(v) for k, v in with_.items()}}
-        if not (select := resource.get("select")):
-            raise ValueError("The query must contain a select key")
-        loaded["select"] = {k: Select.load(v) for k, v in select.items()}
-
-        if parameters := resource.get("parameters"):
-            loaded["parameters"] = dict(parameters.items())
-        if cursors := resource.get("cursors"):
-            loaded["cursors"] = dict(cursors.items())
-        return cls(**loaded)
+        parameters = dict(resource["parameters"].items()) if "parameters" in resource else None
+        cursors = dict(resource["cursors"].items()) if "cursors" in resource else None
+        return cls(
+            with_={k: ResultSetExpression.load(v) for k, v in resource["with"].items()},
+            select={k: Select.load(v) for k, v in resource["select"].items()},
+            parameters=parameters,
+            cursors=cursors,
+        )
 
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and self.dump() == other.dump()
@@ -157,8 +187,7 @@ class ResultSetExpression(CogniteObject, ABC):
         self.chain_to = chain_to
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        ...
+    def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -176,11 +205,7 @@ class ResultSetExpression(CogniteObject, ABC):
                 "direction": query_node.get("direction"),
             }
             if (through := query_node.get("through")) is not None:
-                node["through"] = [
-                    through["view"]["space"],
-                    through["view"]["externalId"] + "/" + through["view"]["version"],
-                    through["identifier"],
-                ]
+                node["through"] = PropertyId.load(through)
             return cast(Self, NodeResultSetExpression(sort=sort, limit=resource.get("limit"), **node))
         elif "edges" in resource:
             query_edge = resource["edges"]
@@ -201,7 +226,7 @@ class ResultSetExpression(CogniteObject, ABC):
                 Self, EdgeResultSetExpression(**edge, sort=sort, post_sort=post_sort, limit=resource.get("limit"))
             )
         else:
-            raise NotImplementedError(f"Unknown query type: {resource}")
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and self.dump() == other.dump()
@@ -215,8 +240,9 @@ class NodeResultSetExpression(ResultSetExpression):
         filter (Filter | None): Filter the result set based on this filter.
         sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         limit (int | None): Limit the result set to this number of instances.
-        through (list[str] | tuple[str, str, str] | None): Chain your result-expression through this view.
-            The tuple must be on the form (space, view/version, property).
+        through (list[str] | tuple[str, str, str] | PropertyId | None): Chain your result-expression through this
+            container or view. The property must be a reference to a direct relation property. `from_` must be defined.
+            The tuple must be on the form (space, container, property) or (space, view/version, property).
         direction (Literal["outwards", "inwards"]): The direction to use when traversing direct relations.
             Only applicable when through is specified.
         chain_to (Literal["destination", "source"]): Control which side of the edge to chain to.
@@ -233,12 +259,29 @@ class NodeResultSetExpression(ResultSetExpression):
         filter: Filter | None = None,
         sort: list[InstanceSort] | None = None,
         limit: int | None = None,
-        through: list[str] | tuple[str, str, str] | None = None,
+        through: list[str] | tuple[str, str, str] | PropertyId | None = None,
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
     ) -> None:
         super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
-        self.through = through
+        self.through: PropertyId | None = self._init_through(through)
+
+    def _init_through(self, through: list[str] | tuple[str, str, str] | PropertyId | None) -> PropertyId | None:
+        if isinstance(through, PropertyId):
+            return through
+        if isinstance(through, (list, tuple)):
+            if len(through) != 3:
+                raise ValueError(
+                    f"`through` must be on the form (space, container, property) or (space, view/version, property), was {self.through}"
+                )
+            # set source to ViewId if '/' in through[1] , else set it to ContainerId
+            source: ViewId | ContainerId = (
+                ViewId(space=through[0], external_id=through[1].split("/")[0], version=through[1].split("/")[1])
+                if "/" in through[1]
+                else ContainerId(space=through[0], external_id=through[1])
+            )
+            return PropertyId(source=source, property=through[2])
+        return None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"nodes": {}}
@@ -248,17 +291,7 @@ class NodeResultSetExpression(ResultSetExpression):
         if self.filter:
             nodes["filter"] = self.filter.dump()
         if self.through:
-            if len(self.through) != 3:
-                raise ValueError(f"`through` must be on the form (space, view/version, property), was {self.through}")
-            nodes["through"] = {
-                "view": {
-                    "type": "view",
-                    "space": self.through[0],
-                    "externalId": self.through[1].split("/")[0],
-                    "version": self.through[1].split("/")[1],
-                },
-                "identifier": self.through[2],
-            }
+            nodes["through"] = self.through.dump(camel_case=camel_case)
         if self.chain_to:
             nodes["chainTo" if camel_case else "chain_to"] = self.chain_to
         if self.direction:
@@ -369,9 +402,9 @@ class QueryResult(UserDict):
             if not values:
                 instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
             elif values[0]["instanceType"] == "node":
-                instance[key] = NodeListWithCursor([Node.load(node) for node in values], cursor)
+                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor)
             elif values[0]["instanceType"] == "edge":
-                instance[key] = EdgeListWithCursor([Edge.load(edge) for edge in values], cursor)
+                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
 

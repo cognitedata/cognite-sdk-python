@@ -1,20 +1,49 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
-    CogniteResource,
     CogniteResourceList,
+    ExternalIDTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class LabelDefinition(CogniteResource):
+class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC):
     """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
+    This is the parent for the reading and writing versions.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): Name of the label.
+        description (str | None): Description of the label.
+        data_set_id (int | None): The id of the dataset this label belongs to.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.description = description
+        self.data_set_id = data_set_id
+
+
+class LabelDefinition(LabelDefinitionCore):
+    """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
+    This is the reading version of the LabelDefinition class. It is used when retrieving existing label definitions.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
@@ -34,12 +63,64 @@ class LabelDefinition(CogniteResource):
         data_set_id: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.name = name
-        self.description = description
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            description=description,
+            data_set_id=data_set_id,
+        )
         self.created_time = created_time
-        self.data_set_id = data_set_id
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> LabelDefinitionWrite:
+        """Returns this LabelDefinition in its writing version."""
+        if self.external_id is None or self.name is None:
+            raise ValueError("External ID and name are required for the writing version of a label definition.")
+        return LabelDefinitionWrite(
+            external_id=self.external_id,
+            name=self.name,
+            description=self.description,
+            data_set_id=self.data_set_id,
+        )
+
+
+class LabelDefinitionWrite(LabelDefinitionCore):
+    """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
+    This is the writing version of the LabelDefinition class. It is used when creating new label definitions.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): Name of the label.
+        description (str | None): Description of the label.
+        data_set_id (int | None): The id of the dataset this label belongs to.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        description: str | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            description=description,
+            data_set_id=data_set_id,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LabelDefinitionWrite:
+        return cls(
+            external_id=resource["externalId"],
+            name=resource["name"],
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+        )
+
+    def as_write(self) -> LabelDefinitionWrite:
+        """Returns this LabelDefinitionWrite instance."""
+        return self
 
 
 class LabelDefinitionFilter(CogniteFilter):
@@ -65,8 +146,20 @@ class LabelDefinitionFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
+class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = LabelDefinitionWrite
+
+
+class LabelDefinitionList(
+    WriteableCogniteResourceList[LabelDefinitionWrite, LabelDefinition], ExternalIDTransformerMixin
+):
     _RESOURCE = LabelDefinition
+
+    def as_write(self) -> LabelDefinitionWriteList:
+        """Returns this LabelDefinitionList in its writing version."""
+        return LabelDefinitionWriteList(
+            [item.as_write() for item in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class Label(CogniteObject):
@@ -81,17 +174,24 @@ class Label(CogniteObject):
         self.external_id = external_id
 
     @classmethod
-    def _load_list(cls, labels: Sequence[str | dict | LabelDefinition | Label] | None) -> list[Label] | None:
-        def convert_label(label: Label | str | LabelDefinition | dict) -> Label:
+    def _load_list(
+        cls,
+        labels: SequenceNotStr[str | dict | LabelDefinitionCore | Label]
+        | Sequence[dict | LabelDefinitionCore | Label]
+        | None,
+    ) -> list[Label] | None:
+        def convert_label(label: Label | str | LabelDefinitionCore | dict) -> Label:
             if isinstance(label, Label):
                 return label
             elif isinstance(label, str):
                 return Label(label)
-            elif isinstance(label, LabelDefinition):
+            elif isinstance(label, LabelDefinitionCore):
                 return Label(label.external_id)
             elif isinstance(label, dict):
                 if "externalId" in label:
                     return Label(label["externalId"])
+                if "external_id" in label:
+                    return Label(label["external_id"])
             raise ValueError(f"Could not parse label: {label}")
 
         if labels is None:

@@ -4,18 +4,6 @@ Time Series
 Metadata
 --------
 
-.. warning::
-    TimeSeries unit support is a new feature:
-      * The API specification is in beta.
-      * The SDK implementation is in alpha.
-
-    Unit is implemented in the TimeSeries APIs with the parameters `unit_external_id` and `unit_quantity` in
-    the methods below. It is only the use of these arguments that is in alpha. Using the methods below
-    without these arguments is stable.
-
-    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
-
-
 Retrieve a time series by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.retrieve
@@ -91,19 +79,8 @@ Calculate the result of a function on time series
 
 
 
-Data points
------------
-.. warning::
-    TimeSeries unit support is a new feature:
-      * The API specification is in beta.
-      * The SDK implementation is in alpha.
-
-    Unit conversion is implemented in the Datapoints APIs with the parameters `target_unit` and `target_unit_system` in
-    the retrieve methods below. It is only the use of these arguments that is in alpha. Using the methods below
-    without these arguments is stable.
-
-    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
-
+Datapoints
+----------
 
 Retrieve datapoints
 ^^^^^^^^^^^^^^^^^^^
@@ -125,53 +102,46 @@ Retrieve latest datapoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_latest
 
-Insert data points
-^^^^^^^^^^^^^^^^^^
+Insert datapoints
+^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert
 
-Insert data points into multiple time series
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Insert datapoints into multiple time series
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_multiple
 
 Insert pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_dataframe
 
-Delete a range of data points
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete a range of datapoints
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_range
 
-Delete ranges of data points
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete ranges of datapoints
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_ranges
 
 
-Data Points Data classes
-^^^^^^^^^^^^^^^^^^^^^^^^
+Datapoints Data classes
+^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.datapoints
     :members:
     :show-inheritance:
 
-Data Point Subscriptions
+Datapoint Subscriptions
 ---------------------------
-.. warning::
-    DataPoint Subscription is a new feature:
-      * The API specification is in beta.
-      * The SDK implementation is in alpha.
 
-    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
-
-
-Create data point subscriptions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create datapoint subscriptions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.create
 
-Retrieve a data point subscription by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve a datapoint subscription by id(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.retrieve
 
-List data point subscriptions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+List datapoint subscriptions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list
 
 List member time series of subscription
@@ -182,15 +152,15 @@ Iterate over subscriptions data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.iterate_data
 
-Update data point subscription
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Update datapoint subscription
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.update
 
-Delete data point subscription
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete datapoint subscription
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.delete
 
-Data Point Subscription classes
+Datapoint Subscription classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.datapoints_subscriptions
     :members:

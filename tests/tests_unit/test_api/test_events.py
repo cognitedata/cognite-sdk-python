@@ -80,7 +80,14 @@ class TestEvents:
 
     def test_list_sorting(self, cognite_client, mock_events_response):
         res = cognite_client.events.list(sort=["startTime:desc"])
-        assert ["startTime:desc"] == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
+        modern_sort_expr = [
+            {
+                "property": ["startTime"],
+                "order": "desc",
+                "nulls": "auto",
+            },
+        ]
+        assert modern_sort_expr == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_sorting_combined_with_partitions(self, cognite_client, mock_events_response):

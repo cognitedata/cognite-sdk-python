@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, MutableMapping
 
 import cognite.client as cc  # Do not import individual entities
 from cognite.client._http_client import _RetryTracker
-from cognite.client.config import ClientConfig
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
 
 if TYPE_CHECKING:
@@ -26,10 +26,10 @@ def patch_sdk_for_pyodide() -> None:
     # -----------------
     # Patch Cognite SDK
     # - For good measure ;)
-    os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"] = "1"
+    global_config.disable_pypi_version_check = True
 
     # - Disable gzip, not supported:
-    cc.config.global_config.disable_gzip = True
+    global_config.disable_gzip = True
 
     # - Use another HTTP adapter:
     cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
@@ -53,7 +53,7 @@ def patch_sdk_for_pyodide() -> None:
     #   >>> from cognite.client import CogniteClient
     #   >>> client = CogniteClient()
     if os.getenv("COGNITE_FUSION_NOTEBOOK") is not None:
-        cc.config.global_config.default_client_config = FusionNotebookConfig()
+        global_config.default_client_config = FusionNotebookConfig()
 
 
 def http_client__init__(

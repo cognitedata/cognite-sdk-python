@@ -1,4 +1,6 @@
-from typing import Iterator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Iterator, Literal
 
 import pytest
 from _pytest.mark import ParameterSet
@@ -8,6 +10,9 @@ from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.filters import Filter
 from tests.utils import all_subclasses
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 def load_and_dump_equals_data() -> Iterator[ParameterSet]:
@@ -171,6 +176,11 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
     }
     yield pytest.param(snake_cased_property, expected, id="And range filter with snake cased property")
 
+    yield pytest.param(
+        f.InvalidFilter([["some", "old", "prop"]], "overlaps"),
+        {"invalid": {"previously_referenced_properties": [["some", "old", "prop"]], "filter_type": "overlaps"}},
+    )
+
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
 def test_dump_filter(user_filter: Filter, expected: dict) -> None:
@@ -180,8 +190,9 @@ def test_dump_filter(user_filter: Filter, expected: dict) -> None:
 
 
 def test_unknown_filter_type() -> None:
-    with pytest.raises(ValueError, match="Unknown filter type: unknown"):
-        Filter.load({"unknown": {}})
+    unknown = Filter.load({"unknown": {}})
+    assert isinstance(unknown, f.UnknownFilter)
+    assert unknown.dump() == {"unknown": {}}
 
 
 @pytest.mark.parametrize("property_cls", filter(lambda cls: hasattr(cls, "metadata_key"), all_subclasses(EnumProperty)))
@@ -193,3 +204,29 @@ def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> Non
     # property may contain more (static) values, so we just verify the end:
     assert dumped["property"][-2:] == ["metadata", "key_foo_Bar_baz"]
     assert dumped["value"] == "value_foo Bar_baz"
+
+
+class TestSpaceFilter:
+    @pytest.mark.parametrize(
+        "inst_type, space, expected_spaces",
+        (
+            ("node", "myspace", ["myspace"]),
+            ("edge", ["myspace"], ["myspace"]),
+            ("node", ["myspace", "another"], ["myspace", "another"]),
+        ),
+    )
+    def test_space_filter(
+        self, inst_type: Literal["node", "edge"], space: str | list[str], expected_spaces: list[str]
+    ) -> None:
+        space_filter = f.SpaceFilter(space, inst_type)
+        expected = {"in": {"property": [inst_type, "space"], "values": expected_spaces}}
+        assert expected == space_filter.dump()
+
+    def test_space_filter_passes_isinstance_checks(self) -> None:
+        space_filter = f.SpaceFilter("myspace", "edge")
+        assert isinstance(space_filter, Filter)
+
+    def test_space_filter_passes_verification(self, cognite_client: CogniteClient) -> None:
+        space_filter = f.SpaceFilter("myspace", "edge")
+        cognite_client.data_modeling.instances._validate_filter(space_filter)
+        assert True

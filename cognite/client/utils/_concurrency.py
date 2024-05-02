@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
 )
 
+from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
@@ -119,13 +120,11 @@ T_Result = TypeVar("T_Result", covariant=True)
 
 
 class TaskExecutor(Protocol):
-    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]:
-        ...
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]: ...
 
 
 class TaskFuture(Protocol[T_Result]):
-    def result(self) -> T_Result:
-        ...
+    def result(self) -> T_Result: ...
 
 
 class SyncFuture(TaskFuture[T_Result]):
@@ -169,18 +168,18 @@ class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
 
     @classmethod
-    def use_threadpool(cls) -> bool:
+    def uses_threadpool(cls) -> bool:
         return cls.executor_type == "threadpool"
 
     @classmethod
-    def use_mainthread(cls) -> bool:
+    def uses_mainthread(cls) -> bool:
         return cls.executor_type == "mainthread"
 
     @classmethod
     def get_executor(cls, max_workers: int) -> TaskExecutor:
-        if cls.use_threadpool():
+        if cls.uses_threadpool():
             return cls.get_thread_pool_executor(max_workers)
-        elif cls.use_mainthread():
+        elif cls.uses_mainthread():
             return cls.get_mainthread_executor()
         raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
 
@@ -190,7 +189,7 @@ class ConcurrencySettings:
 
     @classmethod
     def get_thread_pool_executor(cls, max_workers: int) -> ThreadPoolExecutor:
-        assert cls.use_threadpool(), "use get_executor instead"
+        assert cls.uses_threadpool(), "use get_executor instead"
         global _THREAD_POOL_EXECUTOR_SINGLETON
 
         if max_workers < 1:
@@ -203,6 +202,17 @@ class ConcurrencySettings:
         return executor
 
     @classmethod
+    def get_thread_pool_executor_or_raise(cls, max_workers: int) -> ThreadPoolExecutor:
+        if cls.uses_threadpool():
+            return cls.get_thread_pool_executor(max_workers)
+
+        if _RUNNING_IN_BROWSER:
+            raise RuntimeError("The method you tried to use is not available in Pyodide/WASM")
+        raise RuntimeError(
+            "The method you tried to use requires a version of Python with a working implementation of threads."
+        )
+
+    @classmethod
     def get_data_modeling_executor(cls) -> ThreadPoolExecutor:
         """
         The data modeling backend has different concurrency limits compared with the rest of CDF.
@@ -211,7 +221,7 @@ class ConcurrencySettings:
         Returns:
             ThreadPoolExecutor: The data modeling executor.
         """
-        if cls.use_mainthread():
+        if cls.uses_mainthread():
             return cls.get_mainthread_executor()  # type: ignore [return-value]
 
         global _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
@@ -238,7 +248,7 @@ def execute_tasks_serially(
             elif isinstance(task, tuple):
                 results.append(func(*task))
             else:
-                continue
+                raise TypeError(f"invalid task type: {type(task)}")
             successful_tasks.append(task)
 
         except Exception as err:
@@ -265,11 +275,14 @@ def execute_tasks(
     """
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
     be changed using ConcurrencySettings.executor_type.
+
+    Results are returned in the same order as that given by tasks.
     """
-    if ConcurrencySettings.use_mainthread() or isinstance(executor, MainThreadExecutor):
+    if ConcurrencySettings.uses_mainthread() or isinstance(executor, MainThreadExecutor):
         return execute_tasks_serially(func, tasks, fail_fast)
 
     executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
+    task_order = [id(task) for task in tasks]
 
     futures_dct: dict[Future, tuple | dict] = {}
     for task in tasks:
@@ -277,16 +290,19 @@ def execute_tasks(
             futures_dct[executor.submit(func, **task)] = task
         elif isinstance(task, tuple):
             futures_dct[executor.submit(func, *task)] = task
+        else:
+            raise TypeError(f"invalid task type: {type(task)}")
 
-    results, exceptions = [], []
-    successful_tasks, failed_tasks, unknown_result_tasks, skipped_tasks = [], [], [], []
+    results: dict[int, tuple | dict] = {}
+    successful_tasks: dict[int, tuple | dict] = {}
+    failed_tasks, unknown_result_tasks, skipped_tasks, exceptions = [], [], [], []
 
     for fut in as_completed(futures_dct):
         task = futures_dct[fut]
         try:
             res = fut.result()
-            successful_tasks.append(task)
-            results.append(res)
+            results[id(task)] = task
+            successful_tasks[id(task)] = res
         except CancelledError:
             # In fail-fast mode, after an error has been raised, we attempt to cancel and skip tasks:
             skipped_tasks.append(task)
@@ -303,7 +319,16 @@ def execute_tasks(
                 for fut in futures_dct:
                     fut.cancel()
 
-    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, skipped_tasks, results, exceptions)
+    ordered_successful_tasks = [results[task_id] for task_id in task_order if task_id in results]
+    ordered_results = [successful_tasks[task_id] for task_id in task_order if task_id in successful_tasks]
+    return TasksSummary(
+        ordered_successful_tasks,
+        unknown_result_tasks,
+        failed_tasks,
+        skipped_tasks,
+        ordered_results,
+        exceptions,
+    )
 
 
 def classify_error(err: Exception) -> Literal["failed", "unknown"]:

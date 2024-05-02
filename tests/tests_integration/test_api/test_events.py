@@ -10,6 +10,7 @@ from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, Event
 from cognite.client.data_classes.events import EventProperty, SortableEventProperty
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import timestamp_to_ms
+from cognite.client.utils._text import random_string
 from tests.utils import set_request_limit
 
 
@@ -94,7 +95,6 @@ class TestEventsAPI:
 
     def test_list_ongoing(self, cognite_client):
         res = cognite_client.events.list(end_time=EndTimeFilter(is_null=True), limit=10)
-
         assert len(res) > 0
 
     def test_aggregation(self, cognite_client, new_event):
@@ -143,16 +143,15 @@ class TestEventsAPI:
         assert cognite_client.events.retrieve(id=a.id) is None
 
     def test_upsert_2_events_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert2_one_preexisting:new",
+            external_id="test_upsert2_one_preexisting:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
         preexisting = Event(
-            external_id="test_upsert2_one_preexisting:preexisting",
+            external_id="test_upsert2_one_preexisting:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
@@ -165,10 +164,8 @@ class TestEventsAPI:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
 
-            # Act
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
-            # Assert
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
@@ -187,7 +184,6 @@ class TestEventsAPI:
         result = cognite_client.events.filter(
             f.And(is_integration_test, has_lorem_ipsum), sort=SortableEventProperty.external_id
         )
-
         assert len(result) == 1, "Expected only one event to match the filter"
         assert result[0].external_id == "integration_test:event1_lorem_ipsum"
 
@@ -197,7 +193,18 @@ class TestEventsAPI:
         has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
 
         result = cognite_client.events.filter(f.And(is_integration_test, has_lorem_ipsum), sort=None)
+        assert len(result) == 1, "Expected only one event to match the filter"
+        assert result[0].external_id == "integration_test:event1_lorem_ipsum"
 
+    def test_list_with_advanced_filter(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        f = filters
+        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
+
+        result = cognite_client.events.list(
+            external_id_prefix="integration_test:",
+            advanced_filter=has_lorem_ipsum,
+            sort=SortableEventProperty.external_id,
+        )
         assert len(result) == 1, "Expected only one event to match the filter"
         assert result[0].external_id == "integration_test:event1_lorem_ipsum"
 
@@ -206,7 +213,6 @@ class TestEventsAPI:
         is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
         count = cognite_client.events.aggregate_count(advanced_filter=is_integration_test)
-
         assert count >= len(event_list)
 
     def test_aggregate_has_type(self, cognite_client: CogniteClient, event_list: EventList) -> None:
@@ -214,7 +220,6 @@ class TestEventsAPI:
         is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
         count = cognite_client.events.aggregate_count(EventProperty.type, advanced_filter=is_integration_test)
-
         assert count >= len([e for e in event_list if e.type])
 
     def test_aggregate_type_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
@@ -224,7 +229,6 @@ class TestEventsAPI:
         count = cognite_client.events.aggregate_cardinality_values(
             EventProperty.type, advanced_filter=is_integration_test
         )
-
         assert count >= len({e.type for e in event_list if e.type})
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
@@ -234,7 +238,6 @@ class TestEventsAPI:
         count = cognite_client.events.aggregate_cardinality_properties(
             EventProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert count >= len({k for e in event_list for k in e.metadata})
 
     def test_aggregate_unique_types(self, cognite_client: CogniteClient, event_list: EventList) -> None:
@@ -244,7 +247,6 @@ class TestEventsAPI:
         result = cognite_client.events.aggregate_unique_values(
             property=EventProperty.type, advanced_filter=is_integration_test
         )
-
         assert result
         assert set(result.unique) >= {e.type for e in event_list if e.type}
 
@@ -255,7 +257,6 @@ class TestEventsAPI:
         result = cognite_client.events.aggregate_unique_properties(
             EventProperty.metadata, advanced_filter=is_integration_test
         )
-
         assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in event_list for key in a.metadata or []

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Mapping, Sequence, Tuple, Union, cast, final
+from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequence, Tuple, Union, cast, final
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConversionPropertyList
+from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
-from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
@@ -55,12 +56,15 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, (EnumProperty, NoCaseConversionPropertyList)):
+    if isinstance(property_, EnumProperty):
         return property_.as_reference()
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):
-        return type(property_)(map(to_camel_case, property_)) if camel_case else property_
+        if len(property_) == 1:
+            return [to_camel_case(property_[0])] if camel_case else property_
+        else:
+            return property_
     else:
         raise ValueError(f"Invalid property format {property_}")
 
@@ -85,20 +89,17 @@ class Filter(ABC):
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
-        (filter_name,) = filter_
-        filter_body = filter_[filter_name]
-
-        if filter_name == And._filter_name:
+        if (filter_body := filter_.get(And._filter_name)) is not None:
             return And(*(Filter.load(filter_) for filter_ in filter_body))
-        elif filter_name == Or._filter_name:
+        elif (filter_body := filter_.get(Or._filter_name)) is not None:
             return Or(*(Filter.load(filter_) for filter_ in filter_body))
-        elif filter_name == Not._filter_name:
+        elif (filter_body := filter_.get(Not._filter_name)) is not None:
             return Not(Filter.load(filter_body))
-        elif filter_name == Nested._filter_name:
+        elif (filter_body := filter_.get(Nested._filter_name)) is not None:
             return Nested(scope=filter_body["scope"], filter=Filter.load(filter_body["filter"]))
-        elif filter_name == MatchAll._filter_name:
+        elif MatchAll._filter_name in filter_:
             return MatchAll()
-        elif filter_name == HasData._filter_name:
+        elif (filter_body := filter_.get(HasData._filter_name)) is not None:
             containers = []
             views = []
             for view_or_space in filter_body:
@@ -107,7 +108,7 @@ class Filter(ABC):
                 else:
                     views.append((view_or_space["space"], view_or_space["externalId"], view_or_space.get("version")))
             return HasData(containers=containers, views=views)
-        elif filter_name == Range._filter_name:
+        elif (filter_body := filter_.get(Range._filter_name)) is not None:
             return Range(
                 property=filter_body["property"],
                 gt=_load_filter_value(filter_body.get("gt")),
@@ -115,7 +116,7 @@ class Filter(ABC):
                 lt=_load_filter_value(filter_body.get("lt")),
                 lte=_load_filter_value(filter_body.get("lte")),
             )
-        elif filter_name == Overlaps._filter_name:
+        elif (filter_body := filter_.get(Overlaps._filter_name)) is not None:
             return Overlaps(
                 start_property=filter_body.get("startProperty"),
                 end_property=filter_body.get("endProperty"),
@@ -124,69 +125,69 @@ class Filter(ABC):
                 lt=_load_filter_value(filter_body.get("lt")),
                 lte=_load_filter_value(filter_body.get("lte")),
             )
-        elif filter_name == Equals._filter_name:
+        elif (filter_body := filter_.get(Equals._filter_name)) is not None:
             return Equals(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body.get("value")),
             )
-        elif filter_name == In._filter_name:
+        elif (filter_body := filter_.get(In._filter_name)) is not None:
             return In(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body.get("values"))),
             )
-        elif filter_name == Exists._filter_name:
+        elif (filter_body := filter_.get(Exists._filter_name)) is not None:
             return Exists(property=filter_body["property"])
-        elif filter_name == Prefix._filter_name:
+        elif (filter_body := filter_.get(Prefix._filter_name)) is not None:
             return Prefix(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
-        elif filter_name == ContainsAny._filter_name:
+        elif (filter_body := filter_.get(ContainsAny._filter_name)) is not None:
             return ContainsAny(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == ContainsAll._filter_name:
+        elif (filter_body := filter_.get(ContainsAll._filter_name)) is not None:
             return ContainsAll(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == ContainsAll._filter_name:
-            return ContainsAll(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
-            )
-        elif filter_name == GeoJSONIntersects._filter_name:
+        elif (filter_body := filter_.get(GeoJSONIntersects._filter_name)) is not None:
             return GeoJSONIntersects(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == GeoJSONDisjoint._filter_name:
+        elif (filter_body := filter_.get(GeoJSONDisjoint._filter_name)) is not None:
             return GeoJSONDisjoint(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == GeoJSONWithin._filter_name:
+        elif (filter_body := filter_.get(GeoJSONWithin._filter_name)) is not None:
             return GeoJSONWithin(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == InAssetSubtree._filter_name:
+        elif (filter_body := filter_.get(SpaceFilter._filter_name)) is not None:
             return InAssetSubtree(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
-        elif filter_name == Search._filter_name:
+        elif (filter_body := filter_.get(Search._filter_name)) is not None:
             return Search(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
+        elif (filter_body := filter_.get(InvalidFilter._filter_name)) is not None:
+            return InvalidFilter(
+                previously_referenced_properties=filter_body["previouslyReferencedProperties"],
+                filter_type=filter_body["filterType"],
+            )
         else:
-            raise ValueError(f"Unknown filter type: {filter_name}")
+            filter_name, filter_body = next(iter(filter_.items()))
+            return UnknownFilter(filter_name, filter_body)
 
     @abstractmethod
-    def _filter_body(self, camel_case_property: bool) -> list | dict:
-        ...
+    def _filter_body(self, camel_case_property: bool) -> list | dict: ...
 
     def _involved_filter_types(self) -> set[type[Filter]]:
         output = {type(self)}
@@ -196,7 +197,45 @@ class Filter(ABC):
         return output
 
 
-def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[type[Filter]], api_name: str) -> None:
+class UnknownFilter(Filter):
+    def __init__(self, filter_name: str, filter_body: dict[str, Any]) -> None:
+        self.__actual_filter_name = filter_name
+        self.__actual_filter_body = filter_body
+
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        if camel_case_property:
+            return convert_all_keys_to_camel_case(self.__actual_filter_body)
+        else:
+            return self.__actual_filter_body
+
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        return {self.__actual_filter_name: self._filter_body(camel_case_property)}
+
+
+class InvalidFilter(Filter):
+    _filter_name = "invalid"
+
+    def __init__(self, previously_referenced_properties: list[list[str]], filter_type: str) -> None:
+        self.__previously_reference_properties = previously_referenced_properties
+        self.__filter_type = filter_type
+
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        body = {
+            "previously_referenced_properties": self.__previously_reference_properties,
+            "filter_type": self.__filter_type,
+        }
+        if camel_case_property:
+            return convert_all_keys_to_camel_case(body)
+        else:
+            return body
+
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        return {self._filter_name: self._filter_body(camel_case_property)}
+
+
+def _validate_filter(
+    filter: Filter | dict[str, Any] | None, supported_filters: frozenset[type[Filter]], api_name: str
+) -> None:
     if filter is None or isinstance(filter, dict):
         return
     if not_supported := (filter._involved_filter_types() - supported_filters):
@@ -256,13 +295,22 @@ class And(CompoundFilter):
     Args:
         *filters (Filter): The filters to combine.
 
-
     Example:
+        A filter that combines an Equals and an In filter:
 
-        Combine an In and an Equals filter::
+        - Using a tuple to reference the property:
 
             >>> from cognite.client.data_classes.filters import And, Equals, In
-            >>> filter = And(Equals(("some", "property"), 42), In(("another", "property"), ["a", "b", "c"]))
+            >>> flt = And(
+            ...     Equals(("space", "view_xid/version", "some_property"), 42),
+            ...     In(("space", "view_xid/version", "another_property"), ["a", "b", "c"]))
+
+        - Using the ``View.as_property_ref`` method to reference the property:
+
+            >>> from cognite.client.data_classes.filters import And, Equals, In
+            >>> flt = And(
+            ...     Equals(my_view.as_property_ref("some_property"), 42),
+            ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
     """
 
     _filter_name = "and"
@@ -276,11 +324,20 @@ class Or(CompoundFilter):
         *filters (Filter): The filters to combine.
 
     Example:
+        A filter that combines an Equals and an In filter:
 
-        Combine an In and an Equals filter::
+        - Using a tuple to reference the property:
 
             >>> from cognite.client.data_classes.filters import Or, Equals, In
-            >>> filter = Or(Equals(("some", "property"), 42), In(("another", "property"), ["a", "b", "c"]))
+            >>> flt = Or(
+            ...     Equals(("space", "view_xid/version", "some_property"), 42),
+            ...     In(("space", "view_xid/version", "another_property"), ["a", "b", "c"]))
+
+        - Using the ``View.as_property_ref`` method to reference the property:
+
+            >>> flt = Or(
+            ...     Equals(my_view.as_property_ref("some_property"), 42),
+            ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
     """
 
     _filter_name = "or"
@@ -294,17 +351,21 @@ class Not(CompoundFilter):
         filter (Filter): The filter to negate.
 
     Example:
+        A filter that negates an Equals filter:
 
-        Negate an Equals filter:
+        - Using a tuple to reference the property:
 
             >>> from cognite.client.data_classes.filters import Equals, Not
-            >>> filter = Not(Equals(("some", "property"), 42))
+            >>> is_42 = Equals(("space", "view_xid/view_version", "some_property"), 42)
+            >>> flt = Not(is_42)
+
+        - Using the ``View.as_property_ref`` method to reference the property:
+
+            >>> is_42 = Equals(my_view.as_property_ref("some_property"), 42)
+            >>> flt = Not(is_42)
     """
 
     _filter_name = "not"
-
-    def __init__(self, filter: Filter) -> None:
-        super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return self._filters[0].dump(camel_case_property)
@@ -319,14 +380,21 @@ class Nested(Filter):
         filter (Filter): The filter to apply.
 
     Example:
+        Assume you have two Views, viewA and viewB. viewA has a direct relation to viewB called "viewB-ID",
+        and we want to filter the nodes on viewA based on the property "viewB-Property" on viewB.
 
-        Filter on a related node's property:
+        - A filter using a tuple to reference the property:
 
             >>> from cognite.client.data_classes.filters import Nested, Equals
-            >>> filter = Nested(
-            ...     ("somespace", "somecontainer", "related"),
-            ...     Equals(("somespace", "somecontainer", "someProperty"), 42)
-            ... )
+            >>> flt = Nested(
+            ...     scope=("space", "viewA_xid/view_version", "viewB-ID"),
+            ...     filter=Equals(("space", "viewB_xid/view_version", "viewB-Property"), 42))
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = Nested(
+            ...     scope=viewA.as_property_ref("viewB-ID"),
+            ...     filter=Equals(viewB.as_property_ref("viewB-Property"), 42))
     """
 
     _filter_name = "nested"
@@ -344,11 +412,10 @@ class MatchAll(Filter):
     """A filter that matches all instances.
 
     Example:
-
-        Match everything:
+        A filter that matches all instances:
 
             >>> from cognite.client.data_classes.filters import MatchAll
-            >>> filter = MatchAll()
+            >>> flt = MatchAll()
     """
 
     _filter_name = "matchAll"
@@ -367,10 +434,15 @@ class HasData(Filter):
 
     Example:
 
-        Filter on having data in a specific container:
+        - Filter on having data in a specific container, by using a tuple to reference the property:
 
             >>> from cognite.client.data_classes.filters import HasData
-            >>> filter = HasData(containers=[("somespace", "somecontainer")])
+            >>> flt = HasData(containers=[("some_space", "container_xid")])
+
+        - Filter on having data in a specific view by using a ``ViewId``:
+
+            >>> my_view = ViewId(space="some_space", external_id="view_xid", version="view_version")
+            >>> flt = HasData(views=[my_view])
     """
 
     _filter_name = "hasData"
@@ -410,11 +482,16 @@ class Range(FilterWithProperty):
         lte (FilterValue | None): Less than or equal to.
 
     Example:
+        Filter that can be used to retrieve all instances with a property value greater than 42:
 
-        Retrieve all instances with a property value greater than 42:
+        - A filter using a tuple to reference the property:
 
             >>> from cognite.client.data_classes.filters import Range
-            >>> filter = Range(("some", "property"), gt=42)
+            >>> flt = Range(("space", "view_xid/version", "some_property"), gt=42)
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = Range(my_view.as_property_ref("some_property"), gt=42)
     """
 
     _filter_name = "range"
@@ -461,11 +538,22 @@ class Overlaps(Filter):
 
 
     Example:
+        Filter that can be used to retrieve all instances with a range overlapping with (42, 100):
 
-        Retrieve all instances with a range overlapping with the range (42, 100):
+        - A filter using a tuple to reference the property:
 
             >>> from cognite.client.data_classes.filters import Overlaps
-            >>> filter = Overlaps(("some", "startProperty"), ("some", "endProperty"), gt=42, lt=100)
+            >>> flt = Overlaps(
+            ...     ("space", "view_xid/version", "some_start_property"),
+            ...     ("space", "view_xid/version", "some_end_property"),
+            ...     gt=42, lt=100)
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = Overlaps(
+            ...     my_view.as_property_ref("some_start_property"),
+            ...     my_view.as_property_ref("some_end_property"),
+            ...     gt=42, lt=100)
     """
 
     _filter_name = "overlaps"
@@ -512,11 +600,16 @@ class Equals(FilterWithPropertyAndValue):
         value (FilterValue): The value to filter on.
 
     Example:
-
         Filter than can be used to retrieve items where the property value equals 42:
 
+        - A filter using a tuple to reference the property:
+
             >>> from cognite.client.data_classes.filters import Equals
-            >>> filter = Equals(("some", "property"), 42)
+            >>> flt = Equals(("space", "view_xid/version", "some_property"), 42)
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = Equals(my_view.as_property_ref("some_property"), 42)
     """
 
     _filter_name = "equals"
@@ -526,16 +619,27 @@ class Equals(FilterWithPropertyAndValue):
 class In(FilterWithPropertyAndValueList):
     """Filters results based on whether the property equals one of the provided values.
 
+    When comparing two arrays, ``In`` and ``ContainsAny`` behave the same way. But ``In`` also allows you
+    filter on a primitive property. i.e:
+
+            >>> [1,2,3] in [3,4,5] => true
+            >>> 1 in [1,2,3] => true
+
     Args:
         property (PropertyReference): The property to filter on.
-        values (FilterValueList): The values to filter on.
+        values (FilterValueList): The value(s) to filter on.
 
     Example:
-
         Filter than can be used to retrieve items where the property value equals 42 or 43 (or both):
 
+        - A filter using a tuple to reference the property:
+
             >>> from cognite.client.data_classes.filters import In
-            >>> filter = In(("some", "property"), [42, 43])
+            >>> filter = In(("space", "view_xid/version", "some_property"), [42, 43])
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> filter = In(my_view.as_property_ref("some_property"), [42, 43])
     """
 
     _filter_name = "in"
@@ -549,11 +653,16 @@ class Exists(FilterWithProperty):
         property (PropertyReference): The property to filter on.
 
     Example:
-
         Filter than can be used to retrieve items where the property value is set:
 
+        - A filter using a tuple to reference the property:
+
             >>> from cognite.client.data_classes.filters import Exists
-            >>> filter = Exists(("some", "property"))
+            >>> flt = Exists(("space", "view_xid/version", "some_property"))
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = Exists(my_view.as_property_ref("some_property"))
     """
 
     _filter_name = "exists"
@@ -568,11 +677,16 @@ class Prefix(FilterWithPropertyAndValue):
         value (FilterValue): The value to filter on.
 
     Example:
-
         Filter than can be used to retrieve items where the property value starts with "somePrefix":
 
+        - A filter using a tuple to reference the property:
+
             >>> from cognite.client.data_classes.filters import Prefix
-            >>> filter = Prefix(("some", "property"), "somePrefix")
+            >>> flt = Prefix(("space", "view_xid/version", "some_property"), "somePrefix")
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = Prefix(my_view.as_property_ref("some_property"), "somePrefix")
     """
 
     _filter_name = "prefix"
@@ -582,16 +696,27 @@ class Prefix(FilterWithPropertyAndValue):
 class ContainsAny(FilterWithPropertyAndValueList):
     """Returns results where the referenced property contains _any_ of the provided values.
 
+    When comparing two arrays, ``In`` and ``ContainsAny`` behave the same way. But ``ContainsAny`` does
+    not allow you filter on a primitive property. i.e in sudo code:
+
+        >>> [1,2,3] in [3,4,5] => true
+        >>> 1 in [1,2,3] => ERROR
+
     Args:
         property (PropertyReference): The property to filter on.
-        values (FilterValueList): The value to filter on.
+        values (FilterValueList): The value(s) to filter on.
 
     Example:
-
         Filter than can be used to retrieve items where the property value contains either 42 or 43:
 
+        - A filter using a tuple to reference the property:
+
             >>> from cognite.client.data_classes.filters import ContainsAny
-            >>> filter = ContainsAny(("some", "property"), [42, 43])
+            >>> flt = ContainsAny(("space", "view_xid/version", "some_property"), [42, 43])
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = ContainsAny(my_view.as_property_ref("some_property"), [42, 43])
     """
 
     _filter_name = "containsAny"
@@ -606,11 +731,16 @@ class ContainsAll(FilterWithPropertyAndValueList):
         values (FilterValueList): The value to filter on.
 
     Example:
-
         Filter than can be used to retrieve items where the property value contains both 42 and 43:
 
+        - A filter using a tuple to reference the property:
+
             >>> from cognite.client.data_classes.filters import ContainsAll
-            >>> filter = ContainsAll(("some", "property"), [42, 43])
+            >>> flt = ContainsAll(("space", "view_xid/version", "some_property"), [42, 43])
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = ContainsAll(my_view.as_property_ref("some_property"), [42, 43])
     """
 
     _filter_name = "containsAll"
@@ -650,3 +780,45 @@ class InAssetSubtree(FilterWithPropertyAndValue):
 @final
 class Search(FilterWithPropertyAndValue):
     _filter_name = "search"
+
+
+_BASIC_FILTERS: frozenset[type[Filter]] = frozenset(
+    {And, Or, Not, In, Equals, Exists, Range, Prefix, ContainsAny, ContainsAll}
+)
+
+
+# ######################################################### #
+# Custom filters below (custom meaning 'no API equivalent') #
+# ######################################################### #
+
+
+class SpaceFilter(FilterWithPropertyAndValueList):
+    """Filters instances based on the space.
+
+    Args:
+        space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
+        instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
+
+    Example:
+        Filter than can be used to retrieve nodes from space "space1" or "space2":
+
+            >>> from cognite.client.data_classes.filters import SpaceFilter
+            >>> flt = SpaceFilter(["space1", "space2"])
+
+        Filter than can be used to retrieve edges only from "space3":
+
+            >>> flt = SpaceFilter("space3", instance_type="edge")
+    """
+
+    _filter_name = In._filter_name
+
+    def __init__(self, space: str | SequenceNotStr[str], instance_type: Literal["node", "edge"] = "node") -> None:
+        space_list = [space] if isinstance(space, str) else list(space)
+        super().__init__(property=[instance_type, "space"], values=space_list)
+
+    @classmethod
+    def load(cls, filter_: dict[str, Any]) -> NoReturn:
+        raise NotImplementedError("Custom filter 'SpaceFilter' can not be loaded")
+
+    def _involved_filter_types(self) -> set[type[Filter]]:
+        return {In}

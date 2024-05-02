@@ -15,6 +15,7 @@ from cognite.client.data_classes.annotation_types.primitives import (
     VisionResource,
 )
 from cognite.client.utils._auxiliary import load_resource
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -33,13 +34,16 @@ class ObjectDetection(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.bounding_box, dict):
-            self.bounding_box = BoundingBox(**self.bounding_box)
+            self.bounding_box = BoundingBox._load(convert_all_keys_to_camel_case_recursive(self.bounding_box))
         if isinstance(self.polygon, dict):
-            self.polygon = Polygon(**self.polygon)
+            self.polygon = Polygon._load(convert_all_keys_to_camel_case_recursive(self.polygon))
         if isinstance(self.polyline, dict):
-            self.polyline = Polyline(**self.polyline)
+            self.polyline = Polyline._load(convert_all_keys_to_camel_case_recursive(self.polyline))
         if isinstance(self.attributes, dict):
-            self.attributes = {k: Attribute(**v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
+            self.attributes = {
+                k: Attribute._load(convert_all_keys_to_camel_case_recursive(v)) if isinstance(v, dict) else v
+                for k, v in self.attributes.items()
+            }
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ObjectDetection:
@@ -71,7 +75,7 @@ class TextRegion(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.text_region, dict):
-            self.text_region = BoundingBox(**self.text_region)
+            self.text_region = BoundingBox._load(convert_all_keys_to_camel_case_recursive(self.text_region))
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TextRegion:
@@ -91,16 +95,16 @@ class AssetLink(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.text_region, dict):
-            self.text_region = BoundingBox(**self.text_region)
+            self.text_region = BoundingBox._load(convert_all_keys_to_camel_case_recursive(self.text_region))
         if isinstance(self.asset_ref, dict):
-            self.asset_ref = CdfResourceRef(**self.asset_ref)
+            self.asset_ref = CdfResourceRef._load(convert_all_keys_to_camel_case_recursive(self.asset_ref))
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> AssetLink:
         return cls(
             text=resource["text"],
-            text_region=BoundingBox.load(resource["textRegion"]),
-            asset_ref=CdfResourceRef.load(resource["assetRef"]),
+            text_region=BoundingBox._load(resource["textRegion"]),
+            asset_ref=CdfResourceRef._load(resource["assetRef"]),
             confidence=resource.get("confidence"),
         )
 
@@ -114,15 +118,21 @@ class KeypointCollection(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.attributes, dict):
-            self.attributes = {k: Attribute._load(v) if isinstance(v, dict) else v for k, v in self.attributes.items()}
+            self.attributes = {
+                k: Attribute._load(convert_all_keys_to_camel_case_recursive(v)) if isinstance(v, dict) else v
+                for k, v in self.attributes.items()
+            }
         if isinstance(self.keypoints, dict):
-            self.keypoints = {k: Keypoint._load(v) if isinstance(v, dict) else v for k, v in self.keypoints.items()}
+            self.keypoints = {
+                k: Keypoint._load(convert_all_keys_to_camel_case_recursive(v)) if isinstance(v, dict) else v
+                for k, v in self.keypoints.items()
+            }
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
-            keypoints={k: Keypoint.load(v) for k, v in resource["keypoints"].items()},
+            keypoints={k: Keypoint._load(v) for k, v in resource["keypoints"].items()},
             attributes=resource.get("attributes"),
             confidence=resource.get("confidence"),
         )
@@ -143,9 +153,13 @@ class KeypointCollectionWithObjectDetection(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.object_detection, dict):
-            self.object_detection = ObjectDetection(**self.object_detection)
+            self.object_detection = ObjectDetection._load(
+                convert_all_keys_to_camel_case_recursive(self.object_detection)
+            )
         if isinstance(self.keypoint_collection, dict):
-            self.keypoint_collection = KeypointCollection(**self.keypoint_collection)
+            self.keypoint_collection = KeypointCollection._load(
+                convert_all_keys_to_camel_case_recursive(self.keypoint_collection)
+            )
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:

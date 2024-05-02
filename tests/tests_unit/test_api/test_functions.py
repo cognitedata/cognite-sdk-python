@@ -1,7 +1,6 @@
 import io
 import operator as op
 import os
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
@@ -79,7 +78,6 @@ EXAMPLE_FUNCTION = {
     "runtime": "py38",
     "runtimeVersion": "Python 3.8.13",
 }
-
 CALL_RUNNING = {
     "id": CALL_ID,
     "startTime": 1585925306822,
@@ -323,7 +321,7 @@ def cognite_client_with_client_credentials_flow(rsps):
         rsps.POST,
         "https://bla",
         status=200,
-        json={"access_token": "abc", "expires_at": datetime.now().timestamp() + 1000},
+        json={"access_token": "abc", "expires_in": 1000},
     )
     return CogniteClient(
         ClientConfig(
@@ -811,7 +809,7 @@ def mock_function_schedules_response(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_function_schedules_response_xid_not_valid_with_oidc(rsps, cognite_client):
+def mock_function_schedules_response_with_xid(rsps, cognite_client):
     # Creating a new schedule first needs a session (to pass the nonce):
     rsps.add(
         rsps.POST,
@@ -819,17 +817,13 @@ def mock_function_schedules_response_xid_not_valid_with_oidc(rsps, cognite_clien
         status=200,
         json={"items": [{"nonce": "very noncy", "id": 123, "status": "mocky"}]},
     )
-    rsps.add(
-        rsps.POST,
-        full_url(cognite_client, "/functions/schedules"),
-        status=400,
-        json={
-            "error": {
-                "message": "When creating a schedule with OIDC-tokens, you must use 'function_id' and not 'function_external_id'",
-                "code": 400,
-            }
-        },
-    )
+
+    schedule_url = full_url(cognite_client, "/functions/schedules")
+    rsps.add(rsps.POST, schedule_url, status=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]})
+
+    retrieve_url = full_url(cognite_client, "/functions/byids")
+    rsps.add(rsps.POST, retrieve_url, status=200, json={"items": [EXAMPLE_FUNCTION]})
+
     yield rsps
 
 
@@ -910,6 +904,33 @@ class TestFunctionSchedulesAPI:
             "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
             == excinfo.value.args[0]
         )
+
+    def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
+        with pytest.raises(ValueError) as excinfo:
+            cognite_client.functions.schedules.create(
+                function_id=123,
+                function_external_id="my-func",
+                name="my-schedule",
+                cron_expression="*/5 * * * *",
+            )
+        assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
+
+    @pytest.mark.usefixtures("mock_function_schedules_response_with_xid")
+    def test_create_schedules_with_function_external_id(self, cognite_client):
+        with patch.object(
+            cognite_client.functions.schedules, "_post", wraps=cognite_client.functions.schedules._post
+        ) as post_mock:
+            res = cognite_client.functions.schedules.create(
+                name="my-schedule",
+                function_external_id="my-func",
+                cron_expression="*/5 * * * *",
+                description="Hi",
+            )
+
+        call_args = post_mock.call_args[1]["json"]["items"][0]
+        assert "functionId" in call_args
+        assert "functionExternalId" not in call_args
+        assert isinstance(res, FunctionSchedule)
 
     def test_create_schedules_with_function_id_and_client_credentials(
         self, mock_function_schedules_response_oidc_client_credentials, cognite_client

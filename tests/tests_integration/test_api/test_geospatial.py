@@ -299,6 +299,34 @@ class TestGeospatialAPI:
         )
         assert len(res) == 0
 
+    def test_search_feature_dimensionality_mismatch(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        polygon = "POLYGON((2.276 48.858,2.278 48.859,2.275 48.859,2.276 48.858))"
+        res = cognite_client.geospatial.search_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon}}},
+            limit=10,
+        )
+        assert res[0].external_id == test_feature.external_id
+
+        with pytest.raises(CogniteAPIError):
+            res = cognite_client.geospatial.search_features(
+                feature_type_external_id=test_feature_type.external_id,
+                filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+                limit=10,
+            )
+
+    def test_search_feature_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        res = cognite_client.geospatial.search_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+            limit=10,
+            allow_dimensionality_mismatch=True,
+        )
+        assert len(res) == 1
+        assert res[0].external_id == test_feature.external_id
+
     def test_retrieve_multiple_feature_types_by_external_id(
         self, cognite_client, test_feature_type, another_test_feature_type
     ):
@@ -335,15 +363,12 @@ class TestGeospatialAPI:
         assert res[0].external_id == test_feature.external_id
 
     def test_search_wrong_crs(self, cognite_client, test_feature_type, test_feature):
-        try:
+        with pytest.raises(CogniteAPIError):
             cognite_client.geospatial.search_features(
                 feature_type_external_id=test_feature_type.external_id,
                 filter={"stWithin": {"property": "location", "value": {"wkt": "", "srid": 3857}}},
                 limit=10,
             )
-            raise pytest.fail("searching features using a geometry in invalid crs should have raised an exception")
-        except CogniteAPIError:
-            pass
 
     def test_get_coordinate_reference_system(self, cognite_client):
         res = cognite_client.geospatial.get_coordinate_reference_systems(srids=4326)
@@ -448,6 +473,34 @@ class TestGeospatialAPI:
         )
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
+
+    def test_stream_features_dimensionality_mismatch(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        polygon = "POLYGON((2.276 48.858,2.278 48.859,2.275 48.859,2.276 48.858))"
+        stream_res = cognite_client.geospatial.stream_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon}}},
+        )
+        res = [x for x in stream_res]
+        assert res[0].external_id == test_feature.external_id
+
+        with pytest.raises(CogniteAPIError):
+            stream_res = cognite_client.geospatial.stream_features(
+                feature_type_external_id=test_feature_type.external_id,
+                filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+            )
+            _ = [x for x in stream_res]
+
+    def test_stream_features_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
+        polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"
+        stream_res = cognite_client.geospatial.stream_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
+            allow_dimensionality_mismatch=True,
+        )
+        res = [x for x in stream_res]
+        assert len(res) == 1
+        assert res[0].external_id == test_feature.external_id
 
     def test_list(self, cognite_client, test_feature_type, test_features):
         with set_request_limit(cognite_client.geospatial, 2):

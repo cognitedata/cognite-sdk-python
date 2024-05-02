@@ -7,12 +7,16 @@ from cognite.client.data_classes.transformations.common import OidcCredentials
 
 @pytest.fixture
 def oidc_credentials():
-    return OidcCredentials(client_id="id", client_secret="secret", scopes=["impersonation"], token_uri="url")
+    return OidcCredentials(
+        client_id="id", client_secret="secret", scopes=["impersonation"], token_uri="url", cdf_project_name="xyz"
+    )
 
 
 @pytest.mark.parametrize("scopes", ("comma,separated,scopes", ["comma", "separated", "scopes"]))
 def test_oidc_credentials(scopes):
-    oidc_credentials = OidcCredentials(client_id="id", client_secret="secret", scopes=scopes, token_uri="url")
+    oidc_credentials = OidcCredentials(
+        client_id="id", client_secret="secret", scopes=scopes, token_uri="url", cdf_project_name="zyx"
+    )
     assert oidc_credentials.scopes == "comma,separated,scopes"
 
 

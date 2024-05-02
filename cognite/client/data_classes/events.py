@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from abc import ABC
+from enum import auto
 from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
@@ -11,16 +13,18 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
-    NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -45,7 +49,7 @@ class EndTimeFilter(CogniteObject):
         self.is_null = is_null
 
 
-class Event(CogniteResource):
+class EventCore(WriteableCogniteResource["EventWrite"], ABC):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
     Args:
@@ -53,10 +57,52 @@ class Event(CogniteResource):
         data_set_id (int | None): The id of the dataset this event belongs to.
         start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        type (str | None): Type of the event, e.g 'failure'.
-        subtype (str | None): SubType of the event, e.g 'electrical'.
+        type (str | None): Type of the event, e.g. 'failure'.
+        subtype (str | None): SubType of the event, e.g. 'electrical'.
         description (str | None): Textual description of the event.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
+        source (str | None): The source of this event.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        data_set_id: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        source: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.data_set_id = data_set_id
+        self.start_time = start_time
+        self.end_time = end_time
+        self.type = type
+        self.subtype = subtype
+        self.description = description
+        self.metadata = metadata
+        self.asset_ids = asset_ids
+        self.source = source
+
+
+class Event(EventCore):
+    """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
+    This is the reading version of the Event class. It is used when retrieving existing events.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        data_set_id (int | None): The id of the dataset this event belongs to.
+        start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        type (str | None): Type of the event, e.g. 'failure'.
+        subtype (str | None): SubType of the event, e.g. 'electrical'.
+        description (str | None): Textual description of the event.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
         source (str | None): The source of this event.
         id (int | None): A server-generated ID for the object.
@@ -82,20 +128,90 @@ class Event(CogniteResource):
         created_time: int | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.data_set_id = data_set_id
-        self.start_time = start_time
-        self.end_time = end_time
-        self.type = type
-        self.subtype = subtype
-        self.description = description
-        self.metadata = metadata
-        self.asset_ids = asset_ids
-        self.source = source
-        self.id = id
-        self.last_updated_time = last_updated_time
-        self.created_time = created_time
+        super().__init__(
+            external_id=external_id,
+            data_set_id=data_set_id,
+            start_time=start_time,
+            end_time=end_time,
+            type=type,
+            subtype=subtype,
+            description=description,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            source=source,
+        )
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> EventWrite:
+        """Returns this Event in its writing version."""
+        return EventWrite(
+            external_id=self.external_id,
+            data_set_id=self.data_set_id,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            type=self.type,
+            subtype=self.subtype,
+            description=self.description,
+            metadata=self.metadata,
+            asset_ids=self.asset_ids,
+            source=self.source,
+        )
+
+
+class EventWrite(EventCore):
+    """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
+    This is the writing version of the Event class. It is used when creating new events.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        data_set_id (int | None): The id of the dataset this event belongs to.
+        start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        type (str | None): Type of the event, e.g. 'failure'.
+        subtype (str | None): SubType of the event, e.g. 'electrical'.
+        description (str | None): Textual description of the event.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
+        source (str | None): The source of this event.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        data_set_id: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        source: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            data_set_id=data_set_id,
+            start_time=start_time,
+            end_time=end_time,
+            type=type,
+            subtype=subtype,
+            description=description,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            source=source,
+        )
+
+    def as_write(self) -> EventWrite:
+        """Returns self."""
+        return self
 
 
 class EventFilter(CogniteFilter):
@@ -107,8 +223,8 @@ class EventFilter(CogniteFilter):
         active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
-        asset_external_ids (Sequence[str] | None): Asset External IDs of equipment that this event relates to.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of equipment that this event relates to.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (Sequence[dict[str, Any]] | None): Only include events that belong to these datasets.
         source (str | None): The source of this event.
         type (str | None): Type of the event, e.g 'failure'.
@@ -125,7 +241,7 @@ class EventFilter(CogniteFilter):
         active_at_time: dict[str, Any] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
         asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
         data_set_ids: Sequence[dict[str, Any]] | None = None,
         source: str | None = None,
@@ -261,49 +377,56 @@ class EventUpdate(CogniteUpdate):
         ]
 
 
-class EventList(CogniteResourceList[Event], IdTransformerMixin):
+class EventWriteList(CogniteResourceList[EventWrite], ExternalIDTransformerMixin):
+    _RESOURCE = EventWrite
+
+
+class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMixin):
     _RESOURCE = Event
+
+    def as_write(self) -> EventWriteList:
+        return EventWriteList([event.as_write() for event in self.data], cognite_client=self._get_cognite_client())
 
 
 class EventProperty(EnumProperty):
-    asset_ids = "assetIds"
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    end_time = "endTime"
-    id = "id"
-    last_updated_time = "lastUpdatedTime"
-    start_time = "startTime"
-    description = "description"
-    external_id = "externalId"
-    metadata = "metadata"
-    source = "source"
-    subtype = "subtype"
-    type = "type"
+    asset_ids = auto()
+    created_time = auto()
+    data_set_id = auto()
+    end_time = auto()
+    id = auto()
+    last_updated_time = auto()
+    start_time = auto()
+    description = auto()
+    external_id = auto()
+    metadata = auto()
+    source = auto()
+    subtype = auto()
+    type = auto()
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
 
 
 class SortableEventProperty(EnumProperty):
-    created_time = "createdTime"
-    data_set_id = "dataSetId"
-    description = "description"
-    end_time = "endTime"
-    external_id = "externalId"
-    last_updated_time = "lastUpdatedTime"
-    source = "source"
-    start_time = "startTime"
-    subtype = "subtype"
-    type = "type"
+    created_time = auto()
+    data_set_id = auto()
+    description = auto()
+    end_time = auto()
+    external_id = auto()
+    last_updated_time = auto()
+    source = auto()
+    start_time = auto()
+    subtype = auto()
+    type = auto()
     score = "_score_"
 
     @staticmethod
     def metadata_key(key: str) -> list[str]:
-        return NoCaseConversionPropertyList(["metadata", key])
+        return ["metadata", key]
 
 
 SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]

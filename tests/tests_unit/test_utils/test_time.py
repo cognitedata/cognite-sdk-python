@@ -20,7 +20,6 @@ from cognite.client.utils._time import (
     convert_and_isoformat_time_attrs,
     datetime_to_ms,
     granularity_to_ms,
-    granularity_unit_to_ms,
     import_zoneinfo,
     ms_to_datetime,
     pandas_date_range_tz,
@@ -188,8 +187,6 @@ class TestGranularityToMs:
         with pytest.raises(ValueError, match=granularity):
             granularity_to_ms(granularity)
 
-
-class TestGranularityUnitToMs:
     @pytest.mark.parametrize(
         "granularity, expected_ms",
         [
@@ -203,13 +200,13 @@ class TestGranularityUnitToMs:
             ("13d", 1 * 24 * 60 * 60 * 1000),
         ],
     )
-    def test_to_ms(self, granularity, expected_ms):
-        assert granularity_unit_to_ms(granularity) == expected_ms
+    def test_to_ms_as_unit(self, granularity, expected_ms):
+        assert granularity_to_ms(granularity, as_unit=True) == expected_ms
 
     @pytest.mark.parametrize("granularity", ["2w", "-3h", "13m-ago", "13", "bla"])
-    def test_to_ms_invalid(self, granularity):
-        with pytest.raises(ValueError, match="format"):
-            granularity_unit_to_ms(granularity)
+    def test_to_ms_as_unit_invalid(self, granularity):
+        with pytest.raises(ValueError, match=rf"Invalid granularity format: `{granularity}`"):
+            granularity_to_ms(granularity, as_unit=True)
 
 
 class TestObjectTimeConversion:
@@ -349,16 +346,13 @@ class TestCDFAggregation:
     def test_cdf_aggregation(
         start: str, end: str, raw_freq: str, granularity: str, expected_aggregate: pandas.DataFrame
     ):
-        # Arrange
         import pandas as pd
 
         index = pd.date_range(start, end, freq=raw_freq)
         raw_df = pd.DataFrame(data=range(len(index)), index=index)
 
-        # Act
         actual_aggregate = cdf_aggregate(raw_df=raw_df, aggregate="count", granularity=granularity, is_step=False)
 
-        # Assert
         pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
 
 
@@ -634,16 +628,13 @@ class TestToPandasFreq:
         ],
     )
     def test_to_pandas_freq(granularity: str, start: str, expected_first_step: str):
-        # Arrange
         import pandas as pd
 
         start = pd.Timestamp(start)
         expected_index = pd.DatetimeIndex([start, expected_first_step])
 
-        # Act
         freq = to_pandas_freq(granularity, start.to_pydatetime())
 
-        # Assert
         actual_index = pd.date_range(start, periods=2, freq=freq)
         pd.testing.assert_index_equal(actual_index, expected_index)
 
@@ -652,7 +643,6 @@ class TestPandasDateRangeTz:
     @staticmethod
     @pytest.mark.dsl
     def test_pandas_date_range_tz_ambiguous_time_error():
-        # Arrange
         ZoneInfo = import_zoneinfo()
         oslo = ZoneInfo("Europe/Oslo")
         start = datetime(1916, 8, 1, tzinfo=oslo)
@@ -660,10 +650,8 @@ class TestPandasDateRangeTz:
         expected_length = 5
         freq = to_pandas_freq("1month", start)
 
-        # Act
         index = pandas_date_range_tz(start, end, freq)
 
-        # Assert
         assert len(index) == expected_length
 
 

@@ -10,6 +10,8 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
     CogniteResourceList,
+    UnknownCogniteObject,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource
@@ -24,15 +26,15 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ContainerCore(DataModelingSchemaResource, ABC):
+class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
     """Represent the physical storage of data. This is the base class for the read and write version.
 
     Args:
         space (str): The workspace for the container, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
+        external_id (str): Combined with the space is the unique identifier of the container.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        description (str | None): Textual description of the view
-        name (str | None): Human readable name for the view.
+        description (str | None): Textual description of the container
+        name (str | None): Human readable name for the container.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
     """
@@ -66,16 +68,19 @@ class ContainerCore(DataModelingSchemaResource, ABC):
     def as_id(self) -> ContainerId:
         return ContainerId(self.space, self.external_id)
 
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
+        return self.as_id().as_property_ref(property)
+
 
 class ContainerApply(ContainerCore):
     """Represent the physical storage of data. This is the write format of the container
 
     Args:
         space (str): The workspace for the container, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
+        external_id (str): Combined with the space is the unique identifier of the container.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        description (str | None): Textual description of the view
-        name (str | None): Human readable name for the view.
+        description (str | None): Textual description of the container
+        name (str | None): Human readable name for the container.
         used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
@@ -108,10 +113,12 @@ class ContainerApply(ContainerCore):
             constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()}
             if "constraints" in resource
             else None,
-            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} or None
-            if "indexes" in resource
-            else None,
+            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} if "indexes" in resource else None,
         )
+
+    def as_write(self) -> ContainerApply:
+        """Returns this ContainerApply instance."""
+        return self
 
 
 class Container(ContainerCore):
@@ -119,13 +126,13 @@ class Container(ContainerCore):
 
     Args:
         space (str): The workspace for the container, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
+        external_id (str): Combined with the space is the unique identifier of the container.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (str | None): Textual description of the view
-        name (str | None): Human readable name for the view.
+        description (str | None): Textual description of the container
+        name (str | None): Human readable name for the container.
         used_for (Literal["node", "edge", "all"]): Should this operation apply to nodes, edges or both.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
@@ -183,8 +190,23 @@ class Container(ContainerCore):
             indexes=self.indexes,
         )
 
+    def as_write(self) -> ContainerApply:
+        return self.as_apply()
 
-class ContainerList(CogniteResourceList[Container]):
+
+class ContainerApplyList(CogniteResourceList[ContainerApply]):
+    _RESOURCE = ContainerApply
+
+    def as_ids(self) -> list[ContainerId]:
+        """Convert to a container id list.
+
+        Returns:
+            list[ContainerId]: The container id list.
+        """
+        return [v.as_id() for v in self]
+
+
+class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
     _RESOURCE = Container
 
     def as_apply(self) -> ContainerApplyList:
@@ -203,17 +225,8 @@ class ContainerList(CogniteResourceList[Container]):
         """
         return [v.as_id() for v in self]
 
-
-class ContainerApplyList(CogniteResourceList[ContainerApply]):
-    _RESOURCE = ContainerApply
-
-    def as_ids(self) -> list[ContainerId]:
-        """Convert to a container id list.
-
-        Returns:
-            list[ContainerId]: The container id list.
-        """
-        return [v.as_id() for v in self]
+    def as_write(self) -> ContainerApplyList:
+        return self.as_apply()
 
 
 class ContainerFilter(CogniteFilter):
@@ -274,7 +287,7 @@ class Constraint(CogniteObject, ABC):
             return cast(Self, RequiresConstraint.load(resource))
         elif resource["constraintType"] == "uniqueness":
             return cast(Self, UniquenessConstraint.load(resource))
-        raise ValueError(f"Invalid constraint type {resource['constraintType']}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -323,7 +336,7 @@ class Index(CogniteObject, ABC):
             return cast(Self, BTreeIndex.load(resource))
         if resource["indexType"] == "inverted":
             return cast(Self, InvertedIndex.load(resource))
-        raise ValueError(f"Invalid index type {resource['indexType']}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:

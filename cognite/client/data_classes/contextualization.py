@@ -201,9 +201,14 @@ class EntityMatchingModel(CogniteResource):
         external_id: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        self.id = id
+        # id/created_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
         self.status = status
-        self.created_time = created_time
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
@@ -410,7 +415,7 @@ class DiagramConvertItem(CogniteResource):
     @property
     def pages(self) -> DiagramConvertPageList:
         assert self.results is not None
-        return DiagramConvertPageList.load(self.results, cognite_client=self._cognite_client)
+        return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -575,40 +580,49 @@ class VisionExtractPredictions(VisionResource):
         return cls(
             text_predictions=[
                 TextRegion._load(text_prediction) for text_prediction in resource.get("textPredictions", [])
-            ],
+            ]
+            or None,
             asset_tag_predictions=[
                 AssetLink._load(asset_tag_prediction)
                 for asset_tag_prediction in resource.get("assetTagPredictions", [])
-            ],
+            ]
+            or None,
             industrial_object_predictions=[
                 ObjectDetection._load(industrial_object_prediction)
                 for industrial_object_prediction in resource.get("industrialObjectPredictions", [])
-            ],
+            ]
+            or None,
             people_predictions=[
                 ObjectDetection._load(people_prediction) for people_prediction in resource.get("peoplePredictions", [])
-            ],
+            ]
+            or None,
             personal_protective_equipment_predictions=[
                 ObjectDetection._load(personal_protective_equipment_prediction)
                 for personal_protective_equipment_prediction in resource.get(
                     "personalProtectiveEquipmentPredictions", []
                 )
-            ],
+            ]
+            or None,
             digital_gauge_predictions=[
                 ObjectDetection._load(digital_gauge_prediction)
                 for digital_gauge_prediction in resource.get("digitalGaugePredictions", [])
-            ],
+            ]
+            or None,
             dial_gauge_predictions=[
                 KeypointCollectionWithObjectDetection._load(dial_gauge_prediction)
                 for dial_gauge_prediction in resource.get("dialGaugePredictions", [])
-            ],
+            ]
+            or None,
             level_gauge_predictions=[
                 KeypointCollectionWithObjectDetection._load(level_gauge_prediction)
                 for level_gauge_prediction in resource.get("levelGaugePredictions", [])
-            ],
+            ]
+            or None,
             valve_predictions=[
                 KeypointCollectionWithObjectDetection._load(valve_prediction)
                 for valve_prediction in resource.get("valvePredictions", [])
-            ],
+            ]
+            or None,
         )
 
 

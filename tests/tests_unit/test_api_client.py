@@ -9,13 +9,12 @@ from collections import namedtuple
 from typing import Any, ClassVar, Literal, cast
 
 import pytest
-from more_itertools import flatten
 from requests import Response
 from responses import matchers
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig, global_config
+from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
 from cognite.client.data_classes import TimeSeries, TimeSeriesUpdate
 from cognite.client.data_classes._base import (
@@ -241,6 +240,10 @@ class SomeAggregation(CogniteResource):
     def __init__(self, count):
         self.count = count
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SomeAggregation:
+        return cls(count=resource["count"])
+
 
 class TestStandardRetrieve:
     def test_standard_retrieve_OK(self, api_client_with_token, rsps):
@@ -382,6 +385,9 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
         )
+        # Second request may be skipped intentionally depending on which thread runs when:
+        rsps.assert_all_requests_are_fired = False
+
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteNotFoundError) as e:
                 api_client_with_token._retrieve_multiple(
@@ -496,7 +502,7 @@ class TestStandardList:
             if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
-                time.sleep(0.001)  # ensures bad luck race condition where 503 above executes last
+                time.sleep(0.05)  # ensures bad luck race condition where 503 above executes last
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
 
         rsps.add_callback(
@@ -508,14 +514,14 @@ class TestStandardList:
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 method="POST",
-                partitions=10,
+                partitions=15,
                 limit=None,
             )
         assert 503 == exc.value.code
-        assert exc.value.unknown == [("3/10",)]
+        assert exc.value.unknown == [("3/15",)]
         assert exc.value.skipped
         assert exc.value.successful
-        assert 9 == len(exc.value.successful) + len(exc.value.skipped)
+        assert 14 == len(exc.value.successful) + len(exc.value.skipped)
         assert 1 < len(rsps.calls)
 
     @pytest.fixture
@@ -1032,16 +1038,11 @@ class TestStandardUpdate:
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
 
-    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps, monkeypatch):
+    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps):
         # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
         # execution order. Depending on whether the 400 or 500 hits the first or second task,
         # the following asserts fail (ordering issue). Thus, we use 'matchers.json_params_matcher'
         # to make sure the responses match the two tasks.
-
-        # Note 2: The matcher function expects request.body to not be gzipped (it just does .decode("utf-8")
-        # which fails, making the matching functions useless.. so we temporarily turn off gzip for this test
-        monkeypatch.setattr(global_config, "disable_gzip", True)
-
         rsps.add(
             rsps.POST,
             BASE_URL + URL_PATH + "/update",
@@ -1178,23 +1179,6 @@ def convert_resource_to_patch_object_test_cases():
         id="Patch TimeSeries",
     )
     yield pytest.param(
-        TimeSeries(external_id="myTimeseries", name="bla"),
-        TimeSeriesUpdate._get_update_properties(),
-        "replace",
-        {
-            "externalId": "myTimeseries",
-            "update": {
-                "name": {"set": "bla"},
-                "unit": {"setNull": True},
-                "assetId": {"setNull": True},
-                "description": {"setNull": True},
-                "dataSetId": {"setNull": True},
-                "securityCategories": {"set": []},
-            },
-        },
-        id="Replace TimeSeries and ignore beta property",
-    )
-    yield pytest.param(
         TimeSeries(id=42, description="updated"),
         TimeSeriesUpdate._get_update_properties(),
         "replace_ignore_null",
@@ -1213,8 +1197,19 @@ def convert_resource_to_patch_object_test_cases():
 class TestRetryableEndpoints:
     @pytest.mark.parametrize(
         "method, path, expected",
-        flatten(
-            [
+        [
+            test_case
+            for resource in [
+                "assets",
+                "events",
+                "files",
+                "timeseries",
+                "sequences",
+                "datasets",
+                "relationships",
+                "labels",
+            ]
+            for test_case in [
                 # Should retry POST on all _read_ endpoints
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/list", True),
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/byids", True),
@@ -1226,17 +1221,7 @@ class TestRetryableEndpoints:
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}", False),
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/update", False),
             ]
-            for resource in [
-                "assets",
-                "events",
-                "files",
-                "timeseries",
-                "sequences",
-                "datasets",
-                "relationships",
-                "labels",
-            ]
-        ),
+        ],
     )
     def test_is_retryable_resource_api_endpoints(self, api_client_with_token, method, path, expected):
         assert expected == api_client_with_token._is_retryable(method, path)
@@ -1245,55 +1230,161 @@ class TestRetryableEndpoints:
         "method, path, expected",
         sorted(
             [
-                ### Versions
+                # Versions
                 *(
                     # Should work on all api version
                     ("POST", f"https://api.cognitedata.com/api/{version}/projects/bla/assets/list", True)
                     for version in ["v1", "playground"]
                 ),
-                ### Hosts
+                # Hosts
                 *(
                     # Should work on all hosts
                     ("POST", f"https://{host}/api/v1/projects/bla/assets/list", True)
                     for host in ["api.cognitedata.com", "greenfield.cognitedata.com", "localhost:8000"]
                 ),
-                ### Methods
+                # Methods
                 *(
                     # Should by default retry GET, PUT, and PATCH
                     (method, "https://api.cognitedata.com/api/v1/projects/bla", True)
                     for method in {"GET", "PUT", "PATCH"}
                 ),
-                #### Files
+                # Annotations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/suggest", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/reverselookup", True),
+                # Functions
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/status", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/delete", False),
+                # Function calls
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/call", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/calls/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/xyz/calls/byids", False),
+                # Function schedules
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/delete", False),
+                # User Profiles
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/profiles", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/profiles/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/profiles/search", True),
+                # Documents
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/aggregate", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/search", True),
+                # Transformations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/update", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config/revert", False),
+                # Transformations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/filter", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/run", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/update", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/cancel", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/notifications", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/schedules", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/schedules/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/schedules/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/jobs/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/query/run", True),
+                # 3D models
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/delete", False),
+                # 3D model revisions
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/34/nodes/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/ab/nodes/list", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byids", True),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byXids",
+                    False,
+                ),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/cd/nodes/byids",
+                    False,
+                ),
+                # 3D asset mappings
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings", False),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings/list",
+                    True,
+                ),
+                # Geospatial
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/compute", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/crs", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/crs/byids", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/list", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/update", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/delete", False),
+                *[
+                    (
+                        "POST",
+                        f"https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/abc_123/features/{endpoint}",
+                        True,
+                    )
+                    for endpoint in ("aggregate", "list", "byids", "search-streaming", "search")
+                ],
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/delete", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/update", False),
+                (
+                    "POST",
+                    "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/b_2/rasters/c_3",
+                    True,
+                ),
+                # Files
                 ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
-                #### Timeseries
+                # Timeseries
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data/delete", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data/latest", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/synthetic/query", True),
-                #### Sequences
+                # Sequences
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/data", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/data/delete", True),
-                #### Data modeling
-                *flatten(
+                # Data modeling
+                *[
                     # should retry _all_ data modeling schema endpoints as they are idempotent.
-                    [
+                    test_case
+                    for resource in ("spaces", "containers", "views", "datamodels")
+                    for test_case in [
                         ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}", True),
                         ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/list", True),
                         ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/byids", True),
                         ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/delete", True),
                     ]
-                    for resource in ("spaces", "containers", "views", "datamodels")
-                ),
+                ],
                 # Retry all data modeling instances endpoints as they are idempotent
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/instances", True),
                 *(
                     ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/instances/{endpoint}", True)
                     for endpoint in ("list", "byids", "delete", "aggregate", "search")
                 ),
+                # Retry all data modeling graphql endpoints
+                ("POST", "https://api.cognitedata.com/api/v1/projects/any/dml/graphql", True),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/any/userapis/spaces/bla/datamodels/bla/versions/v1/graphql",
+                    True,
+                ),
                 # Retry for RAW on rows but not on dbs or tables as only the rows endpoints are idempotent
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/insert", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/delete", True),
             ]
         ),

@@ -17,6 +17,7 @@ from cognite.client.utils._concurrency import ConcurrencySettings
 
 class DataModelsAPI(APIClient):
     _RESOURCE_PATH = "/models/datamodels"
+    _LIST_LIMIT = 100
 
     @overload
     def __call__(
@@ -27,8 +28,7 @@ class DataModelsAPI(APIClient):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[DataModel]:
-        ...
+    ) -> Iterator[DataModel]: ...
 
     @overload
     def __call__(
@@ -39,8 +39,7 @@ class DataModelsAPI(APIClient):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[DataModelList]:
-        ...
+    ) -> Iterator[DataModelList]: ...
 
     def __call__(
         self,
@@ -90,14 +89,12 @@ class DataModelsAPI(APIClient):
     @overload
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[True]
-    ) -> DataModelList[View]:
-        ...
+    ) -> DataModelList[View]: ...
 
     @overload
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[False] = False
-    ) -> DataModelList[ViewId]:
-        ...
+    ) -> DataModelList[ViewId]: ...
 
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
@@ -109,14 +106,13 @@ class DataModelsAPI(APIClient):
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
 
         Returns:
-            DataModelList[ViewId] | DataModelList[View]: Requested data_model or None if it does not exist.
+            DataModelList[ViewId] | DataModelList[View]: Requested data model(s) or empty if none exist.
 
         Examples:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
-
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
         """
         identifier = _load_identifier(ids, "data_model")
         return self._retrieve_multiple(
@@ -139,8 +135,8 @@ class DataModelsAPI(APIClient):
             Delete data model by id::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.data_models.delete(("mySpace", "myDataModel", "v1"))
+                >>> client = CogniteClient()
+                >>> client.data_modeling.data_models.delete(("mySpace", "myDataModel", "v1"))
         """
         deleted_data_models = cast(
             list,
@@ -161,8 +157,7 @@ class DataModelsAPI(APIClient):
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> DataModelList[View]:
-        ...
+    ) -> DataModelList[View]: ...
 
     @overload
     def list(
@@ -172,8 +167,7 @@ class DataModelsAPI(APIClient):
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> DataModelList[ViewId]:
-        ...
+    ) -> DataModelList[ViewId]: ...
 
     def list(
         self,
@@ -200,21 +194,21 @@ class DataModelsAPI(APIClient):
             List 5 data model:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> data_model_list = c.data_modeling.data_models.list(limit=5)
+                >>> client = CogniteClient()
+                >>> data_model_list = client.data_modeling.data_models.list(limit=5)
 
             Iterate over data model:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for data_model in c.data_modeling.data_models:
+                >>> client = CogniteClient()
+                >>> for data_model in client.data_modeling.data_models:
                 ...     data_model # do something with the data_model
 
             Iterate over chunks of data model to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for data_model_list in c.data_modeling.data_models(chunk_size=10):
+                >>> client = CogniteClient()
+                >>> for data_model_list in client.data_modeling.data_models(chunk_size=10):
                 ...     data_model_list # do something with the data model
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
@@ -228,12 +222,10 @@ class DataModelsAPI(APIClient):
         )
 
     @overload
-    def apply(self, data_model: Sequence[DataModelApply]) -> DataModelList:
-        ...
+    def apply(self, data_model: Sequence[DataModelApply]) -> DataModelList: ...
 
     @overload
-    def apply(self, data_model: DataModelApply) -> DataModel:
-        ...
+    def apply(self, data_model: DataModelApply) -> DataModel: ...
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
         """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
@@ -250,10 +242,11 @@ class DataModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import DataModelApply
-                >>> c = CogniteClient()
-                >>> data_models = [DataModelApply(space="mySpace",external_id="myDataModel",version="v1"),
-                ... DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1")]
-                >>> res = c.data_modeling.data_models.apply(data_models)
+                >>> client = CogniteClient()
+                >>> data_models = [
+                ...     DataModelApply(space="mySpace",external_id="myDataModel",version="v1"),
+                ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1")]
+                >>> res = client.data_modeling.data_models.apply(data_models)
         """
         return self._create_multiple(
             list_cls=DataModelList,

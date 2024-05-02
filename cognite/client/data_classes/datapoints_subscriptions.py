@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes import Datapoints, filters
+from cognite.client.data_classes import Datapoints
 from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CognitePrimitiveUpdate,
@@ -15,11 +15,15 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    ExternalIDTransformerMixin,
     IdTransformerMixin,
-    NoCaseConversionPropertyList,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.filters import _BASIC_FILTERS as _FILTERS_SUPPORTED
 from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
 if TYPE_CHECKING:
@@ -27,23 +31,8 @@ if TYPE_CHECKING:
 
 ExternalId: TypeAlias = str
 
-_DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-    }
-)
 
-
-class DatapointSubscriptionCore(CogniteResource, ABC):
+class DatapointSubscriptionCore(WriteableCogniteResource["DataPointSubscriptionWrite"], ABC):
     def __init__(
         self,
         external_id: ExternalId,
@@ -114,8 +103,19 @@ class DatapointSubscription(DatapointSubscriptionCore):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription as a DataPointSubscriptionWrite"""
+        return DataPointSubscriptionWrite(
+            external_id=self.external_id,
+            partition_count=self.partition_count,
+            filter=self.filter,
+            name=self.name,
+            description=self.description,
+            data_set_id=self.data_set_id,
+        )
 
-class DataPointSubscriptionCreate(DatapointSubscriptionCore):
+
+class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     """A data point subscription is a way to listen to changes to time series data points, in ingestion order.
         This is the write version of a subscription, used to create new subscriptions.
 
@@ -143,7 +143,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
     ) -> None:
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
-        _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
+        _validate_filter(filter, _FILTERS_SUPPORTED, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_ids = time_series_ids
 
@@ -159,6 +159,14 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
         )
+
+    def as_write(self) -> DataPointSubscriptionWrite:
+        """Returns this DatapointSubscription instance"""
+        return self
+
+
+# TODO: Remove this in next major release
+DataPointSubscriptionCreate = DataPointSubscriptionWrite
 
 
 class DataPointSubscriptionUpdate(CogniteUpdate):
@@ -228,6 +236,9 @@ class TimeSeriesID(CogniteResource):
         self.id = id
         self.external_id = external_id
 
+    def __repr__(self) -> str:
+        return f"TimeSeriesID(id={self.id}, external_id={self.external_id})"
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
         return cls(id=resource["id"], external_id=resource.get("externalId"))
@@ -262,22 +273,23 @@ class DatapointsUpdate:
     deletes: list[DataDeletion]
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> DatapointsUpdate:
-        datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
-        if (values := data["upserts"]) and ("value" in values[0]):
-            datapoints["upserts"] = Datapoints._load(
-                {
-                    "id": data["timeSeries"]["id"],
-                    "externalId": data["timeSeries"].get("externalId"),
-                    "isString": isinstance(values[0]["value"], str),
-                    "datapoints": values,
-                }
-            )
-        if values := data["deletes"]:
-            datapoints["deletes"] = [DataDeletion.load(value) for value in values]
+    def load(
+        cls, data: dict[str, Any], include_status: bool = False, ignore_bad_datapoints: bool = True
+    ) -> DatapointsUpdate:
+        identifier = TimeSeriesID._load(data["timeSeries"])
+        is_string = data["timeSeries"]["isString"]
+        for dp in data["upserts"]:
+            if include_status:
+                dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
+            if not ignore_bad_datapoints:
+                # Bad data can have value missing (we translate to None):
+                dp.setdefault("value", None)
+                if not is_string:
+                    dp["value"] = _json.convert_to_float(dp["value"])
         return cls(
-            time_series=TimeSeriesID._load(data["timeSeries"], None),
-            **datapoints,
+            time_series=identifier,
+            upserts=Datapoints._load({**identifier.dump(), "isString": is_string, "datapoints": data["upserts"]}),
+            deletes=[DataDeletion.load(value) for value in data["deletes"]],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -297,15 +309,15 @@ class SubscriptionTimeSeriesUpdate:
     @classmethod
     def load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
         return cls(
-            added=[TimeSeriesID._load(added) for added in data.get("added", [])],
-            removed=[TimeSeriesID._load(added) for added in data.get("removed", [])],
+            added=[TimeSeriesID._load(ts_id) for ts_id in data.get("added", [])],
+            removed=[TimeSeriesID._load(ts_id) for ts_id in data.get("removed", [])],
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        resource: dict[str, Any] = {}
-        resource["added"] = [id_.dump() for id_ in self.added]
-        resource["removed"] = [id_.dump() for id_ in self.removed]
-        return resource
+    def dump(self, camel_case: bool = True) -> dict[str, list[dict[str, Any]]]:
+        return {
+            "added": [ts_id.dump() for ts_id in self.added],
+            "removed": [ts_id.dump() for ts_id in self.removed],
+        }
 
 
 @dataclass
@@ -314,18 +326,8 @@ class DatapointSubscriptionPartition:
     cursor: str | None = None
 
     @classmethod
-    def create(
-        cls, data: tuple[int, str | None] | int | DatapointSubscriptionPartition
-    ) -> DatapointSubscriptionPartition:
-        if isinstance(data, DatapointSubscriptionPartition):
-            return data
-        if isinstance(data, tuple):
-            return cls(*data)
-        return cls(data)
-
-    @classmethod
     def load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
-        return cls(index=data["index"], cursor=data.get("cursor") or data.get("nextCursor"))
+        return cls(index=data["index"], cursor=data.get("nextCursor") or data.get("cursor"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"index": self.index}
@@ -359,9 +361,14 @@ class _DatapointSubscriptionBatchWithPartitions:
     partitions: list[DatapointSubscriptionPartition]
 
     @classmethod
-    def load(cls, resource: dict) -> _DatapointSubscriptionBatchWithPartitions:
+    def load(
+        cls, resource: dict, include_status: bool = False, ignore_bad_datapoints: bool = True
+    ) -> _DatapointSubscriptionBatchWithPartitions:
         return cls(
-            updates=[DatapointsUpdate.load(u) for u in resource["updates"]],
+            updates=[
+                DatapointsUpdate.load(upd, include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints)
+                for upd in resource["updates"]
+            ],
             partitions=[DatapointSubscriptionPartition.load(p) for p in resource["partitions"]],
             has_next=resource["hasNext"],
             subscription_changes=SubscriptionTimeSeriesUpdate.load(resource.get("subscriptionChanges", [])),
@@ -374,30 +381,39 @@ class _DatapointSubscriptionBatchWithPartitions:
             ("hasNext" if camel_case else "has_next"): self.has_next,
         }
         if self.subscription_changes is not None:
-            resource[
-                ("subscriptionChanges" if camel_case else "subscription_changes")
-            ] = self.subscription_changes.dump(camel_case)
+            resource[("subscriptionChanges" if camel_case else "subscription_changes")] = (
+                self.subscription_changes.dump(camel_case)
+            )
         return resource
 
 
-class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
+class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = DataPointSubscriptionWrite
+
+
+class DatapointSubscriptionList(
+    WriteableCogniteResourceList[DataPointSubscriptionWrite, DatapointSubscription], ExternalIDTransformerMixin
+):
     _RESOURCE = DatapointSubscription
+
+    def as_write(self) -> DatapointSubscriptionWriteList:
+        """Returns this DatapointSubscriptionList as a DatapointSubscriptionWriteList"""
+        return DatapointSubscriptionWriteList(
+            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
     _RESOURCE = TimeSeriesID
 
 
-def _metadata(key: str) -> list[str]:
-    return NoCaseConversionPropertyList(["metadata", key])
-
-
-class DatapointSubscriptionFilterProperties(EnumProperty):
+class DatapointSubscriptionProperty(EnumProperty):
     description = auto()
     external_id = auto()
-    metadata = _metadata
     name = auto()  # type: ignore [assignment]
     unit = auto()
+    unit_external_id = auto()
+    unit_quantity = auto()
     asset_id = auto()
     asset_root_id = auto()
     created_time = auto()
@@ -406,3 +422,13 @@ class DatapointSubscriptionFilterProperties(EnumProperty):
     last_updated_time = auto()
     is_step = auto()
     is_string = auto()
+
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
+        return ["metadata", key]
+
+    metadata = metadata_key  # TODO: Remove in major version 8
+
+
+# TODO: Remove in major version 8:
+DatapointSubscriptionFilterProperties = DatapointSubscriptionProperty
