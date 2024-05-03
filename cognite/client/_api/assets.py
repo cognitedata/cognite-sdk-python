@@ -429,12 +429,12 @@ class AssetsAPI(APIClient):
         Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters as flt
+            >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
             >>> client = CogniteClient()
-            >>> created_after_2020 = flt.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> created_after_2020 = filters.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
@@ -443,11 +443,11 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations as aggs
-            >>> from cognite.client.data_classes import filters as flt
+            >>> from cognite.client.data_classes import aggregations
+            >>> from cognite.client.data_classes import filters
             >>> client = CogniteClient()
-            >>> not_test = aggs.Not(aggs.Prefix("test"))
-            >>> created_after_2020 = flt.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> not_test = aggregations.Not(aggregations.Prefix("test"))
+            >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
@@ -532,7 +532,7 @@ class AssetsAPI(APIClient):
             Create asset with label::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset, Label
+                >>> from cognite.client.data_classes import AssetWrite, Label
                 >>> client = CogniteClient()
                 >>> asset = AssetWrite(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = client.assets.create(asset)
@@ -558,7 +558,7 @@ class AssetsAPI(APIClient):
         Args:
             assets (Sequence[Asset | AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
             upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
-            upsert_mode (Literal["patch", "replace"]): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
+            upsert_mode (Literal['patch', 'replace']): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
         Returns:
             AssetList: Created (and possibly updated) asset hierarchy
@@ -787,7 +787,7 @@ class AssetsAPI(APIClient):
 
         Args:
             item (Asset | AssetWrite | Sequence[Asset | AssetWrite]): Asset or list of assets to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Asset | AssetList: The upserted asset(s).
