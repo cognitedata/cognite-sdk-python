@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.41.1] - 2024-05-06
+### Fixed
+- An edge case when a request for datapoints from several hundred time series (with specific finite limits) would return
+  more datapoints than the user-specified limit.
+
 ## [7.41.0] - 2024-04-30
 ### Added
 - Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).

@@ -1060,7 +1060,7 @@ class BaseTaskOrchestrator(ABC):
 class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
     def get_remaining_limit(self) -> int:
         assert len(self.subtasks) == 1
-        return self.query.limit - self.subtasks[0].n_dps_fetched
+        return self.query.limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
 
     def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # For serial fetching, a single task suffice
