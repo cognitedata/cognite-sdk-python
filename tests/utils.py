@@ -31,6 +31,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.aggregations import Buckets
+from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -442,6 +443,10 @@ class FakeCogniteResourceGenerator:
                 implementations.remove(filters.GeoJSONWithin)
                 implementations.remove(filters.GeoJSONDisjoint)
                 implementations.remove(filters.GeoJSONIntersects)
+            elif type_ is Capability:
+                implementations.remove(UnknownAcl)
+                if LegacyCapability in implementations:
+                    implementations.remove(LegacyCapability)
             if type_ is WorkflowTaskOutput:
                 # For Workflow Output has to match the input type
                 selected = FunctionTaskOutput
