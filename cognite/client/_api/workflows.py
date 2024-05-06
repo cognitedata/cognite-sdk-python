@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union
 from urllib.parse import quote
 
 from typing_extensions import TypeAlias
@@ -9,7 +9,6 @@ from typing_extensions import TypeAlias
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
-    CancelExecution,
     Workflow,
     WorkflowExecution,
     WorkflowExecutionDetailed,
@@ -262,18 +261,19 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             limit=limit,
         )
 
-    def cancel(self, executions: Sequence[CancelExecution]) -> Sequence[WorkflowExecution]:
+    def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
         """`cancel a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
 
         Args:
-            executions (Sequence[CancelExecution]): List of executions to cancel.
+            id (str): The server-generated id of the workflow execution.
+            reason (str | None): The reason for the cancellation, this will be put within the execution's `reasonForIncompletion` field. It is defaulted to 'cancelled' if not provided.
 
-        Tip:
-            Cancelling a workflow only prevents it from starting new tasks, tasks already running on
-            other services (transformations and functions) will keep running there.
+        Note:
+            Cancelling a workflow will immediately cancel the `in_progress` tasks, but not their spawned work in
+            other services (like transformations and functions).
 
         Returns:
-            Sequence[WorkflowExecution]: The canceled workflow executions.
+            WorkflowExecution: The canceled workflow execution.
 
         Examples:
 
@@ -283,15 +283,19 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client.data_classes import CancelExecution
                 >>> client = CogniteClient()
                 >>> res = client.workflows.executions.trigger("foo", "1")
-                >>> client.workflows.executions.cancel([CancelExecution(res.id, "test cancelation")])
+                >>> client.workflows.executions.cancel(id="foo", reason="test cancelation")
         """
         self._warning.warn()
         response = self._post(
-            url_path=f"{self._RESOURCE_PATH}/cancel",
-            json={"items": [execution.dump(camel_case=True) for execution in executions]},
+            url_path=f"{self._RESOURCE_PATH}/{id}/cancel",
+            json={
+                "reason": reason,
+            }
+            if reason
+            else {},
         )
 
-        return [WorkflowExecution._load(execution) for execution in response.json()["items"]]
+        return WorkflowExecution._load(response.json())
 
     def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
         """`Retry a workflow execution. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
@@ -310,7 +314,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
                 >>> from cognite.client.data_classes import CancelExecution
                 >>> client = CogniteClient()
                 >>> res = client.workflows.executions.trigger("foo", "1")
-                >>> client.workflows.executions.cancel([CancelExecution(res.id, "test cancellation")])
+                >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
                 >>> client.workflows.executions.retry(res.id)
         """
         self._warning.warn()
