@@ -280,7 +280,6 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             Trigger a workflow execution for the workflow "foo", version 1 and cancel it:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import CancelExecution
                 >>> client = CogniteClient()
                 >>> res = client.workflows.executions.trigger("foo", "1")
                 >>> client.workflows.executions.cancel(id="foo", reason="test cancelation")
@@ -311,7 +310,6 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             Retry a workflow execution that has been cancelled or failed:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import CancelExecution
                 >>> client = CogniteClient()
                 >>> res = client.workflows.executions.trigger("foo", "1")
                 >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
