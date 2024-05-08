@@ -13,7 +13,6 @@ jobs:
       - name: Linting and static code checks
         run: pre-commit run --all-files
 
-jobs:
   build_docs:
     runs-on: ubuntu-latest
     steps:
