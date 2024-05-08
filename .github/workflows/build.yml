@@ -32,6 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          extras: '-E numpy'
       - name: Linting and static code checks
         run: pre-commit run --all-files
 
