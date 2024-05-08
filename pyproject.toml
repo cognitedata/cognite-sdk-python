@@ -36,11 +36,17 @@ numpy = [
     {version = "^1.26", python = "^3.12", optional = true},
 ]
 sympy = { version = "*", optional = true }
-pandas = { version = ">=1.4", optional = true }
+pandas = [
+    { version = ">=1.4, <2.1", python = "~3.8", optional = true },
+    { version = ">=2.1", python = ">=3.9", optional = true },
+]
 backports-zoneinfo = { version = ">=0.2.1",  python = "<3.9", extras = ["tzdata"], optional = true}
 # Windows does not have a ANSI database and need tzdata
 tzdata = {version = ">=2023.3", markers = "sys_platform == 'win32'", optional = true }
-geopandas = { version = ">=0.10.0", optional = true }
+geopandas = [
+    { version = ">=0.10, <0.14", python = "~3.8", optional = true },
+    { version = ">=0.14", python = ">=3.9", optional = true },
+]
 shapely = { version = ">=1.7.0", optional = true }
 pyodide-http = {version = "^0.2.1", optional = true }
 graphlib-backport = {version = "^1.0.0", python = "<3.9"}
