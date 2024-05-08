@@ -30,6 +30,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup.yml
       - name: Linting and static code checks
         run: pre-commit run --all-files
@@ -37,6 +38,7 @@ jobs:
   build_docs:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup.yml
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"
@@ -44,6 +46,7 @@ jobs:
   test_core:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup.yml
       - name: Test core
         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
