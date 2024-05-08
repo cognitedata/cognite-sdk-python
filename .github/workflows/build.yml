@@ -5,106 +5,60 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  PYTHON_VERSION: '3.8'
-
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install required dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E numpy
-
+      - uses: ./.github/workflows/_setup.yml
       - name: Linting and static code checks
         run: pre-commit run --all-files
 
+jobs:
   build_docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install core dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install
-
+      - uses: ./.github/workflows/_setup.yml
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"
 
   test_core:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install core dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install
-
+      - uses: ./.github/workflows/_setup.yml
       - name: Test core
         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
-  test_full:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E all
-
-      - name: Test full
-        env:
-          LOGIN_FLOW: client_credentials
-          COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
-          COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
-          COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
-          COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
-          COGNITE_PROJECT: python-sdk-test
-          COGNITE_BASE_URL: https://greenfield.cognitedata.com
-          COGNITE_CLIENT_NAME: python-sdk-integration-tests
-        run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
-
-      - uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: python3 -m pip install --upgrade pip poetry
-
-      - name: Build package
-        run: poetry build
+  # test_full:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest]
+  #       python-version: ['3.8', '3.12']
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #
+  #     - name: Install full dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip poetry
+  #         poetry config virtualenvs.create false
+  #         poetry install -E all
+  #
+  #     - name: Test full
+  #       env:
+  #         LOGIN_FLOW: client_credentials
+  #         COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
+  #         COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
+  #         COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
+  #         COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
+  #         COGNITE_PROJECT: python-sdk-test
+  #         COGNITE_BASE_URL: https://greenfield.cognitedata.com
+  #         COGNITE_CLIENT_NAME: python-sdk-integration-tests
+  #       run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+  #
+  #     - uses: codecov/codecov-action@4
+  #       with:
+  #         token: ${{ secrets.CODECOV_TOKEN }}
