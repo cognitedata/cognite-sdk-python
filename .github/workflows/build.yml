@@ -43,6 +43,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
+          python_version: matrix.python-version
           extras: '-E all'
 
       - name: Test full
