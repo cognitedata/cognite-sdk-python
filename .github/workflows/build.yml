@@ -58,5 +58,6 @@ jobs:
         run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@4
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.8'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
