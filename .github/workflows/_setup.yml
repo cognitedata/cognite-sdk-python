@@ -34,6 +34,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip poetry
+          pip install --upgrade pip poetry pre-commit
           poetry config virtualenvs.create false
           poetry install ${{ inputs.extras }}
