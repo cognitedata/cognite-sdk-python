@@ -1,48 +1,52 @@
-name: Main CI Workflow
-
-on:
-  pull_request:
-    branches:
-      - master
-
-jobs:
-  setup_and_test:
-    - uses: ./.github/workflows/_setup.yml
-      with:
-        python_version: '3.8'
-        extras: '-E numpy'
-
-    - name: Linting and static code checks
-      run: poetry run pre-commit run --all-files
-
-# ---
-# name: build
+# name: Main CI Workflow
 #
 # on:
 #   pull_request:
-#     branches: [master]
+#     branches:
+#       - master
 #
 # jobs:
+#   setup_and_test:
+#     uses: ./.github/workflows/_setup.yml
+#     with:
+#       python_version: '3.8'
+#       extras: '-E numpy'
+#
 #   lint:
+#     needs: setup_and_test
 #     runs-on: ubuntu-latest
 #     steps:
-#       - uses: ./.github/workflows/_setup.yml
 #       - name: Linting and static code checks
-#         run: pre-commit run --all-files
-#
-#   build_docs:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: ./.github/workflows/_setup.yml
-#       - name: Build docs
-#         run: cd docs && make html SPHINXOPTS="-W --keep-going"
-#
-#   test_core:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: ./.github/workflows/_setup.yml
-#       - name: Test core
-#         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
+#         run: poetry run pre-commit run --all-files
+
+---
+name: build
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup.yml
+      - name: Linting and static code checks
+        run: pre-commit run --all-files
+
+  build_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup.yml
+      - name: Build docs
+        run: cd docs && make html SPHINXOPTS="-W --keep-going"
+
+  test_core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup.yml
+      - name: Test core
+        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
   # test_full:
   #   runs-on: ${{ matrix.os }}
