@@ -7,17 +7,13 @@ on:
 
 jobs:
   setup_and_test:
-    uses: ./.github/workflows/_setup.yml
-    with:
-      python_version: '3.8'
-      extras: '-E numpy'
+    - uses: ./.github/workflows/_setup.yml
+      with:
+        python_version: '3.8'
+        extras: '-E numpy'
 
-  lint:
-    needs: setup_and_test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Linting and static code checks
-        run: poetry run pre-commit run --all-files
+    - name: Linting and static code checks
+      run: poetry run pre-commit run --all-files
 
 # ---
 # name: build
