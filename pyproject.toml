@@ -30,7 +30,11 @@ msal = "^1"
 protobuf = ">=4"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
-numpy = { version = "^1.20", optional = true }
+numpy = [
+    {version = ">=1.20, <1.25", python = "~3.8", optional = true},
+    {version = "^1.25", python = ">=3.9, <3.12", optional = true},
+    {version = "^1.26", python = "^3.12", optional = true},
+]
 sympy = { version = "*", optional = true }
 pandas = { version = ">=1.4", optional = true }
 backports-zoneinfo = { version = ">=0.2.1",  python = "<3.9", extras = ["tzdata"], optional = true}
