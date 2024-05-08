@@ -7,7 +7,7 @@ on:
 
 jobs:
   setup_and_test:
-    uses: ./.github/workflows/_setup.yml@master
+    uses: ./.github/workflows/_setup.yml
     with:
       python_version: '3.8'
       extras: '-E numpy'
