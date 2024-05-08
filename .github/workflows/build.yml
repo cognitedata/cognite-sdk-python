@@ -1,24 +1,3 @@
-# name: Main CI Workflow
-#
-# on:
-#   pull_request:
-#     branches:
-#       - master
-#
-# jobs:
-#   setup_and_test:
-#     uses: ./.github/workflows/_setup.yml
-#     with:
-#       python_version: '3.8'
-#       extras: '-E numpy'
-#
-#   lint:
-#     needs: setup_and_test
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Linting and static code checks
-#         run: poetry run pre-commit run --all-files
-
 ---
 name: build
 
@@ -53,37 +32,31 @@ jobs:
       - name: Test core
         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
-  # test_full:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       os: [ubuntu-latest, windows-latest]
-  #       python-version: ['3.8', '3.12']
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-python@v5
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #
-  #     - name: Install full dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip poetry
-  #         poetry config virtualenvs.create false
-  #         poetry install -E all
-  #
-  #     - name: Test full
-  #       env:
-  #         LOGIN_FLOW: client_credentials
-  #         COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
-  #         COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
-  #         COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
-  #         COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
-  #         COGNITE_PROJECT: python-sdk-test
-  #         COGNITE_BASE_URL: https://greenfield.cognitedata.com
-  #         COGNITE_CLIENT_NAME: python-sdk-integration-tests
-  #       run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
-  #
-  #     - uses: codecov/codecov-action@4
-  #       with:
-  #         token: ${{ secrets.CODECOV_TOKEN }}
+  test_full:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.8', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          extras: '-E all'
+
+      - name: Test full
+        env:
+          LOGIN_FLOW: client_credentials
+          COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
+          COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
+          COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
+          COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
+          COGNITE_PROJECT: python-sdk-test
+          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_NAME: python-sdk-integration-tests
+        run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+
+      - uses: codecov/codecov-action@4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
