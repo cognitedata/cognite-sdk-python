@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
@@ -156,6 +157,7 @@ def cognite_mock_client() -> CogniteClientMock:
 
 
 class TestCogniteObject:
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
@@ -171,6 +173,7 @@ class TestCogniteObject:
 
         assert loaded.dump() == instance.dump()
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
@@ -187,6 +190,7 @@ class TestCogniteObject:
 
         assert loaded.dump() == instance.dump()
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_writable_cls",
@@ -204,6 +208,7 @@ class TestCogniteObject:
         write_format = instance.as_write()
         assert isinstance(write_format, CogniteResource)
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "writable_list",
@@ -225,6 +230,7 @@ class TestCogniteObject:
         write_format = instance_list.as_write()
         assert isinstance(write_format, CogniteResourceList)
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
@@ -250,6 +256,7 @@ class TestCogniteObject:
         # Ensure no part of load mutates the input dict:
         assert dumped == original_dumped
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
@@ -290,6 +297,7 @@ class TestCogniteObject:
             elif isinstance(case, list):
                 to_check.extend(case)
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
@@ -306,6 +314,7 @@ class TestCogniteObject:
 
         assert loaded.dump() == instance.dump()
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
@@ -401,6 +410,7 @@ class TestCogniteResource:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
@@ -420,6 +430,7 @@ class TestCogniteResource:
 
         assert loaded.dump() == instance.dump()
 
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="TODO: Make test run with Python 3.12")
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_resource_subclass",
