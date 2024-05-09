@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
+from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -18,6 +21,17 @@ class TransformationSchemaArrayType(TransformationSchemaType):
         super().__init__(type=type)
         self.element_type = element_type
         self.contains_null = contains_null
+
+
+class TransformationSchemaStructType(TransformationSchemaType):
+    # TODO: Fields should probably be translated into an object
+    def __init__(self, type: str | None = None, fields: list[dict[str, Any]] | None = None) -> None:
+        super().__init__(type=type)
+        self.fields = fields
+
+    def dump(self, camel_case: bool = True) -> dict:
+        dumped = super().dump(camel_case=camel_case)
+        return convert_all_keys_recursive(dumped, camel_case=camel_case)  # <-- 'fields' is a nested object
 
 
 class TransformationSchemaMapType(TransformationSchemaType):
@@ -43,6 +57,20 @@ class TransformationSchemaMapType(TransformationSchemaType):
             value_type=resource.get("valueType"),
             value_contains_null=resource.get("valueContainsNull"),  # type: ignore[arg-type]
         )
+
+
+class TransformationSchemaUnknownType(TransformationSchemaType):
+    def __init__(self, raw_schema: dict[str, Any]) -> None:
+        raw_schema = raw_schema.copy()
+        super().__init__(type=raw_schema.pop("type"))  # type is required
+        self.__raw_schema = raw_schema
+
+    def dump(self, camel_case: bool = True) -> dict:
+        return {"type": self.type, **convert_all_keys_recursive(self.__raw_schema, camel_case=camel_case)}
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(raw_schema=resource)
 
 
 class TransformationSchemaColumn(CogniteResource):
@@ -72,19 +100,20 @@ class TransformationSchemaColumn(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if self.type:
-            output["type"] = self.type.type
+        if isinstance(self.type, TransformationSchemaType):
+            output["type"] = self.type.dump(camel_case=camel_case)
         return output
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationSchemaColumn:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.type, dict):
-            instance_type = instance.type.get("type")
-            if instance_type == "array":
-                instance.type = TransformationSchemaArrayType._load(instance.type)
-            elif instance_type == "map":
-                instance.type = TransformationSchemaMapType._load(instance.type)
+            instance.type = {
+                "array": TransformationSchemaArrayType,
+                "map": TransformationSchemaMapType,
+                "struct": TransformationSchemaStructType,
+            }.get(instance.type["type"], TransformationSchemaUnknownType)._load(instance.type)
+
         elif isinstance(instance.type, str):
             instance.type = TransformationSchemaType(type=instance.type)
         return instance
