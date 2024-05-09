@@ -7,7 +7,6 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
-    CancelExecution,
     CDFTaskParameters,
     FunctionTaskParameters,
     SubworkflowTaskParameters,
@@ -421,11 +420,9 @@ class TestWorkflowExecutions:
             add_multiply_workflow.version,
         )
 
-        cancelled_workflow_executions = cognite_client.workflows.executions.cancel(
-            [CancelExecution(id=workflow_execution.id, reason="test")]
+        cancelled_workflow_execution = cognite_client.workflows.executions.cancel(
+            id=workflow_execution.id, reason="test"
         )
-        assert len(cancelled_workflow_executions) == 1
-        cancelled_workflow_execution = cancelled_workflow_executions[0]
         assert cancelled_workflow_execution.status == "terminated"
         assert cancelled_workflow_execution.reason_for_incompletion == "test"
 

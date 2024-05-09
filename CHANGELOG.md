@@ -17,11 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-
-## [7.42.0] - 2024-05-02
+## [7.43.0] - 2024-05-09
 ### Added
 - Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
 - `DiagramsAPI.detect()` method's parameter `configuration` now also accepts `DiagramDetectConfig` instances.
+
+## [7.42.0] - 2024-05-06
+### Changed
+- Breaking change: the `workflows.executions.cancel` method now only allows cancelling one execution at a time to reflect its non-atomic operation.
+
+## [7.41.1] - 2024-05-06
+### Fixed
+- An edge case when a request for datapoints from several hundred time series (with specific finite limits) would return
+  more datapoints than the user-specified limit.
 
 ## [7.41.0] - 2024-04-30
 ### Added
