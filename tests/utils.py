@@ -396,6 +396,9 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is TransformationScheduleWrite:
             # TransformationScheduleWrite requires either id or external_id
             keyword_arguments.pop("id", None)
+            if skip_defaulted_args:
+                # At least external_id or id must be set
+                keyword_arguments["external_id"] = "my_schedule"
         elif resource_cls is TransformationNotificationWrite:
             # TransformationNotificationWrite requires either transformation_id or transformation_external_id
             if skip_defaulted_args:
