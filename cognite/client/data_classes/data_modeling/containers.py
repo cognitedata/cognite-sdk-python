@@ -248,7 +248,7 @@ class ContainerProperty(CogniteObject):
     nullable: bool = True
     auto_increment: bool = False
     name: str | None = None
-    default_value: str | int | dict | None = None
+    default_value: str | int | float | bool | dict | None = None
     description: str | None = None
 
     @classmethod
