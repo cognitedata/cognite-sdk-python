@@ -17,10 +17,11 @@ runs:
       with:
         python-version: ${{ inputs.python_version }}
 
-    - name: Setup cache
+    - name: Setup cache for pip and poetry
       uses: actions/cache@v3
       with:
         path: |
+          ~/.cache/pip
           ~/.cache/pypoetry
           ~/.poetry
           !~/.cache/pypoetry/artifacts
