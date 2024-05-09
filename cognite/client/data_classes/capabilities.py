@@ -1259,6 +1259,20 @@ class UserProfilesAcl(Capability):
 
 
 @dataclass
+class AuditlogAcl(Capability):
+    _capability_name = "auditlogAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+    allow_unknown: bool = field(default=False, compare=False, repr=False)
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class LegacyModelHostingAcl(LegacyCapability):
     _capability_name = "modelHostingAcl"
     actions: Sequence[Action]
