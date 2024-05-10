@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.43.1] - 2024-05-10
+### Fixed
+- `RawRowsAPI.insert()` silently ignored rows of type `RowWriteList`.
+
 ## [7.43.0] - 2024-05-09
 ### Added
 - Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
