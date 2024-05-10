@@ -477,7 +477,8 @@ class FakeCogniteResourceGenerator:
             return self.create_instance(type_)
 
         container_type = get_origin(type_)
-        if container_type is np.ndarray:
+        is_container = container_type is not None
+        if not is_container or container_type is np.ndarray:  # looks weird, but 3.8 and 3.12 type compat. issue
             # Handle numpy types
             from numpy.typing import NDArray
 
