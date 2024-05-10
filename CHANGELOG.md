@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.43.2] - 2024-05-10
+### Fixed
+- In containers, `PropertyType` `Text` required parameter `collation` even though it is optional. This is now fixed.
+
 ## [7.43.1] - 2024-05-10
 ### Fixed
 - `RawRowsAPI.insert()` silently ignored rows of type `RowWriteList`.
