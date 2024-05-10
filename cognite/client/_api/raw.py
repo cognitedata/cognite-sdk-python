@@ -557,7 +557,7 @@ class RawRowsAPI(APIClient):
         if isinstance(row, dict):
             for key, columns in row.items():
                 rows.append({"key": key, "columns": columns})
-        elif isinstance(row, list):
+        elif isinstance(row, Sequence):
             for elem in row:
                 if isinstance(elem, Row):
                     rows.append(elem.as_write().dump(camel_case=True))
