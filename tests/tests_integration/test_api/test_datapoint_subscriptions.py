@@ -64,7 +64,7 @@ def time_series_external_ids(all_time_series_external_ids):
 
 @pytest.fixture(scope="session")
 def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
-    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}-{'.'.join(map(str, version_info[:2]))}"
+    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}-{'-'.join(map(str, version_info[:2]))}"
     sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub
@@ -91,7 +91,8 @@ def sub_for_status_codes(cognite_client: CogniteClient, time_series_external_ids
 
 
 class TestDatapointSubscriptions:
-    def test_list_subscriptions(self, cognite_client: CogniteClient, subscription: DatapointSubscription) -> None:
+    @pytest.mark.usefixture("subscription")  # ensures at least 1 exists
+    def test_list_subscriptions(self, cognite_client: CogniteClient) -> None:
         subscriptions = cognite_client.time_series.subscriptions.list(limit=5)
         assert len(subscriptions) > 0, "Add at least one subscription to the test environment to run this test"
 
