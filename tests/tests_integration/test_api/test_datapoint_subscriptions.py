@@ -6,6 +6,7 @@ import random
 import time
 from contextlib import contextmanager
 from datetime import datetime
+from sys import version_info
 
 import numpy as np
 import pandas as pd
@@ -63,7 +64,7 @@ def time_series_external_ids(all_time_series_external_ids):
 
 @pytest.fixture(scope="session")
 def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
-    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}"
+    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}-{'.'.join(map(str, version_info[:2]))}"
     sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub
