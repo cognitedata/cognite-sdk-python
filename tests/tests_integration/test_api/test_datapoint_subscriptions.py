@@ -51,7 +51,7 @@ def all_time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
             TimeSeries(external_id=external_id, name=external_id, is_string=False)
             for external_id in TIMESERIES_EXTERNAL_IDS
         ],
-        mode="overwrite",
+        mode="replace",
     ).as_external_ids()
 
 
