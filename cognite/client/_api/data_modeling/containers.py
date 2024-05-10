@@ -88,7 +88,9 @@ class ContainersAPI(APIClient):
     @overload
     def retrieve(self, ids: Sequence[ContainerIdentifier]) -> ContainerList: ...
 
-    def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
+    def retrieve(
+        self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]
+    ) -> Container | ContainerList | None:
         """`Retrieve one or more container by id(s). <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
@@ -118,7 +120,9 @@ class ContainersAPI(APIClient):
             executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-    def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
+    def delete(
+        self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]
+    ) -> list[ContainerId]:
         """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
 
         Args:
@@ -142,9 +146,14 @@ class ContainersAPI(APIClient):
                 executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
-        return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
+        return [
+            ContainerId(space=item["space"], external_id=item["externalId"])
+            for item in deleted_containers
+        ]
 
-    def delete_constraints(self, ids: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
+    def delete_constraints(
+        self, ids: Sequence[ConstraintIdentifier]
+    ) -> list[ConstraintIdentifier]:
         """`Delete one or more constraints <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerConstraints>`_
 
         Args:
@@ -201,7 +210,12 @@ class ContainersAPI(APIClient):
             },
         )
         return [
-            (ContainerId(space=item["space"], external_id=item["containerExternalId"]), item["identifier"])
+            (
+                ContainerId(
+                    space=item["space"], external_id=item["containerExternalId"]
+                ),
+                item["identifier"],
+            )
             for item in res.json()["items"]
         ]
 
@@ -259,7 +273,9 @@ class ContainersAPI(APIClient):
     @overload
     def apply(self, container: ContainerApply) -> Container: ...
 
-    def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
+    def apply(
+        self, container: ContainerApply | Sequence[ContainerApply]
+    ) -> Container | ContainerList:
         """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
 
         Args:
@@ -278,7 +294,7 @@ class ContainersAPI(APIClient):
                 >>> container = [ContainerApply(space="mySpace", external_id="myContainer",
                 ...     properties={"name": ContainerProperty(type=Text(), name="name")})]
                 >>> res = client.data_modeling.containers.apply(container)
-            
+
             Create new container with unit aware properties:
 
                 >>> from cognite.client import CogniteClient
