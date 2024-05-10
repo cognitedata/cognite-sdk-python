@@ -22,7 +22,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
 )
 from cognite.client.utils._text import random_string
 
-TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(10)]
+TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(20)]
 
 
 @contextmanager
@@ -43,7 +43,7 @@ def all_time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
         external_ids=TIMESERIES_EXTERNAL_IDS, ignore_unknown_ids=True
     ).as_external_ids()
 
-    if len(existing_xids) == len(TIMESERIES_EXTERNAL_IDS):
+    if existing_xids == TIMESERIES_EXTERNAL_IDS:
         return existing_xids
 
     return cognite_client.time_series.upsert(
@@ -59,7 +59,7 @@ def all_time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
 def time_series_external_ids(all_time_series_external_ids):
     # Spread the load to avoid API errors like 'a ts can't be part of too many subscriptions':
     ts_xids = all_time_series_external_ids[:]
-    return random.sample(ts_xids, k=4)
+    return random.sample(ts_xids, k=3)
 
 
 @pytest.fixture(scope="session")
@@ -71,7 +71,7 @@ def subscription(cognite_client: CogniteClient, all_time_series_external_ids: li
     new_sub = DataPointSubscriptionWrite(
         external_id=external_id,
         name=f"{external_id}_3ts",
-        time_series_ids=all_time_series_external_ids[:3],
+        time_series_ids=random.sample(all_time_series_external_ids, k=3),
         partition_count=1,
     )
     return cognite_client.time_series.subscriptions.create(new_sub)
