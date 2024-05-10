@@ -14,7 +14,7 @@ def factory_method_from_array_data():
     except ImportError:
         return []
 
-    index = pd.date_range("2023-01-01", periods=4, freq="1H", tz="UTC").values
+    index = pd.date_range("2023-01-01", periods=4, freq="1h", tz="UTC").values
     arr1 = DatapointsArray(id=123, average=np.array([1.0, 2.0], dtype=np.float64), timestamp=index[:2])
     arr2 = DatapointsArray(id=123, average=np.array([3.0, 4.0], dtype=np.float64), timestamp=index[2:])
     expected = DatapointsArray(id=123, average=np.array([1, 2, 3, 4], dtype=np.float64), timestamp=index)

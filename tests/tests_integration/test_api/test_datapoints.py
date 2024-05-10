@@ -1546,7 +1546,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         "6hours",
         pd.DataFrame(
             [6 * 60] * 4,
-            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6H", tz="Europe/Oslo"),
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6h", tz="Europe/Oslo"),
             columns=["count"],
             dtype="Int64",
         ),
@@ -1559,7 +1559,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         "10minutes",
         pd.DataFrame(
             [10] * 3,
-            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10T", tz="Europe/Oslo"),
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10min", tz="Europe/Oslo"),
             columns=["count"],
             dtype="Int64",
         ),

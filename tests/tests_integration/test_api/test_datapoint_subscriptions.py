@@ -91,7 +91,6 @@ def sub_for_status_codes(cognite_client: CogniteClient, time_series_external_ids
 
 
 class TestDatapointSubscriptions:
-    @pytest.mark.usefixture("subscription")  # ensures at least 1 exists
     def test_list_subscriptions(self, cognite_client: CogniteClient) -> None:
         subscriptions = cognite_client.time_series.subscriptions.list(limit=5)
         assert len(subscriptions) > 0, "Add at least one subscription to the test environment to run this test"
