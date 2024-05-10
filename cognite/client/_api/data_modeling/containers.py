@@ -278,6 +278,42 @@ class ContainersAPI(APIClient):
                 >>> container = [ContainerApply(space="mySpace", external_id="myContainer",
                 ...     properties={"name": ContainerProperty(type=Text(), name="name")})]
                 >>> res = client.data_modeling.containers.apply(container)
+            
+            Create new container with unit aware properties:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import ContainerApply, ContainerProperty, Float64
+                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference
+                >>> client = CogniteClient()
+                >>> container = ContainerApply(
+                ...     space="mySpace",
+                ...     external_id="myContainer",
+                ...     properties={
+                ...         "maxPressure": ContainerProperty(
+                ...             nullable=True,
+                ...             description="Maximum Pump Pressure",
+                ...             name="maxPressure",
+                ...             type=Float64(
+                ...                 unit=UnitReference(
+                ...                     external_id="pressure:bar",
+                ...                     source_unit="BAR"
+                ...                 )
+                ...             )
+                ...         ),
+                ...         "rotationConfigurations": ContainerProperty(
+                ...             nullable=True,
+                ...             description="Rotation Configurations",
+                ...             name="rotationConfigurations",
+                ...             type=Float64(
+                ...                 is_list=True,
+                ...                 unit=UnitReference(
+                ...                     external_id="angular_velocity:rev-per-min"
+                ...                 )
+                ...             )
+                ...         )
+                ...     }
+                ... )
+                >>> res = client.data_modeling.containers.apply(container)
         """
         return self._create_multiple(
             list_cls=ContainerList,
