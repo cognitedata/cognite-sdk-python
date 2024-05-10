@@ -73,7 +73,7 @@ class PropertyType(CogniteObject, ABC):
         type_ = resource["type"]
         obj: Any
         if type_ == "text":
-            obj = Text(is_list=resource["list"], collation=resource["collation"])
+            obj = Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
         elif type_ == "boolean":
             obj = Boolean(is_list=resource["list"])
         elif type_ == "float32":
