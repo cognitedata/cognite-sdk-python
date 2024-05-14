@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.43.2] - 2024-05-10
 ### Fixed
-- In containers, `PropertyType` `Text` required parameter `collation` is now optional, matching the API spec.
+- In containers, `PropertyType` `Text` required parameter `collation` is now optional when `load()`ing, matching the API spec.
 
 ## [7.43.1] - 2024-05-10
 ### Fixed
