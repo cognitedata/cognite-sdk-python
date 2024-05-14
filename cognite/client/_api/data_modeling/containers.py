@@ -282,7 +282,7 @@ class ContainersAPI(APIClient):
                 ...     properties={"name": ContainerProperty(type=Text(), name="name")})]
                 >>> res = client.data_modeling.containers.apply(container)
 
-            Create new container with unit aware properties:
+            Create new container with unit-aware properties:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ContainerApply, ContainerProperty, Float64
