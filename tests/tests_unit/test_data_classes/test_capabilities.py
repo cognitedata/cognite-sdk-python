@@ -245,7 +245,7 @@ class TestCapabilities:
         ],
     )
     def test_load__action_does_not_exist(self, acl_cls_name: str, bad_action: str, dumped: dict[str, Any]) -> None:
-        with pytest.raises(ValueError, match=rf"^'{bad_action}' is not a valid {acl_cls_name} Action$"):
+        with pytest.raises(ValueError, match=rf"^'{bad_action}' is not a valid {acl_cls_name}.Action$"):
             Capability.load(dumped)
 
         assert Capability.load(dumped, allow_unknown=True)
@@ -397,7 +397,7 @@ class TestCogniteClientDoesntRaiseOnUnknownAcls:
         assert expected == [g["capabilities"] for g in groups.dump()]
 
         # Ensure that the capabilities that did -not- raise from groups/list, would raise for a normal user:
-        with pytest.raises(ValueError, match="^'READ' is not a valid Action"):
+        with pytest.raises(ValueError, match=r"^'READ' is not a valid Capability.Action"):
             GroupList.load(groups.dump(camel_case=True))
 
         # ...and ensure each individual (acl/action/scope) raises:

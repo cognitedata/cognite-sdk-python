@@ -62,9 +62,8 @@ class Capability(ABC):
             if not self.allow_unknown:
                 self._validate()
         except Exception as err:
-            raise ValueError(
-                f"Could not instantiate {type(self).__name__} due to: {err}. " + self.show_example_usage()
-            ) from err
+            acl_name = "ACL" if (cls := type(self)) is UnknownAcl else cls.__name__
+            raise ValueError(f"Could not instantiate {acl_name} due to: {err}. " + self.show_example_usage()) from err
 
     def _validate(self) -> None:
         if (capability_cls := type(self)) is UnknownAcl:
@@ -104,11 +103,13 @@ class Capability(ABC):
             # Pythonistas, don't judge me, _missing_ does an isinstance check...
             try:
                 return cls(action)
-            except ValueError:
+            except (ValueError, TypeError):
                 if allow_unknown:
                     Action = enum.Enum("Action", {action.title(): action}, type=Capability.Action)  # type: ignore [misc]
                     return Action(action)  # type: ignore [return-value]
-                raise
+
+                # Note: Doesn't enum raise this for us?! Not as of >=3.11 (new check on empty is done first..)
+                raise ValueError(f"{action!r} is not a valid {cls.__qualname__}")
 
     @dataclass(frozen=True)
     class Scope(ABC):
