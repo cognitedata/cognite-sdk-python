@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.43.3] - 2024-05-15
+### Fixed
+- Identity providers that return `expires_in` as a string no longer causes `TypeError` when authenticating.
+
 ## [7.43.2] - 2024-05-10
 ### Fixed
 - In containers, `PropertyType` `Text` required parameter `collation` is now optional when `load()`ing, matching the API spec.
