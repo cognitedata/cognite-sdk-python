@@ -116,12 +116,13 @@ class Capability(ABC):
         _scope_name: ClassVar[str]
 
         @classmethod
-        def load(cls, resource: dict | str) -> Self:
+        def load(cls, resource: dict | str, allow_unknown: bool = False) -> Self:
             resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
-            for cls_name, scope_cls in _SCOPE_CLASS_BY_NAME.items():
-                if cls_name not in resource:
-                    continue
-                data = convert_all_keys_to_snake_case(resource[cls_name])
+            known_scopes = set(resource).intersection(_SCOPE_CLASS_BY_NAME)
+            if len(known_scopes) == 1:
+                (name,) = known_scopes
+                scope_cls = _SCOPE_CLASS_BY_NAME[name]
+                data = convert_all_keys_to_snake_case(resource[name])
                 try:
                     return cast(Self, scope_cls(**data))
                 except TypeError:
@@ -133,9 +134,19 @@ class Capability(ABC):
                     return cast(Self, scope_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
 
             # We infer this as an unknown scope not yet added to the SDK:
-            name, data = next(iter(resource.items()))
-            data = convert_all_keys_to_snake_case(data)
-            return cast(Self, UnknownScope(name=name, data=data))
+            if len(resource) == 1:
+                ((name, data),) = resource.items()
+                if allow_unknown:
+                    return cast(Self, UnknownScope(name=name, data=data))
+
+                raise ValueError(
+                    f"Unable to parse Scope, {name!r} is not a known scope. Pass `allow_unknown=True` to force "
+                    f"loading it as an unknown scope. List of known: {sorted(_SCOPE_CLASS_BY_NAME)}."
+                )
+            raise ValueError(
+                f"Unable to parse Scope, none of the top-level keys in the input, {sorted(resource)}, "
+                f"matched known Scopes, - or - multiple was found. List of known: {sorted(_SCOPE_CLASS_BY_NAME)}."
+            )
 
         def dump(self, camel_case: bool = True) -> dict[str, Any]:
             if isinstance(self, UnknownScope):
@@ -176,11 +187,16 @@ class Capability(ABC):
             (name,) = known_acls
             capability_cls = _CAPABILITY_CLASS_BY_NAME[name]
             # TODO: We ignore extra keys that might be present like 'projectUrlNames' - are these needed?
+            try:
+                scopes = Capability.Scope.load(resource[name]["scope"], allow_unknown)
+            except Exception as err:
+                raise ValueError(f"Could not instantiate {capability_cls.__name__} due to: {err}") from None
+
             return cast(
                 Self,
                 capability_cls(
                     actions=[capability_cls.Action.load(act, allow_unknown) for act in resource[name]["actions"]],
-                    scope=Capability.Scope.load(resource[name]["scope"]),
+                    scope=scopes,
                     allow_unknown=allow_unknown,
                 ),
             )
@@ -188,13 +204,13 @@ class Capability(ABC):
         # loaded with 'allow_unknown=True' (to future-proof):
         if allow_unknown:
             if len(resource) != 1:
-                unknown_acl = UnknownAcl(actions=None, scope=None, raw_data=resource, allow_unknown=True)
+                unknown_acl = UnknownAcl(actions=None, scope=None, raw_data=resource, allow_unknown=True)  # type: ignore [arg-type]
             else:
                 ((name, data),) = resource.items()
                 unknown_acl = UnknownAcl(
                     capability_name=name,
                     actions=[UnknownAcl.Action.load(act, allow_unknown=True) for act in data["actions"]],
-                    scope=Capability.Scope.load(data["scope"]),
+                    scope=Capability.Scope.load(data["scope"], allow_unknown=True),
                     raw_data=resource,
                     allow_unknown=True,
                 )
