@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import enum
 import inspect
 import itertools
@@ -216,11 +217,16 @@ class Capability(ABC):
                 )
             return cast(Self, unknown_acl)
 
-        raise ValueError(
-            f"Unable to parse Capability, none of the top-level keys in the input, {sorted(resource)}, "
+        top_lvl_keys = sorted(resource)
+        err_msg = (
+            f"Unable to parse Capability, none of the top-level keys in the input, {top_lvl_keys}, "
             f"matched known ACLs, - or - multiple was found. Pass `allow_unknown=True` to force loading it "
-            f"as an unknown capability. List of known ACLs: {sorted(_CAPABILITY_CLASS_BY_NAME)}."
+            f"as an unknown capability."
         )
+        if matches := [match for key in top_lvl_keys for match in difflib.get_close_matches(key, ALL_CAPABILITIES)]:
+            err_msg += f" Did you mean one of: {matches}?"
+        err_msg += " List of all ACLs: from cognite.client.data_classes.capabilities import ALL_CAPABILITIES"
+        raise ValueError(err_msg)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if isinstance(self, UnknownAcl):
@@ -1329,6 +1335,8 @@ _CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProx
         if c not in (UnknownAcl, LegacyCapability)
     }
 )
+ALL_CAPABILITIES = sorted(_CAPABILITY_CLASS_BY_NAME)
+
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
     if acl.Action.__members__:

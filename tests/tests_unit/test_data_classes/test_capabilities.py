@@ -231,6 +231,26 @@ class TestCapabilities:
         assert capability.raw_data == raw
         assert capability.dump(camel_case=True) == raw
 
+    def test_load_capability_misspelled_acl(self, unknown_acls_items):
+        unknown_acl, *_ = unknown_acls_items
+        exp_err_msg = re.escape(
+            "Unable to parse Capability, none of the top-level keys in the input, ['funkyAssetsAcl'], "
+            "matched known ACLs, - or - multiple was found. Pass `allow_unknown=True` to force loading "
+            "it as an unknown capability. Did you mean one of: ['assetsAcl', 'functionsAcl']? List of all "
+            "ACLs: from cognite.client.data_classes.capabilities import ALL_CAPABILITIES"
+        )
+        # difflib should give some nice suggestions for misspelling:
+        # - funkyAssetsAcl -> [assetsAcl, functionsAcl]
+        with pytest.raises(ValueError, match=f"^{exp_err_msg}$"):
+            Capability.load(unknown_acl, allow_unknown=False)
+
+        # when difflib doesnt find any matches, it should be omitted from the err. msg:
+        with pytest.raises(ValueError, match="force loading it as an unknown capability. List of all ACLs"):
+            Capability.load(
+                {"does not match anything really": {"actions": ["READ"], "scope": {"all": {}}}},
+                allow_unknown=False,
+            )
+
     @pytest.mark.parametrize(
         "acl_cls_name, bad_action, dumped",
         [
