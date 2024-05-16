@@ -190,7 +190,7 @@ class Capability(ABC):
             try:
                 scopes = Capability.Scope.load(resource[name]["scope"], allow_unknown)
             except Exception as err:
-                raise ValueError(f"Could not instantiate {capability_cls.__name__} due to: {err}") from None
+                raise ValueError(f"Could not instantiate {capability_cls.__name__} due to: {err}")
 
             return cast(
                 Self,
