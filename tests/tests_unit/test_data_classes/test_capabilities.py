@@ -405,20 +405,22 @@ class TestCogniteClientDoesntRaiseOnUnknownAcls:
         assert expected == [g["capabilities"] for g in groups.dump()]
 
         # Ensure that the capabilities that did -not- raise from groups/list, would raise for a normal user:
-        err_match = r"top-level keys in the input, \['funkyAssetsAcl'\], matched known ACLs"
-        with pytest.raises(ValueError, match=err_match):
+        acl_err_match = r"top-level keys in the input, \['funkyAssetsAcl'\], matched known ACLs"
+        action_err_match = "^'UN-KN-OWN' is not a valid AssetsAcl.Action$"
+        scope_err_match = "^Could not instantiate AssetsAcl due to: Unable to parse Scope, 'astronautSpace' is not"
+        with pytest.raises(ValueError, match=acl_err_match):
             GroupList.load(groups.dump(camel_case=True))
 
         # ...and ensure each individual (acl/action/scope) raises:
         u1, u2, u3, u4 = unknown_acls_items
         group = {"name": "me", "id": 123, "source_id": "huh"}
-        with pytest.raises(ValueError, match=err_match):
+        with pytest.raises(ValueError, match=acl_err_match):
             Group.load({**group, "capabilities": [u1]})  # Unknown capability
-        with pytest.raises(ValueError, match="^'UN-KN-OWN' is not a valid AssetsAcl.Action$"):
+        with pytest.raises(ValueError, match=action_err_match):
             Group.load({**group, "capabilities": [u2]})  # Unknown action
-        with pytest.raises(ValueError, match="Could not instantiate AssetsAcl due to: AssetsAcl got an unknown scope: UnknownScope"):
+        with pytest.raises(ValueError, match=scope_err_match):
             Group.load({**group, "capabilities": [u3]})  # Unknown scope
-        with pytest.raises(ValueError, match=err_match):
+        with pytest.raises(ValueError, match=acl_err_match):
             Group.load({**group, "capabilities": [u4]})  # Unknown -everything-
 
     def test_token_inspect(self, cognite_client, mock_token_inspect_resp):
