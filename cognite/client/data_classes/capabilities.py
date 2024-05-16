@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import enum
 import inspect
 import itertools
@@ -75,7 +76,7 @@ class Capability(ABC):
         if bad_actions := [a for a in self.actions if a not in capability_cls.Action]:
             full_action_examples = ", ".join(f"{acl}.Action.{action.name}" for action in capability_cls.Action)
             raise ValueError(
-                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]."
+                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]"
             )
         allowed_scopes, scope_names = _VALID_SCOPES_BY_CAPABILITY[capability_cls]
         if type(self.scope) in allowed_scopes or not allowed_scopes:
@@ -87,7 +88,7 @@ class Capability(ABC):
         else:
             full_scope_examples = ", ".join(f"{acl}.Scope.{name}" for name in scope_names)
             raise ValueError(
-                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]."
+                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]"
             )
 
     @classmethod
@@ -116,12 +117,13 @@ class Capability(ABC):
         _scope_name: ClassVar[str]
 
         @classmethod
-        def load(cls, resource: dict | str) -> Self:
+        def load(cls, resource: dict | str, allow_unknown: bool = False) -> Self:
             resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
-            for cls_name, scope_cls in _SCOPE_CLASS_BY_NAME.items():
-                if cls_name not in resource:
-                    continue
-                data = convert_all_keys_to_snake_case(resource[cls_name])
+            known_scopes = set(resource).intersection(_SCOPE_CLASS_BY_NAME)
+            if len(known_scopes) == 1:
+                (name,) = known_scopes
+                scope_cls = _SCOPE_CLASS_BY_NAME[name]
+                data = convert_all_keys_to_snake_case(resource[name])
                 try:
                     return cast(Self, scope_cls(**data))
                 except TypeError:
@@ -133,9 +135,19 @@ class Capability(ABC):
                     return cast(Self, scope_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
 
             # We infer this as an unknown scope not yet added to the SDK:
-            name, data = next(iter(resource.items()))
-            data = convert_all_keys_to_snake_case(data)
-            return cast(Self, UnknownScope(name=name, data=data))
+            if len(resource) == 1:
+                ((name, data),) = resource.items()
+                if allow_unknown:
+                    return cast(Self, UnknownScope(name=name, data=data))
+
+                raise ValueError(
+                    f"Unable to parse Scope, {name!r} is not a known scope. Pass `allow_unknown=True` to force "
+                    f"loading it as an unknown scope. List of known: {sorted(_SCOPE_CLASS_BY_NAME)}."
+                )
+            raise ValueError(
+                f"Unable to parse Scope, none of the top-level keys in the input, {sorted(resource)}, "
+                f"matched known Scopes, - or - multiple was found. List of known: {sorted(_SCOPE_CLASS_BY_NAME)}."
+            )
 
         def dump(self, camel_case: bool = True) -> dict[str, Any]:
             if isinstance(self, UnknownScope):
@@ -176,32 +188,45 @@ class Capability(ABC):
             (name,) = known_acls
             capability_cls = _CAPABILITY_CLASS_BY_NAME[name]
             # TODO: We ignore extra keys that might be present like 'projectUrlNames' - are these needed?
+            try:
+                scopes = Capability.Scope.load(resource[name]["scope"], allow_unknown)
+            except Exception as err:
+                raise ValueError(f"Could not instantiate {capability_cls.__name__} due to: {err}")
+
             return cast(
                 Self,
                 capability_cls(
                     actions=[capability_cls.Action.load(act, allow_unknown) for act in resource[name]["actions"]],
-                    scope=Capability.Scope.load(resource[name]["scope"]),
+                    scope=scopes,
                     allow_unknown=allow_unknown,
                 ),
             )
-        elif not known_acls and len(resource) == 1:
-            # We infer this as an unknown acl not yet added to the SDK:
-            ((name, data),) = resource.items()
-            return cast(
-                Self,
-                UnknownAcl(
+        # We infer this as an unknown acl not yet added to the SDK. All API-responses are neccessarily
+        # loaded with 'allow_unknown=True' (to future-proof):
+        if allow_unknown:
+            if len(resource) != 1:
+                unknown_acl = UnknownAcl(actions=None, scope=None, raw_data=resource, allow_unknown=True)  # type: ignore [arg-type]
+            else:
+                ((name, data),) = resource.items()
+                unknown_acl = UnknownAcl(
                     capability_name=name,
-                    actions=[UnknownAcl.Action.load(act, allow_unknown) for act in data["actions"]],
-                    scope=Capability.Scope.load(data["scope"]),
+                    actions=[UnknownAcl.Action.load(act, allow_unknown=True) for act in data["actions"]],
+                    scope=Capability.Scope.load(data["scope"], allow_unknown=True),
                     raw_data=resource,
-                    allow_unknown=allow_unknown,
-                ),
-            )
-        # We got more than one acl (highly unlikely) or we got an unknown acl + extra keys in the response:
-        raise ValueError(
-            "Unable to parse capability from API-response, please create an issue on Github: "
-            "https://github.com/cognitedata/cognite-sdk-python"
+                    allow_unknown=True,
+                )
+            return cast(Self, unknown_acl)
+
+        top_lvl_keys = sorted(resource)
+        err_msg = (
+            f"Unable to parse Capability, none of the top-level keys in the input, {top_lvl_keys}, "
+            f"matched known ACLs, - or - multiple was found. Pass `allow_unknown=True` to force loading it "
+            f"as an unknown capability."
         )
+        if matches := [match for key in top_lvl_keys for match in difflib.get_close_matches(key, ALL_CAPABILITIES)]:
+            err_msg += f" Did you mean one of: {matches}?"
+        err_msg += " List of all ACLs: from cognite.client.data_classes.capabilities import ALL_CAPABILITIES"
+        raise ValueError(err_msg)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if isinstance(self, UnknownAcl):
@@ -1310,6 +1335,8 @@ _CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProx
         if c not in (UnknownAcl, LegacyCapability)
     }
 )
+ALL_CAPABILITIES = sorted(_CAPABILITY_CLASS_BY_NAME)
+
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
     if acl.Action.__members__:

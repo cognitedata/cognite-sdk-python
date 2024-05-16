@@ -209,8 +209,16 @@ class TestCapabilities:
         assert capability.dump(camel_case=True) == cap_with_extra_key
 
     def test_load_dump_unknown__extra_top_level_keys(self, unknown_cap_with_extra_key) -> None:
-        with pytest.raises(ValueError, match="^Unable to parse capability from API-response"):
+        match = (
+            "^Unable to parse Capability, none of the top-level keys in the input, "
+            r"\['extra-key', 'veryUnknownAcl'\], matched known ACLs"
+        )
+        with pytest.raises(ValueError, match=match):
             Capability.load(unknown_cap_with_extra_key)
+
+        # API responses should never fail to load, even when crazy:
+        loaded = Capability.load(unknown_cap_with_extra_key, allow_unknown=True)
+        assert loaded.dump() == unknown_cap_with_extra_key
 
     @pytest.mark.parametrize(
         "raw", [{"dataproductAcl": {"actions": ["UTILIZE"], "scope": {"components": {"ids": [1, 2, 3]}}}}]
@@ -222,6 +230,26 @@ class TestCapabilities:
         assert all(isinstance(action, Capability.Action) for action in capability.actions)
         assert capability.raw_data == raw
         assert capability.dump(camel_case=True) == raw
+
+    def test_load_capability_misspelled_acl(self, unknown_acls_items):
+        unknown_acl, *_ = unknown_acls_items
+        exp_err_msg = re.escape(
+            "Unable to parse Capability, none of the top-level keys in the input, ['funkyAssetsAcl'], "
+            "matched known ACLs, - or - multiple was found. Pass `allow_unknown=True` to force loading "
+            "it as an unknown capability. Did you mean one of: ['assetsAcl', 'functionsAcl']? List of all "
+            "ACLs: from cognite.client.data_classes.capabilities import ALL_CAPABILITIES"
+        )
+        # difflib should give some nice suggestions for misspelling:
+        # - funkyAssetsAcl -> [assetsAcl, functionsAcl]
+        with pytest.raises(ValueError, match=f"^{exp_err_msg}$"):
+            Capability.load(unknown_acl, allow_unknown=False)
+
+        # when difflib doesnt find any matches, it should be omitted from the err. msg:
+        with pytest.raises(ValueError, match="force loading it as an unknown capability. List of all ACLs"):
+            Capability.load(
+                {"does not match anything really": {"actions": ["READ"], "scope": {"all": {}}}},
+                allow_unknown=False,
+            )
 
     @pytest.mark.parametrize(
         "acl_cls_name, bad_action, dumped",
@@ -397,13 +425,23 @@ class TestCogniteClientDoesntRaiseOnUnknownAcls:
         assert expected == [g["capabilities"] for g in groups.dump()]
 
         # Ensure that the capabilities that did -not- raise from groups/list, would raise for a normal user:
-        with pytest.raises(ValueError, match=r"^'READ' is not a valid Capability.Action"):
+        acl_err_match = r"top-level keys in the input, \['funkyAssetsAcl'\], matched known ACLs"
+        action_err_match = "^'UN-KN-OWN' is not a valid AssetsAcl.Action$"
+        scope_err_match = "^Could not instantiate AssetsAcl due to: Unable to parse Scope, 'astronautSpace' is not"
+        with pytest.raises(ValueError, match=acl_err_match):
             GroupList.load(groups.dump(camel_case=True))
 
         # ...and ensure each individual (acl/action/scope) raises:
-        for unknown_acl in unknown_acls_items:
-            with pytest.raises(ValueError, match="is not a valid |^Could not instantiate "):
-                Group.load({"name": "me", "id": 123, "source_id": "huh", "capabilities": [unknown_acl]})
+        u1, u2, u3, u4 = unknown_acls_items
+        group = {"name": "me", "id": 123, "source_id": "huh"}
+        with pytest.raises(ValueError, match=acl_err_match):
+            Group.load({**group, "capabilities": [u1]})  # Unknown capability
+        with pytest.raises(ValueError, match=action_err_match):
+            Group.load({**group, "capabilities": [u2]})  # Unknown action
+        with pytest.raises(ValueError, match=scope_err_match):
+            Group.load({**group, "capabilities": [u3]})  # Unknown scope
+        with pytest.raises(ValueError, match=acl_err_match):
+            Group.load({**group, "capabilities": [u4]})  # Unknown -everything-
 
     def test_token_inspect(self, cognite_client, mock_token_inspect_resp):
         # Mostly a repeat of test_groups_list, ensuring token/inspect won't ever raise
