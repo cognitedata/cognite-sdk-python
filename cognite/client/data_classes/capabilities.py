@@ -75,7 +75,7 @@ class Capability(ABC):
         if bad_actions := [a for a in self.actions if a not in capability_cls.Action]:
             full_action_examples = ", ".join(f"{acl}.Action.{action.name}" for action in capability_cls.Action)
             raise ValueError(
-                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]."
+                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]"
             )
         allowed_scopes, scope_names = _VALID_SCOPES_BY_CAPABILITY[capability_cls]
         if type(self.scope) in allowed_scopes or not allowed_scopes:
@@ -87,7 +87,7 @@ class Capability(ABC):
         else:
             full_scope_examples = ", ".join(f"{acl}.Scope.{name}" for name in scope_names)
             raise ValueError(
-                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]."
+                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]"
             )
 
     @classmethod
@@ -184,23 +184,26 @@ class Capability(ABC):
                     allow_unknown=allow_unknown,
                 ),
             )
-        elif not known_acls and len(resource) == 1:
-            # We infer this as an unknown acl not yet added to the SDK:
-            ((name, data),) = resource.items()
-            return cast(
-                Self,
-                UnknownAcl(
+        # We infer this as an unknown acl not yet added to the SDK. All API-responses are neccessarily
+        # loaded with 'allow_unknown=True' (to future-proof):
+        if allow_unknown:
+            if len(resource) != 1:
+                unknown_acl = UnknownAcl(actions=None, scope=None, raw_data=resource, allow_unknown=True)
+            else:
+                ((name, data),) = resource.items()
+                unknown_acl = UnknownAcl(
                     capability_name=name,
-                    actions=[UnknownAcl.Action.load(act, allow_unknown) for act in data["actions"]],
+                    actions=[UnknownAcl.Action.load(act, allow_unknown=True) for act in data["actions"]],
                     scope=Capability.Scope.load(data["scope"]),
                     raw_data=resource,
-                    allow_unknown=allow_unknown,
-                ),
-            )
-        # We got more than one acl (highly unlikely) or we got an unknown acl + extra keys in the response:
+                    allow_unknown=True,
+                )
+            return cast(Self, unknown_acl)
+
         raise ValueError(
-            "Unable to parse capability from API-response, please create an issue on Github: "
-            "https://github.com/cognitedata/cognite-sdk-python"
+            f"Unable to parse Capability, none of the top-level keys in the input, {sorted(resource)}, "
+            f"matched known ACLs, - or - multiple was found. Pass `allow_unknown=True` to force loading it "
+            f"as an unknown capability. List of known ACLs: {sorted(_CAPABILITY_CLASS_BY_NAME)}."
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
