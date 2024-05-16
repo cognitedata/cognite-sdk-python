@@ -511,7 +511,9 @@ class APIClient:
         verify_limit(limit)
         if partitions:
             if not is_unlimited(limit):
-                raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+                raise ValueError(
+                    "When using partitions, a finite limit can not be used. Pass one of `None`, `-1` or `inf`."
+                )
             if sort is not None:
                 raise ValueError("When using sort, partitions is not supported.")
             return self._list_partitioned(
