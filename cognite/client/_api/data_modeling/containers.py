@@ -22,7 +22,9 @@ from cognite.client.utils._concurrency import ConcurrencySettings
 
 class ContainersAPI(APIClient):
     _RESOURCE_PATH = "/models/containers"
-    _LIST_LIMIT = 100
+    _DELETE_LIMIT = 100
+    _RETRIEVE_LIMIT = 100
+    _CREATE_LIMIT = 100
 
     @overload
     def __call__(
