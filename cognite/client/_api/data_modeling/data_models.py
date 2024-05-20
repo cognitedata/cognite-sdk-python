@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Sequence, cast, overload
+from typing import TYPE_CHECKING, Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
@@ -14,12 +14,19 @@ from cognite.client.data_classes.data_modeling.ids import DataModelId, DataModel
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._concurrency import ConcurrencySettings
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class DataModelsAPI(APIClient):
     _RESOURCE_PATH = "/models/datamodels"
-    _DELETE_LIMIT = 100
-    _RETRIEVE_LIMIT = 100
-    _CREATE_LIMIT = 100
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 100
+        self._RETRIEVE_LIMIT = 100
+        self._CREATE_LIMIT = 100
 
     @overload
     def __call__(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import TYPE_CHECKING, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -9,12 +9,19 @@ from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, 
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils.useful_types import SequenceNotStr
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class SpacesAPI(APIClient):
     _RESOURCE_PATH = "/models/spaces"
-    _DELETE_LIMIT = 100
-    _RETRIEVE_LIMIT = 100
-    _CREATE_LIMIT = 100
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 100
+        self._RETRIEVE_LIMIT = 100
+        self._CREATE_LIMIT = 100
 
     @overload
     def __call__(
