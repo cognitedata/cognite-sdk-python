@@ -18,6 +18,7 @@ from cognite.client.utils._time import (
     align_large_granularity,
     align_start_and_end_for_granularity,
     convert_and_isoformat_time_attrs,
+    datetime_to_gql_timestamp,
     datetime_to_ms,
     granularity_to_ms,
     import_zoneinfo,
@@ -33,6 +34,15 @@ from tests.utils import cdf_aggregate, tmp_set_envvar
 
 if TYPE_CHECKING:
     import pandas
+
+
+class TestDatetimeToGqlTimestamp:
+    def test_datetime_to_gql_timestamp_correct_type(self):
+        assert datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0)) == "2021-01-01T00:00:00.000"
+
+    def test_datetime_to_gql_timestamp_incorrect_type(self):
+        with pytest.raises(TypeError):
+            datetime_to_gql_timestamp("2021-01-01T00:00:00.000")
 
 
 class TestDatetimeToMs:

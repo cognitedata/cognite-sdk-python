@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.44.0] - 2024-05-20
+### Added
+- New utility function `datetime_to_gql_timestamp` in `cognite.client.utils` to convert a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+
 ## [7.43.3] - 2024-05-15
 ### Fixed
 - Identity providers that return `expires_in` as a string no longer causes `TypeError` when authenticating.

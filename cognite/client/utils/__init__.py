@@ -6,6 +6,7 @@ import sys
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
+    datetime_to_gql_timestamp,
     datetime_to_ms,
     ms_to_datetime,
     timestamp_to_ms,
@@ -18,4 +19,12 @@ with contextlib.suppress(ImportError):
     else:
         from backports.zoneinfo import ZoneInfo
 
-__all__ = ["ZoneInfo", "MAX_TIMESTAMP_MS", "MIN_TIMESTAMP_MS", "datetime_to_ms", "ms_to_datetime", "timestamp_to_ms"]
+__all__ = [
+    "ZoneInfo",
+    "MAX_TIMESTAMP_MS",
+    "MIN_TIMESTAMP_MS",
+    "datetime_to_ms",
+    "ms_to_datetime",
+    "timestamp_to_ms",
+    "datetime_to_gql_timestamp",
+]

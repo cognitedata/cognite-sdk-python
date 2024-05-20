@@ -102,6 +102,14 @@ def ms_to_datetime(ms: int | float) -> datetime:
     return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
+def datetime_to_gql_timestamp(dt: datetime) -> str:
+    """Converts a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API."""
+    if isinstance(dt, datetime):
+        return dt.isoformat(timespec="milliseconds")
+    else:
+        raise TypeError(f"Expected datetime object, got {type(dt)}")
+
+
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: dict[str, int]) -> int | None:
     pattern = pattern.format("|".join(unit_in_ms))
     if res := re.fullmatch(pattern, string):
