@@ -19,9 +19,10 @@ Changes are grouped as follows
 
 ## [7.43.4] - 2024-05-20
 ### Fixed
-- The data modeling APIs (Views, Containers, Data Models and Spaces) have updated the create, retrieve, delete, 
-  and list limits to match the API limits. This means that the SDK will no longer raise a `CogniteAPIError` if 
-  you, for example, try to delete more than 100 containers in a single method call.
+- The data modeling APIs (Views, Containers, Data Models and Spaces) limits for create, retrieve, delete, 
+  and list were not matching the API spec, causing the SDK to wrongly split large calls into too few requests.
+  This means that the SDK will no longer raise a `CogniteAPIError` if you, for example, try to delete 
+  more than 100 containers in a single method call.
 
 ## [7.43.3] - 2024-05-15
 ### Fixed
