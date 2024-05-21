@@ -7,15 +7,20 @@ from collections import defaultdict
 from dataclasses import InitVar, dataclass, fields
 from datetime import datetime
 from enum import IntEnum
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Collection,
     Iterator,
     Literal,
     Sequence,
+    TypedDict,
     overload,
 )
+
+from typing_extensions import NotRequired, Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -36,11 +41,21 @@ from cognite.client.utils._text import (
 from cognite.client.utils._time import convert_and_isoformat_time_attrs
 from cognite.client.utils.useful_types import SequenceNotStr
 
+if NUMPY_IS_AVAILABLE:
+    import numpy as np
 
-class StatusCode(IntEnum):
-    Good = 0x0
-    Uncertain = 0x40000000  # aka 1 << 30 aka 1073741824
-    Bad = 0x80000000  # aka 1 << 31 aka 2147483648
+if TYPE_CHECKING:
+    import numpy.typing as npt
+    import pandas
+
+    from cognite.client import CogniteClient
+    from cognite.client._api.datapoint_tasks import BaseTaskOrchestrator
+
+    NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
+    NumpyUInt32Array = npt.NDArray[np.uint32]
+    NumpyInt64Array = npt.NDArray[np.int64]
+    NumpyFloat64Array = npt.NDArray[np.float64]
+    NumpyObjArray = npt.NDArray[np.object_]
 
 
 Aggregate = Literal[
@@ -74,21 +89,6 @@ _INT_AGGREGATES = frozenset(
 )
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
 
-if NUMPY_IS_AVAILABLE:
-    import numpy as np
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
-    import pandas
-
-    from cognite.client import CogniteClient
-
-    NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
-    NumpyUInt32Array = npt.NDArray[np.uint32]
-    NumpyInt64Array = npt.NDArray[np.int64]
-    NumpyFloat64Array = npt.NDArray[np.float64]
-    NumpyObjArray = npt.NDArray[np.object_]
-
 
 def numpy_dtype_fix(element: np.float64 | str) -> float | str:
     try:
@@ -101,18 +101,62 @@ def numpy_dtype_fix(element: np.float64 | str) -> float | str:
         raise
 
 
+class StatusCode(IntEnum):
+    """The three main categories of status codes"""
+
+    Good = 0x0
+    Uncertain = 0x40000000  # aka 1 << 30 aka 1073741824
+    Bad = 0x80000000  # aka 1 << 31 aka 2147483648
+
+
+class _DatapointsPayloadItem(TypedDict, total=False):
+    # No field required
+    start: int
+    end: int
+    aggregates: list[str] | None
+    granularity: str | None
+    targetUnit: str | None
+    targetUnitSystem: str | None
+    limit: int
+    includeOutsidePoints: bool
+    includeStatus: bool
+    ignoreBadDataPoints: bool
+    treatUncertainAsBad: bool
+
+
+class _DatapointsPayload(_DatapointsPayloadItem):
+    items: list[_DatapointsPayloadItem]
+    ignoreUnknownIds: NotRequired[bool]
+
+
 _NOT_SET = object()
 
 
-@dataclass(frozen=True)
+@dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
 
+    OPTIONAL_DICT_KEYS: ClassVar[frozenset[str]] = frozenset(
+        {
+            "start",
+            "end",
+            "aggregates",
+            "granularity",
+            "target_unit",
+            "target_unit_system",
+            "limit",
+            "include_outside_points",
+            "ignore_unknown_ids",
+            "include_status",
+            "ignore_bad_datapoints",
+            "treat_uncertain_as_bad",
+        }
+    )
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
     start: int | str | datetime = _NOT_SET  # type: ignore [assignment]
     end: int | str | datetime = _NOT_SET  # type: ignore [assignment]
-    aggregates: Aggregate | str | list[Aggregate | str] = _NOT_SET  # type: ignore [assignment]
+    aggregates: Aggregate | list[Aggregate] = _NOT_SET  # type: ignore [assignment]
     granularity: str = _NOT_SET  # type: ignore [assignment]
     target_unit: str = _NOT_SET  # type: ignore [assignment]
     target_unit_system: str = _NOT_SET  # type: ignore [assignment]
@@ -125,11 +169,99 @@ class DatapointsQuery:
 
     def __post_init__(self, id: int | None, external_id: str | None) -> None:
         # Ensure user have just specified one of id/xid:
-        object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id))
+        self._identifier = Identifier.of_either(id, external_id)
+
+    def __eq__(self, other: object) -> bool:
+        # Note: Instances representing identical queries should -not- compare equal as this would mean we
+        #       would drop all-but-one of them - and the API support duplicated queries.
+        if not isinstance(other, DatapointsQuery):
+            return NotImplemented
+        return self is other
+
+    def __hash__(self) -> int:
+        return hash(id(self))  # See note on __eq__
+
+    def _set_defaults(self, defaults: dict[str, Any]) -> None:
+        # Used to merge in default values for any non-set parameter
+        for fld in fields(self):
+            if getattr(self, fld.name) is _NOT_SET:
+                setattr(self, fld.name, defaults[fld.name])
+
+    @classmethod
+    # TODO: Remove in next major version (require use of DatapointsQuery directly)
+    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id"]) -> Self:
+        if id_type not in dct:
+            if (arg_name_cc := to_camel_case(id_type)) not in dct:
+                raise KeyError(f"Missing required key `{id_type}` in dict: {dct}.")
+            # For backwards compatibility we accept identifiers in camel case:
+            dct[id_type] = (dct := dct.copy()).pop(arg_name_cc)  # copy to avoid side effects for user's input
+
+        if bad_keys := set(dct) - cls.OPTIONAL_DICT_KEYS - {id_type}:
+            raise KeyError(
+                f"Dict provided by argument `{id_type}` included key(s) not understood: {sorted(bad_keys)}. "
+                f"Required key: `{id_type}`. Optional: {list(cls.OPTIONAL_DICT_KEYS)}."
+            )
+        return cls(**dct)
 
     @property
     def identifier(self) -> Identifier:
         return self._identifier  # type: ignore [attr-defined]
+
+    @cached_property
+    def aggs_camel_case(self) -> list[str]:
+        return list(map(to_camel_case, self.aggregates or []))
+
+    @property
+    def start_ms(self) -> int:
+        assert isinstance(self.start, int)
+        return self.start
+
+    @property
+    def end_ms(self) -> int:
+        assert isinstance(self.end, int)
+        return self.end
+
+    @property
+    def finite_limit(self) -> int:
+        assert isinstance(self.limit, int)
+        return self.limit
+
+    @property
+    def is_raw_query(self) -> bool:
+        return self._is_raw_query
+
+    @is_raw_query.setter
+    def is_raw_query(self, value: bool) -> None:
+        assert isinstance(value, bool)
+        self._is_raw_query = value
+
+    @property
+    def is_missing(self) -> bool:
+        return self._is_missing
+
+    @is_missing.setter
+    def is_missing(self, value: bool) -> None:
+        assert isinstance(value, bool)
+        self._is_missing = value
+
+    @property
+    def max_query_limit(self) -> int:
+        return self._max_query_limit
+
+    @max_query_limit.setter
+    def max_query_limit(self, value: int) -> None:
+        assert isinstance(value, int)
+        self._max_query_limit = value
+
+    @property
+    def capped_limit(self) -> int:
+        if self.limit is None:
+            return self.max_query_limit
+        return min(self.limit, self.max_query_limit)
+
+    def override_max_query_limit(self, new_limit: int) -> None:
+        assert isinstance(new_limit, int)
+        self.max_query_limit = new_limit
 
     def __repr__(self) -> str:
         return json.dumps(self.dump(), indent=4)
@@ -140,6 +272,38 @@ class DatapointsQuery:
             **self.identifier.as_dict(camel_case=False),
             **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not _NOT_SET),
         }
+
+    @property
+    def task_orchestrator(self) -> type[BaseTaskOrchestrator]:
+        from cognite.client._api.datapoint_tasks import get_task_orchestrator
+
+        return get_task_orchestrator(self.is_raw_query, self.limit)
+
+    def to_payload_item(self) -> _DatapointsPayloadItem:
+        payload = _DatapointsPayloadItem(
+            **self.identifier.as_dict(),  # type: ignore [typeddict-item]
+            start=self.start,
+            end=self.end,
+            limit=self.capped_limit,
+        )
+        if self.target_unit is not None:
+            payload["targetUnit"] = self.target_unit
+        elif self.target_unit_system is not None:
+            payload["targetUnitSystem"] = self.target_unit_system
+
+        if self.ignore_bad_datapoints is False:
+            payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
+        if self.treat_uncertain_as_bad is False:
+            payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
+
+        if self.is_raw_query:
+            if self.include_outside_points is True:
+                payload["includeOutsidePoints"] = self.include_outside_points
+            if self.include_status is True:
+                payload["includeStatus"] = self.include_status
+        else:
+            payload.update(aggregates=self.aggs_camel_case, granularity=self.granularity)
+        return payload
 
 
 @dataclass(frozen=True)
