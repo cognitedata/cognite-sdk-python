@@ -134,6 +134,7 @@ from cognite.client.data_classes.geospatial import (
     FeatureWriteList,
 )
 from cognite.client.data_classes.iam import (
+    ALL_USER_ACCOUNTS,
     ClientCredentials,
     CreatedSession,
     Group,
@@ -282,7 +283,6 @@ from cognite.client.data_classes.transformations.schema import (
 )
 from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
 from cognite.client.data_classes.workflows import (
-    CancelExecution,
     CDFTaskOutput,
     CDFTaskParameters,
     DynamicTaskOutput,
@@ -382,6 +382,7 @@ __all__ = [
     "DocumentHighlight",
     "DocumentHighlightList",
     "ClientCredentials",
+    "ALL_USER_ACCOUNTS",
     "CreatedSession",
     "Group",
     "GroupWrite",
@@ -539,7 +540,6 @@ __all__ = [
     "CoordinateReferenceSystem",
     "UserProfile",
     "UserProfileList",
-    "CancelExecution",
     "WorkflowUpsert",
     "WorkflowExecution",
     "WorkflowExecutionDetailed",

@@ -24,7 +24,6 @@ from cognite.client.data_classes.transformations.common import (
     OidcCredentials,
     TransformationBlockedInfo,
     TransformationDestination,
-    _load_destination_dct,
 )
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
@@ -428,7 +427,7 @@ class Transformation(TransformationCore):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Transformation:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
-            instance.destination = _load_destination_dct(instance.destination)
+            instance.destination = TransformationDestination._load(instance.destination)
 
         if isinstance(instance.running_job, dict):
             instance.running_job = TransformationJob._load(instance.running_job, cognite_client=cognite_client)
@@ -521,7 +520,7 @@ class TransformationWrite(TransformationCore):
             name=resource["name"],
             ignore_null_fields=resource["ignoreNullFields"],
             query=resource.get("query"),
-            destination=_load_destination_dct(resource["destination"]) if "destination" in resource else None,
+            destination=TransformationDestination._load(resource["destination"]) if "destination" in resource else None,
             conflict_mode=resource.get("conflictMode"),
             is_public=resource.get("isPublic", True),
             source_oidc_credentials=OidcCredentials.load(resource["sourceOidcCredentials"])

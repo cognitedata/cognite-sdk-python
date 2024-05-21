@@ -23,14 +23,18 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
+ALL_USER_ACCOUNTS = "allUserAccounts"
+
+
 class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     """No description.
 
     Args:
         name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
-        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
+        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
     def __init__(
@@ -38,7 +42,8 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         name: str,
         source_id: str | None = None,
         capabilities: list[Capability] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
+        members: Literal["allUserAccounts"] | list[str] | None = None,
     ) -> None:
         self.name = name
         self.source_id = source_id
@@ -46,6 +51,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         if isinstance(self.capabilities, Capability):
             self.capabilities = [capabilities]
         self.metadata = metadata
+        self.members = members
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -54,6 +60,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
             source_id=resource.get("sourceId"),
             capabilities=[Capability.load(c, allow_unknown=False) for c in resource.get("capabilities", [])] or None,
             metadata=resource.get("metadata"),
+            members=resource.get("members"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -64,16 +71,20 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
 
 
 class Group(GroupCore):
-    """No description.
+    """Groups are used to give principals the capabilities to access CDF resources. One principal
+    can be a member in multiple groups and one group can have multiple members.
+
+    Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
         name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
-        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
         cognite_client (CogniteClient | None): No description.
     """
 
@@ -85,7 +96,8 @@ class Group(GroupCore):
         id: int | None = None,
         is_deleted: bool | None = None,
         deleted_time: int | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
+        members: Literal["allUserAccounts"] | list[str] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -93,6 +105,7 @@ class Group(GroupCore):
             source_id=source_id,
             capabilities=capabilities,
             metadata=metadata,
+            members=members,
         )
         # id is required when using the class to read, but doesn't make sense passing in when
         # creating a new object. So in order to make the typing correct here
@@ -110,7 +123,21 @@ class Group(GroupCore):
             source_id=self.source_id,
             capabilities=self.capabilities,
             metadata=self.metadata,
+            members=self.members,
         )
+
+    @property
+    def is_externally_managed(self) -> bool:
+        # Note: `source_id` may be returned as the empty string, hence the 'truthy' test
+        if self.source_id and self.members is not None:
+            raise ValueError("Managed status is unknown")
+        return self.source_id is not None
+
+    @property
+    def is_managed_in_cdf(self) -> bool:
+        if self.source_id and self.members is not None:
+            raise ValueError("Managed status is unknown")
+        return self.members is not None
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Group:
@@ -122,6 +149,7 @@ class Group(GroupCore):
             is_deleted=resource.get("isDeleted"),
             deleted_time=resource.get("deletedTime"),
             metadata=resource.get("metadata"),
+            members=resource.get("members"),
             cognite_client=cognite_client,
         )
 
@@ -144,13 +172,17 @@ class Group(GroupCore):
 
 
 class GroupWrite(GroupCore):
-    """No description.
+    """Groups are used to give principals the capabilities to access CDF resources. One principal
+    can be a member in multiple groups and one group can have multiple members.
+
+    Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
         name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
-        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
+        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
     def __init__(
@@ -158,13 +190,15 @@ class GroupWrite(GroupCore):
         name: str,
         source_id: str | None = None,
         capabilities: list[Capability] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
+        members: Literal["allUserAccounts"] | list[str] | None = None,
     ) -> None:
         super().__init__(
             name=name,
             source_id=source_id,
             capabilities=capabilities,
             metadata=metadata,
+            members=members,
         )
 
     def as_write(self) -> GroupWrite:

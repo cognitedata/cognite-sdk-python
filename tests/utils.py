@@ -10,6 +10,7 @@ import math
 import os
 import random
 import string
+import sys
 import typing
 from collections import Counter
 from contextlib import contextmanager
@@ -31,6 +32,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.aggregations import Buckets
+from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -51,6 +53,12 @@ if TYPE_CHECKING:
     import pandas
 
 T_Type = TypeVar("T_Type", bound=type)
+
+UNION_TYPES = {typing.Union}
+if sys.version_info >= (3, 10):
+    from types import UnionType
+
+    UNION_TYPES.add(UnionType)
 
 
 def all_subclasses(base: T_Type) -> list[T_Type]:
@@ -395,6 +403,9 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is TransformationScheduleWrite:
             # TransformationScheduleWrite requires either id or external_id
             keyword_arguments.pop("id", None)
+            if skip_defaulted_args:
+                # At least external_id or id must be set
+                keyword_arguments["external_id"] = "my_schedule"
         elif resource_cls is TransformationNotificationWrite:
             # TransformationNotificationWrite requires either transformation_id or transformation_external_id
             if skip_defaulted_args:
@@ -410,6 +421,8 @@ class FakeCogniteResourceGenerator:
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
+        import numpy as np
+
         if isinstance(type_, typing.ForwardRef):
             type_ = type_._evaluate(globals(), self._type_checking())
 
@@ -442,6 +455,10 @@ class FakeCogniteResourceGenerator:
                 implementations.remove(filters.GeoJSONWithin)
                 implementations.remove(filters.GeoJSONDisjoint)
                 implementations.remove(filters.GeoJSONIntersects)
+            elif type_ is Capability:
+                implementations.remove(UnknownAcl)
+                if LegacyCapability in implementations:
+                    implementations.remove(LegacyCapability)
             if type_ is WorkflowTaskOutput:
                 # For Workflow Output has to match the input type
                 selected = FunctionTaskOutput
@@ -461,9 +478,8 @@ class FakeCogniteResourceGenerator:
 
         container_type = get_origin(type_)
         is_container = container_type is not None
-        if not is_container:
+        if not is_container or container_type is np.ndarray:  # looks weird, but 3.8 and 3.12 type compat. issue
             # Handle numpy types
-            import numpy as np
             from numpy.typing import NDArray
 
             if type_ == NDArray[np.float64]:
@@ -482,7 +498,7 @@ class FakeCogniteResourceGenerator:
         # Handle containers
         args = get_args(type_)
         first_not_none = next((arg for arg in args if arg is not None), None)
-        if container_type is typing.Union:
+        if container_type in UNION_TYPES:
             return self.create_value(first_not_none)
         elif container_type is typing.Literal:
             return self._random.choice(args)

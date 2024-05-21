@@ -113,9 +113,7 @@ class ContainerApply(ContainerCore):
             constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()}
             if "constraints" in resource
             else None,
-            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} or None
-            if "indexes" in resource
-            else None,
+            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} if "indexes" in resource else None,
         )
 
     def as_write(self) -> ContainerApply:
@@ -250,7 +248,7 @@ class ContainerProperty(CogniteObject):
     nullable: bool = True
     auto_increment: bool = False
     name: str | None = None
-    default_value: str | int | dict | None = None
+    default_value: str | int | float | bool | dict | None = None
     description: str | None = None
 
     @classmethod

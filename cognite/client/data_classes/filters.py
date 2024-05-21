@@ -89,20 +89,17 @@ class Filter(ABC):
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
-        (filter_name,) = filter_
-        filter_body = filter_[filter_name]
-
-        if filter_name == And._filter_name:
+        if (filter_body := filter_.get(And._filter_name)) is not None:
             return And(*(Filter.load(filter_) for filter_ in filter_body))
-        elif filter_name == Or._filter_name:
+        elif (filter_body := filter_.get(Or._filter_name)) is not None:
             return Or(*(Filter.load(filter_) for filter_ in filter_body))
-        elif filter_name == Not._filter_name:
+        elif (filter_body := filter_.get(Not._filter_name)) is not None:
             return Not(Filter.load(filter_body))
-        elif filter_name == Nested._filter_name:
+        elif (filter_body := filter_.get(Nested._filter_name)) is not None:
             return Nested(scope=filter_body["scope"], filter=Filter.load(filter_body["filter"]))
-        elif filter_name == MatchAll._filter_name:
+        elif MatchAll._filter_name in filter_:
             return MatchAll()
-        elif filter_name == HasData._filter_name:
+        elif (filter_body := filter_.get(HasData._filter_name)) is not None:
             containers = []
             views = []
             for view_or_space in filter_body:
@@ -111,7 +108,7 @@ class Filter(ABC):
                 else:
                     views.append((view_or_space["space"], view_or_space["externalId"], view_or_space.get("version")))
             return HasData(containers=containers, views=views)
-        elif filter_name == Range._filter_name:
+        elif (filter_body := filter_.get(Range._filter_name)) is not None:
             return Range(
                 property=filter_body["property"],
                 gt=_load_filter_value(filter_body.get("gt")),
@@ -119,7 +116,7 @@ class Filter(ABC):
                 lt=_load_filter_value(filter_body.get("lt")),
                 lte=_load_filter_value(filter_body.get("lte")),
             )
-        elif filter_name == Overlaps._filter_name:
+        elif (filter_body := filter_.get(Overlaps._filter_name)) is not None:
             return Overlaps(
                 start_property=filter_body.get("startProperty"),
                 end_property=filter_body.get("endProperty"),
@@ -128,69 +125,65 @@ class Filter(ABC):
                 lt=_load_filter_value(filter_body.get("lt")),
                 lte=_load_filter_value(filter_body.get("lte")),
             )
-        elif filter_name == Equals._filter_name:
+        elif (filter_body := filter_.get(Equals._filter_name)) is not None:
             return Equals(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body.get("value")),
             )
-        elif filter_name == In._filter_name:
+        elif (filter_body := filter_.get(In._filter_name)) is not None:
             return In(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body.get("values"))),
             )
-        elif filter_name == Exists._filter_name:
+        elif (filter_body := filter_.get(Exists._filter_name)) is not None:
             return Exists(property=filter_body["property"])
-        elif filter_name == Prefix._filter_name:
+        elif (filter_body := filter_.get(Prefix._filter_name)) is not None:
             return Prefix(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
-        elif filter_name == ContainsAny._filter_name:
+        elif (filter_body := filter_.get(ContainsAny._filter_name)) is not None:
             return ContainsAny(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == ContainsAll._filter_name:
+        elif (filter_body := filter_.get(ContainsAll._filter_name)) is not None:
             return ContainsAll(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == ContainsAll._filter_name:
-            return ContainsAll(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
-            )
-        elif filter_name == GeoJSONIntersects._filter_name:
+        elif (filter_body := filter_.get(GeoJSONIntersects._filter_name)) is not None:
             return GeoJSONIntersects(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == GeoJSONDisjoint._filter_name:
+        elif (filter_body := filter_.get(GeoJSONDisjoint._filter_name)) is not None:
             return GeoJSONDisjoint(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == GeoJSONWithin._filter_name:
+        elif (filter_body := filter_.get(GeoJSONWithin._filter_name)) is not None:
             return GeoJSONWithin(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == InAssetSubtree._filter_name:
+        elif (filter_body := filter_.get(SpaceFilter._filter_name)) is not None:
             return InAssetSubtree(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
-        elif filter_name == Search._filter_name:
+        elif (filter_body := filter_.get(Search._filter_name)) is not None:
             return Search(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
-        elif filter_name == InvalidFilter._filter_name:
+        elif (filter_body := filter_.get(InvalidFilter._filter_name)) is not None:
             return InvalidFilter(
                 previously_referenced_properties=filter_body["previouslyReferencedProperties"],
                 filter_type=filter_body["filterType"],
             )
         else:
+            filter_name, filter_body = next(iter(filter_.items()))
             return UnknownFilter(filter_name, filter_body)
 
     @abstractmethod
@@ -787,6 +780,11 @@ class InAssetSubtree(FilterWithPropertyAndValue):
 @final
 class Search(FilterWithPropertyAndValue):
     _filter_name = "search"
+
+
+_BASIC_FILTERS: frozenset[type[Filter]] = frozenset(
+    {And, Or, Not, In, Equals, Exists, Range, Prefix, ContainsAny, ContainsAll}
+)
 
 
 # ######################################################### #

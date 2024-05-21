@@ -32,6 +32,7 @@ from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteObject,
     CogniteResource,
     CogniteUpdate,
     EnumProperty,
@@ -73,7 +74,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
+T = TypeVar("T", bound=CogniteObject)
 
 
 class APIClient:
@@ -510,7 +511,9 @@ class APIClient:
         verify_limit(limit)
         if partitions:
             if not is_unlimited(limit):
-                raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+                raise ValueError(
+                    "When using partitions, a finite limit can not be used. Pass one of `None`, `-1` or `inf`."
+                )
             if sort is not None:
                 raise ValueError("When using sort, partitions is not supported.")
             return self._list_partitioned(
@@ -627,7 +630,7 @@ class APIClient:
         if keys is not None:
             body["keys"] = keys
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
-        return [cls(**agg) for agg in res.json()["items"]]
+        return [cls._load(agg) for agg in res.json()["items"]]
 
     @overload
     def _advanced_aggregate(

@@ -42,7 +42,6 @@ from cognite.client._proto.data_points_pb2 import (
 )
 from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.datapoints import (
-    _AGGREGATES_IN_BETA,
     _INT_AGGREGATES,
     Aggregate,
     Datapoints,
@@ -429,10 +428,6 @@ class _SingleTSQueryBase:
 
     @property
     @abstractmethod
-    def requires_api_subversion_beta(self) -> bool: ...
-
-    @property
-    @abstractmethod
     def is_raw_query(self) -> bool: ...
 
     @property
@@ -461,12 +456,6 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
         self.include_status = include_status
         self.aggregates = self.aggs_camel_case = None
         self.granularity = None
-
-    @property
-    def requires_api_subversion_beta(self) -> bool:
-        return (
-            self.include_status is True or self.ignore_bad_datapoints is False or self.treat_uncertain_as_bad is False
-        )
 
     @property
     def is_raw_query(self) -> Literal[True]:
@@ -518,14 +507,6 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
         super().__init__(**kwargs, include_outside_points=False)
         self.aggregates = aggregates
         self.granularity = granularity
-
-    @property
-    def requires_api_subversion_beta(self) -> bool:
-        return (
-            self.ignore_bad_datapoints is False
-            or self.treat_uncertain_as_bad is False
-            or bool(_AGGREGATES_IN_BETA.intersection(self.aggregates))
-        )
 
     @property
     def is_raw_query(self) -> Literal[False]:
@@ -1079,7 +1060,7 @@ class BaseTaskOrchestrator(ABC):
 class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
     def get_remaining_limit(self) -> int:
         assert len(self.subtasks) == 1
-        return self.query.limit - self.subtasks[0].n_dps_fetched
+        return self.query.limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
 
     def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # For serial fetching, a single task suffice

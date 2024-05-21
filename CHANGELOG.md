@@ -17,6 +17,64 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.43.3] - 2024-05-15
+### Fixed
+- Identity providers that return `expires_in` as a string no longer causes `TypeError` when authenticating.
+
+## [7.43.2] - 2024-05-10
+### Fixed
+- In containers, `PropertyType` `Text` required parameter `collation` is now optional when `load()`ing, matching the API spec.
+
+## [7.43.1] - 2024-05-10
+### Fixed
+- `RawRowsAPI.insert()` silently ignored rows of type `RowWriteList`.
+
+## [7.43.0] - 2024-05-09
+### Added
+- Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
+- `DiagramsAPI.detect()` method's parameter `configuration` now also accepts `DiagramDetectConfig` instances.
+
+## [7.42.0] - 2024-05-06
+### Changed
+- Breaking change: the `workflows.executions.cancel` method now only allows cancelling one execution at a time to reflect its non-atomic operation.
+
+## [7.41.1] - 2024-05-06
+### Fixed
+- An edge case when a request for datapoints from several hundred time series (with specific finite limits) would return
+  more datapoints than the user-specified limit.
+
+## [7.41.0] - 2024-04-30
+### Added
+- Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).
+  - You can read more in the Cognite Data Fusion developer documentation: [Status Codes reference](https://developer.cognite.com/dev/concepts/reference/quality_codes/).
+
+## [7.40.2] - 2024-04-30
+### Fixed
+- `InAssetSubtree` is no longer (mistakenly) accepted as a time series filter.
+
+## [7.40.1] - 2024-04-30
+### Fixed
+- Deleting multiple Datapoint Subscriptions now work as expected.
+
+## [7.40.0] - 2024-04-30
+### Added
+- Datapoint Subscriptions now support status codes.
+
+## [7.39.0] - 2024-04-25
+### Added
+- Support for internally managed groups (inside CDF, as opposed to the external identity provider).
+
+## [7.38.3] - 2024-04-25
+### Improved
+- The classes `WorkflowUpsert`, `Filter`, `Query`, `Node`, `Edge`, `Container`, `Document`, and
+  `Transformation` which are used for parsing API responses were not handling adding new parameters in
+  the API correctly. These are now future-proofed.
+
+## [7.38.2] - 2024-04-24
+### Added
+- Added new parameter `function_external_id` to `FunctionScheduleAPI.create` as a convenience to the user. Note
+  that schedules must be attached to a Function by (internal) ID, so a lookup is first done on behalf of the user.
+
 ## [7.38.1] - 2024-04-23
 ### Added
 - Added missing `partitions` parameter to `list()` and `__call__()` methods for `FilesAPI`.

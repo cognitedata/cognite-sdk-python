@@ -73,7 +73,7 @@ class PropertyType(CogniteObject, ABC):
         type_ = resource["type"]
         obj: Any
         if type_ == "text":
-            obj = Text(is_list=resource["list"], collation=resource["collation"])
+            obj = Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
         elif type_ == "boolean":
             obj = Boolean(is_list=resource["list"])
         elif type_ == "float32":
@@ -99,7 +99,10 @@ class PropertyType(CogniteObject, ABC):
         elif type_ == "direct":
             obj = DirectRelation(
                 container=ContainerId.load(container) if (container := resource.get("container")) else None,
-                is_list=resource["list"],
+                # The PropertyTypes are used as both read and write objects. The `list` was added later
+                # in the API for DirectRelations. Thus, we need to set the default value to False
+                # to avoid breaking changes. When used as a read object, the `list` will always be present.
+                is_list=resource.get("list", False),
             )
         else:
             logger.warning(f"Unknown property type: {type_}")

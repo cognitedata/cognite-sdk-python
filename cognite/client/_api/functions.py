@@ -129,8 +129,8 @@ class FunctionsAPI(APIClient):
             owner (str | None): Owner of this function. Typically used to know who created it.
             secrets (dict | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
             env_vars (dict | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (Number | None): Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
-            memory (Number | None): Memory per function measured in GB. Allowed values are in the range [0.1, 2.5], and None translates to the API default which is 1 GB in GCP. The argument is unavailable in Azure.
+            cpu (Number | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            memory (Number | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
             runtime (str | None): The function runtime. Valid values are ["py38", "py39", "py310", "py311", `None`], and `None` translates to the API default which will change over time. The runtime "py38" resolves to the latest version of the Python 3.8 series.
             metadata (dict | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
@@ -985,7 +985,8 @@ class FunctionSchedulesAPI(APIClient):
         self,
         name: str,
         cron_expression: str,
-        function_id: int,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
         client_credentials: dict | ClientCredentials | None = None,
         description: str = "",
         data: dict | None = None,
@@ -995,7 +996,8 @@ class FunctionSchedulesAPI(APIClient):
         Args:
             name (str): Name of the schedule.
             cron_expression (str): Cron expression.
-            function_id (int): Id of the function to attach the schedule to.
+            function_id (int | None): Id of the function to attach the schedule to.
+            function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
             client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
@@ -1006,6 +1008,10 @@ class FunctionSchedulesAPI(APIClient):
         Warning:
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
             ``secrets`` argument in FunctionsAPI.create() for this purpose.
+
+            Passing the reference to the Function by ``function_external_id`` is just here as a convenience to the user.
+            The API require that all schedules *must* be attached to a Function by (internal) ID for authentication-
+            and security purposes. This means that the lookup to get the ID is first done on behalf of the user.
 
         Examples:
 
@@ -1037,6 +1043,8 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
+        identifier = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, identifier)
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
         )

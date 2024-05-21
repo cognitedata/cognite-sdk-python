@@ -81,7 +81,7 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.spaces.retrieve(space='mySpace')
+                >>> res = client.data_modeling.spaces.retrieve(spaces='mySpace')
 
             Get multiple spaces by id:
 

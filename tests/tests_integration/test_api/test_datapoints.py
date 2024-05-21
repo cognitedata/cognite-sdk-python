@@ -349,8 +349,19 @@ def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeri
 
 class TestRetrieveRawDatapointsAPI:
     """Note: Since `retrieve` and `retrieve_arrays` endpoints should give identical results,
-    except for the data container types, all tests run both endpoints.
+    except for the data container types, all tests run both endpoints except those targeting a specific bug
     """
+
+    def test_retrieve_chunking_mode_with_limit_ignores_dps_count_in_first_batch(
+        self, cognite_client, all_test_time_series
+    ):
+        # From 6.33.2 to 7.41.0, when fetching in "chunking mode" with a finite limit and with more than
+        # 100 time series per available worker - in some rare cases - the initial batch of datapoints would
+        # not be counted towards the total limit requested.
+        ids = [all_test_time_series[105].id] * 100
+        with set_max_workers(cognite_client, 1), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+            dps_lst = cognite_client.time_series.data.retrieve(id=ids, limit=1001)
+        assert all(len(dps) == 1001 for dps in dps_lst)
 
     def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
         # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
@@ -1535,7 +1546,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         "6hours",
         pd.DataFrame(
             [6 * 60] * 4,
-            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6H", tz="Europe/Oslo"),
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6h", tz="Europe/Oslo"),
             columns=["count"],
             dtype="Int64",
         ),
@@ -1548,7 +1559,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         "10minutes",
         pd.DataFrame(
             [10] * 3,
-            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10T", tz="Europe/Oslo"),
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10min", tz="Europe/Oslo"),
             columns=["count"],
             dtype="Int64",
         ),

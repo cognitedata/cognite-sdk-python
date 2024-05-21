@@ -17,7 +17,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
-from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -166,10 +165,21 @@ class SourceFile(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SourceFile:
-        instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
-        if isinstance(instance.geo_location, dict):
-            instance.geo_location = DocumentsGeoJsonGeometry.load(instance.geo_location)
-        return instance
+        return cls(
+            name=resource["name"],
+            hash=resource.get("hash"),
+            directory=resource.get("directory"),
+            source=resource.get("source"),
+            mime_type=resource.get("mimeType"),
+            size=resource.get("size"),
+            asset_ids=resource.get("assetIds"),
+            labels=Label._load_list(resource.get("labels")),  # type: ignore[arg-type]
+            geo_location=DocumentsGeoJsonGeometry._load(resource["geoLocation"]) if "geoLocation" in resource else None,
+            dataset_id=resource.get("datasetId"),
+            security_categories=resource.get("securityCategories"),
+            metadata=resource.get("metadata"),
+            cognite_client=cognite_client,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -256,12 +266,27 @@ class Document(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Document:
-        instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
-        if isinstance(instance.source_file, dict):
-            instance.source_file = SourceFile.load(instance.source_file)
-        if isinstance(instance.geo_location, dict):
-            instance.geo_location = DocumentsGeoJsonGeometry.load(instance.geo_location)
-        return instance
+        return cls(
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            source_file=SourceFile._load(resource["sourceFile"]),
+            external_id=resource.get("externalId"),
+            title=resource.get("title"),
+            author=resource.get("author"),
+            producer=resource.get("producer"),
+            modified_time=resource.get("modifiedTime"),
+            last_indexed_time=resource.get("lastIndexedTime"),
+            mime_type=resource.get("mimeType"),
+            extension=resource.get("extension"),
+            page_count=resource.get("pageCount"),
+            type=resource.get("type"),
+            language=resource.get("language"),
+            truncated_content=resource.get("truncatedContent"),
+            asset_ids=resource.get("assetIds"),
+            labels=Label._load_list(resource.get("labels")),  # type: ignore[arg-type]
+            geo_location=DocumentsGeoJsonGeometry._load(resource["geoLocation"]) if "geoLocation" in resource else None,
+            cognite_client=cognite_client,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)

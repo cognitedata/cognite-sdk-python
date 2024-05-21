@@ -615,7 +615,7 @@ class ViewResolveItem(UserDict, CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return self.data
+        return self.data.copy()
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ViewResolveItem:

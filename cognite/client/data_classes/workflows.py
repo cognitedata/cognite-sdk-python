@@ -16,7 +16,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -297,8 +297,13 @@ class CDFTaskParameters(WorkflowTaskParameters):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
-        arguments = convert_all_keys_to_snake_case(cdf_request)
-        return cls(**arguments)
+        return cls(
+            cdf_request["resourcePath"],
+            cdf_request["method"],
+            cdf_request.get("queryParameters"),
+            cdf_request.get("body"),
+            cdf_request.get("requestTimeoutInMillis", 10000),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -1168,38 +1173,3 @@ class WorkflowIds(UserList):
 
     def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
-
-
-@dataclass(frozen=True)
-class CancelExecution:
-    """
-    This class represents a Workflow Version Identifier.
-
-    Args:
-        workflow_external_id (str): The external ID of the workflow.
-        version (str, optional): The version of the workflow. Defaults to None.
-    """
-
-    id: str
-    reason: str | None = None
-
-    def as_primitive(self) -> tuple[str, str | None]:
-        return self.id, self.reason
-
-    @classmethod
-    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CancelExecution:
-        if "id" in resource:
-            execution_id = resource["id"]
-        else:
-            raise ValueError("Invalid input to WorkflowVersionId.load")
-
-        return cls(
-            id=execution_id,
-            reason=resource.get("reason"),
-        )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = {"id": self.id}
-        if self.reason:
-            output["reason"] = self.reason
-        return output
