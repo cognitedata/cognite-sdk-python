@@ -38,6 +38,7 @@ from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_D
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
 from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
+from cognite.client.data_classes.transformations.schema import TransformationSchemaUnknownType
 from cognite.client.data_classes.workflows import (
     FunctionTaskOutput,
     FunctionTaskParameters,
@@ -359,6 +360,8 @@ class FakeCogniteResourceGenerator:
             else:
                 for raw in ["value", "status_code", "status_symbol"]:
                     keyword_arguments.pop(raw, None)
+        elif resource_cls is TransformationSchemaUnknownType:
+            keyword_arguments["raw_schema"]["type"] = "unknown"
         elif resource_cls is SequenceRows:
             # All row values must match the number of columns
             # Reducing to one column, and one value for each row
