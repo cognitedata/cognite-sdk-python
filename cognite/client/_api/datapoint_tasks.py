@@ -46,7 +46,6 @@ from cognite.client.data_classes.datapoints import (
     _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
@@ -446,47 +445,30 @@ def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iter
 
 
 class BaseDpsFetchSubtask:
-    def __init__(
-        self,
-        start: int,
-        end: int,
-        identifier: Identifier,
-        parent: BaseTaskOrchestrator,
-        max_query_limit: int,
-        is_raw_query: bool,
-        target_unit: str | None = None,
-        target_unit_system: str | None = None,
-        include_status: bool = False,
-        ignore_bad_datapoints: bool = True,
-        treat_uncertain_as_bad: bool = True,
-    ) -> None:
+    def __init__(self, start: int, end: int, parent: BaseTaskOrchestrator) -> None:
         self.start = start
         self.end = end
-        self.identifier = identifier
         self.parent = parent
-        self.is_raw_query = is_raw_query
-        self.max_query_limit = max_query_limit
-        self.target_unit = target_unit
-        self.target_unit_system = target_unit_system
-        self.include_status = include_status
-        self.ignore_bad_datapoints = ignore_bad_datapoints
-        self.treat_uncertain_as_bad = treat_uncertain_as_bad
+        self.max_query_limit = (query := parent.query).max_query_limit
         self.is_done = False
         self.n_dps_fetched = 0
 
-        self.static_kwargs = identifier.as_dict()
-        if target_unit is not None:
-            self.static_kwargs["targetUnit"] = target_unit
-        elif target_unit_system is not None:
-            self.static_kwargs["targetUnitSystem"] = target_unit_system
+        self.static_kwargs = query.identifier.as_dict()
+        if not query.is_raw_query:
+            self.static_kwargs.update(aggregates=query.aggs_camel_case, granularity=query.granularity)
 
-        if ignore_bad_datapoints is False:
-            self.static_kwargs["ignoreBadDataPoints"] = ignore_bad_datapoints
-        if treat_uncertain_as_bad is False:
-            self.static_kwargs["treatUncertainAsBad"] = treat_uncertain_as_bad
+        if query.target_unit is not None:
+            self.static_kwargs["targetUnit"] = query.target_unit
+        elif query.target_unit_system is not None:
+            self.static_kwargs["targetUnitSystem"] = query.target_unit_system
 
-        if self.is_raw_query and include_status is True:
-            self.static_kwargs["includeStatus"] = include_status
+        if query.ignore_bad_datapoints is False:
+            self.static_kwargs["ignoreBadDataPoints"] = query.ignore_bad_datapoints
+        if query.treat_uncertain_as_bad is False:
+            self.static_kwargs["treatUncertainAsBad"] = query.treat_uncertain_as_bad
+
+        if query.include_status is True:
+            self.static_kwargs["includeStatus"] = query.include_status
 
     @abstractmethod
     def get_next_payload_item(self) -> _DatapointsPayloadItem: ...
@@ -497,9 +479,6 @@ class BaseDpsFetchSubtask:
 
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     """Fetches outside points and stores in parent"""
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs, is_raw_query=True, max_query_limit=0)
 
     def get_next_payload_item(self) -> _DatapointsPayloadItem:
         return _DatapointsPayloadItem(
@@ -522,22 +501,10 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
 class SerialFetchSubtask(BaseDpsFetchSubtask):
     """Fetches datapoints serially until complete, nice and simple. Stores data in parent"""
 
-    def __init__(
-        self,
-        *,
-        aggregates: list[str] | None,
-        granularity: str | None,
-        subtask_idx: tuple[float, ...],
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *, subtask_idx: tuple[float, ...], **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.aggregates = aggregates
-        self.granularity = granularity
         self.subtask_idx = subtask_idx
         self.next_start = self.start
-
-        if not self.is_raw_query:
-            self.static_kwargs.update(aggregates=aggregates, granularity=granularity)
 
     def get_next_payload_item(self) -> _DatapointsPayloadItem:
         remaining = self.parent.get_remaining_limit()
@@ -582,22 +549,6 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.max_splitting_factor = max_splitting_factor
         self.split_subidx: int = 0  # Actual value doesn't matter (any int will do)
 
-    @property
-    def _static_params(self) -> dict[str, Any]:
-        return dict(
-            parent=self.parent,
-            identifier=self.identifier,
-            aggregates=self.aggregates,
-            granularity=self.granularity,
-            max_query_limit=self.max_query_limit,
-            is_raw_query=self.is_raw_query,
-            target_unit=self.target_unit,
-            target_unit_system=self.target_unit_system,
-            include_status=self.include_status,
-            ignore_bad_datapoints=self.ignore_bad_datapoints,
-            treat_uncertain_as_bad=self.treat_uncertain_as_bad,
-        )
-
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         self.prev_start = self.next_start
         super().store_partial_result(res)
@@ -629,7 +580,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.end = boundaries[1]  # We shift end of 'self' backwards
         split_idxs = self._create_subtasks_idxs(n_new_tasks)
         new_subtasks = [
-            SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, **self._static_params)
+            SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, parent=self.parent)
             for start, end, idx in zip(boundaries[1:-1], boundaries[2:], split_idxs)
         ]
         self.parent.subtasks.extend(new_subtasks)
@@ -766,13 +717,9 @@ class BaseTaskOrchestrator(ABC):
         if self.eager_mode and self.query.is_raw_query and self.query.include_outside_points:
             # In eager mode we do not get the "first dps batch" to extract outside points from:
             self.subtask_outside_points = OutsideDpsFetchSubtask(
-                start=self.query.start,
-                end=self.query.end,
-                identifier=self.query.identifier,
+                start=self.query.start_ms,
+                end=self.query.end_ms,
                 parent=self,
-                include_status=self.query.include_status,
-                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
-                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
             # Append the outside subtask to returned subtasks so that it will be queued:
             subtasks.append(self.subtask_outside_points)
@@ -804,22 +751,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
         # For serial fetching, a single task suffice
         start = self.query.start if self.eager_mode else self.first_start
         subtasks: list[BaseDpsFetchSubtask] = [
-            SerialFetchSubtask(
-                start=start,
-                end=self.query.end,
-                identifier=self.query.identifier,
-                parent=self,
-                max_query_limit=self.query.max_query_limit,
-                is_raw_query=self.query.is_raw_query,
-                target_unit=self.query.target_unit,
-                target_unit_system=self.query.target_unit_system,
-                aggregates=self.query.aggs_camel_case,
-                granularity=self.query.granularity,
-                subtask_idx=FIRST_IDX,
-                include_status=self.query.include_status if self.query.is_raw_query else False,
-                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
-                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
-            )
+            SerialFetchSubtask(start=start, end=self.query.end, parent=self, subtask_idx=FIRST_IDX)
         ]
         self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
@@ -885,7 +817,6 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     **status_columns,
                 }
             )
-
         if self.query.include_status:
             status_columns.update(
                 status_code=create_list_from_dps_container(self.status_code),
@@ -1014,22 +945,7 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
         boundaries = split_time_range(start, end, n_periods, self.offset_next)
         return [
-            SplittingFetchSubtask(
-                start=start,
-                end=end,
-                subtask_idx=(i,),
-                parent=self,
-                identifier=self.query.identifier,
-                aggregates=self.query.aggs_camel_case,
-                granularity=self.query.granularity,
-                target_unit=self.query.target_unit,
-                target_unit_system=self.query.target_unit_system,
-                max_query_limit=self.query.max_query_limit,
-                is_raw_query=self.query.is_raw_query,
-                include_status=self.query.include_status if self.query.is_raw_query else False,
-                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
-                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
-            )
+            SplittingFetchSubtask(start=start, end=end, subtask_idx=(i,), parent=self)
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
         ]
 

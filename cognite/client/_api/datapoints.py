@@ -383,7 +383,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             # smaller queries), then counter to always break ties, but keep order (never use tasks themselves):
             limit = min(task.parent.get_remaining_limit(), task.max_query_limit)
             new_subtask: PoolSubtaskType = (limit, self._counter(), task)
-            heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
+            heapq.heappush(self.subtask_pools[task.parent.query.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
         self,
