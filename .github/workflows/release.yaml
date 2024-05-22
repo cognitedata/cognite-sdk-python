@@ -8,6 +8,7 @@ on:
 jobs:
   test_full_build_and_release:
     runs-on: ubuntu-latest
+    environment: CD
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -40,7 +41,7 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload --verbose dist/* || echo 'Version exists'
+        run: twine upload --skip-existing --verbose dist/*
 
       # TODO: Make this work again
       # - name: Push code snippets to service-contracts
