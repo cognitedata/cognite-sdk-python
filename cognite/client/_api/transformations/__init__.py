@@ -541,7 +541,6 @@ class TransformationsAPI(APIClient):
             "sourceLimit": source_limit,
             "inferSchemaLimit": infer_schema_limit,
         }
-
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
         result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
         return result
