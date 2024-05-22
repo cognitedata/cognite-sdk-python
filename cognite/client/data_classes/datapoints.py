@@ -205,7 +205,7 @@ class DatapointsQuery:
 
     @property
     def identifier(self) -> Identifier:
-        return self._identifier  # type: ignore [attr-defined]
+        return self._identifier
 
     @cached_property
     def aggs_camel_case(self) -> list[str]:
