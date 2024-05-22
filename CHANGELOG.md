@@ -17,9 +17,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
 ## [7.44.0] - 2024-05-20
 ### Added
 - New utility function `datetime_to_gql_timestamp` in `cognite.client.utils` to convert a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+
+## [7.43.4] - 2024-05-20
+### Fixed
+- The data modeling APIs (Views, Containers, Data Models and Spaces) limits for create, retrieve, delete, 
+  and list were not matching the API spec, causing the SDK to wrongly split large calls into too few requests.
+  This means that the SDK will no longer raise a `CogniteAPIError` if you, for example, try to delete 
+  more than 100 containers in a single method call.
 
 ## [7.43.3] - 2024-05-15
 ### Fixed
