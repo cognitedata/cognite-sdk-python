@@ -12,6 +12,6 @@ Convert datetime to milliseconds since epoch
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: cognite.client.utils.datetime_to_ms
 
-Convert datetime to data modelling GraphQL timestamp
+Convert datetime to ISO timestamp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: cognite.client.utils.datetime_to_gql_timestamp
+.. autofunction:: cognite.client.utils.datetime_to_ms_iso_timestamp

@@ -19,8 +19,8 @@ from cognite.client.utils._time import (
     align_large_granularity,
     align_start_and_end_for_granularity,
     convert_and_isoformat_time_attrs,
-    datetime_to_gql_timestamp,
     datetime_to_ms,
+    datetime_to_ms_iso_timestamp,
     granularity_to_ms,
     import_zoneinfo,
     ms_to_datetime,
@@ -37,25 +37,34 @@ if TYPE_CHECKING:
     import pandas
 
 
-class TestDatetimeToGqlTimestamp:
-    def test_datetime_to_gql_timestamp_no_timezone(self):
-        assert datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0)) == "2021-01-01T00:00:00.000"
+class TestDatetimeToIsoTimestamp:
+    def test_datetime_to_iso_timestamp_timezone_unaware(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
+        with tmp_set_envvar("TZ", "UTC"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+00:00"
 
-    def test_datetime_to_gql_timestamp_timezone_utc(self):
-        assert (
-            datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc))
-            == "2021-01-01T00:00:00.000+00:00"
-        )
+    def test_datetime_to_iso_timestamp_timezone_cet_in_oslo(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET"))
+        with tmp_set_envvar("TZ", "Europe/Oslo"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) in (
+                "2021-01-01T00:00:00.000+01:00",
+                "2021-01-01T00:00:00.000+02:00",
+            )
 
-    def test_datetime_to_gql_timestamp_timezone_cet(self):
-        assert (
-            datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET")))
-            == "2021-01-01T00:00:00.000+01:00"
-        )
+    def test_datetime_to_iso_timestamp_timezone_utc_in_Oslo(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("UTC"))
+        with tmp_set_envvar("TZ", "Europe/Oslo"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) in (
+                "2021-01-01T01:00:00.000+01:00",
+                "2021-01-01T02:00:00.000+02:00",
+            )
 
-    def test_datetime_to_gql_timestamp_incorrect_type(self):
+    def test_datetime_to_iso_timestamp_incorrect_type(self):
         with pytest.raises(TypeError):
-            datetime_to_gql_timestamp("2021-01-01T00:00:00.000")
+            datetime_to_ms_iso_timestamp("2021-01-01T00:00:00.000")
 
 
 class TestDatetimeToMs:

@@ -20,7 +20,7 @@ Changes are grouped as follows
 
 ## [7.44.0] - 2024-05-20
 ### Added
-- New utility function `datetime_to_gql_timestamp` in `cognite.client.utils` to convert a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+- New utility function `datetime_to_ms_iso_timestamp` in `cognite.client.utils` to convert a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API.
 
 ## [7.43.4] - 2024-05-20
 ### Fixed

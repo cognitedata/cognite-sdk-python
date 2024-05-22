@@ -102,11 +102,11 @@ def ms_to_datetime(ms: int | float) -> datetime:
     return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
-def datetime_to_gql_timestamp(dt: datetime) -> str:
-    """Converts a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+def datetime_to_ms_iso_timestamp(dt: datetime) -> str:
+    """Converts a datetime object to a string representing a timestamp in the ISO-format expected by the Cognite GraphQL API.
 
     Args:
-        dt (datetime): Naive or aware datetime object. Naive datetimes will be treated as UTC when ingested into a data model property.
+        dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
 
     Raises:
         TypeError: If dt is not a datetime object
@@ -115,7 +115,7 @@ def datetime_to_gql_timestamp(dt: datetime) -> str:
         str: Timestamp string in ISO 8601 format with milliseconds
     """
     if isinstance(dt, datetime):
-        return dt.isoformat(timespec="milliseconds")
+        return dt.astimezone().isoformat(timespec="milliseconds")
     else:
         raise TypeError(f"Expected datetime object, got {type(dt)}")
 
