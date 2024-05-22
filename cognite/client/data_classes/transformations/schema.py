@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
 
@@ -65,8 +65,8 @@ class TransformationSchemaUnknownType(TransformationSchemaType):
         super().__init__(type=raw_schema.pop("type"))  # type is required
         self.__raw_schema = raw_schema
 
-    def dump(self, camel_case: bool = True) -> dict:
-        return {"type": self.type, **convert_all_keys_recursive(self.__raw_schema, camel_case=camel_case)}
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:  # type: ignore [override]
+        return {"type": self.type, **self.__raw_schema}
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
