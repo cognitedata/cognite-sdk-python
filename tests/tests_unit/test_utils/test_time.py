@@ -38,21 +38,24 @@ if TYPE_CHECKING:
 
 
 class TestDatetimeToGqlTimestamp:
-    def test_datetime_to_gql_timestamp_correct_type(self):
+    def test_datetime_to_gql_timestamp_no_timezone(self):
+        assert datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0)) == "2021-01-01T00:00:00.000"
+
+    def test_datetime_to_gql_timestamp_timezone_utc(self):
         assert (
             datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc))
-            == "2021-01-01T00:00:00.000"
+            == "2021-01-01T00:00:00.000+00:00"
+        )
+
+    def test_datetime_to_gql_timestamp_timezone_cet(self):
+        assert (
+            datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET")))
+            == "2021-01-01T00:00:00.000+01:00"
         )
 
     def test_datetime_to_gql_timestamp_incorrect_type(self):
         with pytest.raises(TypeError):
             datetime_to_gql_timestamp("2021-01-01T00:00:00.000")
-
-    def test_datetime_to_gql_timestamp_with_timezone(self):
-        assert (
-            datetime_to_gql_timestamp(datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET")))
-            == "2020-12-31T23:00:00.000"
-        )
 
 
 class TestDatetimeToMs:

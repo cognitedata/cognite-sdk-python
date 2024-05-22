@@ -103,10 +103,19 @@ def ms_to_datetime(ms: int | float) -> datetime:
 
 
 def datetime_to_gql_timestamp(dt: datetime) -> str:
-    """Converts a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API."""
+    """Converts a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+
+    Args:
+        dt (datetime): Naive or aware datetime object. Naive datetimes will be treated as UTC when ingested into a data model property.
+
+    Raises:
+        TypeError: If dt is not a datetime object
+
+    Returns:
+        str: Timestamp string in ISO 8601 format with milliseconds
+    """
     if isinstance(dt, datetime):
-        utc_datetime = dt.astimezone(timezone.utc).replace(tzinfo=None)
-        return utc_datetime.isoformat(timespec="milliseconds")
+        return dt.isoformat(timespec="milliseconds")
     else:
         raise TypeError(f"Expected datetime object, got {type(dt)}")
 

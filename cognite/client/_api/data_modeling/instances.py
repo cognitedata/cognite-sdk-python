@@ -571,13 +571,16 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
+                >>> from cognite.client.utils import datetime_to_gql_timestamp
+                >>> from datetime import datetime
+                >>> birth_date = datetime(1947, 7, 30)
                 >>> actor = NodeApply(
                 ...     space="actors",
                 ...     external_id="arnold_schwarzenegger",
                 ...     sources=[
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "PersonView", "v1"),
-                ...             {"name": "Arnold Schwarzenegger", "birthYear": 1947}
+                ...             {"name": "Arnold Schwarzenegger", "birthYear": 1947, "birthDate": datetime_to_gql_timestamp(birth_date)}
                 ...         ),
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "ActorView", "v1"),
