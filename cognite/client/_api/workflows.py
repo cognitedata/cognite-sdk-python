@@ -78,8 +78,6 @@ class WorkflowTaskAPI(APIClient):
                 >>> res = client.workflows.tasks.update(res.tasks[1].id, "completed")
 
         """
-        self._warning.warn()
-
         body: dict[str, Any] = {"status": status.upper()}
         if output is not None:
             body["output"] = output
@@ -118,7 +116,6 @@ class WorkflowExecutionAPI(APIClient):
                 >>> res = client.workflows.executions.retrieve_detailed(res[0].id)
 
         """
-        self._warning.warn()
         try:
             response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
         except CogniteAPIError as e:
@@ -177,7 +174,6 @@ class WorkflowExecutionAPI(APIClient):
                 >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
                 >>> res = client.workflows.executions.trigger("foo", "1", client_credentials=credentials)
         """
-        self._warning.warn()
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
@@ -225,7 +221,6 @@ class WorkflowExecutionAPI(APIClient):
                 >>> res = client.workflows.executions.list(created_time_start=int((datetime.now() - timedelta(days=1)).timestamp() * 1000))
 
         """
-        self._warning.warn()
         filter_: dict[str, Any] = {}
         if workflow_version_ids is not None:
             filter_["workflowFilters"] = WorkflowIds.load(workflow_version_ids).dump(
@@ -267,7 +262,6 @@ class WorkflowExecutionAPI(APIClient):
                 >>> res = client.workflows.executions.trigger("foo", "1")
                 >>> client.workflows.executions.cancel(id="foo", reason="test cancelation")
         """
-        self._warning.warn()
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/cancel",
             json={
@@ -298,7 +292,6 @@ class WorkflowExecutionAPI(APIClient):
                 >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
                 >>> client.workflows.executions.retry(res.id)
         """
-        self._warning.warn()
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
@@ -355,7 +348,6 @@ class WorkflowVersionAPI(APIClient):
                 ... )
                 >>> res = client.workflows.versions.upsert(new_version)
         """
-        self._warning.warn()
         if mode != "replace":
             raise ValueError("Only replace mode is supported for upserting workflow versions.")
 
@@ -393,7 +385,6 @@ class WorkflowVersionAPI(APIClient):
                 >>> client.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
 
         """
-        self._warning.warn()
         identifiers = WorkflowIds.load(workflow_version_id).dump(camel_case=True)
         self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
@@ -419,7 +410,6 @@ class WorkflowVersionAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.versions.retrieve("my workflow", "1")
         """
-        self._warning.warn()
         try:
             response = self._get(
                 url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}",
@@ -467,7 +457,6 @@ class WorkflowVersionAPI(APIClient):
                 >>> res = client.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
-        self._warning.warn()
         if workflow_version_ids is None:
             workflow_ids_dumped = []
         else:
@@ -518,7 +507,6 @@ class WorkflowAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.upsert(WorkflowUpsert(external_id="my workflow", description="my workflow description"))
         """
-        self._warning.warn()
         if mode != "replace":
             raise ValueError("Only replace mode is supported for upserting workflows.")
 
@@ -545,7 +533,6 @@ class WorkflowAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.retrieve("my workflow")
         """
-        self._warning.warn()
         try:
             response = self._get(url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}")
         except CogniteAPIError as e:
@@ -569,7 +556,6 @@ class WorkflowAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.workflows.delete("my workflow")
         """
-        self._warning.warn()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             params={"ignoreUnknownIds": ignore_unknown_ids},
@@ -592,8 +578,6 @@ class WorkflowAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.list()
         """
-        self._warning.warn()
-
         return self._list(
             method="GET",
             resource_cls=Workflow,
