@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union
 from urllib.parse import quote
 
@@ -23,7 +22,6 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -35,26 +33,11 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
     from cognite.client.data_classes import ClientCredentials
 
-
-class BetaWorkflowAPIClient(APIClient, ABC):
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "beta"
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Workflow Orchestration"
-        )
-
-
 WorkflowIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
 WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str]]
 
 
-class WorkflowTaskAPI(BetaWorkflowAPIClient):
+class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
     def update(
@@ -107,7 +90,7 @@ class WorkflowTaskAPI(BetaWorkflowAPIClient):
         return WorkflowTaskExecution.load(response.json())
 
 
-class WorkflowExecutionAPI(BetaWorkflowAPIClient):
+class WorkflowExecutionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
@@ -326,7 +309,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         return WorkflowExecution._load(response.json())
 
 
-class WorkflowVersionAPI(BetaWorkflowAPIClient):
+class WorkflowVersionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/versions"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
@@ -499,7 +482,7 @@ class WorkflowVersionAPI(BetaWorkflowAPIClient):
         )
 
 
-class WorkflowAPI(BetaWorkflowAPIClient):
+class WorkflowAPI(APIClient):
     _RESOURCE_PATH = "/workflows"
 
     def __init__(
