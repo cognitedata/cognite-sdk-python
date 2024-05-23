@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import functools
 import heapq
 import itertools
@@ -9,7 +10,6 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import datetime, timezone
 from itertools import chain
 from operator import itemgetter
 from typing import (
@@ -536,11 +536,11 @@ class DatapointsAPI(APIClient):
         | DatapointsQuery
         | dict[str, Any]
         | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
-        start: int | str | datetime | None = None,
-        end: int | str | datetime | None = None,
+        start: int | str | dt.datetime | None = None,
+        end: int | str | dt.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
-        timezone: str | timezone | ZoneInfo | None = None,
+        timezone: str | dt.timezone | ZoneInfo | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         limit: int | None = None,
@@ -566,11 +566,11 @@ class DatapointsAPI(APIClient):
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
-            end (int | str | datetime | None): Exclusive end. Default: "now"
+            start (int | str | dt.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
+            end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            timezone (str | timezone | ZoneInfo | None): Which timezone to align aggregates to, for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, the aggregate duration can vary, typically due to daylight saving time.
+            timezone (str | dt.timezone | ZoneInfo | None): Which timezone to align aggregates to, for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, the aggregate duration can vary, typically due to daylight saving time.
                 You can also use a fixed offset from UTC by specifying "UTC+/-HH:MM". Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
@@ -779,8 +779,8 @@ class DatapointsAPI(APIClient):
         | DatapointsQuery
         | dict[str, Any]
         | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
-        start: int | str | datetime | None = None,
-        end: int | str | datetime | None = None,
+        start: int | str | dt.datetime | None = None,
+        end: int | str | dt.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -803,8 +803,8 @@ class DatapointsAPI(APIClient):
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
-            end (int | str | datetime | None): Exclusive end. Default: "now"
+            start (int | str | dt.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
+            end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -905,8 +905,8 @@ class DatapointsAPI(APIClient):
         | DatapointsQuery
         | dict[str, Any]
         | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
-        start: int | str | datetime | None = None,
-        end: int | str | datetime | None = None,
+        start: int | str | dt.datetime | None = None,
+        end: int | str | dt.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -933,8 +933,8 @@ class DatapointsAPI(APIClient):
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
-            end (int | str | datetime | None): Exclusive end. Default: "now"
+            start (int | str | dt.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
+            end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1052,8 +1052,8 @@ class DatapointsAPI(APIClient):
         *,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        start: datetime,
-        end: datetime,
+        start: dt.datetime,
+        end: dt.datetime,
         aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -1104,8 +1104,8 @@ class DatapointsAPI(APIClient):
         Args:
             id (int | Sequence[int] | None): ID or list of IDs.
             external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
-            start (datetime): Inclusive start, must be timezone aware.
-            end (datetime): Exclusive end, must be timezone aware and have the same timezone as start.
+            start (dt.datetime): Inclusive start, must be timezone aware.
+            end (dt.datetime): Exclusive end, must be timezone aware and have the same timezone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1247,7 +1247,7 @@ class DatapointsAPI(APIClient):
         self,
         id: int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None = None,
         external_id: str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None = None,
-        before: None | int | str | datetime = None,
+        before: None | int | str | dt.datetime = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1263,7 +1263,7 @@ class DatapointsAPI(APIClient):
         Args:
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
-            before (None | int | str | datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
+            before (None | int | str | dt.datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
             include_status (bool): Also return the status code, an integer, for each datapoint in the response.
@@ -1347,8 +1347,8 @@ class DatapointsAPI(APIClient):
         self,
         datapoints: Datapoints
         | DatapointsArray
-        | Sequence[dict[str, int | float | str | datetime]]
-        | Sequence[tuple[int | float | datetime, int | float | str]],
+        | Sequence[dict[str, int | float | str | dt.datetime]]
+        | Sequence[tuple[int | float | dt.datetime, int | float | str]],
         id: int | None = None,
         external_id: str | None = None,
     ) -> None:
@@ -1361,7 +1361,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime]] | Sequence[tuple[int | float | datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
+            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | dt.datetime]] | Sequence[tuple[int | float | dt.datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
 
@@ -1495,16 +1495,16 @@ class DatapointsAPI(APIClient):
 
     def delete_range(
         self,
-        start: int | str | datetime,
-        end: int | str | datetime,
+        start: int | str | dt.datetime,
+        end: int | str | dt.datetime,
         id: int | None = None,
         external_id: str | None = None,
     ) -> None:
         """Delete a range of datapoints from a time series.
 
         Args:
-            start (int | str | datetime): Inclusive start of delete range
-            end (int | str | datetime): Exclusive end of delete range
+            start (int | str | dt.datetime): Inclusive start of delete range
+            end (int | str | dt.datetime): Exclusive end of delete range
             id (int | None): Id of time series to delete data from
             external_id (str | None): External id of time series to delete data from
 
@@ -1609,7 +1609,7 @@ class DatapointsAPI(APIClient):
 
 
 class _InsertDatapoint(NamedTuple):
-    ts: int | datetime
+    ts: int | dt.datetime
     value: str | float
     status_code: int | None = None
     status_symbol: str | None = None
@@ -1788,7 +1788,7 @@ class RetrieveLatestDpsFetcher:
         self,
         id: None | int | LatestDatapointQuery | list[int | LatestDatapointQuery],
         external_id: None | str | LatestDatapointQuery | list[str | LatestDatapointQuery],
-        before: None | int | str | datetime,
+        before: None | int | str | dt.datetime,
         target_unit: None | str,
         target_unit_system: None | str,
         include_status: bool,
@@ -1804,7 +1804,7 @@ class RetrieveLatestDpsFetcher:
         self.default_ignore_bad_datapoints = ignore_bad_datapoints
         self.default_treat_uncertain_as_bad = treat_uncertain_as_bad
 
-        self.settings_before: dict[tuple[str, int], None | int | str | datetime] = {}
+        self.settings_before: dict[tuple[str, int], None | int | str | dt.datetime] = {}
         self.settings_target_unit: dict[tuple[str, int], None | str] = {}
         self.settings_target_unit_system: dict[tuple[str, int], None | str] = {}
         self.settings_include_status: dict[tuple[str, int], bool | None] = {}
