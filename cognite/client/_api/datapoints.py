@@ -1133,6 +1133,7 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> # In Python >=3.9 you may import directly from `zoneinfo`
                 >>> from cognite.client.utils import ZoneInfo
+                >>> from datetime import datetime
                 >>> client = CogniteClient()
                 >>> df = client.time_series.data.retrieve_dataframe_in_tz(
                 ...     id=12345,
@@ -1145,10 +1146,6 @@ class DatapointsAPI(APIClient):
             Get a pandas dataframe with the sum and continuous variance of the time series with external id "foo" and "bar",
             for each quarter from 2020 to 2022 in the timezone of New York, United States:
 
-                >>> from cognite.client import CogniteClient
-                >>> # In Python >=3.9 you may import directly from `zoneinfo`
-                >>> from cognite.client.utils import ZoneInfo
-                >>> client = CogniteClient()
                 >>> df = client.time_series.data.retrieve_dataframe_in_tz(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates=["sum", "continuous_variance"],
