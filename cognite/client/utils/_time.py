@@ -11,7 +11,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, overload
 
-from cognite.client.utils._importing import local_import
+from cognite.client.utils._importing import _import_zoneinfo_not_found_error, import_zoneinfo, local_import
 from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
@@ -20,9 +20,9 @@ if TYPE_CHECKING:
     import pandas
 
     if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+        from zoneinfo import ZoneInfo
     else:
-        from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+        from backports.zoneinfo import ZoneInfo
 
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -32,32 +32,45 @@ GRANULARITY_IN_HOURS = {"w": 168, "d": 24, "h": 1}
 GRANULARITY_IN_TIMEDELTA_UNIT = {"w": "weeks", "d": "days", "h": "hours", "m": "minutes", "s": "seconds"}
 MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
-
-
-def import_zoneinfo() -> type[ZoneInfo]:
-    try:
-        if sys.version_info >= (3, 9):
-            from zoneinfo import ZoneInfo
-        else:
-            from backports.zoneinfo import ZoneInfo
-        return ZoneInfo
-
-    except ImportError as e:
-        from cognite.client.exceptions import CogniteImportError
-
-        raise CogniteImportError(
-            "ZoneInfo is part of the standard library starting with Python >=3.9. In earlier versions "
-            "you need to install a backport. This is done automatically for you when installing with the pandas "
-            "group: 'cognite-sdk[pandas]', or with poetry: 'poetry install -E pandas'"
-        ) from e
-
-
-def _import_zoneinfo_not_found_error() -> type[ZoneInfoNotFoundError]:
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfoNotFoundError
-    else:
-        from backports.zoneinfo import ZoneInfoNotFoundError
-    return ZoneInfoNotFoundError
+_GRANULARITY_UNIT_LOOKUP: dict[str, str] = {
+    "s": "s",
+    "sec": "s",
+    "second": "s",
+    "seconds": "s",
+    "t": "m",
+    "m": "m",
+    "min": "m",
+    "minute": "m",
+    "minutes": "m",
+    "h": "h",
+    "hour": "h",
+    "hours": "h",
+    "d": "d",
+    "day": "d",
+    "days": "d",
+    "w": "w",
+    "week": "w",
+    "weeks": "w",
+    "mo": "month",
+    "month": "month",
+    "months": "month",
+    "q": "quarter",
+    "quarter": "quarter",
+    "quarters": "quarter",
+    "y": "year",
+    "year": "year",
+    "years": "year",
+}
+_GRANULARITY_CONVERSION = {
+    "s": (1, "s"),
+    "m": (1, "m"),
+    "h": (1, "h"),
+    "d": (1, "d"),
+    "w": (7, "d"),
+    "month": (1, "mo"),
+    "q": (3, "mo"),
+    "y": (12, "mo"),
+}
 
 
 def get_utc_zoneinfo() -> ZoneInfo:
@@ -118,8 +131,21 @@ def datetime_to_ms_iso_timestamp(dt: datetime) -> str:
         if dt.tzinfo is None:
             dt = dt.astimezone()
         return dt.isoformat(timespec="milliseconds")
-    else:
-        raise TypeError(f"Expected datetime object, got {type(dt)}")
+    raise TypeError(f"Expected datetime object, got {type(dt)}")
+
+
+def split_granularity_into_quantity_and_normalized_unit(granularity: str) -> tuple[int, str]:
+    """A normalized unit is any unit accepted by the API"""
+    if match := re.match(r"(\d+)(.*)", granularity):
+        quantity, unit = match.groups()
+        # We accept a whole range of different formats like s, sec, second
+        if normalized_unit := _GRANULARITY_UNIT_LOOKUP.get(unit):
+            multiplier, normalized_unit = _GRANULARITY_CONVERSION[normalized_unit]
+            return int(quantity) * multiplier, normalized_unit
+    raise ValueError(
+        f"Invalid granularity format: `{granularity}`. Must be on format <quantity><unit>, e.g. 5m, 3h, 1d, or 2w. "
+        "Tip: Unit can be spelled out for clarity, e.g. week(s), month(s), quarter(s), or year(s)."
+    )
 
 
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: dict[str, int]) -> int | None:
@@ -474,36 +500,6 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
     return [*(start + delta_ms * i for i in range(n_splits)), end]
 
 
-_GRANULARITY_UNIT_LOOKUP: dict[str, str] = {
-    "s": "s",
-    "sec": "s",
-    "second": "s",
-    "seconds": "s",
-    "t": "m",
-    "m": "m",
-    "min": "m",
-    "minute": "m",
-    "minutes": "m",
-    "h": "h",
-    "hour": "h",
-    "hours": "h",
-    "d": "d",
-    "day": "d",
-    "days": "d",
-    "w": "w",
-    "week": "w",
-    "weeks": "w",
-    "month": "month",
-    "months": "month",
-    "q": "quarter",
-    "quarter": "quarter",
-    "quarters": "quarter",
-    "y": "year",
-    "year": "year",
-    "years": "year",
-}
-
-
 def get_granularity_multiplier_and_unit(granularity: str) -> tuple[int, str]:
     if granularity and granularity[0].isdigit():
         _, number, unit = re.split(r"(\d+)", granularity)
@@ -589,14 +585,14 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
 def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: str = "both") -> pandas.DatetimeIndex:
     """
-    Pandas date_range struggles with time zone aware datetimes.
+    Pandas date_range struggles with timezone aware datetimes.
     This function overcomes that limitation.
 
     Assumes that start and end have the same timezone.
     """
     pd = local_import("pandas")
-    # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
-    # datetimes. This is a workaround by passing the time zone as an argument to the function.
+    # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use timezone aware
+    # datetimes. This is a workaround by passing the timezone as an argument to the function.
     # In addition, pandas struggle with ZoneInfo objects, so we convert them to string so that pandas can use its own
     # tzdata implementation.
 
@@ -622,7 +618,7 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
     -except- when given something concrete like pytz.UTC or ZoneInfo(...).
 
     To make sure we don't raise something silly like 'UTC != UTC', we convert both to ZoneInfo for comparison
-    via str(). This is safe as all return the lookup key (for the IANA time zone database).
+    via str(). This is safe as all return the lookup key (for the IANA timezone database).
 
     Note:
         We do not consider timezones with different keys, but equal fixed offsets from UTC to be equal. An example

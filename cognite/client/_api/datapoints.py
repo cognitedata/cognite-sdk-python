@@ -4,11 +4,12 @@ import functools
 import heapq
 import itertools
 import math
+import sys
 import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 from operator import itemgetter
 from typing import (
@@ -77,6 +78,11 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
+
+    if sys.version_info >= (3, 9):
+        from zoneinfo import ZoneInfo
+    else:
+        from backports.zoneinfo import ZoneInfo
 
 
 as_completed = import_as_completed()
@@ -534,6 +540,7 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        timezone: str | timezone | ZoneInfo | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         limit: int | None = None,
@@ -563,6 +570,8 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            timezone (str | timezone | ZoneInfo | None): Which timezone to align aggregates to, for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, the aggregate duration can vary, typically due to daylight saving time.
+                You can also use a fixed offset from UTC by specifying "UTC+/-HH:MM". Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -742,6 +751,7 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            timezone=timezone,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
             limit=limit,
@@ -1034,7 +1044,7 @@ class DatapointsAPI(APIClient):
         end = pd.Timestamp(max(q.end_ms for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
-        freq = granularity.replace("m", "min")
+        freq = cast(str, granularity).replace("m", "min")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
     def retrieve_dataframe_in_tz(
@@ -1057,7 +1067,7 @@ class DatapointsAPI(APIClient):
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
-        """Get datapoints directly in a pandas dataframe in the same time zone as ``start`` and ``end``.
+        """Get datapoints directly in a pandas dataframe in the same timezone as ``start`` and ``end``.
 
         .. admonition:: Deprecation Warning
 
@@ -1086,7 +1096,7 @@ class DatapointsAPI(APIClient):
 
         Warning:
             The datapoints queries are translated into several sub-queries using a multiple of hours. This means that
-            time zones that are not a whole hour offset from UTC are not supported. The same is true for time zones that
+            timezones that are not a whole hour offset from UTC are not supported. The same is true for timezones that
             observe DST with an offset from standard time that is not a multiple of 1 hour.
 
             It also sets an upper limit on the maximum granularity setting (around 11 years).
@@ -1094,8 +1104,8 @@ class DatapointsAPI(APIClient):
         Args:
             id (int | Sequence[int] | None): ID or list of IDs.
             external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
-            start (datetime): Inclusive start, must be time zone aware.
-            end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
+            start (datetime): Inclusive start, must be timezone aware.
+            end (datetime): Exclusive end, must be timezone aware and have the same timezone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1110,7 +1120,7 @@ class DatapointsAPI(APIClient):
             column_names (Literal["id", "external_id"]): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
-            pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given time zone.
+            pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given timezone.
 
         Warning:
             When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
@@ -1118,7 +1128,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe in the time zone of Oslo, Norway:
+            Get a pandas dataframe in the timezone of Oslo, Norway:
 
                 >>> from cognite.client import CogniteClient
                 >>> # In Python >=3.9 you may import directly from `zoneinfo`
@@ -1133,7 +1143,7 @@ class DatapointsAPI(APIClient):
                 ...     column_names="id")
 
             Get a pandas dataframe with the sum and continuous variance of the time series with external id "foo" and "bar",
-            for each quarter from 2020 to 2022 in the time zone of New York, United States:
+            for each quarter from 2020 to 2022 in the timezone of New York, United States:
 
                 >>> from cognite.client import CogniteClient
                 >>> # In Python >=3.9 you may import directly from `zoneinfo`

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import datetime as dt
 import json
+import sys
 import typing
 import warnings
 from collections import defaultdict
 from dataclasses import InitVar, dataclass, fields
-from datetime import datetime
 from enum import IntEnum
 from functools import cached_property
 from typing import (
@@ -56,6 +57,11 @@ if TYPE_CHECKING:
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
+
+    if sys.version_info >= (3, 9):
+        from zoneinfo import ZoneInfo
+    else:
+        from backports.zoneinfo import ZoneInfo
 
 
 Aggregate = Literal[
@@ -142,6 +148,7 @@ class DatapointsQuery:
             "end",
             "aggregates",
             "granularity",
+            "timezone",
             "target_unit",
             "target_unit_system",
             "limit",
@@ -154,12 +161,13 @@ class DatapointsQuery:
     )
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
-    start: int | str | datetime = _NOT_SET  # type: ignore [assignment]
-    end: int | str | datetime = _NOT_SET  # type: ignore [assignment]
-    aggregates: Aggregate | list[Aggregate] = _NOT_SET  # type: ignore [assignment]
-    granularity: str = _NOT_SET  # type: ignore [assignment]
-    target_unit: str = _NOT_SET  # type: ignore [assignment]
-    target_unit_system: str = _NOT_SET  # type: ignore [assignment]
+    start: int | str | dt.datetime = _NOT_SET  # type: ignore [assignment]
+    end: int | str | dt.datetime = _NOT_SET  # type: ignore [assignment]
+    aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
+    granularity: str | None = _NOT_SET  # type: ignore [assignment]
+    timezone: str | dt.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
+    target_unit: str | None = _NOT_SET  # type: ignore [assignment]
+    target_unit_system: str | None = _NOT_SET  # type: ignore [assignment]
     limit: int | None = _NOT_SET  # type: ignore [assignment]
     include_outside_points: bool = _NOT_SET  # type: ignore [assignment]
     ignore_unknown_ids: bool = _NOT_SET  # type: ignore [assignment]
@@ -168,6 +176,8 @@ class DatapointsQuery:
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
     def __post_init__(self, id: int | None, external_id: str | None) -> None:
+        # Store the possibly custom granularity (we support more than the API and a translation is done)
+        self._original_granularity = self.granularity
         # Ensure user have just specified one of id/xid:
         self._identifier = Identifier.of_either(id, external_id)
 
@@ -207,6 +217,10 @@ class DatapointsQuery:
     def identifier(self) -> Identifier:
         return self._identifier
 
+    @property
+    def original_granularity(self) -> str | None:
+        return self._original_granularity
+
     @cached_property
     def aggs_camel_case(self) -> list[str]:
         return list(map(to_camel_case, self.aggregates or []))
@@ -243,6 +257,15 @@ class DatapointsQuery:
     def is_missing(self, value: bool) -> None:
         assert isinstance(value, bool)
         self._is_missing = value
+
+    @property
+    def is_calendar_query(self) -> bool:
+        return self._is_calendar_query
+
+    @is_calendar_query.setter
+    def is_calendar_query(self, value: bool) -> None:
+        assert isinstance(value, bool)
+        self._is_calendar_query = value
 
     @property
     def max_query_limit(self) -> int:
@@ -326,7 +349,7 @@ class LatestDatapointQuery:
 
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
-    before: None | int | str | datetime = None
+    before: None | int | str | dt.datetime = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     include_status: bool | None = None
@@ -698,7 +721,7 @@ class DatapointsArray(CogniteResource):
         else:
             # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour)
             #       and for some weird reason .astype(datetime) directly from dt64 returns native integer... whatwhyy
-            arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime).astype(str)
+            arrays[0] = arrays[0].astype("datetime64[ms]").astype(dt.datetime).astype(str)
 
         if camel_case:
             attrs = list(map(to_camel_case, attrs))

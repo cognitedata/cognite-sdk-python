@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import datetime as dt
 import math
 import numbers
 import operator as op
+import sys
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
 from functools import cached_property
 from itertools import chain
 from typing import (
@@ -30,7 +31,7 @@ from typing import (
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from typing_extensions import TypeAlias
 
-from cognite.client._constants import NUMPY_IS_AVAILABLE
+from cognite.client._constants import NUMPY_IS_AVAILABLE, ZONEINFO_IS_AVAILABLE
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
 from cognite.client._proto.data_points_pb2 import (
     AggregateDatapoint,
@@ -46,10 +47,12 @@ from cognite.client.data_classes.datapoints import (
     _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._importing import import_zoneinfo
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     granularity_to_ms,
+    split_granularity_into_quantity_and_normalized_unit,
     split_time_range,
     time_ago_to_ms,
     timestamp_to_ms,
@@ -63,6 +66,11 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
+
+    if sys.version_info >= (3, 9):
+        from zoneinfo import ZoneInfo
+    else:
+        from backports.zoneinfo import ZoneInfo
 
 
 _T = TypeVar("_T")
@@ -92,12 +100,13 @@ class _FullDatapointsQuery:
     requested, previously public (before v5).
     """
 
-    start: int | str | datetime | None = None
-    end: int | str | datetime | None = None
+    start: int | str | dt.datetime | None = None
+    end: int | str | dt.datetime | None = None
     id: DatapointsId | None = None
     external_id: DatapointsExternalId | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
+    timezone: str | dt.timezone | ZoneInfo | None = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     limit: int | None = None
@@ -125,6 +134,7 @@ class _FullDatapointsQuery:
             limit=self.limit,
             aggregates=self.aggregates,
             granularity=self.granularity,
+            timezone=self.timezone,
             target_unit=self.target_unit,
             target_unit_system=self.target_unit_system,
             include_outside_points=self.include_outside_points,
@@ -194,13 +204,19 @@ class _FullDatapointsQuery:
         # exception 'end not after start' if both are set to the same value.
         frozen_time_now = timestamp_to_ms("now")
 
+        # NOTE: The order of verification checks must be kept due to dependencies:
         for query in queries:
             query.limit = self._verify_and_convert_limit(query.limit)
             query.is_raw_query = self._verify_options_and_categorize_query(query)
-            query.max_query_limit = dps_limit_raw if query.is_raw_query else dps_limit_agg
+            query.timezone = self._verify_and_convert_timezone(query.timezone)
+            query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
-            if not query.is_raw_query and isinstance(query.aggregates, str):
-                query.aggregates = [query.aggregates]
+            if query.is_raw_query:
+                query.max_query_limit = dps_limit_raw
+            else:
+                query.max_query_limit = dps_limit_agg
+                if isinstance(query.aggregates, str):
+                    query.aggregates = [query.aggregates]
         return queries
 
     @staticmethod
@@ -216,6 +232,8 @@ class _FullDatapointsQuery:
             raise TypeError(f"Expected `aggregates` to be of type `str`, `list[str]` or None, not {type(aggregates)}")
         elif aggregates is None:
             if granularity is None:
+                if query.timezone is not None:
+                    raise ValueError("'timezone' is supported for aggregate datapoints only.")
                 if query.include_outside_points and query.limit is not None:
                     warnings.warn(
                         "When using `include_outside_points=True` with a finite `limit` you may get a large gap "
@@ -240,6 +258,31 @@ class _FullDatapointsQuery:
         return False
 
     @staticmethod
+    def _verify_and_convert_timezone(tz: str | dt.timezone | ZoneInfo | None) -> str | None:
+        if tz is None or isinstance(tz, str):
+            return tz
+        elif isinstance(tz, dt.timezone):
+            # Built-in timezones can only represent fixed UTC offsets (i.e. we do not allow arbitrary
+            # tzinfo subclasses). We could do str(tz), but if the user has passed a name, that is
+            # returned instead so we have to first get the utc offset:
+            return str(dt.timezone(tz.utcoffset(None)))
+        elif ZONEINFO_IS_AVAILABLE and isinstance(tz, import_zoneinfo()):
+            # ZoneInfo is not a required dependency, hence we only check for it when available
+            if tz.key is not None:
+                return tz.key
+            raise ValueError("timezone of type ZoneInfo does not have the required 'key' attribute set")
+        raise ValueError(
+            f"'timezone' not understood, expected one of: [None, str, datetime.timezone, ZoneInfo], got {type(tz)}"
+        )
+
+    @staticmethod
+    def _verify_and_convert_granularity(granularity: str | None) -> tuple[str | None, bool]:
+        if granularity is None:
+            return None, False
+        quantity, unit = split_granularity_into_quantity_and_normalized_unit(granularity)
+        return f"{quantity}{unit}", unit == "mo"
+
+    @staticmethod
     def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
@@ -254,24 +297,27 @@ class _FullDatapointsQuery:
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
         )
 
+    @staticmethod
     def _verify_time_range(
-        self,
         query: DatapointsQuery,
         frozen_time_now: int,
     ) -> tuple[int, int]:
-        start = self._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
-        end = self._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
+        start = _FullDatapointsQuery._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
+        end = _FullDatapointsQuery._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
         if end <= start:
             raise ValueError(
                 f"Invalid time range, {end=} ({query.end}) must be later than {start=} ({query.start})"
                 f"(from query: {query.identifier.as_dict(camel_case=False)})"
             )
-        if not query.is_raw_query:
+        # We align start and end so that we can efficiently parallelize aggregate dps fetching. Queries
+        # using timezone or a calendar granularity (month) are left untouched (and thus fetch serially):
+        if not (query.is_raw_query or query.timezone or query.is_calendar_query):
             # API rounds aggregate query timestamps in a very particular fashion:
-            start, end = align_start_and_end_for_granularity(start, end, query.granularity)
+            start, end = align_start_and_end_for_granularity(start, end, cast(str, query.granularity))
         return start, end
 
-    def _ts_to_ms_frozen_now(self, ts: int | str | datetime | None, frozen_time_now: int, default: int) -> int:
+    @staticmethod
+    def _ts_to_ms_frozen_now(ts: int | str | dt.datetime | None, frozen_time_now: int, default: int) -> int:
         # Time 'now' is frozen for all queries in a single call from the user, leading to identical
         # results e.g. "4d-ago" and "now"
         if ts is None:
@@ -407,7 +453,7 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(DatapointsAny, [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool]:
+def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
     return {
         "id": res.id,
@@ -965,7 +1011,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
 
     @cached_property
     def offset_next(self) -> int:
-        return granularity_to_ms(self.query.granularity)
+        return granularity_to_ms(cast(str, self.query.granularity))
 
     def _set_aggregate_vars(self, aggs_camel_case: list[str], use_numpy: bool) -> None:
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.

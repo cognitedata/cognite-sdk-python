@@ -15,7 +15,8 @@ from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
-from cognite.client.utils._time import granularity_to_ms, import_zoneinfo
+from cognite.client.utils._importing import import_zoneinfo
+from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load, random_gamma_dist_integer
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"

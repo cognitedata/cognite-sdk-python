@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import contextlib
-import sys
 
+from cognite.client.utils._importing import import_zoneinfo
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
@@ -14,10 +14,7 @@ from cognite.client.utils._time import (
 
 # Needed for doctest to pass.
 with contextlib.suppress(ImportError):
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
-    else:
-        from backports.zoneinfo import ZoneInfo
+    ZoneInfo = import_zoneinfo()
 
 __all__ = [
     "ZoneInfo",

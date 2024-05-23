@@ -11,6 +11,7 @@ import pytest
 from _pytest.mark import ParameterSet
 
 from cognite.client.exceptions import CogniteImportError
+from cognite.client.utils._importing import import_zoneinfo
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
@@ -21,7 +22,6 @@ from cognite.client.utils._time import (
     datetime_to_ms,
     datetime_to_ms_iso_timestamp,
     granularity_to_ms,
-    import_zoneinfo,
     ms_to_datetime,
     pandas_date_range_tz,
     split_time_range,
