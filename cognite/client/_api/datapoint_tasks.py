@@ -633,15 +633,15 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         return new_subtasks
 
 
-def get_task_orchestrator(is_raw_query: bool, limit: None | int) -> type[BaseTaskOrchestrator]:
-    if is_raw_query:
-        if limit is None:
+def get_task_orchestrator(query: DatapointsQuery) -> type[BaseTaskOrchestrator]:
+    if query.is_raw_query:
+        if query.limit is None:
             return ConcurrentUnlimitedRawTaskOrchestrator
         return SerialLimitedRawTaskOrchestrator
     else:
-        if limit is None:
-            return ConcurrentUnlimitedAggTaskOrchestrator
-        return SerialLimitedAggTaskOrchestrator
+        if query.limit is not None or query.timezone or query.is_calendar_query:
+            return SerialLimitedAggTaskOrchestrator
+        return ConcurrentUnlimitedAggTaskOrchestrator
 
 
 class BaseTaskOrchestrator(ABC):

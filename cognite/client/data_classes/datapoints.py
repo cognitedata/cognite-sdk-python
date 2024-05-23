@@ -300,7 +300,7 @@ class DatapointsQuery:
     def task_orchestrator(self) -> type[BaseTaskOrchestrator]:
         from cognite.client._api.datapoint_tasks import get_task_orchestrator
 
-        return get_task_orchestrator(self.is_raw_query, self.limit)
+        return get_task_orchestrator(self)
 
     def to_payload_item(self) -> _DatapointsPayloadItem:
         payload = _DatapointsPayloadItem(
