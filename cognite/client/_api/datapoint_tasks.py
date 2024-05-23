@@ -516,6 +516,9 @@ class BaseDpsFetchSubtask:
         if query.include_status is True:
             self.static_kwargs["includeStatus"] = query.include_status
 
+        if query.timezone:
+            self.static_kwargs["timeZone"] = query.timezone
+
     @abstractmethod
     def get_next_payload_item(self) -> _DatapointsPayloadItem: ...
 
@@ -551,6 +554,8 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         super().__init__(**kwargs)
         self.subtask_idx = subtask_idx
         self.next_start = self.start
+        self.next_cursor: str | None = None
+        self.uses_cursor = self.parent.query.timezone or self.parent.query.is_calendar_query
 
     def get_next_payload_item(self) -> _DatapointsPayloadItem:
         remaining = self.parent.get_remaining_limit()
@@ -558,6 +563,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
             start=self.next_start,
             end=self.end,
             limit=min(self.max_query_limit, remaining),
+            cursor=self.next_cursor,
             **self.static_kwargs,  # type: ignore [typeddict-item]
         )
 
@@ -572,17 +578,23 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
 
         n, last_ts = len(dps), dps[-1].timestamp
         self.parent._unpack_and_store(self.subtask_idx, dps)
-        self._update_state_for_next_payload(last_ts, n)
-        if self._is_task_done(n, res.nextCursor):
+        self._update_state_for_next_payload(res, last_ts, n)
+        if self._is_task_done(n):
             self.is_done = True
         return None
 
-    def _update_state_for_next_payload(self, last_ts: int, n: int) -> None:
-        self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
+    def _update_state_for_next_payload(self, res: DataPointListItem, last_ts: int, n: int) -> None:
+        self.next_cursor = res.nextCursor
+        if not self.uses_cursor:
+            self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
         self.n_dps_fetched += n  # Used to quit limited queries asap
 
-    def _is_task_done(self, n: int, next_cursor: str) -> bool:
-        return not next_cursor or n < self.max_query_limit or self.next_start == self.end
+    def _is_task_done(self, n: int) -> bool:
+        return (
+            not self.next_cursor
+            or n < self.max_query_limit
+            or not self.uses_cursor and self.next_start == self.end
+        )  # fmt: skip
 
 
 class SplittingFetchSubtask(SerialFetchSubtask):
@@ -667,16 +679,16 @@ class BaseTaskOrchestrator(ABC):
         self.dps_data: _DataContainer = defaultdict(list)
         self.subtasks: list[BaseDpsFetchSubtask] = []
 
-        if self.query.is_raw_query:
-            if self.query.include_status:
+        if query.is_raw_query:
+            if query.include_status:
                 self.status_code: _DataContainer = defaultdict(list)
                 self.status_symbol: _DataContainer = defaultdict(list)
-            if self.use_numpy and not self.query.ignore_bad_datapoints:
+            if use_numpy and not query.ignore_bad_datapoints:
                 self.null_timestamps: set[int] = set()
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points for free (if asked for) and ts info:
-        if not self.eager_mode:
+        if not eager_mode:
             assert first_dps_batch is not None and first_limit is not None
             self._extract_first_dps_batch(first_dps_batch, first_limit)
 

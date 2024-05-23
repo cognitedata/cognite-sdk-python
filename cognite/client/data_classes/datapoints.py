@@ -121,6 +121,7 @@ class _DatapointsPayloadItem(TypedDict, total=False):
     end: int
     aggregates: list[str] | None
     granularity: str | None
+    timeZone: str | None
     targetUnit: str | None
     targetUnitSystem: str | None
     limit: int
@@ -128,6 +129,7 @@ class _DatapointsPayloadItem(TypedDict, total=False):
     includeStatus: bool
     ignoreBadDataPoints: bool
     treatUncertainAsBad: bool
+    cursor: str | None
 
 
 class _DatapointsPayload(_DatapointsPayloadItem):
@@ -318,6 +320,9 @@ class DatapointsQuery:
             payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
         if self.treat_uncertain_as_bad is False:
             payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
+
+        if self.timezone:
+            payload["timeZone"] = self.timezone
 
         if self.is_raw_query:
             if self.include_outside_points is True:
