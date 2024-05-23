@@ -68,8 +68,8 @@ _GRANULARITY_CONVERSION = {
     "d": (1, "d"),
     "w": (7, "d"),
     "month": (1, "mo"),
-    "q": (3, "mo"),
-    "y": (12, "mo"),
+    "quarter": (3, "mo"),
+    "year": (12, "mo"),
 }
 
 

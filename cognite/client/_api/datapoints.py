@@ -471,7 +471,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         # no chunking), and which are not (...and may be grouped - and how "tightly"):
         for query, ts_task in remaining_tasks.items():
             est_limit = self._decide_individual_query_limit(query, ts_task, self.dps_client._FETCH_TS_LIMIT)
-            query.override_max_query_limit(est_limit)
+            query.max_query_limit = est_limit
 
         return list(remaining_tasks.values())
 

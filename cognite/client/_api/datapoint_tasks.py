@@ -311,7 +311,7 @@ class _FullDatapointsQuery:
             )
         # We align start and end so that we can efficiently parallelize aggregate dps fetching. Queries
         # using timezone or a calendar granularity (month) are left untouched (and thus fetch serially):
-        if not (query.is_raw_query or query.timezone or query.is_calendar_query):
+        if not (query.is_raw_query or query.use_cursors):
             # API rounds aggregate query timestamps in a very particular fashion:
             start, end = align_start_and_end_for_granularity(start, end, cast(str, query.granularity))
         return start, end
@@ -550,12 +550,12 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
 class SerialFetchSubtask(BaseDpsFetchSubtask):
     """Fetches datapoints serially until complete, nice and simple. Stores data in parent"""
 
-    def __init__(self, *, subtask_idx: tuple[float, ...], **kwargs: Any) -> None:
+    def __init__(self, *, subtask_idx: tuple[float, ...], first_cursor: str | None = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.subtask_idx = subtask_idx
         self.next_start = self.start
-        self.next_cursor: str | None = None
-        self.uses_cursor = self.parent.query.timezone or self.parent.query.is_calendar_query
+        self.next_cursor = first_cursor
+        self.uses_cursor = self.parent.query.use_cursors
 
     def get_next_payload_item(self) -> _DatapointsPayloadItem:
         remaining = self.parent.get_remaining_limit()
@@ -651,7 +651,7 @@ def get_task_orchestrator(query: DatapointsQuery) -> type[BaseTaskOrchestrator]:
             return ConcurrentUnlimitedRawTaskOrchestrator
         return SerialLimitedRawTaskOrchestrator
     else:
-        if query.limit is not None or query.timezone or query.is_calendar_query:
+        if query.limit is not None or query.use_cursors:
             return SerialLimitedAggTaskOrchestrator
         return ConcurrentUnlimitedAggTaskOrchestrator
 
@@ -671,7 +671,6 @@ class BaseTaskOrchestrator(ABC):
         self.ts_info: dict | None = None
         self.subtask_outside_points: OutsideDpsFetchSubtask | None = None
         self.raw_dtype_numpy: type[np.object_] | type[np.float64] | None = None
-        self.has_limit = self.query.limit is not None
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
 
@@ -688,8 +687,11 @@ class BaseTaskOrchestrator(ABC):
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points for free (if asked for) and ts info:
-        if not eager_mode:
+        if eager_mode:
+            self.first_cursor = None
+        else:
             assert first_dps_batch is not None and first_limit is not None
+            self.first_cursor = first_dps_batch.nextCursor
             self._extract_first_dps_batch(first_dps_batch, first_limit)
 
     @property
@@ -741,19 +743,24 @@ class BaseTaskOrchestrator(ABC):
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
         self.ts_info = get_ts_info_from_proto(res)
-        self.ts_info["granularity"] = self.query.granularity
+        self.ts_info["granularity"] = self.query.original_granularity
         if self.use_numpy:
             self.raw_dtype_numpy = decide_numpy_dtype_from_is_string(res.isString)
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
-        # Set `start` for the first subtask:
-        self.first_start = dps[-1].timestamp + self.offset_next
+        # Set `start` for the first subtask; since we have a cursor, this is only (really)
+        # needed for time domain splitting:
+        self.first_start = dps[-1].timestamp
+        if not self.query.use_cursors:
+            self.first_start += self.offset_next
         self._unpack_and_store(FIRST_IDX, dps)
 
         # Are we done after first batch?
-        if self.first_start == self.query.end or len(dps) < first_limit:
+        if not self.first_cursor or len(dps) < first_limit:
             self._is_done = True
-        elif self.has_limit and len(dps) <= self.query.finite_limit <= first_limit:
+        elif not self.query.use_cursors and self.first_start == self.query.end:
+            self._is_done = True
+        elif self.query.limit is not None and len(dps) <= self.query.limit <= first_limit:  # TODO: len == limit??
             self._is_done = True
 
     def _clear_data_containers(self) -> None:
@@ -801,15 +808,19 @@ class BaseTaskOrchestrator(ABC):
 
 
 class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
-    def get_remaining_limit(self) -> int:
+    def get_remaining_limit(self) -> float:
         assert len(self.subtasks) == 1
-        return self.query.finite_limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
+        if self.query.limit is None:
+            return math.inf
+        return self.query.limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
 
     def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # For serial fetching, a single task suffice
         start = self.query.start if self.eager_mode else self.first_start
         subtasks: list[BaseDpsFetchSubtask] = [
-            SerialFetchSubtask(start=start, end=self.query.end, parent=self, subtask_idx=FIRST_IDX)
+            SerialFetchSubtask(
+                start=start, end=self.query.end, parent=self, subtask_idx=FIRST_IDX, first_cursor=self.first_cursor
+            )
         ]
         self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)

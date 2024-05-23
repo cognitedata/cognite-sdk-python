@@ -238,11 +238,6 @@ class DatapointsQuery:
         return self.end
 
     @property
-    def finite_limit(self) -> int:
-        assert isinstance(self.limit, int)
-        return self.limit
-
-    @property
     def is_raw_query(self) -> bool:
         return self._is_raw_query
 
@@ -269,6 +264,10 @@ class DatapointsQuery:
         assert isinstance(value, bool)
         self._is_calendar_query = value
 
+    @cached_property
+    def use_cursors(self) -> bool:
+        return bool(self.timezone or self.is_calendar_query)
+
     @property
     def max_query_limit(self) -> int:
         return self._max_query_limit
@@ -283,10 +282,6 @@ class DatapointsQuery:
         if self.limit is None:
             return self.max_query_limit
         return min(self.limit, self.max_query_limit)
-
-    def override_max_query_limit(self, new_limit: int) -> None:
-        assert isinstance(new_limit, int)
-        self.max_query_limit = new_limit
 
     def __repr__(self) -> str:
         return json.dumps(self.dump(), indent=4)
@@ -320,10 +315,8 @@ class DatapointsQuery:
             payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
         if self.treat_uncertain_as_bad is False:
             payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
-
         if self.timezone:
             payload["timeZone"] = self.timezone
-
         if self.is_raw_query:
             if self.include_outside_points is True:
                 payload["includeOutsidePoints"] = self.include_outside_points
