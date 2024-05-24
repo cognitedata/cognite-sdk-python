@@ -540,7 +540,7 @@ class DatapointsAPI(APIClient):
         end: int | str | dt.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
-        timezone: str | dt.timezone | ZoneInfo | None = None,
+        timezone: dt.timezone | ZoneInfo | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         limit: int | None = None,
@@ -570,8 +570,8 @@ class DatapointsAPI(APIClient):
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            timezone (str | dt.timezone | ZoneInfo | None): Which timezone to align aggregates to, for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, the aggregate duration can vary, typically due to daylight saving time.
-                You can also use a fixed offset from UTC by specifying "UTC+/-HH:MM". Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            timezone (dt.timezone | ZoneInfo | None): Which timezone to align aggregates to, for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time.
+                You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)

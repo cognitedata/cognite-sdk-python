@@ -167,7 +167,7 @@ class DatapointsQuery:
     end: int | str | dt.datetime = _NOT_SET  # type: ignore [assignment]
     aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
     granularity: str | None = _NOT_SET  # type: ignore [assignment]
-    timezone: str | dt.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
+    timezone: dt.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
     target_unit: str | None = _NOT_SET  # type: ignore [assignment]
     target_unit_system: str | None = _NOT_SET  # type: ignore [assignment]
     limit: int | None = _NOT_SET  # type: ignore [assignment]

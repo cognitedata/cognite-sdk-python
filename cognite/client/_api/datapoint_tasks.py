@@ -106,7 +106,7 @@ class _FullDatapointsQuery:
     external_id: DatapointsExternalId | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
-    timezone: str | dt.timezone | ZoneInfo | None = None
+    timezone: dt.timezone | ZoneInfo | None = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     limit: int | None = None
@@ -208,7 +208,7 @@ class _FullDatapointsQuery:
         for query in queries:
             query.limit = self._verify_and_convert_limit(query.limit)
             query.is_raw_query = self._verify_options_and_categorize_query(query)
-            query.timezone = self._verify_and_convert_timezone(query.timezone)
+            query.timezone = self._verify_and_convert_timezone(query.timezone)  # type: ignore [assignment]
             query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
             if query.is_raw_query:
@@ -258,8 +258,8 @@ class _FullDatapointsQuery:
         return False
 
     @staticmethod
-    def _verify_and_convert_timezone(tz: str | dt.timezone | ZoneInfo | None) -> str | None:
-        if tz is None or isinstance(tz, str):
+    def _verify_and_convert_timezone(tz: dt.timezone | ZoneInfo | None) -> str | None:
+        if tz is None:
             return tz
         elif isinstance(tz, dt.timezone):
             # Built-in timezones can only represent fixed UTC offsets (i.e. we do not allow arbitrary
@@ -272,7 +272,7 @@ class _FullDatapointsQuery:
                 return tz.key
             raise ValueError("timezone of type ZoneInfo does not have the required 'key' attribute set")
         raise ValueError(
-            f"'timezone' not understood, expected one of: [None, str, datetime.timezone, ZoneInfo], got {type(tz)}"
+            f"'timezone' not understood, expected one of: [None, datetime.timezone, ZoneInfo], got {type(tz)}"
         )
 
     @staticmethod
