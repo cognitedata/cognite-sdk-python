@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
 class TestDatetimeToMsIsoTimestamp:
     @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
-    def test_datetime_to_iso_timestamp_timezone_unaware(self):
+    def test_timezone_unaware(self):
         input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
         with tmp_set_envvar("TZ", "CET"):
             time.tzset()
