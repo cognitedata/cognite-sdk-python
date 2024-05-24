@@ -17,7 +17,6 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-
 ## [7.44.0] - 2024-05-24
 ### Added
 - New utility function `datetime_to_ms_iso_timestamp` in `cognite.client.utils` to convert a datetime object to a string representing a timestamp in the format expected by the Cognite GraphQL API.
