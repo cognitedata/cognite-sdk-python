@@ -194,7 +194,7 @@ class APIClient:
         **kwargs: Any,
     ) -> Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
-        json_payload = kwargs.get("json")
+        json_payload = kwargs.pop("json", None)
         headers = self._configure_headers(
             accept,
             additional_headers=self._config.headers.copy(),
@@ -202,7 +202,7 @@ class APIClient:
         )
         headers.update(kwargs.get("headers") or {})
 
-        if json_payload:
+        if json_payload is not None:
             try:
                 data = _json.dumps(json_payload, allow_nan=False)
             except ValueError as e:
