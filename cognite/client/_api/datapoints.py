@@ -32,11 +32,7 @@ from typing_extensions import Self, TypeGuard
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
     BaseTaskOrchestrator,
-    DatapointsPayload,
-    DatapointsPayloadItem,
     _FullDatapointsQuery,
-    _FullDatapointsQueryValidator,
-    _SingleTSQueryBase,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
@@ -49,7 +45,7 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     LatestDatapointQuery,
 )
-from cognite.client.data_classes.datapoints import Aggregate
+from cognite.client.data_classes.datapoints import Aggregate, _DatapointsPayload, _DatapointsPayloadItem
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
@@ -84,7 +80,7 @@ if TYPE_CHECKING:
 
 as_completed = import_as_completed()
 
-_TSQueryList = List[_SingleTSQueryBase]
+_TSQueryList = List[DatapointsQuery]
 PoolSubtaskType = Tuple[float, int, BaseDpsFetchSubtask]
 
 _T = TypeVar("_T")
@@ -92,10 +88,8 @@ _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
 def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapointsQuery) -> DpsFetchStrategy:
-    validator = _FullDatapointsQueryValidator(
-        full_query, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG
-    )
-    all_queries = validator.validate_and_create_single_queries()
+    all_queries = full_query.parse_into_queries()
+    full_query.validate(all_queries, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG)
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
@@ -144,7 +138,7 @@ class DpsFetchStrategy(ABC):
             cognite_client=self.dps_client._cognite_client,
         )
 
-    def _request_datapoints(self, payload: DatapointsPayload) -> Sequence[DataPointListItem]:
+    def _request_datapoints(self, payload: _DatapointsPayload) -> Sequence[DataPointListItem]:
         (res := DataPointListResponse()).MergeFromString(
             self.dps_client._do_request(
                 json=payload,
@@ -157,7 +151,7 @@ class DpsFetchStrategy(ABC):
         return res.items
 
     @staticmethod
-    def _raise_if_missing(to_raise: set[_SingleTSQueryBase]) -> None:
+    def _raise_if_missing(to_raise: set[DatapointsQuery]) -> None:
         if to_raise:
             raise CogniteNotFoundError(not_found=[q.identifier.as_dict(camel_case=False) for q in to_raise])
 
@@ -178,7 +172,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
     """
 
     def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> Iterator[BaseTaskOrchestrator]:
-        missing_to_raise: set[_SingleTSQueryBase] = set()
+        missing_to_raise: set[DatapointsQuery] = set()
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
 
         # Run until all top level tasks are complete:
@@ -214,13 +208,13 @@ class EagerDpsFetcher(DpsFetchStrategy):
         self,
         pool: ThreadPoolExecutor,
         use_numpy: bool,
-    ) -> tuple[dict[Future, BaseDpsFetchSubtask], dict[_SingleTSQueryBase, BaseTaskOrchestrator]]:
+    ) -> tuple[dict[Future, BaseDpsFetchSubtask], dict[DatapointsQuery, BaseTaskOrchestrator]]:
         futures_dct: dict[Future, BaseDpsFetchSubtask] = {}
         ts_task_lookup = {}
         for query in self.all_queries:
             ts_task = ts_task_lookup[query] = query.task_orchestrator(query=query, eager_mode=True, use_numpy=use_numpy)
             for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
-                payload = DatapointsPayload(items=[subtask.get_next_payload_item()], ignoreUnknownIds=False)
+                payload = _DatapointsPayload(items=[subtask.get_next_payload_item()], ignoreUnknownIds=False)
                 future = pool.submit(self._request_datapoints, payload)
                 futures_dct[future] = subtask
         return futures_dct, ts_task_lookup
@@ -232,7 +226,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         new_subtasks: Sequence[BaseDpsFetchSubtask],
     ) -> None:
         for subtask in new_subtasks:
-            payload = DatapointsPayload(items=[subtask.get_next_payload_item()])
+            payload = _DatapointsPayload(items=[subtask.get_next_payload_item()])
             future = pool.submit(self._request_datapoints, payload)
             futures_dct[future] = subtask
 
@@ -240,8 +234,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
         self,
         future: Future,
         ts_task: BaseTaskOrchestrator,
-        ts_task_lookup: dict[_SingleTSQueryBase, BaseTaskOrchestrator],
-        missing_to_raise: set[_SingleTSQueryBase],
+        ts_task_lookup: dict[DatapointsQuery, BaseTaskOrchestrator],
+        missing_to_raise: set[DatapointsQuery],
     ) -> DataPointListItem | None:
         try:
             return future.result()[0]
@@ -314,7 +308,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self,
         pool: ThreadPoolExecutor,
         futures_dct: dict[Future, list[BaseDpsFetchSubtask]],
-        ts_task_lookup: dict[_SingleTSQueryBase, BaseTaskOrchestrator],
+        ts_task_lookup: dict[DatapointsQuery, BaseTaskOrchestrator],
     ) -> None:
         while futures_dct:
             future = next(as_completed(futures_dct))
@@ -333,8 +327,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _create_initial_tasks(
         self, pool: ThreadPoolExecutor
-    ) -> tuple[dict[_SingleTSQueryBase, int], dict[Future, tuple[_TSQueryList, _TSQueryList]]]:
-        initial_query_limits: dict[_SingleTSQueryBase, int] = {}
+    ) -> tuple[dict[DatapointsQuery, int], dict[Future, tuple[_TSQueryList, _TSQueryList]]]:
+        initial_query_limits: dict[DatapointsQuery, int] = {}
         initial_futures_dct: dict[Future, tuple[_TSQueryList, _TSQueryList]] = {}
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `_FETCH_TS_LIMIT * max_workers`):
@@ -352,7 +346,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                     (item := query.to_payload_item())["limit"] = limit
                     items.append(item)
 
-            payload = DatapointsPayload(items=items, ignoreUnknownIds=True)
+            payload = _DatapointsPayload(items=items, ignoreUnknownIds=True)
             future = pool.submit(self._request_datapoints, payload)
             initial_futures_dct[future] = query_chunks
         return initial_query_limits, initial_futures_dct
@@ -361,11 +355,11 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self,
         res: Sequence[DataPointListItem],
         chunk_queues: tuple[_TSQueryList, _TSQueryList],
-        initial_query_limits: dict[_SingleTSQueryBase, int],
+        initial_query_limits: dict[DatapointsQuery, int],
         use_numpy: bool,
-    ) -> tuple[dict[_SingleTSQueryBase, BaseTaskOrchestrator], set[_SingleTSQueryBase]]:
+    ) -> tuple[dict[DatapointsQuery, BaseTaskOrchestrator], set[DatapointsQuery]]:
         if len(res) == sum(map(len, chunk_queues)):
-            to_raise: set[_SingleTSQueryBase] = set()
+            to_raise: set[DatapointsQuery] = set()
         else:
             # We have at least 1 missing time series:
             chunk_queues, to_raise = self._handle_missing_ts(res, *chunk_queues)
@@ -389,7 +383,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             # smaller queries), then counter to always break ties, but keep order (never use tasks themselves):
             limit = min(task.parent.get_remaining_limit(), task.max_query_limit)
             new_subtask: PoolSubtaskType = (limit, self._counter(), task)
-            heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
+            heapq.heappush(self.subtask_pools[task.parent.query.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
         self,
@@ -407,8 +401,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _combine_subtasks_into_new_request(
         self,
-    ) -> tuple[DatapointsPayload, list[BaseDpsFetchSubtask]]:
-        next_items: list[DatapointsPayloadItem] = []
+    ) -> tuple[_DatapointsPayload, list[BaseDpsFetchSubtask]]:
+        next_items: list[_DatapointsPayloadItem] = []
         next_subtasks: list[BaseDpsFetchSubtask] = []
         fetch_limits = (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW)
         agg_pool, raw_pool = self.subtask_pools
@@ -419,7 +413,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             while task_pool:
                 if len(next_items) + 1 > self.dps_client._FETCH_TS_LIMIT:
                     # Hard limit on N ts, quit immediately (even if below dps limit):
-                    payload = DatapointsPayload(items=next_items)
+                    payload = _DatapointsPayload(items=next_items)
                     return payload, next_subtasks
 
                 # Highest priority task i.e. the smallest limit, is always at index 0 (heap magic):
@@ -434,15 +428,13 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                     heapq.heappop(task_pool)
                 else:
                     break
-        return DatapointsPayload(items=next_items), next_subtasks
+        return _DatapointsPayload(items=next_items), next_subtasks
 
     @staticmethod
-    def _decide_individual_query_limit(
-        query: _SingleTSQueryBase, ts_task: BaseTaskOrchestrator, n_ts_limit: int
-    ) -> int:
+    def _decide_individual_query_limit(query: DatapointsQuery, ts_task: BaseTaskOrchestrator, n_ts_limit: int) -> int:
         # For a better estimate, we use first ts of first batch instead of `query.start`:
         batch_start, batch_end = ts_task.start_ts_first_batch, ts_task.end_ts_first_batch
-        est_remaining_dps = ts_task.n_dps_first_batch * (query.end - batch_end) / (batch_end - batch_start)
+        est_remaining_dps = ts_task.n_dps_first_batch * (query.end_ms - batch_end) / (batch_end - batch_start)
         # To use the full request limit on a single ts, the estimate must be >> max_limit (raw/agg dependent):
         if est_remaining_dps > 5 * (max_limit := query.max_query_limit):
             return max_limit
@@ -454,7 +446,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         return max_limit // n_ts_limit
 
     def _update_queries_with_new_chunking_limit(
-        self, ts_task_lookup: dict[_SingleTSQueryBase, BaseTaskOrchestrator]
+        self, ts_task_lookup: dict[DatapointsQuery, BaseTaskOrchestrator]
     ) -> list[BaseTaskOrchestrator]:
         remaining_tasks = {}
         for query, ts_task in ts_task_lookup.items():
@@ -502,7 +494,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         res: Sequence[DataPointListItem],
         agg_queries: _TSQueryList,
         raw_queries: _TSQueryList,
-    ) -> tuple[tuple[_TSQueryList, _TSQueryList], set[_SingleTSQueryBase]]:
+    ) -> tuple[tuple[_TSQueryList, _TSQueryList], set[DatapointsQuery]]:
         to_raise = set()
         not_missing = {("id", r.id) for r in res}.union(("externalId", r.externalId) for r in res)
         for query in chain(agg_queries, raw_queries):
@@ -1037,11 +1029,11 @@ class DatapointsAPI(APIClient):
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
             column_names, include_aggregate_name, include_granularity_name
         )
-        start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
-        end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
+        start = pd.Timestamp(min(q.start_ms for q in fetcher.agg_queries), unit="ms")
+        end = pd.Timestamp(max(q.end_ms for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
-        freq = cast(str, granularity).replace("m", "min")
+        freq = granularity.replace("m", "min")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
     def retrieve_dataframe_in_tz(
