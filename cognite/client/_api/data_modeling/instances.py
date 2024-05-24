@@ -629,7 +629,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling import NodeApply
                 >>> from cognite.client.utils import datetime_to_ms_iso_timestamp
                 >>> from datetime import datetime
-                >>> birth_date = datetime(1947, 7, 30)
+                >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000)
                 >>> client = CogniteClient()
                 >>> node = NodeApply(
                 ...     space="actors",
@@ -637,7 +637,7 @@ class InstancesAPI(APIClient):
                 ...     sources=[
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "PersonView", "v1"),
-                ...             {"name": "Arnold Schwarzenegger", "birthDate": datetime_to_ms_iso_timestamp(birth_date)}
+                ...             {"name": "Piday", "date": datetime_to_ms_iso_timestamp(my_date)}
                 ...         )
                 ...     ]
                 ... )
