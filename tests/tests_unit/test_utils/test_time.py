@@ -45,18 +45,18 @@ class TestDatetimeToMsIsoTimestamp:
             time.tzset()
             assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
 
-    def test_datetime_to_iso_timestamp_timezone_cet(self):
+    def test_timezone_cet(self):
         input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET"))
         assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
 
     @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
-    def test_datetime_to_iso_timestamp_timezone_cet_in_local_tz(self):
+    def test_timezone_cet_in_local_tz(self):
         input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET"))
         with tmp_set_envvar("TZ", "UTC"):
             time.tzset()
             assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
 
-    def test_datetime_to_iso_timestamp_incorrect_type(self):
+    def test_incorrect_type(self):
         with pytest.raises(TypeError):
             datetime_to_ms_iso_timestamp("2021-01-01T00:00:00.000")
 
