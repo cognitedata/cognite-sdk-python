@@ -640,7 +640,7 @@ class InstancesAPI(APIClient):
                 ...             {"name": "Arnold Schwarzenegger", "birthDate": datetime_to_ms_iso_timestamp(birth_date)}
                 ...         )
                 ...     ]
-                ... )    
+                ... )
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
