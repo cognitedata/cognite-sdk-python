@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     import pandas
 
 
-class TestDatetimeToIsoTimestamp:
+class TestDatetimeToMsIsoTimestamp:
     @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
     def test_datetime_to_iso_timestamp_timezone_unaware(self):
         input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
