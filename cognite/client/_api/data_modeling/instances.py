@@ -571,9 +571,6 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
-                >>> from cognite.client.utils import datetime_to_gql_timestamp
-                >>> from datetime import datetime
-                >>> birth_date = datetime(1947, 7, 30)
                 >>> actor = NodeApply(
                 ...     space="actors",
                 ...     external_id="arnold_schwarzenegger",
@@ -624,6 +621,27 @@ class InstancesAPI(APIClient):
                 ...     edges=actor_to_movie,
                 ...     auto_create_start_nodes=True,
                 ...     auto_create_end_nodes=True
+                ... )
+
+            Make node apply using helper functions:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeApply
+                >>> from cognite.client.utils import datetime_to_gql_timestamp
+                >>> from datetime import datetime
+                >>> birth_date = datetime(1947, 7, 30)
+                >>> client = CogniteClient()
+                >>> node = NodeApply(
+                ...     space="actors",
+                ...     external_id="arnold_schwarzenegger",
+                ...     sources=[
+                ...         NodeOrEdgeData(
+                ...             ViewId("mySpace", "PersonView", "v1"),
+                ...             {"name": "Arnold Schwarzenegger",
+                ...             "birthDate": datetime_to_gql_timestamp(birth_date)
+                ...             }
+                ...         )
+                ...     ]
                 ... )
 
         """
