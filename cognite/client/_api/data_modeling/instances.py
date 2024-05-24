@@ -577,7 +577,7 @@ class InstancesAPI(APIClient):
                 ...     sources=[
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "PersonView", "v1"),
-                ...             {"name": "Arnold Schwarzenegger", "birthYear": 1947, "birthDate": datetime_to_gql_timestamp(birth_date)}
+                ...             {"name": "Arnold Schwarzenegger", "birthYear": 1947}
                 ...         ),
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "ActorView", "v1"),
