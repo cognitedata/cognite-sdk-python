@@ -107,24 +107,28 @@ class HTTPClient:
         self.refresh_auth_header = refresh_auth_header
         self.retry_tracker_factory = retry_tracker_factory  # needed for tests
 
-    def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+    def request(self, method: str, url: str, accept: str, **kwargs: Any) -> requests.Response:
         retry_tracker = self.retry_tracker_factory(self.config)
         headers = kwargs.get("headers")
+        accepts_json = accept == "application/json"
+        is_auto_retryable = False
         while True:
             try:
                 res = self._do_request(method=method, url=url, **kwargs)
-                # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
-                retry_tracker.status += 1
+                if accepts_json:
+                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
+                    res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
+                    try:
+                        is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
+                    except Exception:
+                        # if the response is not JSON or it doesn't conform to the api design guide,
+                        # we assume it's not auto-retryable
+                        pass
 
-                try:
-                    is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
-                except Exception:
-                    # if the response is not JSON or it doesn't conform to the api design guide,
-                    # we assume it's not auto-retryable
-                    is_auto_retryable = False
+                retry_tracker.status += 1
                 if not retry_tracker.should_retry(status_code=res.status_code, is_auto_retryable=is_auto_retryable):
                     return res
+
             except CogniteReadTimeout as e:
                 retry_tracker.read += 1
                 if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):

@@ -592,7 +592,7 @@ class FilesAPI(APIClient):
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
-            "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
+            "PUT", upload_url, accept="*/*", data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
         if not upload_response.ok:
             raise CogniteFileUploadError(
@@ -714,6 +714,7 @@ class FilesAPI(APIClient):
         upload_response = self._http_client_with_retry.request(
             "PUT",
             upload_url,
+            accept="*/*",
             data=content,
             timeout=self._config.file_transfer_timeout,
             headers=None,
@@ -946,7 +947,7 @@ class FilesAPI(APIClient):
 
     def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(
-            "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
+            "GET", download_link, accept="*/*", stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
@@ -998,7 +999,9 @@ class FilesAPI(APIClient):
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
-        res = self._http_client_with_retry.request("GET", download_link, timeout=self._config.file_transfer_timeout)
+        res = self._http_client_with_retry.request(
+            "GET", download_link, accept="*/*", timeout=self._config.file_transfer_timeout
+        )
         return res.content
 
     def list(
