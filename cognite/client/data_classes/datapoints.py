@@ -23,12 +23,12 @@ from typing import (
 
 from typing_extensions import NotRequired, Self
 
-from cognite.client._constants import NUMPY_IS_AVAILABLE
+from cognite.client._constants import NUMPY_IS_AVAILABLE, ZONEINFO_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier
-from cognite.client.utils._importing import local_import
+from cognite.client.utils._importing import import_zoneinfo, local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dataframes_with_nullable_int_cols,
     notebook_display_with_fallback,
@@ -39,7 +39,7 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
-from cognite.client.utils._time import convert_and_isoformat_time_attrs
+from cognite.client.utils._time import convert_and_isoformat_time_attrs, ms_to_datetime
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if NUMPY_IS_AVAILABLE:
@@ -433,6 +433,26 @@ class Datapoint(CogniteResource):
         self.status_code = status_code
         self.status_symbol = status_symbol
 
+        # A datapoint can be told how its timestamp should be displayed
+        self._timezone: dt.timezone | ZoneInfo | None = None
+
+    @property
+    def timezone(self) -> dt.timezone | ZoneInfo | None:
+        """Which timezone to use when displaying the datapoint"""
+        return self._timezone
+
+    @timezone.setter
+    def timezone(self, value: dt.timezone | ZoneInfo) -> None:
+        self._timezone = value
+
+    def __str__(self) -> str:
+        item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
+        if self.timezone and self.timestamp:
+            item["timestamp"] = (
+                ms_to_datetime(self.timestamp).astimezone(self.timezone).isoformat(sep=" ", timespec="milliseconds")
+            )
+        return _json.dumps(item, indent=4)
+
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
 
@@ -446,12 +466,17 @@ class Datapoint(CogniteResource):
 
         dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
-
-        return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms")])
+        tz = self.timezone
+        if ZONEINFO_IS_AVAILABLE and isinstance(tz, import_zoneinfo()):
+            # pandas is not happy about ZoneInfo :shrug:
+            tz = tz.key  # type: ignore [assignment]
+        return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        # Keep value even if None (bad status codes support missing):
-        return {"value": self.value, **super().dump(camel_case=camel_case)}
+        dumped = super().dump(camel_case=camel_case)
+        dumped.pop("timezone", None)
+        dumped["value"] = self.value  # Keep value even if None (bad status codes support missing values)
+        return dumped
 
 
 class DatapointsArray(CogniteResource):
