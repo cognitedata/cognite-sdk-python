@@ -568,7 +568,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         )
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
-        if self.parent.ts_info is None:
+        if not self.parent.ts_info:
             # In eager mode, first task to complete gets the honor to store ts info:
             self.parent._store_ts_info(res)
 
@@ -668,7 +668,7 @@ class BaseTaskOrchestrator(ABC):
         self.query = query
         self.eager_mode = eager_mode
         self.use_numpy = use_numpy
-        self.ts_info: dict | None = None
+        self.ts_info: dict[str, Any] = {}
         self.subtask_outside_points: OutsideDpsFetchSubtask | None = None
         self.raw_dtype_numpy: type[np.object_] | type[np.float64] | None = None
         self._is_done = False
@@ -696,7 +696,7 @@ class BaseTaskOrchestrator(ABC):
 
     @property
     def is_done(self) -> bool:
-        if self.ts_info is None:
+        if not self.ts_info:
             return False
         elif self._is_done:
             return True
@@ -709,13 +709,6 @@ class BaseTaskOrchestrator(ABC):
     @is_done.setter
     def is_done(self, value: bool) -> None:
         self._is_done = value
-
-    @property
-    def ts_info_dct(self) -> dict[str, Any]:
-        # This is mostly for mypy to avoid 'cast' x 10000, but also a nice check to make sure
-        # we have the required ts info before returning a result dps object.
-        assert self.ts_info is not None
-        return self.ts_info
 
     @property
     def start_ts_first_batch(self) -> int:
@@ -742,8 +735,9 @@ class BaseTaskOrchestrator(ABC):
         self._store_first_batch(dps, first_limit)
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
-        self.ts_info = get_ts_info_from_proto(res)
-        self.ts_info["granularity"] = self.query.original_granularity
+        self.ts_info.update(get_ts_info_from_proto(res))
+        self.ts_info["timezone"] = self.query.original_timezone
+        self.ts_info["granularity"] = self.query.original_granularity  # show '1quarter', not '3mo'
         if self.use_numpy:
             self.raw_dtype_numpy = decide_numpy_dtype_from_is_string(res.isString)
 
@@ -847,13 +841,13 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if not self.use_numpy:
             if self.query.include_status:
                 status_cols.update(status_code=[], status_symbol=[])
-            return Datapoints(**self.ts_info_dct, timestamp=[], value=[], **status_cols)
+            return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
 
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
         return DatapointsArray._load_from_arrays(
             {
-                **self.ts_info_dct,
+                **self.ts_info,
                 "timestamp": np.array([], dtype=np.int64),
                 "value": np.array([], dtype=self.raw_dtype_numpy),
                 **status_cols,
@@ -880,7 +874,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 status_columns["null_timestamps"] = self.null_timestamps
             return DatapointsArray._load_from_arrays(
                 {
-                    **self.ts_info_dct,
+                    **self.ts_info,
                     "timestamp": create_array_from_dps_container(self.ts_data),
                     "value": create_array_from_dps_container(self.dps_data),
                     **status_columns,
@@ -892,7 +886,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 status_symbol=create_list_from_dps_container(self.status_symbol),
             )
         return Datapoints(
-            **self.ts_info_dct,
+            **self.ts_info,
             timestamp=create_list_from_dps_container(self.ts_data),
             value=create_list_from_dps_container(self.dps_data),
             **status_columns,
@@ -1063,10 +1057,10 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
             if self.int_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.int64) for agg in self.int_aggs})
-            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct: dict[str, list] = {agg: [] for agg in self.all_aggregates}
-        return Datapoints(timestamp=[], **self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
+        return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
         if not self.ts_data or self.query.limit == 0:
@@ -1084,7 +1078,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct[agg] = np.nan_to_num(arr_dct[agg], copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(
                     np.int64
                 )
-            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}
         if self.single_agg:
@@ -1095,7 +1089,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         for agg in self.int_aggs:
             # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double:
             lst_dct[agg] = list(map(ensure_int, lst_dct[agg]))
-        return Datapoints(**self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
+        return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
         if self.use_numpy:

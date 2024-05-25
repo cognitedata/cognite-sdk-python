@@ -232,6 +232,14 @@ TIME_ATTRIBUTES = {
 TIME_ATTRIBUTES |= set(map(to_camel_case, TIME_ATTRIBUTES))
 
 
+def convert_and_isoformat_timestamp(ts: int, tz: timezone | ZoneInfo | None) -> str:
+    """Used in datapoints classes that are fetched with a 'timezone'"""
+    dt = ms_to_datetime(ts)
+    if tz is not None:
+        dt = dt.astimezone(tz)
+    return dt.isoformat(sep=" ", timespec="milliseconds")
+
+
 def _convert_and_isoformat_time_attrs_in_dict(item: dict) -> dict:
     for k in TIME_ATTRIBUTES.intersection(item):
         try:

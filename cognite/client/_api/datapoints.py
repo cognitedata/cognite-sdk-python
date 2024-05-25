@@ -559,6 +559,7 @@ class DatapointsAPI(APIClient):
             2. Unlimited queries (``limit=None``) are most performant as they are always fetched in parallel, for any number of requested time series.
             3. Limited queries, (e.g. ``limit=500_000``) are much less performant, at least for large limits, as each individual time series is fetched serially (we can't predict where on the timeline the datapoints are). Thus parallelisation is only used when asking for multiple "limited" time series.
             4. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't use start=0 (1970).
+            5. Using ``timezone`` and/or calendar granularities like month/quarter/year in aggregate queries comes at a penalty.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
@@ -783,6 +784,7 @@ class DatapointsAPI(APIClient):
         end: int | str | dt.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        timezone: dt.timezone | ZoneInfo | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         limit: int | None = None,
@@ -807,6 +809,8 @@ class DatapointsAPI(APIClient):
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            timezone (dt.timezone | ZoneInfo | None): Which timezone to align aggregates to, for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time.
+                You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -878,6 +882,7 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            timezone=timezone,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
             limit=limit,
@@ -909,6 +914,7 @@ class DatapointsAPI(APIClient):
         end: int | str | dt.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: str | None = None,
+        timezone: dt.timezone | ZoneInfo | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         limit: int | None = None,
@@ -937,6 +943,8 @@ class DatapointsAPI(APIClient):
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            timezone (dt.timezone | ZoneInfo | None): Which timezone to align aggregates to, for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time.
+                You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -1029,14 +1037,15 @@ class DatapointsAPI(APIClient):
                 column_names, include_aggregate_name, include_granularity_name
             )
         # Uniform index requires extra validation and processing:
+        uses_tz_or_calendar_gran = {q.use_cursors for q in fetcher.all_queries}
         grans_given = {q.granularity for q in fetcher.all_queries}
         is_limited = any(q.limit is not None for q in fetcher.all_queries)
-        if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
+        if fetcher.raw_queries or len(grans_given) > 1 or is_limited or uses_tz_or_calendar_gran:
             raise ValueError(
                 "Cannot return a uniform index when asking for aggregates with multiple granularities "
-                f"({grans_given or []}) OR when (partly) querying raw datapoints OR when a finite limit is used."
+                f"({grans_given or []}) OR when (partly) querying raw datapoints OR when a finite limit is used "
+                "OR when timezone is used OR when a calendar granularity is used (e.g. month/quarter/year)"
             )
-
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
             column_names, include_aggregate_name, include_granularity_name
         )
