@@ -87,8 +87,8 @@ def concat_dps_dataframe_list(
     # TypeError: Cannot join tz-naive with tz-aware DatetimeIndex
     if len(timezones) > 1:
         warnings.warn(
-            "When concatenating datapoints localized to different timezones, the final dataframe index (timestamps) "
-            "will be a union of the UTC converted timestamps.",
+            f"When concatenating datapoints localized to different timezones ({sorted(map(str, timezones))}), the "
+            "final dataframe index (timestamps) will be a union of the UTC converted timestamps.",
             UserWarning,
         )
     return concat_dataframes_with_nullable_int_cols(dfs)

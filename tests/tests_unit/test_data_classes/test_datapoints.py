@@ -15,13 +15,14 @@ class TestDatapoint:
         assert "timezone" not in str(dp)
         assert '"timestamp": "2024-05-24 22:28:57.000+00:00"' in str(dp)
         dp.timezone = None
+        assert "timezone" not in str(dp)
         assert '"timestamp": "2024-05-24 22:28:57.000+00:00"' in str(dp)
 
     def test_display_str_with_builtin_timezone(self):
         epoch_ms = 1716589737000
         dp = Datapoint(timestamp=epoch_ms, value="foo", average=123)
         dp.timezone = timezone(timedelta(hours=2))
-        assert "timezone" not in str(dp)
+        assert "timezone" in str(dp)
         assert '"timestamp": "2024-05-25 00:28:57.000+02:00"' in str(dp)
 
         # Timezone is only a setting for how to display the timestamp:
@@ -31,24 +32,25 @@ class TestDatapoint:
 
     @pytest.mark.dsl
     @pytest.mark.parametrize(
-        "epoch_ms, offset, zone, expected",
+        "epoch_ms, offset_hours, zone, expected",
         (
-            (1716589737000, timedelta(hours=2), "Europe/Oslo", "2024-05-25 00:28:57.000+02:00"),
-            (1616589737000, timedelta(hours=1), "Europe/Oslo", "2021-03-24 13:42:17.000+01:00"),
+            (1716589737000, 2, "Europe/Oslo", "2024-05-25 00:28:57.000+02:00"),
+            (1616589737000, 1, "Europe/Oslo", "2021-03-24 13:42:17.000+01:00"),
         ),
     )
-    def test_display_str_and_to_pandas_with_timezone_and_zoneinfo(self, epoch_ms, offset, zone, expected):
+    def test_display_str_and_to_pandas_with_timezone_and_zoneinfo(self, epoch_ms, offset_hours, zone, expected):
         import pandas as pd
 
         ZoneInfo = import_zoneinfo()
         dp1 = Datapoint(timestamp=epoch_ms, value="foo", average=123)
         dp2 = Datapoint(timestamp=epoch_ms, value="foo", average=123)
         dp1.timezone = ZoneInfo(zone)
-        dp2.timezone = timezone(offset)
+        dp2.timezone = timezone(timedelta(hours=offset_hours))
+        sdp1, sdp2 = str(dp1), str(dp2)
 
-        assert str(dp1) == str(dp2)
-        assert "timezone" not in str(dp1)
-        assert f'"timestamp": "{expected}"' in str(dp1)
+        assert sdp1 != sdp2
+        assert sdp1.replace("Europe/Oslo", "") == sdp2.replace(f"UTC+0{offset_hours}:00", "")
+        assert f'"timestamp": "{expected}"' in sdp1
 
         df1, df2 = dp1.to_pandas(), dp2.to_pandas()
         assert 1 == len(df1.index) == len(df2.index)
