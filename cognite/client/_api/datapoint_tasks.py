@@ -208,7 +208,7 @@ class _FullDatapointsQuery:
         for query in queries:
             query.limit = self._verify_and_convert_limit(query.limit)
             query.is_raw_query = self._verify_options_and_categorize_query(query)
-            query.timezone = self._verify_and_convert_timezone(query.timezone)  # type: ignore [assignment]
+            query.timezone = self._verify_and_convert_timezone(query.timezone, query.is_raw_query)  # type: ignore [assignment]
             query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
             if query.is_raw_query:
@@ -232,10 +232,6 @@ class _FullDatapointsQuery:
             raise TypeError(f"Expected `aggregates` to be of type `str`, `list[str]` or None, not {type(aggregates)}")
         elif aggregates is None:
             if granularity is None:
-                if query.timezone is not None:
-                    # Timezone will only be used for display purposes (or when converting to pandas), so we fetch
-                    # like it doesn't exist aka concurrently (the API only supports using timezone with agg. queries)
-                    query.timezone = None  # Note: we store original timezone
                 if query.include_outside_points and query.limit is not None:
                     warnings.warn(
                         "When using `include_outside_points=True` with a finite `limit` you may get a large gap "
@@ -260,22 +256,30 @@ class _FullDatapointsQuery:
         return False
 
     @staticmethod
-    def _verify_and_convert_timezone(tz: dt.timezone | ZoneInfo | None) -> str | None:
+    def _verify_and_convert_timezone(tz: dt.timezone | ZoneInfo | None, is_raw_query: bool) -> str | None:
         if tz is None:
             return tz
         elif isinstance(tz, dt.timezone):
             # Built-in timezones can only represent fixed UTC offsets (i.e. we do not allow arbitrary
             # tzinfo subclasses). We could do str(tz), but if the user has passed a name, that is
             # returned instead so we have to first get the utc offset:
-            return str(dt.timezone(tz.utcoffset(None)))
+            api_tz = str(dt.timezone(tz.utcoffset(None)))  # avoiding string parsing like a pro
+
         elif ZONEINFO_IS_AVAILABLE and isinstance(tz, import_zoneinfo()):
             # ZoneInfo is not a required dependency, hence we only check for it when available
             if tz.key is not None:
-                return tz.key
-            raise ValueError("timezone of type ZoneInfo does not have the required 'key' attribute set")
-        raise ValueError(
-            f"'timezone' not understood, expected one of: [None, datetime.timezone, ZoneInfo], got {type(tz)}"
-        )
+                api_tz = tz.key
+            else:
+                raise ValueError("timezone of type ZoneInfo does not have the required 'key' attribute set")
+        else:
+            raise ValueError(
+                f"'timezone' not understood, expected one of: [None, datetime.timezone, ZoneInfo], got {type(tz)}"
+            )
+        if is_raw_query:
+            # Timezone will only be used for display purposes (or when converting to pandas), so we fetch
+            # like it doesn't exist (concurrently). The API only supports using timezone with agg. queries.
+            return None  # Note: we also store the original timezone
+        return api_tz
 
     @staticmethod
     def _verify_and_convert_granularity(granularity: str | None) -> tuple[str | None, bool]:

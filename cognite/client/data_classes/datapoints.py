@@ -180,11 +180,14 @@ class DatapointsQuery:
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
     def __post_init__(self, id: int | None, external_id: str | None) -> None:
+        # Ensure user have just specified one of id/xid:
+        self._identifier = Identifier.of_either(id, external_id)
+        self._store_original_inputs()
+
+    def _store_original_inputs(self) -> None:
         # Store the possibly custom granularity (we support more than the API and a translation is done)
         self._original_granularity = self.granularity
         self._original_timezone = self.timezone
-        # Ensure user have just specified one of id/xid:
-        self._identifier = Identifier.of_either(id, external_id)
 
     def __eq__(self, other: object) -> bool:
         # Note: Instances representing identical queries should -not- compare equal as this would mean we
@@ -201,6 +204,7 @@ class DatapointsQuery:
         for fld in fields(self):
             if getattr(self, fld.name) is _NOT_SET:
                 setattr(self, fld.name, defaults[fld.name])
+        self._store_original_inputs()
 
     @classmethod
     # TODO: Remove in next major version (require use of DatapointsQuery directly)
@@ -561,8 +565,7 @@ class DatapointsArray(CogniteResource):
         cognite_client: CogniteClient | None = None,
     ) -> DatapointsArray:
         assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
-        # Since pandas always uses nanoseconds for datetime, we stick with the same
-        # (also future-proofs the SDK; ns may be coming!):
+        # We store datetime using nanosecond resolution to future-proof the SDK in case it is ever added:
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
 
@@ -822,6 +825,10 @@ class DatapointsArray(CogniteResource):
         else:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
 
+        idx, tz = self.timestamp, self.timezone
+        if tz is not None:
+            idx = pd.to_datetime(idx, utc=True).tz_convert(convert_tz_for_pandas(tz))
+
         if self.value is not None:
             raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
             if include_status:
@@ -829,7 +836,7 @@ class DatapointsArray(CogniteResource):
                     raw_columns[f"{identifier}|status_code"] = self.status_code
                 if self.status_symbol is not None:
                     raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
-            return pd.DataFrame(raw_columns, index=self.timestamp, copy=False)
+            return pd.DataFrame(raw_columns, index=idx, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
         aggregate_columns = [
@@ -838,9 +845,6 @@ class DatapointsArray(CogniteResource):
         ]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
-        idx, tz = self.timestamp, self.timezone
-        if tz is not None:
-            idx = pd.to_datetime(idx, utc=True).tz_convert(convert_tz_for_pandas(tz))
         (df := pd.DataFrame(dict(enumerate(arrays)), index=idx, copy=False)).columns = aggregate_columns
         return df
 
