@@ -464,11 +464,11 @@ class Datapoint(CogniteResource):
         tz = convert_tz_for_pandas(self.timezone)
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, include_timezone: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         # Keep value even if None (bad status codes support missing):
         dumped["value"] = self.value
-        if self.timezone is not None:
+        if include_timezone and self.timezone is not None:
             dumped["timezone"] = str(self.timezone)
         return dumped
 
@@ -1000,7 +1000,7 @@ class Datapoints(CogniteResource):
         }
         if self.timezone is not None:
             dumped["timezone"] = str(self.timezone)
-        datapoints = [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()]
+        datapoints = [dp.dump(camel_case=camel_case, include_timezone=False) for dp in self.__get_datapoint_objects()]
         if self.status_code is not None or self.status_symbol is not None:
             if (
                 self.status_code is None
