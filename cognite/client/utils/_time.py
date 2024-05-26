@@ -60,10 +60,6 @@ def _import_zoneinfo_not_found_error() -> type[ZoneInfoNotFoundError]:
     return ZoneInfoNotFoundError
 
 
-def _datetime_is_tz_naive(dt: datetime) -> bool:
-    return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
-
-
 def get_utc_zoneinfo() -> ZoneInfo:
     return import_zoneinfo()("UTC")
 
@@ -119,8 +115,8 @@ def datetime_to_ms_iso_timestamp(dt: datetime) -> str:
         str: Timestamp string in ISO 8601 format with milliseconds
     """
     if isinstance(dt, datetime):
-        if _datetime_is_tz_naive(dt):
-            return dt.astimezone().isoformat(timespec="milliseconds")
+        if dt.tzinfo is None:
+            dt = dt.astimezone()
         return dt.isoformat(timespec="milliseconds")
     else:
         raise TypeError(f"Expected datetime object, got {type(dt)}")

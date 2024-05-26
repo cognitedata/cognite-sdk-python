@@ -623,24 +623,13 @@ class InstancesAPI(APIClient):
                 ...     auto_create_end_nodes=True
                 ... )
 
-            Make node apply using helper functions:
+            Using helper function to create valid graphql timestamp for a datetime object:
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import NodeApply
                 >>> from cognite.client.utils import datetime_to_ms_iso_timestamp
                 >>> from datetime import datetime
-                >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000)
-                >>> client = CogniteClient()
-                >>> node = NodeApply(
-                ...     space="actors",
-                ...     external_id="arnold_schwarzenegger",
-                ...     sources=[
-                ...         NodeOrEdgeData(
-                ...             ViewId("mySpace", "PersonView", "v1"),
-                ...             {"name": "Piday", "date": datetime_to_ms_iso_timestamp(my_date)}
-                ...         )
-                ...     ]
-                ... )
+                >>> import pytz
+                >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=pytz.utc)
+                >>> data_model_timestamp = datetime_to_ms_iso_timestamp(my_date)  # "2020-03-14T15:09:26.535+00:00"
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
