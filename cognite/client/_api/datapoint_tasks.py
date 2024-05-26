@@ -233,7 +233,9 @@ class _FullDatapointsQuery:
         elif aggregates is None:
             if granularity is None:
                 if query.timezone is not None:
-                    raise ValueError("'timezone' is supported for aggregate datapoints only.")
+                    # Timezone will only be used for display purposes (or when converting to pandas), so we fetch
+                    # like it doesn't exist aka concurrently (the API only supports using timezone with agg. queries)
+                    query.timezone = None  # Note: we store original timezone
                 if query.include_outside_points and query.limit is not None:
                     warnings.warn(
                         "When using `include_outside_points=True` with a finite `limit` you may get a large gap "
