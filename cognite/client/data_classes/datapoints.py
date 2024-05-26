@@ -555,7 +555,7 @@ class DatapointsArray(CogniteResource):
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
-            "timezone": self.timezone or str(self.timezone),
+            "timezone": None if self.timezone is None else str(self.timezone),
         }
 
     @classmethod
