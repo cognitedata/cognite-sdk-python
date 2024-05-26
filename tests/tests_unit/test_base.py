@@ -262,6 +262,8 @@ class TestCogniteObject:
     ):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass)
+        if cognite_object_subclass in {Datapoints, DatapointsArray}:
+            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         dumped = instance.dump(camel_case=True)
 
@@ -301,6 +303,8 @@ class TestCogniteObject:
         instance = FakeCogniteResourceGenerator(
             seed=65, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
+        if cognite_object_subclass in {Datapoints, DatapointsArray}:
+            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
@@ -435,6 +439,8 @@ class TestCogniteResource:
         instance = FakeCogniteResourceGenerator(
             seed=64, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
+        if cognite_resource_subclass in {Datapoints, DatapointsArray}:
+            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         yaml_serialised = instance.dump_yaml()
         loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
