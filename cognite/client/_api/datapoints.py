@@ -570,7 +570,7 @@ class DatapointsAPI(APIClient):
             start (int | str | dt.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. The unit can be spelled out for clarity, e.g., second(s), minute(s), hour(s), day(s), week(s), month(s), quarter(s), or year(s). Default: None.
             timezone (dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour,
                 day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time.
                 You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
@@ -809,7 +809,7 @@ class DatapointsAPI(APIClient):
             start (int | str | dt.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. The unit can be spelled out for clarity, e.g., second(s), minute(s), hour(s), day(s), week(s), month(s), quarter(s), or year(s). Default: None.
             timezone (dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour,
                 day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time.
                 You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
@@ -936,7 +936,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Note:
-            If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
+            For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -944,7 +944,7 @@ class DatapointsAPI(APIClient):
             start (int | str | dt.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. The unit can be spelled out for clarity, e.g., second(s), minute(s), hour(s), day(s), week(s), month(s), quarter(s), or year(s). Default: None.
             timezone (dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour,
                 day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time.
                 You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
@@ -965,6 +965,8 @@ class DatapointsAPI(APIClient):
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
 
         Warning:
+            If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
+
             When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
             missing a value (due to being stored in a numpy array); all will become NaNs in the dataframe.
 
