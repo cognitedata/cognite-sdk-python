@@ -468,8 +468,11 @@ class Datapoint(CogniteResource):
         dumped = super().dump(camel_case=camel_case)
         # Keep value even if None (bad status codes support missing):
         dumped["value"] = self.value
-        if include_timezone and self.timezone is not None:
-            dumped["timezone"] = str(self.timezone)
+        if include_timezone:
+            if self.timezone is not None:
+                dumped["timezone"] = str(self.timezone)
+        else:
+            dumped.pop("timezone", None)
         return dumped
 
 
@@ -548,7 +551,7 @@ class DatapointsArray(CogniteResource):
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
-            "timezone": self.timezone,
+            "timezone": self.timezone or str(self.timezone),
         }
 
     @classmethod
