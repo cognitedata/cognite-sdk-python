@@ -228,9 +228,9 @@ class APIClient:
         kwargs.setdefault("allow_redirects", False)
 
         if is_retryable:
-            res = self._http_client_with_retry.request(method=method, url=full_url, **kwargs)
+            res = self._http_client_with_retry.request(method=method, url=full_url, accept=accept, **kwargs)
         else:
-            res = self._http_client.request(method=method, url=full_url, **kwargs)
+            res = self._http_client.request(method=method, url=full_url, accept=accept, **kwargs)
 
         if not self._status_ok(res.status_code):
             self._raise_api_error(res, payload=json_payload)
