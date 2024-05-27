@@ -180,7 +180,7 @@ class _FullDatapointsQuery:
             elif isinstance(query, DatapointsQuery):
                 if query.identifier.name() != arg_name:
                     raise ValueError(f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}")
-                query._set_defaults(self.top_level_defaults)
+                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query.dump()}, id_type=arg_name)
             else:
                 self._raise_on_wrong_ts_identifier_type(query, arg_name, exp_type)
 

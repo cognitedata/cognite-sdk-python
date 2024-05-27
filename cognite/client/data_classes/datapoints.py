@@ -182,9 +182,6 @@ class DatapointsQuery:
     def __post_init__(self, id: int | None, external_id: str | None) -> None:
         # Ensure user have just specified one of id/xid:
         self._identifier = Identifier.of_either(id, external_id)
-        self._store_original_inputs()
-
-    def _store_original_inputs(self) -> None:
         # Store the possibly custom granularity (we support more than the API and a translation is done)
         self._original_granularity = self.granularity
         self._original_timezone = self.timezone
@@ -198,13 +195,6 @@ class DatapointsQuery:
 
     def __hash__(self) -> int:
         return hash(id(self))  # See note on __eq__
-
-    def _set_defaults(self, defaults: dict[str, Any]) -> None:
-        # Used to merge in default values for any non-set parameter
-        for fld in fields(self):
-            if getattr(self, fld.name) is _NOT_SET:
-                setattr(self, fld.name, defaults[fld.name])
-        self._store_original_inputs()
 
     @classmethod
     # TODO: Remove in next major version (require use of DatapointsQuery directly)
