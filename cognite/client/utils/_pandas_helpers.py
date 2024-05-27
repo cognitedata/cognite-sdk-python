@@ -83,7 +83,7 @@ def concat_dps_dataframe_list(
     if not dfs:
         return pd.DataFrame(index=pd.to_datetime([]))
     timezones = set(dps.timezone for dps in dps_lst) - {None}
-    # If attempting to join naive & aware, pandas will raise (so we don't):
+    # If attempting to join naive & aware, pandas will raise (so we don't need to):
     # TypeError: Cannot join tz-naive with tz-aware DatetimeIndex
     if len(timezones) > 1:
         warnings.warn(

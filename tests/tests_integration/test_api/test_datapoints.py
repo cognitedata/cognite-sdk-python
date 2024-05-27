@@ -176,9 +176,15 @@ def retrieve_endpoints(cognite_client):
     ]
 
 
-def ts_to_ms(ts):
+@pytest.fixture
+def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
+    # retrieve_dataframe is just a wrapper around retrieve_arrays
+    return [*retrieve_endpoints, cognite_client.time_series.data.retrieve_dataframe]
+
+
+def ts_to_ms(ts, tz=None):
     assert isinstance(ts, str)
-    return pd.Timestamp(ts).value // int(1e6)
+    return pd.Timestamp(ts, tz=tz).value // int(1e6)
 
 
 def convert_any_ts_to_integer(ts):
@@ -345,6 +351,27 @@ def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeri
     created_timeseries = cognite_client.time_series.upsert(ts, mode="patch")
     cognite_client.time_series.data.insert([(0, -40.0), (1, 0.0), (2, 100.0)], external_id=ts.external_id)
     return created_timeseries
+
+
+@pytest.fixture
+def dps_queries_dst_transitions(all_test_time_series):
+    ts, oslo = all_test_time_series[113], "Europe/Oslo"
+    return [
+        # DST from winter to summer:
+        DatapointsQuery(
+            external_id=ts.external_id,
+            start=ts_to_ms("1991-03-31 00:20:05.912", tz=oslo),
+            end=ts_to_ms("1991-03-31 03:28:51.903", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+        # DST from summer to winter:
+        DatapointsQuery(
+            external_id=ts.external_id,
+            start=ts_to_ms("1991-09-29 01:02:37.950", tz=oslo),
+            end=ts_to_ms("1991-09-29 04:12:02.558", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+    ]
 
 
 class TestRetrieveRawDatapointsAPI:
@@ -1474,6 +1501,48 @@ class TestRetrieveAggregateDatapointsAPI:
                 m4.continuous_variance[:4],
                 [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
             )
+
+    def test_timezone_raw_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
+        expected_index = pd.to_datetime(
+            [
+                # to summer
+                "1991-03-31 00:20:05.911+01:00",
+                "1991-03-31 00:39:49.780+01:00",
+                "1991-03-31 03:21:08.144+02:00",
+                "1991-03-31 03:28:06.963+02:00",
+                "1991-03-31 03:28:51.903+02:00",
+                # to winter
+                "1991-09-29 01:02:37.949+02:00",
+                "1991-09-29 02:09:29.699+02:00",
+                "1991-09-29 02:11:39.983+02:00",
+                "1991-09-29 02:10:59.442+01:00",
+                "1991-09-29 02:52:26.212+01:00",
+                "1991-09-29 04:12:02.558+01:00",
+            ],
+            utc=True,  # pandas is not great at parameter names
+        ).tz_convert("Europe/Oslo")
+        expected_to_summer_index = expected_index[:5]
+        expected_to_winter_index = expected_index[5:]
+        for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
+            to_summer, to_winter = dps_lst = endpoint(
+                external_id=dps_queries_dst_transitions, include_outside_points=True
+            )
+            if convert:
+                dps_lst = dps_lst.to_pandas().astype("Int64")
+                to_summer, to_winter = to_summer.to_pandas().astype(np.int64), to_winter.to_pandas().astype(np.int64)
+            else:
+                dps_lst = dps_lst.astype("Int64")
+                to_summer, to_winter = dps_lst.iloc[:, 0], dps_lst.iloc[:, 1]
+
+            if convert:
+                pd.testing.assert_index_equal(expected_index, dps_lst.index)
+                pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
+                pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
+            else:
+                for dps in [dps_lst, to_summer, to_winter]:
+                    pd.testing.assert_index_equal(expected_index, dps.index)
+                pd.testing.assert_index_equal(expected_to_summer_index, to_summer.dropna().index)
+                pd.testing.assert_index_equal(expected_to_winter_index, to_winter.dropna().index)
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
