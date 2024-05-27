@@ -502,7 +502,7 @@ class TransformationsAPI(APIClient):
         self,
         query: str | None = None,
         convert_to_string: bool = False,
-        limit: int = 100,
+        limit: int | None = 100,
         source_limit: int | None = 100,
         infer_schema_limit: int | None = 1000,
     ) -> TransformationPreviewResult:
@@ -511,7 +511,7 @@ class TransformationsAPI(APIClient):
         Args:
             query (str | None): SQL query to run for preview.
             convert_to_string (bool): Stringify values in the query results, default is False.
-            limit (int): Maximum number of rows to return in the final result, default is 100.
+            limit (int | None): Maximum number of rows to return in the final result, default is 100.
             source_limit (int | None): Maximum number of items to read from the data source or None to run without limit, default is 100.
             infer_schema_limit (int | None): Limit for how many rows that are used for inferring result schema, default is 1000.
 
