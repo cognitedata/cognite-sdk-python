@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.43.6] - 2024-05-27
+### Improved
+- JSON is no longer attempted decoded when e.g. expecting protobuf, which currently leads to a small performance
+  improvement for datapoints fetching.
+
 ## [7.43.5] - 2024-05-22
 ### Fixed
 - Transformation schemas no longer raise when loaded into its resource type.
