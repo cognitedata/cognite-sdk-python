@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Iterable
 from unittest import mock
 
 import pytest
-import pytz
 from _pytest.mark import ParameterSet
 
 from cognite.client.exceptions import CogniteImportError
@@ -46,14 +45,16 @@ class TestDatetimeToMsIsoTimestamp:
             assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
 
     def test_timezone_cet(self):
-        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET"))
-        utc_datetime = input_datetime.astimezone(pytz.timezone("UTC"))
+        ZoneInfo = import_zoneinfo()
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
+        utc_datetime = input_datetime.astimezone(timezone.utc)
         assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
         assert datetime_to_ms_iso_timestamp(utc_datetime) == "2020-12-31T23:00:00.000+00:00"
 
     @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
     def test_timezone_cet_in_local_tz(self):
-        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone("CET"))
+        ZoneInfo = import_zoneinfo()
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
         with tmp_set_envvar("TZ", "UTC"):
             time.tzset()
             assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
