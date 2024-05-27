@@ -1026,6 +1026,7 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            timezone=timezone,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
             limit=limit,
@@ -1039,7 +1040,7 @@ class DatapointsAPI(APIClient):
 
         if not uniform_index:
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
-                column_names, include_aggregate_name, include_granularity_name
+                column_names, include_aggregate_name, include_granularity_name, include_status=True
             )
         # Uniform index requires extra validation and processing:
         uses_tz_or_calendar_gran = any(q.use_cursors for q in fetcher.all_queries)
@@ -1052,7 +1053,7 @@ class DatapointsAPI(APIClient):
                 "OR when timezone is used OR when a calendar granularity is used (e.g. month/quarter/year)"
             )
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
-            column_names, include_aggregate_name, include_granularity_name
+            column_names, include_aggregate_name, include_granularity_name, include_status=True
         )
         start = pd.Timestamp(min(q.start_ms for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end_ms for q in fetcher.agg_queries), unit="ms")
