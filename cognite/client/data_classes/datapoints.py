@@ -555,7 +555,7 @@ class DatapointsArray(CogniteResource):
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
-            "timezone": None if self.timezone is None else str(self.timezone),
+            "timezone": self.timezone,
         }
 
     @classmethod
@@ -675,12 +675,11 @@ class DatapointsArray(CogniteResource):
         data: dict[str, float | str | None] = {
             attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])
         }
-
         if self.status_code is not None:
             data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
         if self.null_timestamps and timestamp in self.null_timestamps:
             data["value"] = None
-        return Datapoint(timestamp=timestamp, **data)  # type: ignore [arg-type]
+        return Datapoint(timestamp=timestamp, **data, timezone=self.timezone)  # type: ignore [arg-type]
 
     def _slice(self, part: slice) -> DatapointsArray:
         data: dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
@@ -747,12 +746,14 @@ class DatapointsArray(CogniteResource):
         else:
             # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour)
             #       and for some weird reason .astype(datetime) directly from dt64 returns native integer... whatwhyy
-            arrays[0] = arrays[0].astype("datetime64[ms]").astype(dt.datetime)
             if self.timezone is None:
-                arrays[0] = arrays[0].astype(str)
+                arrays[0] = arrays[0].astype("datetime64[ms]").astype(dt.datetime).astype(str)
             else:
                 arrays[0] = np.array(
-                    [convert_and_isoformat_timestamp(ts, self.timezone) for ts in arrays[0]],
+                    [
+                        convert_and_isoformat_timestamp(ts, self.timezone)
+                        for ts in arrays[0].astype("datetime64[ms]").astype(np.int64).tolist()
+                    ],
                     dtype=str,
                 )
 
@@ -760,6 +761,8 @@ class DatapointsArray(CogniteResource):
             attrs = list(map(to_camel_case, attrs))
 
         dumped = self._ts_info
+        if self.timezone is not None:
+            dumped["timezone"] = str(self.timezone)
         datapoints = [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]
 
         if self.status_code is not None or self.status_symbol is not None:
@@ -976,7 +979,7 @@ class Datapoints(CogniteResource):
     def __getitem__(self, item: int | slice) -> Datapoint | Datapoints:
         if isinstance(item, slice):
             return self._slice(item)
-        dp_args = {}
+        dp_args: dict[str, Any] = {"timezone": self.timezone}
         for attr, values in self._get_non_empty_data_fields():
             dp_args[attr] = values[item]
 
