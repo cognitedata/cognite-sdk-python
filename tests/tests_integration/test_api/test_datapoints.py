@@ -355,20 +355,33 @@ def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeri
 
 @pytest.fixture
 def dps_queries_dst_transitions(all_test_time_series):
-    ts, oslo = all_test_time_series[113], "Europe/Oslo"
+    ts1, ts2 = all_test_time_series[113], all_test_time_series[119]
+    oslo = "Europe/Oslo"
     return [
         # DST from winter to summer:
         DatapointsQuery(
-            external_id=ts.external_id,
+            id=ts1.id,
             start=ts_to_ms("1991-03-31 00:20:05.912", tz=oslo),
             end=ts_to_ms("1991-03-31 03:28:51.903", tz=oslo),
             timezone=ZoneInfo(oslo),
         ),
         # DST from summer to winter:
         DatapointsQuery(
-            external_id=ts.external_id,
+            id=ts1.id,
             start=ts_to_ms("1991-09-29 01:02:37.950", tz=oslo),
             end=ts_to_ms("1991-09-29 04:12:02.558", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+        DatapointsQuery(
+            id=ts2.id,
+            start=ts_to_ms("2023-03-26", tz=oslo),
+            end=ts_to_ms("2023-03-26 05:00:00", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+        DatapointsQuery(
+            id=ts2.id,
+            start=ts_to_ms("2023-10-29 01:00:00", tz=oslo),
+            end=ts_to_ms("2023-10-29 03:00:00.001", tz=oslo),
             timezone=ZoneInfo(oslo),
         ),
     ]
@@ -1524,9 +1537,7 @@ class TestRetrieveAggregateDatapointsAPI:
         expected_to_summer_index = expected_index[:5]
         expected_to_winter_index = expected_index[5:]
         for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
-            to_summer, to_winter = dps_lst = endpoint(
-                external_id=dps_queries_dst_transitions, include_outside_points=True
-            )
+            to_summer, to_winter = dps_lst = endpoint(id=dps_queries_dst_transitions[:2], include_outside_points=True)
             if convert:
                 dps_lst = dps_lst.to_pandas().astype("Int64")
                 to_summer, to_winter = to_summer.to_pandas().astype(np.int64), to_winter.to_pandas().astype(np.int64)
@@ -1534,15 +1545,62 @@ class TestRetrieveAggregateDatapointsAPI:
                 dps_lst = dps_lst.astype("Int64")
                 to_summer, to_winter = dps_lst.iloc[:, 0], dps_lst.iloc[:, 1]
 
-            if convert:
-                pd.testing.assert_index_equal(expected_index, dps_lst.index)
-                pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
-                pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
-            else:
-                for dps in [dps_lst, to_summer, to_winter]:
+            if not convert:
+                for dps in [to_summer, to_winter]:
                     pd.testing.assert_index_equal(expected_index, dps.index)
-                pd.testing.assert_index_equal(expected_to_summer_index, to_summer.dropna().index)
-                pd.testing.assert_index_equal(expected_to_winter_index, to_winter.dropna().index)
+                to_summer = to_summer.dropna()
+                to_winter = to_winter.dropna()
+
+            assert list(range(89712, 89717)) == to_summer.squeeze().values.tolist()
+            assert list(range(96821, 96827)) == to_winter.squeeze().values.tolist()
+            pd.testing.assert_index_equal(expected_index, dps_lst.index)
+            pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
+            pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
+
+    def test_timezone_agg_query_dst_transitions(
+        self, cognite_client, all_retrieve_endpoints, dps_queries_dst_transitions, monkeypatch
+    ):
+        monkeypatch.setattr(cognite_client.time_series.data, "_api_subversion", "beta")
+        expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
+        expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
+        expected_index = pd.to_datetime(
+            [
+                # to summer
+                "2023-03-26 00:00:00+01:00",
+                "2023-03-26 01:00:00+01:00",
+                "2023-03-26 03:00:00+02:00",
+                "2023-03-26 04:00:00+02:00",
+                # to winter
+                "2023-10-29 01:00:00+02:00",
+                "2023-10-29 02:00:00+02:00",
+                "2023-10-29 02:00:00+01:00",
+                "2023-10-29 03:00:00+01:00",
+            ],
+            utc=True,  # pandas is still not great at parameter names
+        ).tz_convert("Europe/Oslo")
+        expected_to_summer_index = expected_index[:4]
+        expected_to_winter_index = expected_index[4:]
+        for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
+            to_summer, to_winter = dps_lst = endpoint(
+                id=dps_queries_dst_transitions[2:], aggregates="average", granularity="1hour"
+            )
+            if convert:
+                dps_lst = dps_lst.to_pandas()
+                to_summer, to_winter = to_summer.to_pandas(), to_winter.to_pandas()
+            else:
+                to_summer, to_winter = dps_lst.iloc[:, 0], dps_lst.iloc[:, 1]
+
+            if not convert:
+                for dps in [to_summer, to_winter]:
+                    pd.testing.assert_index_equal(expected_index, dps.index)
+                to_summer = to_summer.dropna()
+                to_winter = to_winter.dropna()
+
+            assert_allclose(expected_values1, to_summer.squeeze().to_numpy())
+            assert_allclose(expected_values2, to_winter.squeeze().to_numpy())
+            pd.testing.assert_index_equal(expected_index, dps_lst.index)
+            pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
+            pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
