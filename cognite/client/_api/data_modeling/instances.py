@@ -626,9 +626,8 @@ class InstancesAPI(APIClient):
             Using helper function to create valid graphql timestamp for a datetime object:
 
                 >>> from cognite.client.utils import datetime_to_ms_iso_timestamp
-                >>> from datetime import datetime
-                >>> import pytz
-                >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=pytz.utc)
+                >>> from datetime import datetime, timezone
+                >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=timezone.utc)
                 >>> data_model_timestamp = datetime_to_ms_iso_timestamp(my_date)  # "2020-03-14T15:09:26.535+00:00"
         """
         other_parameters = {
