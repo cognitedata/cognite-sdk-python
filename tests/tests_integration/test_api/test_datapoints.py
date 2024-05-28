@@ -20,7 +20,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
@@ -1560,6 +1560,7 @@ class TestRetrieveAggregateDatapointsAPI:
     def test_timezone_agg_query_dst_transitions(
         self, cognite_client, all_retrieve_endpoints, dps_queries_dst_transitions, monkeypatch
     ):
+        # TODO: Remove when timezone is out of beta
         monkeypatch.setattr(cognite_client.time_series.data, "_api_subversion", "beta")
         expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
         expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
@@ -1601,6 +1602,54 @@ class TestRetrieveAggregateDatapointsAPI:
             pd.testing.assert_index_equal(expected_index, dps_lst.index)
             pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
             pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
+
+    def test_calendar_granularities_in_utc_and_timezone(
+        self, cognite_client, retrieve_endpoints, all_test_time_series, monkeypatch
+    ):
+        # TODO: Remove when timezone is out of beta
+        monkeypatch.setattr(cognite_client.time_series.data, "_api_subversion", "beta")
+        daily_ts, oslo = all_test_time_series[108], ZoneInfo("Europe/Oslo")
+        granularities = [
+            "1" + random.choice(["mo", "month", "months"]),
+            "1" + random.choice(["q", "quarter", "quarters"]),
+            "1" + random.choice(["y", "year", "years"]),
+        ]
+        for endpoint in retrieve_endpoints:
+            mo_utc, q_utc, y_utc, mo_oslo, q_oslo, y_oslo = endpoint(
+                id=[DatapointsQuery(id=daily_ts.id, granularity=gran) for gran in granularities],
+                external_id=[
+                    DatapointsQuery(external_id=daily_ts.external_id, granularity=gran, timezone=oslo)
+                    for gran in granularities
+                ],
+                start=ts_to_ms("1964-01-01"),
+                end=ts_to_ms("1974-12-31"),
+                aggregates="count",
+            )
+            assert_equal(mo_utc.count, mo_oslo.count)
+            assert_equal(q_utc.count, q_oslo.count)
+            assert_equal(y_utc.count, y_oslo.count)
+
+            # Verify that the number of days per year/quarter/month follows the actual calendar:
+            exp_days_per_year = [
+                365, 365, 365, 366,
+                365, 365, 365, 366,
+                365, 365,  #   ^^^
+            ]  # fmt: skip
+            exp_days_per_quarter = [
+                90, 91, 92, 92,
+                90, 91, 92, 92,
+                90, 91, 92, 92,
+                91, 91, 92, 92,  # Look, I'm special
+            ]  # fmt: skip
+            exp_days_per_month = [
+                31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+                31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+                31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+                31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,  # star of the show: Feb 29
+            ]  # fmt: skip
+            assert_equal(exp_days_per_year, y_utc.count)
+            assert_equal(exp_days_per_quarter, q_utc.count[: 4 * 4])
+            assert_equal(exp_days_per_month, mo_utc.count[: 12 * 4])
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
