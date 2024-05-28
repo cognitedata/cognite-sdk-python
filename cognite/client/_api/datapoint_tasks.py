@@ -312,7 +312,8 @@ class _FullDatapointsQuery:
         end = _FullDatapointsQuery._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
         if end <= start:
             raise ValueError(
-                f"Invalid time range, {end=} ({query.end}) must be later than {start=} ({query.start})"
+                f"Invalid time range, {end=} {f'({query.end!r}) ' if end != query.end else ''}"
+                f"must be later than {start=} {f'({query.start!r}) ' if start != query.start else ''}"
                 f"(from query: {query.identifier.as_dict(camel_case=False)})"
             )
         # We align start and end so that we can efficiently parallelize aggregate dps fetching. Queries
