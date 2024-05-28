@@ -19,6 +19,7 @@ from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     convert_and_isoformat_time_attrs,
     datetime_to_ms,
+    datetime_to_ms_iso_timestamp,
     granularity_to_ms,
     import_zoneinfo,
     ms_to_datetime,
@@ -33,6 +34,36 @@ from tests.utils import cdf_aggregate, tmp_set_envvar
 
 if TYPE_CHECKING:
     import pandas
+
+
+class TestDatetimeToMsIsoTimestamp:
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
+    def test_timezone_unaware(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
+        with tmp_set_envvar("TZ", "CET"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+
+    @pytest.mark.dsl
+    def test_timezone_cet(self):
+        ZoneInfo = import_zoneinfo()
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
+        utc_datetime = input_datetime.astimezone(timezone.utc)
+        assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+        assert datetime_to_ms_iso_timestamp(utc_datetime) == "2020-12-31T23:00:00.000+00:00"
+
+    @pytest.mark.dsl
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
+    def test_timezone_cet_in_local_tz(self):
+        ZoneInfo = import_zoneinfo()
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
+        with tmp_set_envvar("TZ", "UTC"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+
+    def test_incorrect_type(self):
+        with pytest.raises(TypeError, match="Expected datetime object, got <class 'str'>"):
+            datetime_to_ms_iso_timestamp("2021-01-01T00:00:00.000")
 
 
 class TestDatetimeToMs:

@@ -102,6 +102,26 @@ def ms_to_datetime(ms: int | float) -> datetime:
     return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
+def datetime_to_ms_iso_timestamp(dt: datetime) -> str:
+    """Converts a datetime object to a string representing a timestamp in the ISO-format expected by the Cognite GraphQL API.
+
+    Args:
+        dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
+
+    Raises:
+        TypeError: If dt is not a datetime object
+
+    Returns:
+        str: Timestamp string in ISO 8601 format with milliseconds
+    """
+    if isinstance(dt, datetime):
+        if dt.tzinfo is None:
+            dt = dt.astimezone()
+        return dt.isoformat(timespec="milliseconds")
+    else:
+        raise TypeError(f"Expected datetime object, got {type(dt)}")
+
+
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: dict[str, int]) -> int | None:
     pattern = pattern.format("|".join(unit_in_ms))
     if res := re.fullmatch(pattern, string):
