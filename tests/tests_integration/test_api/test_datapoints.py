@@ -1557,11 +1557,7 @@ class TestRetrieveAggregateDatapointsAPI:
             pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
             pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
 
-    def test_timezone_agg_query_dst_transitions(
-        self, cognite_client, all_retrieve_endpoints, dps_queries_dst_transitions, monkeypatch
-    ):
-        # TODO: Remove when timezone is out of beta
-        monkeypatch.setattr(cognite_client.time_series.data, "_api_subversion", "beta")
+    def test_timezone_agg_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions, monkeypatch):
         expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
         expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
         expected_index = pd.to_datetime(
@@ -1603,11 +1599,7 @@ class TestRetrieveAggregateDatapointsAPI:
             pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
             pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
 
-    def test_calendar_granularities_in_utc_and_timezone(
-        self, cognite_client, retrieve_endpoints, all_test_time_series, monkeypatch
-    ):
-        # TODO: Remove when timezone is out of beta
-        monkeypatch.setattr(cognite_client.time_series.data, "_api_subversion", "beta")
+    def test_calendar_granularities_in_utc_and_timezone(self, retrieve_endpoints, all_test_time_series, monkeypatch):
         daily_ts, oslo = all_test_time_series[108], ZoneInfo("Europe/Oslo")
         granularities = [
             "1" + random.choice(["mo", "month", "months"]),
