@@ -580,7 +580,11 @@ class DatapointsAPI(APIClient):
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. The unit can be spelled out for clarity, e.g., second(s), minute(s), hour(s), day(s), week(s), month(s), quarter(s), or year(s). Default: None.
-            timezone (str | dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            timezone (str | dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved).
+                For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location,
+                like 'Europe/Oslo', pass a string or ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
+                from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not
+                supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -615,7 +619,7 @@ class DatapointsAPI(APIClient):
 
             In the two code examples above, we have a `dps` object (an instance of ``Datapoints``), and a `dps_lst` object (an instance of ``DatapointsList``).
             On `dps`, which in this case contains raw datapoints, you may access the underlying data directly by using the `.value` attribute. This works for
-            both numeric and string (raw) datapoints, but not aggregates - they must be accessed by their respective names, because you're allowed to fetch up
+            both numeric and string (raw) datapoints, but not aggregates - they must be accessed by their respective names, because you're allowed to fetch
             all available aggregates simultaneously, and they are stored on the same object:
 
                 >>> raw_data = dps.value
@@ -633,8 +637,8 @@ class DatapointsAPI(APIClient):
                 ...     pass  # do something!
 
             All parameters can be individually set if you use and pass ``DatapointsQuery`` objects (even ``ignore_unknown_ids``, contrary to the API).
-            If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
-            mix any kind of ids and external ids: Single identifiers, single DatapointsQuery objects and (mixed) lists of these.
+            If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist, so think of these as defaults).
+            You are free to mix any kind of ids and external ids: Single identifiers, single DatapointsQuery objects and (mixed) lists of these.
 
             Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
             the string directly for convenience):
@@ -642,7 +646,7 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client.data_classes import DatapointsQuery
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
-                ...         DatapointsQuery(id=42, end="1d-ago", aggregates= "average"),
+                ...         DatapointsQuery(id=42, end="1d-ago", aggregates="average"),
                 ...         DatapointsQuery(id=69, end="2d-ago", aggregates=["average"]),
                 ...         DatapointsQuery(id=96, end="3d-ago", aggregates=["min", "max", "count"]),
                 ...     ],
@@ -650,9 +654,20 @@ class DatapointsAPI(APIClient):
                 ...     start="5d-ago",
                 ...     granularity="1h")
 
+            Certain aggregates are very useful when they follow the calendar, for example electricity consumption per day, week, month
+            or year. You may request such calendar-based aggregates in a specific timezone to make them even more useful: daylight savings (DST)
+            will be taken care of automatically and the datapoints will be aligned to the timezone. Note: Calendar granularities and timezone
+            can be used independently. To get monthly local aggregates in Oslo, Norway you can do:
+
+                >>> dps = client.time_series.data.retrieve(
+                ...     id=123,
+                ...     aggregates="sum",
+                ...     granularity="1month",
+                ...     timezone="Europe/Oslo")
+
             When requesting multiple time series, an easy way to get the datapoints of a specific one is to use the `.get` method
             on the returned ``DatapointsList`` object, then specify if you want `id` or `external_id`. Note: If you fetch a time series
-            by using `id`, you can still access it with its `external_id` (and the opposite way around), if you know it::
+            by using `id`, you can still access it with its `external_id` (and the opposite way around), if you know it:
 
                 >>> from datetime import datetime, timezone
                 >>> utc = timezone.utc
@@ -703,27 +718,6 @@ class DatapointsAPI(APIClient):
                 ...     id=123,
                 ...     start=MIN_TIMESTAMP_MS,
                 ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
-
-            Another example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query:
-
-                >>> ts1 = 1337
-                >>> ts2 = DatapointsQuery(
-                ...     id=42,
-                ...     start=-12345,  # Overrides `start` arg. below
-                ...     end="1h-ago",
-                ...     limit=1000,  # Overrides `limit` arg. below
-                ...     include_outside_points=True,
-                ... )
-                >>> ts3 = DatapointsQuery(
-                ...     id=11,
-                ...     end="1h-ago",
-                ...     aggregates="max",
-                ...     granularity="42h",
-                ...     include_outside_points=False,
-                ...     ignore_unknown_ids=True,  # Overrides `ignore_unknown_ids` arg. below
-                ... )
-                >>> dps_lst = client.time_series.data.retrieve(
-                ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False)
 
             If you have a time series with 'unit_external_id' set, you can use the 'target_unit' parameter to convert the datapoints
             to the desired unit. In the example below, we are converting temperature readings from a sensor measured and stored in Celsius,
@@ -817,7 +811,11 @@ class DatapointsAPI(APIClient):
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. The unit can be spelled out for clarity, e.g., second(s), minute(s), hour(s), day(s), week(s), month(s), quarter(s), or year(s). Default: None.
-            timezone (str | dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            timezone (str | dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved).
+                For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location,
+                like 'Europe/Oslo', pass a string or ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
+                from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not
+                supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -950,7 +948,11 @@ class DatapointsAPI(APIClient):
             end (int | str | dt.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. The unit can be spelled out for clarity, e.g., second(s), minute(s), hour(s), day(s), week(s), month(s), quarter(s), or year(s). Default: None.
-            timezone (str | dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like Europe/Oslo, pass a ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            timezone (str | dt.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved).
+                For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, -day or -month. For timezones of type Region/Location,
+                like 'Europe/Oslo', pass a string or ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
+                from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not
+                supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
