@@ -598,6 +598,10 @@ class DatapointsArray(CogniteResource):
                 array_by_attr["statusCode"] = np.array([s["code"] for s in status], dtype=np.uint32)
                 array_by_attr["statusSymbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
 
+        timezone = dps_dct.get("timezone")
+        if isinstance(timezone, str):
+            with contextlib.suppress(ValueError):  # Dont fail load if invalid
+                timezone = parse_str_timezone(timezone)
         return cls(
             id=dps_dct.get("id"),
             external_id=dps_dct.get("externalId"),
@@ -627,6 +631,7 @@ class DatapointsArray(CogniteResource):
             status_code=array_by_attr.get("statusCode"),
             status_symbol=array_by_attr.get("statusSymbol"),
             null_timestamps=set(dps_dct["nullTimestamps"]) if "nullTimestamps" in dps_dct else None,
+            timezone=timezone,  # type: ignore [arg-type]
         )
 
     @classmethod

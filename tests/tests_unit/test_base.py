@@ -164,8 +164,6 @@ class TestCogniteObject:
     def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass)
-        if cognite_object_subclass in {Datapoints, DatapointsArray}:
-            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         dumped = instance.dump(camel_case=True)
         json_serialised = _json.dumps(dumped)
@@ -262,8 +260,6 @@ class TestCogniteObject:
     ):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass)
-        if cognite_object_subclass in {Datapoints, DatapointsArray}:
-            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         dumped = instance.dump(camel_case=True)
 
@@ -303,8 +299,6 @@ class TestCogniteObject:
         instance = FakeCogniteResourceGenerator(
             seed=65, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
-        if cognite_object_subclass in {Datapoints, DatapointsArray}:
-            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
