@@ -4,7 +4,6 @@ import datetime as dt
 import math
 import numbers
 import operator as op
-import sys
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -31,7 +30,7 @@ from typing import (
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from typing_extensions import TypeAlias
 
-from cognite.client._constants import NUMPY_IS_AVAILABLE, ZONEINFO_IS_AVAILABLE
+from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
 from cognite.client._proto.data_points_pb2 import (
     AggregateDatapoint,
@@ -47,9 +46,9 @@ from cognite.client.data_classes.datapoints import (
     _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._importing import import_zoneinfo
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
+    ZoneInfo,
     align_start_and_end_for_granularity,
     granularity_to_ms,
     split_granularity_into_quantity_and_normalized_unit,
@@ -66,11 +65,6 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
-
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
-    else:
-        from backports.zoneinfo import ZoneInfo
 
 
 _T = TypeVar("_T")
@@ -265,7 +259,7 @@ class _FullDatapointsQuery:
             # returned instead so we have to first get the utc offset:
             api_tz = str(dt.timezone(tz.utcoffset(None)))  # avoiding string parsing like a pro
 
-        elif ZONEINFO_IS_AVAILABLE and isinstance(tz, import_zoneinfo()):
+        elif isinstance(tz, ZoneInfo):
             # ZoneInfo is not a required dependency, hence we only check for it when available
             if tz.key is not None:
                 api_tz = tz.key

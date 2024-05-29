@@ -11,20 +11,20 @@ from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, overload
 
-from cognite.client.utils._importing import _import_zoneinfo_not_found_error, import_zoneinfo, local_import
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+else:
+    from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 if TYPE_CHECKING:
     from datetime import tzinfo
 
     import pandas
 
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
-    else:
-        from backports.zoneinfo import ZoneInfo
-
-
+UTC = ZoneInfo("UTC")  # type: ignore [abstract]
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 VARIABLE_LENGTH_UNITS = {"month", "quarter", "year"}
@@ -71,10 +71,6 @@ _GRANULARITY_CONVERSION = {
     "quarter": (3, "mo"),
     "year": (12, "mo"),
 }
-
-
-def get_utc_zoneinfo() -> ZoneInfo:
-    return import_zoneinfo()("UTC")
 
 
 def datetime_to_ms(dt: datetime) -> int:
@@ -545,11 +541,10 @@ def _to_fixed_utc_intervals_variable_unit_length(
 ) -> list[dict[str, datetime | str]]:
     freq = to_pandas_freq(f"{multiplier}{unit}", start)
     index = pandas_date_range_tz(start, end, freq)
-    utc = get_utc_zoneinfo()
     return [
         {
-            "start": start.to_pydatetime().astimezone(utc),
-            "end": end.to_pydatetime().astimezone(utc),
+            "start": start.to_pydatetime().astimezone(UTC),
+            "end": end.to_pydatetime().astimezone(UTC),
             "granularity": f"{_check_max_granularity_limit((end - start) // timedelta(hours=1), granularity)}h",
         }
         for start, end in zip(index[:-1], index[1:])
@@ -566,7 +561,6 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     transition_raw = index[(utc_offsets != utc_offsets.shift(-1)) | (utc_offsets != utc_offsets.shift(1))]
 
     transitions = []
-    utc = get_utc_zoneinfo()
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     for t_start, t_end in zip(transition_raw[:-1], transition_raw[1:]):
@@ -583,8 +577,8 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
         transitions.append(
             {
-                "start": t_start.to_pydatetime().astimezone(utc),
-                "end": t_end.to_pydatetime().astimezone(utc),
+                "start": t_start.to_pydatetime().astimezone(UTC),
+                "end": t_end.to_pydatetime().astimezone(UTC),
                 "granularity": f"{_check_max_granularity_limit(freq + dst_adjustment, granularity)}h",
             }
         )
@@ -634,10 +628,9 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
     """
     if start_tz is end_tz:
         return True
-    ZoneInfo, ZoneInfoNotFoundError = import_zoneinfo(), _import_zoneinfo_not_found_error()
     with suppress(ValueError, ZoneInfoNotFoundError):
         # ValueError is raised for non-conforming keys (ZoneInfoNotFoundError is self-explanatory)
-        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):
+        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):  # type: ignore [abstract]
             return True
     return False
 
@@ -652,13 +645,12 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
     if not _timezones_are_equal(start_tz, end_tz):
         raise ValueError(f"'start' and 'end' represent different timezones: '{start_tz}' and '{end_tz}'.")
 
-    ZoneInfo = import_zoneinfo()
     if isinstance(start_tz, ZoneInfo):
         return start_tz
 
     pd = local_import("pandas")
     if isinstance(start, pd.Timestamp):
-        return ZoneInfo(str(start_tz))
+        return ZoneInfo(str(start_tz))  # type: ignore [abstract]
 
     raise ValueError("Only tz-aware pandas.Timestamp and datetime (must be using ZoneInfo) are supported.")
 
@@ -682,3 +674,6 @@ def to_pandas_freq(granularity: str, start: datetime) -> str:
         floored = QuarterAligner.floor(start)
         unit += {1: "-JAN", 4: "-APR", 7: "-JUL", 10: "-OCT"}[floored.month]
     return f"{multiplier}{unit}"
+
+
+__all__ = ["ZoneInfo", "ZoneInfoNotFoundError"]  # Fix: Module does not explicitly export attribute "ZoneInfo

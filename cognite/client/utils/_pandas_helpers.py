@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import sys
 import warnings
 from datetime import timezone
 from inspect import signature
@@ -9,22 +8,16 @@ from itertools import chain
 from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal, Sequence
 
-from cognite.client._constants import ZONEINFO_IS_AVAILABLE
 from cognite.client.exceptions import CogniteImportError
-from cognite.client.utils._importing import import_zoneinfo, local_import
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._time import TIME_ATTRIBUTES
+from cognite.client.utils._time import TIME_ATTRIBUTES, ZoneInfo
 
 if TYPE_CHECKING:
     import pandas as pd
 
     from cognite.client.data_classes import DatapointsArrayList, DatapointsList
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
-
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
-    else:
-        from backports.zoneinfo import ZoneInfo
 
 
 NULLABLE_INT_COLS = {
@@ -55,7 +48,7 @@ def pandas_major_version() -> int:
 def convert_tz_for_pandas(tz: str | timezone | ZoneInfo | None) -> str | timezone | None:
     if tz is None or isinstance(tz, (str, timezone)):
         return tz
-    if ZONEINFO_IS_AVAILABLE and isinstance(tz, import_zoneinfo()):
+    if isinstance(tz, ZoneInfo):
         # pandas is not happy about ZoneInfo :shrug:
         if tz.key is not None:
             return tz.key

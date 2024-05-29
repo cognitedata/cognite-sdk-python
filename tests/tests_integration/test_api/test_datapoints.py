@@ -42,6 +42,7 @@ from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
     UNIT_IN_MS,
+    ZoneInfo,
     align_start_and_end_for_granularity,
     granularity_to_ms,
     timestamp_to_ms,
@@ -56,12 +57,6 @@ from tests.utils import (
     rng_context,
     set_max_workers,
 )
-
-try:
-    from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo
-
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]

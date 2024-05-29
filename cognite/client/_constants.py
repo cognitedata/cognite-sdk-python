@@ -18,13 +18,3 @@ try:
 
 except ImportError:  # pragma no cover
     NUMPY_IS_AVAILABLE = False
-
-try:
-    from cognite.client.utils._importing import import_zoneinfo
-
-    import_zoneinfo()
-
-    ZONEINFO_IS_AVAILABLE = True
-
-except ImportError:  # pragma no cover
-    ZONEINFO_IS_AVAILABLE = False

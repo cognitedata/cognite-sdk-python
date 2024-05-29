@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import sys
 import typing
 import warnings
 from collections import defaultdict
@@ -41,7 +40,7 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
-from cognite.client.utils._time import convert_and_isoformat_time_attrs, convert_and_isoformat_timestamp
+from cognite.client.utils._time import ZoneInfo, convert_and_isoformat_time_attrs, convert_and_isoformat_timestamp
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if NUMPY_IS_AVAILABLE:
@@ -59,11 +58,6 @@ if TYPE_CHECKING:
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
-
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
-    else:
-        from backports.zoneinfo import ZoneInfo
 
 
 Aggregate = Literal[

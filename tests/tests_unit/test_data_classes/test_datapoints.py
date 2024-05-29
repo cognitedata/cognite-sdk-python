@@ -6,7 +6,7 @@ from datetime import timedelta, timezone
 import pytest
 
 from cognite.client.data_classes import Datapoint, DatapointsArray
-from cognite.client.utils._importing import import_zoneinfo
+from cognite.client.utils._time import ZoneInfo
 
 
 class TestDatapoint:
@@ -41,7 +41,6 @@ class TestDatapoint:
     def test_display_str_and_to_pandas_with_timezone_and_zoneinfo(self, epoch_ms, offset_hours, zone, expected):
         import pandas as pd
 
-        ZoneInfo = import_zoneinfo()
         dp1 = Datapoint(timestamp=epoch_ms, value="foo", average=123)
         dp2 = Datapoint(timestamp=epoch_ms, value="foo", average=123)
         dp1.timezone = ZoneInfo(zone)

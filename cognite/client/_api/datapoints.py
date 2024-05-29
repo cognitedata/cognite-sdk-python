@@ -5,7 +5,6 @@ import functools
 import heapq
 import itertools
 import math
-import sys
 import time
 import warnings
 from abc import ABC, abstractmethod
@@ -62,6 +61,7 @@ from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
+    ZoneInfo,
     align_large_granularity,
     pandas_date_range_tz,
     timestamp_to_ms,
@@ -79,11 +79,6 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
-
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
-    else:
-        from backports.zoneinfo import ZoneInfo
 
 
 as_completed = import_as_completed()

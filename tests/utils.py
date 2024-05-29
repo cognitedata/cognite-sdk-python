@@ -552,7 +552,6 @@ class FakeCogniteResourceGenerator:
         import numpy.typing as npt
 
         from cognite.client import CogniteClient
-        from cognite.client.utils._importing import import_zoneinfo
 
         return {
             "CogniteClient": CogniteClient,
@@ -561,7 +560,6 @@ class FakeCogniteResourceGenerator:
             "NumpyInt64Array": npt.NDArray[np.int64],
             "NumpyFloat64Array": npt.NDArray[np.float64],
             "NumpyObjArray": npt.NDArray[np.object_],
-            "ZoneInfo": import_zoneinfo(),
         }
 
     @classmethod
