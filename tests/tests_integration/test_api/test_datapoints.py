@@ -14,7 +14,7 @@ import re
 import unittest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Callable, Literal
 from unittest.mock import patch
 
 import numpy as np
@@ -921,6 +921,56 @@ class TestRetrieveRawDatapointsAPI:
             assert b3.status_code[-1] == 2165309440
             assert b3.status_symbol[-1] == "BadLicenseNotAvailable"
 
+    def test_query_no_ts_exists(self, retrieve_endpoints):
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            ts_id = random_cognite_ids(1)  # list of len 1
+            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
+            assert isinstance(res_lst, exp_res_lst_type)
+            # SDK bug v<5, id mapping would not exist because empty `.data` on res_lst:
+            assert res_lst.get(id=ts_id[0]) is None
+
+    def test_timezone_raw_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
+        expected_index = pd.to_datetime(
+            [
+                # to summer
+                "1991-03-31 00:20:05.911+01:00",
+                "1991-03-31 00:39:49.780+01:00",
+                "1991-03-31 03:21:08.144+02:00",
+                "1991-03-31 03:28:06.963+02:00",
+                "1991-03-31 03:28:51.903+02:00",
+                # to winter
+                "1991-09-29 01:02:37.949+02:00",
+                "1991-09-29 02:09:29.699+02:00",
+                "1991-09-29 02:11:39.983+02:00",
+                "1991-09-29 02:10:59.442+01:00",
+                "1991-09-29 02:52:26.212+01:00",
+                "1991-09-29 04:12:02.558+01:00",
+            ],
+            utc=True,  # pandas is not great at parameter names
+        ).tz_convert("Europe/Oslo")
+        expected_to_summer_index = expected_index[:5]
+        expected_to_winter_index = expected_index[5:]
+        for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
+            to_summer, to_winter = dps_lst = endpoint(id=dps_queries_dst_transitions[:2], include_outside_points=True)
+            if convert:
+                dps_lst = dps_lst.to_pandas().astype("Int64")
+                to_summer, to_winter = to_summer.to_pandas().astype(np.int64), to_winter.to_pandas().astype(np.int64)
+            else:
+                dps_lst = dps_lst.astype("Int64")
+                to_summer, to_winter = dps_lst.iloc[:, 0], dps_lst.iloc[:, 1]
+
+            if not convert:
+                for dps in [to_summer, to_winter]:
+                    pd.testing.assert_index_equal(expected_index, dps.index)
+                to_summer = to_summer.dropna()
+                to_winter = to_winter.dropna()
+
+            assert list(range(89712, 89717)) == to_summer.squeeze().values.tolist()
+            assert list(range(96821, 96827)) == to_winter.squeeze().values.tolist()
+            pd.testing.assert_index_equal(expected_index, dps_lst.index)
+            pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
+            pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
+
 
 class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
@@ -1362,65 +1412,20 @@ class TestRetrieveAggregateDatapointsAPI:
             assert df[f"{xid}|count"].dtype == np.int64
             assert df[f"{xid}|interpolation"].dtype == np.float64
 
-    def test_query_no_ts_exists(self, retrieve_endpoints):
-        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
-            ts_id = random_cognite_ids(1)  # list of len 1
-            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
-            assert isinstance(res_lst, exp_res_lst_type)
-            # SDK bug v<5, id mapping would not exist because empty `.data` on res_lst:
-            assert res_lst.get(id=ts_id[0]) is None
-
-    def test_query_with_duplicates(self, retrieve_endpoints, one_mill_dps_ts, ms_bursty_ts):
-        ts_numeric, ts_string = one_mill_dps_ts
-        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
-            res_lst = endpoint(
-                id=[
-                    ms_bursty_ts.id,  # This is the only non-duplicated
-                    ts_string.id,
-                    {"id": ts_numeric.id, "granularity": "1d", "aggregates": "average"},
-                ],
-                external_id=[
-                    ts_string.external_id,
-                    ts_numeric.external_id,
-                    {"external_id": ts_numeric.external_id, "granularity": "1d", "aggregates": "average"},
-                ],
-                limit=5,
-            )
-            assert isinstance(res_lst, exp_res_lst_type)
-            # Check non-duplicated in result:
-            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)
-            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)
-            # Check duplicated in result:
-            assert isinstance(res_lst.get(id=ts_numeric.id), list)
-            assert isinstance(res_lst.get(id=ts_string.id), list)
-            assert isinstance(res_lst.get(external_id=ts_numeric.external_id), list)
-            assert isinstance(res_lst.get(external_id=ts_string.external_id), list)
-            assert len(res_lst.get(id=ts_numeric.id)) == 3
-            assert len(res_lst.get(id=ts_string.id)) == 2
-            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
-            assert len(res_lst.get(external_id=ts_string.external_id)) == 2
-
-    @pytest.mark.parametrize(
-        "retrieve_method_name, kwargs",
-        itertools.product(
-            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
-            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
-        ),
-    )
+    @pytest.mark.parametrize("kwargs", (dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")))
     def test_retrieve_methods_in_target_unit(
         self,
-        retrieve_method_name: str,
+        all_retrieve_endpoints: list[Callable],
         kwargs: dict,
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
         ts = timeseries_degree_c_minus40_0_100
-        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
-
-        res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
-        if isinstance(res, pd.DataFrame):
-            res = DatapointsArray(max=res.values)
-        assert math.isclose(res.max[0], 212)
+        for retrieve_method in all_retrieve_endpoints:
+            res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
+            if isinstance(res, pd.DataFrame):
+                res = DatapointsArray(max=res.values)
+            assert math.isclose(res.max[0], 212)
 
     def test_status_codes_affect_aggregate_calculations(self, retrieve_endpoints, ts_status_codes):
         mixed_ts, _, bad_ts, _ = ts_status_codes  # No aggregates for string dps
@@ -1509,48 +1514,6 @@ class TestRetrieveAggregateDatapointsAPI:
                 m4.continuous_variance[:4],
                 [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
             )
-
-    def test_timezone_raw_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
-        expected_index = pd.to_datetime(
-            [
-                # to summer
-                "1991-03-31 00:20:05.911+01:00",
-                "1991-03-31 00:39:49.780+01:00",
-                "1991-03-31 03:21:08.144+02:00",
-                "1991-03-31 03:28:06.963+02:00",
-                "1991-03-31 03:28:51.903+02:00",
-                # to winter
-                "1991-09-29 01:02:37.949+02:00",
-                "1991-09-29 02:09:29.699+02:00",
-                "1991-09-29 02:11:39.983+02:00",
-                "1991-09-29 02:10:59.442+01:00",
-                "1991-09-29 02:52:26.212+01:00",
-                "1991-09-29 04:12:02.558+01:00",
-            ],
-            utc=True,  # pandas is not great at parameter names
-        ).tz_convert("Europe/Oslo")
-        expected_to_summer_index = expected_index[:5]
-        expected_to_winter_index = expected_index[5:]
-        for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
-            to_summer, to_winter = dps_lst = endpoint(id=dps_queries_dst_transitions[:2], include_outside_points=True)
-            if convert:
-                dps_lst = dps_lst.to_pandas().astype("Int64")
-                to_summer, to_winter = to_summer.to_pandas().astype(np.int64), to_winter.to_pandas().astype(np.int64)
-            else:
-                dps_lst = dps_lst.astype("Int64")
-                to_summer, to_winter = dps_lst.iloc[:, 0], dps_lst.iloc[:, 1]
-
-            if not convert:
-                for dps in [to_summer, to_winter]:
-                    pd.testing.assert_index_equal(expected_index, dps.index)
-                to_summer = to_summer.dropna()
-                to_winter = to_winter.dropna()
-
-            assert list(range(89712, 89717)) == to_summer.squeeze().values.tolist()
-            assert list(range(96821, 96827)) == to_winter.squeeze().values.tolist()
-            pd.testing.assert_index_equal(expected_index, dps_lst.index)
-            pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
-            pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
 
     def test_timezone_agg_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions, monkeypatch):
         expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
@@ -2066,6 +2029,36 @@ class TestRetrieveMixedRawAndAgg:
             assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)
             dps_id = res_lst.get(id=ts_num.id)
             assert isinstance(dps_id, exp_res_lst_type._RESOURCE)
+
+    def test_query_with_duplicates(self, retrieve_endpoints, one_mill_dps_ts, ms_bursty_ts):
+        ts_numeric, ts_string = one_mill_dps_ts
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            res_lst = endpoint(
+                id=[
+                    ms_bursty_ts.id,  # This is the only non-duplicated
+                    ts_string.id,
+                    {"id": ts_numeric.id, "granularity": "1d", "aggregates": "average"},
+                ],
+                external_id=[
+                    ts_string.external_id,
+                    ts_numeric.external_id,
+                    {"external_id": ts_numeric.external_id, "granularity": "1d", "aggregates": "average"},
+                ],
+                limit=5,
+            )
+            assert isinstance(res_lst, exp_res_lst_type)
+            # Check non-duplicated in result:
+            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)
+            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)
+            # Check duplicated in result:
+            assert isinstance(res_lst.get(id=ts_numeric.id), list)
+            assert isinstance(res_lst.get(id=ts_string.id), list)
+            assert isinstance(res_lst.get(external_id=ts_numeric.external_id), list)
+            assert isinstance(res_lst.get(external_id=ts_string.external_id), list)
+            assert len(res_lst.get(id=ts_numeric.id)) == 3
+            assert len(res_lst.get(id=ts_string.id)) == 2
+            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
+            assert len(res_lst.get(external_id=ts_string.external_id)) == 2
 
 
 class TestRetrieveDataFrameAPI:
