@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import json
 import typing
@@ -40,7 +41,13 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
-from cognite.client.utils._time import ZoneInfo, convert_and_isoformat_time_attrs, convert_and_isoformat_timestamp
+from cognite.client.utils._time import (
+    ZoneInfo,
+    convert_and_isoformat_time_attrs,
+    convert_and_isoformat_timestamp,
+    convert_timezone_to_str,
+    parse_str_timezone,
+)
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if NUMPY_IS_AVAILABLE:
@@ -163,7 +170,7 @@ class DatapointsQuery:
     end: int | str | dt.datetime = _NOT_SET  # type: ignore [assignment]
     aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
     granularity: str | None = _NOT_SET  # type: ignore [assignment]
-    timezone: dt.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
+    timezone: str | dt.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
     target_unit: str | None = _NOT_SET  # type: ignore [assignment]
     target_unit_system: str | None = _NOT_SET  # type: ignore [assignment]
     limit: int | None = _NOT_SET  # type: ignore [assignment]
@@ -178,7 +185,6 @@ class DatapointsQuery:
         self._identifier = Identifier.of_either(id, external_id)
         # Store the possibly custom granularity (we support more than the API and a translation is done)
         self._original_granularity = self.granularity
-        self._original_timezone = self.timezone
 
     def __eq__(self, other: object) -> bool:
         # Note: Instances representing identical queries should -not- compare equal as this would mean we
@@ -217,6 +223,10 @@ class DatapointsQuery:
     @property
     def original_timezone(self) -> dt.timezone | ZoneInfo | None:
         return self._original_timezone
+
+    @original_timezone.setter
+    def original_timezone(self, tz: dt.timezone | ZoneInfo) -> None:
+        self._original_timezone = tz
 
     @cached_property
     def aggs_camel_case(self) -> list[str]:
@@ -452,13 +462,21 @@ class Datapoint(CogniteResource):
         tz = convert_tz_for_pandas(self.timezone)
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client=cognite_client)
+        if isinstance(instance.timezone, str):
+            with contextlib.suppress(ValueError):  # Dont fail load if invalid
+                instance.timezone = parse_str_timezone(instance.timezone)
+        return instance
+
     def dump(self, camel_case: bool = True, include_timezone: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         # Keep value even if None (bad status codes support missing):
-        dumped["value"] = self.value
+        dumped["value"] = self.value  # TODO: What if Datapoint represents one or more aggregates?
         if include_timezone:
             if self.timezone is not None:
-                dumped["timezone"] = str(self.timezone)
+                dumped["timezone"] = convert_timezone_to_str(self.timezone)
         else:
             dumped.pop("timezone", None)
         return dumped
@@ -539,7 +557,7 @@ class DatapointsArray(CogniteResource):
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
-            "timezone": self.timezone,
+            "timezone": None if self.timezone is None else convert_timezone_to_str(self.timezone),
         }
 
     @classmethod
@@ -993,7 +1011,7 @@ class Datapoints(CogniteResource):
             "unit_external_id": self.unit_external_id,
         }
         if self.timezone is not None:
-            dumped["timezone"] = str(self.timezone)
+            dumped["timezone"] = convert_timezone_to_str(self.timezone)
         datapoints = [dp.dump(camel_case=camel_case, include_timezone=False) for dp in self.__get_datapoint_objects()]
         if self.status_code is not None or self.status_symbol is not None:
             if (
@@ -1128,6 +1146,8 @@ class Datapoints(CogniteResource):
         for row in dps_object["datapoints"]:
             for attr, value in row.items():
                 data_lists[attr].append(value)
+        if (timezone := dps_object.get("timezone")) is not None:
+            instance.timezone = parse_str_timezone(timezone)
         if (status := data_lists.pop("status", None)) is not None:
             data_lists["status_code"] = [s["code"] for s in status]
             data_lists["status_symbol"] = [s["symbol"] for s in status]
@@ -1146,6 +1166,7 @@ class Datapoints(CogniteResource):
             self.is_step = other_dps.is_step
             self.unit = other_dps.unit
             self.unit_external_id = other_dps.unit_external_id
+            self.timezone = other_dps.timezone
 
         for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
             value = getattr(self, attr)

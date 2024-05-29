@@ -9,7 +9,7 @@ import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
@@ -71,6 +71,49 @@ _GRANULARITY_CONVERSION = {
     "quarter": (3, "mo"),
     "year": (12, "mo"),
 }
+
+
+def parse_str_timezone_offset(tz: str) -> timezone:
+    """
+    This function attempts to accept and convert all valid fixed-offset timezone input that the API
+    supports for datapoints endpoints. The backend is using native java class TimeZone with some
+    added restrictions on ambiguous names/ids.
+    """
+    prefix, tz = "", tz.replace(" ", "")
+    if match := re.match("^(UTC?|GMT)?", tz):
+        tz = tz.replace(prefix := match.group(), "")
+    if prefix and not tz:
+        return timezone.utc
+    elif re.match(r"^(-|\+)\d\d?$", tz) and abs(hours_offset := int(tz)) <= 18:
+        return timezone(timedelta(hours=hours_offset))
+    return cast(timezone, datetime.strptime(tz, "%z").tzinfo)
+
+
+def parse_str_timezone(tz: str) -> timezone | ZoneInfo:
+    try:
+        return ZoneInfo(tz)  # type: ignore [abstract]
+    except ZoneInfoNotFoundError:
+        try:
+            return parse_str_timezone_offset(tz)
+        except ValueError:
+            raise ValueError(
+                f"Unable to parse string timezone {tz!r}, expected an UTC offset like UTC-02, UTC+01:30, +0400 "
+                "or an IANA timezone on the format Region/Location like Europe/Oslo, Asia/Tokyo or America/Los_Angeles"
+            )
+
+
+def convert_timezone_to_str(tz: timezone | ZoneInfo) -> str:
+    if isinstance(tz, timezone):
+        # Built-in timezones can only represent fixed UTC offsets (i.e. we do not allow arbitrary
+        # tzinfo subclasses). We could do str(tz), but if the user has passed a name, that is
+        # returned instead so we have to first get the utc offset:
+        return str(timezone(tz.utcoffset(None)))
+    elif isinstance(tz, ZoneInfo):
+        if tz.key is not None:
+            return tz.key
+        else:
+            raise ValueError("timezone of type ZoneInfo does not have the required 'key' attribute set")
+    raise TypeError(f"timezone must be datetime.timezone or zoneinfo.ZoneInfo, not {type(tz)}")
 
 
 def datetime_to_ms(dt: datetime) -> int:

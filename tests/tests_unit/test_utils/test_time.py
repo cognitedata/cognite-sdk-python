@@ -24,6 +24,7 @@ from cognite.client.utils._time import (
     granularity_to_ms,
     ms_to_datetime,
     pandas_date_range_tz,
+    parse_str_timezone_offset,
     split_time_range,
     timestamp_to_ms,
     to_fixed_utc_intervals,
@@ -34,6 +35,30 @@ from tests.utils import cdf_aggregate, tmp_set_envvar
 
 if TYPE_CHECKING:
     import pandas
+
+
+@pytest.mark.parametrize(
+    "offset_inp, expected",
+    (
+        ("", timedelta(0)),
+        ("01:15", timedelta(seconds=4500)),
+        ("01:15:12", timedelta(seconds=4512)),
+        ("23:59", timedelta(seconds=86340)),
+        ("0", timedelta(0)),
+        ("01", timedelta(seconds=3600)),
+        ("1", timedelta(seconds=3600)),
+        ("7", timedelta(seconds=25200)),
+        ("18", timedelta(seconds=64800)),
+    ),
+)
+def test_parse_str_timezone_offset(offset_inp, expected):
+    for pm in "+-":
+        for prefix in ["", "UTC", "UT", "GMT"]:
+            if not prefix and not offset_inp:
+                continue
+            inp = prefix + pm + offset_inp if offset_inp else prefix
+            res = parse_str_timezone_offset(inp)
+            assert res == timezone(int(pm + "1") * expected)
 
 
 class TestDatetimeToMsIsoTimestamp:
