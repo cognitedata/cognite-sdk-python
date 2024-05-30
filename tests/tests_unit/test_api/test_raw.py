@@ -342,6 +342,7 @@ def test_insert_dataframe_raises_on_duplicated_cols(cognite_client):
         cognite_client.raw.rows.insert_dataframe("db", "tbl", df)
 
 
+@pytest.mark.dsl
 def test_df_to_rows_skip_nans():
     import numpy as np
     import pandas as pd
