@@ -535,6 +535,27 @@ class TransformationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>>
                 >>> df = client.transformations.preview(query="select * from _cdf.assets").to_pandas()
+
+            Notice that the results are limited both by the `limit` and `source_limit` parameters. If you have
+            a query that converts one source row to one result row, you may need to increase the `source_limit`.
+            For example, given that you have a query that reads from a raw table with 10,903 rows
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>>
+                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None)
+                >>> print(result.results)
+                100
+
+            To get all rows, you also need to set the `source_limit` to None:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>>
+                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None)
+                >>> print(result.results)
+                10903
+
         """
         request_body = {
             "query": query,
