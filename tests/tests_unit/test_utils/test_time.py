@@ -24,6 +24,7 @@ from cognite.client.utils._time import (
     granularity_to_ms,
     ms_to_datetime,
     pandas_date_range_tz,
+    parse_str_timezone,
     parse_str_timezone_offset,
     split_time_range,
     timestamp_to_ms,
@@ -59,6 +60,20 @@ def test_parse_str_timezone_offset(offset_inp, expected):
             inp = prefix + pm + offset_inp if offset_inp else prefix
             res = parse_str_timezone_offset(inp)
             assert res == timezone(int(pm + "1") * expected)
+
+
+@pytest.mark.parametrize(
+    "inp, expected",
+    (
+        ("Europe/Oslo", ZoneInfo("Europe/Oslo")),
+        ("Asia/Tokyo", ZoneInfo("Asia/Tokyo")),
+        ("GMT", ZoneInfo("GMT")),
+        ("UTC-0", timezone.utc),
+        ("UTC+01:15", timezone(timedelta(seconds=4500))),
+    ),
+)
+def test_parse_str_timezone_asd(inp, expected):
+    assert expected == parse_str_timezone(inp)
 
 
 class TestDatetimeToMsIsoTimestamp:
