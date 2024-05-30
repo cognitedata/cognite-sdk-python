@@ -4,7 +4,7 @@ import platform
 import re
 import time
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable
 from unittest import mock
 
 import pytest
@@ -14,28 +14,20 @@ from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
-    MonthAligner,
     ZoneInfo,
-    align_large_granularity,
     align_start_and_end_for_granularity,
     convert_and_isoformat_time_attrs,
     datetime_to_ms,
     datetime_to_ms_iso_timestamp,
     granularity_to_ms,
     ms_to_datetime,
-    pandas_date_range_tz,
     parse_str_timezone,
     parse_str_timezone_offset,
     split_time_range,
     timestamp_to_ms,
-    to_fixed_utc_intervals,
-    to_pandas_freq,
     validate_timezone,
 )
-from tests.utils import cdf_aggregate, tmp_set_envvar
-
-if TYPE_CHECKING:
-    import pandas
+from tests.utils import tmp_set_envvar
 
 
 @pytest.mark.parametrize(
@@ -361,65 +353,6 @@ class TestAlignToGranularity:
         start, end = gran_ms - 1, 2 * gran_ms
         assert expected == align_start_and_end_for_granularity(start, end, granularity)
 
-    @staticmethod
-    @pytest.mark.parametrize(
-        "start, end, granularity, expected_start, expected_end",
-        [
-            (datetime(2023, 3, 4, 12), datetime(2023, 3, 9), "2days", datetime(2023, 3, 4), datetime(2023, 3, 10)),
-            (datetime(2023, 4, 9), datetime(2023, 4, 12), "2weeks", datetime(2023, 4, 3), datetime(2023, 4, 17)),
-            (datetime(2023, 1, 10), datetime(2023, 1, 11), "2months", datetime(2023, 1, 1), datetime(2023, 3, 1)),
-            (datetime(2023, 2, 10), datetime(2023, 6, 15), "2quarters", datetime(2023, 1, 1), datetime(2023, 7, 1)),
-            (datetime(2023, 1, 8), datetime(2023, 1, 8, second=1), "1year", datetime(2023, 1, 1), datetime(2024, 1, 1)),
-            (datetime(2022, 12, 10), datetime(2023, 1, 11), "3months", datetime(2022, 12, 1), datetime(2023, 3, 1)),
-            (datetime(2022, 12, 10), datetime(2023, 1, 11), "25months", datetime(2022, 12, 1), datetime(2025, 1, 1)),
-            (datetime(2023, 2, 10), datetime(2025, 8, 10), "10quarters", datetime(2023, 1, 1), datetime(2028, 1, 1)),
-            (datetime(2023, 4, 9), datetime(2023, 4, 12), "1week", datetime(2023, 4, 3), datetime(2023, 4, 17)),
-            (datetime(2023, 1, 10), datetime(2023, 2, 11), "1month", datetime(2023, 1, 1), datetime(2023, 3, 1)),
-        ],
-    )
-    def test_align_with_granularity(
-        start: datetime, end: datetime, granularity: str, expected_start: datetime, expected_end: datetime
-    ):
-        actual_start, actual_end = align_large_granularity(start, end, granularity)
-
-        assert actual_start == expected_start, "Start is not aligning"
-        assert actual_end == expected_end, "End is not aligning"
-
-
-def cdf_aggregate_test_data():
-    try:
-        import pandas as pd
-    except ModuleNotFoundError:
-        return []
-    start, end = "2023-03-20", "2023-04-09 23:59:59"
-
-    yield pytest.param(
-        start,
-        end,
-        "1h",
-        "7d",
-        # Nullable int to match the output of retrieve_dataframe
-        pd.DataFrame(index=pd.date_range(start, end, freq="7d"), data=[168, 168, 168], dtype="Int64"),
-        id="1week aggregation",
-    )
-
-
-class TestCDFAggregation:
-    @staticmethod
-    @pytest.mark.dsl
-    @pytest.mark.parametrize("start, end, raw_freq, granularity, expected_aggregate", list(cdf_aggregate_test_data()))
-    def test_cdf_aggregation(
-        start: str, end: str, raw_freq: str, granularity: str, expected_aggregate: pandas.DataFrame
-    ):
-        import pandas as pd
-
-        index = pd.date_range(start, end, freq=raw_freq)
-        raw_df = pd.DataFrame(data=range(len(index)), index=index)
-
-        actual_aggregate = cdf_aggregate(raw_df=raw_df, aggregate="count", granularity=granularity, is_step=False)
-
-        pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
-
 
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
     oslo = ZoneInfo("Europe/Oslo")
@@ -532,21 +465,6 @@ def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
     )
 
 
-class TestToFixedUTCIntervals:
-    @staticmethod
-    @pytest.mark.dsl
-    @pytest.mark.parametrize(
-        "start, end, granularity, expected_intervals",
-        list(to_fixed_utc_intervals_data()),
-    )
-    def test_to_fixed_utc_intervals(
-        start: datetime, end: datetime, granularity: str, expected_intervals: list[dict[str, int | str]]
-    ):
-        actual_intervals = to_fixed_utc_intervals(start, end, granularity)
-
-        assert actual_intervals == expected_intervals
-
-
 def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
@@ -657,96 +575,3 @@ class TestValidateTimeZone:
 
         assert isinstance(actual_tz, ZoneInfo)
         assert actual_tz is expected_tz
-
-
-class TestToPandasFreq:
-    @staticmethod
-    @pytest.mark.dsl
-    @pytest.mark.parametrize(
-        "granularity, start, expected_first_step",
-        [
-            ("week", "2023-01-02", "2023-01-09"),
-            ("quarter", "2023-01-01", "2023-04-01"),
-            ("quarter", "2022-10-01", "2023-01-01"),
-            ("quarter", "2022-07-01", "2022-10-01"),
-            ("quarter", "2022-04-01", "2022-07-01"),
-            ("year", "2023-01-01", "2024-01-01"),
-            ("d", "2023-01-01", "2023-01-02"),
-            ("2years", "2023-01-01", "2025-01-01"),
-            ("3quarters", "2023-01-01", "2023-10-01"),
-            ("m", "2023-01-01", "2023-01-01 00:01:00"),
-            ("s", "2023-01-01", "2023-01-01 00:00:01"),
-            ("2d", "2023-01-01", "2023-01-03"),
-            ("2weeks", "2023-01-02", "2023-01-16"),
-        ],
-    )
-    def test_to_pandas_freq(granularity: str, start: str, expected_first_step: str):
-        import pandas as pd
-
-        start = pd.Timestamp(start)
-        expected_index = pd.DatetimeIndex([start, expected_first_step])
-
-        freq = to_pandas_freq(granularity, start.to_pydatetime())
-
-        actual_index = pd.date_range(start, periods=2, freq=freq)
-        pd.testing.assert_index_equal(actual_index, expected_index)
-
-
-class TestPandasDateRangeTz:
-    @staticmethod
-    @pytest.mark.dsl
-    def test_pandas_date_range_tz_ambiguous_time_error():
-        oslo = ZoneInfo("Europe/Oslo")
-        start = datetime(1916, 8, 1, tzinfo=oslo)
-        end = datetime(1916, 12, 1, tzinfo=oslo)
-        expected_length = 5
-        freq = to_pandas_freq("1month", start)
-
-        index = pandas_date_range_tz(start, end, freq)
-
-        assert len(index) == expected_length
-
-
-class TestDateTimeAligner:
-    # TODO: DayAligner
-    # TODO: WeekAligner
-    # TODO: MonthAligner
-    # TODO: QuarterAligner
-    # TODO: YearAligner
-
-    @pytest.mark.parametrize(
-        "dt, expected",
-        (
-            (datetime(2023, 11, 1), datetime(2023, 11, 1)),
-            (datetime(2023, 10, 15), datetime(2023, 11, 1)),
-            (datetime(2023, 12, 15), datetime(2024, 1, 1)),
-            (datetime(2024, 1, 10), datetime(2024, 2, 1)),
-            # Bug prior to 7.5.7 would cause this to raise:
-            (datetime(2023, 11, 2), datetime(2023, 12, 1)),
-        ),
-    )
-    def test_month_aligner__ceil(self, dt, expected):
-        assert expected == MonthAligner.ceil(dt)
-
-    def test_month_aligner_ceil__invalid_date(self):
-        with pytest.raises(ValueError, match="^day is out of range for month$"):
-            MonthAligner.add_units(datetime(2023, 7, 31), 2)  # sept has 30 days
-
-    @pytest.mark.parametrize(
-        "dt, n_units, expected",
-        (
-            (datetime(2023, 7, 2), 12, datetime(2024, 7, 2)),
-            (datetime(2023, 7, 2), 12 * 12, datetime(2035, 7, 2)),
-            (datetime(2023, 7, 2), -12 * 2, datetime(2021, 7, 2)),
-            # Bug prior to 7.5.7 would cause these to raise:
-            (datetime(2023, 11, 15), 1, datetime(2023, 12, 15)),
-            (datetime(2023, 12, 15), 0, datetime(2023, 12, 15)),
-            (datetime(2024, 1, 15), -1, datetime(2023, 12, 15)),
-        ),
-    )
-    def test_month_aligner__add_unites(self, dt, n_units, expected):
-        assert expected == MonthAligner.add_units(dt, n_units)
-
-    def test_month_aligner_add_unites__invalid_date(self):
-        with pytest.raises(ValueError, match="^day is out of range for month$"):
-            MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year

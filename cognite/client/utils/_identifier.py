@@ -179,9 +179,6 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
     def as_primitives(self) -> list[int | str]:
         return [identifier.as_primitive() for identifier in self._identifiers]
 
-    def are_unique(self) -> bool:
-        return len(self) == len(set(self.as_primitives()))
-
     @staticmethod
     def unwrap_identifier(identifier: str | int | dict) -> str | int:
         if isinstance(identifier, (str, int)):
