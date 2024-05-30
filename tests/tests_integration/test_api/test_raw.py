@@ -126,7 +126,7 @@ class TestRawRowsAPI:
         data = {"a": {"r1": 1, "r2": 1, "r3": 1}, "b": {"r1": None, "r2": None, "r3": None}}
 
         df = pd.DataFrame.from_dict(data)
-        cognite_client.raw.rows.insert_dataframe(db.name, table.name, df)
+        cognite_client.raw.rows.insert_dataframe(db.name, table.name, df, dropna=False)
         retrieved_df = cognite_client.raw.rows.retrieve_dataframe(db.name, table.name)
 
         pd.testing.assert_frame_equal(df.sort_index(), retrieved_df.sort_index())
