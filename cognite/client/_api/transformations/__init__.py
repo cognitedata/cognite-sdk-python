@@ -502,18 +502,20 @@ class TransformationsAPI(APIClient):
         self,
         query: str | None = None,
         convert_to_string: bool = False,
-        limit: int = 100,
+        limit: int | None = 100,
         source_limit: int | None = 100,
-        infer_schema_limit: int | None = 1000,
+        infer_schema_limit: int | None = 10_000,
+        timeout: int | None = 240,
     ) -> TransformationPreviewResult:
         """`Preview the result of a query. <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_
 
         Args:
             query (str | None): SQL query to run for preview.
             convert_to_string (bool): Stringify values in the query results, default is False.
-            limit (int): Maximum number of rows to return in the final result, default is 100.
+            limit (int | None): Maximum number of rows to return in the final result, default is 100.
             source_limit (int | None): Maximum number of items to read from the data source or None to run without limit, default is 100.
-            infer_schema_limit (int | None): Limit for how many rows that are used for inferring result schema, default is 1000.
+            infer_schema_limit (int | None): Limit for how many rows that are used for inferring result schema, default is 10 000.
+            timeout (int | None): Number of seconds to wait before cancelling a query. The default, and maximum, is 240.
 
         Returns:
             TransformationPreviewResult: Result of the executed query
@@ -533,6 +535,27 @@ class TransformationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>>
                 >>> df = client.transformations.preview(query="select * from _cdf.assets").to_pandas()
+
+            Notice that the results are limited both by the `limit` and `source_limit` parameters. If you have
+            a query that converts one source row to one result row, you may need to increase the `source_limit`.
+            For example, given that you have a query that reads from a raw table with 10,903 rows
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>>
+                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None)
+                >>> print(result.results)
+                100
+
+            To get all rows, you also need to set the `source_limit` to None:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>>
+                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None)
+                >>> print(result.results)
+                10903
+
         """
         request_body = {
             "query": query,
@@ -540,6 +563,7 @@ class TransformationsAPI(APIClient):
             "limit": limit,
             "sourceLimit": source_limit,
             "inferSchemaLimit": infer_schema_limit,
+            "timeout": timeout,
         }
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
         result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)

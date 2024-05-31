@@ -1,10 +1,59 @@
 from __future__ import annotations
 
 import math
+from datetime import timedelta, timezone
 
 import pytest
 
-from cognite.client.data_classes import DatapointsArray
+from cognite.client.data_classes import Datapoint, DatapointsArray
+from cognite.client.utils._time import ZoneInfo
+
+
+class TestDatapoint:
+    def test_display_str_no_timezone(self):
+        dp = Datapoint(timestamp=1716589737000, value="foo", average=123)
+        assert "timezone" not in str(dp)
+        assert '"timestamp": "2024-05-24 22:28:57.000+00:00"' in str(dp)
+        dp.timezone = None
+        assert "timezone" not in str(dp)
+        assert '"timestamp": "2024-05-24 22:28:57.000+00:00"' in str(dp)
+
+    def test_display_str_with_builtin_timezone(self):
+        epoch_ms = 1716589737000
+        dp = Datapoint(timestamp=epoch_ms, value="foo", average=123)
+        dp.timezone = timezone(timedelta(hours=2))
+        assert "timezone" in str(dp)
+        assert '"timestamp": "2024-05-25 00:28:57.000+02:00"' in str(dp)
+
+        # Timezone is only a setting for how to display the timestamp:
+        dp.timezone = timezone(timedelta(hours=-2))
+        assert '"timestamp": "2024-05-24 20:28:57.000-02:00"' in str(dp)
+        assert dp.timestamp == epoch_ms
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "epoch_ms, offset_hours, zone, expected",
+        (
+            (1716589737000, 2, "Europe/Oslo", "2024-05-25 00:28:57.000+02:00"),
+            (1616589737000, 1, "Europe/Oslo", "2021-03-24 13:42:17.000+01:00"),
+        ),
+    )
+    def test_display_str_and_to_pandas_with_timezone_and_zoneinfo(self, epoch_ms, offset_hours, zone, expected):
+        import pandas as pd
+
+        dp1 = Datapoint(timestamp=epoch_ms, value="foo", average=123)
+        dp2 = Datapoint(timestamp=epoch_ms, value="foo", average=123)
+        dp1.timezone = ZoneInfo(zone)
+        dp2.timezone = timezone(timedelta(hours=offset_hours))
+        sdp1, sdp2 = str(dp1), str(dp2)
+
+        assert sdp1 != sdp2
+        assert sdp1.replace("Europe/Oslo", "") == sdp2.replace(f"UTC+0{offset_hours}:00", "")
+        assert f'"timestamp": "{expected}"' in sdp1
+
+        df1, df2 = dp1.to_pandas(), dp2.to_pandas()
+        assert 1 == len(df1.index) == len(df2.index)
+        assert pd.Timestamp(expected) == df1.index[0] == df2.index[0]
 
 
 def factory_method_from_array_data():

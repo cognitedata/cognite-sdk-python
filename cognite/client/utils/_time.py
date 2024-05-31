@@ -9,22 +9,22 @@ import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+else:
+    from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 if TYPE_CHECKING:
     from datetime import tzinfo
 
     import pandas
 
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-    else:
-        from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-
-
+UTC = ZoneInfo("UTC")  # type: ignore [abstract]
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 VARIABLE_LENGTH_UNITS = {"month", "quarter", "year"}
@@ -32,36 +32,88 @@ GRANULARITY_IN_HOURS = {"w": 168, "d": 24, "h": 1}
 GRANULARITY_IN_TIMEDELTA_UNIT = {"w": "weeks", "d": "days", "h": "hours", "m": "minutes", "s": "seconds"}
 MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
+_GRANULARITY_UNIT_LOOKUP: dict[str, str] = {
+    "s": "s",
+    "sec": "s",
+    "second": "s",
+    "seconds": "s",
+    "t": "m",
+    "m": "m",
+    "min": "m",
+    "minute": "m",
+    "minutes": "m",
+    "h": "h",
+    "hour": "h",
+    "hours": "h",
+    "d": "d",
+    "day": "d",
+    "days": "d",
+    "w": "w",
+    "week": "w",
+    "weeks": "w",
+    "mo": "month",
+    "month": "month",
+    "months": "month",
+    "q": "quarter",
+    "quarter": "quarter",
+    "quarters": "quarter",
+    "y": "year",
+    "year": "year",
+    "years": "year",
+}
+_GRANULARITY_CONVERSION = {
+    "s": (1, "s"),
+    "m": (1, "m"),
+    "h": (1, "h"),
+    "d": (1, "d"),
+    "w": (7, "d"),
+    "month": (1, "mo"),
+    "quarter": (3, "mo"),
+    "year": (12, "mo"),
+}
 
 
-def import_zoneinfo() -> type[ZoneInfo]:
+def parse_str_timezone_offset(tz: str) -> timezone:
+    """
+    This function attempts to accept and convert all valid fixed-offset timezone input that the API
+    supports for datapoints endpoints. The backend is using native java class TimeZone with some
+    added restrictions on ambiguous names/ids.
+    """
+    prefix, tz = "", tz.replace(" ", "")
+    if match := re.match("^(UTC?|GMT)?", tz):
+        tz = tz.replace(prefix := match.group(), "")
+    if prefix and not tz:
+        return timezone.utc
+    elif re.match(r"^(-|\+)\d\d?$", tz) and abs(hours_offset := int(tz)) <= 18:
+        return timezone(timedelta(hours=hours_offset))
+    return cast(timezone, datetime.strptime(tz, "%z").tzinfo)
+
+
+def parse_str_timezone(tz: str) -> timezone | ZoneInfo:
     try:
-        if sys.version_info >= (3, 9):
-            from zoneinfo import ZoneInfo
+        return ZoneInfo(tz)  # type: ignore [abstract]
+    except ZoneInfoNotFoundError:
+        try:
+            return parse_str_timezone_offset(tz)
+        except ValueError:
+            raise ValueError(
+                f"Unable to parse string timezone {tz!r}, expected an UTC offset like UTC-02, UTC+01:30, +0400 "
+                "or an IANA timezone on the format Region/Location like Europe/Oslo, Asia/Tokyo or America/Los_Angeles"
+            )
+
+
+def convert_timezone_to_str(tz: timezone | ZoneInfo) -> str:
+    if isinstance(tz, timezone):
+        # Built-in timezones can only represent fixed UTC offsets (i.e. we do not allow arbitrary
+        # tzinfo subclasses). We could do str(tz), but if the user has passed a name, that is
+        # returned instead so we have to first get the utc offset:
+        return str(timezone(tz.utcoffset(None)))
+    elif isinstance(tz, ZoneInfo):
+        if tz.key is not None:
+            return tz.key
         else:
-            from backports.zoneinfo import ZoneInfo
-        return ZoneInfo
-
-    except ImportError as e:
-        from cognite.client.exceptions import CogniteImportError
-
-        raise CogniteImportError(
-            "ZoneInfo is part of the standard library starting with Python >=3.9. In earlier versions "
-            "you need to install a backport. This is done automatically for you when installing with the pandas "
-            "group: 'cognite-sdk[pandas]', or with poetry: 'poetry install -E pandas'"
-        ) from e
-
-
-def _import_zoneinfo_not_found_error() -> type[ZoneInfoNotFoundError]:
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfoNotFoundError
-    else:
-        from backports.zoneinfo import ZoneInfoNotFoundError
-    return ZoneInfoNotFoundError
-
-
-def get_utc_zoneinfo() -> ZoneInfo:
-    return import_zoneinfo()("UTC")
+            raise ValueError("timezone of type ZoneInfo does not have the required 'key' attribute set")
+    raise TypeError(f"timezone must be datetime.timezone or zoneinfo.ZoneInfo, not {type(tz)}")
 
 
 def datetime_to_ms(dt: datetime) -> int:
@@ -118,8 +170,21 @@ def datetime_to_ms_iso_timestamp(dt: datetime) -> str:
         if dt.tzinfo is None:
             dt = dt.astimezone()
         return dt.isoformat(timespec="milliseconds")
-    else:
-        raise TypeError(f"Expected datetime object, got {type(dt)}")
+    raise TypeError(f"Expected datetime object, got {type(dt)}")
+
+
+def split_granularity_into_quantity_and_normalized_unit(granularity: str) -> tuple[int, str]:
+    """A normalized unit is any unit accepted by the API"""
+    if match := re.match(r"(\d+)(.*)", granularity):
+        quantity, unit = match.groups()
+        # We accept a whole range of different formats like s, sec, second
+        if normalized_unit := _GRANULARITY_UNIT_LOOKUP.get(unit):
+            multiplier, normalized_unit = _GRANULARITY_CONVERSION[normalized_unit]
+            return int(quantity) * multiplier, normalized_unit
+    raise ValueError(
+        f"Invalid granularity format: `{granularity}`. Must be on format <quantity><unit>, e.g. 5m, 3h, 1d, or 2w. "
+        "Tip: Unit can be spelled out for clarity, e.g. week(s), month(s), quarter(s), or year(s)."
+    )
 
 
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: dict[str, int]) -> int | None:
@@ -204,6 +269,14 @@ TIME_ATTRIBUTES = {
     "uploaded_time",
 }
 TIME_ATTRIBUTES |= set(map(to_camel_case, TIME_ATTRIBUTES))
+
+
+def convert_and_isoformat_timestamp(ts: int, tz: timezone | ZoneInfo | None) -> str:
+    """Used in datapoints classes that are fetched with a 'timezone'"""
+    dt = ms_to_datetime(ts)
+    if tz is not None:
+        dt = dt.astimezone(tz)
+    return dt.isoformat(sep=" ", timespec="milliseconds")
 
 
 def _convert_and_isoformat_time_attrs_in_dict(item: dict) -> dict:
@@ -474,36 +547,6 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
     return [*(start + delta_ms * i for i in range(n_splits)), end]
 
 
-_GRANULARITY_UNIT_LOOKUP: dict[str, str] = {
-    "s": "s",
-    "sec": "s",
-    "second": "s",
-    "seconds": "s",
-    "t": "m",
-    "m": "m",
-    "min": "m",
-    "minute": "m",
-    "minutes": "m",
-    "h": "h",
-    "hour": "h",
-    "hours": "h",
-    "d": "d",
-    "day": "d",
-    "days": "d",
-    "w": "w",
-    "week": "w",
-    "weeks": "w",
-    "month": "month",
-    "months": "month",
-    "q": "quarter",
-    "quarter": "quarter",
-    "quarters": "quarter",
-    "y": "year",
-    "year": "year",
-    "years": "year",
-}
-
-
 def get_granularity_multiplier_and_unit(granularity: str) -> tuple[int, str]:
     if granularity and granularity[0].isdigit():
         _, number, unit = re.split(r"(\d+)", granularity)
@@ -541,11 +584,10 @@ def _to_fixed_utc_intervals_variable_unit_length(
 ) -> list[dict[str, datetime | str]]:
     freq = to_pandas_freq(f"{multiplier}{unit}", start)
     index = pandas_date_range_tz(start, end, freq)
-    utc = get_utc_zoneinfo()
     return [
         {
-            "start": start.to_pydatetime().astimezone(utc),
-            "end": end.to_pydatetime().astimezone(utc),
+            "start": start.to_pydatetime().astimezone(UTC),
+            "end": end.to_pydatetime().astimezone(UTC),
             "granularity": f"{_check_max_granularity_limit((end - start) // timedelta(hours=1), granularity)}h",
         }
         for start, end in zip(index[:-1], index[1:])
@@ -562,7 +604,6 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     transition_raw = index[(utc_offsets != utc_offsets.shift(-1)) | (utc_offsets != utc_offsets.shift(1))]
 
     transitions = []
-    utc = get_utc_zoneinfo()
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     for t_start, t_end in zip(transition_raw[:-1], transition_raw[1:]):
@@ -579,8 +620,8 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
         transitions.append(
             {
-                "start": t_start.to_pydatetime().astimezone(utc),
-                "end": t_end.to_pydatetime().astimezone(utc),
+                "start": t_start.to_pydatetime().astimezone(UTC),
+                "end": t_end.to_pydatetime().astimezone(UTC),
                 "granularity": f"{_check_max_granularity_limit(freq + dst_adjustment, granularity)}h",
             }
         )
@@ -589,14 +630,14 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
 def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: str = "both") -> pandas.DatetimeIndex:
     """
-    Pandas date_range struggles with time zone aware datetimes.
+    Pandas date_range struggles with timezone aware datetimes.
     This function overcomes that limitation.
 
     Assumes that start and end have the same timezone.
     """
     pd = local_import("pandas")
-    # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
-    # datetimes. This is a workaround by passing the time zone as an argument to the function.
+    # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use timezone aware
+    # datetimes. This is a workaround by passing the timezone as an argument to the function.
     # In addition, pandas struggle with ZoneInfo objects, so we convert them to string so that pandas can use its own
     # tzdata implementation.
 
@@ -622,7 +663,7 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
     -except- when given something concrete like pytz.UTC or ZoneInfo(...).
 
     To make sure we don't raise something silly like 'UTC != UTC', we convert both to ZoneInfo for comparison
-    via str(). This is safe as all return the lookup key (for the IANA time zone database).
+    via str(). This is safe as all return the lookup key (for the IANA timezone database).
 
     Note:
         We do not consider timezones with different keys, but equal fixed offsets from UTC to be equal. An example
@@ -630,10 +671,9 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
     """
     if start_tz is end_tz:
         return True
-    ZoneInfo, ZoneInfoNotFoundError = import_zoneinfo(), _import_zoneinfo_not_found_error()
     with suppress(ValueError, ZoneInfoNotFoundError):
         # ValueError is raised for non-conforming keys (ZoneInfoNotFoundError is self-explanatory)
-        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):
+        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):  # type: ignore [abstract]
             return True
     return False
 
@@ -648,13 +688,12 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
     if not _timezones_are_equal(start_tz, end_tz):
         raise ValueError(f"'start' and 'end' represent different timezones: '{start_tz}' and '{end_tz}'.")
 
-    ZoneInfo = import_zoneinfo()
     if isinstance(start_tz, ZoneInfo):
         return start_tz
 
     pd = local_import("pandas")
     if isinstance(start, pd.Timestamp):
-        return ZoneInfo(str(start_tz))
+        return ZoneInfo(str(start_tz))  # type: ignore [abstract]
 
     raise ValueError("Only tz-aware pandas.Timestamp and datetime (must be using ZoneInfo) are supported.")
 
@@ -678,3 +717,6 @@ def to_pandas_freq(granularity: str, start: datetime) -> str:
         floored = QuarterAligner.floor(start)
         unit += {1: "-JAN", 4: "-APR", 7: "-JUL", 10: "-OCT"}[floored.month]
     return f"{multiplier}{unit}"
+
+
+__all__ = ["ZoneInfo", "ZoneInfoNotFoundError"]  # Fix: Module does not explicitly export attribute "ZoneInfo

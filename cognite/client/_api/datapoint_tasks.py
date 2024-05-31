@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import math
 import numbers
 import operator as op
@@ -7,7 +8,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
 from functools import cached_property
 from itertools import chain
 from typing import (
@@ -48,8 +48,12 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
+    ZoneInfo,
     align_start_and_end_for_granularity,
+    convert_timezone_to_str,
     granularity_to_ms,
+    parse_str_timezone,
+    split_granularity_into_quantity_and_normalized_unit,
     split_time_range,
     time_ago_to_ms,
     timestamp_to_ms,
@@ -92,12 +96,13 @@ class _FullDatapointsQuery:
     requested, previously public (before v5).
     """
 
-    start: int | str | datetime | None = None
-    end: int | str | datetime | None = None
+    start: int | str | datetime.datetime | None = None
+    end: int | str | datetime.datetime | None = None
     id: DatapointsId | None = None
     external_id: DatapointsExternalId | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
+    timezone: str | datetime.timezone | ZoneInfo | None = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     limit: int | None = None
@@ -125,6 +130,7 @@ class _FullDatapointsQuery:
             limit=self.limit,
             aggregates=self.aggregates,
             granularity=self.granularity,
+            timezone=self.timezone,
             target_unit=self.target_unit,
             target_unit_system=self.target_unit_system,
             include_outside_points=self.include_outside_points,
@@ -170,7 +176,7 @@ class _FullDatapointsQuery:
             elif isinstance(query, DatapointsQuery):
                 if query.identifier.name() != arg_name:
                     raise ValueError(f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}")
-                query._set_defaults(self.top_level_defaults)
+                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query.dump()}, id_type=arg_name)
             else:
                 self._raise_on_wrong_ts_identifier_type(query, arg_name, exp_type)
 
@@ -194,13 +200,21 @@ class _FullDatapointsQuery:
         # exception 'end not after start' if both are set to the same value.
         frozen_time_now = timestamp_to_ms("now")
 
+        # NOTE: The order of verification checks must be kept due to dependencies:
         for query in queries:
             query.limit = self._verify_and_convert_limit(query.limit)
             query.is_raw_query = self._verify_options_and_categorize_query(query)
-            query.max_query_limit = dps_limit_raw if query.is_raw_query else dps_limit_agg
+            query.original_timezone, query.timezone = self._verify_and_convert_timezone(
+                query.timezone, query.is_raw_query
+            )
+            query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
-            if not query.is_raw_query and isinstance(query.aggregates, str):
-                query.aggregates = [query.aggregates]
+            if query.is_raw_query:
+                query.max_query_limit = dps_limit_raw
+            else:
+                query.max_query_limit = dps_limit_agg
+                if isinstance(query.aggregates, str):
+                    query.aggregates = [query.aggregates]
         return queries
 
     @staticmethod
@@ -240,6 +254,33 @@ class _FullDatapointsQuery:
         return False
 
     @staticmethod
+    def _verify_and_convert_timezone(
+        tz: str | datetime.timezone | ZoneInfo | None, is_raw_query: bool
+    ) -> tuple[datetime.timezone | ZoneInfo | None, str | None]:
+        if tz is None:
+            return None, None
+        elif isinstance(tz, str):
+            tz = parse_str_timezone(tz)  # There...
+        try:
+            api_tz = convert_timezone_to_str(tz)  # ...and back again
+        except TypeError:
+            raise ValueError(
+                f"'timezone' not understood, expected one of: [None, str, datetime.timezone, ZoneInfo], got {type(tz)}"
+            )
+        if is_raw_query:
+            # Timezone will only be used for display purposes (or when converting to pandas), so we fetch
+            # like it doesn't exist (concurrently). The API only supports using timezone with agg. queries.
+            return tz, None
+        return tz, api_tz
+
+    @staticmethod
+    def _verify_and_convert_granularity(granularity: str | None) -> tuple[str | None, bool]:
+        if granularity is None:
+            return None, False
+        quantity, unit = split_granularity_into_quantity_and_normalized_unit(granularity)
+        return f"{quantity}{unit}", unit == "mo"
+
+    @staticmethod
     def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
@@ -254,24 +295,28 @@ class _FullDatapointsQuery:
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
         )
 
+    @staticmethod
     def _verify_time_range(
-        self,
         query: DatapointsQuery,
         frozen_time_now: int,
     ) -> tuple[int, int]:
-        start = self._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
-        end = self._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
+        start = _FullDatapointsQuery._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
+        end = _FullDatapointsQuery._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
         if end <= start:
             raise ValueError(
-                f"Invalid time range, {end=} ({query.end}) must be later than {start=} ({query.start})"
+                f"Invalid time range, {end=} {f'({query.end!r}) ' if end != query.end else ''}"
+                f"must be later than {start=} {f'({query.start!r}) ' if start != query.start else ''}"
                 f"(from query: {query.identifier.as_dict(camel_case=False)})"
             )
-        if not query.is_raw_query:
+        # We align start and end so that we can efficiently parallelize aggregate dps fetching. Queries
+        # using timezone or a calendar granularity (month) are left untouched (and thus fetch serially):
+        if not (query.is_raw_query or query.use_cursors):
             # API rounds aggregate query timestamps in a very particular fashion:
-            start, end = align_start_and_end_for_granularity(start, end, query.granularity)
+            start, end = align_start_and_end_for_granularity(start, end, cast(str, query.granularity))
         return start, end
 
-    def _ts_to_ms_frozen_now(self, ts: int | str | datetime | None, frozen_time_now: int, default: int) -> int:
+    @staticmethod
+    def _ts_to_ms_frozen_now(ts: int | str | datetime.datetime | None, frozen_time_now: int, default: int) -> int:
         # Time 'now' is frozen for all queries in a single call from the user, leading to identical
         # results e.g. "4d-ago" and "now"
         if ts is None:
@@ -407,7 +452,7 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(DatapointsAny, [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool]:
+def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
     return {
         "id": res.id,
@@ -470,6 +515,9 @@ class BaseDpsFetchSubtask:
         if query.include_status is True:
             self.static_kwargs["includeStatus"] = query.include_status
 
+        if query.timezone:
+            self.static_kwargs["timeZone"] = query.timezone
+
     @abstractmethod
     def get_next_payload_item(self) -> _DatapointsPayloadItem: ...
 
@@ -501,10 +549,12 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
 class SerialFetchSubtask(BaseDpsFetchSubtask):
     """Fetches datapoints serially until complete, nice and simple. Stores data in parent"""
 
-    def __init__(self, *, subtask_idx: tuple[float, ...], **kwargs: Any) -> None:
+    def __init__(self, *, subtask_idx: tuple[float, ...], first_cursor: str | None = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.subtask_idx = subtask_idx
         self.next_start = self.start
+        self.next_cursor = first_cursor
+        self.uses_cursor = self.parent.query.use_cursors
 
     def get_next_payload_item(self) -> _DatapointsPayloadItem:
         remaining = self.parent.get_remaining_limit()
@@ -512,11 +562,12 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
             start=self.next_start,
             end=self.end,
             limit=min(self.max_query_limit, remaining),
+            cursor=self.next_cursor,
             **self.static_kwargs,  # type: ignore [typeddict-item]
         )
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
-        if self.parent.ts_info is None:
+        if not self.parent.ts_info:
             # In eager mode, first task to complete gets the honor to store ts info:
             self.parent._store_ts_info(res)
 
@@ -526,17 +577,23 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
 
         n, last_ts = len(dps), dps[-1].timestamp
         self.parent._unpack_and_store(self.subtask_idx, dps)
-        self._update_state_for_next_payload(last_ts, n)
-        if self._is_task_done(n, res.nextCursor):
+        self._update_state_for_next_payload(res, last_ts, n)
+        if self._is_task_done(n):
             self.is_done = True
         return None
 
-    def _update_state_for_next_payload(self, last_ts: int, n: int) -> None:
-        self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
+    def _update_state_for_next_payload(self, res: DataPointListItem, last_ts: int, n: int) -> None:
+        self.next_cursor = res.nextCursor
+        if not self.uses_cursor:
+            self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
         self.n_dps_fetched += n  # Used to quit limited queries asap
 
-    def _is_task_done(self, n: int, next_cursor: str) -> bool:
-        return not next_cursor or n < self.max_query_limit or self.next_start == self.end
+    def _is_task_done(self, n: int) -> bool:
+        return (
+            not self.next_cursor
+            or n < self.max_query_limit
+            or not self.uses_cursor and self.next_start == self.end
+        )  # fmt: skip
 
 
 class SplittingFetchSubtask(SerialFetchSubtask):
@@ -587,15 +644,15 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         return new_subtasks
 
 
-def get_task_orchestrator(is_raw_query: bool, limit: None | int) -> type[BaseTaskOrchestrator]:
-    if is_raw_query:
-        if limit is None:
+def get_task_orchestrator(query: DatapointsQuery) -> type[BaseTaskOrchestrator]:
+    if query.is_raw_query:
+        if query.limit is None:
             return ConcurrentUnlimitedRawTaskOrchestrator
         return SerialLimitedRawTaskOrchestrator
     else:
-        if limit is None:
-            return ConcurrentUnlimitedAggTaskOrchestrator
-        return SerialLimitedAggTaskOrchestrator
+        if query.limit is not None or query.use_cursors:
+            return SerialLimitedAggTaskOrchestrator
+        return ConcurrentUnlimitedAggTaskOrchestrator
 
 
 class BaseTaskOrchestrator(ABC):
@@ -610,10 +667,9 @@ class BaseTaskOrchestrator(ABC):
         self.query = query
         self.eager_mode = eager_mode
         self.use_numpy = use_numpy
-        self.ts_info: dict | None = None
+        self.ts_info: dict[str, Any] = {}
         self.subtask_outside_points: OutsideDpsFetchSubtask | None = None
         self.raw_dtype_numpy: type[np.object_] | type[np.float64] | None = None
-        self.has_limit = self.query.limit is not None
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
 
@@ -621,22 +677,25 @@ class BaseTaskOrchestrator(ABC):
         self.dps_data: _DataContainer = defaultdict(list)
         self.subtasks: list[BaseDpsFetchSubtask] = []
 
-        if self.query.is_raw_query:
-            if self.query.include_status:
+        if query.is_raw_query:
+            if query.include_status:
                 self.status_code: _DataContainer = defaultdict(list)
                 self.status_symbol: _DataContainer = defaultdict(list)
-            if self.use_numpy and not self.query.ignore_bad_datapoints:
+            if use_numpy and not query.ignore_bad_datapoints:
                 self.null_timestamps: set[int] = set()
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points for free (if asked for) and ts info:
-        if not self.eager_mode:
+        if eager_mode:
+            self.first_cursor = None
+        else:
             assert first_dps_batch is not None and first_limit is not None
+            self.first_cursor = first_dps_batch.nextCursor
             self._extract_first_dps_batch(first_dps_batch, first_limit)
 
     @property
     def is_done(self) -> bool:
-        if self.ts_info is None:
+        if not self.ts_info:
             return False
         elif self._is_done:
             return True
@@ -649,13 +708,6 @@ class BaseTaskOrchestrator(ABC):
     @is_done.setter
     def is_done(self, value: bool) -> None:
         self._is_done = value
-
-    @property
-    def ts_info_dct(self) -> dict[str, Any]:
-        # This is mostly for mypy to avoid 'cast' x 10000, but also a nice check to make sure
-        # we have the required ts info before returning a result dps object.
-        assert self.ts_info is not None
-        return self.ts_info
 
     @property
     def start_ts_first_batch(self) -> int:
@@ -682,20 +734,26 @@ class BaseTaskOrchestrator(ABC):
         self._store_first_batch(dps, first_limit)
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
-        self.ts_info = get_ts_info_from_proto(res)
-        self.ts_info["granularity"] = self.query.granularity
+        self.ts_info.update(get_ts_info_from_proto(res))
+        self.ts_info["timezone"] = self.query.original_timezone
+        self.ts_info["granularity"] = self.query.original_granularity  # show '1quarter', not '3mo'
         if self.use_numpy:
             self.raw_dtype_numpy = decide_numpy_dtype_from_is_string(res.isString)
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
-        # Set `start` for the first subtask:
-        self.first_start = dps[-1].timestamp + self.offset_next
+        # Set `start` for the first subtask; since we have a cursor, this is only (really)
+        # needed for time domain splitting:
+        self.first_start = dps[-1].timestamp
+        if not self.query.use_cursors:
+            self.first_start += self.offset_next
         self._unpack_and_store(FIRST_IDX, dps)
 
         # Are we done after first batch?
-        if self.first_start == self.query.end or len(dps) < first_limit:
+        if not self.first_cursor or len(dps) < first_limit:
             self._is_done = True
-        elif self.has_limit and len(dps) <= self.query.finite_limit <= first_limit:
+        elif not self.query.use_cursors and self.first_start == self.query.end:
+            self._is_done = True
+        elif self.query.limit is not None and len(dps) <= self.query.limit <= first_limit:  # TODO: len == limit??
             self._is_done = True
 
     def _clear_data_containers(self) -> None:
@@ -743,15 +801,19 @@ class BaseTaskOrchestrator(ABC):
 
 
 class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
-    def get_remaining_limit(self) -> int:
+    def get_remaining_limit(self) -> float:
         assert len(self.subtasks) == 1
-        return self.query.finite_limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
+        if self.query.limit is None:
+            return math.inf
+        return self.query.limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
 
     def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # For serial fetching, a single task suffice
         start = self.query.start if self.eager_mode else self.first_start
         subtasks: list[BaseDpsFetchSubtask] = [
-            SerialFetchSubtask(start=start, end=self.query.end, parent=self, subtask_idx=FIRST_IDX)
+            SerialFetchSubtask(
+                start=start, end=self.query.end, parent=self, subtask_idx=FIRST_IDX, first_cursor=self.first_cursor
+            )
         ]
         self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
@@ -778,13 +840,13 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if not self.use_numpy:
             if self.query.include_status:
                 status_cols.update(status_code=[], status_symbol=[])
-            return Datapoints(**self.ts_info_dct, timestamp=[], value=[], **status_cols)
+            return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
 
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
         return DatapointsArray._load_from_arrays(
             {
-                **self.ts_info_dct,
+                **self.ts_info,
                 "timestamp": np.array([], dtype=np.int64),
                 "value": np.array([], dtype=self.raw_dtype_numpy),
                 **status_cols,
@@ -811,7 +873,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 status_columns["null_timestamps"] = self.null_timestamps
             return DatapointsArray._load_from_arrays(
                 {
-                    **self.ts_info_dct,
+                    **self.ts_info,
                     "timestamp": create_array_from_dps_container(self.ts_data),
                     "value": create_array_from_dps_container(self.dps_data),
                     **status_columns,
@@ -823,7 +885,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 status_symbol=create_list_from_dps_container(self.status_symbol),
             )
         return Datapoints(
-            **self.ts_info_dct,
+            **self.ts_info,
             timestamp=create_list_from_dps_container(self.ts_data),
             value=create_list_from_dps_container(self.dps_data),
             **status_columns,
@@ -965,7 +1027,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
 
     @cached_property
     def offset_next(self) -> int:
-        return granularity_to_ms(self.query.granularity)
+        return granularity_to_ms(cast(str, self.query.granularity))
 
     def _set_aggregate_vars(self, aggs_camel_case: list[str], use_numpy: bool) -> None:
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.
@@ -994,10 +1056,10 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
             if self.int_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.int64) for agg in self.int_aggs})
-            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct: dict[str, list] = {agg: [] for agg in self.all_aggregates}
-        return Datapoints(timestamp=[], **self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
+        return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
         if not self.ts_data or self.query.limit == 0:
@@ -1015,7 +1077,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct[agg] = np.nan_to_num(arr_dct[agg], copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(
                     np.int64
                 )
-            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}
         if self.single_agg:
@@ -1026,7 +1088,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         for agg in self.int_aggs:
             # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double:
             lst_dct[agg] = list(map(ensure_int, lst_dct[agg]))
-        return Datapoints(**self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
+        return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
         if self.use_numpy:
