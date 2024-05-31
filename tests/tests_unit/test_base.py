@@ -417,7 +417,6 @@ class TestCogniteResource:
         dumped = instance.dump(camel_case=True)
         json_serialised = _json.dumps(dumped)
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
-
         assert loaded.dump() == instance.dump()
 
     @pytest.mark.dsl
