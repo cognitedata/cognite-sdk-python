@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.46.1] - 2024-05-31
+### Fixed
+- Pyodide issue related to missing tzdata package.
+
 ## [7.46.0] - 2024-05-31
 ### Added
 - `RawRowsAPI.insert_dataframe` now has a new `dropna` setting (defaulting to True, as this would otherwise raise later).
