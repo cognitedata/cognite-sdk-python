@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import calendar
+import functools
 import math
 import numbers
 import re
@@ -24,7 +25,6 @@ if TYPE_CHECKING:
 
     import pandas
 
-UTC = ZoneInfo("UTC")  # type: ignore [abstract]
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 VARIABLE_LENGTH_UNITS = {"month", "quarter", "year"}
@@ -71,6 +71,11 @@ _GRANULARITY_CONVERSION = {
     "quarter": (3, "mo"),
     "year": (12, "mo"),
 }
+
+
+@functools.lru_cache(1)
+def get_zoneinfo_utc() -> ZoneInfo:
+    return ZoneInfo("UTC")  # type: ignore [abstract]
 
 
 def parse_str_timezone_offset(tz: str) -> timezone:
@@ -582,6 +587,7 @@ def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> 
 def _to_fixed_utc_intervals_variable_unit_length(
     start: datetime, end: datetime, multiplier: int, unit: str, granularity: str
 ) -> list[dict[str, datetime | str]]:
+    UTC = get_zoneinfo_utc()
     freq = to_pandas_freq(f"{multiplier}{unit}", start)
     index = pandas_date_range_tz(start, end, freq)
     return [
@@ -598,6 +604,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     start: datetime, end: datetime, multiplier: int, unit: str, granularity: str
 ) -> list[dict[str, datetime | str]]:
     pd = local_import("pandas")
+    UTC = get_zoneinfo_utc()
 
     index = pandas_date_range_tz(start, end, to_pandas_freq(f"{multiplier}{unit}", start))
     utc_offsets = pd.Series([t.utcoffset() for t in index], index=index)
