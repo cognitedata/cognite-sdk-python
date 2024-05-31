@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.45.0] - 2024-05-28
+## [7.46.0] - 2024-05-31
+### Added
+- `RawRowsAPI.insert_dataframe` now has a new `dropna` setting (defaulting to True, as this would otherwise raise later).
+
+## [7.45.0] - 2024-05-31
 ### Added
 - DatapointsAPI now support `timezone` and new calendar-based granularities like `month`, `quarter` and `year`.
   These API features are in beta, and the SDK implementation in alpha, meaning breaking changes can
