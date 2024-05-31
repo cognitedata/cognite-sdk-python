@@ -540,7 +540,7 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table.
             dataframe (pd.DataFrame): The dataframe to insert. Index will be used as row keys.
             ensure_parent (bool): Create database/table if they don't already exist.
-            dropna (bool): Remove NaNs before insert, done individually per column. Default: True
+            dropna (bool): Remove NaNs (but keep None's in dtype=object columns) before inserting. Done individually per column. Default: True
 
         Examples:
 
@@ -561,17 +561,23 @@ class RawRowsAPI(APIClient):
         elif not dataframe.columns.is_unique:
             raise ValueError(f"Dataframe columns are not unique: {sorted(find_duplicates(dataframe.columns))}")
 
-        if not dropna:
-            rows = dataframe.to_dict(orient="index")
-        else:
-            rows = self._df_to_rows_skip_nans(dataframe)
+        rows = self._df_to_rows_skip_nans(dataframe) if dropna else dataframe.to_dict(orient="index")
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     @staticmethod
     def _df_to_rows_skip_nans(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
+        np = local_import("numpy")
         rows: defaultdict[str, dict[str, Any]] = defaultdict(dict)
+        object_cols = df.select_dtypes("object").columns
+
         for column_id, col in df.items():
-            col = col.dropna()
+            if column_id not in object_cols:
+                col = col.dropna()
+            else:
+                # pandas treat None as NaN, but numpy does not:
+                mask = np.logical_or(col.to_numpy() == None, col.notna())  # noqa: E711
+                col = col[mask]
+
             for idx, val in col.items():
                 rows[idx][column_id] = val
         return dict(rows)
