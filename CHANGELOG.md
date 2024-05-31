@@ -23,6 +23,9 @@ Changes are grouped as follows
   These API features are in beta, and the SDK implementation in alpha, meaning breaking changes can
   happen without warning. Set beta header to avoid warning. Users of `retrieve_dataframe_in_tz` should
   consider upgrading as soon as possible.
+### Deprecated
+- The function `DatapointsAPI.retrieve_dataframe_in_tz` is deprecated. Use the other retrieve methods instead
+  and pass in `timezone`.
 
 ## [7.44.1] - 2024-05-24
 ### Added
