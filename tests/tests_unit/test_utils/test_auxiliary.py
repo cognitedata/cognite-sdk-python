@@ -104,7 +104,7 @@ class TestRemoveDuplicatesKeepOrder:
             ("abccba", ["a", "b", "c"]),
         ),
     )
-    def test_no_duplicates_asdffdsa(self, inp, expected):
+    def test_no_duplicates(self, inp, expected):
         assert expected == remove_duplicates_keep_order(inp)
 
 

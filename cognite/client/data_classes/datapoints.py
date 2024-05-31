@@ -43,7 +43,6 @@ from cognite.client.utils._text import (
 )
 from cognite.client.utils._time import (
     ZoneInfo,
-    convert_and_isoformat_time_attrs,
     convert_and_isoformat_timestamp,
     convert_timezone_to_str,
     parse_str_timezone,
@@ -959,12 +958,10 @@ class Datapoints(CogniteResource):
         self.__datapoint_objects: list[Datapoint] | None = None
 
     def __str__(self) -> str:
-        item = self.dump()
-        item["datapoints"] = [
-            {"timestamp": convert_and_isoformat_timestamp(dct["timestamp"], self.timezone), **dct}
-            for dct in item["datapoints"]
-        ]
-        return _json.dumps(item, indent=4)
+        dumped = self.dump()
+        for dct in dumped["datapoints"]:
+            dct["timestamp"] = convert_and_isoformat_timestamp(dct["timestamp"], self.timezone)
+        return _json.dumps(dumped, indent=4)
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -1406,11 +1403,11 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         return super().get(id, external_id)
 
     def __str__(self) -> str:
-        item = self.dump()
-        for i in item:
-            # TODO: Don't ignore timezone settings
-            i["datapoints"] = convert_and_isoformat_time_attrs(i["datapoints"])
-        return _json.dumps(item, indent=4)
+        dumped = self.dump()
+        for dps, item in zip(self, dumped):
+            for dct in item["datapoints"]:
+                dct["timestamp"] = convert_and_isoformat_timestamp(dct["timestamp"], dps.timezone)
+        return _json.dumps(dumped, indent=4)
 
     def to_pandas(  # type: ignore [override]
         self,

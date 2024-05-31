@@ -1515,7 +1515,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
             )
 
-    def test_timezone_agg_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions, monkeypatch):
+    def test_timezone_agg_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
         expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
         expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
         expected_index = pd.to_datetime(
@@ -1557,7 +1557,7 @@ class TestRetrieveAggregateDatapointsAPI:
             pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
             pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
 
-    def test_calendar_granularities_in_utc_and_timezone(self, retrieve_endpoints, all_test_time_series, monkeypatch):
+    def test_calendar_granularities_in_utc_and_timezone(self, retrieve_endpoints, all_test_time_series):
         daily_ts, oslo = all_test_time_series[108], ZoneInfo("Europe/Oslo")
         granularities = [
             "1" + random.choice(["mo", "month", "months"]),

@@ -34,7 +34,7 @@ from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
 )
-from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray
+from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
@@ -413,8 +413,6 @@ class TestCogniteResource:
         instance = FakeCogniteResourceGenerator(
             seed=42, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
-        if cognite_resource_subclass in {Datapoints, DatapointsArray}:
-            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         dumped = instance.dump(camel_case=True)
         json_serialised = _json.dumps(dumped)
@@ -433,8 +431,6 @@ class TestCogniteResource:
         instance = FakeCogniteResourceGenerator(
             seed=64, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
-        if cognite_resource_subclass in {Datapoints, DatapointsArray}:
-            instance.timezone = None  # TODO: No good way to dump/load without adding tz string parsing...
 
         yaml_serialised = instance.dump_yaml()
         loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)

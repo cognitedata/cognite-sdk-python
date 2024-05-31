@@ -72,7 +72,7 @@ def test_parse_str_timezone_offset(offset_inp, expected):
         ("UTC+01:15", timezone(timedelta(seconds=4500))),
     ),
 )
-def test_parse_str_timezone_asd(inp, expected):
+def test_parse_str_timezone(inp, expected):
     assert expected == parse_str_timezone(inp)
 
 
