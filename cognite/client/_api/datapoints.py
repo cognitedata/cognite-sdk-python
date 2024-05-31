@@ -6,7 +6,6 @@ import heapq
 import itertools
 import math
 import time
-import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from itertools import chain
@@ -1098,13 +1097,6 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe in the same timezone as ``start`` and ``end``.
 
-        .. admonition:: Deprecation Warning
-
-            This SDK function is deprecated and will be removed in the next major release. Reason: Cognite Data
-            Fusion now has native support for timezone and calendar-based aggregations. Please consider
-            migrating already today: The API yields more accurate results and have better support for exotic
-            timezones. You can use the normal retrieve methods instead, just pass 'timezone' as a parameter.
-
         This is a convenience method extending the Time Series API capabilities to make timezone-aware datapoints
         fetching easy with daylight saving time (DST) transitions taken care of automatically. It builds on top
         of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
@@ -1185,15 +1177,6 @@ class DatapointsAPI(APIClient):
                 ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("America/New_York")),
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("America/New_York")))
         """
-        warnings.warn(
-            (
-                "This SDK function is deprecated and will be removed in the next major release. Reason: Cognite Data "
-                "Fusion now has native support for timezone and calendar-based aggregations. Please consider "
-                "migrating already today: The API yields more accurate results and have better support for exotic "
-                "timezones. You can use the normal retrieve methods instead, just pass 'timezone' as a parameter."
-            ),
-            UserWarning,
-        )
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
 
         if not exactly_one_is_not_none(id, external_id):
