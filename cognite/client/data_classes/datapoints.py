@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-import datetime as dt
+import datetime
 import json
 import typing
 import warnings
@@ -166,11 +166,11 @@ class DatapointsQuery:
     )
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
-    start: int | str | dt.datetime = _NOT_SET  # type: ignore [assignment]
-    end: int | str | dt.datetime = _NOT_SET  # type: ignore [assignment]
+    start: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
+    end: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
     granularity: str | None = _NOT_SET  # type: ignore [assignment]
-    timezone: str | dt.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
+    timezone: str | datetime.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
     target_unit: str | None = _NOT_SET  # type: ignore [assignment]
     target_unit_system: str | None = _NOT_SET  # type: ignore [assignment]
     limit: int | None = _NOT_SET  # type: ignore [assignment]
@@ -221,11 +221,11 @@ class DatapointsQuery:
         return self._original_granularity
 
     @property
-    def original_timezone(self) -> dt.timezone | ZoneInfo | None:
+    def original_timezone(self) -> datetime.timezone | ZoneInfo | None:
         return self._original_timezone
 
     @original_timezone.setter
-    def original_timezone(self, tz: dt.timezone | ZoneInfo) -> None:
+    def original_timezone(self, tz: datetime.timezone | ZoneInfo) -> None:
         self._original_timezone = tz
 
     @cached_property
@@ -352,7 +352,7 @@ class LatestDatapointQuery:
 
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
-    before: None | int | str | dt.datetime = None
+    before: None | int | str | datetime.datetime = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     include_status: bool | None = None
@@ -392,7 +392,7 @@ class Datapoint(CogniteResource):
         duration_uncertain (int | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
         status_code (int | None): The status code for the raw datapoint.
         status_symbol (str | None): The status symbol for the raw datapoint.
-        timezone (dt.timezone | ZoneInfo | None): The timezone to use when displaying the datapoint.
+        timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoint.
     """
 
     def __init__(
@@ -417,7 +417,7 @@ class Datapoint(CogniteResource):
         duration_uncertain: int | None = None,
         status_code: int | None = None,
         status_symbol: str | None = None,
-        timezone: dt.timezone | ZoneInfo | None = None,
+        timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.value = value
@@ -515,7 +515,7 @@ class DatapointsArray(CogniteResource):
         status_code: NumpyUInt32Array | None = None,
         status_symbol: NumpyObjArray | None = None,
         null_timestamps: set[int] | None = None,
-        timezone: dt.timezone | ZoneInfo | None = None,
+        timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -754,7 +754,7 @@ class DatapointsArray(CogniteResource):
             # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour)
             #       and for some weird reason .astype(datetime) directly from dt64 returns native integer... whatwhyy
             if self.timezone is None:
-                arrays[0] = arrays[0].astype("datetime64[ms]").astype(dt.datetime).astype(str)
+                arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime.datetime).astype(str)
             else:
                 arrays[0] = np.array(
                     [
@@ -891,7 +891,7 @@ class Datapoints(CogniteResource):
         status_code (list[int] | None): The status codes for the raw datapoints.
         status_symbol (list[str] | None): The status symbols for the raw datapoints.
         error (list[None | str] | None): Human readable strings with description of what went wrong (returned by synthetic datapoints queries).
-        timezone (dt.timezone | ZoneInfo | None): The timezone to use when displaying the datapoints.
+        timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoints.
     """
 
     def __init__(
@@ -924,7 +924,7 @@ class Datapoints(CogniteResource):
         status_code: list[int] | None = None,
         status_symbol: list[str] | None = None,
         error: list[None | str] | None = None,
-        timezone: dt.timezone | ZoneInfo | None = None,
+        timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id

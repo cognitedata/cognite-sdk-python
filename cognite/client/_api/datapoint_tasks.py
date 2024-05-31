@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime as dt
+import datetime
 import math
 import numbers
 import operator as op
@@ -96,13 +96,13 @@ class _FullDatapointsQuery:
     requested, previously public (before v5).
     """
 
-    start: int | str | dt.datetime | None = None
-    end: int | str | dt.datetime | None = None
+    start: int | str | datetime.datetime | None = None
+    end: int | str | datetime.datetime | None = None
     id: DatapointsId | None = None
     external_id: DatapointsExternalId | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
-    timezone: str | dt.timezone | ZoneInfo | None = None
+    timezone: str | datetime.timezone | ZoneInfo | None = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     limit: int | None = None
@@ -255,8 +255,8 @@ class _FullDatapointsQuery:
 
     @staticmethod
     def _verify_and_convert_timezone(
-        tz: str | dt.timezone | ZoneInfo | None, is_raw_query: bool
-    ) -> tuple[dt.timezone | ZoneInfo | None, str | None]:
+        tz: str | datetime.timezone | ZoneInfo | None, is_raw_query: bool
+    ) -> tuple[datetime.timezone | ZoneInfo | None, str | None]:
         if tz is None:
             return None, None
         elif isinstance(tz, str):
@@ -316,7 +316,7 @@ class _FullDatapointsQuery:
         return start, end
 
     @staticmethod
-    def _ts_to_ms_frozen_now(ts: int | str | dt.datetime | None, frozen_time_now: int, default: int) -> int:
+    def _ts_to_ms_frozen_now(ts: int | str | datetime.datetime | None, frozen_time_now: int, default: int) -> int:
         # Time 'now' is frozen for all queries in a single call from the user, leading to identical
         # results e.g. "4d-ago" and "now"
         if ts is None:
