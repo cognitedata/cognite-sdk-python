@@ -578,11 +578,14 @@ class DatapointsAPI(APIClient):
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. The can be given as an abbreviation or spelled out for clarity: s/second(s), m/minute(s), h/hour(s), d/day(s), w/week(s), mo/month(s), q/quarter(s), or y/year(s). Default: None.
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``,
+                ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``min``, ``step_interpolation``, ``sum`` and ``total_variation``.
+                Default: None (raw datapoints returned)
+            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``,
+                ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved).
                 For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location,
-                like 'Europe/Oslo', pass a string or ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
+                like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
                 from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not
                 supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -697,7 +700,7 @@ class DatapointsAPI(APIClient):
                 >>> ts_44 = dps_lst.get(id=44)  # Single ``Datapoints`` object
                 >>> ts_lst = dps_lst.get(external_id=sensor_xid)  # List of ``len(periods)`` ``Datapoints`` objects
 
-            The API has an endpoint to "retrieve latest (before)", but not "after". Luckily, we can emulate that behaviour easily.
+            The API has an endpoint to :py:meth:`~DatapointsAPI.retrieve_latest`, i.e. "before", but not "after". Luckily, we can emulate that behaviour easily.
             Let's say we have a very dense time series and do not want to fetch all of the available raw data (or fetch less precise
             aggregate data), just to get the very first datapoint of every month (from e.g. the year 2000 through 2010)::
 
@@ -710,7 +713,7 @@ class DatapointsAPI(APIClient):
                 ...     limit=1)
 
             To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
-            constants: `MIN_TIMESTAMP_MS` and `MAX_TIMESTAMP_MS`, to make sure you do not miss any. Performance warning: This pattern of
+            constants: ``MIN_TIMESTAMP_MS`` and ``MAX_TIMESTAMP_MS``, to make sure you do not miss any. **Performance warning**: This pattern of
             fetching datapoints from the entire valid time domain is slower and shouldn't be used for regular "day-to-day" queries:
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
@@ -721,7 +724,7 @@ class DatapointsAPI(APIClient):
 
             If you have a time series with 'unit_external_id' set, you can use the 'target_unit' parameter to convert the datapoints
             to the desired unit. In the example below, we are converting temperature readings from a sensor measured and stored in Celsius,
-            to Fahrenheit (we're assuming that the time series has e.g. ``unit_external_id='temperature:deg_c'``):
+            to Fahrenheit (we're assuming that the time series has e.g. ``unit_external_id="temperature:deg_c"`` ):
 
                 >>> client.time_series.data.retrieve(
                 ...   id=42, start="2w-ago", target_unit="temperature:deg_f")
@@ -809,11 +812,14 @@ class DatapointsAPI(APIClient):
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. The can be given as an abbreviation or spelled out for clarity: s/second(s), m/minute(s), h/hour(s), d/day(s), w/week(s), mo/month(s), q/quarter(s), or y/year(s). Default: None.
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``,
+                ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``min``, ``step_interpolation``, ``sum`` and ``total_variation``.
+                Default: None (raw datapoints returned)
+            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``,
+                ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved).
                 For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location,
-                like 'Europe/Oslo', pass a string or ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
+                like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
                 from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not
                 supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -946,11 +952,14 @@ class DatapointsAPI(APIClient):
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. The can be given as an abbreviation or spelled out for clarity: s/second(s), m/minute(s), h/hour(s), d/day(s), w/week(s), mo/month(s), q/quarter(s), or y/year(s). Default: None.
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``,
+                ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``min``, ``step_interpolation``, ``sum`` and ``total_variation``.
+                Default: None (raw datapoints returned)
+            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``,
+                ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved).
                 For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, -day or -month. For timezones of type Region/Location,
-                like 'Europe/Oslo', pass a string or ZoneInfo instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
+                like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset
                 from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not
                 supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1126,15 +1135,18 @@ class DatapointsAPI(APIClient):
             external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
             start (datetime.datetime): Inclusive start, must be timezone aware.
             end (datetime.datetime): Exclusive end, must be timezone aware and have the same timezone as start.
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``,
+                ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``min``, ``step_interpolation``, ``sum`` and ``total_variation``.
+                Default: None (raw datapoints returned)
+            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``,
+                ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
             ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
-            uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
+            uniform_index (bool): If querying aggregates with a non-calendar granularity, specifying ``uniform_index=True`` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names (Literal["id", "external_id"]): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
