@@ -15,7 +15,7 @@ import typing
 from collections import Counter
 from contextlib import contextmanager
 from datetime import timedelta, timezone
-from typing import Any, Mapping, TypeVar, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -48,7 +48,11 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string, to_snake_case
+
+if TYPE_CHECKING:
+    import pandas
 
 T_Type = TypeVar("T_Type", bound=type)
 
@@ -186,6 +190,76 @@ def set_request_limit(client, limit):
     for limit_name, limit_val in tmp.items():
         if hasattr(client, limit_name):
             setattr(client, limit_name, limit_val)
+
+
+def cdf_aggregate(
+    raw_df: pandas.DataFrame,
+    aggregate: Literal["average", "sum", "count"],
+    granularity: str,
+    is_step: bool = False,
+    raw_freq: str | None = None,
+) -> pandas.DataFrame:
+    """Aggregates the dataframe as CDF is doing it on the database layer.
+
+    **Motivation**: This is used in testing to verify that the correct aggregation is done with
+    on the client side when aggregating in given time zone.
+
+    Current assumptions:
+        * No step timeseries
+        * Uniform index.
+        * Known frequency of raw data.
+
+    Args:
+        raw_df (pd.DataFrame): Dataframe with the raw datapoints.
+        aggregate (str): Single aggregate to calculate, supported average, sum.
+        granularity (str): The granularity to aggregates at. e.g. '15s', '2h', '10d'.
+        is_step (bool): Whether to use stepwise or continuous interpolation.
+        raw_freq (str): The frequency of the raw data. If it is not given, it is attempted inferred from raw_df.
+    """
+    if is_step:
+        raise NotImplementedError
+
+    pd = cast(Any, local_import("pandas"))
+    granularity_pd = granularity.replace("m", "T")
+    grouping = raw_df.groupby(pd.Grouper(freq=granularity_pd))
+    if aggregate == "sum":
+        return grouping.sum()
+    elif aggregate == "count":
+        return grouping.count().astype("Int64")
+
+    # The average is calculated by the formula '1/(b-a) int_a^b f(t) dt' where f(t) is the continuous function
+    # This is weighted average of the sampled version of f(t)
+    np = cast(Any, local_import("numpy"))
+
+    def integrate_average(values: pandas.DataFrame) -> pandas.Series:
+        inner = (values.iloc[1:].values + values.iloc[:-1].values) / 2.0
+        res = inner.mean() if inner.shape[0] else np.nan
+        return pd.Series(res, index=values.columns)
+
+    freq = raw_freq or raw_df.index.inferred_freq
+    if freq is None:
+        raise ValueError("Failed to infer frequency raw data.")
+    if not freq[0].isdigit():
+        freq = f"1{freq}"
+
+    # When the frequency of the data is 1 hour and above, the end point is excluded.
+    freq = pd.Timedelta(freq)
+    if freq >= pd.Timedelta("1hour"):
+        return grouping.apply(integrate_average)
+
+    def integrate_average_end_points(values: pandas.Series) -> float:
+        dt = values.index[-1] - values.index[0]
+        scale = np.diff(values.index) / 2.0 / dt
+        return (scale * (values.values[1:] + values.values[:-1])).sum()
+
+    step = pd.Timedelta(granularity_pd) // freq
+
+    return (
+        raw_df.rolling(window=pd.Timedelta(granularity_pd), closed="both")
+        .apply(integrate_average_end_points)
+        .shift(-step)
+        .iloc[::step]
+    )
 
 
 T = TypeVar("T")

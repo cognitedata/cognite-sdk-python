@@ -1265,6 +1265,45 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
 
+    def concat_duplicate_ids(self) -> None:
+        """
+        Concatenates all arrays with duplicated IDs.
+
+        Arrays with the same ids are stacked in chronological order.
+
+        **Caveat** This method is not guaranteed to preserve the order of the list.
+        """
+        # Rebuilt list instead of removing duplicated one at a time at the cost of O(n).
+        self.data.clear()
+
+        # This implementation takes advantage of the ordering of the duplicated in the __init__ method
+        has_external_ids = set()
+        for ext_id, items in self._external_id_to_item.items():
+            if not isinstance(items, list):
+                self.data.append(items)
+                if items.id is not None:
+                    has_external_ids.add(items.id)
+                continue
+            concatenated = DatapointsArray.create_from_arrays(*items)
+            self._external_id_to_item[ext_id] = concatenated
+            if concatenated.id is not None:
+                has_external_ids.add(concatenated.id)
+                self._id_to_item[concatenated.id] = concatenated
+            self.data.append(concatenated)
+
+        if not (only_ids := set(self._id_to_item) - has_external_ids):
+            return
+
+        for id_, items in self._id_to_item.items():
+            if id_ not in only_ids:
+                continue
+            if not isinstance(items, list):
+                self.data.append(items)
+                continue
+            concatenated = DatapointsArray.create_from_arrays(*items)
+            self._id_to_item[id_] = concatenated
+            self.data.append(concatenated)
+
     def get(  # type: ignore [override]
         self,
         id: int | None = None,
