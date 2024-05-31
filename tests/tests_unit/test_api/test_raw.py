@@ -357,11 +357,12 @@ def test_df_to_rows_skip_nans():
             "f": [None, None, None],
         }
     )
+    df.at[1, "f"] = math.nan  # object column, should keep None's, but this should be removed
     res = RawRowsAPI._df_to_rows_skip_nans(df)
     expected = {
-        0: {"a": 1.0, "b": 1.0, "c": 10, "d": math.inf, "e": 100.0},
+        0: {"a": 1.0, "b": 1.0, "c": 10, "d": math.inf, "e": 100.0, "f": None},
         1: {"b": 2.0, "c": 20, "d": 20.0, "e": 200.0},
-        2: {"a": 3.0, "c": 30, "d": 30.0},
+        2: {"a": 3.0, "c": 30, "d": 30.0, "f": None},
     }
     assert res == expected
 
