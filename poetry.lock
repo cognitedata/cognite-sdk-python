@@ -2675,11 +2675,11 @@ functions = ["pip"]
 geo = ["geopandas", "geopandas", "shapely"]
 numpy = ["numpy", "numpy", "numpy"]
 pandas = ["pandas", "pandas"]
-pyodide = ["pyodide-http"]
+pyodide = ["pyodide-http", "tzdata"]
 sympy = ["sympy"]
 yaml = ["PyYAML"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "d1af07445f013565e6cdd2b6513b9fc0a1d4df6109f9933a47f3d423f2b10412"
+content-hash = "108bba6708b5f23e380af2ae0f07a11993a57334384ac8e56068df03cd4e8614"
