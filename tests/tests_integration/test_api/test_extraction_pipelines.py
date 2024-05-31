@@ -8,7 +8,6 @@ from cognite.client.data_classes.extractionpipelines import ExtractionPipelineCo
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import random_string
-from cognite.client.utils._time import DayAligner
 
 
 @pytest.fixture(scope="function")
@@ -39,8 +38,9 @@ def new_extpipe(cognite_client: CogniteClient):
 
 @pytest.fixture(scope="function")
 def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipeline) -> ExtractionPipelineRunList:
-    now = datetime_to_ms(dt_now := datetime.now(timezone.utc))
-    long_time_ago = datetime_to_ms(DayAligner.add_units(dt_now, -300))
+    dt_now = datetime.now(timezone.utc)
+    now = datetime_to_ms(dt_now)
+    long_time_ago = datetime_to_ms(dt_now - timedelta(days=300))
     runs = [
         ExtractionPipelineRun(
             extpipe_external_id=new_extpipe.external_id, status="failure", message="lorem ipsum", created_time=now
