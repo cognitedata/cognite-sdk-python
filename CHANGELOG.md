@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.47.0] - 2024-06-03
+### Added
+- `WorkfowExecutionAPI.list` now allows filtering by execution status.
+
 ## [7.46.1] - 2024-05-31
 ### Fixed
 - Pyodide issue related to missing tzdata package.
