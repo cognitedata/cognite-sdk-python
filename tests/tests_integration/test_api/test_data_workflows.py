@@ -360,6 +360,29 @@ class TestWorkflowExecutions:
         assert len(listed) == len(workflow_execution_list)
         assert all(w.as_workflow_id() in workflow_ids for w in listed)
 
+    def test_list_workflow_executions_by_status(
+        self,
+        cognite_client: CogniteClient,
+        workflow_execution_list: WorkflowExecutionList,
+        add_multiply_workflow: WorkflowVersion,
+    ) -> None:
+        # start a fresh execution
+        result = cognite_client.workflows.executions.trigger(
+            add_multiply_workflow.workflow_external_id,
+            add_multiply_workflow.version,
+            {"a": 5, "b": "a"},
+        )
+
+        # the new execution should not be completed yet, but running
+        listed_completed = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), status="completed", limit=3
+        )
+        listed_failed = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), status="running", limit=3
+        )
+        assert filter(lambda x: x.id == result.id, listed_completed) == []
+        assert len(filter(lambda x: x.id == result.id, listed_failed)) == 1
+
     def test_retrieve_workflow_execution_detailed(
         self,
         cognite_client: CogniteClient,
