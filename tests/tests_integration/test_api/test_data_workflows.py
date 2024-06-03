@@ -375,13 +375,13 @@ class TestWorkflowExecutions:
 
         # the new execution should not be completed yet, but running
         listed_completed = cognite_client.workflows.executions.list(
-            workflow_version_ids=add_multiply_workflow.as_id(), status="completed", limit=3
+            workflow_version_ids=add_multiply_workflow.as_id(), status=["completed"], limit=3
         )
-        listed_failed = cognite_client.workflows.executions.list(
-            workflow_version_ids=add_multiply_workflow.as_id(), status="running", limit=3
+        listed_running = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), status=["running"], limit=3
         )
         assert filter(lambda x: x.id == result.id, listed_completed) == []
-        assert len(filter(lambda x: x.id == result.id, listed_failed)) == 1
+        assert len(filter(lambda x: x.id == result.id, listed_running)) == 1
 
     def test_retrieve_workflow_execution_detailed(
         self,
