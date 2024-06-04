@@ -18,7 +18,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.48.0] - 2024-06-04
-### Added
+### Changed
 - Mark Data Workflows SDK implementation as Generally Available.
 
 ## [7.47.0] - 2024-06-04
