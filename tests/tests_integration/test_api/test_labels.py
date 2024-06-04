@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, AssetUpdate, Label, LabelDefinition, LabelDefinitionList
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
 
@@ -41,9 +41,13 @@ class TestLabelsAPI:
         assert res[0].name == new_label.name
 
     def test_retrieve_non_existing_labels(self, cognite_client: CogniteClient) -> None:
-        with pytest.raises(CogniteAPIError) as e:
+        with pytest.raises(CogniteNotFoundError) as e:
             cognite_client.labels.retrieve(external_id="this does not exist")
-        assert e.value.code == 404
+        assert e.value.failed[0]["externalId"] == "this does not exist"
+
+    def test_retrieve_non_existing_label_list(self, cognite_client: CogniteClient) -> None:
+        label_list = cognite_client.labels.retrieve(external_id=["this does not exist"], ignore_unknown_ids=True)
+        assert len(label_list) == 0
 
     def test_retrieve_none_existing_labels_ignore_unknown(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.labels.retrieve(external_id="this does not exist", ignore_unknown_ids=True)
