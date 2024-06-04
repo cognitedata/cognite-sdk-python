@@ -1,8 +1,9 @@
+import math
 import re
 
 import pytest
 
-from cognite.client._api.raw import Database, DatabaseList, Row, RowList, Table, TableList
+from cognite.client._api.raw import Database, DatabaseList, RawRowsAPI, Row, RowList, Table, TableList
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
@@ -320,6 +321,50 @@ def test_raw_row__direct_column_access():
     row.columns = None
     with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
         del row["wrong-key"]
+
+
+@pytest.mark.dsl
+def test_insert_dataframe_raises_on_duplicated_cols(cognite_client):
+    import pandas as pd
+
+    df = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [1, 2, 3],
+            "c": [10, 20, 30],
+            "d": [10, 20, 30],
+            "e": [100, 200, 300],
+            "f": [100, 200, 300],
+        }
+    )
+    df.columns = ["a", "b", "a", "c", "a", "b"]
+    with pytest.raises(ValueError, match=r"^Dataframe columns are not unique: \['a', 'b'\]$"):
+        cognite_client.raw.rows.insert_dataframe("db", "tbl", df)
+
+
+@pytest.mark.dsl
+def test_df_to_rows_skip_nans():
+    import numpy as np
+    import pandas as pd
+
+    df = pd.DataFrame(
+        {
+            "a": [1, None, 3],
+            "b": [1, 2, None],
+            "c": [10, 20, 30],
+            "d": [math.inf, 20, 30],
+            "e": [100, 200, np.nan],
+            "f": [None, None, None],
+        }
+    )
+    df.at[1, "f"] = math.nan  # object column, should keep None's, but this should be removed
+    res = RawRowsAPI._df_to_rows_skip_nans(df)
+    expected = {
+        0: {"a": 1.0, "b": 1.0, "c": 10, "d": math.inf, "e": 100.0, "f": None},
+        1: {"b": 2.0, "c": 20, "d": 20.0, "e": 200.0},
+        2: {"a": 3.0, "c": 30, "d": 30.0, "f": None},
+    }
+    assert res == expected
 
 
 @pytest.mark.dsl

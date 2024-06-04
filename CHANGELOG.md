@@ -17,6 +17,43 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.47.0] - 2024-06-04
+### Added
+- Support for retrieving `Labels`, `client.labels.retrieve`. 
+
+## [7.46.2] - 2024-06-03
+### Added
+- Added option for silencing `FeaturePreviewWarnings` in the `cognite.client.global_config`. 
+
+## [7.46.1] - 2024-05-31
+### Fixed
+- Pyodide issue related to missing tzdata package.
+
+## [7.46.0] - 2024-05-31
+### Added
+- `RawRowsAPI.insert_dataframe` now has a new `dropna` setting (defaulting to True, as this would otherwise raise later).
+
+## [7.45.0] - 2024-05-31
+### Added
+- DatapointsAPI now support `timezone` and new calendar-based granularities like `month`, `quarter` and `year`.
+  These API features are in beta, and the SDK implementation in alpha, meaning breaking changes can
+  occur without warning. Set beta header to avoid warning. Users of `retrieve_dataframe_in_tz` should
+  consider preparing to upgrade as soon as the features reach general availability (GA).
+
+## [7.44.1] - 2024-05-24
+### Added
+- Missing parameter `timeout` to `client.transformations.preview`.
+
+## [7.44.0] - 2024-05-24
+### Added
+- New utility function `datetime_to_ms_iso_timestamp` in `cognite.client.utils` to convert a datetime object
+  to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+
+## [7.43.6] - 2024-05-27
+### Improved
+- JSON is no longer attempted decoded when e.g. expecting protobuf, which currently leads to a small performance
+  improvement for datapoints fetching.
+
 ## [7.43.5] - 2024-05-22
 ### Fixed
 - Transformation schemas no longer raise when loaded into its resource type.

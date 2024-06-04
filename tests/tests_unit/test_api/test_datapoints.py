@@ -15,7 +15,7 @@ from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
-from cognite.client.utils._time import granularity_to_ms, import_zoneinfo
+from cognite.client.utils._time import ZoneInfo, granularity_to_ms
 from tests.utils import jsgz_load, random_gamma_dist_integer
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
@@ -968,7 +968,6 @@ class TestRetrieveDataPointsInTz:
     def test_retrieve_data_points_in_tz_invalid_user_input(
         args: dict, expected_error_message: str, start_tz: str | None, end_tz: str | None, cognite_client: CogniteClient
     ):
-        ZoneInfo = import_zoneinfo()
         if start_tz is not None:
             args["start"] = args["start"].astimezone(ZoneInfo(start_tz))
         if end_tz is not None:

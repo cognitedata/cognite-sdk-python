@@ -15,14 +15,17 @@ from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
     MonthAligner,
+    ZoneInfo,
     align_large_granularity,
     align_start_and_end_for_granularity,
     convert_and_isoformat_time_attrs,
     datetime_to_ms,
+    datetime_to_ms_iso_timestamp,
     granularity_to_ms,
-    import_zoneinfo,
     ms_to_datetime,
     pandas_date_range_tz,
+    parse_str_timezone,
+    parse_str_timezone_offset,
     split_time_range,
     timestamp_to_ms,
     to_fixed_utc_intervals,
@@ -33,6 +36,72 @@ from tests.utils import cdf_aggregate, tmp_set_envvar
 
 if TYPE_CHECKING:
     import pandas
+
+
+@pytest.mark.parametrize(
+    "offset_inp, expected",
+    (
+        ("", timedelta(0)),
+        ("01:15", timedelta(seconds=4500)),
+        ("01:15:12", timedelta(seconds=4512)),
+        ("23:59", timedelta(seconds=86340)),
+        ("0", timedelta(0)),
+        ("01", timedelta(seconds=3600)),
+        ("1", timedelta(seconds=3600)),
+        ("7", timedelta(seconds=25200)),
+        ("18", timedelta(seconds=64800)),
+    ),
+)
+def test_parse_str_timezone_offset(offset_inp, expected):
+    for pm in "+-":
+        for prefix in ["", "UTC", "UT", "GMT"]:
+            if not prefix and not offset_inp:
+                continue
+            inp = prefix + pm + offset_inp if offset_inp else prefix
+            res = parse_str_timezone_offset(inp)
+            assert res == timezone(int(pm + "1") * expected)
+
+
+@pytest.mark.parametrize(
+    "inp, expected",
+    (
+        ("Europe/Oslo", ZoneInfo("Europe/Oslo")),
+        ("Asia/Tokyo", ZoneInfo("Asia/Tokyo")),
+        ("GMT", ZoneInfo("GMT")),
+        ("UTC-0", timezone.utc),
+        ("UTC+01:15", timezone(timedelta(seconds=4500))),
+    ),
+)
+def test_parse_str_timezone(inp, expected):
+    assert expected == parse_str_timezone(inp)
+
+
+class TestDatetimeToMsIsoTimestamp:
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
+    def test_timezone_unaware(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
+        with tmp_set_envvar("TZ", "CET"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+
+    @pytest.mark.dsl
+    def test_timezone_cet(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
+        utc_datetime = input_datetime.astimezone(timezone.utc)
+        assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+        assert datetime_to_ms_iso_timestamp(utc_datetime) == "2020-12-31T23:00:00.000+00:00"
+
+    @pytest.mark.dsl
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
+    def test_timezone_cet_in_local_tz(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
+        with tmp_set_envvar("TZ", "UTC"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+
+    def test_incorrect_type(self):
+        with pytest.raises(TypeError, match="Expected datetime object, got <class 'str'>"):
+            datetime_to_ms_iso_timestamp("2021-01-01T00:00:00.000")
 
 
 class TestDatetimeToMs:
@@ -62,21 +131,17 @@ class TestDatetimeToMs:
             datetime_to_ms(datetime(1925, 8, 3))
 
     def test_aware_datetime_to_ms(self):
-        # TODO: Starting from PY39 we should also add tests using:
-        # from zoneinfo import ZoneInfo
-        # datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
         utc = timezone.utc
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
         assert datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
         assert datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
 
-    @pytest.mark.dsl
     def test_aware_datetime_to_ms_zoneinfo(self):
-        ZoneInfo = import_zoneinfo()
         # The correct answer was obtained using: https://dencode.com/en/date/unix-time
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=ZoneInfo("Europe/Oslo"))) == 1517353200000
         assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("Europe/Oslo"))) == -2208992400000
         assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("America/New_York"))) == -2208970800000
+        assert datetime_to_ms(datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))) == 1604170800000
 
     def test_ms_to_datetime__valid_input(self):  # TODO: Many tests here could benefit from parametrize
         utc = timezone.utc
@@ -357,11 +422,6 @@ class TestCDFAggregation:
 
 
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
-    try:
-        ZoneInfo = import_zoneinfo()
-    except CogniteImportError:
-        return []
-
     oslo = ZoneInfo("Europe/Oslo")
     utc = dict(tzinfo=ZoneInfo("UTC"))
     oslo_dst = datetime(2023, 3, 25, 23, **utc)
@@ -488,11 +548,6 @@ class TestToFixedUTCIntervals:
 
 
 def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
-    try:
-        ZoneInfo = import_zoneinfo()
-    except CogniteImportError:
-        return []
-
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
 
@@ -526,7 +581,6 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
 
 def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
     try:
-        ZoneInfo = import_zoneinfo()
         import pandas as pd
         import pytz  # hard pandas dependency
     except (ImportError, CogniteImportError):
@@ -601,7 +655,6 @@ class TestValidateTimeZone:
     def test_infer_timezone(start: datetime, end: datetime, expected_tz):
         actual_tz = validate_timezone(start, end)
 
-        ZoneInfo = import_zoneinfo()
         assert isinstance(actual_tz, ZoneInfo)
         assert actual_tz is expected_tz
 
@@ -643,7 +696,6 @@ class TestPandasDateRangeTz:
     @staticmethod
     @pytest.mark.dsl
     def test_pandas_date_range_tz_ambiguous_time_error():
-        ZoneInfo = import_zoneinfo()
         oslo = ZoneInfo("Europe/Oslo")
         start = datetime(1916, 8, 1, tzinfo=oslo)
         end = datetime(1916, 12, 1, tzinfo=oslo)

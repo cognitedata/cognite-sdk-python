@@ -14,6 +14,7 @@ import sys
 import typing
 from collections import Counter
 from contextlib import contextmanager
+from datetime import timedelta, timezone
 from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
@@ -420,6 +421,8 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
         elif resource_cls is Buckets:
             keyword_arguments = {"items": [{"start": 1, "count": 1}]}
+        elif resource_cls is timezone:
+            positional_arguments.append(timedelta(hours=self._random.randint(-3, 3)))
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
