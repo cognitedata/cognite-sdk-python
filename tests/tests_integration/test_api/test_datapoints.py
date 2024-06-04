@@ -198,6 +198,8 @@ def validate_raw_datapoints_lst(ts_lst, dps_lst, **kw):
 
 def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
     assert isinstance(dps, DPS_TYPES), "Datapoints(Array) not given"
+    assert ts.id == dps.id
+    assert ts.external_id == dps.external_id
     # Convert both dps types to arrays for simple comparisons:
     # (also convert string datapoints - which are also integers)
     values = np.array(dps.value, dtype=np.int64)
@@ -397,6 +399,24 @@ class TestRetrieveRawDatapointsAPI:
         with set_max_workers(cognite_client, 1), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             dps_lst = cognite_client.time_series.data.retrieve(id=ids, limit=1001)
         assert all(len(dps) == 1001 for dps in dps_lst)
+
+    def test_retrieve_chunking_mode_outside_points_stopped_after_no_cursor(self, cognite_client, weekly_dps_ts):
+        # From 7.45.0 to 7.47.0, when fetching in "chunking mode" with include_outside_points=True,
+        # due to an added is-nextCursor-empty check, the queries would short-circuit after the first batch.
+        ts_ids, tx_xids = weekly_dps_ts
+        with set_max_workers(cognite_client, 1):
+            dps_lst = cognite_client.time_series.data.retrieve(
+                id=ts_ids.as_ids(),
+                external_id=tx_xids.as_external_ids(),
+                start=ts_to_ms("1951"),
+                end=ts_to_ms("1999"),
+                include_outside_points=True,
+            )
+            df = dps_lst.to_pandas()
+
+            validate_raw_datapoints_lst(ts_ids + tx_xids, dps_lst)
+            assert df.shape == (2506, 101)
+            assert df.notna().any(axis=None)
 
     def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
         # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
