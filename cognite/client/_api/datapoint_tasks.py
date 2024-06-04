@@ -749,8 +749,10 @@ class BaseTaskOrchestrator(ABC):
         self._unpack_and_store(FIRST_IDX, dps)
 
         # Are we done after first batch?
-        if not self.first_cursor or len(dps) < first_limit:
+        if len(dps) < first_limit:
             self._is_done = True
+        elif not self.first_cursor and not self.query.include_outside_points:
+            self._is_done = True  # no cursor when including outside...
         elif not self.query.use_cursors and self.first_start == self.query.end:
             self._is_done = True
         elif self.query.limit is not None and len(dps) <= self.query.limit <= first_limit:  # TODO: len == limit??

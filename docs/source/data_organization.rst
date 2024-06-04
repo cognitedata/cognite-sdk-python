@@ -81,6 +81,10 @@ List labels
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.labels.LabelsAPI.list
 
+Retrieve labels
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.retrieve
+
 Create a label
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.labels.LabelsAPI.create
