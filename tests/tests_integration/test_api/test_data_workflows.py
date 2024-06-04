@@ -221,6 +221,16 @@ def workflow_execution_list(
     return cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=5)
 
 
+@pytest.fixture()
+def clean_created_sessions(cognite_client: CogniteClient) -> None:
+    existing_active_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
+    yield None
+    current_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
+    existing_ids = {session.id for session in existing_active_sessions}
+    to_revoked = [session.id for session in current_sessions if session.id not in existing_ids]
+    cognite_client.iam.sessions.revoke(to_revoked)
+
+
 class TestWorkflows:
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         workflow = WorkflowUpsert(
@@ -378,6 +388,9 @@ class TestWorkflowExecutions:
 
         assert non_existing is None
 
+    # Each trigger creates a new execution, so we need to clean up after each test to avoid
+    # running out of quota
+    @pytest.mark.usefixtures("clean_created_sessions")
     def test_trigger_retrieve_detailed_update_update_task(
         self,
         cognite_client: CogniteClient,
@@ -398,6 +411,7 @@ class TestWorkflowExecutions:
         async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
         assert async_task.status == "completed"
 
+    @pytest.mark.usefixtures("clean_created_sessions")
     def test_trigger_cancel_retry_workflow(
         self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
     ) -> None:
