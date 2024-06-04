@@ -21,7 +21,7 @@ from cognite.client.utils._text import to_snake_case
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-WorkflowStatus: TypeAlias = Literal[
+TaskStatus: TypeAlias = Literal[
     "in_progress",
     "cancelled",
     "failed",
@@ -32,6 +32,13 @@ WorkflowStatus: TypeAlias = Literal[
     "skipped",
 ]
 
+WorkflowStatus: TypeAlias = Literal[
+    "completed",
+    "failed",
+    "running",
+    "terminated",
+    "timed_out"
+]
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
     def __init__(self, external_id: str, description: str | None) -> None:
@@ -630,7 +637,7 @@ class WorkflowTaskExecution(CogniteObject):
         self,
         id: str,
         external_id: str,
-        status: WorkflowStatus,
+        status: TaskStatus,
         input: WorkflowTaskParameters,
         output: WorkflowTaskOutput,
         version: str | None = None,
@@ -657,7 +664,7 @@ class WorkflowTaskExecution(CogniteObject):
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
-            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
+            status=cast(TaskStatus, to_snake_case(resource["status"])),
             input=WorkflowTaskParameters.load_parameters(resource),
             output=WorkflowTaskOutput.load_output(resource),
             version=resource.get("version"),
@@ -953,7 +960,7 @@ class WorkflowExecution(CogniteResource):
         self,
         id: str,
         workflow_external_id: str,
-        status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+        status: WorkflowStatus,
         created_time: int,
         version: str | None = None,
         start_time: int | None = None,
@@ -984,7 +991,7 @@ class WorkflowExecution(CogniteResource):
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
             status=cast(
-                Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+                WorkflowStatus,
                 to_snake_case(resource["status"]),
             ),
             created_time=resource["createdTime"],

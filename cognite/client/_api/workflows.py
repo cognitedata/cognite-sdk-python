@@ -16,6 +16,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowIds,
     WorkflowList,
     WorkflowTaskExecution,
+    WorkflowStatus,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionId,
@@ -212,7 +213,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         workflow_version_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
-        statuses: list[Literal["completed", "failed", "running", "terminated", "timed_out"]] | None = None,
+        statuses:  WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
         """`List workflow executions in the project. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
@@ -221,7 +222,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
             workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
             created_time_start (int | None): Filter out executions that was created before this time. Time is in milliseconds since epoch.
             created_time_end (int | None): Filter out executions that was created after this time. Time is in milliseconds since epoch.
-            statuses (list[Literal["completed", "failed", "running", "terminated", "timed_out"]] | None): Fetch only executions with these statuses.
+            statuses (WorkflowStatus | MutableSequence[WorkflowStatus] | None): Workflow status or list of workflow statuses to filter on.
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
                         to return all items.
         Returns:
