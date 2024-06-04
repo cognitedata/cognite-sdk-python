@@ -15,8 +15,8 @@ from cognite.client.data_classes.workflows import (
     WorkflowExecutionList,
     WorkflowIds,
     WorkflowList,
-    WorkflowTaskExecution,
     WorkflowStatus,
+    WorkflowTaskExecution,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionId,
@@ -213,7 +213,7 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         workflow_version_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
-        statuses:  WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
+        statuses: WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
         """`List workflow executions in the project. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
@@ -255,7 +255,10 @@ class WorkflowExecutionAPI(BetaWorkflowAPIClient):
         if created_time_end is not None:
             filter_["createdTimeEnd"] = created_time_end
         if statuses is not None:
-            filter_["status"] = [status.upper() for status in statuses]
+            if isinstance(statuses, str):
+                filter_["status"] = [statuses.upper()]
+            else:  # Assume it is a sequence
+                filter_["status"] = [status.upper() for status in statuses]
 
         return self._list(
             method="POST",

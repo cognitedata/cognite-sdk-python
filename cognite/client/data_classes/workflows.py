@@ -32,13 +32,8 @@ TaskStatus: TypeAlias = Literal[
     "skipped",
 ]
 
-WorkflowStatus: TypeAlias = Literal[
-    "completed",
-    "failed",
-    "running",
-    "terminated",
-    "timed_out"
-]
+WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminated", "timed_out"]
+
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
     def __init__(self, external_id: str, description: str | None) -> None:
@@ -624,7 +619,7 @@ class WorkflowTaskExecution(CogniteObject):
     Args:
         id (str): The server generated id of the task execution.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        status (WorkflowStatus): The status of the task execution.
+        status (TaskStatus): The status of the task execution.
         input (WorkflowTaskParameters): The input parameters of the task execution.
         output (WorkflowTaskOutput): The output of the task execution.
         version (str | None): The version of the task execution. Defaults to None.
@@ -947,7 +942,7 @@ class WorkflowExecution(CogniteResource):
     Args:
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
-        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
+        status (WorkflowStatus): The status of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
