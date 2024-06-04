@@ -82,19 +82,13 @@ class LabelsAPI(APIClient):
                 >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
 
         """
-        is_single = isinstance(external_id, str)
         identifiers = IdentifierSequence.load(external_ids=external_id)
-        result = self._retrieve_multiple(
+        return self._retrieve_multiple(
             list_cls=LabelDefinitionList,
             resource_cls=LabelDefinition,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        if is_single and result:
-            return result[0]
-        elif is_single:
-            return None
-        return result
 
     def list(
         self,
