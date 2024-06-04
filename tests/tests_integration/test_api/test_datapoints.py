@@ -403,18 +403,18 @@ class TestRetrieveRawDatapointsAPI:
     def test_retrieve_chunking_mode_outside_points_stopped_after_no_cursor(self, cognite_client, weekly_dps_ts):
         # From 7.45.0 to 7.48.0, when fetching in "chunking mode" with include_outside_points=True,
         # due to an added is-nextCursor-empty check, the queries would short-circuit after the first batch.
-        ts_ids, tx_xids = weekly_dps_ts
+        ts_ids, ts_xids = weekly_dps_ts
         with set_max_workers(cognite_client, 1):
             dps_lst = cognite_client.time_series.data.retrieve(
                 id=ts_ids.as_ids(),
-                external_id=tx_xids.as_external_ids(),
+                external_id=ts_xids.as_external_ids(),
                 start=ts_to_ms("1951"),
                 end=ts_to_ms("1999"),
                 include_outside_points=True,
             )
             df = dps_lst.to_pandas()
 
-            validate_raw_datapoints_lst(ts_ids + tx_xids, dps_lst)
+            validate_raw_datapoints_lst(ts_ids + ts_xids, dps_lst)
             assert df.shape == (2506, 101)
             assert df.notna().any(axis=None)
 
