@@ -233,10 +233,10 @@ class WorkflowExecutionAPI(APIClient):
         if created_time_end is not None:
             filter_["createdTimeEnd"] = created_time_end
         if statuses is not None:
-            if isinstance(statuses, str):
-                filter_["status"] = [statuses.upper()]
-            else:  # Assume it is a sequence
+            if isinstance(statuses, MutableSequence):
                 filter_["status"] = [status.upper() for status in statuses]
+            else:  # Assume it is a stringy type
+                filter_["status"] = [statuses.upper()]
 
         return self._list(
             method="POST",
