@@ -401,7 +401,7 @@ class TestRetrieveRawDatapointsAPI:
         assert all(len(dps) == 1001 for dps in dps_lst)
 
     def test_retrieve_chunking_mode_outside_points_stopped_after_no_cursor(self, cognite_client, weekly_dps_ts):
-        # From 7.45.0 to 7.47.0, when fetching in "chunking mode" with include_outside_points=True,
+        # From 7.45.0 to 7.48.0, when fetching in "chunking mode" with include_outside_points=True,
         # due to an added is-nextCursor-empty check, the queries would short-circuit after the first batch.
         ts_ids, tx_xids = weekly_dps_ts
         with set_max_workers(cognite_client, 1):
