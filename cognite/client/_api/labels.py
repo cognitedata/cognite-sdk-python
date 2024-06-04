@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -51,6 +51,50 @@ class LabelsAPI(APIClient):
             filter=filter,
             chunk_size=chunk_size,
         )
+
+    @overload
+    def retrieve(self, external_id: str, ignore_unknown_ids: Literal[True]) -> LabelDefinition | None: ...
+
+    @overload
+    def retrieve(self, external_id: str, ignore_unknown_ids: Literal[False] = False) -> LabelDefinition: ...
+
+    @overload
+    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> LabelDefinitionList: ...
+
+    def retrieve(
+        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> LabelDefinition | LabelDefinitionList | None:
+        """`Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
+
+        Args:
+            external_id (str | SequenceNotStr[str]): External ID or list of external ids
+            ignore_unknown_ids (bool): If True, ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            LabelDefinition | LabelDefinitionList | None: The requested label definition(s)
+
+        Examples:
+
+            Get label by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
+
+        """
+        is_single = isinstance(external_id, str)
+        identifiers = IdentifierSequence.load(external_ids=external_id)
+        result = self._retrieve_multiple(
+            list_cls=LabelDefinitionList,
+            resource_cls=LabelDefinition,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
+        if is_single and result:
+            return result[0]
+        elif is_single:
+            return None
+        return result
 
     def list(
         self,
