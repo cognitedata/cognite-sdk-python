@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.48.0] - 2024-06-04
+### Changed
+- Mark Data Workflows SDK implementation as Generally Available.
+
 ## [7.47.0] - 2024-06-04
 ### Added
 - Support for retrieving `Labels`, `client.labels.retrieve`. 
