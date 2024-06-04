@@ -1016,7 +1016,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow.
-        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
+        status (WorkflowStatus): The status of the workflow execution.
         executed_tasks (list[WorkflowTaskExecution]): The executed tasks of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
@@ -1032,7 +1032,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         id: str,
         workflow_external_id: str,
         workflow_definition: WorkflowDefinition,
-        status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+        status: WorkflowStatus,
         executed_tasks: list[WorkflowTaskExecution],
         created_time: int,
         version: str | None = None,
@@ -1057,7 +1057,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
             status=cast(
-                Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+                WorkflowStatus,
                 to_snake_case(resource["status"]),
             ),
             created_time=resource["createdTime"],
