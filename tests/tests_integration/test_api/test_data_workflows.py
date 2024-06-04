@@ -385,7 +385,7 @@ class TestWorkflowExecutions:
 
         # the new execution should not be completed yet, but running
         listed_completed = cognite_client.workflows.executions.list(
-            workflow_version_ids=add_multiply_workflow.as_id(), statuses=["completed"], limit=3
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses="completed", limit=3
         )
         listed_running = cognite_client.workflows.executions.list(
             workflow_version_ids=add_multiply_workflow.as_id(), statuses=["running"], limit=3
