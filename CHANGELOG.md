@@ -17,17 +17,22 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.48.1] - 2024-06-04
+### Fixed
+- A bug introduced in `7.45.0` that would short-circuit raw datapoint queries too early when a lot of time series was
+  requested at the same time, and `include_outside_points=True` was used (empty cursor are to be expected).
+
 ## [7.48.0] - 2024-06-04
 ### Changed
 - Mark Data Workflows SDK implementation as Generally Available.
 
 ## [7.47.0] - 2024-06-04
 ### Added
-- Support for retrieving `Labels`, `client.labels.retrieve`. 
+- Support for retrieving `Labels`, `client.labels.retrieve`.
 
 ## [7.46.2] - 2024-06-03
 ### Added
-- Added option for silencing `FeaturePreviewWarnings` in the `cognite.client.global_config`. 
+- Added option for silencing `FeaturePreviewWarnings` in the `cognite.client.global_config`.
 
 ## [7.46.1] - 2024-05-31
 ### Fixed
