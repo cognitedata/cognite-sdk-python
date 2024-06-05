@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.49.0] - 2024-06-04
+## [7.49.0] - 2024-06-05
 ### Added
 - `WorkfowExecutionAPI.list` now allows filtering by execution status.
 
