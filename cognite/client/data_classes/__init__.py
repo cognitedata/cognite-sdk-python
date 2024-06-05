@@ -269,6 +269,8 @@ from cognite.client.data_classes.transformations.jobs import (
 from cognite.client.data_classes.transformations.notifications import (
     TransformationNotification,
     TransformationNotificationList,
+    TransformationNotificationWrite,
+    TransformationNotificationWriteList,
 )
 from cognite.client.data_classes.transformations.schedules import (
     TransformationSchedule,
@@ -480,6 +482,8 @@ __all__ = [
     "TransformationJobStatus",
     "TransformationNotification",
     "TransformationNotificationList",
+    "TransformationNotificationWrite",
+    "TransformationNotificationWriteList",
     "TransformationSchedule",
     "TransformationScheduleWrite",
     "TransformationScheduleList",
