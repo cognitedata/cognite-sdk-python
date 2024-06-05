@@ -14,6 +14,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowExecutionList,
     WorkflowIds,
     WorkflowList,
+    WorkflowStatus,
     WorkflowTaskExecution,
     WorkflowUpsert,
     WorkflowVersion,
@@ -191,6 +192,7 @@ class WorkflowExecutionAPI(APIClient):
         workflow_version_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
+        statuses: WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
         """`List workflow executions in the project. <https://api-docs.cognite.com/20230101-beta/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
@@ -199,9 +201,9 @@ class WorkflowExecutionAPI(APIClient):
             workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
             created_time_start (int | None): Filter out executions that was created before this time. Time is in milliseconds since epoch.
             created_time_end (int | None): Filter out executions that was created after this time. Time is in milliseconds since epoch.
+            statuses (WorkflowStatus | MutableSequence[WorkflowStatus] | None): Workflow status or list of workflow statuses to filter on.
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
                         to return all items.
-
         Returns:
             WorkflowExecutionList: The requested workflow executions.
 
@@ -230,6 +232,11 @@ class WorkflowExecutionAPI(APIClient):
             filter_["createdTimeStart"] = created_time_start
         if created_time_end is not None:
             filter_["createdTimeEnd"] = created_time_end
+        if statuses is not None:
+            if isinstance(statuses, MutableSequence):
+                filter_["status"] = [status.upper() for status in statuses]
+            else:  # Assume it is a stringy type
+                filter_["status"] = [statuses.upper()]
 
         return self._list(
             method="POST",

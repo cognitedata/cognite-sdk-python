@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.49.0] - 2024-06-05
+### Added
+- `WorkfowExecutionAPI.list` now allows filtering by execution status.
+
 ## [7.48.1] - 2024-06-04
 ### Fixed
 - A bug introduced in `7.45.0` that would short-circuit raw datapoint queries too early when a lot of time series was
