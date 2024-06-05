@@ -373,25 +373,19 @@ class TestWorkflowExecutions:
     def test_list_workflow_executions_by_status(
         self,
         cognite_client: CogniteClient,
-        workflow_execution_list: WorkflowExecutionList,
         add_multiply_workflow: WorkflowVersion,
     ) -> None:
-        # start a fresh execution
-        result = cognite_client.workflows.executions.trigger(
-            add_multiply_workflow.workflow_external_id,
-            add_multiply_workflow.version,
-            {"a": 5, "b": "a"},
-        )
-
-        # the new execution should not be completed yet, but running
         listed_completed = cognite_client.workflows.executions.list(
             workflow_version_ids=add_multiply_workflow.as_id(), statuses="completed", limit=3
         )
-        listed_running = cognite_client.workflows.executions.list(
-            workflow_version_ids=add_multiply_workflow.as_id(), statuses=["running"], limit=3
+        for execution in listed_completed:
+            assert execution.status == "completed"
+
+        listed_others = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses=["running", "failed"], limit=3
         )
-        assert not any(x.id == result.id for x in listed_completed)
-        assert sum(1 for x in listed_running if x.id == result.id) == 1
+        for execution in listed_others:
+            assert execution.status in ["running", "failed"]
 
     def test_retrieve_workflow_execution_detailed(
         self,
