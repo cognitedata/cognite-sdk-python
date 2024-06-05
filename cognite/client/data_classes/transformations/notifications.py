@@ -55,11 +55,11 @@ class TransformationNotification(TransformationNotificationCore):
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(destination)
-        self.id = id
-        self.transformation_id = transformation_id
-        self.transformation_external_id = transformation_external_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        self.id = cast(int, id)
+        self.transformation_id = cast(int, transformation_id)
+        self.transformation_external_id = cast(str, transformation_external_id)
+        self.created_time = cast(int, created_time)
+        self.last_updated_time = cast(int, last_updated_time)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __hash__(self) -> int:
