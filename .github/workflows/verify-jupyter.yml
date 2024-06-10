@@ -21,7 +21,7 @@ jobs:
         run: npm install pyodide@0.25.0
       - name: Install cognite-sdk in pyodide environment
         run: |
-          whl_file=$(find dist -type f -name "*.whl")
+          whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix
           echo "Found built wheel file: $whl_file"
           SDK_FILE_PATH=$whl_file \
           PACKAGES="[\"pyodide-http\", \"http://localhost:3000/dist/$whl_file\"]" \
