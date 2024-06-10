@@ -45,7 +45,7 @@ server.listen(PORT, () => {
     }
     await pyodide.runPythonAsync("from cognite.client import CogniteClient");
     
-    return pyodide.runPythonAsync("Python SDK successfully installed and imported!");
+    return pyodide.runPythonAsync('print("Python SDK successfully installed and imported!"');
   }
 
   test_cognite_sdk().then((result) => {
