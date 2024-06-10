@@ -9,10 +9,6 @@
       "enabled": false,
       "matchManagers": ["poetry"],
       "matchPackagePatterns": ["*"]
-    },
-    {
-      "enabled": false,
-      "matchPackageNames": ["mcr.microsoft.com/devcontainers/python"]
     }
   ],
   "vulnerabilityAlerts": {
