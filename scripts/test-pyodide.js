@@ -1,3 +1,8 @@
+// Description: This script is used to test the Python SDK installation in a Pyodide environment.
+// We are using JupyterLite and stlite, both pyodide based Python runtimes. To ensure that the SDK works
+// in these runtimes, we need to test the installation of the SDK in a Pyodide environment.
+// This script will start an HTTP server to serve the SDK wheel file and then try to install the SDK in Python.
+// If the installation is successful, it will run a simple Python script to test the SDK.
 const { loadPyodide } = require("pyodide");
 
 const http = require('http');
@@ -40,11 +45,11 @@ server.listen(PORT, () => {
     }
     await pyodide.runPythonAsync("from cognite.client import CogniteClient");
     
-    return pyodide.runPythonAsync("1+1");
+    return pyodide.runPythonAsync("Python SDK successfully installed and imported!");
   }
 
   test_cognite_sdk().then((result) => {
-    console.log("Python says that 1+1 =", result);
+    console.log("Response from Python =", result);
     server.close();
   });
 });
