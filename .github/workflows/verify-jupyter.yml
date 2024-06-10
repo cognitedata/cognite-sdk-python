@@ -1,0 +1,29 @@
+---
+name: build
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  build_package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build package
+        run: poetry build
+  install_jupyter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm install pyodide==0.25.0
+      - name: Install cognite-sdk in pyodide environment
+        run: |
+          echo "SDK_FILE_PATH=cognite_sdk-7.49.0-py3-none-any.whl" >> $GITHUB_ENV
+          echo 'PACKAGES=["pyodide-http", "http://localhost:3000/dist/cognite_sdk-7.49.0-py3-none-any.whl"]' >> $GITHUB_ENV
+          node scripts/test-pyodide.js
