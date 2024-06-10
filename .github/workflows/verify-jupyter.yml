@@ -17,6 +17,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20"
+      - name: Use 20.9
+        # https://github.com/microsoft/playwright/issues/29253
+        run: nvm use v20.9
       - name: Install dependencies
         run: npm install pyodide@0.25.0
       - name: Install cognite-sdk in pyodide environment
