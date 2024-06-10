@@ -6,7 +6,7 @@ on:
     branches: [master]
 
 jobs:
-  build_and_test_pyodide:
+  build_and_test_jupyter_pyodide:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +21,8 @@ jobs:
         run: npm install pyodide@0.25.0
       - name: Install cognite-sdk in pyodide environment
         run: |
-          SDK_FILE_PATH=cognite_sdk-7.49.0-py3-none-any.whl \
-          PACKAGES="[\"pyodide-http\", \"http://localhost:3000/dist/cognite_sdk-7.49.0-py3-none-any.whl\"]" \
+          whl_file=$(find . -type f -name "dist/*.whl" -print -quit)
+          echo "Found built wheel file: $whl_file"
+          SDK_FILE_PATH=$whl_file \
+          PACKAGES="[\"pyodide-http\", \"http://localhost:3000/dist/$whl_file\"]" \
           node scripts/test-pyodide.js
