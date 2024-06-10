@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: "20"
       - name: Install dependencies
-        run: npm install pyodide@0.25.0 # JupyterLite currently using pyodide 0.25.1
+        run: npm install pyodide@0.25.1 # JupyterLite currently using pyodide 0.25.0
       - name: Install cognite-sdk in pyodide environment
         run: |
           whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix
