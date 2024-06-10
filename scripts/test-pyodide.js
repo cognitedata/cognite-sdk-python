@@ -7,7 +7,7 @@ const path = require('path');
 const PORT = 3000;
 
 // The Cognite Python SDK wheel filename will be sent in as environment variable
-const wheelFilePath = path.join(__dirname, process.env.SDK_FILE_PATH);
+const wheelFilePath = path.join(__dirname, '..', 'dist', process.env.SDK_FILE_PATH);
 
 // Create an HTTP server to serve the wheel file
 const server = http.createServer((req, res) => {
@@ -38,8 +38,6 @@ server.listen(PORT, () => {
     for (const pkg of packages) {
       await micropip.install(pkg);
     }
-    // await micropip.install("pyodide-http");
-    // await micropip.install('http://localhost:3000/cognite_sdk-7.49.0-py3-none-any.whl');
     await pyodide.runPythonAsync("from cognite.client import CogniteClient");
     
     return pyodide.runPythonAsync("1+1");
