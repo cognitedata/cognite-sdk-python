@@ -1,14 +1,6 @@
 Data Workflows
 ======================
 
-.. warning::
-    Data Workflows is a new feature:
-      * The API specification is in beta.
-      * The SDK implementation is in alpha.
-
-    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
-
-
 Workflows
 ------------
 Upsert Workflow
