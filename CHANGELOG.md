@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.49.1] - 2024-06-11
+
+### Fixed
+- Fixes resetting dataSetId to None in a ThreeDModelUpdate.
+
 ## [7.49.0] - 2024-06-05
 ### Added
 - `WorkfowExecutionAPI.list` now allows filtering by execution status.
