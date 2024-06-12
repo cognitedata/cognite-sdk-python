@@ -130,10 +130,10 @@ class RowListCore(WriteableCogniteResourceList[RowWrite, T_Row], ABC):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         pd = local_import("pandas")
-        if self:
-            index, data = zip(*((row.key, row.columns) for row in self))
-            return pd.DataFrame.from_records(data, index=index)
-        return pd.DataFrame(columns=[], index=[])
+        if not self:
+            return pd.DataFrame(columns=[], index=[])
+        index, data = zip(*((row.key, row.columns) for row in self))
+        return pd.DataFrame.from_records(data, index=index)
 
 
 class RowWriteList(RowListCore[RowWrite]):
