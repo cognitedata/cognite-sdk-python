@@ -4,6 +4,7 @@ import re
 import pytest
 
 from cognite.client._api.raw import Database, DatabaseList, RawRowsAPI, Row, RowList, Table, TableList
+from cognite.client.data_classes import RowWrite, RowWriteList
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
@@ -292,10 +293,11 @@ class TestRawRows:
             cognite_client.raw.rows(db_name="db1", table_name="table1", columns="a,b")
 
 
-def test_raw_row__direct_column_access():
+@pytest.mark.parametrize("raw_cls", (Row, RowWrite))
+def test_raw_row__direct_column_access(raw_cls):
     # Verify additional methods: 'get', '__getitem__', '__setitem__', '__delitem__' and '__contains__'
     key = "itsamee"
-    row = Row(key="foo", columns={"bar": 42, key: "mario"})
+    row = raw_cls(key="foo", columns={"bar": 42, key: "mario"})
     assert row[key] == row.columns[key] == row.get(key) == "mario"
 
     row[key] = "luigi?"
@@ -412,14 +414,15 @@ class TestPandasIntegration:
         assert row_df.shape == (0, 0)
         pd.testing.assert_frame_equal(row_df, pd.DataFrame(columns=[], index=[]))
 
+    @pytest.mark.parametrize("lst_cls", (RowList, RowWriteList))
     @pytest.mark.parametrize("n_rows", (1, 5))
-    def test_rows_to_pandas__empty_or_sparse(self, n_rows):
+    def test_rows_to_pandas__empty_or_sparse(self, lst_cls, n_rows):
         # Before version 7.49.2, rows with no column data would be silently dropped when converting to a pandas dataframe,
         # which was most noticable as len(rows) != len(df).
         import pandas as pd
 
         keys = [f"row-{i}" for i in range(n_rows)]
-        row_list = RowList([Row(k, {}) for k in keys])
+        row_list = lst_cls([lst_cls._RESOURCE(k, {}) for k in keys])
         row_df = row_list.to_pandas()
         assert row_df.shape == (n_rows, 0)
         pd.testing.assert_frame_equal(row_df, pd.DataFrame(columns=[], index=keys))
