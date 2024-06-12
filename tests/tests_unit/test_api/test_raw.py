@@ -414,7 +414,7 @@ class TestPandasIntegration:
 
     @pytest.mark.parametrize("n_rows", (1, 5))
     def test_rows_to_pandas__empty_or_sparse(self, n_rows):
-        # Before version 7.49.1, rows with no column data would be silently dropped when converting to a pandas dataframe,
+        # Before version 7.49.2, rows with no column data would be silently dropped when converting to a pandas dataframe,
         # which was most noticable as len(rows) != len(df).
         import pandas as pd
 

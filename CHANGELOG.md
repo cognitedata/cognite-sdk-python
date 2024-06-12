@@ -17,8 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.49.1] - 2024-06-11
+## [7.49.2] - 2024-06-12
+### Fixed
+- Converting rows (`RowList` and `RowListWrite`) to a pandas DataFrame no longer silently drops rows that do not have
+  any columnar data.
 
+## [7.49.1] - 2024-06-11
 ### Fixed
 - Fixes resetting dataSetId to None in a ThreeDModelUpdate.
 
