@@ -404,3 +404,29 @@ class TestPandasIntegration:
             row_list.to_pandas().sort_index(axis=1),
         )
         pd.testing.assert_frame_equal(pd.DataFrame({"c1": ["v1"], "c2": ["v1"]}, index=["k1"]), row_list[0].to_pandas())
+
+    def test_rows_to_pandas__no_rows(self):
+        import pandas as pd
+
+        row_df = RowList([]).to_pandas()
+        assert row_df.shape == (0, 0)
+        pd.testing.assert_frame_equal(row_df, pd.DataFrame(columns=[], index=[]))
+
+    @pytest.mark.parametrize("n_rows", (1, 5))
+    def test_rows_to_pandas__empty_or_sparse(self, n_rows):
+        # Before version 7.49.1, rows with no column data would be silently dropped when converting to a pandas dataframe,
+        # which was most noticable as len(rows) != len(df).
+        import pandas as pd
+
+        keys = [f"row-{i}" for i in range(n_rows)]
+        row_list = RowList([Row(k, {}) for k in keys])
+        row_df = row_list.to_pandas()
+        assert row_df.shape == (n_rows, 0)
+        pd.testing.assert_frame_equal(row_df, pd.DataFrame(columns=[], index=keys))
+
+        row_list[0]["foo"] = 123
+        row_df = row_list.to_pandas()
+        assert row_df.shape == (n_rows, 1)
+        pd.testing.assert_frame_equal(
+            row_df, pd.DataFrame({"foo": [123, *[None for _ in range(n_rows - 1)]]}, index=keys)
+        )
