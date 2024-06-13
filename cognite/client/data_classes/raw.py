@@ -105,6 +105,13 @@ class RowWrite(RowCore):
         columns (dict[str, Any]): Row data stored as a JSON object.
     """
 
+    def __init__(
+        self,
+        key: str,
+        columns: dict[str, Any],
+    ) -> None:
+        super().__init__(key, columns)
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> RowWrite:
         return cls(resource["key"], resource["columns"])
