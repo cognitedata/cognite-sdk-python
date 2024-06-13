@@ -17,7 +17,45 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.45.0] - 2024-05-28
+## [7.49.2] - 2024-06-12
+### Fixed
+- Converting rows (`RowList` and `RowListWrite`) to a pandas DataFrame no longer silently drops rows that do not have
+  any columnar data.
+
+## [7.49.1] - 2024-06-11
+### Fixed
+- Fixes resetting dataSetId to None in a ThreeDModelUpdate.
+
+## [7.49.0] - 2024-06-05
+### Added
+- `WorkfowExecutionAPI.list` now allows filtering by execution status.
+
+## [7.48.1] - 2024-06-04
+### Fixed
+- A bug introduced in `7.45.0` that would short-circuit raw datapoint queries too early when a lot of time series was
+  requested at the same time, and `include_outside_points=True` was used (empty cursor are to be expected).
+
+## [7.48.0] - 2024-06-04
+### Changed
+- Mark Data Workflows SDK implementation as Generally Available.
+
+## [7.47.0] - 2024-06-04
+### Added
+- Support for retrieving `Labels`, `client.labels.retrieve`.
+
+## [7.46.2] - 2024-06-03
+### Added
+- Added option for silencing `FeaturePreviewWarnings` in the `cognite.client.global_config`.
+
+## [7.46.1] - 2024-05-31
+### Fixed
+- Pyodide issue related to missing tzdata package.
+
+## [7.46.0] - 2024-05-31
+### Added
+- `RawRowsAPI.insert_dataframe` now has a new `dropna` setting (defaulting to True, as this would otherwise raise later).
+
+## [7.45.0] - 2024-05-31
 ### Added
 - DatapointsAPI now support `timezone` and new calendar-based granularities like `month`, `quarter` and `year`.
   These API features are in beta, and the SDK implementation in alpha, meaning breaking changes can

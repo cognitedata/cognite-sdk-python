@@ -1,0 +1,28 @@
+---
+name: build
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  build_and_test_jupyter_pyodide:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build package
+        run: poetry build
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm install pyodide@0.25.1 # JupyterLite currently using pyodide 0.25.0
+      - name: Install cognite-sdk in pyodide environment
+        run: |
+          whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix
+          echo "Found built wheel file: $whl_file"
+          SDK_FILE_PATH=$whl_file \
+          PACKAGES="[\"pyodide-http\", \"http://localhost:3000/dist/$whl_file\"]" \
+          node scripts/test-pyodide.js

@@ -742,7 +742,7 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> asset_filter = filters.Equals("asset_id", 123)
                 >>> is_efficiency = filters.Equals(["metadata", "type"], "efficiency")
-                >>> res = client.time_series.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
+                >>> res = client.sequences.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -756,7 +756,7 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> asset_filter = filters.Equals(SequenceProperty.asset_id, 123)
                 >>> is_efficiency = filters.Equals(SequenceProperty.metadata_key("type"), "efficiency")
-                >>> res = client.time_series.filter(
+                >>> res = client.sequences.filter(
                 ...     filter=filters.And(asset_filter, is_efficiency),
                 ...     sort=SortableSequenceProperty.created_time)
 

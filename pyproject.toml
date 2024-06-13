@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "7.45.0"
+version = "7.49.2"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
@@ -31,8 +31,8 @@ protobuf = ">=4"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
 backports-zoneinfo = { version = ">=0.2.1",  python = "<3.9" }
-# Windows does not have a ANSI database and need tzdata
-tzdata = { version = ">=2024.1", markers = "platform_system == 'Windows'" }
+# Windows does not have a ANSI database and need tzdata... pyodide also needs it:
+tzdata = { version = ">=2024.1", markers = "platform_system == 'Windows' or platform_system == 'Emscripten'" }
 numpy = [
     { version = ">=1.20, <1.25", python = "~3.8", optional = true },
     { version = "^1.25", python = ">=3.9, <3.12", optional = true },
@@ -59,7 +59,7 @@ geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
 yaml = ["PyYAML"]
-pyodide = ["pyodide-http"]  # keep pyodide related dependencies outside of 'all'
+pyodide = ["pyodide-http", "tzdata"]  # keep pyodide related dependencies outside of 'all'
 all = ["numpy", "pandas", "geopandas", "shapely", "sympy", "pip", "PyYAML"]
 
 [tool.poetry.group.dev.dependencies]
