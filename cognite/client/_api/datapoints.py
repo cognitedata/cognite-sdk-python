@@ -6,6 +6,7 @@ import heapq
 import itertools
 import math
 import time
+import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from itertools import chain
@@ -56,7 +57,6 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
@@ -94,20 +94,13 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapo
     full_query.validate(all_queries, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG)
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
-    # If timezone or calendar-based aggregates are requested, use beta:
-    api_subversion = None
-    if any(query.use_cursors for query in all_queries):
-        if "beta" not in dps_client._api_subversion:
-            api_subversion = dps_client._api_subversion + "-beta"
-            dps_client._timezone_calendar_aggs_warning.warn()  # We only warn when we autouse 'beta'
-
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
         # Start shooting requests from the hip immediately:
-        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
+        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
     # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
     # guesstimation of dps density - then chunk away:
-    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
+    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
 
 
 def split_queries_into_raw_and_aggs(all_queries: _TSQueryList) -> tuple[_TSQueryList, _TSQueryList]:
@@ -125,14 +118,12 @@ class DpsFetchStrategy(ABC):
         agg_queries: _TSQueryList,
         raw_queries: _TSQueryList,
         max_workers: int,
-        api_subversion: str | None,
     ) -> None:
         self.dps_client = dps_client
         self.all_queries = all_queries
         self.agg_queries = agg_queries
         self.raw_queries = raw_queries
         self.max_workers = max_workers
-        self.api_subversion = api_subversion
         self.n_queries = len(all_queries)
 
     def fetch_all_datapoints(self) -> DatapointsList:
@@ -157,7 +148,6 @@ class DpsFetchStrategy(ABC):
                 url_path=f"{self.dps_client._RESOURCE_PATH}/list",
                 accept="application/protobuf",
                 timeout=self.dps_client._config.timeout,
-                api_subversion=self.api_subversion,
             ).content
         )
         return res.items
@@ -531,9 +521,6 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
-        self._timezone_calendar_aggs_warning = FeaturePreviewWarning(
-            "beta", "alpha", feature_name="Timezone & Calender-based aggregations"
-        )
 
     def retrieve(
         self,
@@ -1097,30 +1084,13 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe in the same timezone as ``start`` and ``end``.
 
-        This is a convenience method extending the Time Series API capabilities to make timezone-aware datapoints
-        fetching easy with daylight saving time (DST) transitions taken care of automatically. It builds on top
-        of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
+        .. admonition:: Deprecation Warning
 
-        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
-
-        Tip:
-            The additional granularity settings are: **week(s)**, **month(s)**, **quarter(s)** and **year(s)**. You may
-            pass any of the following (using 'week' as example): ``1week``, ``2weeks`` or ``3w``. The existing
-            granularity specifiers are also available: **second(s)**, **minute(s)**, **hour(s)** and **day(s)**.
-
-            Keep in mind that only the longer granularities at your disposal, *day and longer*, are adjusted for DST,
-            and thus represent a non-fixed duration in time (e.g. a day can have 23, 24 or 25 hours).
-
-            All the granularities support a one-letter version: ``s``, ``m``, ``h``, ``d``, ``w``, ``q``, and ``y``,
-            except for month, to avoid confusion with minutes.
-
-        Warning:
-            The datapoints queries are translated into several sub-queries using a multiple of hours. This means that
-            timezones that are not a whole hour offset from UTC are not supported. The same is true for timezones that
-            observe DST with an offset from standard time that is not a multiple of 1 hour.
-
-            It also sets an upper limit on the maximum granularity setting (around 11 years).
+            This SDK function is deprecated and will be removed in the next major release. Reason: Cognite Data
+            Fusion now has native support for timezone and calendar-based aggregations. Please consider migrating
+            already today: The API also supports fixed offsets, yields more accurate results and have better support
+            for exotic timezones and unusual DST offsets. You can use the normal retrieve methods instead, just
+            pass 'timezone' as a parameter.
 
         Args:
             id (int | Sequence[int] | None): ID or list of IDs.
@@ -1145,38 +1115,17 @@ class DatapointsAPI(APIClient):
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given timezone.
-
-        Warning:
-            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
-            missing a value (due to being stored in a numpy array); all will become NaNs in the dataframe.
-
-        Examples:
-
-            Get a pandas dataframe in the timezone of Oslo, Norway:
-
-                >>> from cognite.client import CogniteClient
-                >>> # In Python >=3.9 you may import directly from `zoneinfo`
-                >>> from cognite.client.utils import ZoneInfo
-                >>> from datetime import datetime
-                >>> client = CogniteClient()
-                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
-                ...     id=12345,
-                ...     start=datetime(2023, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
-                ...     end=datetime(2023, 2, 1, tzinfo=ZoneInfo("Europe/Oslo")),
-                ...     aggregates="average",
-                ...     granularity="1week",
-                ...     column_names="id")
-
-            Get a pandas dataframe with the sum and continuous variance of the time series with external id "foo" and "bar",
-            for each quarter from 2020 to 2022 in the timezone of New York, United States:
-
-                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
-                ...     external_id=["foo", "bar"],
-                ...     aggregates=["sum", "continuous_variance"],
-                ...     granularity="1quarter",
-                ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("America/New_York")),
-                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("America/New_York")))
         """
+        warnings.warn(
+            (
+                "This SDK method, `retrieve_dataframe_in_tz`, is deprecated and will be removed in the next major release. "
+                "Reason: Cognite Data Fusion now has native support for timezone and calendar-based aggregations. Please "
+                "consider migrating already today: The API also supports fixed offsets, yields more accurate results and "
+                "have better support for exotic timezones and unusual DST offsets. You can use the normal retrieve methods "
+                "instead, just pass 'timezone' as a parameter."
+            ),
+            UserWarning,
+        )
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
 
         if not exactly_one_is_not_none(id, external_id):
@@ -1187,7 +1136,6 @@ class DatapointsAPI(APIClient):
                 "Got only one of 'aggregates' and 'granularity'. "
                 "Pass both to get aggregates, or neither to get raw data"
             )
-
         tz = validate_timezone(start, end)
         if aggregates is None and granularity is None:
             # For raw data, we only need to convert the timezone:
