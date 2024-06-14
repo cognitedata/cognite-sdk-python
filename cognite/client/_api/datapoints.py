@@ -1092,31 +1092,6 @@ class DatapointsAPI(APIClient):
             for exotic timezones and unusual DST offsets. You can use the normal retrieve methods instead, just
             pass 'timezone' as a parameter.
 
-        This is a convenience method extending the Time Series API capabilities to make timezone-aware datapoints
-        fetching easy with daylight saving time (DST) transitions taken care of automatically. It builds on top
-        of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
-
-        Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
-
-        Tip:
-            The additional granularity settings are: **week(s)**, **month(s)**, **quarter(s)** and **year(s)**. You may
-            pass any of the following (using 'week' as example): ``1week``, ``2weeks`` or ``3w``. The existing
-            granularity specifiers are also available: **second(s)**, **minute(s)**, **hour(s)** and **day(s)**.
-
-            Keep in mind that only the longer granularities at your disposal, *day and longer*, are adjusted for DST,
-            and thus represent a non-fixed duration in time (e.g. a day can have 23, 24 or 25 hours).
-
-            All the granularities support a one-letter version: ``s``, ``m``, ``h``, ``d``, ``w``, ``q``, and ``y``,
-            except for month, to avoid confusion with minutes.
-
-        Warning:
-            The datapoints queries are translated into several sub-queries using a multiple of hours. This means that
-            timezones that are not a whole hour offset from UTC are not supported. The same is true for timezones that
-            observe DST with an offset from standard time that is not a multiple of 1 hour.
-
-            It also sets an upper limit on the maximum granularity setting (around 11 years).
-
         Args:
             id (int | Sequence[int] | None): ID or list of IDs.
             external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
@@ -1140,44 +1115,14 @@ class DatapointsAPI(APIClient):
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given timezone.
-
-        Warning:
-            When retrieving raw datapoints with ``ignore_bad_datapoints=False``, bad datapoints with the value NaN can not be distinguished from those
-            missing a value (due to being stored in a numpy array); all will become NaNs in the dataframe.
-
-        Examples:
-
-            Get a pandas dataframe in the timezone of Oslo, Norway:
-
-                >>> from cognite.client import CogniteClient
-                >>> # In Python >=3.9 you may import directly from `zoneinfo`
-                >>> from cognite.client.utils import ZoneInfo
-                >>> from datetime import datetime
-                >>> client = CogniteClient()
-                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
-                ...     id=12345,
-                ...     start=datetime(2023, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
-                ...     end=datetime(2023, 2, 1, tzinfo=ZoneInfo("Europe/Oslo")),
-                ...     aggregates="average",
-                ...     granularity="1week",
-                ...     column_names="id")
-
-            Get a pandas dataframe with the sum and continuous variance of the time series with external id "foo" and "bar",
-            for each quarter from 2020 to 2022 in the timezone of New York, United States:
-
-                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
-                ...     external_id=["foo", "bar"],
-                ...     aggregates=["sum", "continuous_variance"],
-                ...     granularity="1quarter",
-                ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("America/New_York")),
-                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("America/New_York")))
         """
         warnings.warn(
             (
-                "This SDK function is deprecated and will be removed in the next major release. Reason: Cognite Data "
-                "Fusion now has native support for timezone and calendar-based aggregations. Please consider "
-                "migrating already today: The API yields more accurate results and have better support for exotic "
-                "timezones. You can use the normal retrieve methods instead, just pass 'timezone' as a parameter."
+                "This SDK method, `retrieve_dataframe_in_tz`, is deprecated and will be removed in the next major release. "
+                "Reason: Cognite Data Fusion now has native support for timezone and calendar-based aggregations. Please "
+                "consider migrating already today: The API also supports fixed offsets, yields more accurate results and "
+                "have better support for exotic timezones and unusual DST offsets. You can use the normal retrieve methods "
+                "instead, just pass 'timezone' as a parameter."
             ),
             UserWarning,
         )
