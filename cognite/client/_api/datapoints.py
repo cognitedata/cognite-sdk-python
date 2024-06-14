@@ -56,7 +56,6 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
@@ -94,20 +93,13 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapo
     full_query.validate(all_queries, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG)
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
-    # If timezone or calendar-based aggregates are requested, use beta:
-    api_subversion = None
-    if any(query.use_cursors for query in all_queries):
-        if "beta" not in dps_client._api_subversion:
-            api_subversion = dps_client._api_subversion + "-beta"
-            dps_client._timezone_calendar_aggs_warning.warn()  # We only warn when we autouse 'beta'
-
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
         # Start shooting requests from the hip immediately:
-        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
+        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
     # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
     # guesstimation of dps density - then chunk away:
-    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, api_subversion)
+    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
 
 
 def split_queries_into_raw_and_aggs(all_queries: _TSQueryList) -> tuple[_TSQueryList, _TSQueryList]:
@@ -125,14 +117,12 @@ class DpsFetchStrategy(ABC):
         agg_queries: _TSQueryList,
         raw_queries: _TSQueryList,
         max_workers: int,
-        api_subversion: str | None,
     ) -> None:
         self.dps_client = dps_client
         self.all_queries = all_queries
         self.agg_queries = agg_queries
         self.raw_queries = raw_queries
         self.max_workers = max_workers
-        self.api_subversion = api_subversion
         self.n_queries = len(all_queries)
 
     def fetch_all_datapoints(self) -> DatapointsList:
@@ -157,7 +147,6 @@ class DpsFetchStrategy(ABC):
                 url_path=f"{self.dps_client._RESOURCE_PATH}/list",
                 accept="application/protobuf",
                 timeout=self.dps_client._config.timeout,
-                api_subversion=self.api_subversion,
             ).content
         )
         return res.items
@@ -531,9 +520,6 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
-        self._timezone_calendar_aggs_warning = FeaturePreviewWarning(
-            "beta", "alpha", feature_name="Timezone & Calender-based aggregations"
-        )
 
     def retrieve(
         self,
