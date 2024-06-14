@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.50.0] - 2024-06-14
+### Changed
+- DatapointsAPI support for timezones and calendar-based aggregates reaches general availability (GA).
+### Deprecated
+- The function `DatapointsAPI.retrieve_dataframe_in_tz` is deprecated. Use the other retrieve methods instead
+  and pass in `timezone`.
+
 ## [7.49.2] - 2024-06-12
 ### Fixed
 - Converting rows (`RowList` and `RowListWrite`) to a pandas DataFrame no longer silently drops rows that do not have
