@@ -72,3 +72,11 @@ logging on and off by setting the :code:`debug` attribute on the :ref:`ClientCon
     print(client.config.debug)   # True, all http request details will be logged
     client.config.debug = False  # disable debug logging
     client.config.debug = True   # enable debug logging again
+
+HTTP Request logging
+--------------------
+Internally this library uses the `requests` library to perform network calls to the Cognite API service endpoints. The `requests` library is
+in turn built on `urllib3` and finally `httplib`, which means that you can enable Python logging for these modules to log all HTTP traffic to
+and from the Cognite API. Please be advised that doing so may cause sensitive information such as authentication credentials and sensitive
+data to be logged, and this is not recommended in production environments, or where credentials cannot be easily disabled or rotated, or where
+log data may be accessed by others.
