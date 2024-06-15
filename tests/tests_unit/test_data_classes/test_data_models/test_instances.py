@@ -209,6 +209,37 @@ class TestNode:
         reloaded = Node.load(node.dump()).properties
         assert isinstance(reloaded, Properties)
 
+    def test_node_list_as_custom_properties(self) -> None:
+        nodes = NodeList(
+            [
+                Node(
+                    space="IntegrationTestsImmutable",
+                    external_id="shop:case:integration_test",
+                    version=1,
+                    type=DirectRelationReference("someSpace", "someType"),
+                    last_updated_time=123,
+                    created_time=123,
+                    deleted_time=None,
+                    properties=Properties(
+                        {
+                            ViewId("power-models", "WindTurbine", "v1"): {
+                                "name": "MyWindTurbine",
+                                "wind_farm": "Utsira Nord",
+                                "rotor": DirectRelationReference("space", "external_id"),
+                            }
+                        }
+                    ),
+                ),
+            ]
+        ).property_as_type(WindTurbine)
+
+        assert len(nodes) == 1
+        for node in nodes:
+            assert isinstance(node.properties, WindTurbine)
+            assert node.properties.name == "MyWindTurbine"
+            assert node.properties.wind_farm == "Utsira Nord"
+            assert node.properties.rotor == DirectRelationReference("space", "external_id")
+
 
 @pytest.fixture
 def node_dumped() -> dict[str, Any]:
