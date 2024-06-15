@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -27,6 +27,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 1
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_
@@ -46,22 +47,28 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> client = CogniteClient()
-                >>> sub = DataPointSubscriptionWrite("mySubscription", partition_count=1, time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"], name="My subscription")
+                >>> sub = DataPointSubscriptionWrite(
+                ...     external_id="my_subscription",
+                ...     name="My subscription",
+                ...     partition_count=1,
+                ...     time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"])
                 >>> created = client.time_series.subscriptions.create(sub)
 
-            Create a filter defined subscription for all numeric time series:
+            Create a filter defined subscription for all numeric time series that are stepwise:
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes import filters as flt
-                >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionFilterProperties
+                >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionProperty
                 >>> client = CogniteClient()
-                >>> prop = DatapointSubscriptionFilterProperties.is_string
-                >>> numeric_timeseries = flt.Equals(prop, False)
+                >>> is_numeric_stepwise = flt.And(
+                ...     flt.Equals(DatapointSubscriptionProperty.is_string, False),
+                ...     flt.Equals(DatapointSubscriptionProperty.is_step, True))
                 >>> sub = DataPointSubscriptionWrite(
-                ...     "mySubscription",
+                ...     external_id="my_subscription",
+                ...     name="My subscription for numeric, stepwise time series",
                 ...     partition_count=1,
-                ...     filter=numeric_timeseries,
-                ...     name="My subscription for Numeric time series")
+                ...     filter=is_numeric_stepwise)
                 >>> created = client.time_series.subscriptions.create(sub)
         """
 
@@ -202,6 +209,9 @@ class DatapointsSubscriptionAPI(APIClient):
         partition: int = 0,
         poll_timeout: int = 5,
         cursor: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
     ) -> Iterator[DatapointSubscriptionBatch]:
         """`Iterate over data from a given subscription. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
@@ -219,6 +229,9 @@ class DatapointsSubscriptionAPI(APIClient):
             partition (int): The partition to iterate over. Defaults to 0.
             poll_timeout (int): How many seconds to wait for new data, until an empty response is sent. Defaults to 5.
             cursor (str | None): Optional cursor to start iterating from.
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response.
+            ignore_bad_datapoints (bool): Do not return bad datapoints. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Default: True.
 
         Yields:
             DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
@@ -230,38 +243,43 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription"):
+                ...     # Changes to the subscription itself:
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
                 ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     # Changes to datapoints for time series in the subscription:
+                ...     for update in batch.updates:
+                ...         upserts.time_series  # The time series the update belongs to
+                ...         upserts.upserts  # The upserted datapoints, if any
+                ...         upserts.deletes  # Ranges of deleted periods, if any
                 ...     if not batch.has_next:
                 ...         break
 
             Iterate continuously over all changes to the subscription newer than 3 days:
 
-                >>> import time
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
-                ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
-                ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
-                ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
+                ...     pass  # do something
         """
-
-        current_partitions = [DatapointSubscriptionPartition.create((partition, cursor))]
+        current_partitions = [DatapointSubscriptionPartition(partition, cursor)]
         while True:
             body = {
                 "externalId": external_id,
                 "partitions": [p.dump(camel_case=True) for p in current_partitions],
                 "limit": limit,
                 "pollTimeoutSeconds": poll_timeout,
+                "includeStatus": include_status,
+                "ignoreBadDataPoints": ignore_bad_datapoints,
+                "treatUncertainAsBad": treat_uncertain_as_bad,
             }
             if start is not None:
                 body["initializeCursors"] = start
-            start = None
+                start = None
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-            batch = _DatapointSubscriptionBatchWithPartitions.load(res.json())
-
-            cursor = batch.partitions[0].cursor
-            assert cursor is not None
+            batch = _DatapointSubscriptionBatchWithPartitions.load(
+                res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
+            )
+            cursor = cast(str, batch.partitions[0].cursor)
 
             yield DatapointSubscriptionBatch(batch.updates, batch.subscription_changes, batch.has_next, cursor)
 

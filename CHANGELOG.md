@@ -17,20 +17,269 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.50.0] - 2024-06-14
+### Changed
+- DatapointsAPI support for timezones and calendar-based aggregates reaches general availability (GA).
+### Deprecated
+- The function `DatapointsAPI.retrieve_dataframe_in_tz` is deprecated. Use the other retrieve methods instead
+  and pass in `timezone`.
+
+## [7.49.2] - 2024-06-12
+### Fixed
+- Converting rows (`RowList` and `RowListWrite`) to a pandas DataFrame no longer silently drops rows that do not have
+  any columnar data.
+
+## [7.49.1] - 2024-06-11
+### Fixed
+- Fixes resetting dataSetId to None in a ThreeDModelUpdate.
+
+## [7.49.0] - 2024-06-05
+### Added
+- `WorkfowExecutionAPI.list` now allows filtering by execution status.
+
+## [7.48.1] - 2024-06-04
+### Fixed
+- A bug introduced in `7.45.0` that would short-circuit raw datapoint queries too early when a lot of time series was
+  requested at the same time, and `include_outside_points=True` was used (empty cursor are to be expected).
+
+## [7.48.0] - 2024-06-04
+### Changed
+- Mark Data Workflows SDK implementation as Generally Available.
+
+## [7.47.0] - 2024-06-04
+### Added
+- Support for retrieving `Labels`, `client.labels.retrieve`.
+
+## [7.46.2] - 2024-06-03
+### Added
+- Added option for silencing `FeaturePreviewWarnings` in the `cognite.client.global_config`.
+
+## [7.46.1] - 2024-05-31
+### Fixed
+- Pyodide issue related to missing tzdata package.
+
+## [7.46.0] - 2024-05-31
+### Added
+- `RawRowsAPI.insert_dataframe` now has a new `dropna` setting (defaulting to True, as this would otherwise raise later).
+
+## [7.45.0] - 2024-05-31
+### Added
+- DatapointsAPI now support `timezone` and new calendar-based granularities like `month`, `quarter` and `year`.
+  These API features are in beta, and the SDK implementation in alpha, meaning breaking changes can
+  occur without warning. Set beta header to avoid warning. Users of `retrieve_dataframe_in_tz` should
+  consider preparing to upgrade as soon as the features reach general availability (GA).
+
+## [7.44.1] - 2024-05-24
+### Added
+- Missing parameter `timeout` to `client.transformations.preview`.
+
+## [7.44.0] - 2024-05-24
+### Added
+- New utility function `datetime_to_ms_iso_timestamp` in `cognite.client.utils` to convert a datetime object
+  to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+
+## [7.43.6] - 2024-05-27
+### Improved
+- JSON is no longer attempted decoded when e.g. expecting protobuf, which currently leads to a small performance
+  improvement for datapoints fetching.
+
+## [7.43.5] - 2024-05-22
+### Fixed
+- Transformation schemas no longer raise when loaded into its resource type.
+
+## [7.43.4] - 2024-05-20
+### Fixed
+- The data modeling APIs (Views, Containers, Data Models and Spaces) limits for create, retrieve, delete,
+  and list were not matching the API spec, causing the SDK to wrongly split large calls into too few requests.
+  This means that the SDK will no longer raise a `CogniteAPIError` if you, for example, try to delete
+  more than 100 containers in a single method call.
+
+## [7.43.3] - 2024-05-15
+### Fixed
+- Identity providers that return `expires_in` as a string no longer causes `TypeError` when authenticating.
+
+## [7.43.2] - 2024-05-10
+### Fixed
+- In containers, `PropertyType` `Text` required parameter `collation` is now optional when `load()`ing, matching the API spec.
+
+## [7.43.1] - 2024-05-10
+### Fixed
+- `RawRowsAPI.insert()` silently ignored rows of type `RowWriteList`.
+
+## [7.43.0] - 2024-05-09
+### Added
+- Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
+- `DiagramsAPI.detect()` method's parameter `configuration` now also accepts `DiagramDetectConfig` instances.
+
+## [7.42.0] - 2024-05-06
+### Changed
+- Breaking change: the `workflows.executions.cancel` method now only allows cancelling one execution at a time to reflect its non-atomic operation.
+
+## [7.41.1] - 2024-05-06
+### Fixed
+- An edge case when a request for datapoints from several hundred time series (with specific finite limits) would return
+  more datapoints than the user-specified limit.
+
+## [7.41.0] - 2024-04-30
+### Added
+- Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).
+  - You can read more in the Cognite Data Fusion developer documentation: [Status Codes reference](https://developer.cognite.com/dev/concepts/reference/quality_codes/).
+
+## [7.40.2] - 2024-04-30
+### Fixed
+- `InAssetSubtree` is no longer (mistakenly) accepted as a time series filter.
+
+## [7.40.1] - 2024-04-30
+### Fixed
+- Deleting multiple Datapoint Subscriptions now work as expected.
+
+## [7.40.0] - 2024-04-30
+### Added
+- Datapoint Subscriptions now support status codes.
+
+## [7.39.0] - 2024-04-25
+### Added
+- Support for internally managed groups (inside CDF, as opposed to the external identity provider).
+
+## [7.38.3] - 2024-04-25
+### Improved
+- The classes `WorkflowUpsert`, `Filter`, `Query`, `Node`, `Edge`, `Container`, `Document`, and
+  `Transformation` which are used for parsing API responses were not handling adding new parameters in
+  the API correctly. These are now future-proofed.
+
+## [7.38.2] - 2024-04-24
+### Added
+- Added new parameter `function_external_id` to `FunctionScheduleAPI.create` as a convenience to the user. Note
+  that schedules must be attached to a Function by (internal) ID, so a lookup is first done on behalf of the user.
+
+## [7.38.1] - 2024-04-23
+### Added
+- Added missing `partitions` parameter to `list()` and `__call__()` methods for `FilesAPI`.
+
+## [7.38.0] - 2024-04-22
+### Added
+- Support for `workflows.executions.retry`
+
+## [7.37.4] - 2024-04-22
+### Improved
+- Enabled automatic retries on Data Workflows POST endpoints
+
+## [7.37.3] - 2024-04-18
+### Improved
+- Minor quality of life change for comparing capabilities involving `DataModelInstancesAcl.WRITE_PROPERTIES`; any
+  ACL already covered by `WRITE` will not be reported as missing.
+
+## [7.37.2] - 2024-04-18
+### Fixed
+- Datapoints inserted into non-existent time series, no longer get their identifier hidden in the `failed` attribute
+  on the raised `CogniteNotFoundError`. Any `successful` now also gets reported correctly.
+
+## [7.37.1] - 2024-04-17
+### Fixed
+- Updating data set ID now works as expected for `ThreeDModelUpdate`.
+
+## [7.37.0] - 2024-04-16
+### Fixed
+- Now handle unknown data types in DM
+
+## [7.36.0] - 2024-04-16
+### Fixed
+- Now handle unknown filter types in DM
+- Add support for the "invalid" filter type in DM
+
+## [7.35.0] - 2024-04-16
+### Added
+- Datapoints insert methods `insert` and `insert_multiple` now support ingesting (optional) status codes.
+
+## [7.34.0] - 2024-04-11
+### Added
+- Datapoints method `retrieve_latest` now supports status codes.
+- Slicing or indexing a `Datapoints` or `DatapointsArray` instance, now propagates status codes (when present).
+
+## [7.33.1] - 2024-04-10
+### Fixed
+- Ordering of elements from calls to `retrieve_multiple` now match the requested elements. For SDK versions between
+  7.0.0 and 7.33.1, the ordering has been broken when >> 1k elements has been requested (the more requests used, the
+  more likely that a chunk was out of order).
+
+## [7.33.0] - 2024-04-08
+### Added
+- All datapoints retrieve methods (except `retrieve_latest`) now support status codes. Note: Support for *inserting*
+  datapoints with status codes will be released shortly. There are three new arguments:
+    * `include_status (bool)`: Toggle the return of status code and -symbol on/off, only valid for raw datapoints.
+    * `ignore_bad_datapoints (bool)`: For raw datapoints: Whether to return those marked bad (or not).
+      For aggregates: Whether the time periods of bad datapoints should affect aggregate calculations (or not).
+    * `treat_uncertain_as_bad (bool)`: Toggle whether datapoints marked uncertain should be regarded as good or bad.
+- The `to_pandas` method for `Datapoints`, `DatapointsList`, `DatapointsArray` and `DatapointsArrayList` now accepts
+  a new parameter, `include_status (bool)`, that controls whether to include status codes & -symbols as separate columns.
+- New datapoints query class, `DatapointsQuery`, to make writing custom queries easier, type-safe and more robust,
+  as opposed to passing dictionaries (of settings).
+### Deprecated
+- Passing *custom* datapoints queries using dictionaries is deprecated and will be removed in the next major release.
+  Consider refactoring already to `DatapointsQuery`. Example: `{"id": 12, "aggregates" : "min", "granularity": "6h"} ->
+  DatapointsQuery(id=12, aggregates="min", granularity="6h")`.
+
+## [7.32.8] - 2024-04-08
+### Fixed
+- When using TimeSeries objects without `external_id` as part of the `variables` parameter in a synthetic datapoints
+  query, a `CogniteNotFoundError` would most likely be raised, due to `None` being silently cast to a string. It now
+  raises a friendly `ValueError`.
+- An invalid expression could be created when using multiple variables in a synthetic datapoints query. This happened
+  while substituting the variables into the expression; this was done one at a time, leading to later replacements
+  possibly affecting earlier ones. Now all variables are substituted at the same time/in a single call.
+### Improved
+- Passing sympy symbols as part of the variables mapping (in synthetic datapoints queries) is now documented properly
+  and "officially supported".
+
+## [7.32.7] - 2024-04-05
+### Fixed
+- Inserting sequence data using `insert_dataframe` would by default drop all rows that contained at least one missing value.
+  This has now been fixed to only remove rows where all values are missing.
+
+## [7.32.6] - 2024-04-05
+### Fixed
+- `AssetsAPI.create_hierarchy` now properly supports `AssetWrite`.
+
+## [7.32.5] - 2024-04-04
+### Improved
+- Type validation of identifiers
+
+## [7.32.4] - 2024-03-28
+### Fixed
+- Several methods for `DatapointsArray` that previously failed for string datapoints due to bad handling
+  of numpy `dtype`-to-native conversion.
+
+## [7.32.3] - 2024-03-27
+### Removed
+- Support for `protobuf==3.*` was dropped.
+
+## [7.32.2] - 2024-03-26
+### Added
+- Missing filterable properties `unit_external_id` and `unit_quantity` to `DatapointSubscriptionProperty`.
+  Note: was renamed from `DatapointSubscriptionFilterProperties`, which is now a deprecated alias.
+
+## [7.32.1] - 2024-03-25
+### Fixed
+- Fix type hints for functions data classes Function/FunctionSchedule/FunctionCall
+
+## [7.32.0] - 2024-03-25
+### Changed
+- Type hint for `id`, `last_updated_time`, and `create_time` attributes are no longer `Optional` on
+  subclasses of `CogniteResource`. This is to reflect that these attributes are always set when the
+  object is returned by the SDK.
+
 ## [7.31.0] - 2024-03-24
 ### Added
 - Retrieve method for session, `client.iam.session.retrieve`
 - The parameter `limit` to the method `client.iam.session.list`.
-
 ### Fixed
-- The method `client.iam.session.revoke` is now overloaded correctly and returns a `Session` for single id 
+- The method `client.iam.session.revoke` is now overloaded correctly and returns a `Session` for single id
   and a `SessionList` for multiple ids.
 
 ## [7.30.1] - 2024-03-23
 ### Fixed
-- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` would raise
-  an `AttributeError: 'dict' object has no attribute '_repr_html_'`, i.e., the HTML representation of `SequenceRowsList`
-  was failing. This is now fixed.
+- When calling `client.sequences.data.retrieve` in a Jupyter Notebook the returning `SequenceRowsList` no longer raises
+  `AttributeError: 'dict' object has no attribute '_repr_html_'` (the HTML representation of `SequenceRowsList` was failing).
 
 ## [7.30.0] - 2024-03-20
 ### Added
@@ -43,8 +292,7 @@ Changes are grouped as follows
 
 ## [7.28.2] - 2024-03-14
 ### Fixed
-- Retrieving more than 100 containers, views, data models, or spaces would raise a
-   `CogniteAPIError`. This is now fixed.
+- Retrieving more than 100 containers, views, data models, or spaces no longer raises a `CogniteAPIError`.
 
 ## [7.28.1] - 2024-03-13
 ### Fixed

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import enum
 import inspect
 import itertools
@@ -9,7 +10,7 @@ from abc import ABC
 from dataclasses import asdict, dataclass, field
 from itertools import product
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Literal, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Literal, NamedTuple, NoReturn, Sequence, cast
 
 from typing_extensions import Self
 
@@ -28,6 +29,24 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class CapabilityTuple(NamedTuple):
+    acl_name: str
+    action: str
+    scope_name: str
+    scope_id: int | str | None = None
+    scope_extra: str | None = None
+
+    @property
+    def database(self) -> str:
+        assert self.acl_name == RawAcl._capability_name and isinstance(self.scope_id, str)
+        return self.scope_id
+
+    @property
+    def table(self) -> str:
+        assert self.acl_name == RawAcl._capability_name and isinstance(self.scope_extra, str)
+        return self.scope_extra
+
+
 @dataclass
 class Capability(ABC):
     _capability_name: ClassVar[str]
@@ -44,9 +63,8 @@ class Capability(ABC):
             if not self.allow_unknown:
                 self._validate()
         except Exception as err:
-            raise ValueError(
-                f"Could not instantiate {type(self).__name__} due to: {err}. " + self.show_example_usage()
-            ) from err
+            acl_name = "ACL" if (cls := type(self)) is UnknownAcl else cls.__name__
+            raise ValueError(f"Could not instantiate {acl_name} due to: {err}. " + self.show_example_usage()) from err
 
     def _validate(self) -> None:
         if (capability_cls := type(self)) is UnknownAcl:
@@ -58,7 +76,7 @@ class Capability(ABC):
         if bad_actions := [a for a in self.actions if a not in capability_cls.Action]:
             full_action_examples = ", ".join(f"{acl}.Action.{action.name}" for action in capability_cls.Action)
             raise ValueError(
-                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]."
+                f"{acl} got unknown action(s): {bad_actions}, expected a subset of: [{full_action_examples}]"
             )
         allowed_scopes, scope_names = _VALID_SCOPES_BY_CAPABILITY[capability_cls]
         if type(self.scope) in allowed_scopes or not allowed_scopes:
@@ -70,7 +88,7 @@ class Capability(ABC):
         else:
             full_scope_examples = ", ".join(f"{acl}.Scope.{name}" for name in scope_names)
             raise ValueError(
-                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]."
+                f"{acl} got an unknown scope: {self.scope}, expected an instance of one of: [{full_scope_examples}]"
             )
 
     @classmethod
@@ -86,22 +104,26 @@ class Capability(ABC):
             # Pythonistas, don't judge me, _missing_ does an isinstance check...
             try:
                 return cls(action)
-            except ValueError:
+            except (ValueError, TypeError):
                 if allow_unknown:
                     Action = enum.Enum("Action", {action.title(): action}, type=Capability.Action)  # type: ignore [misc]
                     return Action(action)  # type: ignore [return-value]
-                raise
+
+                # Note: Doesn't enum raise this for us?! Not as of >=3.11 (new check on empty is done first..)
+                raise ValueError(f"{action!r} is not a valid {cls.__qualname__}")
 
     @dataclass(frozen=True)
     class Scope(ABC):
         _scope_name: ClassVar[str]
 
         @classmethod
-        def load(cls, resource: dict | str) -> Self:
+        def load(cls, resource: dict | str, allow_unknown: bool = False) -> Self:
             resource = resource if isinstance(resource, dict) else load_yaml_or_json(resource)
-            ((name, data),) = resource.items()
-            data = convert_all_keys_to_snake_case(data)
-            if scope_cls := _SCOPE_CLASS_BY_NAME.get(name):
+            known_scopes = set(resource).intersection(_SCOPE_CLASS_BY_NAME)
+            if len(known_scopes) == 1:
+                (name,) = known_scopes
+                scope_cls = _SCOPE_CLASS_BY_NAME[name]
+                data = convert_all_keys_to_snake_case(resource[name])
                 try:
                     return cast(Self, scope_cls(**data))
                 except TypeError:
@@ -111,7 +133,21 @@ class Capability(ABC):
                         "Try updating to the latest SDK version, or create an issue on Github!"
                     )
                     return cast(Self, scope_cls(**rename_and_exclude_keys(data, exclude=not_supported)))
-            return cast(Self, UnknownScope(name=name, data=data))
+
+            # We infer this as an unknown scope not yet added to the SDK:
+            if len(resource) == 1:
+                ((name, data),) = resource.items()
+                if allow_unknown:
+                    return cast(Self, UnknownScope(name=name, data=data))
+
+                raise ValueError(
+                    f"Unable to parse Scope, {name!r} is not a known scope. Pass `allow_unknown=True` to force "
+                    f"loading it as an unknown scope. List of known: {sorted(_SCOPE_CLASS_BY_NAME)}."
+                )
+            raise ValueError(
+                f"Unable to parse Scope, none of the top-level keys in the input, {sorted(resource)}, "
+                f"matched known Scopes, - or - multiple was found. List of known: {sorted(_SCOPE_CLASS_BY_NAME)}."
+            )
 
         def dump(self, camel_case: bool = True) -> dict[str, Any]:
             if isinstance(self, UnknownScope):
@@ -122,27 +158,27 @@ class Capability(ABC):
                 data = convert_all_keys_to_camel_case(data)
             return {self._scope_name: data}
 
-        def as_tuples(self) -> set[tuple]:
+        def as_tuples(
+            self,
+        ) -> set[tuple[str]] | set[tuple[str, str]] | set[tuple[str, str, str]] | set[tuple[str, int]]:
             # Basic implementation for all simple Scopes (e.g. all or currentuser)
             return {(self._scope_name,)}
 
     @classmethod
-    def from_tuple(cls, tpl: tuple) -> Self:
-        acl_name, action, scope_name, *scope_params = tpl
-        capability_cls = _CAPABILITY_CLASS_BY_NAME[acl_name]
-        scope_cls = _SCOPE_CLASS_BY_NAME[scope_name]
+    def from_tuple(cls, tpl: CapabilityTuple) -> Self:
+        capability_cls = _CAPABILITY_CLASS_BY_NAME[tpl.acl_name]
+        scope_cls = _SCOPE_CLASS_BY_NAME[tpl.scope_name]
 
-        if not scope_params:
+        if tpl.scope_id is None:
             scope = scope_cls()
-        elif len(scope_params) == 1:
-            scope = scope_cls(scope_params)  # type: ignore [call-arg]
-        elif len(scope_params) == 2 and scope_cls is TableScope:
-            db, tbl = scope_params
-            scope = scope_cls({db: [tbl] if tbl else []})  # type: ignore [call-arg]
+        elif tpl.scope_extra is None:
+            scope = scope_cls([tpl.scope_id])  # type: ignore [call-arg]
+        elif scope_cls is TableScope:
+            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})  # type: ignore [call-arg]
         else:
-            raise ValueError(f"tuple not understood as capability: {tpl}")
+            raise ValueError(f"CapabilityTuple not understood: {tpl}")
 
-        return cast(Self, capability_cls(actions=[capability_cls.Action(action)], scope=scope))  # type: ignore [call-arg]
+        return cast(Self, capability_cls(actions=[capability_cls.Action(tpl.action)], scope=scope, allow_unknown=False))
 
     @classmethod
     def load(cls, resource: dict | str, allow_unknown: bool = False) -> Self:
@@ -152,32 +188,45 @@ class Capability(ABC):
             (name,) = known_acls
             capability_cls = _CAPABILITY_CLASS_BY_NAME[name]
             # TODO: We ignore extra keys that might be present like 'projectUrlNames' - are these needed?
+            try:
+                scopes = Capability.Scope.load(resource[name]["scope"], allow_unknown)
+            except Exception as err:
+                raise ValueError(f"Could not instantiate {capability_cls.__name__} due to: {err}")
+
             return cast(
                 Self,
                 capability_cls(
                     actions=[capability_cls.Action.load(act, allow_unknown) for act in resource[name]["actions"]],
-                    scope=Capability.Scope.load(resource[name]["scope"]),
+                    scope=scopes,
                     allow_unknown=allow_unknown,
                 ),
             )
-        elif not known_acls and len(resource) == 1:
-            # We infer this as an unknown acl not yet added to the SDK:
-            ((name, data),) = resource.items()
-            return cast(
-                Self,
-                UnknownAcl(
+        # We infer this as an unknown acl not yet added to the SDK. All API-responses are neccessarily
+        # loaded with 'allow_unknown=True' (to future-proof):
+        if allow_unknown:
+            if len(resource) != 1:
+                unknown_acl = UnknownAcl(actions=None, scope=None, raw_data=resource, allow_unknown=True)  # type: ignore [arg-type]
+            else:
+                ((name, data),) = resource.items()
+                unknown_acl = UnknownAcl(
                     capability_name=name,
-                    actions=[UnknownAcl.Action.load(act, allow_unknown) for act in data["actions"]],
-                    scope=Capability.Scope.load(data["scope"]),
+                    actions=[UnknownAcl.Action.load(act, allow_unknown=True) for act in data["actions"]],
+                    scope=Capability.Scope.load(data["scope"], allow_unknown=True),
                     raw_data=resource,
-                    allow_unknown=allow_unknown,
-                ),
-            )
-        # We got more than one acl (highly unlikely) or we got an unknown acl + extra keys in the response:
-        raise ValueError(
-            "Unable to parse capability from API-response, please create an issue on Github: "
-            "https://github.com/cognitedata/cognite-sdk-python"
+                    allow_unknown=True,
+                )
+            return cast(Self, unknown_acl)
+
+        top_lvl_keys = sorted(resource)
+        err_msg = (
+            f"Unable to parse Capability, none of the top-level keys in the input, {top_lvl_keys}, "
+            f"matched known ACLs, - or - multiple was found. Pass `allow_unknown=True` to force loading it "
+            f"as an unknown capability."
         )
+        if matches := [match for key in top_lvl_keys for match in difflib.get_close_matches(key, ALL_CAPABILITIES)]:
+            err_msg += f" Did you mean one of: {matches}?"
+        err_msg += " List of all ACLs: from cognite.client.data_classes.capabilities import ALL_CAPABILITIES"
+        raise ValueError(err_msg)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if isinstance(self, UnknownAcl):
@@ -189,9 +238,9 @@ class Capability(ABC):
         capability_name = self._capability_name
         return {to_camel_case(capability_name) if camel_case else to_snake_case(capability_name): data}
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[CapabilityTuple]:
         return set(
-            (acl, action, *scope_tpl)
+            CapabilityTuple(acl, action, *scope_tpl)  # type: ignore [arg-type]
             for acl, action, scope_tpl in product(
                 [self._capability_name], [action.value for action in self.actions], self.scope.as_tuples()
             )
@@ -284,10 +333,10 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
             return self._cognite_client.config.project
         return project
 
-    def as_tuples(self, project: str | None = None) -> set[tuple]:
+    def as_tuples(self, project: str | None = None) -> set[CapabilityTuple]:
         project = self._infer_project(project)
 
-        output: set[tuple] = set()
+        output: set[CapabilityTuple] = set()
         for proj_cap in self:
             cap = proj_cap.capability
             if isinstance(cap, UnknownAcl):
@@ -323,7 +372,7 @@ class IDScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -337,7 +386,7 @@ class IDScopeLowerCase(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -349,7 +398,7 @@ class ExtractionPipelineScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -361,7 +410,7 @@ class DataSetScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "ids", [int(i) for i in self.ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
 
 
@@ -385,7 +434,7 @@ class TableScope(Capability.Scope):
         key = "dbsToTables" if camel_case else "dbs_to_tables"
         return {self._scope_name: {key: {k: {"tables": v} for k, v in self.dbs_to_tables.items()}}}
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str, str]]:
         # When the scope contains no tables, it means all tables... since database name must be at least 1
         # character, we represent this internally with the empty string:
         return {(self._scope_name, db, tbl) for db, tables in self.dbs_to_tables.items() for tbl in tables or [""]}
@@ -399,7 +448,7 @@ class AssetRootIDScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "root_ids", [int(i) for i in self.root_ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.root_ids}
 
 
@@ -408,7 +457,7 @@ class ExperimentsScope(Capability.Scope):
     _scope_name = "experimentscope"
     experiments: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.experiments}
 
 
@@ -417,7 +466,7 @@ class SpaceIDScope(Capability.Scope):
     _scope_name = "spaceIdScope"
     space_ids: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.space_ids}
 
 
@@ -429,7 +478,7 @@ class PartitionScope(Capability.Scope):
     def __post_init__(self) -> None:
         object.__setattr__(self, "partition_ids", [int(i) for i in self.partition_ids])
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.partition_ids}
 
 
@@ -438,7 +487,7 @@ class LegacySpaceScope(Capability.Scope):
     _scope_name = "spaceScope"
     external_ids: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.external_ids}
 
 
@@ -447,7 +496,7 @@ class LegacyDataModelScope(Capability.Scope):
     _scope_name = "dataModelScope"
     external_ids: list[str]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.external_ids}
 
 
@@ -464,7 +513,7 @@ class UnknownScope(Capability.Scope):
     def __getitem__(self, item: str) -> Any:
         return self.data[item]
 
-    def as_tuples(self) -> set[tuple]:
+    def as_tuples(self) -> NoReturn:
         raise NotImplementedError("Unknown scope cannot be converted to tuples (needed for comparisons)")
 
 
@@ -1236,6 +1285,20 @@ class UserProfilesAcl(Capability):
 
 
 @dataclass
+class AuditlogAcl(Capability):
+    _capability_name = "auditlogAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+    allow_unknown: bool = field(default=False, compare=False, repr=False)
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class LegacyModelHostingAcl(LegacyCapability):
     _capability_name = "modelHostingAcl"
     actions: Sequence[Action]
@@ -1272,6 +1335,8 @@ _CAPABILITY_CLASS_BY_NAME: MappingProxyType[str, type[Capability]] = MappingProx
         if c not in (UnknownAcl, LegacyCapability)
     }
 )
+ALL_CAPABILITIES = sorted(_CAPABILITY_CLASS_BY_NAME)
+
 # Give all Actions a better error message (instead of implementing __missing__ for all):
 for acl in _CAPABILITY_CLASS_BY_NAME.values():
     if acl.Action.__members__:

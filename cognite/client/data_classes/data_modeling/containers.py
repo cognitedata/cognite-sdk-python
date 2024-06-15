@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
     CogniteResourceList,
+    UnknownCogniteObject,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -112,9 +113,7 @@ class ContainerApply(ContainerCore):
             constraints={k: Constraint.load(v) for k, v in resource["constraints"].items()}
             if "constraints" in resource
             else None,
-            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} or None
-            if "indexes" in resource
-            else None,
+            indexes={k: Index.load(v) for k, v in resource["indexes"].items()} if "indexes" in resource else None,
         )
 
     def as_write(self) -> ContainerApply:
@@ -249,7 +248,7 @@ class ContainerProperty(CogniteObject):
     nullable: bool = True
     auto_increment: bool = False
     name: str | None = None
-    default_value: str | int | dict | None = None
+    default_value: str | int | float | bool | dict | None = None
     description: str | None = None
 
     @classmethod
@@ -288,7 +287,7 @@ class Constraint(CogniteObject, ABC):
             return cast(Self, RequiresConstraint.load(resource))
         elif resource["constraintType"] == "uniqueness":
             return cast(Self, UniquenessConstraint.load(resource))
-        raise ValueError(f"Invalid constraint type {resource['constraintType']}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -337,7 +336,7 @@ class Index(CogniteObject, ABC):
             return cast(Self, BTreeIndex.load(resource))
         if resource["indexType"] == "inverted":
             return cast(Self, InvertedIndex.load(resource))
-        raise ValueError(f"Invalid index type {resource['indexType']}")
+        return cast(Self, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:

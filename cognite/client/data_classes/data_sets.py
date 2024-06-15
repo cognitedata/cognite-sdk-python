@@ -84,9 +84,14 @@ class DataSet(DataSetCore):
             metadata=metadata,
             write_protected=write_protected,
         )
-        self.id = id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> DataSetWrite:

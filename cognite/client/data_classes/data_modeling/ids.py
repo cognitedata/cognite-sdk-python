@@ -44,9 +44,9 @@ class DataModelingId(AbstractDataclass):
         if isinstance(data, cls):
             return data
         elif isinstance(data, tuple):
-            return cls(*data)
+            return cls(space=data[0], external_id=data[1])
         elif isinstance(data, dict):
-            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+            return cls(space=data["space"], external_id=data["externalId"])
         raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
@@ -77,9 +77,9 @@ class VersionedDataModelingId(AbstractDataclass):
         if isinstance(data, cls):
             return data
         elif isinstance(data, tuple):
-            return cls(*data)
+            return cls(space=data[0], external_id=data[1], version=data[2] if len(data) == 3 else None)
         elif isinstance(data, dict):
-            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+            return cls(space=data["space"], external_id=data["externalId"], version=data.get("version"))
         raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 

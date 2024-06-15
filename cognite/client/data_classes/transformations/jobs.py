@@ -6,7 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
-from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
+from cognite.client.data_classes.transformations.common import TransformationDestination
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -257,7 +257,7 @@ class TransformationJob(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationJob:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
-            instance.destination = _load_destination_dct(instance.destination)
+            instance.destination = TransformationDestination._load(instance.destination)
         elif isinstance(instance.destination, str):
             instance.destination = TransformationDestination(type=instance.destination)
         if isinstance(instance.status, str):

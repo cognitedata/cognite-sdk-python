@@ -32,9 +32,10 @@ class TestOauthClientCredentials:
 
     @patch("cognite.client.credentials.BackendApplicationClient")
     @patch("cognite.client.credentials.OAuth2Session")
-    def test_access_token_generated(self, mock_oauth_session, mock_backend_client):
+    @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
+    def test_access_token_generated(self, mock_oauth_session, mock_backend_client, expires_in):
         mock_backend_client().return_value = Mock()
-        mock_oauth_session().fetch_token.return_value = {"access_token": "azure_token", "expires_in": 1000}
+        mock_oauth_session().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()

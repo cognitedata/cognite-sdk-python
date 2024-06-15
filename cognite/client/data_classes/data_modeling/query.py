@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, Mapping, Sequence, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteObject
+from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
@@ -156,19 +156,14 @@ class Query(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if not (with_ := resource.get("with")):
-            raise ValueError("The query must contain a with key")
-
-        loaded: dict[str, Any] = {"with_": {k: ResultSetExpression.load(v) for k, v in with_.items()}}
-        if not (select := resource.get("select")):
-            raise ValueError("The query must contain a select key")
-        loaded["select"] = {k: Select.load(v) for k, v in select.items()}
-
-        if parameters := resource.get("parameters"):
-            loaded["parameters"] = dict(parameters.items())
-        if cursors := resource.get("cursors"):
-            loaded["cursors"] = dict(cursors.items())
-        return cls(**loaded)
+        parameters = dict(resource["parameters"].items()) if "parameters" in resource else None
+        cursors = dict(resource["cursors"].items()) if "cursors" in resource else None
+        return cls(
+            with_={k: ResultSetExpression.load(v) for k, v in resource["with"].items()},
+            select={k: Select.load(v) for k, v in resource["select"].items()},
+            parameters=parameters,
+            cursors=cursors,
+        )
 
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and self.dump() == other.dump()
@@ -231,7 +226,7 @@ class ResultSetExpression(CogniteObject, ABC):
                 Self, EdgeResultSetExpression(**edge, sort=sort, post_sort=post_sort, limit=resource.get("limit"))
             )
         else:
-            raise NotImplementedError(f"Unknown query type: {resource}")
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
     def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and self.dump() == other.dump()

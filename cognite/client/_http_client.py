@@ -5,7 +5,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Any, Callable, Literal, MutableMapping
+from typing import Any, Callable, Iterable, Literal, MutableMapping
 
 import requests
 import requests.adapters
@@ -13,6 +13,7 @@ import urllib3
 
 from cognite.client.config import global_config
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
+from cognite.client.utils.useful_types import SupportsRead
 
 
 class BlockAll(cookiejar.CookiePolicy):
@@ -107,24 +108,47 @@ class HTTPClient:
         self.refresh_auth_header = refresh_auth_header
         self.retry_tracker_factory = retry_tracker_factory  # needed for tests
 
-    def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+    def request(
+        self,
+        method: str,
+        url: str,
+        accept: str,
+        data: str | bytes | Iterable[bytes] | SupportsRead | None = None,
+        headers: MutableMapping[str, Any] | None = None,
+        timeout: float | None = None,
+        params: dict[str, Any] | str | bytes | None = None,
+        stream: bool | None = None,
+        allow_redirects: bool = False,
+    ) -> requests.Response:
         retry_tracker = self.retry_tracker_factory(self.config)
-        headers = kwargs.get("headers")
+        accepts_json = accept == "application/json"
+        is_auto_retryable = False
         while True:
             try:
-                res = self._do_request(method=method, url=url, **kwargs)
-                # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
-                retry_tracker.status += 1
+                res = self._do_request(
+                    method=method,
+                    url=url,
+                    data=data,
+                    headers=headers,
+                    timeout=timeout,
+                    params=params,
+                    stream=stream,
+                    allow_redirects=allow_redirects,
+                )
+                if accepts_json:
+                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
+                    res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
+                    try:
+                        is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
+                    except Exception:
+                        # if the response is not JSON or it doesn't conform to the api design guide,
+                        # we assume it's not auto-retryable
+                        pass
 
-                try:
-                    is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
-                except Exception:
-                    # if the response is not JSON or it doesn't conform to the api design guide,
-                    # we assume it's not auto-retryable
-                    is_auto_retryable = False
+                retry_tracker.status += 1
                 if not retry_tracker.should_retry(status_code=res.status_code, is_auto_retryable=is_auto_retryable):
                     return res
+
             except CogniteReadTimeout as e:
                 retry_tracker.read += 1
                 if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):
@@ -140,7 +164,17 @@ class HTTPClient:
                 # TODO: Refactoring needed to make this "prettier"
                 self.refresh_auth_header(headers)
 
-    def _do_request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+    def _do_request(
+        self,
+        method: str,
+        url: str,
+        data: str | bytes | Iterable[bytes] | SupportsRead | None = None,
+        headers: MutableMapping[str, Any] | None = None,
+        timeout: float | None = None,
+        params: dict[str, Any] | str | bytes | None = None,
+        stream: bool | None = None,
+        allow_redirects: bool = False,
+    ) -> requests.Response:
         """requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
 
         Sometimes the appropriate built-in networking exception is not in the context, sometimes the requests
@@ -148,7 +182,16 @@ class HTTPClient:
         urllib3 exceptions, and requests exceptions.
         """
         try:
-            res = self.session.request(method=method, url=url, **kwargs)
+            res = self.session.request(
+                method=method,
+                url=url,
+                data=data,
+                headers=headers,
+                timeout=timeout,
+                params=params,
+                stream=stream,
+                allow_redirects=allow_redirects,
+            )
             return res
         except Exception as e:
             if self._any_exception_in_context_isinstance(

@@ -619,12 +619,33 @@ class TestSequencesPandasIntegration:
         res = cognite_client.sequences.data.insert_dataframe(df, id=42)
         assert res is None
         request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
-        assert {
-            "items": [
-                {
-                    "id": 42,
-                    "columns": ["aa", "bb"],
-                    "rows": [{"rowNumber": 123, "values": [1, 5.0]}, {"rowNumber": 456, "values": [2, 6.0]}],
-                }
-            ]
-        } == request_body
+        expected_rows = [{"rowNumber": 123, "values": [1, 5.0]}, {"rowNumber": 456, "values": [2, 6.0]}]
+        expected_body = {"items": [{"id": 42, "columns": ["aa", "bb"], "rows": expected_rows}]}
+        assert expected_body == request_body
+
+    def test_insert_dataframe_with_missing_values(self, cognite_client, mock_post_sequence_data):
+        import pandas as pd
+
+        # Both missing third element + col A missing last + col B missing first
+        df = pd.DataFrame(
+            {
+                "col-A": [1.0, 2.0, None, 4.0, None],
+                "col-B": [None, "b", None, "d", "e"],
+            },
+            index=range(5),
+        )
+        cognite_client.sequences.data.insert_dataframe(df, id=42)
+        request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        expected_rows = [
+            {"rowNumber": 0, "values": [1.0, None]},
+            {"rowNumber": 1, "values": [2.0, "b"]},
+            {"rowNumber": 3, "values": [4.0, "d"]},
+            {"rowNumber": 4, "values": [None, "e"]},
+        ]
+        expected_body = {"items": [{"id": 42, "columns": ["col-A", "col-B"], "rows": expected_rows}]}
+        assert expected_body == request_body
+
+        cognite_client.sequences.data.insert_dataframe(df, id=42, dropna=False)
+        request_body = jsgz_load(mock_post_sequence_data.calls[1].request.body)
+        expected_rows.insert(2, {"rowNumber": 2, "values": [None, None]})
+        assert expected_body == request_body

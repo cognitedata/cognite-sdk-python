@@ -8,7 +8,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import convert_dict_to_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_dict_to_case
 
 if TYPE_CHECKING:
     import pandas
@@ -69,7 +69,7 @@ def _process_vertices(vertices: list[dict[str, float]] | list[Point]) -> list[Po
         if isinstance(v, Point):
             processed_vertices.append(v)
         elif isinstance(v, dict) and set(v) == set("xy"):
-            processed_vertices.append(Point(**v))
+            processed_vertices.append(Point._load(convert_all_keys_to_camel_case_recursive(v)))
         else:
             raise ValueError(f"{v} is an invalid point.")
     return processed_vertices
@@ -131,7 +131,7 @@ class Keypoint(VisionResource):
 
     def __post_init__(self) -> None:
         if isinstance(self.point, dict):
-            self.point = Point(**self.point)
+            self.point = Point._load(convert_all_keys_to_camel_case_recursive(self.point))
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Keypoint:

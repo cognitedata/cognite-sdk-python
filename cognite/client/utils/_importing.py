@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable, Iterable, Iterator, TypeVar, overloa
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
+
 _T = TypeVar("_T")
 
 
@@ -43,12 +44,6 @@ def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:
         except ImportError as e:
             raise CogniteImportError(name.split(".")[0]) from e
     return tuple(modules)
-
-
-def import_legacy_protobuf() -> bool:
-    from google.protobuf import __version__ as pb_version
-
-    return 4 > int(pb_version.split(".")[0])
 
 
 def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T]]]:

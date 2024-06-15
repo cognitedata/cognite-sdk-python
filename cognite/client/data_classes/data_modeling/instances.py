@@ -79,7 +79,7 @@ PropertyIdentifier: TypeAlias = str
 
 
 @dataclass
-class NodeOrEdgeData:
+class NodeOrEdgeData(CogniteObject):
     """This represents the data values of a node or edge.
 
     Args:
@@ -91,21 +91,21 @@ class NodeOrEdgeData:
     properties: Mapping[str, PropertyValue]
 
     @classmethod
-    def load(cls, data: dict) -> NodeOrEdgeData:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         try:
-            source_type = data["source"]["type"]
+            source_type = resource["source"]["type"]
         except KeyError as e:
             raise ValueError("source must be a dict with a type key") from e
         source: ContainerId | ViewId
         if source_type == "container":
-            source = ContainerId.load(data["source"])
+            source = ContainerId.load(resource["source"])
         elif source_type == "view":
-            source = ViewId.load(data["source"])
+            source = ViewId.load(resource["source"])
         else:
             raise ValueError(f"source type must be container or view, but was {source_type}")
         return cls(
             source=source,
-            properties=data["properties"],
+            properties=resource["properties"],
         )
 
     def dump(self, camel_case: bool = True) -> dict:
@@ -200,7 +200,12 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
             for view_id_str, properties in view_properties.items():
                 view_tuple = tuple(view_id_str.split("/", 1))
                 if len(view_tuple) != 2:
-                    raise ValueError(f"View id must be in the format <external_id>/<version>, not {view_id_str!r}")
+                    warnings.warn(
+                        f"Unknown type of view id: {view_id_str}, expected format <external_id>/<version>. "
+                        "Skipping...",
+                        stacklevel=2,
+                    )
+                    continue
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
         return cls(props)
@@ -414,7 +419,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     @abstractmethod
     def as_apply(self) -> InstanceApply:
         """Convert the instance to an apply instance."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class InstanceApplyResult(InstanceCore, ABC):
@@ -1074,10 +1079,6 @@ class InstancesResult:
 
     nodes: NodeList
     edges: EdgeList
-
-    @classmethod
-    def load(cls, data: str | dict) -> InstancesResult:
-        raise NotImplementedError()
 
 
 @dataclass

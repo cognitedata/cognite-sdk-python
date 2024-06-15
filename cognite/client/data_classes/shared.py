@@ -29,10 +29,9 @@ class AggregateResult(CogniteObject):
 
     Args:
         count (int | None): Size of the aggregation group
-        **_ (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, **_: Any) -> None:
+    def __init__(self, count: int | None = None) -> None:
         self.count = count
 
 
@@ -42,11 +41,10 @@ class AggregateUniqueValuesResult(AggregateResult):
     Args:
         count (int | None): Size of the aggregation group
         value (int | str | None): A unique value from the requested field
-        **kwargs (Any): No description.
     """
 
-    def __init__(self, count: int | None = None, value: int | str | None = None, **kwargs: Any) -> None:
-        super().__init__(count=count, value=value, **kwargs)
+    def __init__(self, count: int | None = None, value: int | str | None = None) -> None:
+        super().__init__(count=count)
         self.value = value
 
 

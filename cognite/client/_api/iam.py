@@ -25,10 +25,13 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.capabilities import (
     AllScope,
     Capability,
+    CapabilityTuple,
+    DataModelInstancesAcl,
     LegacyCapability,
     ProjectCapability,
     ProjectCapabilityList,
     RawAcl,
+    SpaceIDScope,
     UnknownAcl,
 )
 from cognite.client.data_classes.iam import GroupWrite, SecurityCategoryWrite, SessionStatus, TokenInspection
@@ -50,7 +53,9 @@ ComparableCapability: TypeAlias = Union[
 ]
 
 
-def _convert_capability_to_tuples(capabilities: ComparableCapability, project: str | None = None) -> set[tuple]:
+def _convert_capability_to_tuples(
+    capabilities: ComparableCapability, project: str | None = None
+) -> set[CapabilityTuple]:
     if isinstance(capabilities, ProjectCapability):
         return ProjectCapabilityList([capabilities]).as_tuples(project)
     if isinstance(capabilities, ProjectCapabilityList):
@@ -63,7 +68,7 @@ def _convert_capability_to_tuples(capabilities: ComparableCapability, project: s
     elif isinstance(capabilities, GroupList):
         capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
     if isinstance(capabilities, Sequence):
-        tpls: set[tuple] = set()
+        tpls: set[CapabilityTuple] = set()
         has_skipped = False
         for cap in capabilities:
             if isinstance(cap, dict):
@@ -156,6 +161,12 @@ class IAMAPI(APIClient):
                 ...     existing_capabilities=my_groups,
                 ...     desired_capabilities=to_check)
 
+            You may also load capabilities from a dict-representation directly into ACLs (access-control list)
+            by using ``Capability.load``. This will also ensure that the capabilities are valid.
+
+                >>> from cognite.client.data_classes.capabilities import Capability
+                >>> acls = [Capability.load(cap) for cap in to_check]
+
         Tip:
             If you just want to check against your existing capabilities, you may use the helper method
             ``client.iam.verify_capabilities`` instead.
@@ -168,27 +179,41 @@ class IAMAPI(APIClient):
         to_check_lookup = {k: set(grp) for k, grp in groupby(sorted(missing), key=itemgetter(slice(2)))}
 
         missing.clear()
-        raw_group, raw_check_grp = set(), set()
-        for key, check_grp in to_check_lookup.items():
+        raw_group, raw_check_group = set(), set()
+        for key, check_group in to_check_lookup.items():
             group = has_capabilties_lookup.get(key, set())
-            if any(AllScope._scope_name == grp[2] for grp in group):
+            if any(AllScope._scope_name == tpl.scope_name for tpl in group):
                 continue  # If allScope exists for capability, we safely skip ahead
-            elif RawAcl._capability_name == next(iter(check_grp))[0]:
+
+            cap_name, _ = key
+            if cap_name == RawAcl._capability_name:
+                # rawAcl needs specialized handling (below):
                 raw_group.update(group)
-                raw_check_grp.update(check_grp)
+                raw_check_group.update(check_group)
+            elif key == (DataModelInstancesAcl._capability_name, DataModelInstancesAcl.Action.Write_Properties.value):
+                # For dataModelInstancesAcl, 'WRITE_PROPERTIES' may covered by 'WRITE', so we must check AllScope:
+                write_grp = has_capabilties_lookup.get((cap_name, DataModelInstancesAcl.Action.Write.value), set())
+                if any(AllScope._scope_name == grp.scope_name for grp in write_grp):
+                    continue
+                # ...and if no AllScope, check individual SpaceIDScope:
+                for check_tpl in check_group:
+                    to_find = (SpaceIDScope._scope_name, check_tpl.scope_id)
+                    if any(to_find == (tpl.scope_name, tpl.scope_id) for tpl in write_grp):
+                        continue
+                    missing.add(check_tpl)
             else:
-                missing.update(check_grp)
+                missing.update(check_group)
 
         # Special handling of rawAcl which has a "hidden" database scope between "all" and "tables":
-        raw_to_check = {k: sorted(grp) for k, grp in groupby(sorted(raw_check_grp), key=itemgetter(slice(4)))}
+        raw_to_check = {k: sorted(grp) for k, grp in groupby(sorted(raw_check_group), key=itemgetter(slice(4)))}
         raw_has_capabs = {k: sorted(grp) for k, grp in groupby(sorted(raw_group), key=itemgetter(slice(4)))}
         for key, check_db_grp in raw_to_check.items():
-            if (db_group := raw_has_capabs.get(key)) and not db_group[0][-1]:
-                # [0] because empty string sorts first; [-1] is table; if no table -> db scope -> skip ahead
+            if (db_group := raw_has_capabs.get(key)) and not db_group[0].table:
+                # [0] because empty string sorts first; if no table -> db scope -> skip ahead
                 continue
             missing.update(check_db_grp)
 
-        return [Capability.from_tuple(tpl) for tpl in missing]
+        return [Capability.from_tuple(tpl) for tpl in sorted(missing)]
 
     def verify_capabilities(
         self,
@@ -226,10 +251,17 @@ class IAMAPI(APIClient):
 
             Capabilities can also be passed as dictionaries:
 
-                >>> missing = client.iam.verify_capabilities([
+                >>> to_check = [
                 ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
                 ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
-                ... ])
+                ... ]
+                >>> missing = client.iam.verify_capabilities(to_check)
+
+            You may also load capabilities from a dict-representation directly into ACLs (access-control list)
+            by using ``Capability.load``. This will also ensure that the capabilities are valid.
+
+                >>> from cognite.client.data_classes.capabilities import Capability
+                >>> acls = [Capability.load(cap) for cap in to_check]
         """
         existing_capabilities = self.token.inspect().capabilities
         return self.compare_capabilities(existing_capabilities, desired_capabilities)
@@ -253,11 +285,11 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.iam.groups.list()
+                >>> my_groups = client.iam.groups.list()
 
             List all groups:
 
-                >>> res = client.iam.groups.list(all=True)
+                >>> all_groups = client.iam.groups.list(all=True)
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
@@ -280,7 +312,7 @@ class GroupsAPI(APIClient):
 
         Example:
 
-            Create group::
+            Create a group without any members:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GroupWrite
@@ -291,6 +323,45 @@ class GroupsAPI(APIClient):
                 ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
+
+            Create a group whose members are managed externally (by your company's identity provider (IdP)).
+            This is done by using the ``source_id`` field. If this is the same ID as a group in the IdP,
+            a user in that group will implicitly be a part of this group as well.
+
+                >>> grp = GroupWrite(
+                ...     name="Externally managed group",
+                ...     capabilities=my_capabilities,
+                ...     source_id="b7c9a5a4...")
+                >>> res = client.iam.groups.create(grp)
+
+            Create a group whose members are managed internally by Cognite. This group may grant access through
+            listing specific users or include them all. This is done by passing the ``members`` field, either a
+            list of strings with the unique user identifiers or as the constant ``ALL_USER_ACCOUNTS``. To find the
+            user identifiers, you may use the UserProfilesAPI: ``client.iam.user_profiles.list()``.
+
+                >>> from cognite.client.data_classes import ALL_USER_ACCOUNTS
+                >>> all_group = GroupWrite(
+                ...     name="Everyone is welcome!",
+                ...     capabilities=my_capabilities,
+                ...     members=ALL_USER_ACCOUNTS,
+                ... )
+                >>> user_list_group = GroupWrite(
+                ...     name="Specfic users only",
+                ...     capabilities=my_capabilities,
+                ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"])
+                >>> res = client.iam.groups.create([user_list_group, all_group])
+
+            Capabilities are often defined in configuration files, like YAML or JSON. You may convert capabilities
+            from a dict-representation directly into ACLs (access-control list) by using ``Capability.load``.
+            This will also ensure that the capabilities are valid.
+
+                >>> from cognite.client.data_classes.capabilities import Capability
+                >>> unparsed_capabilities = [
+                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
+                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ... ]
+                >>> acls = [Capability.load(cap) for cap in unparsed_capabilities]
+                >>> group = GroupWrite(name="Another group", capabilities=acls)
         """
         return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
 

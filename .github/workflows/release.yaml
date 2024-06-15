@@ -5,61 +5,15 @@ on:
   push:
     branches: [master]
 
-env:
-  PYTHON_VERSION: '3.8'
-
 jobs:
-  lint:
-    runs-on: ubuntu-latest
+  test_full_build_and_release:
+    runs-on: windows-latest
+    environment: CD
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install required dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E numpy
-
-      - name: Linting and static code checks
-        run: pre-commit run --all-files
-
-  test_core:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install required dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install
-
-      - name: Test core
-        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
-
-  test_full:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E all
+          extras: '-E all'
 
       - name: Test full
         env:
@@ -71,28 +25,12 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-        run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        run: pytest tests --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
-
-  build:
-    runs-on: ubuntu-latest
-    needs: [lint, test_core, test_full]
-    environment: CD
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E all
 
       - name: Build package
         run: poetry build
@@ -104,7 +42,7 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload --verbose dist/* || echo 'Version exists'
+        run: twine upload --skip-existing --verbose dist/*
 
       # TODO: Make this work again
       # - name: Push code snippets to service-contracts

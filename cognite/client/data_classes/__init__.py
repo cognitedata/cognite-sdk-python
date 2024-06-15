@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from cognite.client.data_classes._base import Geometry
+from cognite.client.data_classes._base import Geometry, HasExternalAndInternalId, HasExternalId, HasInternalId, HasName
 from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.annotations import (
     Annotation,
@@ -44,7 +44,9 @@ from cognite.client.data_classes.datapoints import (
     DatapointsArray,
     DatapointsArrayList,
     DatapointsList,
+    DatapointsQuery,
     LatestDatapointQuery,
+    StatusCode,
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
@@ -132,6 +134,7 @@ from cognite.client.data_classes.geospatial import (
     FeatureWriteList,
 )
 from cognite.client.data_classes.iam import (
+    ALL_USER_ACCOUNTS,
     ClientCredentials,
     CreatedSession,
     Group,
@@ -266,6 +269,8 @@ from cognite.client.data_classes.transformations.jobs import (
 from cognite.client.data_classes.transformations.notifications import (
     TransformationNotification,
     TransformationNotificationList,
+    TransformationNotificationWrite,
+    TransformationNotificationWriteList,
 )
 from cognite.client.data_classes.transformations.schedules import (
     TransformationSchedule,
@@ -280,7 +285,6 @@ from cognite.client.data_classes.transformations.schema import (
 )
 from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
 from cognite.client.data_classes.workflows import (
-    CancelExecution,
     CDFTaskOutput,
     CDFTaskParameters,
     DynamicTaskOutput,
@@ -380,6 +384,7 @@ __all__ = [
     "DocumentHighlight",
     "DocumentHighlightList",
     "ClientCredentials",
+    "ALL_USER_ACCOUNTS",
     "CreatedSession",
     "Group",
     "GroupWrite",
@@ -477,6 +482,8 @@ __all__ = [
     "TransformationJobStatus",
     "TransformationNotification",
     "TransformationNotificationList",
+    "TransformationNotificationWrite",
+    "TransformationNotificationWriteList",
     "TransformationSchedule",
     "TransformationScheduleWrite",
     "TransformationScheduleList",
@@ -502,7 +509,9 @@ __all__ = [
     "DatapointsList",
     "DatapointsArray",
     "DatapointsArrayList",
+    "DatapointsQuery",
     "LatestDatapointQuery",
+    "StatusCode",
     "Function",
     "FunctionWrite",
     "FunctionFilter",
@@ -535,7 +544,6 @@ __all__ = [
     "CoordinateReferenceSystem",
     "UserProfile",
     "UserProfileList",
-    "CancelExecution",
     "WorkflowUpsert",
     "WorkflowExecution",
     "WorkflowExecutionDetailed",
@@ -561,4 +569,8 @@ __all__ = [
     "WorkflowTask",
     "WorkflowUpsertList",
     "WorkflowVersionUpsertList",
+    "HasName",
+    "HasExternalId",
+    "HasInternalId",
+    "HasExternalAndInternalId",
 ]

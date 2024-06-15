@@ -16,12 +16,12 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-WorkflowStatus: TypeAlias = Literal[
+TaskStatus: TypeAlias = Literal[
     "in_progress",
     "cancelled",
     "failed",
@@ -31,6 +31,8 @@ WorkflowStatus: TypeAlias = Literal[
     "timed_out",
     "skipped",
 ]
+
+WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminated", "timed_out"]
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
@@ -297,8 +299,13 @@ class CDFTaskParameters(WorkflowTaskParameters):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
-        arguments = convert_all_keys_to_snake_case(cdf_request)
-        return cls(**arguments)
+        return cls(
+            cdf_request["resourcePath"],
+            cdf_request["method"],
+            cdf_request.get("queryParameters"),
+            cdf_request.get("body"),
+            cdf_request.get("requestTimeoutInMillis", 10000),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -612,7 +619,7 @@ class WorkflowTaskExecution(CogniteObject):
     Args:
         id (str): The server generated id of the task execution.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        status (WorkflowStatus): The status of the task execution.
+        status (TaskStatus): The status of the task execution.
         input (WorkflowTaskParameters): The input parameters of the task execution.
         output (WorkflowTaskOutput): The output of the task execution.
         version (str | None): The version of the task execution. Defaults to None.
@@ -625,7 +632,7 @@ class WorkflowTaskExecution(CogniteObject):
         self,
         id: str,
         external_id: str,
-        status: WorkflowStatus,
+        status: TaskStatus,
         input: WorkflowTaskParameters,
         output: WorkflowTaskOutput,
         version: str | None = None,
@@ -652,7 +659,7 @@ class WorkflowTaskExecution(CogniteObject):
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
-            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
+            status=cast(TaskStatus, to_snake_case(resource["status"])),
             input=WorkflowTaskParameters.load_parameters(resource),
             output=WorkflowTaskOutput.load_output(resource),
             version=resource.get("version"),
@@ -935,7 +942,7 @@ class WorkflowExecution(CogniteResource):
     Args:
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
-        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
+        status (WorkflowStatus): The status of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
@@ -948,7 +955,7 @@ class WorkflowExecution(CogniteResource):
         self,
         id: str,
         workflow_external_id: str,
-        status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+        status: WorkflowStatus,
         created_time: int,
         version: str | None = None,
         start_time: int | None = None,
@@ -979,7 +986,7 @@ class WorkflowExecution(CogniteResource):
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
             status=cast(
-                Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+                WorkflowStatus,
                 to_snake_case(resource["status"]),
             ),
             created_time=resource["createdTime"],
@@ -1009,7 +1016,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow.
-        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
+        status (WorkflowStatus): The status of the workflow execution.
         executed_tasks (list[WorkflowTaskExecution]): The executed tasks of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
@@ -1025,7 +1032,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         id: str,
         workflow_external_id: str,
         workflow_definition: WorkflowDefinition,
-        status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+        status: WorkflowStatus,
         executed_tasks: list[WorkflowTaskExecution],
         created_time: int,
         version: str | None = None,
@@ -1050,7 +1057,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
             status=cast(
-                Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+                WorkflowStatus,
                 to_snake_case(resource["status"]),
             ),
             created_time=resource["createdTime"],
@@ -1168,38 +1175,3 @@ class WorkflowIds(UserList):
 
     def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
-
-
-@dataclass(frozen=True)
-class CancelExecution:
-    """
-    This class represents a Workflow Version Identifier.
-
-    Args:
-        workflow_external_id (str): The external ID of the workflow.
-        version (str, optional): The version of the workflow. Defaults to None.
-    """
-
-    id: str
-    reason: str | None = None
-
-    def as_primitive(self) -> tuple[str, str | None]:
-        return self.id, self.reason
-
-    @classmethod
-    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CancelExecution:
-        if "id" in resource:
-            execution_id = resource["id"]
-        else:
-            raise ValueError("Invalid input to WorkflowVersionId.load")
-
-        return cls(
-            id=execution_id,
-            reason=resource.get("reason"),
-        )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = {"id": self.id}
-        if self.reason:
-            output["reason"] = self.reason
-        return output

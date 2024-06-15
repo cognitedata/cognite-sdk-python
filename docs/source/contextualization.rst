@@ -110,7 +110,8 @@ Get vision extract job
 
 
 Contextualization Data Classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
+
 .. automodule:: cognite.client.data_classes.contextualization
     :members:
     :undoc-members:

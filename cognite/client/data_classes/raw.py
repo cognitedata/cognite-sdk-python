@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC
-from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from cognite.client.data_classes._base import (
@@ -33,6 +32,27 @@ class RowCore(WriteableCogniteResource["RowWrite"], ABC):
     ) -> None:
         self.key = key
         self.columns = columns
+
+    def get(self, attr: str, default: Any = None) -> Any:
+        return (self.columns or {}).get(attr, default)
+
+    def __getitem__(self, attr: str) -> Any:
+        return (self.columns or {})[attr]
+
+    def __setitem__(self, attr: str, value: Any) -> None:
+        if self.columns is not None:
+            self.columns[attr] = value
+        else:
+            raise RuntimeError("columns not set on Row instance")
+
+    def __delitem__(self, attr: str) -> None:
+        if self.columns is not None:
+            del self.columns[attr]
+        else:
+            raise RuntimeError("columns not set on Row instance")
+
+    def __contains__(self, attr: str) -> bool:
+        return self.columns is not None and attr in self.columns
 
     def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -68,27 +88,6 @@ class Row(RowCore):
         super().__init__(key, columns)
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
-
-    def get(self, attr: str, default: Any = None) -> Any:
-        return (self.columns or {}).get(attr, default)
-
-    def __getitem__(self, attr: str) -> Any:
-        return (self.columns or {})[attr]
-
-    def __setitem__(self, attr: str, value: Any) -> None:
-        if self.columns is not None:
-            self.columns[attr] = value
-        else:
-            raise RuntimeError("columns not set on Row instance")
-
-    def __delitem__(self, attr: str) -> None:
-        if self.columns is not None:
-            del self.columns[attr]
-        else:
-            raise RuntimeError("columns not set on Row instance")
-
-    def __contains__(self, attr: str) -> bool:
-        return self.columns is not None and attr in self.columns
 
     def as_write(self) -> RowWrite:
         """Returns this Row as a RowWrite"""
@@ -130,20 +129,14 @@ class RowListCore(WriteableCogniteResourceList[RowWrite, T_Row], ABC):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         pd = local_import("pandas")
-        return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
+        if not self:
+            return pd.DataFrame(columns=[], index=[])
+        index, data = zip(*((row.key, row.columns) for row in self))
+        return pd.DataFrame.from_records(data, index=index)
 
 
 class RowWriteList(RowListCore[RowWrite]):
     _RESOURCE = RowWrite
-
-    def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
-        """Convert the instance into a pandas DataFrame.
-
-        Returns:
-            pandas.DataFrame: The pandas DataFrame representing this instance.
-        """
-        pd = local_import("pandas")
-        return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
 
     def as_write(self) -> RowWriteList:
         return self

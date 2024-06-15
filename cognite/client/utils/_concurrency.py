@@ -248,7 +248,7 @@ def execute_tasks_serially(
             elif isinstance(task, tuple):
                 results.append(func(*task))
             else:
-                continue
+                raise TypeError(f"invalid task type: {type(task)}")
             successful_tasks.append(task)
 
         except Exception as err:
@@ -275,11 +275,14 @@ def execute_tasks(
     """
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
     be changed using ConcurrencySettings.executor_type.
+
+    Results are returned in the same order as that given by tasks.
     """
     if ConcurrencySettings.uses_mainthread() or isinstance(executor, MainThreadExecutor):
         return execute_tasks_serially(func, tasks, fail_fast)
 
     executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
+    task_order = [id(task) for task in tasks]
 
     futures_dct: dict[Future, tuple | dict] = {}
     for task in tasks:
@@ -287,16 +290,19 @@ def execute_tasks(
             futures_dct[executor.submit(func, **task)] = task
         elif isinstance(task, tuple):
             futures_dct[executor.submit(func, *task)] = task
+        else:
+            raise TypeError(f"invalid task type: {type(task)}")
 
-    results, exceptions = [], []
-    successful_tasks, failed_tasks, unknown_result_tasks, skipped_tasks = [], [], [], []
+    results: dict[int, tuple | dict] = {}
+    successful_tasks: dict[int, tuple | dict] = {}
+    failed_tasks, unknown_result_tasks, skipped_tasks, exceptions = [], [], [], []
 
     for fut in as_completed(futures_dct):
         task = futures_dct[fut]
         try:
             res = fut.result()
-            successful_tasks.append(task)
-            results.append(res)
+            results[id(task)] = task
+            successful_tasks[id(task)] = res
         except CancelledError:
             # In fail-fast mode, after an error has been raised, we attempt to cancel and skip tasks:
             skipped_tasks.append(task)
@@ -313,7 +319,16 @@ def execute_tasks(
                 for fut in futures_dct:
                     fut.cancel()
 
-    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, skipped_tasks, results, exceptions)
+    ordered_successful_tasks = [results[task_id] for task_id in task_order if task_id in results]
+    ordered_results = [successful_tasks[task_id] for task_id in task_order if task_id in successful_tasks]
+    return TasksSummary(
+        ordered_successful_tasks,
+        unknown_result_tasks,
+        failed_tasks,
+        skipped_tasks,
+        ordered_results,
+        exceptions,
+    )
 
 
 def classify_error(err: Exception) -> Literal["failed", "unknown"]:

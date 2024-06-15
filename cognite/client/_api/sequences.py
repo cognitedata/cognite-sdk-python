@@ -19,7 +19,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
-from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.data_classes.sequences import (
     SequenceCore,
     SequenceProperty,
@@ -53,21 +53,7 @@ SortSpec: TypeAlias = Union[
     Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
 ]
 
-_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-        filters.Search,
-    }
-)
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
 class SequencesAPI(APIClient):
@@ -756,7 +742,7 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> asset_filter = filters.Equals("asset_id", 123)
                 >>> is_efficiency = filters.Equals(["metadata", "type"], "efficiency")
-                >>> res = client.time_series.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
+                >>> res = client.sequences.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -770,7 +756,7 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> asset_filter = filters.Equals(SequenceProperty.asset_id, 123)
                 >>> is_efficiency = filters.Equals(SequenceProperty.metadata_key("type"), "efficiency")
-                >>> res = client.time_series.filter(
+                >>> res = client.sequences.filter(
                 ...     filter=filters.And(asset_filter, is_efficiency),
                 ...     sort=SortableSequenceProperty.created_time)
 
@@ -1028,22 +1014,23 @@ class SequencesDataAPI(APIClient):
             dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
-            dropna (bool): Whether to drop all NaN rows before inserting.
+            dropna (bool): Whether to drop rows where all values are missing. Default: True.
 
         Examples:
-            Multiply data in the sequence by 2::
+            Insert three rows into columns 'col_a' and 'col_b' of the sequence with id=123:
 
                 >>> from cognite.client import CogniteClient
                 >>> import pandas as pd
                 >>> client = CogniteClient()
                 >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
-                >>> client.sequences.data.insert_dataframe(df, id=1)
+                >>> client.sequences.data.insert_dataframe(df, id=123)
         """
         if dropna:
-            dataframe = dataframe.dropna()
+            # These will be rejected by the API, hence we remove them by default:
+            dataframe = dataframe.dropna(how="all")
         dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
-        data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
-        columns = [str(s) for s in dataframe.columns]
+        data = [(row.Index, row[1:]) for row in dataframe.itertuples()]
+        columns = list(dataframe.columns.astype(str))
         self.insert(rows=data, columns=columns, id=id, external_id=external_id)
 
     def _insert_data(self, task: dict[str, Any]) -> None:

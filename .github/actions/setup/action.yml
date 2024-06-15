@@ -1,0 +1,36 @@
+name: 'Setup Python Environment'
+description: 'Set up Python and install dependencies'
+inputs:
+  python_version:
+    description: 'Python version to set up'
+    required: false
+    default: "3.8"
+  extras:
+    description: 'extra deps: poetry install -E whatever'
+    required: false
+    default: ""
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python_version }}
+        cache: 'pip'
+
+    - name: Setup cache for poetry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pypoetry
+          ~/.poetry
+          !~/.cache/pypoetry/artifacts
+          !~/.cache/pypoetry/repositories
+        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ inputs.python_version }}-${{ inputs.extras }}
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install --upgrade pip poetry
+        poetry config virtualenvs.create false
+        poetry install --no-interaction --no-ansi ${{ inputs.extras }}

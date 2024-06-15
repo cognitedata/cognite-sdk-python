@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
+from cognite.client.data_classes import (
+    TransformationNotification,
+    TransformationNotificationList,
+    TransformationNotificationWrite,
+)
 from cognite.client.data_classes.transformations.notifications import (
     TransformationNotificationCore,
     TransformationNotificationFilter,
-    TransformationNotificationWrite,
 )
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
@@ -17,13 +20,27 @@ from cognite.client.utils._validation import assert_type
 class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
 
+    @overload
     def create(
-        self, notification: TransformationNotification | Sequence[TransformationNotification]
+        self, notification: TransformationNotification | TransformationNotificationWrite
+    ) -> TransformationNotification: ...
+
+    @overload
+    def create(
+        self, notification: Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]
+    ) -> TransformationNotificationList: ...
+
+    def create(
+        self,
+        notification: TransformationNotification
+        | TransformationNotificationWrite
+        | Sequence[TransformationNotification]
+        | Sequence[TransformationNotificationWrite],
     ) -> TransformationNotification | TransformationNotificationList:
         """`Subscribe for notifications on the transformation errors. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/createTransformationNotifications>`_
 
         Args:
-            notification (TransformationNotification | Sequence[TransformationNotification]): Notification or list of notifications to create.
+            notification (TransformationNotification | TransformationNotificationWrite | Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]): Notification or list of notifications to create.
 
         Returns:
             TransformationNotification | TransformationNotificationList: Created notification(s)

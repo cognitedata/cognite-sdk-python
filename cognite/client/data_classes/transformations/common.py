@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from cognite.client.credentials import OAuthClientCredentials
+from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.utils._auxiliary import basic_obj_dump
-from cognite.client.utils._text import convert_all_keys_to_snake_case, iterable_to_case
+from cognite.client.utils._text import iterable_to_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
-class TransformationDestination:
+class TransformationDestination(CogniteObject):
     """TransformationDestination has static methods to define the target resource type of a transformation
 
     Args:
@@ -155,6 +159,24 @@ class TransformationDestination:
         """
         return Instances(data_model=data_model, instance_space=instance_space)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TransformationDestination:
+        type_ = resource.get("type")
+        if type_ is None:
+            return UnknownCogniteObject._load(resource)  # type: ignore[return-value]
+
+        if type_ == "raw":
+            return RawTable._load(resource)
+        elif type_ == "sequence_rows":
+            return SequenceRowsDestination._load(resource)
+        elif type_ == "nodes":
+            return Nodes._load(resource)
+        elif type_ == "edges":
+            return Edges._load(resource)
+        elif type_ == "instances":
+            return Instances._load(resource)
+        return TransformationDestination(type_)
+
 
 class RawTable(TransformationDestination):
     def __init__(self, database: str | None = None, table: str | None = None) -> None:
@@ -165,6 +187,10 @@ class RawTable(TransformationDestination):
     def __hash__(self) -> int:
         return hash((self.type, self.database, self.table))
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(database=resource["database"], table=resource["table"])
+
 
 class SequenceRowsDestination(TransformationDestination):
     def __init__(self, external_id: str | None = None) -> None:
@@ -174,8 +200,12 @@ class SequenceRowsDestination(TransformationDestination):
     def __hash__(self) -> int:
         return hash((self.type, self.external_id))
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(external_id=resource["externalId"])
 
-class ViewInfo:
+
+class ViewInfo(CogniteObject):
     def __init__(self, space: str, external_id: str, version: str) -> None:
         self.space = space
         self.external_id = external_id
@@ -184,11 +214,16 @@ class ViewInfo:
     def __hash__(self) -> int:
         return hash((self.space, self.external_id, self.version))
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return basic_obj_dump(self, camel_case)
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ViewInfo:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+        )
 
 
-class EdgeType:
+class EdgeType(CogniteObject):
     def __init__(self, space: str, external_id: str) -> None:
         self.space = space
         self.external_id = external_id
@@ -196,11 +231,18 @@ class EdgeType:
     def __hash__(self) -> int:
         return hash((self.space, self.external_id))
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> EdgeType:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+        )
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
 
-class DataModelInfo:
+class DataModelInfo(CogniteObject):
     def __init__(
         self,
         space: str,
@@ -215,8 +257,15 @@ class DataModelInfo:
         self.destination_type = destination_type
         self.destination_relationship_from_type = destination_relationship_from_type
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return basic_obj_dump(self, camel_case)
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            destination_type=resource["destinationType"],
+            destination_relationship_from_type=resource.get("destinationRelationshipFromType"),
+        )
 
 
 class Nodes(TransformationDestination):
@@ -230,11 +279,11 @@ class Nodes(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def load(cls, resource: dict[str, Any]) -> Nodes:
-        inst = cls(**resource)
-        if isinstance(inst.view, dict):
-            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
-        return inst
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
+            instance_space=resource.get("instanceSpace"),
+        )
 
 
 class Edges(TransformationDestination):
@@ -250,13 +299,12 @@ class Edges(TransformationDestination):
         self.edge_type = edge_type
 
     @classmethod
-    def load(cls, resource: dict[str, Any]) -> Edges:
-        inst = cls(**resource)
-        if isinstance(inst.view, dict):
-            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
-        if isinstance(inst.edge_type, dict):
-            inst.edge_type = EdgeType(**convert_all_keys_to_snake_case(inst.edge_type))
-        return inst
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
+            instance_space=resource.get("instanceSpace"),
+            edge_type=EdgeType._load(resource["edgeType"]) if resource.get("edgeType") is not None else None,
+        )
 
 
 class Instances(TransformationDestination):
@@ -270,11 +318,11 @@ class Instances(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def load(cls, resource: dict[str, Any]) -> Instances:
-        inst = cls(**resource)
-        if isinstance(inst.data_model, dict):
-            inst.data_model = DataModelInfo(**convert_all_keys_to_snake_case(inst.data_model))
-        return inst
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            data_model=DataModelInfo._load(resource["dataModel"]) if resource.get("dataModel") is not None else None,
+            instance_space=resource.get("instanceSpace"),
+        )
 
 
 class OidcCredentials:
@@ -416,27 +464,3 @@ class TransformationBlockedInfo:
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
-
-
-def _load_destination_dct(
-    dct: dict[str, Any],
-) -> RawTable | Nodes | Edges | SequenceRowsDestination | TransformationDestination:
-    """Helper function to load destination from dictionary"""
-    snake_dict = convert_all_keys_to_snake_case(dct)
-    destination_type = snake_dict.pop("type")
-    simple = {
-        "raw": RawTable,
-        "sequence_rows": SequenceRowsDestination,
-    }
-    if destination_type in simple:
-        return simple[destination_type](**snake_dict)
-
-    nested: dict[str, type[Nodes] | type[Edges] | type[Instances]] = {
-        "nodes": Nodes,
-        "edges": Edges,
-        "instances": Instances,
-    }
-    if destination_type in nested:
-        return nested[destination_type].load(snake_dict)
-
-    return TransformationDestination(destination_type)

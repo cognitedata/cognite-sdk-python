@@ -26,7 +26,10 @@ class FeaturePreviewWarning(FutureWarning):
             )
 
     def warn(self) -> None:
-        warnings.warn(self, stacklevel=2)
+        from cognite.client import global_config
+
+        if not global_config.silence_feature_preview_warnings:
+            warnings.warn(self, stacklevel=2)
 
     def __reduce__(self) -> tuple:
         # This is needed to make the cognite client picklable as warings are stored on APIClass objects.

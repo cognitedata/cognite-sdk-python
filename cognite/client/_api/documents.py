@@ -18,29 +18,13 @@ from cognite.client.data_classes.documents import (
     SourceFileProperty,
     TemporaryLink,
 )
-from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
-_DOCUMENTS_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-        filters.GeoJSONIntersects,
-        filters.GeoJSONDisjoint,
-        filters.GeoJSONWithin,
-        filters.InAssetSubtree,
-        filters.Search,
-    }
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
+    {filters.InAssetSubtree, filters.Search, filters.GeoJSONIntersects, filters.GeoJSONDisjoint, filters.GeoJSONWithin}
 )
 
 
@@ -701,4 +685,4 @@ class DocumentsAPI(APIClient):
         )
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
-        _validate_filter(filter, _DOCUMENTS_SUPPORTED_FILTERS, type(self).__name__)
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)

@@ -92,7 +92,7 @@ class TransformationSchedule(TransformationScheduleCore):
         return hash(self.id)
 
 
-class TransformationScheduleWrite(TransformationScheduleCore, ABC):
+class TransformationScheduleWrite(TransformationScheduleCore):
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:

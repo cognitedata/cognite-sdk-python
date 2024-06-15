@@ -51,7 +51,7 @@ from cognite.client.data_classes.assets import (
     AssetWrite,
     SortableAssetProperty,
 )
-from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
@@ -81,21 +81,7 @@ SortSpec: TypeAlias = Union[
     Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
 ]
 
-_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
-    {
-        filters.And,
-        filters.Or,
-        filters.Not,
-        filters.In,
-        filters.Equals,
-        filters.Exists,
-        filters.Range,
-        filters.Prefix,
-        filters.ContainsAny,
-        filters.ContainsAll,
-        filters.Search,
-    }
-)
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
 class AssetsAPI(APIClient):
@@ -1252,7 +1238,7 @@ class _AssetHierarchyCreator:
     ) -> _TaskResult:
         try:
             resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
-            successful = list(map(Asset.load, resp.json()["items"]))
+            successful = [Asset._load(item) for item in resp.json()["items"]]
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
             self._set_latest_exception(err)

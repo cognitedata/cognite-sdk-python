@@ -184,10 +184,12 @@ def add_multiply_workflow(
             ],
         ),
     )
-    # Delete existing workflow and versions
-    cognite_client.workflows.delete(workflow_id, ignore_unknown_ids=True)
-    yield cognite_client.workflows.versions.upsert(version)
-    cognite_client.workflows.delete(workflow_id, ignore_unknown_ids=True)
+
+    retrieved = cognite_client.workflows.versions.retrieve(version.workflow_external_id, version.version)
+    if retrieved is not None:
+        return retrieved
+    else:
+        return cognite_client.workflows.versions.upsert(version)
 
 
 @pytest.fixture(scope="session")
@@ -360,6 +362,7 @@ class TestWorkflowExecutions:
     ) -> None:
         workflow_ids = set(w.as_workflow_id() for w in workflow_execution_list)
 
+        assert workflow_ids, "There should be at least one workflow execution to test list with"
         listed = cognite_client.workflows.executions.list(
             workflow_version_ids=list(workflow_ids), limit=len(workflow_execution_list)
         )
@@ -367,11 +370,29 @@ class TestWorkflowExecutions:
         assert len(listed) == len(workflow_execution_list)
         assert all(w.as_workflow_id() in workflow_ids for w in listed)
 
+    def test_list_workflow_executions_by_status(
+        self,
+        cognite_client: CogniteClient,
+        add_multiply_workflow: WorkflowVersion,
+    ) -> None:
+        listed_completed = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses="completed", limit=3
+        )
+        for execution in listed_completed:
+            assert execution.status == "completed"
+
+        listed_others = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses=["running", "failed"], limit=3
+        )
+        for execution in listed_others:
+            assert execution.status in ["running", "failed"]
+
     def test_retrieve_workflow_execution_detailed(
         self,
         cognite_client: CogniteClient,
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
+        assert workflow_execution_list, "There should be at least one workflow execution to test retrieve detailed with"
         retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
 
         assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
@@ -406,3 +427,21 @@ class TestWorkflowExecutions:
 
         async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
         assert async_task.status == "completed"
+
+    @pytest.mark.usefixtures("clean_created_sessions")
+    def test_trigger_cancel_retry_workflow(
+        self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
+    ) -> None:
+        workflow_execution = cognite_client.workflows.executions.trigger(
+            add_multiply_workflow.workflow_external_id,
+            add_multiply_workflow.version,
+        )
+
+        cancelled_workflow_execution = cognite_client.workflows.executions.cancel(
+            id=workflow_execution.id, reason="test"
+        )
+        assert cancelled_workflow_execution.status == "terminated"
+        assert cancelled_workflow_execution.reason_for_incompletion == "test"
+
+        retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
+        assert retried_workflow_execution.status == "running"

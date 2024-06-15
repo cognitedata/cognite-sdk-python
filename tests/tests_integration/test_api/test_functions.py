@@ -26,3 +26,12 @@ class TestFunctionsAPI:
         assert len(schedules) == expected_unique_schedules
         assert len({s.id for s in schedules}) == expected_unique_schedules
         assert len({s.cron_expression for s in schedules}) == expected_unique_schedules
+
+    def test_create_schedule_with_bad_external_id(self, cognite_client: CogniteClient):
+        xid = "bad_xid"
+        with pytest.raises(ValueError, match=f'Function with external ID "{xid}" is not found'):
+            cognite_client.functions.schedules.create(
+                function_external_id=xid,
+                cron_expression="* * * * *",
+                name="test_schedule",
+            )

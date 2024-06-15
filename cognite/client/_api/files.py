@@ -67,6 +67,7 @@ class FilesAPI(APIClient):
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
         limit: int | None = None,
+        partitions: int | None = None,
     ) -> Iterator[FileMetadata] | Iterator[FileMetadataList]:
         """Iterate over files
 
@@ -95,6 +96,7 @@ class FilesAPI(APIClient):
             directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int | None): Maximum number of files to return. Defaults to return all items.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
 
         Returns:
             Iterator[FileMetadata] | Iterator[FileMetadataList]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
@@ -129,6 +131,7 @@ class FilesAPI(APIClient):
             chunk_size=chunk_size,
             filter=filter,
             limit=limit,
+            partitions=partitions,
         )
 
     def __iter__(self) -> Iterator[FileMetadata]:
@@ -589,7 +592,7 @@ class FilesAPI(APIClient):
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
-            "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
+            "PUT", upload_url, accept="*/*", data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
         if not upload_response.ok:
             raise CogniteFileUploadError(
@@ -711,6 +714,7 @@ class FilesAPI(APIClient):
         upload_response = self._http_client_with_retry.request(
             "PUT",
             upload_url,
+            accept="*/*",
             data=content,
             timeout=self._config.file_transfer_timeout,
             headers=None,
@@ -901,7 +905,7 @@ class FilesAPI(APIClient):
 
         id_to_metadata: dict[str | int, FileMetadata] = {}
         for f in files_metadata:
-            id_to_metadata[cast(int, f.id)] = f
+            id_to_metadata[f.id] = f
             if f.external_id is not None:
                 id_to_metadata[f.external_id] = f
 
@@ -943,7 +947,7 @@ class FilesAPI(APIClient):
 
     def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(
-            "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
+            "GET", download_link, accept="*/*", stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
@@ -995,7 +999,9 @@ class FilesAPI(APIClient):
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
-        res = self._http_client_with_retry.request("GET", download_link, timeout=self._config.file_transfer_timeout)
+        res = self._http_client_with_retry.request(
+            "GET", download_link, accept="*/*", timeout=self._config.file_transfer_timeout
+        )
         return res.content
 
     def list(
@@ -1021,6 +1027,7 @@ class FilesAPI(APIClient):
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
     ) -> FileMetadataList:
         """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 
@@ -1046,6 +1053,7 @@ class FilesAPI(APIClient):
             directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int | None): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
 
         Returns:
             FileMetadataList: The requested files.
@@ -1113,5 +1121,10 @@ class FilesAPI(APIClient):
         ).dump(camel_case=True)
 
         return self._list(
-            list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            partitions=partitions,
         )

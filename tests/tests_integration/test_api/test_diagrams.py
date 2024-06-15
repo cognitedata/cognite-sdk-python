@@ -83,12 +83,12 @@ class TestPNIDParsingIntegration:
         assert set(pages_with_annotations_per_subjob[1]) == {6, 11}
         assert set(pages_with_annotations_per_subjob[2]) == {50, 55}
 
-    def test_run_diagram_detect_in_pattern_mode(self, cognite_client_beta):
+    def test_run_diagram_detect_in_pattern_mode(self, cognite_client):
         entities = [
             {"sample": "[PH]-ME-P-0156-001", "resourceType": "file_reference"},
             {"sample": "23-TI-92101-01", "resourceType": "instrument"},
         ]
-        detected = cognite_client_beta.diagrams.detect(
+        detected = cognite_client.diagrams.detect(
             file_references=[
                 FileReference(file_external_id=ELEVEN_PAGE_PNID_EXTERNAL_ID, first_page=11, last_page=11),
             ],

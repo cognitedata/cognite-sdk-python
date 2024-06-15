@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Sequence, cast, overload
+from typing import TYPE_CHECKING, Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
@@ -19,10 +19,19 @@ from cognite.client.data_classes.data_modeling.ids import (
 )
 from cognite.client.utils._concurrency import ConcurrencySettings
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class ContainersAPI(APIClient):
     _RESOURCE_PATH = "/models/containers"
-    _LIST_LIMIT = 100
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 100
+        self._RETRIEVE_LIMIT = 100
+        self._CREATE_LIMIT = 100
 
     @overload
     def __call__(
@@ -201,7 +210,10 @@ class ContainersAPI(APIClient):
             },
         )
         return [
-            (ContainerId(space=item["space"], external_id=item["containerExternalId"]), item["identifier"])
+            (
+                ContainerId(space=item["space"], external_id=item["containerExternalId"]),
+                item["identifier"],
+            )
             for item in res.json()["items"]
         ]
 
@@ -277,6 +289,42 @@ class ContainersAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> container = [ContainerApply(space="mySpace", external_id="myContainer",
                 ...     properties={"name": ContainerProperty(type=Text(), name="name")})]
+                >>> res = client.data_modeling.containers.apply(container)
+
+            Create new container with unit-aware properties:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import ContainerApply, ContainerProperty, Float64
+                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference
+                >>> client = CogniteClient()
+                >>> container = ContainerApply(
+                ...     space="mySpace",
+                ...     external_id="myContainer",
+                ...     properties={
+                ...         "maxPressure": ContainerProperty(
+                ...             nullable=True,
+                ...             description="Maximum Pump Pressure",
+                ...             name="maxPressure",
+                ...             type=Float64(
+                ...                 unit=UnitReference(
+                ...                     external_id="pressure:bar",
+                ...                     source_unit="BAR"
+                ...                 )
+                ...             )
+                ...         ),
+                ...         "rotationConfigurations": ContainerProperty(
+                ...             nullable=True,
+                ...             description="Rotation Configurations",
+                ...             name="rotationConfigurations",
+                ...             type=Float64(
+                ...                 is_list=True,
+                ...                 unit=UnitReference(
+                ...                     external_id="angular_velocity:rev-per-min"
+                ...                 )
+                ...             )
+                ...         )
+                ...     }
+                ... )
                 >>> res = client.data_modeling.containers.apply(container)
         """
         return self._create_multiple(

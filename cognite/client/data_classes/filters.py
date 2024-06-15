@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequenc
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import EnumProperty, Geometry, NoCaseConversionPropertyList
+from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
-from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
@@ -55,12 +56,15 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, (EnumProperty, NoCaseConversionPropertyList)):
+    if isinstance(property_, EnumProperty):
         return property_.as_reference()
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):
-        return type(property_)(map(to_camel_case, property_)) if camel_case else property_
+        if len(property_) == 1:
+            return [to_camel_case(property_[0])] if camel_case else property_
+        else:
+            return property_
     else:
         raise ValueError(f"Invalid property format {property_}")
 
@@ -85,20 +89,17 @@ class Filter(ABC):
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
-        (filter_name,) = filter_
-        filter_body = filter_[filter_name]
-
-        if filter_name == And._filter_name:
+        if (filter_body := filter_.get(And._filter_name)) is not None:
             return And(*(Filter.load(filter_) for filter_ in filter_body))
-        elif filter_name == Or._filter_name:
+        elif (filter_body := filter_.get(Or._filter_name)) is not None:
             return Or(*(Filter.load(filter_) for filter_ in filter_body))
-        elif filter_name == Not._filter_name:
+        elif (filter_body := filter_.get(Not._filter_name)) is not None:
             return Not(Filter.load(filter_body))
-        elif filter_name == Nested._filter_name:
+        elif (filter_body := filter_.get(Nested._filter_name)) is not None:
             return Nested(scope=filter_body["scope"], filter=Filter.load(filter_body["filter"]))
-        elif filter_name == MatchAll._filter_name:
+        elif MatchAll._filter_name in filter_:
             return MatchAll()
-        elif filter_name == HasData._filter_name:
+        elif (filter_body := filter_.get(HasData._filter_name)) is not None:
             containers = []
             views = []
             for view_or_space in filter_body:
@@ -107,7 +108,7 @@ class Filter(ABC):
                 else:
                     views.append((view_or_space["space"], view_or_space["externalId"], view_or_space.get("version")))
             return HasData(containers=containers, views=views)
-        elif filter_name == Range._filter_name:
+        elif (filter_body := filter_.get(Range._filter_name)) is not None:
             return Range(
                 property=filter_body["property"],
                 gt=_load_filter_value(filter_body.get("gt")),
@@ -115,7 +116,7 @@ class Filter(ABC):
                 lt=_load_filter_value(filter_body.get("lt")),
                 lte=_load_filter_value(filter_body.get("lte")),
             )
-        elif filter_name == Overlaps._filter_name:
+        elif (filter_body := filter_.get(Overlaps._filter_name)) is not None:
             return Overlaps(
                 start_property=filter_body.get("startProperty"),
                 end_property=filter_body.get("endProperty"),
@@ -124,65 +125,66 @@ class Filter(ABC):
                 lt=_load_filter_value(filter_body.get("lt")),
                 lte=_load_filter_value(filter_body.get("lte")),
             )
-        elif filter_name == Equals._filter_name:
+        elif (filter_body := filter_.get(Equals._filter_name)) is not None:
             return Equals(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body.get("value")),
             )
-        elif filter_name == In._filter_name:
+        elif (filter_body := filter_.get(In._filter_name)) is not None:
             return In(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body.get("values"))),
             )
-        elif filter_name == Exists._filter_name:
+        elif (filter_body := filter_.get(Exists._filter_name)) is not None:
             return Exists(property=filter_body["property"])
-        elif filter_name == Prefix._filter_name:
+        elif (filter_body := filter_.get(Prefix._filter_name)) is not None:
             return Prefix(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
-        elif filter_name == ContainsAny._filter_name:
+        elif (filter_body := filter_.get(ContainsAny._filter_name)) is not None:
             return ContainsAny(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == ContainsAll._filter_name:
+        elif (filter_body := filter_.get(ContainsAll._filter_name)) is not None:
             return ContainsAll(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == ContainsAll._filter_name:
-            return ContainsAll(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
-            )
-        elif filter_name == GeoJSONIntersects._filter_name:
+        elif (filter_body := filter_.get(GeoJSONIntersects._filter_name)) is not None:
             return GeoJSONIntersects(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == GeoJSONDisjoint._filter_name:
+        elif (filter_body := filter_.get(GeoJSONDisjoint._filter_name)) is not None:
             return GeoJSONDisjoint(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == GeoJSONWithin._filter_name:
+        elif (filter_body := filter_.get(GeoJSONWithin._filter_name)) is not None:
             return GeoJSONWithin(
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif filter_name == InAssetSubtree._filter_name:
+        elif (filter_body := filter_.get(SpaceFilter._filter_name)) is not None:
             return InAssetSubtree(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
-        elif filter_name == Search._filter_name:
+        elif (filter_body := filter_.get(Search._filter_name)) is not None:
             return Search(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
             )
+        elif (filter_body := filter_.get(InvalidFilter._filter_name)) is not None:
+            return InvalidFilter(
+                previously_referenced_properties=filter_body["previouslyReferencedProperties"],
+                filter_type=filter_body["filterType"],
+            )
         else:
-            raise ValueError(f"Unknown filter type: {filter_name}")
+            filter_name, filter_body = next(iter(filter_.items()))
+            return UnknownFilter(filter_name, filter_body)
 
     @abstractmethod
     def _filter_body(self, camel_case_property: bool) -> list | dict: ...
@@ -193,6 +195,42 @@ class Filter(ABC):
             for filter_ in self._filters:
                 output.update(filter_._involved_filter_types())
         return output
+
+
+class UnknownFilter(Filter):
+    def __init__(self, filter_name: str, filter_body: dict[str, Any]) -> None:
+        self.__actual_filter_name = filter_name
+        self.__actual_filter_body = filter_body
+
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        if camel_case_property:
+            return convert_all_keys_to_camel_case(self.__actual_filter_body)
+        else:
+            return self.__actual_filter_body
+
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        return {self.__actual_filter_name: self._filter_body(camel_case_property)}
+
+
+class InvalidFilter(Filter):
+    _filter_name = "invalid"
+
+    def __init__(self, previously_referenced_properties: list[list[str]], filter_type: str) -> None:
+        self.__previously_reference_properties = previously_referenced_properties
+        self.__filter_type = filter_type
+
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        body = {
+            "previously_referenced_properties": self.__previously_reference_properties,
+            "filter_type": self.__filter_type,
+        }
+        if camel_case_property:
+            return convert_all_keys_to_camel_case(body)
+        else:
+            return body
+
+    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
+        return {self._filter_name: self._filter_body(camel_case_property)}
 
 
 def _validate_filter(
@@ -744,6 +782,11 @@ class Search(FilterWithPropertyAndValue):
     _filter_name = "search"
 
 
+_BASIC_FILTERS: frozenset[type[Filter]] = frozenset(
+    {And, Or, Not, In, Equals, Exists, Range, Prefix, ContainsAny, ContainsAll}
+)
+
+
 # ######################################################### #
 # Custom filters below (custom meaning 'no API equivalent') #
 # ######################################################### #
@@ -753,7 +796,7 @@ class SpaceFilter(FilterWithPropertyAndValueList):
     """Filters instances based on the space.
 
     Args:
-        space (str | Sequence[str]): The space (or spaces) to filter on.
+        space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
         instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
 
     Example:
@@ -769,7 +812,7 @@ class SpaceFilter(FilterWithPropertyAndValueList):
 
     _filter_name = In._filter_name
 
-    def __init__(self, space: str | Sequence[str], instance_type: Literal["node", "edge"] = "node") -> None:
+    def __init__(self, space: str | SequenceNotStr[str], instance_type: Literal["node", "edge"] = "node") -> None:
         space_list = [space] if isinstance(space, str) else list(space)
         super().__init__(property=[instance_type, "space"], values=space_list)
 

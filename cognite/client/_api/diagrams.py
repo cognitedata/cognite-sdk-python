@@ -10,11 +10,13 @@ from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     DetectJobBundle,
     DiagramConvertResults,
+    DiagramDetectConfig,
     DiagramDetectResults,
     FileReference,
     T_ContextualizationJob,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -33,6 +35,11 @@ class DiagramsAPI(APIClient):
         # https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50
         self._DETECT_API_STATUS_JOB_LIMIT = 1000
+        self._detect_beta_params_warning = FeaturePreviewWarning(
+            api_maturity="beta",
+            sdk_maturity="beta",
+            feature_name="Support for diagram detect 'configuration' and 'pattern_mode' parameters",
+        )
 
     def _camel_post(
         self,
@@ -40,12 +47,14 @@ class DiagramsAPI(APIClient):
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
     ) -> Response:
         return self._post(
             self._RESOURCE_PATH + context_path,
             json={to_camel_case(k): v for k, v in (json or {}).items() if v is not None},
             params=params,
             headers=headers,
+            api_subversion=api_subversion,
         )
 
     def _run_job(
@@ -54,11 +63,12 @@ class DiagramsAPI(APIClient):
         job_path: str,
         status_path: str | None = None,
         headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
-        response = self._camel_post(job_path, json=kwargs, headers=headers)
+        response = self._camel_post(job_path, json=kwargs, headers=headers, api_subversion=api_subversion)
         return job_cls._load_with_status(
             data=response.json(),
             headers=response.headers,
@@ -128,7 +138,7 @@ class DiagramsAPI(APIClient):
         file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
-        configuration: dict[str, Any] | None = None,
+        configuration: DiagramDetectConfig | dict[str, Any] | None = None,
         *,
         multiple_jobs: Literal[True],
     ) -> tuple[DetectJobBundle | None, list[dict[str, Any]]]: ...
@@ -144,7 +154,7 @@ class DiagramsAPI(APIClient):
         file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
-        configuration: dict[str, Any] | None = None,
+        configuration: DiagramDetectConfig | dict[str, Any] | None = None,
     ) -> DiagramDetectResults: ...
 
     def detect(
@@ -157,11 +167,11 @@ class DiagramsAPI(APIClient):
         file_external_ids: str | SequenceNotStr[str] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool | None = None,
-        configuration: dict[str, Any] | None = None,
+        configuration: DiagramDetectConfig | dict[str, Any] | None = None,
         *,
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]:
-        """Detect entities in a PNID. The results are not written to CDF.
+        """`Detect annotations in engineering diagrams <https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect>`_
 
         Note:
             All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
@@ -175,11 +185,14 @@ class DiagramsAPI(APIClient):
             file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (str | SequenceNotStr[str] | None): File external ids, alternative to file_ids and file_references.
             file_references (list[FileReference] | FileReference | None): File references (id or external_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
-            pattern_mode (bool | None): Only in beta. If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
-            configuration (dict[str, Any] | None): Only in beta. Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
+            pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
+            configuration (DiagramDetectConfig | dict[str, Any] | None): Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
             DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
+
+        Note:
+            The results are not written to CDF, to create annotations based on detected entities use `AnnotationsAPI`.
 
         Examples:
                 >>> from cognite.client import CogniteClient
@@ -230,14 +243,34 @@ class DiagramsAPI(APIClient):
                     ]
                 }
                 </code>
+
+            To use beta configuration options you can use a dictionary or `DiagramDetectConfig` object for convenience:
+
+                >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+                >>> config = DiagramDetectConfig(
+                ...     remove_leading_zeros=True,
+                ...     connection_flags=ConnectionFlags(
+                ...         no_text_inbetween=True,
+                ...         natural_reading_order=True,
+                ...     )
+                ... )
+                >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
+
+            Check the documentation for `DiagramDetectConfig` for more information on the available options.
         """
         items = self._process_file_ids(file_ids, file_external_ids, file_references)
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
+        api_subversion = None
         beta_parameters = {}
         if pattern_mode is not None or configuration is not None:
-            beta_parameters = dict(pattern_mode=pattern_mode, configuration=configuration)
+            config = configuration.dump() if isinstance(configuration, DiagramDetectConfig) else configuration
+            beta_parameters = dict(pattern_mode=pattern_mode, configuration=config)
+
+            self._detect_beta_params_warning.warn()
+            if self._api_subversion and not self._api_subversion.endswith("beta"):
+                api_subversion = f"{self._api_subversion}-beta"
 
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
@@ -261,6 +294,7 @@ class DiagramsAPI(APIClient):
                         search_field=search_field,
                         min_tokens=min_tokens,
                         job_cls=DiagramDetectResults,
+                        api_subversion=api_subversion,
                         **beta_parameters,  # type: ignore[arg-type]
                     )
                     jobs.append(posted_job)
@@ -283,6 +317,7 @@ class DiagramsAPI(APIClient):
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
+            api_subversion=api_subversion,
             **beta_parameters,  # type: ignore[arg-type]
         )
 
