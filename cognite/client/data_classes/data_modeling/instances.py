@@ -730,6 +730,12 @@ class NodeBase(Instance[NodeApply, T_Property]):
             output["type"] = self.type.dump(camel_case)
         return output
 
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        raise NotImplementedError(
+            "You cannot load a NodeBase instance directly. Use Node.load(data).as_property(YOUR_TYPE) instead."
+        )
+
 
 @final
 class Node(NodeBase[Properties]):
@@ -1017,6 +1023,12 @@ class EdgeBase(Instance[EdgeApply, T_Property]):
         if self.end_node:
             output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
         return output
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        raise NotImplementedError(
+            "You cannot load a EdgeBase instance directly. Use Edge.load(data).as_property(YOUR_TYPE) instead."
+        )
 
 
 @final
