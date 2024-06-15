@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -17,7 +18,7 @@ from cognite.client.data_classes.data_modeling import (
     NodeOrEdgeData,
     ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import Instance
+from cognite.client.data_classes.data_modeling.instances import Instance, NodeOrEdgeLikeData
 
 
 class TestEdgeApply:
@@ -64,6 +65,14 @@ class TestNodeOrEdgeData:
             },
             "source": {"external_id": "Case", "space": "IntegrationTestsImmutable", "type": "container"},
         } == data.dump(camel_case=False)
+
+
+@dataclass
+class WindTurbine(NodeOrEdgeLikeData):
+    source = ViewId("power-models", "WindTurbine", "v1")
+    name: str
+    wind_farm: str
+    rotor: DirectRelationReference
 
 
 class TestNodeApply:
@@ -120,6 +129,32 @@ class TestNodeApply:
             "space": "IntegrationTestsImmutable",
             "type": {"externalId": "someType", "space": "someSpace"},
         }
+
+    def test_custom_properties(self) -> None:
+        node = NodeApply(
+            space="IntegrationTestsImmutable",
+            external_id="shop:case:integration_test",
+            type=("someSpace", "someType"),
+            sources=[
+                NodeOrEdgeData(
+                    source=WindTurbine.source,
+                    properties=dict(
+                        name="MyWindTurbine",
+                        wind_farm="Utsira Nord",
+                        rotor=DirectRelationReference("space", "external_id"),
+                    ),
+                )
+            ],
+        ).as_property(WindTurbine)
+
+        assert isinstance(node.sources, WindTurbine)
+        assert node.sources.name == "MyWindTurbine"
+        assert node.sources.wind_farm == "Utsira Nord"
+        assert node.sources.rotor == DirectRelationReference("space", "external_id")
+
+        reloaded = NodeApply.load(node.dump()).sources
+        assert isinstance(reloaded, list)
+        assert isinstance(reloaded[0], NodeOrEdgeData)
 
 
 class TestNode:

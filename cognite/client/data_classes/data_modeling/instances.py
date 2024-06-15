@@ -4,13 +4,15 @@ import threading
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Collection,
     Dict,
+    Generic,
     ItemsView,
     Iterator,
     KeysView,
@@ -29,14 +31,19 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import (
+    CogniteObject,
+    CogniteResource,
+    CogniteResourceList,
+    T_CogniteResource,
+    T_WriteClass,
+)
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
     DataModelingInstancesList,
     DataModelingResource,
     DataModelingSort,
-    WritableDataModelingResource,
 )
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
@@ -127,6 +134,33 @@ class NodeOrEdgeData(CogniteObject):
         return output
 
 
+@dataclass
+class NodeOrEdgeLikeData(CogniteObject, ABC):
+    """This is a base class for all custom data classes that represent the data values of a node or edge."""
+
+    source: ClassVar[ContainerId | ViewId]
+
+    def as_node_or_edge_data(self) -> list[NodeOrEdgeData]:
+        """Convert the custom data class to a list of NodeOrEdgeData."""
+        return [NodeOrEdgeData(source=self.source, properties=asdict(self))]
+
+    @classmethod
+    def from_node_or_edge_data(cls, data: list[NodeOrEdgeData] | None) -> Self | None:
+        """Populate the custom data class from a Node"""
+        if data is None:
+            return None
+        for node_or_edge_data in data:
+            if node_or_edge_data.source == cls.source:
+                return cls(**node_or_edge_data.properties)
+        else:
+            raise TypeError(f"NodeOrEdgeData with source {cls.source} not found in data")
+
+
+T_NodeOrEdgeLikeData = TypeVar("T_NodeOrEdgeLikeData", bound=NodeOrEdgeLikeData)
+T_NodeOrEdgeData = TypeVar("T_NodeOrEdgeData", bound=Union[List[NodeOrEdgeData], NodeOrEdgeLikeData])
+_T_Any = TypeVar("_T_Any")
+
+
 class InstanceCore(DataModelingResource, ABC):
     """A node or edge
     Args:
@@ -141,14 +175,23 @@ class InstanceCore(DataModelingResource, ABC):
         self.external_id = external_id
 
 
-class WritableInstanceCore(WritableDataModelingResource[T_CogniteResource], ABC):
+class WritableInstanceCore(CogniteResource, Generic[T_WriteClass, _T_Any], ABC):
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
-        super().__init__(space=space)
+        super().__init__()
+        self.space = space
         self.instance_type = instance_type
         self.external_id = external_id
 
+    def __repr__(self) -> str:
+        args = [self.space, self.external_id, self.instance_type]
+        return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
 
-class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
+    @abstractmethod
+    def as_write(self) -> T_WriteClass:
+        raise NotImplementedError
+
+
+class InstanceApply(WritableInstanceCore[T_CogniteResource, T_NodeOrEdgeData], ABC):
     """A node or edge. This is the write version of the instance.
 
     Args:
@@ -156,7 +199,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         external_id (str): Combined with the space is the unique identifier of the instance.
         instance_type (Literal["node", "edge"]): No description.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
+        sources (T_NodeOrEdgeData | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -165,12 +208,12 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         external_id: str,
         instance_type: Literal["node", "edge"] = "node",
         existing_version: int | None = None,
-        sources: list[NodeOrEdgeData] | None = None,
+        sources: T_NodeOrEdgeData | None = None,
     ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
-        self.sources = sources
+        self.sources: T_NodeOrEdgeData | None = sources
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -277,7 +320,10 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         return df._repr_html_()
 
 
-class Instance(WritableInstanceCore[T_CogniteResource], ABC):
+T_Property = TypeVar("T_Property", bound=Properties)
+
+
+class Instance(WritableInstanceCore[T_CogniteResource, T_Property], ABC):
     """A node or edge. This is the read version of the instance.
 
     Args:
@@ -288,7 +334,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         instance_type (Literal["node", "edge"]): The type of instance.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties (Properties | None): Properties of the instance.
+        properties (T_Property | None): Properties of the instance.
     """
 
     def __init__(
@@ -300,7 +346,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         created_time: int,
         instance_type: Literal["node", "edge"],
         deleted_time: int | None,
-        properties: Properties | None,
+        properties: T_Property | None,
     ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -501,7 +547,55 @@ class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResul
     _RESOURCE = InstanceAggregationResult
 
 
-class NodeApply(InstanceApply["NodeApply"]):
+class NodeApplyBase(InstanceApply["NodeApplyBase", T_NodeOrEdgeData]):
+    """A node. This is the write version of the node.
+
+    Args:
+        space (str): The workspace for the node, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the node.
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (T_NodeOrEdgeData | None): List of source properties to write. The properties are from the node and/or container the container(s) making up this node.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        existing_version: int | None = None,
+        sources: T_NodeOrEdgeData | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space, external_id, "node", existing_version, sources)
+        if isinstance(type, tuple):
+            self.type: DirectRelationReference | None = DirectRelationReference.load(type)
+        else:
+            self.type = type
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.sources:
+            if isinstance(self.sources, NodeOrEdgeLikeData):
+                output["sources"] = [source.dump(camel_case) for source in self.sources.as_node_or_edge_data()]
+            elif isinstance(self.sources, list):
+                output["sources"] = [
+                    source.dump(camel_case) for source in self.sources if isinstance(source, NodeOrEdgeData)
+                ]
+            else:
+                raise TypeError(f"sources must be a list or NodeOrEdgeLikeData, but was {type(self.sources)}")
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
+    def as_id(self) -> NodeId:
+        return NodeId(space=self.space, external_id=self.external_id)
+
+    def as_write(self) -> Self:
+        """Returns this NodeApply instance"""
+        return self
+
+
+class NodeApply(NodeApplyBase[List[NodeOrEdgeData]]):
     """A node. This is the write version of the node.
 
     Args:
@@ -520,22 +614,10 @@ class NodeApply(InstanceApply["NodeApply"]):
         sources: list[NodeOrEdgeData] | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        super().__init__(space, external_id, "node", existing_version, sources)
-        if isinstance(type, tuple):
-            self.type: DirectRelationReference | None = DirectRelationReference.load(type)
-        else:
-            self.type = type
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.sources:
-            output["sources"] = [source.dump(camel_case) for source in self.sources]
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        return output
+        super().__init__(space, external_id, existing_version, sources, type)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -544,16 +626,19 @@ class NodeApply(InstanceApply["NodeApply"]):
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
-    def as_id(self) -> NodeId:
-        return NodeId(space=self.space, external_id=self.external_id)
-
-    def as_write(self) -> NodeApply:
-        """Returns this NodeApply instance"""
-        return self
+    def as_property(self, property_type: type[T_NodeOrEdgeLikeData]) -> NodeApplyBase[T_NodeOrEdgeLikeData]:
+        """Convert the sources to a property type."""
+        return NodeApplyBase[T_NodeOrEdgeLikeData](
+            space=self.space,
+            external_id=self.external_id,
+            existing_version=self.existing_version,
+            sources=property_type.from_node_or_edge_data(self.sources),
+            type=self.type,
+        )
 
 
 @final
-class Node(Instance["NodeApply"]):
+class Node(Instance["NodeApply", Properties]):
     """A node. This is the read version of the node.
 
     Args:
@@ -669,7 +754,64 @@ class NodeApplyResult(InstanceApplyResult):
         return NodeId(space=self.space, external_id=self.external_id)
 
 
-class EdgeApply(InstanceApply["EdgeApply"]):
+class EdgeApplyBase(InstanceApply["EdgeApplyBase", T_NodeOrEdgeData]):
+    """An Edge. This is the write version of the edge.
+
+    Args:
+        space (str): The workspace for the edge, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the edge.
+        type (DirectRelationReference | tuple[str, str]): The type of edge.
+        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (T_NodeOrEdgeData | None): List of source properties to write. The properties are from the edge and/or container the container(s) making up this node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference | tuple[str, str],
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        existing_version: int | None = None,
+        sources: T_NodeOrEdgeData | None = None,
+    ) -> None:
+        super().__init__(space, external_id, "edge", existing_version, sources)
+        self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
+        self.start_node = (
+            start_node if isinstance(start_node, DirectRelationReference) else DirectRelationReference.load(start_node)
+        )
+        self.end_node = (
+            end_node if isinstance(end_node, DirectRelationReference) else DirectRelationReference.load(end_node)
+        )
+
+    def as_id(self) -> EdgeId:
+        return EdgeId(space=self.space, external_id=self.external_id)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.sources:
+            if isinstance(self.sources, NodeOrEdgeLikeData):
+                output["sources"] = [source.dump(camel_case) for source in self.sources.as_node_or_edge_data()]
+            elif isinstance(self.sources, list):
+                output["sources"] = [source.dump(camel_case) for source in self.sources]
+            else:
+                raise TypeError(f"sources must be a list or NodeOrEdgeLikeData, but was {type(self.sources)}")
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        if self.start_node:
+            output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
+        if self.end_node:
+            output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
+        return output
+
+    def as_write(self) -> Self:
+        """Returns this EdgeApply instance"""
+        return self
+
+
+class EdgeApply(EdgeApplyBase[List[NodeOrEdgeData]]):
     """An Edge. This is the write version of the edge.
 
     Args:
@@ -692,29 +834,7 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         existing_version: int | None = None,
         sources: list[NodeOrEdgeData] | None = None,
     ) -> None:
-        super().__init__(space, external_id, "edge", existing_version, sources)
-        self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
-        self.start_node = (
-            start_node if isinstance(start_node, DirectRelationReference) else DirectRelationReference.load(start_node)
-        )
-        self.end_node = (
-            end_node if isinstance(end_node, DirectRelationReference) else DirectRelationReference.load(end_node)
-        )
-
-    def as_id(self) -> EdgeId:
-        return EdgeId(space=self.space, external_id=self.external_id)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.sources:
-            output["sources"] = [source.dump(camel_case) for source in self.sources]
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        if self.start_node:
-            output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
-        if self.end_node:
-            output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
-        return output
+        super().__init__(space, external_id, type, start_node, end_node, existing_version, sources)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -728,13 +848,21 @@ class EdgeApply(InstanceApply["EdgeApply"]):
             end_node=DirectRelationReference.load(resource["endNode"]),
         )
 
-    def as_write(self) -> EdgeApply:
-        """Returns this EdgeApply instance"""
-        return self
+    def as_property(self, property_type: type[T_NodeOrEdgeLikeData]) -> EdgeApplyBase[T_NodeOrEdgeLikeData]:
+        """Convert the sources to a property type."""
+        return EdgeApplyBase[T_NodeOrEdgeLikeData](
+            space=self.space,
+            external_id=self.external_id,
+            existing_version=self.existing_version,
+            sources=property_type.from_node_or_edge_data(self.sources),
+            type=self.type,
+            start_node=self.start_node,
+            end_node=self.end_node,
+        )
 
 
 @final
-class Edge(Instance[EdgeApply]):
+class Edge(Instance[EdgeApply, Properties]):
     """An Edge. This is the read version of the edge.
 
     Args:
@@ -889,7 +1017,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[NodeApply, Node]):
+class NodeList(DataModelingInstancesList[NodeApply, Node]):  # type: ignore [type-var]
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -940,7 +1068,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
+class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):  # type: ignore [type-var]
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
