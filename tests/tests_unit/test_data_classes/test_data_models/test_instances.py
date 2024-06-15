@@ -18,7 +18,7 @@ from cognite.client.data_classes.data_modeling import (
     NodeOrEdgeData,
     ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import Instance, NodeOrEdgeLikeData
+from cognite.client.data_classes.data_modeling.instances import Instance, PropertyLike
 
 
 class TestEdgeApply:
@@ -68,7 +68,7 @@ class TestNodeOrEdgeData:
 
 
 @dataclass
-class WindTurbine(NodeOrEdgeLikeData):
+class WindTurbine(PropertyLike):
     source = ViewId("power-models", "WindTurbine", "v1")
     name: str
     wind_farm: str

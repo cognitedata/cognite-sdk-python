@@ -135,10 +135,10 @@ class NodeOrEdgeData(CogniteObject):
 
 
 @dataclass
-class NodeOrEdgeLikeData(CogniteObject, ABC):
+class PropertyLike(CogniteObject, ABC):
     """This is a base class for all custom data classes that represent the data values of a node or edge."""
 
-    source: ClassVar[ContainerId | ViewId]
+    source: ClassVar[ViewId]
 
     def as_node_or_edge_data(self) -> list[NodeOrEdgeData]:
         """Convert the custom data class to a list of NodeOrEdgeData."""
@@ -155,9 +155,21 @@ class NodeOrEdgeLikeData(CogniteObject, ABC):
         else:
             raise TypeError(f"NodeOrEdgeData with source {cls.source} not found in data")
 
+    def as_properties(self) -> Properties:
+        return Properties({self.source: asdict(self)})
 
-T_NodeOrEdgeLikeData = TypeVar("T_NodeOrEdgeLikeData", bound=NodeOrEdgeLikeData)
-T_NodeOrEdgeData = TypeVar("T_NodeOrEdgeData", bound=Union[List[NodeOrEdgeData], NodeOrEdgeLikeData])
+    @classmethod
+    def from_properties(cls, properties: Properties | None) -> Self | None:
+        if properties is None:
+            return None
+        for view_id, props in properties.items():
+            if view_id == cls.source:
+                return cls(**props)
+        raise TypeError(f"Properties with source {cls.source} not found in data")
+
+
+T_PropertyLike = TypeVar("T_PropertyLike", bound=PropertyLike)
+T_NodeOrEdgeData = TypeVar("T_NodeOrEdgeData", bound=Union[List[NodeOrEdgeData], PropertyLike])
 _T_Any = TypeVar("_T_Any")
 
 
@@ -320,7 +332,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         return df._repr_html_()
 
 
-T_Property = TypeVar("T_Property", bound=Properties)
+T_Property = TypeVar("T_Property", bound=Union[Properties, PropertyLike])
 
 
 class Instance(WritableInstanceCore[T_CogniteResource, T_Property], ABC):
@@ -353,17 +365,17 @@ class Instance(WritableInstanceCore[T_CogniteResource, T_Property], ABC):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self.deleted_time = deleted_time
-        self.properties: Properties = properties or Properties({})
+        self.properties: T_Property = properties or Properties({})  # type: ignore[assignment]
 
-        if len(self.properties) == 1:
+        self._prop_lookup: MutableMapping[PropertyIdentifier, PropertyValue] = None  # type: ignore[assignment]
+        if isinstance(self.properties, Properties) and len(self.properties) == 1:
             (self._prop_lookup,) = self.properties.values()
-        else:
-            # For speed, we want this to fail (to avoid LBYL pattern):
-            self._prop_lookup = None  # type: ignore [assignment]
+        elif isinstance(self.properties, PropertyLike):
+            (self._prop_lookup,) = self.properties.as_properties().values()
 
     def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
         err_msg = "Quick property access is only possible on instances from a single source."
-        if len(self.properties) > 1:
+        if isinstance(self.properties, Properties) and len(self.properties) > 1:
             err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
         raise RuntimeError(err_msg) from None
 
@@ -450,7 +462,12 @@ class Instance(WritableInstanceCore[T_CogniteResource, T_Property], ABC):
         prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
             # We only do/allow this if we have a single source:
-            view_id, *extra = self.properties.keys()
+            if isinstance(self.properties, PropertyLike):
+                properties = self.properties.as_properties()
+            else:
+                properties = cast(Properties, self.properties)
+            view_id, *extra = properties.keys()
+
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
             else:
@@ -575,7 +592,7 @@ class NodeApplyBase(InstanceApply["NodeApplyBase", T_NodeOrEdgeData]):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.sources:
-            if isinstance(self.sources, NodeOrEdgeLikeData):
+            if isinstance(self.sources, PropertyLike):
                 output["sources"] = [source.dump(camel_case) for source in self.sources.as_node_or_edge_data()]
             elif isinstance(self.sources, list):
                 output["sources"] = [
@@ -633,9 +650,9 @@ class NodeApply(NodeApplyBase[List[NodeOrEdgeData]]):
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
-    def as_property(self, property_type: type[T_NodeOrEdgeLikeData]) -> NodeApplyBase[T_NodeOrEdgeLikeData]:
+    def as_property(self, property_type: type[T_PropertyLike]) -> NodeApplyBase[T_PropertyLike]:
         """Convert the sources to a property type."""
-        return NodeApplyBase[T_NodeOrEdgeLikeData](
+        return NodeApplyBase[T_PropertyLike](
             space=self.space,
             external_id=self.external_id,
             existing_version=self.existing_version,
@@ -644,8 +661,78 @@ class NodeApply(NodeApplyBase[List[NodeOrEdgeData]]):
         )
 
 
+class NodeBase(Instance[NodeApply, T_Property]):
+    """A node. This is the read version of the node.
+
+    Args:
+        space (str): The workspace for the node, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the node.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (T_Property | None): Properties of the node.
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        deleted_time: int | None,
+        properties: T_Property | None,
+        type: DirectRelationReference | None,
+    ) -> None:
+        super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
+        self.type = type
+
+    def as_apply(self) -> NodeApply:
+        """
+        This is a convenience function for converting the read to a write node.
+
+        It makes the simplifying assumption that all properties are from the same view. Note that this
+        is not true in general.
+
+        Returns:
+            NodeApply: A write node, NodeApply
+
+        """
+        if isinstance(self.properties, PropertyLike):
+            properties = self.properties.as_properties()
+        elif isinstance(self.properties, Properties):
+            properties = self.properties
+        else:
+            properties = Properties({})
+
+        return NodeApply(
+            space=self.space,
+            external_id=self.external_id,
+            existing_version=self.version,
+            sources=[
+                NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in properties.items()
+            ]
+            or None,
+            type=self.type,
+        )
+
+    def as_write(self) -> NodeApply:
+        return self.as_apply()
+
+    def as_id(self) -> NodeId:
+        return NodeId(space=self.space, external_id=self.external_id)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
+
 @final
-class Node(Instance["NodeApply", Properties]):
+class Node(NodeBase[Properties]):
     """A node. This is the read version of the node.
 
     Args:
@@ -670,42 +757,7 @@ class Node(Instance["NodeApply", Properties]):
         properties: Properties | None,
         type: DirectRelationReference | None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
-        self.type = type
-
-    def as_apply(self) -> NodeApply:
-        """
-        This is a convenience function for converting the read to a write node.
-
-        It makes the simplifying assumption that all properties are from the same view. Note that this
-        is not true in general.
-
-        Returns:
-            NodeApply: A write node, NodeApply
-
-        """
-        return NodeApply(
-            space=self.space,
-            external_id=self.external_id,
-            existing_version=self.version,
-            sources=[
-                NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
-            ]
-            or None,
-            type=self.type,
-        )
-
-    def as_write(self) -> NodeApply:
-        return self.as_apply()
-
-    def as_id(self) -> NodeId:
-        return NodeId(space=self.space, external_id=self.external_id)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        return output
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, properties, type)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Node:
@@ -718,6 +770,18 @@ class Node(Instance["NodeApply", Properties]):
             deleted_time=resource.get("deletedTime"),
             properties=Properties.load(resource["properties"]) if "properties" in resource else None,
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+        )
+
+    def as_property(self, property_type: type[T_PropertyLike]) -> NodeBase[T_PropertyLike]:
+        return NodeBase(
+            space=self.space,
+            external_id=self.external_id,
+            version=self.version,
+            last_updated_time=self.last_updated_time,
+            created_time=self.created_time,
+            deleted_time=self.deleted_time,
+            properties=property_type.from_properties(self.properties),
+            type=self.type,
         )
 
 
@@ -799,7 +863,7 @@ class EdgeApplyBase(InstanceApply["EdgeApplyBase", T_NodeOrEdgeData]):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.sources:
-            if isinstance(self.sources, NodeOrEdgeLikeData):
+            if isinstance(self.sources, PropertyLike):
                 output["sources"] = [source.dump(camel_case) for source in self.sources.as_node_or_edge_data()]
             elif isinstance(self.sources, list):
                 output["sources"] = [source.dump(camel_case) for source in self.sources]
@@ -862,9 +926,9 @@ class EdgeApply(EdgeApplyBase[List[NodeOrEdgeData]]):
             end_node=DirectRelationReference.load(resource["endNode"]),
         )
 
-    def as_property(self, property_type: type[T_NodeOrEdgeLikeData]) -> EdgeApplyBase[T_NodeOrEdgeLikeData]:
+    def as_property(self, property_type: type[T_PropertyLike]) -> EdgeApplyBase[T_PropertyLike]:
         """Convert the sources to a property type."""
-        return EdgeApplyBase[T_NodeOrEdgeLikeData](
+        return EdgeApplyBase[T_PropertyLike](
             space=self.space,
             external_id=self.external_id,
             existing_version=self.existing_version,
@@ -875,8 +939,88 @@ class EdgeApply(EdgeApplyBase[List[NodeOrEdgeData]]):
         )
 
 
+class EdgeBase(Instance[EdgeApply, T_Property]):
+    """An Edge. This is the read version of the edge.
+
+    Args:
+        space (str): The workspace for the edge, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the edge.
+        version (int): DMS version.
+        type (DirectRelationReference): The type of edge.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (T_Property | None): No description.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        type: DirectRelationReference,
+        last_updated_time: int,
+        created_time: int,
+        start_node: DirectRelationReference,
+        end_node: DirectRelationReference,
+        deleted_time: int | None,
+        properties: T_Property | None,
+    ) -> None:
+        super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
+        self.type = type
+        self.start_node = start_node
+        self.end_node = end_node
+
+    def as_apply(self) -> EdgeApply:
+        """
+        This is a convenience function for converting the read to a write edge.
+
+        It makes the simplifying assumption that all properties are from the same view. Note that this
+        is not true in general.
+
+        Returns:
+            EdgeApply: A write edge, EdgeApply
+        """
+        if isinstance(self.properties, PropertyLike):
+            properties = self.properties.as_properties()
+        elif isinstance(self.properties, Properties):
+            properties = self.properties
+        else:
+            properties = Properties({})
+        return EdgeApply(
+            space=self.space,
+            external_id=self.external_id,
+            type=self.type,
+            start_node=self.start_node,
+            end_node=self.end_node,
+            existing_version=self.version,
+            sources=[
+                NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in properties.items()
+            ]
+            or None,
+        )
+
+    def as_write(self) -> EdgeApply:
+        return self.as_apply()
+
+    def as_id(self) -> EdgeId:
+        return EdgeId(space=self.space, external_id=self.external_id)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        if self.start_node:
+            output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
+        if self.end_node:
+            output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
+        return output
+
+
 @final
-class Edge(Instance[EdgeApply, Properties]):
+class Edge(EdgeBase[Properties]):
     """An Edge. This is the read version of the edge.
 
     Args:
@@ -905,49 +1049,18 @@ class Edge(Instance[EdgeApply, Properties]):
         deleted_time: int | None,
         properties: Properties | None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
-        self.type = type
-        self.start_node = start_node
-        self.end_node = end_node
-
-    def as_apply(self) -> EdgeApply:
-        """
-        This is a convenience function for converting the read to a write edge.
-
-        It makes the simplifying assumption that all properties are from the same view. Note that this
-        is not true in general.
-
-        Returns:
-            EdgeApply: A write edge, EdgeApply
-        """
-        return EdgeApply(
-            space=self.space,
-            external_id=self.external_id,
-            type=self.type,
-            start_node=self.start_node,
-            end_node=self.end_node,
-            existing_version=self.version,
-            sources=[
-                NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
-            ]
-            or None,
+        super().__init__(
+            space,
+            external_id,
+            version,
+            type,
+            last_updated_time,
+            created_time,
+            start_node,
+            end_node,
+            deleted_time,
+            properties,
         )
-
-    def as_write(self) -> EdgeApply:
-        return self.as_apply()
-
-    def as_id(self) -> EdgeId:
-        return EdgeId(space=self.space, external_id=self.external_id)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        if self.start_node:
-            output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
-        if self.end_node:
-            output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
-        return output
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -962,6 +1075,20 @@ class Edge(Instance[EdgeApply, Properties]):
             end_node=DirectRelationReference.load(resource["endNode"]),
             deleted_time=resource.get("deletedTime"),
             properties=Properties.load(resource["properties"]) if "properties" in resource else None,
+        )
+
+    def as_property(self, property_type: type[T_PropertyLike]) -> EdgeBase[T_PropertyLike]:
+        return EdgeBase(
+            space=self.space,
+            external_id=self.external_id,
+            version=self.version,
+            type=self.type,
+            last_updated_time=self.last_updated_time,
+            created_time=self.created_time,
+            start_node=self.start_node,
+            end_node=self.end_node,
+            deleted_time=self.deleted_time,
+            properties=property_type.from_properties(self.properties),
         )
 
 
