@@ -45,9 +45,13 @@ class Connection3D(PropertyLike):
 
 
 @dataclass
+class Model3D(Sourceable, Describable):
+    _source = ViewId("cdf_cdm_experimental", "Model3D", "v1")
+
+
+@dataclass
 class Object3D(PropertyLike):
     _source = ViewId("cdf_cdm_experimental", "Object3D", "v1")
-    in_3D_model: list[Connection3D]
     source_id: str | None = None
     source: str | None = None
     source_created_time: datetime | None = None
