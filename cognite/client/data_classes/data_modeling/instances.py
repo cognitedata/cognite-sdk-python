@@ -587,6 +587,13 @@ class NodeApplyBase(InstanceApply["NodeApplyBase", T_NodeOrEdgeData]):
             output["type"] = self.type.dump(camel_case)
         return output
 
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        raise NotImplementedError(
+            "You cannot load a NodeApplyBase instance directly. "
+            "Use NodeApply.load(data).as_property(YOUR_TYPE) instead."
+        )
+
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
@@ -805,6 +812,13 @@ class EdgeApplyBase(InstanceApply["EdgeApplyBase", T_NodeOrEdgeData]):
         if self.end_node:
             output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
         return output
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        raise NotImplementedError(
+            "You cannot load a EdgeApplyBase instance directly. "
+            "Use EdgeApply.load(data).as_property(YOUR_TYPE) instead."
+        )
 
     def as_write(self) -> Self:
         """Returns this EdgeApply instance"""
