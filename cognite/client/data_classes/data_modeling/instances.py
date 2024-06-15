@@ -611,7 +611,7 @@ class NodeApplyBase(InstanceApply["NodeApplyBase", T_NodeOrEdgeData]):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         raise NotImplementedError(
             "You cannot load a NodeApplyBase instance directly. "
-            "Use NodeApply.load(data).as_property(YOUR_TYPE) instead."
+            "Use NodeApply.load(data).property_as_type(YOUR_TYPE) instead."
         )
 
     def as_id(self) -> NodeId:
@@ -736,7 +736,7 @@ class NodeBase(Instance[NodeApply, T_Property]):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         raise NotImplementedError(
-            "You cannot load a NodeBase instance directly. Use Node.load(data).as_property(YOUR_TYPE) instead."
+            "You cannot load a NodeBase instance directly. Use Node.load(data).property_as_type(YOUR_TYPE) instead."
         )
 
 
@@ -890,7 +890,7 @@ class EdgeApplyBase(InstanceApply["EdgeApplyBase", T_NodeOrEdgeData]):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         raise NotImplementedError(
             "You cannot load a EdgeApplyBase instance directly. "
-            "Use EdgeApply.load(data).as_property(YOUR_TYPE) instead."
+            "Use EdgeApply.load(data).property_as_type(YOUR_TYPE) instead."
         )
 
     def as_write(self) -> Self:
@@ -1030,7 +1030,7 @@ class EdgeBase(Instance[EdgeApply, T_Property]):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         raise NotImplementedError(
-            "You cannot load a EdgeBase instance directly. Use Edge.load(data).as_property(YOUR_TYPE) instead."
+            "You cannot load a EdgeBase instance directly. Use Edge.load(data).property_as_type(YOUR_TYPE) instead."
         )
 
 
