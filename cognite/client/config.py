@@ -45,6 +45,7 @@ class GlobalConfig:
         self.proxies: dict[str, str] | None = {}
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
+        self.cdm_model_version = "v1"
 
 
 global_config = GlobalConfig()
