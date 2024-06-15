@@ -650,7 +650,7 @@ class NodeApply(NodeApplyBase[List[NodeOrEdgeData]]):
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
-    def as_property(self, property_type: type[T_PropertyLike]) -> NodeApplyBase[T_PropertyLike]:
+    def property_as_type(self, property_type: type[T_PropertyLike]) -> NodeApplyBase[T_PropertyLike]:
         """Convert the sources to a property type."""
         return NodeApplyBase[T_PropertyLike](
             space=self.space,
@@ -772,7 +772,7 @@ class Node(NodeBase[Properties]):
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
-    def as_property(self, property_type: type[T_PropertyLike]) -> NodeBase[T_PropertyLike]:
+    def property_as_type(self, property_type: type[T_PropertyLike]) -> NodeBase[T_PropertyLike]:
         return NodeBase(
             space=self.space,
             external_id=self.external_id,
@@ -926,7 +926,7 @@ class EdgeApply(EdgeApplyBase[List[NodeOrEdgeData]]):
             end_node=DirectRelationReference.load(resource["endNode"]),
         )
 
-    def as_property(self, property_type: type[T_PropertyLike]) -> EdgeApplyBase[T_PropertyLike]:
+    def property_as_type(self, property_type: type[T_PropertyLike]) -> EdgeApplyBase[T_PropertyLike]:
         """Convert the sources to a property type."""
         return EdgeApplyBase[T_PropertyLike](
             space=self.space,
@@ -1077,7 +1077,7 @@ class Edge(EdgeBase[Properties]):
             properties=Properties.load(resource["properties"]) if "properties" in resource else None,
         )
 
-    def as_property(self, property_type: type[T_PropertyLike]) -> EdgeBase[T_PropertyLike]:
+    def property_as_type(self, property_type: type[T_PropertyLike]) -> EdgeBase[T_PropertyLike]:
         return EdgeBase(
             space=self.space,
             external_id=self.external_id,

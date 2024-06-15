@@ -145,7 +145,7 @@ class TestNodeApply:
                     ),
                 )
             ],
-        ).as_property(WindTurbine)
+        ).property_as_type(WindTurbine)
 
         assert isinstance(node.sources, WindTurbine)
         assert node.sources.name == "MyWindTurbine"
@@ -199,7 +199,7 @@ class TestNode:
                     }
                 }
             ),
-        ).as_property(WindTurbine)
+        ).property_as_type(WindTurbine)
 
         assert isinstance(node.properties, WindTurbine)
         assert node.properties.name == "MyWindTurbine"
