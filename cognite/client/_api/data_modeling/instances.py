@@ -42,6 +42,7 @@ from cognite.client.data_classes.data_modeling.ids import (
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
     EdgeApply,
+    EdgeApplyBase,
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
@@ -52,6 +53,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     InstancesResult,
     Node,
     NodeApply,
+    NodeApplyBase,
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
@@ -536,8 +538,8 @@ class InstancesAPI(APIClient):
 
     def apply(
         self,
-        nodes: NodeApply | Sequence[NodeApply] | None = None,
-        edges: EdgeApply | Sequence[EdgeApply] | None = None,
+        nodes: NodeApplyBase | Sequence[NodeApplyBase] | None = None,
+        edges: EdgeApplyBase | Sequence[EdgeApplyBase] | None = None,
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         auto_create_direct_relations: bool = True,
@@ -547,8 +549,8 @@ class InstancesAPI(APIClient):
         """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
-            nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
-            edges (EdgeApply | Sequence[EdgeApply] | None): Edges to apply
+            nodes (NodeApplyBase | Sequence[NodeApplyBase] | None): Nodes to apply
+            edges (EdgeApplyBase | Sequence[EdgeApplyBase] | None): Edges to apply
             auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
             auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
