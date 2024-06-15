@@ -36,12 +36,13 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     T_CogniteResource,
+    T_WritableCogniteResource,
     T_WriteClass,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
-    DataModelingInstancesList,
     DataModelingResource,
     DataModelingSort,
 )
@@ -417,8 +418,10 @@ class Instance(WritableInstanceCore[T_CogniteResource, T_Property], ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
-        if "properties" in dumped:
+        if isinstance(self.properties, Properties):
             dumped["properties"] = self.properties.dump()
+        elif isinstance(self.properties, PropertyLike):
+            dumped["properties"] = self.properties.as_properties().dump()
         return dumped
 
     def to_pandas(  # type: ignore [override]
@@ -1144,6 +1147,56 @@ class EdgeApplyResult(InstanceApplyResult):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
+class DataModelingInstancesList(
+    WriteableCogniteResourceList, Generic[T_WriteClass, _T, T_WritableCogniteResource], ABC
+):
+    def to_pandas(  # type: ignore [override]
+        self,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+        expand_properties: bool = False,
+        remove_property_prefix: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Convert the instance into a pandas DataFrame. Note that if the properties column is expanded and there are
+        keys in the metadata that already exist in the DataFrame, then an error will be raised by pandas during joining.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
+            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
+            remove_property_prefix (bool): Remove view ID prefix from columns names of expanded properties. Requires data to be from a single view.
+            **kwargs (Any): For backwards compatability.
+
+        Returns:
+            pd.DataFrame: The Cognite resource as a dataframe.
+        """
+        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
+        if kwargs:
+            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+        if not expand_properties:
+            warnings.warn(
+                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
+                DeprecationWarning,
+            )
+        df = super().to_pandas(camel_case=camel_case, expand_metadata=False, convert_timestamps=convert_timestamps)
+        if not expand_properties or "properties" not in df.columns:
+            return df
+
+        prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
+        if remove_property_prefix and not prop_df.empty:
+            # We only do/allow this if we have a single source:
+            view_id, *extra = set(vid for item in self for vid in item.properties)
+            if not extra:
+                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+            else:
+                warnings.warn(
+                    "Can't remove view ID prefix from expanded property columns as source was not unique",
+                    RuntimeWarning,
+                )
+        return df.join(prop_df)
+
+
 class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
     _RESOURCE = NodeApplyResult
 
@@ -1170,8 +1223,8 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[NodeApply, Node]):  # type: ignore [type-var]
-    _RESOURCE = Node
+class NodeBaseList(DataModelingInstancesList[NodeApply, T_Property, NodeBase[T_Property]]):  # type: ignore [type-var]
+    _RESOURCE = NodeBase
 
     def as_ids(self) -> list[NodeId]:
         """
@@ -1185,6 +1238,13 @@ class NodeList(DataModelingInstancesList[NodeApply, Node]):  # type: ignore [typ
     def as_write(self) -> NodeApplyList:
         """Returns this NodeList as a NodeApplyList"""
         return NodeApplyList([node.as_write() for node in self])
+
+
+class NodeList(NodeBaseList[Properties]):
+    _RESOURCE = Node
+
+    def property_as_type(self, property_type: type[T_PropertyLike]) -> NodeBaseList[T_PropertyLike]:
+        return NodeBaseList[T_PropertyLike]([node.property_as_type(property_type) for node in self])
 
 
 class NodeListWithCursor(NodeList):
@@ -1221,8 +1281,8 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):  # type: ignore [type-var]
-    _RESOURCE = Edge
+class EdgeBaseList(DataModelingInstancesList[EdgeApply, T_Property, EdgeBase[T_Property]]):  # type: ignore [type-var]
+    _RESOURCE = EdgeBase
 
     def as_ids(self) -> list[EdgeId]:
         """
@@ -1236,6 +1296,13 @@ class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):  # type: ignore [typ
     def as_write(self) -> EdgeApplyList:
         """Returns this EdgeList as a EdgeApplyList"""
         return EdgeApplyList([edge.as_write() for edge in self], cognite_client=self._get_cognite_client())
+
+
+class EdgeList(EdgeBaseList[Properties]):
+    _RESOURCE = Edge
+
+    def property_as_type(self, property_type: type[T_PropertyLike]) -> EdgeBaseList[T_PropertyLike]:
+        return EdgeBaseList[T_PropertyLike]([edge.property_as_type(property_type) for edge in self])
 
 
 class EdgeListWithCursor(EdgeList):
