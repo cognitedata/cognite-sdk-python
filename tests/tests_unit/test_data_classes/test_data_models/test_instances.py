@@ -69,7 +69,7 @@ class TestNodeOrEdgeData:
 
 @dataclass
 class WindTurbine(PropertyLike):
-    source = ViewId("power-models", "WindTurbine", "v1")
+    _source = ViewId("power-models", "WindTurbine", "v1")
     name: str
     wind_farm: str
     rotor: DirectRelationReference
@@ -137,7 +137,7 @@ class TestNodeApply:
             type=("someSpace", "someType"),
             sources=[
                 NodeOrEdgeData(
-                    source=WindTurbine.source,
+                    source=WindTurbine._source,
                     properties=dict(
                         name="MyWindTurbine",
                         wind_farm="Utsira Nord",

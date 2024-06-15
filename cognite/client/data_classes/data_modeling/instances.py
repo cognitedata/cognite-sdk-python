@@ -139,11 +139,11 @@ class NodeOrEdgeData(CogniteObject):
 class PropertyLike(CogniteObject, ABC):
     """This is a base class for all custom data classes that represent the data values of a node or edge."""
 
-    source: ClassVar[ViewId]
+    _source: ClassVar[ViewId]
 
     def as_node_or_edge_data(self) -> list[NodeOrEdgeData]:
         """Convert the custom data class to a list of NodeOrEdgeData."""
-        return [NodeOrEdgeData(source=self.source, properties=asdict(self))]
+        return [NodeOrEdgeData(source=self._source, properties=asdict(self))]
 
     @classmethod
     def from_node_or_edge_data(cls, data: list[NodeOrEdgeData] | None) -> Self | None:
@@ -151,22 +151,22 @@ class PropertyLike(CogniteObject, ABC):
         if data is None:
             return None
         for node_or_edge_data in data:
-            if node_or_edge_data.source == cls.source:
+            if node_or_edge_data.source == cls._source:
                 return cls(**node_or_edge_data.properties)
         else:
-            raise TypeError(f"NodeOrEdgeData with source {cls.source} not found in data")
+            raise TypeError(f"NodeOrEdgeData with source {cls._source} not found in data")
 
     def as_properties(self) -> Properties:
-        return Properties({self.source: asdict(self)})
+        return Properties({self._source: asdict(self)})
 
     @classmethod
     def from_properties(cls, properties: Properties | None) -> Self | None:
         if properties is None:
             return None
         for view_id, props in properties.items():
-            if view_id == cls.source:
+            if view_id == cls._source:
                 return cls(**props)
-        raise TypeError(f"Properties with source {cls.source} not found in data")
+        raise TypeError(f"Properties with source {cls._source} not found in data")
 
 
 T_PropertyLike = TypeVar("T_PropertyLike", bound=PropertyLike)
