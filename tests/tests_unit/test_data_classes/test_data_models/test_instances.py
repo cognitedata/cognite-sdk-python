@@ -18,7 +18,7 @@ from cognite.client.data_classes.data_modeling import (
     NodeOrEdgeData,
     ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import Instance, PropertyLike
+from cognite.client.data_classes.data_modeling.instances import Instance, Properties, PropertyLike
 
 
 class TestEdgeApply:
@@ -180,6 +180,34 @@ class TestNode:
             "type": {"externalId": "someType", "space": "someSpace"},
             "version": 1,
         }
+
+    def test_as_custom_properties(self) -> None:
+        node = Node(
+            space="IntegrationTestsImmutable",
+            external_id="shop:case:integration_test",
+            version=1,
+            type=DirectRelationReference("someSpace", "someType"),
+            last_updated_time=123,
+            created_time=123,
+            deleted_time=None,
+            properties=Properties(
+                {
+                    ViewId("power-models", "WindTurbine", "v1"): {
+                        "name": "MyWindTurbine",
+                        "wind_farm": "Utsira Nord",
+                        "rotor": DirectRelationReference("space", "external_id"),
+                    }
+                }
+            ),
+        ).as_property(WindTurbine)
+
+        assert isinstance(node.properties, WindTurbine)
+        assert node.properties.name == "MyWindTurbine"
+        assert node.properties.wind_farm == "Utsira Nord"
+        assert node.properties.rotor == DirectRelationReference("space", "external_id")
+
+        reloaded = Node.load(node.dump()).properties
+        assert isinstance(reloaded, Properties)
 
 
 @pytest.fixture
