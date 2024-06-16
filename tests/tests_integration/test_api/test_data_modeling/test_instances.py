@@ -4,7 +4,7 @@ import json
 import math
 import time
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any, ClassVar, cast
 
 import pytest
@@ -686,6 +686,7 @@ class TestInstancesAPI:
         assert len(queried["nodes"]) == 1
         assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
 
+    @pytest.mark.usefixtures("primitive_nullable_view")
     def test_write_read_custom_properties(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
         external_id = "node_test_write_read_custom_properties"
@@ -696,7 +697,9 @@ class TestInstancesAPI:
             float64=1.1,
             int32=1,
             int64=1,
-            timestamp=datetime.now(),
+            # Replacing microseconds with 0 to avoid comparison issues in the asserting below
+            # as server only stores milliseconds
+            timestamp=datetime.now(timezone.utc).replace(microsecond=0),
             date=date.today(),
             json={"key": "value", "nested": {"key": "value"}},
             direct=DirectRelationReference(space, external_id),
@@ -708,16 +711,17 @@ class TestInstancesAPI:
         )
         try:
             cognite_client.data_modeling.instances.apply(node)
-            retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id()).nodes.property_as_type(
-                PrimitiveNullable
-            )
+            retrieved = cognite_client.data_modeling.instances.retrieve(
+                node.as_id(), sources=PrimitiveNullable._source
+            ).nodes.property_as_type(PrimitiveNullable)
             assert len(retrieved) == 1
-            property_ = retrieved[0].sources
-            assert isinstance(property_, PrimitiveNullable)
-            assert property_.dump() == primitive.dump()
+            properties = retrieved[0].properties
+            assert isinstance(properties, PrimitiveNullable)
+            assert properties.dump() == primitive.dump()
         finally:
             cognite_client.data_modeling.instances.delete(node.as_id())
 
+    @pytest.mark.usefixtures("primitive_nullable_listed_view")
     def test_write_read_custom_properties_listable(
         self, cognite_client: CogniteClient, integration_test_space: Space
     ) -> None:
@@ -730,7 +734,8 @@ class TestInstancesAPI:
             float64=[1.1],
             int32=[1],
             int64=[1],
-            timestamp=[datetime.now()],
+            # Replacing microseconds with 0 to avoid comparison issues in the asserting below
+            timestamp=[datetime.now(timezone.utc).replace(microsecond=0)],
             date=[date.today()],
             json=[{"key": "value", "nested": {"key": "value"}}],
             direct=[DirectRelationReference(space, external_id)],
@@ -742,13 +747,13 @@ class TestInstancesAPI:
         )
         try:
             cognite_client.data_modeling.instances.apply(node)
-            retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id()).nodes.property_as_type(
-                PrimitiveListed
-            )
+            retrieved = cognite_client.data_modeling.instances.retrieve(
+                node.as_id(), sources=PrimitiveListed._source
+            ).nodes.property_as_type(PrimitiveListed)
             assert len(retrieved) == 1
-            property_ = retrieved[0].sources
-            assert isinstance(property_, PrimitiveListed)
-            assert property_.dump() == primitive_listed.dump()
+            properties = retrieved[0].properties
+            assert isinstance(properties, PrimitiveListed)
+            assert properties.dump() == primitive_listed.dump()
         finally:
             cognite_client.data_modeling.instances.delete(node.as_id())
 

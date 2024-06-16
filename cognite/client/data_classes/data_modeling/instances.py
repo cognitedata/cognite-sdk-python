@@ -4,8 +4,9 @@ import threading
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from dataclasses import asdict, dataclass
-from datetime import datetime
+from collections.abc import Iterable
+from dataclasses import dataclass, fields
+from datetime import date, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -115,15 +116,12 @@ class NodeOrEdgeData(CogniteObject):
         )
 
     def dump(self, camel_case: bool = True) -> dict:
-        properties: dict[str, PropertyValue] = {}
+        properties: dict[str, Any] = {}
         for key, value in self.properties.items():
-            if isinstance(value, NodeId):
-                # We don't want to dump the instance_type field when serializing NodeId in this context
-                properties[key] = value.dump(camel_case, include_instance_type=False)
-            elif isinstance(value, DirectRelationReference):
-                properties[key] = value.dump(camel_case)
+            if isinstance(value, Iterable):
+                properties[key] = [self._serialize_value(v, camel_case) for v in value]
             else:
-                properties[key] = value
+                properties[key] = self._serialize_value(value, camel_case)
         output: dict[str, Any] = {"properties": properties}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
@@ -134,6 +132,20 @@ class NodeOrEdgeData(CogniteObject):
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
 
+    @staticmethod
+    def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:
+        if isinstance(value, NodeId):
+            # We don't want to dump the instance_type field when serializing NodeId in this context
+            return value.dump(camel_case, include_instance_type=False)
+        elif isinstance(value, DirectRelationReference):
+            return value.dump(camel_case)
+        elif isinstance(value, datetime):
+            return value.isoformat(timespec="milliseconds")
+        elif isinstance(value, date):
+            return value.isoformat()
+        else:
+            return value
+
 
 @dataclass
 class PropertyLike(CogniteObject, ABC):
@@ -141,9 +153,46 @@ class PropertyLike(CogniteObject, ABC):
 
     _source: ClassVar[ViewId]
 
+    def as_servers_side_properties(self) -> dict[str, PropertyValue]:
+        """This converts the custom data into the format expected by the serverside.
+
+        It can be overridden to provide custom serialization.
+        """
+        return self.__dict__.copy()
+
+    @classmethod
+    def from_server_side_properties(cls, properties: Mapping[str, PropertyValue]) -> Self:
+        """This converts the server side properties into the custom data class.
+
+        It can be overridden to provide custom deserialization.
+        """
+        args: dict[str, Any] = {}
+        for field in fields(cls):
+            if field.name not in properties:
+                continue
+            value = properties[field.name]
+            if isinstance(value, Iterable):
+                args[field.name] = [cls._deserialize_value(v, str(field.type)) for v in value]
+            else:
+                args[field.name] = cls._deserialize_value(value, str(field.type))
+        return cls(**args)
+
+    @staticmethod
+    def _deserialize_value(value: PropertyValue, field_type: str) -> Any:
+        if "datetime" in str(field_type) and isinstance(value, str):
+            return datetime.fromisoformat(value)
+        elif "date" in str(field_type) and isinstance(value, str):
+            return date.fromisoformat(value)
+        elif "directrelationreference" in str(field_type).lower() and isinstance(value, (dict, tuple)):
+            return DirectRelationReference.load(value)
+        elif "nodeid" in str(field_type).lower() and isinstance(value, dict):
+            return NodeId.load(value)
+        else:
+            return value
+
     def as_node_or_edge_data(self) -> list[NodeOrEdgeData]:
         """Convert the custom data class to a list of NodeOrEdgeData."""
-        return [NodeOrEdgeData(source=self._source, properties=asdict(self))]
+        return [NodeOrEdgeData(source=self._source, properties=self.as_servers_side_properties())]
 
     @classmethod
     def from_node_or_edge_data(cls, data: list[NodeOrEdgeData] | None) -> Self | None:
@@ -152,12 +201,12 @@ class PropertyLike(CogniteObject, ABC):
             return None
         for node_or_edge_data in data:
             if node_or_edge_data.source == cls._source:
-                return cls(**node_or_edge_data.properties)
+                return cls.from_server_side_properties(node_or_edge_data.properties)
         else:
             raise TypeError(f"NodeOrEdgeData with source {cls._source} not found in data")
 
     def as_properties(self) -> Properties:
-        return Properties({self._source: asdict(self)})
+        return Properties({self._source: self.as_servers_side_properties()})
 
     @classmethod
     def from_properties(cls, properties: Properties | None) -> Self | None:
@@ -165,7 +214,7 @@ class PropertyLike(CogniteObject, ABC):
             return None
         for view_id, props in properties.items():
             if view_id == cls._source:
-                return cls(**props)
+                return cls.from_server_side_properties(props)
         raise TypeError(f"Properties with source {cls._source} not found in data")
 
 
