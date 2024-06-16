@@ -118,7 +118,7 @@ class NodeOrEdgeData(CogniteObject):
     def dump(self, camel_case: bool = True) -> dict:
         properties: dict[str, Any] = {}
         for key, value in self.properties.items():
-            if isinstance(value, Iterable):
+            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
                 properties[key] = [self._serialize_value(v, camel_case) for v in value]
             else:
                 properties[key] = self._serialize_value(value, camel_case)
@@ -171,7 +171,7 @@ class PropertyLike(CogniteObject, ABC):
             if field.name not in properties:
                 continue
             value = properties[field.name]
-            if isinstance(value, Iterable):
+            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
                 args[field.name] = [cls._deserialize_value(v, str(field.type)) for v in value]
             else:
                 args[field.name] = cls._deserialize_value(value, str(field.type))
