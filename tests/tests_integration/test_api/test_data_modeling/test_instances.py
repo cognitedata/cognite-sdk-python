@@ -43,7 +43,7 @@ from cognite.client.data_classes.data_modeling import (
     query,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
-from cognite.client.data_classes.data_modeling.instances import PropertyLike, TargetUnit
+from cognite.client.data_classes.data_modeling.instances import NodeApplyBase, PropertyLike, TargetUnit
 from cognite.client.data_classes.data_modeling.query import (
     NodeResultSetExpression,
     Query,
@@ -685,6 +685,72 @@ class TestInstancesAPI:
         assert queried
         assert len(queried["nodes"]) == 1
         assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
+
+    def test_write_read_custom_properties(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+        space = integration_test_space.space
+        external_id = "node_test_write_read_custom_properties"
+        primitive = PrimitiveNullable(
+            text="text",
+            boolean=True,
+            float32=1.1,
+            float64=1.1,
+            int32=1,
+            int64=1,
+            timestamp=datetime.now(),
+            date=date.today(),
+            json={"key": "value", "nested": {"key": "value"}},
+            direct=DirectRelationReference(space, external_id),
+        )
+        node = NodeApplyBase[PrimitiveNullable](
+            space=space,
+            external_id=external_id,
+            sources=primitive,
+        )
+        try:
+            cognite_client.data_modeling.instances.apply(node)
+            retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id()).nodes.property_as_type(
+                PrimitiveNullable
+            )
+            assert len(retrieved) == 1
+            property_ = retrieved[0].sources
+            assert isinstance(property_, PrimitiveNullable)
+            assert property_.dump() == primitive.dump()
+        finally:
+            cognite_client.data_modeling.instances.delete(node.as_id())
+
+    def test_write_read_custom_properties_listable(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
+        space = integration_test_space.space
+        external_id = "node_test_write_read_custom_properties_listable"
+        primitive_listed = PrimitiveListed(
+            text=["text"],
+            boolean=[True],
+            float32=[1.1],
+            float64=[1.1],
+            int32=[1],
+            int64=[1],
+            timestamp=[datetime.now()],
+            date=[date.today()],
+            json=[{"key": "value", "nested": {"key": "value"}}],
+            direct=[DirectRelationReference(space, external_id)],
+        )
+        node = NodeApplyBase[PrimitiveListed](
+            space=space,
+            external_id=external_id,
+            sources=primitive_listed,
+        )
+        try:
+            cognite_client.data_modeling.instances.apply(node)
+            retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id()).nodes.property_as_type(
+                PrimitiveListed
+            )
+            assert len(retrieved) == 1
+            property_ = retrieved[0].sources
+            assert isinstance(property_, PrimitiveListed)
+            assert property_.dump() == primitive_listed.dump()
+        finally:
+            cognite_client.data_modeling.instances.delete(node.as_id())
 
 
 class TestInstancesSync:
