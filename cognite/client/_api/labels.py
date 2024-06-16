@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -27,17 +27,52 @@ class LabelsAPI(APIClient):
         Returns:
             Iterator[LabelDefinition]: yields Labels one by one.
         """
-        return cast(Iterator[LabelDefinition], self())
+        return self()
 
+    @overload
     def __call__(
         self,
+        chunk_size: None = None,
         name: str | None = None,
         external_id_prefix: str | None = None,
         limit: int | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> Iterator[LabelDefinition]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        limit: int | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> Iterator[LabelDefinitionList]: ...
+
+    def __call__(
+        self,
         chunk_size: int | None = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        limit: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> Iterator[LabelDefinition] | Iterator[LabelDefinitionList]:
+        """Iterate over Labels
+
+        Args:
+            chunk_size (int | None): Number of Labels to return in each chunk. Defaults to yielding one Label a time.
+            name (str | None): returns the label definitions matching that name
+            external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
+            limit (int | None): Maximum number of label definitions to return. Defaults return all labels.
+            data_set_ids (int | Sequence[int] | None): return only labels in the data sets with this id / these ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): return only labels in the data sets with this external id / these external ids.
+
+        Returns:
+            Iterator[LabelDefinition] | Iterator[LabelDefinitionList]: yields Labels one by one or in chunks.
+        """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = LabelDefinitionFilter(
