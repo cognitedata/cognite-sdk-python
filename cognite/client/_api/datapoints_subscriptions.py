@@ -38,7 +38,7 @@ class DatapointsSubscriptionAPI(APIClient):
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
     ) -> Iterator[DatapointSubscription] | Iterator[DatapointSubscriptionList]:
-        """Iterate over all items in the endpoint.
+        """Iterate over all datapoint subscriptions.
 
         Args:
             chunk_size (int | None): The number of datapoint subscriptions to fetch per request. Defaults to yielding one datapoint subscription at a time.
