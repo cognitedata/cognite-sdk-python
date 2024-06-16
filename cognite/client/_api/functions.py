@@ -975,6 +975,83 @@ class FunctionSchedulesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT_CEILING = 10_000
 
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FunctionSchedule]: ...
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FunctionSchedulesList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]:
+        """Iterate over function schedules
+
+        Args:
+            chunk_size (int | None): The number of schedules to return in each chunk. Defaults to yielding one schedule a time.
+            name (str | None): Name of the function schedule.
+            function_id (int | None): ID of the function the schedules are linked to.
+            function_external_id (str | None): External ID of the function the schedules are linked to.
+            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            cron_expression (str | None): Cron expression.
+            limit (int | None): Maximum schedules to return. Defaults to return all schedules.
+
+        Returns:
+            Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]: yields function schedules.
+
+        """
+        if function_id or function_external_id:
+            try:
+                IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
+            except ValueError:
+                raise ValueError(
+                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
+                ) from None
+
+        filter_ = FunctionSchedulesFilter(
+            name=name,
+            function_id=function_id,
+            function_external_id=function_external_id,
+            created_time=created_time,
+            cron_expression=cron_expression,
+        ).dump(camel_case=True)
+        return self._list_generator(
+            method="POST",
+            url_path=f"{self._RESOURCE_PATH}/list",
+            filter=filter_,
+            resource_cls=FunctionSchedule,
+            list_cls=FunctionSchedulesList,
+            chunk_size=chunk_size,
+            limit=limit,
+        )
+
+    def __iter__(self) -> Iterator[FunctionSchedule]:
+        """Iterate over all function schedules"""
+        return self.__call__()
+
     def retrieve(self, id: int) -> FunctionSchedule | None:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
 
