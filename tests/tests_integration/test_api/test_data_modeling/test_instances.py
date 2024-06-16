@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import math
 import time
+from dataclasses import dataclass
+from datetime import date, datetime
 from typing import Any, ClassVar, cast
 
 import pytest
@@ -41,7 +43,7 @@ from cognite.client.data_classes.data_modeling import (
     query,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
-from cognite.client.data_classes.data_modeling.instances import TargetUnit
+from cognite.client.data_classes.data_modeling.instances import PropertyLike, TargetUnit
 from cognite.client.data_classes.data_modeling.query import (
     NodeResultSetExpression,
     Query,
@@ -119,6 +121,36 @@ def node_with_1_1_pressure_in_bar(
     )
     _ = cognite_client.data_modeling.instances.apply(node)
     return node
+
+
+@dataclass
+class PrimitiveNullable(PropertyLike):
+    _source = ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
+    text: str | None = None
+    boolean: bool | None = None
+    float32: float | None = None
+    float64: float | None = None
+    int32: int | None = None
+    int64: int | None = None
+    timestamp: datetime | None = None
+    date: date | None = None
+    json: dict | None = None
+    direct: DirectRelationReference | None = None
+
+
+@dataclass
+class PrimitiveListed(PropertyLike):
+    _source = ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
+    text: list[str] | None = None
+    boolean: list[bool] | None = None
+    float32: list[float] | None = None
+    float64: list[float] | None = None
+    int32: list[int] | None = None
+    int64: list[int] | None = None
+    timestamp: list[datetime] | None = None
+    date: list[date] | None = None
+    json: list[dict] | None = None
+    direct: list[DirectRelationReference] | None = None
 
 
 class TestInstancesAPI:

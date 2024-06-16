@@ -24,7 +24,11 @@ from cognite.client.data_classes.data_modeling import (
     ViewList,
 )
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
-from cognite.client.data_classes.data_modeling.instances import EdgeApplyList, InstancesResult, NodeApplyList
+from cognite.client.data_classes.data_modeling.instances import (
+    EdgeApplyList,
+    InstancesResult,
+    NodeApplyList,
+)
 
 RESOURCES = Path(__file__).parent / "resources"
 
