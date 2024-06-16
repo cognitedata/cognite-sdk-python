@@ -167,6 +167,12 @@ class RawDatabasesAPI(APIClient):
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
+    @overload
+    def __call__(self, db_name: str, chunk_size: None = None, limit: int | None = None) -> Iterator[Table]: ...
+
+    @overload
+    def __call__(self, db_name: str, chunk_size: int, limit: int | None = None) -> Iterator[TableList]: ...
+
     def __call__(
         self, db_name: str, chunk_size: int | None = None, limit: int | None = None
     ) -> Iterator[Table] | Iterator[TableList]:
