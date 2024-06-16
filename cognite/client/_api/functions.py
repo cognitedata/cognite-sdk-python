@@ -7,12 +7,13 @@ import re
 import sys
 import textwrap
 import time
+from collections.abc import Iterator
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Sequence, overload
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -80,6 +81,82 @@ class FunctionsAPI(APIClient):
         self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
         # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
         self._LIST_LIMIT_CEILING = 10_000
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: str | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Function]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: str | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FunctionList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: str | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Function] | Iterator[FunctionList]:
+        """Iterate over functions.
+
+        Args:
+            chunk_size (int | None): Number of functions to yield per chunk. Defaults to yielding functions one by one.
+            name (str | None): The name of the function.
+            owner (str | None): Owner of the function.
+            file_id (int | None): The file ID of the zip-file used to create the function.
+            status (str | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
+            external_id_prefix (str | None): External ID prefix to filter on.
+            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
+
+        Returns:
+            Iterator[Function] | Iterator[FunctionList]: An iterator over functions.
+
+        """
+        filter_ = FunctionFilter(
+            name=name,
+            owner=owner,
+            file_id=file_id,
+            status=status,
+            external_id_prefix=external_id_prefix,
+            created_time=created_time,
+        ).dump(camel_case=True)
+
+        return self._list_generator(
+            method="POST",
+            resource_path="/functions/list",
+            filter=filter_,
+            limit=limit,
+            chunk_size=chunk_size,
+            resource_cls=Function,
+            list_cls=FunctionList,
+        )
+
+    def __iter__(self) -> Iterator[Function]:
+        """Iterate over all functions."""
+        return self.__call__()
 
     def create(
         self,
