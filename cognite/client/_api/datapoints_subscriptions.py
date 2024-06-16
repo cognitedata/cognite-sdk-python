@@ -162,14 +162,14 @@ class DatapointsSubscriptionAPI(APIClient):
             other_params={"externalId": external_id},
         )
 
-    def update(self, update: DataPointSubscriptionUpdate) -> DatapointSubscription:
+    def update(self, update: DataPointSubscriptionUpdate | DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Update a subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/updateSubscriptions>`_
 
         Update a subscription. Note that Fields that are not included in the request are not changed.
         Furthermore, the subscription partition cannot be changed.
 
         Args:
-            update (DataPointSubscriptionUpdate): The subscription update.
+            update (DataPointSubscriptionUpdate | DataPointSubscriptionWrite): The subscription update.
 
         Returns:
             DatapointSubscription: Updated subscription.

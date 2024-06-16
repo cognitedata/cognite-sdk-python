@@ -8,6 +8,7 @@ import importlib
 import inspect
 import math
 import os
+import platform
 import random
 import string
 import sys
@@ -61,6 +62,11 @@ if sys.version_info >= (3, 10):
     from types import UnionType
 
     UNION_TYPES.add(UnionType)
+
+
+# This is needed as we run tests for two different versions of Python in parallel.
+# The platform.system() is not used, but is here in case we start testing on Windows as well.
+RUN_UNIQUE_ID = f"{platform.system()}_{sys.version_info.major}_{sys.version_info.minor}"
 
 
 def all_subclasses(base: T_Type) -> list[T_Type]:

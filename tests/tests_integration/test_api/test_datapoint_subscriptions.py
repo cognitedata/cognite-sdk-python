@@ -21,6 +21,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionWrite,
 )
 from cognite.client.utils._text import random_string
+from tests.utils import RUN_UNIQUE_ID
 
 TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(20)]
 
@@ -146,6 +147,24 @@ class TestDatapointSubscriptions:
 
             assert updated.name == "New Name"
             assert updated.time_series_count == len(time_series_external_ids) - 1
+            assert updated.data_set_id == data_set.id
+
+    def test_update_subscription_write_object(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+        new_subscription = DataPointSubscriptionWrite(
+            external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}-{RUN_UNIQUE_ID}",
+            name="PYSDKDataPointSubscriptionUpdateTest",
+            time_series_ids=time_series_external_ids,
+            partition_count=1,
+        )
+        data_set = cognite_client.data_sets.list(limit=1)[0]
+        with create_subscription_with_cleanup(cognite_client, new_subscription):
+            update = DataPointSubscriptionWrite.load(new_subscription.dump())
+            update.name = "New Name"
+            update.data_set_id = data_set.id
+            updated = cognite_client.time_series.subscriptions.update(update)
+
+            assert updated.name == "New Name"
+            assert updated.time_series_count == len(time_series_external_ids)
             assert updated.data_set_id == data_set.id
 
     def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):
