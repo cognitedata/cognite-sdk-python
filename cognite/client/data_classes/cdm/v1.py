@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import ClassVar
 
+from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import PropertyLike
 
@@ -73,19 +74,17 @@ class AssetType(Describable):
 @dataclass
 class Asset(Object3D):
     _source = ViewId("cdf_cdm_experimental", "Asset", "v1")
-    children: list[Asset] | None = None
-    parent: Asset | None = None
-    path: Asset | None = None
+    parent: DirectRelationReference | None = None
+    path: DirectRelationReference | None = None
     last_path_materialization_time: datetime | None = None
-    equipment: Equipment | None = None
-    type: AssetType | None = None
-    root: Asset | None = None
+    equipment: DirectRelationReference | None = None
+    type: DirectRelationReference | None = None
+    root: DirectRelationReference | None = None
 
 
 @dataclass
 class Equipment(Object3D):
     _source = ViewId("cdf_cdm_experimental", "Equipment", "v1")
-    asset: Asset | None = None
     serial_number: str | None = None
     manufacturer: str | None = None
 
@@ -93,7 +92,7 @@ class Equipment(Object3D):
 @dataclass
 class Activity(Describable, Sourceable, Schedulable):
     _source = ViewId("cdf_cdm_experimental", "Activity", "v1")
-    assets: list[Asset] | None = None
+    assets: list[DirectRelationReference] | None = None
 
 
 @dataclass
@@ -113,5 +112,5 @@ class TimeSeriesBase(PropertyLike):
     source_updated_user: str | None = None
     source_unit: str | None = None
     unit: str | None = None
-    assets: list[Asset] | None = None
-    equipment: list[Equipment] | None = None
+    assets: list[DirectRelationReference] | None = None
+    equipment: list[DirectRelationReference] | None = None
