@@ -22,7 +22,7 @@ Changes are grouped as follows
 - Introduced support for custom dataclasses as Node and Edge properties. This allows you to automtically serialize and 
   deserialize custom dataclasses when working with the Data Modeling API. For example, you parse the
   properties of nodes by doing the following 
-  `client.data_modeling.instances.retrieve(node_id).nodes.property_as_type(MyCustomDataClass)`.
+  `client.data_modeling.instances.retrieve(node_id, sources=MyCustomDataClass._source).nodes.property_as_type(MyCustomDataClass)`.
 
 ## [7.50.0] - 2024-06-14
 ### Changed
