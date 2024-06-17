@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.51.0] - 2024-06-16
+### Added
+- Support for iterating over `Functions`, `FunctionSchedules`, `DatapointSubscriptions`, `Transformations`,
+  `TransformationSchedules`, `TransformationNotifications`, `ExtractionPipelines`, `Workflows`, `WorkflowVersions`.
+
 ## [7.50.0] - 2024-06-14
 ### Changed
 - DatapointsAPI support for timezones and calendar-based aggregates reaches general availability (GA).

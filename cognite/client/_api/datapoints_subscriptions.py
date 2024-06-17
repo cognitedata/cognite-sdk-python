@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, cast
+from typing import TYPE_CHECKING, Iterator, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -28,6 +28,36 @@ class DatapointsSubscriptionAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
+
+    @overload
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[DatapointSubscription]: ...
+
+    @overload
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatapointSubscriptionList]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[DatapointSubscription] | Iterator[DatapointSubscriptionList]:
+        """Iterate over all datapoint subscriptions.
+
+        Args:
+            chunk_size (int | None): The number of datapoint subscriptions to fetch per request. Defaults to yielding one datapoint subscription at a time.
+            limit (int | None): Maximum number of items to return. Defaults to return all datapoint subscriptions.
+
+        Returns:
+            Iterator[DatapointSubscription] | Iterator[DatapointSubscriptionList]: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
+        """
+        return self._list_generator(
+            method="GET",
+            limit=limit,
+            chunk_size=chunk_size,
+            list_cls=DatapointSubscriptionList,
+            resource_cls=DatapointSubscription,
+        )
+
+    def __iter__(self) -> Iterator[DatapointSubscription]:
+        """Iterate over all datapoint subscriptions."""
+        return self.__call__()
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_
