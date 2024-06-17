@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterator, Literal, Sequence, Tuple, Union, cast, overload
+from typing import Any, Iterator, Literal, Sequence, Tuple, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -37,6 +37,58 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> Iterator[Event]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> Iterator[EventList]: ...
 
     def __call__(
         self,
@@ -135,7 +187,7 @@ class EventsAPI(APIClient):
         Returns:
             Iterator[Event]: yields Events one by one.
         """
-        return cast(Iterator[Event], self())
+        return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_

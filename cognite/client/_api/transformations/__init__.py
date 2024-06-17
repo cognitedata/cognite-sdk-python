@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -43,6 +44,118 @@ class TransformationsAPI(APIClient):
         self.schedules = TransformationSchedulesAPI(config, api_version, cognite_client)
         self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
         self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[int] | None = None,
+        data_set_external_ids: list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Transformation]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[int] | None = None,
+        data_set_external_ids: list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[int] | None = None,
+        data_set_external_ids: list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Transformation] | Iterator[TransformationList]:
+        """Iterate over transformations
+
+        Args:
+            chunk_size (int | None): Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
+            include_public (bool): Whether public transformations should be included in the results. (default true).
+            name_regex (str | None): Regex expression to match the transformation name
+            query_regex (str | None): Regex expression to match the transformation query
+            destination_type (str | None): Transformation destination resource name to filter by.
+            conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name (str | None): Project name to filter by configured source and destination project
+            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
+            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            data_set_ids (list[int] | None): Return only transformations in the specified data sets with these ids.
+            data_set_external_ids (list[str] | None): Return only transformations in the specified data sets with these external ids.
+            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
+
+        Returns:
+            Iterator[Transformation] | Iterator[TransformationList]: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
+        """
+        ds_ids: list[dict[str, Any]] | None = None
+        if data_set_ids and data_set_external_ids:
+            ds_ids = [*[{"id": i} for i in data_set_ids], *[{"externalId": i} for i in data_set_external_ids]]
+        elif data_set_ids:
+            ds_ids = [{"id": i} for i in data_set_ids]
+        elif data_set_external_ids:
+            ds_ids = [{"externalId": i} for i in data_set_external_ids]
+
+        filter_ = TransformationFilter(
+            include_public=include_public,
+            name_regex=name_regex,
+            query_regex=query_regex,
+            destination_type=destination_type,
+            conflict_mode=conflict_mode,
+            cdf_project_name=cdf_project_name,
+            has_blocked_error=has_blocked_error,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            tags=tags,
+            data_set_ids=ds_ids,
+        ).dump(camel_case=True)
+
+        return self._list_generator(
+            method="POST",
+            url_path=f"{self._RESOURCE_PATH}/filter",
+            limit=limit,
+            chunk_size=chunk_size,
+            filter=filter_,
+            resource_cls=Transformation,
+            list_cls=TransformationList,
+        )
+
+    def __iter__(self) -> Iterator[Transformation]:
+        """Iterate over all transformations"""
+        return self()
 
     @overload
     def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...
