@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -62,8 +62,10 @@ class RelationshipsAPI(APIClient):
             labels=labels,
         ).dump(camel_case=True)
 
+    @overload
     def __call__(
         self,
+        chunk_size: None = None,
         source_external_ids: SequenceNotStr[str] | None = None,
         source_types: SequenceNotStr[str] | None = None,
         target_external_ids: SequenceNotStr[str] | None = None,
@@ -79,7 +81,49 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter | None = None,
         limit: int | None = None,
         fetch_resources: bool = False,
+        partitions: int | None = None,
+    ) -> Iterator[Relationship]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        limit: int | None = None,
+        fetch_resources: bool = False,
+        partitions: int | None = None,
+    ) -> Iterator[RelationshipList]: ...
+
+    def __call__(
+        self,
         chunk_size: int | None = None,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        limit: int | None = None,
+        fetch_resources: bool = False,
         partitions: int | None = None,
     ) -> Iterator[Relationship] | Iterator[RelationshipList]:
         """Iterate over relationships
@@ -87,6 +131,7 @@ class RelationshipsAPI(APIClient):
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Args:
+            chunk_size (int | None): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
             source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
             source_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their source Type field
             target_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their target External Id field
@@ -102,7 +147,6 @@ class RelationshipsAPI(APIClient):
             labels (LabelFilter | None): Return only the resource matching the specified label constraints.
             limit (int | None): No description.
             fetch_resources (bool): No description.
-            chunk_size (int | None): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
             partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Returns:
@@ -152,7 +196,7 @@ class RelationshipsAPI(APIClient):
         Returns:
             Iterator[Relationship]: yields Relationships one by one.
         """
-        return cast(Iterator[Relationship], self())
+        return self()
 
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.

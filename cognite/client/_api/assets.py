@@ -87,6 +87,58 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
 
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: TimestampRange | dict[str, Any] | None = None,
+        last_updated_time: TimestampRange | dict[str, Any] | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[Asset]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: TimestampRange | dict[str, Any] | None = None,
+        last_updated_time: TimestampRange | dict[str, Any] | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[AssetList]: ...
+
     def __call__(
         self,
         chunk_size: int | None = None,
@@ -185,7 +237,7 @@ class AssetsAPI(APIClient):
         Returns:
             Iterator[Asset]: yields Assets one by one.
         """
-        return cast(Iterator[Asset], self())
+        return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_

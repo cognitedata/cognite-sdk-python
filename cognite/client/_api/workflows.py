@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union, overload
 from urllib.parse import quote
 
 from typing_extensions import TypeAlias
@@ -316,6 +317,47 @@ class WorkflowVersionAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[WorkflowVersion]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[WorkflowVersionList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]:
+        """Iterate over workflow versions
+
+        Args:
+            chunk_size (int | None): The number of workflow versions to return in each chunk. Defaults to yielding one workflow version at a time.
+            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            limit (int | None): Maximum number of workflow versions to return. Defaults to returning all.
+
+        Returns:
+            Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]: Returns an iterator over workflow versions.
+
+        """
+        return self._list_generator(
+            method="GET", resource_cls=WorkflowVersion, list_cls=WorkflowVersionList, limit=limit, chunk_size=chunk_size
+        )
+
+    def __iter__(self) -> Iterator[WorkflowVersion]:
+        """Iterate all over workflow versions"""
+        return self.__call__()
+
     def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
         """`Create a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
 
@@ -493,6 +535,33 @@ class WorkflowAPI(APIClient):
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
+    @overload
+    def __call__(self, chunk_size: None = None, limit: None = None) -> Iterator[Workflow]: ...
+
+    @overload
+    def __call__(self, chunk_size: int, limit: None) -> Iterator[Workflow]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Workflow] | Iterator[WorkflowList]:
+        """Iterate over workflows
+
+        Args:
+            chunk_size (int | None): The number of workflows to return in each chunk. Defaults to yielding one workflow at a time.
+            limit (int | None): Maximum number of workflows to return. Defaults to returning all items.
+
+        Returns:
+            Iterator[Workflow] | Iterator[WorkflowList]: Returns an iterator over workflows.
+
+        """
+        return self._list_generator(
+            method="GET", resource_cls=Workflow, list_cls=WorkflowList, limit=limit, chunk_size=chunk_size
+        )
+
+    def __iter__(self) -> Iterator[Workflow]:
+        """Iterate all over workflows"""
+        return self.__call__()
+
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
         """`Create a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
@@ -569,11 +638,11 @@ class WorkflowAPI(APIClient):
             wrap_ids=True,
         )
 
-    def list(self, limit: int = DEFAULT_LIMIT_READ) -> WorkflowList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
         """`List all workflows in the project. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/FetchAllWorkflows>`_
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
         Returns:
             WorkflowList: All workflows in the CDF project.
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, cast, overload
 
 from typing_extensions import TypeAlias
@@ -45,6 +46,37 @@ class ExtractionPipelinesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.runs = ExtractionPipelineRunsAPI(config, api_version, cognite_client)
         self.config = ExtractionPipelineConfigsAPI(config, api_version, cognite_client)
+
+    @overload
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[ExtractionPipeline]: ...
+
+    @overload
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[ExtractionPipelineList]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[ExtractionPipeline] | Iterator[ExtractionPipelineList]:
+        """Iterate over extraction pipelines
+
+        Args:
+            chunk_size (int | None): Number of extraction pipelines to yield per chunk. Defaults to yielding extraction pipelines one by one.
+            limit (int | None): Limits the number of results to be returned. Defaults to yielding all extraction pipelines.
+
+        Returns:
+            Iterator[ExtractionPipeline] | Iterator[ExtractionPipelineList]: Yields extraction pipelines one by one or in chunks up to the chunk size.
+
+        """
+        return self._list_generator(
+            method="GET",
+            limit=limit,
+            chunk_size=chunk_size,
+            resource_cls=ExtractionPipeline,
+            list_cls=ExtractionPipelineList,
+        )
+
+    def __iter__(self) -> Iterator[ExtractionPipeline]:
+        """Iterate over all extraction pipelines"""
+        return self.__call__()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:
         """`Retrieve a single extraction pipeline by id. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/showExtPipe>`_

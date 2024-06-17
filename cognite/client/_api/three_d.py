@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -44,6 +44,16 @@ class ThreeDAPI(APIClient):
 class ThreeDModelsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models"
 
+    @overload
+    def __call__(
+        self, chunk_size: None = None, published: bool | None = None, limit: int | None = None
+    ) -> Iterator[ThreeDModel]: ...
+
+    @overload
+    def __call__(
+        self, chunk_size: int, published: bool | None = None, limit: int | None = None
+    ) -> Iterator[ThreeDModelList]: ...
+
     def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
     ) -> Iterator[ThreeDModel] | Iterator[ThreeDModelList]:
@@ -76,7 +86,7 @@ class ThreeDModelsAPI(APIClient):
         Returns:
             Iterator[ThreeDModel]: yields models one by one.
         """
-        return cast(Iterator[ThreeDModel], self())
+        return self()
 
     def retrieve(self, id: int) -> ThreeDModel | None:
         """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
@@ -230,6 +240,15 @@ class ThreeDModelsAPI(APIClient):
 
 class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
+
+    @overload
+    def __call__(
+        self, model_id: int, chunk_size: None = None, published: bool = False, limit: int | None = None
+    ) -> Iterator[ThreeDModelRevision]: ...
+    @overload
+    def __call__(
+        self, model_id: int, chunk_size: int, published: bool = False, limit: int | None = None
+    ) -> Iterator[ThreeDModelRevisionList]: ...
 
     def __call__(
         self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None

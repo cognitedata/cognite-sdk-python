@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Sequence, overload
 
 from cognite.client._api_client import APIClient
@@ -19,6 +20,65 @@ from cognite.client.utils._validation import assert_type
 
 class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationNotification]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationNotificationList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationNotification] | Iterator[TransformationNotificationList]:
+        """Iterate over transformation notifications
+
+        Args:
+            chunk_size (int | None): Number of notifications to yield per chunk. Defaults to yielding notifications one by one.
+            transformation_id (int | None): Filter by transformation internal numeric ID.
+            transformation_external_id (str | None): Filter by transformation externalId.
+            destination (str | None): Filter by notification destination.
+            limit (int | None): Limits the number of results to be returned. Defaults to yielding all notifications.
+
+        Returns:
+            Iterator[TransformationNotification] | Iterator[TransformationNotificationList]: No description.
+        """
+        filter_ = TransformationNotificationFilter(
+            transformation_id=transformation_id,
+            transformation_external_id=transformation_external_id,
+            destination=destination,
+        ).dump(camel_case=True)
+
+        return self._list_generator(
+            method="GET",
+            limit=limit,
+            resource_cls=TransformationNotification,
+            list_cls=TransformationNotificationList,
+            filter=filter_,
+            chunk_size=chunk_size,
+        )
+
+    def __iter__(self) -> Iterator[TransformationNotification]:
+        """Iterate over all transformation notifications"""
+        return self.__call__()
 
     @overload
     def create(
