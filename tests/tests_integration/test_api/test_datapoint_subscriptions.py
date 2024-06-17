@@ -21,7 +21,6 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionWrite,
 )
 from cognite.client.utils._text import random_string
-from tests.utils import RUN_UNIQUE_ID
 
 TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(20)]
 
@@ -151,7 +150,7 @@ class TestDatapointSubscriptions:
 
     def test_update_subscription_write_object(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
         new_subscription = DataPointSubscriptionWrite(
-            external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}-{RUN_UNIQUE_ID}",
+            external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionUpdateTest",
             time_series_ids=time_series_external_ids,
             partition_count=1,
