@@ -45,6 +45,12 @@ class RawAPI(APIClient):
 class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
+    @overload
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Database]: ...
+
+    @overload
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatabaseList]: ...
+
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
     ) -> Iterator[Database] | Iterator[DatabaseList]:
@@ -69,7 +75,7 @@ class RawDatabasesAPI(APIClient):
         Returns:
             Iterator[Database]: yields Database one by one.
         """
-        return cast(Iterator[Database], self())
+        return self()
 
     @overload
     def create(self, name: str) -> Database: ...
@@ -166,6 +172,12 @@ class RawDatabasesAPI(APIClient):
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
+
+    @overload
+    def __call__(self, db_name: str, chunk_size: None = None, limit: int | None = None) -> Iterator[Table]: ...
+
+    @overload
+    def __call__(self, db_name: str, chunk_size: int, limit: int | None = None) -> Iterator[TableList]: ...
 
     def __call__(
         self, db_name: str, chunk_size: int | None = None, limit: int | None = None
@@ -326,6 +338,32 @@ class RawRowsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
+
+    @overload
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: None = None,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Row]: ...
+
+    @overload
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[RowList]: ...
 
     def __call__(
         self,
