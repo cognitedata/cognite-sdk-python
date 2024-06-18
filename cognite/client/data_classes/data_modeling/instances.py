@@ -4,8 +4,9 @@ import threading
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -107,15 +108,13 @@ class NodeOrEdgeData(CogniteObject):
         )
 
     def dump(self, camel_case: bool = True) -> dict:
-        properties: dict[str, PropertyValue] = {}
+        properties: dict[str, Any] = {}
         for key, value in self.properties.items():
-            if isinstance(value, NodeId):
-                # We don't want to dump the instance_type field when serializing NodeId in this context
-                properties[key] = value.dump(camel_case, include_instance_type=False)
-            elif isinstance(value, DirectRelationReference):
-                properties[key] = value.dump(camel_case)
+            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
+                properties[key] = [self._serialize_value(v, camel_case) for v in value]
             else:
-                properties[key] = value
+                properties[key] = self._serialize_value(value, camel_case)
+
         output: dict[str, Any] = {"properties": properties}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
@@ -125,6 +124,20 @@ class NodeOrEdgeData(CogniteObject):
             else:
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
+
+    @staticmethod
+    def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:
+        if isinstance(value, NodeId):
+            # We don't want to dump the instance_type field when serializing NodeId in this context
+            return value.dump(camel_case, include_instance_type=False)
+        elif isinstance(value, DirectRelationReference):
+            return value.dump(camel_case)
+        elif isinstance(value, datetime):
+            return value.isoformat(timespec="milliseconds")
+        elif isinstance(value, date):
+            return value.isoformat()
+        else:
+            return value
 
 
 class InstanceCore(DataModelingResource, ABC):
