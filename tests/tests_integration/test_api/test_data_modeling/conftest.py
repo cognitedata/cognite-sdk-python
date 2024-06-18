@@ -9,6 +9,8 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
+    Container,
+    ContainerApply,
     DataModel,
     DataModelApply,
     EdgeApply,
@@ -18,6 +20,7 @@ from cognite.client.data_classes.data_modeling import (
     Space,
     SpaceApply,
     View,
+    ViewApply,
     ViewList,
 )
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
@@ -79,6 +82,358 @@ def populated_movie(cognite_client: CogniteClient, movie_model: DataModel[View])
     created = cognite_client.data_modeling.instances.apply(nodes, edges)
     result = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), created.edges.as_ids())
     return result
+
+
+@pytest.fixture(scope="session")
+def primitive_nullable_container(cognite_client: CogniteClient, integration_test_space: Space) -> Container:
+    container_raw = f"""space: {integration_test_space.space}
+externalId: PrimitiveNullable
+name: PrimitiveNullable
+usedFor: node
+properties:
+  text:
+    type:
+      list: false
+      collation: ucs_basic
+      type: text
+    nullable: true
+    autoIncrement: false
+    name: text
+  boolean:
+    type:
+      list: false
+      type: boolean
+    nullable: true
+    autoIncrement: false
+    name: text
+  float32:
+    type:
+      list: false
+      type: float32
+    nullable: true
+    autoIncrement: false
+    name: float32
+  float64:
+    type:
+      list: false
+      type: float64
+    nullable: true
+    autoIncrement: false
+    name: float64
+  int32:
+    type:
+      list: false
+      type: int32
+    nullable: true
+    autoIncrement: false
+    name: int32
+  int64:
+    type:
+      list: false
+      type: int64
+    nullable: true
+    autoIncrement: false
+    name: int64
+  timestamp:
+    type:
+      list: false
+      type: timestamp
+    nullable: true
+    autoIncrement: false
+    name: timestamp
+  date:
+    type:
+      list: false
+      type: date
+    nullable: true
+    autoIncrement: false
+    name: date
+  json:
+    type:
+      list: false
+      type: json
+    nullable: true
+    autoIncrement: false
+    name: json
+  direct:
+    type:
+      list: false
+      type: direct
+    nullable: true
+    autoIncrement: false
+    name: direct
+"""
+
+    primitive_container = ContainerApply.load(container_raw)
+    container = cognite_client.data_modeling.containers.retrieve(primitive_container.as_id())
+    if container:
+        return container
+    return cognite_client.data_modeling.containers.apply(primitive_container)
+
+
+@pytest.fixture(scope="session")
+def primitive_nullable_view(cognite_client: CogniteClient, primitive_nullable_container: Container) -> View:
+    space = primitive_nullable_container.space
+    container = primitive_nullable_container.external_id
+    view_raw = f"""space: {space}
+externalId: PrimitiveNullable
+name: PrimitiveNullable
+version: '1'
+properties:
+  text:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: text
+    name: text
+  boolean:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: boolean
+    name: text
+  float32:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: float32
+    name: float32
+  float64:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: float64
+    name: float64
+  int32:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: int32
+    name: int32
+  int64:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: int64
+    name: int64
+  timestamp:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: timestamp
+    name: timestamp
+  date:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: date
+    name: date
+  json:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: json
+    name: json
+  direct:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: direct
+    name: direct
+"""
+
+    view_write = ViewApply.load(view_raw)
+    view = cognite_client.data_modeling.views.retrieve(view_write.as_id())
+    if view:
+        return view[0]
+    return cognite_client.data_modeling.views.apply(view_write)
+
+
+@pytest.fixture(scope="session")
+def primitive_nullable_listed_container(cognite_client: CogniteClient, integration_test_space: Space) -> Container:
+    container_raw = f"""space: {integration_test_space.space}
+externalId: PrimitiveListed
+name: PrimitiveListed
+usedFor: node
+properties:
+  text:
+    type:
+      list: true
+      collation: ucs_basic
+      type: text
+    nullable: true
+    autoIncrement: false
+    name: text
+  boolean:
+    type:
+      list: true
+      type: boolean
+    nullable: true
+    autoIncrement: false
+    name: text
+  float32:
+    type:
+      list: true
+      type: float32
+    nullable: true
+    autoIncrement: false
+    name: float32
+  float64:
+    type:
+      list: true
+      type: float64
+    nullable: true
+    autoIncrement: false
+    name: float64
+  int32:
+    type:
+      list: true
+      type: int32
+    nullable: true
+    autoIncrement: false
+    name: int32
+  int64:
+    type:
+      list: true
+      type: int64
+    nullable: true
+    autoIncrement: false
+    name: int64
+  timestamp:
+    type:
+      list: true
+      type: timestamp
+    nullable: true
+    autoIncrement: false
+    name: timestamp
+  date:
+    type:
+      list: true
+      type: date
+    nullable: true
+    autoIncrement: false
+    name: date
+  json:
+    type:
+      list: true
+      type: json
+    nullable: true
+    autoIncrement: false
+    name: json
+  direct:
+    type:
+      list: true
+      type: direct
+    nullable: true
+    autoIncrement: false
+    name: direct
+"""
+
+    primitive_container = ContainerApply.load(container_raw)
+    container = cognite_client.data_modeling.containers.retrieve(primitive_container.as_id())
+    if container:
+        return container
+    return cognite_client.data_modeling.containers.apply(primitive_container)
+
+
+@pytest.fixture(scope="session")
+def primitive_nullable_listed_view(
+    cognite_client: CogniteClient, primitive_nullable_listed_container: Container
+) -> View:
+    space = primitive_nullable_listed_container.space
+    container = primitive_nullable_listed_container.external_id
+    view_raw = f"""space: {space}
+externalId: PrimitiveListed
+name: PrimitiveListed
+version: '1'
+properties:
+  text:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: text
+    name: text
+  boolean:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: boolean
+    name: text
+  float32:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: float32
+    name: float32
+  float64:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: float64
+    name: float64
+  int32:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: int32
+    name: int32
+  int64:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: int64
+    name: int64
+  timestamp:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: timestamp
+    name: timestamp
+  date:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: date
+    name: date
+  json:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: json
+    name: json
+  direct:
+    container:
+      space: {space}
+      externalId: {container}
+      type: container
+    containerPropertyIdentifier: direct
+    name: direct
+"""
+
+    view_write = ViewApply.load(view_raw)
+    view = cognite_client.data_modeling.views.retrieve(view_write.as_id())
+    if view:
+        return view[0]
+    return cognite_client.data_modeling.views.apply(view_write)
 
 
 @dataclass
