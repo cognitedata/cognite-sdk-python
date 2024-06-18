@@ -70,9 +70,27 @@ PropertyValue: TypeAlias = Union[
     List[float],
     List[bool],
     List[dict],
+]
+PropertyValueWrite: TypeAlias = Union[
+    str,
+    int,
+    float,
+    bool,
+    dict,
+    List[str],
+    List[int],
+    List[float],
+    List[bool],
+    List[dict],
     NodeId,
     DirectRelationReference,
+    date,
+    datetime,
+    List[Union[NodeId, DirectRelationReference]],
+    List[date],
+    List[datetime],
 ]
+
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
 
@@ -87,7 +105,7 @@ class NodeOrEdgeData(CogniteObject):
     """
 
     source: ContainerId | ViewId
-    properties: Mapping[str, PropertyValue]
+    properties: Mapping[str, PropertyValueWrite]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
