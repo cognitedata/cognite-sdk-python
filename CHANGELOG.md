@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.51.1] - 2024-06-18
+### Fixed
+
+- Added support for serializing Node/Edge properties of type `list` of `NodeId`and `DirectRelationReference`, 
+  `date`, `datetime` and list of `date` and `datetime` to `json` format.
+
 ## [7.51.0] - 2024-06-16
 ### Added
 - Support for iterating over `Functions`, `FunctionSchedules`, `DatapointSubscriptions`, `Transformations`,
