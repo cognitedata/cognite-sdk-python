@@ -126,7 +126,7 @@ class NodeOrEdgeData(CogniteObject):
         )
 
     def dump(self, camel_case: bool = True) -> dict:
-        properties: dict[str, Any] = {}
+        properties: dict[str, str | int | float | bool | dict | list] = {}
         for key, value in self.properties.items():
             if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
                 properties[key] = [self._serialize_value(v, camel_case) for v in value]
@@ -144,7 +144,7 @@ class NodeOrEdgeData(CogniteObject):
         return output
 
     @staticmethod
-    def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:
+    def _serialize_value(value: PropertyValueWrite, camel_case: bool) -> str | int | float | bool | dict | list:
         if isinstance(value, NodeId):
             # We don't want to dump the instance_type field when serializing NodeId in this context
             return value.dump(camel_case, include_instance_type=False)
