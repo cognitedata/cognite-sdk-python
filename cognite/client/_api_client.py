@@ -417,6 +417,7 @@ class APIClient:
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
+        extra_response: list[dict[str, Any]] | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
         verify_limit(limit)
         if is_unlimited(limit):
@@ -471,6 +472,9 @@ class APIClient:
             last_received_items = res.json()["items"]
             total_items_retrieved += len(last_received_items)
 
+            if isinstance(extra_response, list):
+                extra_response.append({k: v for k, v in res.json().items() if k not in ["items", "nextCursor"]})
+
             if not chunk_size:
                 for item in last_received_items:
                     yield resource_cls._load(item, cognite_client=self._cognite_client)
@@ -507,6 +511,7 @@ class APIClient:
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
+        extra_response: list[dict[str, Any]] | None = None,
     ) -> T_CogniteResourceList:
         verify_limit(limit)
         if partitions:
@@ -544,6 +549,7 @@ class APIClient:
             initial_cursor=initial_cursor,
             advanced_filter=advanced_filter,
             api_subversion=api_subversion,
+            extra_response=extra_response,
         ):
             items.extend(cast(T_CogniteResourceList, resource_list).data)
         return list_cls(items, cognite_client=self._cognite_client)

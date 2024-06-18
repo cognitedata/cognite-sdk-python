@@ -10,6 +10,7 @@ from cognite.client.data_classes.data_modeling import (
     Edge,
     EdgeApply,
     EdgeList,
+    Float64,
     Node,
     NodeApply,
     NodeId,
@@ -17,7 +18,8 @@ from cognite.client.data_classes.data_modeling import (
     NodeOrEdgeData,
     ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import Instance
+from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.instances import Instance, TypeInformation, TypePropertyDefinition
 
 
 class TestEdgeApply:
@@ -310,3 +312,44 @@ class TestInstancesToPandas:
         )
 
         assert "properties" not in expanded_with_empty_properties.columns
+
+
+class TestTypeInformation:
+    @pytest.mark.dsl
+    def test_to_pandas(self) -> None:
+        import pandas as pd
+
+        info = TypeInformation(
+            {
+                "my_space": {
+                    "view_id/v1": {
+                        "pressure": TypePropertyDefinition(
+                            type=Float64(unit=UnitReference(external_id="pressure:pa")),
+                            nullable=True,
+                            auto_increment=False,
+                        ),
+                    }
+                }
+            }
+        )
+        expected = pd.DataFrame.from_dict(
+            {
+                ("my_space", "view_id/v1"): {
+                    "identifier": "pressure",
+                    "type.list": False,
+                    "type.unit.external_id": "pressure:pa",
+                    "type.type": "float64",
+                    "nullable": True,
+                    "autoIncrement": False,
+                    "defaultValue": None,
+                    "name": None,
+                    "description": None,
+                }
+            },
+            orient="index",
+        )
+        expected.index.names = "space_name", "view_or_container"
+
+        df = info.to_pandas()
+
+        pd.testing.assert_frame_equal(df, expected)
