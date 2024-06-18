@@ -3,6 +3,7 @@ from __future__ import annotations
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
+from cognite.client.data_classes.data_modeling.ids import EdgeId, NodeId
 
 
 class TypedNodeWrite:
@@ -17,6 +18,9 @@ class TypedNodeWrite:
         self.external_id = external_id
         self.existing_version = existing_version
         self.type = DirectRelationReference.load(type) if type else None
+
+    def as_id(self) -> NodeId:
+        return NodeId(space=self.space, external_id=self.external_id)
 
 
 class TypedEdgeWrite:
@@ -35,3 +39,6 @@ class TypedEdgeWrite:
         self.start_node = DirectRelationReference.load(start_node)
         self.end_node = DirectRelationReference.load(end_node)
         self.existing_version = existing_version
+
+    def as_id(self) -> EdgeId:
+        return EdgeId(space=self.space, external_id=self.external_id)

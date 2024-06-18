@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import time
+from datetime import date, datetime, timezone
 from typing import Any, ClassVar, cast
 
 import pytest
@@ -49,6 +50,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
+from cognite.client.data_classes.data_modeling.typed_instances import TypedNodeWrite
 from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
@@ -119,6 +121,68 @@ def node_with_1_1_pressure_in_bar(
     )
     _ = cognite_client.data_modeling.instances.apply(node)
     return node
+
+
+class PrimitiveNullable(TypedNodeWrite):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        text: str | None = None,
+        boolean: bool | None = None,
+        float32: float | None = None,
+        float64: float | None = None,
+        int32: int | None = None,
+        int64: int | None = None,
+        timestamp: datetime | None = None,
+        date: date | None = None,
+        json: dict | None = None,
+        direct: DirectRelationReference | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space=space, external_id=external_id, existing_version=existing_version, type=type)
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
+
+
+class PrimitiveListed(TypedNodeWrite):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        text: list[str] | None = None,
+        boolean: list[bool] | None = None,
+        float32: list[float] | None = None,
+        float64: list[float] | None = None,
+        int32: list[int] | None = None,
+        int64: list[int] | None = None,
+        timestamp: list[datetime] | None = None,
+        date: list[date] | None = None,
+        json: list[dict] | None = None,
+        direct: list[DirectRelationReference] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space=space, external_id=external_id, existing_version=existing_version, type=type)
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
 
 
 class TestInstancesAPI:
@@ -653,6 +717,61 @@ class TestInstancesAPI:
         assert queried
         assert len(queried["nodes"]) == 1
         assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
+
+    @pytest.mark.usefixtures("primitive_nullable_view")
+    def test_write_read_custom_properties(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+        space = integration_test_space.space
+        external_id = "node_test_write_read_custom_properties"
+        primitive = PrimitiveNullable(
+            space=space,
+            external_id=external_id,
+            text="text",
+            boolean=True,
+            float32=1.1,
+            float64=1.1,
+            int32=1,
+            int64=1,
+            # Replacing microseconds with 0 to avoid comparison issues in the asserting below
+            # as server only stores milliseconds
+            timestamp=datetime.now(timezone.utc).replace(microsecond=0),
+            date=date.today(),
+            json={"key": "value", "nested": {"key": "value"}},
+            direct=DirectRelationReference(space, external_id),
+        )
+        try:
+            created = cognite_client.data_modeling.instances.apply(primitive)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].external_id == external_id
+        finally:
+            cognite_client.data_modeling.instances.delete(primitive.as_id())
+
+    @pytest.mark.usefixtures("primitive_nullable_listed_view")
+    def test_write_read_custom_properties_listable(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
+        space = integration_test_space.space
+        external_id = "node_test_write_read_custom_properties_listable"
+        primitive_listed = PrimitiveListed(
+            space=space,
+            external_id=external_id,
+            text=["text"],
+            boolean=[True],
+            float32=[1.1],
+            float64=[1.1],
+            int32=[1],
+            int64=[1],
+            # Replacing microseconds with 0 to avoid comparison issues in the asserting below
+            timestamp=[datetime.now(timezone.utc).replace(microsecond=0)],
+            date=[date.today()],
+            json=[{"key": "value", "nested": {"key": "value"}}],
+            direct=[DirectRelationReference(space, external_id)],
+        )
+        try:
+            created = cognite_client.data_modeling.instances.apply(primitive_listed)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].external_id == external_id
+        finally:
+            cognite_client.data_modeling.instances.delete(primitive_listed.as_id())
 
 
 class TestInstancesSync:
