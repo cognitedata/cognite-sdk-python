@@ -13,6 +13,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import PropertyValueWrite
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -112,10 +113,26 @@ class TypedInstanceWrite(CogniteResource, ABC):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        args: dict[str, Any] = {}
+        args.update(cls._load_properties(resource))
+        args.update(cls._load_instance(resource))
+        return cls(**args)
+
+    @classmethod
+    def _load_instance(cls, resource: dict[str, Any]) -> dict[str, Any]:
+        args: dict[str, Any] = {}
+        for key in cls._instance_properties:
+            camel_key = to_camel_case(key)
+            if camel_key in resource:
+                args[key] = resource[camel_key]
+        return args
+
+    @classmethod
+    def _load_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError()
 
 
-class TypedNodeWrite(TypedInstanceWrite):
+class TypedNodeWrite(TypedInstanceWrite, ABC):
     _instance_properties: frozenset[str] = frozenset({"space", "external_id", "existing_version", "type"})
     _instance_type = "node"
 
@@ -133,7 +150,7 @@ class TypedNodeWrite(TypedInstanceWrite):
         return NodeId(space=self.space, external_id=self.external_id)
 
 
-class TypedEdgeWrite(TypedInstanceWrite):
+class TypedEdgeWrite(TypedInstanceWrite, ABC):
     _instance_properties = frozenset({"space", "external_id", "existing_version", "type", "start_node", "end_node"})
     _instance_type = "edge"
 
