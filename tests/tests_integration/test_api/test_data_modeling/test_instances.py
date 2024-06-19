@@ -50,7 +50,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.typed_instances import TypedNodeWrite
+from cognite.client.data_classes.data_modeling.typed_instances import InstanceProperty, TypedNodeWrite
 from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
@@ -191,6 +191,27 @@ class PrimitiveListed(TypedNodeWrite):
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
+
+
+class Person(TypedNodeWrite):
+    birth_year = InstanceProperty(alias="birthYear")
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        name: str,
+        birth_year: int,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ):
+        super().__init__(space=space, external_id=external_id, existing_version=existing_version, type=type)
+        self.name = name
+        self.birth_year = birth_year
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "Person", "37ce1494b83df2")
 
 
 class TestInstancesAPI:
@@ -780,6 +801,21 @@ class TestInstancesAPI:
             assert created.nodes[0].external_id == external_id
         finally:
             cognite_client.data_modeling.instances.delete(primitive_listed.as_id())
+
+    @pytest.mark.usefixtures("person_view")
+    def test_write_type_node_instance_property_descriptor(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
+        space = integration_test_space.space
+        external_id = "node_test_write_read_instance_property_descriptor"
+        person = Person(space=space, external_id=external_id, name="John Doe", birth_year=1980)
+
+        try:
+            created = cognite_client.data_modeling.instances.apply(person)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].external_id == external_id
+        finally:
+            cognite_client.data_modeling.instances.delete(person.as_id())
 
 
 class TestInstancesSync:

@@ -3,17 +3,54 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterable
 from datetime import date, datetime
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from cognite.client.data_classes._base import CogniteObject
+from typing_extensions import Self
+
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import PropertyValueWrite
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
-class TypedInstanceWrite(CogniteObject, ABC):
+
+class InstanceProperty:
+    """This is a descriptor class for instance properties in a typed class.
+
+    It is used when you have a property that has a different name in the Data Model
+    compared to the name in the Python class.
+    """
+
+    def __init__(self, alias: str | None = None) -> None:
+        self.name = alias
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        self.name = self.name or name
+
+    def __get__(self, instance: Any, owner: type) -> Any:
+        try:
+            return instance.__dict__[self.name]
+        except KeyError:
+            raise AttributeError(f"'{owner.__name__}' object has no attribute '{self.name}'")
+
+    def __set__(self, instance: Any, value: Any) -> None:
+        try:
+            instance.__dict__[self.name] = value
+        except KeyError:
+            raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
+
+    def __delete__(self, instance: Any) -> None:
+        try:
+            del instance.__dict__[self.name]
+        except KeyError:
+            raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
+
+
+class TypedInstanceWrite(CogniteResource, ABC):
     _instance_properties: frozenset[str]
     _instance_type: ClassVar[str]
 
@@ -72,6 +109,10 @@ class TypedInstanceWrite(CogniteObject, ABC):
             return value.isoformat()
         else:
             return value
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        raise NotImplementedError()
 
 
 class TypedNodeWrite(TypedInstanceWrite):
