@@ -1109,7 +1109,7 @@ class APIClient:
         return [
             {"items": chunk, **(extra_body_fields or {})}
             for chunk in split_into_chunks(
-                [it.dump(camel_case=True) if isinstance(it, CogniteResource) else it for it in items],
+                [it.dump(camel_case=True) if isinstance(it, CogniteObject) else it for it in items],
                 chunk_size=limit,
             )
         ]

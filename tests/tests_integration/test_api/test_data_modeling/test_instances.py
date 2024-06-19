@@ -153,6 +153,10 @@ class PrimitiveNullable(TypedNodeWrite):
         self.json = json
         self.direct = direct
 
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
+
 
 class PrimitiveListed(TypedNodeWrite):
     def __init__(
@@ -183,6 +187,10 @@ class PrimitiveListed(TypedNodeWrite):
         self.date = date
         self.json = json
         self.direct = direct
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
 
 
 class TestInstancesAPI:
@@ -719,7 +727,7 @@ class TestInstancesAPI:
         assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
 
     @pytest.mark.usefixtures("primitive_nullable_view")
-    def test_write_read_custom_properties(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+    def test_write_typed_node(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
         external_id = "node_test_write_read_custom_properties"
         primitive = PrimitiveNullable(
@@ -746,7 +754,7 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.delete(primitive.as_id())
 
     @pytest.mark.usefixtures("primitive_nullable_listed_view")
-    def test_write_read_custom_properties_listable(
+    def test_write_typed_node_listed_properties(
         self, cognite_client: CogniteClient, integration_test_space: Space
     ) -> None:
         space = integration_test_space.space

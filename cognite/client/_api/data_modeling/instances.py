@@ -63,6 +63,7 @@ from cognite.client.data_classes.data_modeling.query import (
     QueryResult,
     SourceSelector,
 )
+from cognite.client.data_classes.data_modeling.typed_instances import TypedEdgeWrite, TypedNodeWrite
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.utils._auxiliary import load_yaml_or_json
@@ -536,8 +537,8 @@ class InstancesAPI(APIClient):
 
     def apply(
         self,
-        nodes: NodeApply | Sequence[NodeApply] | None = None,
-        edges: EdgeApply | Sequence[EdgeApply] | None = None,
+        nodes: NodeApply | TypedNodeWrite | Sequence[NodeApply] | Sequence[TypedNodeWrite] | None = None,
+        edges: EdgeApply | TypedEdgeWrite | Sequence[EdgeApply] | Sequence[TypedEdgeWrite] | None = None,
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         auto_create_direct_relations: bool = True,
@@ -547,8 +548,8 @@ class InstancesAPI(APIClient):
         """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
-            nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
-            edges (EdgeApply | Sequence[EdgeApply] | None): Edges to apply
+            nodes (NodeApply | TypedNodeWrite | Sequence[NodeApply] | Sequence[TypedNodeWrite] | None): Nodes to apply
+            edges (EdgeApply | TypedEdgeWrite | Sequence[EdgeApply] | Sequence[TypedEdgeWrite] | None): Edges to apply
             auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
             auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
@@ -638,13 +639,13 @@ class InstancesAPI(APIClient):
             "replace": replace,
         }
         nodes = nodes or []
-        nodes = nodes if isinstance(nodes, Sequence) else [nodes]
+        nodes = nodes if isinstance(nodes, Sequence) else [nodes]  # type: ignore[assignment]
 
         edges = edges or []
-        edges = edges if isinstance(edges, Sequence) else [edges]
+        edges = edges if isinstance(edges, Sequence) else [edges]  # type: ignore[assignment]
 
         res = self._create_multiple(
-            items=cast(Sequence[WriteableCogniteResource], (*nodes, *edges)),
+            items=cast(Sequence[WriteableCogniteResource], (*nodes, *edges)),  # type: ignore[misc]
             list_cls=_NodeOrEdgeApplyResultList,
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
