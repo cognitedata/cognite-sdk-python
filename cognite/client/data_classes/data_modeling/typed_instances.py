@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, WriteableCogniteResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -164,6 +164,154 @@ class TypedEdgeWrite(TypedInstanceWrite, ABC):
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
+
+    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
+        output = super()._dump_instance(camel_case)
+        output["type"] = self.type.dump(camel_case)
+        output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
+        output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
+        return output
+
+
+class TypedInstance(WriteableCogniteResource, ABC):
+    _instance_properties: frozenset[str]
+    _instance_type: ClassVar[str]
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        deleted_time: int | None,
+    ) -> None:
+        self.space = space
+        self.external_id = external_id
+        self.version = version
+        self.last_updated_time = last_updated_time
+        self.created_time = created_time
+        self.deleted_time = deleted_time
+
+    @classmethod
+    def get_source(cls) -> ViewId | ContainerId:
+        raise NotImplementedError()
+
+    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+        output = self._dump_instance(camel_case)
+        properties = self._dump_properties(camel_case)
+        if properties:
+            source = self.get_source()
+            output["properties"] = {
+                source.space: {
+                    source.as_source_identifier(): properties,
+                }
+            }
+        return output
+
+    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "instanceType" if camel_case else "instance_type": self._instance_type,
+            "version": self.version,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
+            "createdTime" if camel_case else "created_time": self.created_time,
+        }
+        if self.deleted_time:
+            output["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
+        return output
+
+    def _dump_properties(self, camel_case: bool) -> dict[str, Any]:
+        properties: dict[str, str | int | float | bool | dict | list] = {}
+        for key, value in vars(self).items():
+            if key in self._instance_properties:
+                continue
+            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
+                properties[key] = [_serialize_property_value(v, camel_case) for v in value]
+            else:
+                properties[key] = _serialize_property_value(value, camel_case)
+        return properties
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        args: dict[str, Any] = {}
+        args.update(cls._load_properties(resource))
+        args.update(cls._load_instance(resource))
+        return cls(**args)
+
+    @classmethod
+    def _load_instance(cls, resource: dict[str, Any]) -> dict[str, Any]:
+        args: dict[str, Any] = {}
+        for key in cls._instance_properties:
+            camel_key = to_camel_case(key)
+            if camel_key in resource:
+                args[key] = resource[camel_key]
+        return args
+
+    @classmethod
+    def _load_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
+        raise NotImplementedError()
+
+
+class TypedNode(TypedInstance, ABC):
+    _instance_properties = frozenset(
+        {"space", "external_id", "version", "last_updated_time", "created_time", "deleted_time", "type"}
+    )
+    _instance_type = "node"
+
+    def __init___(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time)
+        self.type = DirectRelationReference.load(type) if type else None
+
+    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
+        output = super()._dump_instance(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
+
+class TypedEdge(TypedInstance, ABC):
+    _instance_properties = frozenset(
+        {
+            "space",
+            "external_id",
+            "version",
+            "last_updated_time",
+            "created_time",
+            "deleted_time",
+            "type",
+            "start_node",
+            "end_node",
+        }
+    )
+    _instance_type = "edge"
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference | tuple[str, str],
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time)
+        self.type = DirectRelationReference.load(type)
+        self.start_node = DirectRelationReference.load(start_node)
+        self.end_node = DirectRelationReference.load(end_node)
 
     def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
         output = super()._dump_instance(camel_case)
