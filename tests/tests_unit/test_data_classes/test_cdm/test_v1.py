@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from cognite.client.data_classes.cdm.v1 import SourceableWrite
+from cognite.client.data_classes.cdm.v1 import Model3DWrite, SourceableWrite
 
 
 class TestSourceable:
@@ -36,6 +36,38 @@ class TestSourceable:
                         "sourceUpdatedTime": today.isoformat(timespec="milliseconds"),
                         "sourceCreatedUser": "Anders",
                         "sourceUpdatedUser": "Anders",
+                    },
+                }
+            ],
+        }
+
+
+class TestModel3D:
+    def test_dump(self) -> None:
+        my_model = Model3DWrite(
+            "sp_data_space",
+            "my_model",
+            source="imagination",
+            source_id="source_id",
+            description="A model",
+        )
+
+        assert my_model.dump() == {
+            "space": "sp_data_space",
+            "externalId": "my_model",
+            "instanceType": "node",
+            "sources": [
+                {
+                    "source": {
+                        "space": "cdf_cdm_experimental",
+                        "externalId": "Model3D",
+                        "version": "v1",
+                        "type": "view",
+                    },
+                    "properties": {
+                        "source": "imagination",
+                        "sourceId": "source_id",
+                        "description": "A model",
                     },
                 }
             ],
