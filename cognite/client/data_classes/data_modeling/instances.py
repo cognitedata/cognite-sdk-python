@@ -129,9 +129,9 @@ class NodeOrEdgeData(CogniteObject):
         properties: dict[str, str | int | float | bool | dict | list] = {}
         for key, value in self.properties.items():
             if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
-                properties[key] = [self._serialize_value(v, camel_case) for v in value]
+                properties[key] = [_serialize_property_value(v, camel_case) for v in value]
             else:
-                properties[key] = self._serialize_value(value, camel_case)
+                properties[key] = _serialize_property_value(value, camel_case)
 
         output: dict[str, Any] = {"properties": properties}
         if self.source:
@@ -143,19 +143,19 @@ class NodeOrEdgeData(CogniteObject):
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
 
-    @staticmethod
-    def _serialize_value(value: PropertyValueWrite, camel_case: bool) -> str | int | float | bool | dict | list:
-        if isinstance(value, NodeId):
-            # We don't want to dump the instance_type field when serializing NodeId in this context
-            return value.dump(camel_case, include_instance_type=False)
-        elif isinstance(value, DirectRelationReference):
-            return value.dump(camel_case)
-        elif isinstance(value, datetime):
-            return value.isoformat(timespec="milliseconds")
-        elif isinstance(value, date):
-            return value.isoformat()
-        else:
-            return value
+
+def _serialize_property_value(value: PropertyValueWrite, camel_case: bool) -> str | int | float | bool | dict | list:
+    if isinstance(value, NodeId):
+        # We don't want to dump the instance_type field when serializing NodeId in this context
+        return value.dump(camel_case, include_instance_type=False)
+    elif isinstance(value, DirectRelationReference):
+        return value.dump(camel_case)
+    elif isinstance(value, datetime):
+        return value.isoformat(timespec="milliseconds")
+    elif isinstance(value, date):
+        return value.isoformat()
+    else:
+        return value
 
 
 class InstanceCore(DataModelingResource, ABC):
