@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Generic,
     Iterator,
     List,
     Literal,
@@ -63,7 +64,17 @@ from cognite.client.data_classes.data_modeling.query import (
     QueryResult,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.typed_instances import TypedEdgeWrite, TypedNodeWrite
+from cognite.client.data_classes.data_modeling.typed_instances import (
+    T_Edge,
+    T_Node,
+    TypedEdge,
+    TypedEdgeList,
+    TypedEdgeWrite,
+    TypedInstancesResult,
+    TypedNode,
+    TypedNodeList,
+    TypedNodeWrite,
+)
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.utils._auxiliary import load_yaml_or_json
@@ -86,29 +97,16 @@ logger = logging.getLogger(__name__)
 Source: TypeAlias = Union[SourceSelector, View, ViewId, Tuple[str, str], Tuple[str, str, str]]
 
 
-class _NodeOrEdgeList(CogniteResourceList):
-    _RESOURCE = (Node, Edge)  # type: ignore[assignment]
+class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
+    def __init__(self, node_cls: type[T_Node], edge_cls: type[T_Edge]):
+        self._node_cls = node_cls
+        self._edge_cls = edge_cls
 
-    @classmethod
-    def _load(
-        cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> _NodeOrEdgeList:
-        resources: list[Node | Edge] = [
-            Node._load(data) if data["instanceType"] == "node" else Edge._load(data) for data in resource_list
-        ]
-        return cls(resources, None)
-
-    def as_ids(self) -> list[NodeId | EdgeId]:
-        return [instance.as_id() for instance in self]
-
-
-class _NodeOrEdgeResourceAdapter:
-    @staticmethod
-    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
+    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
-            return Node._load(data)
-        return Edge._load(data)
+            return self._node_cls._load(data)  # type: ignore[return-value, attr-defined]
+        return self._edge_cls._load(data)  # type: ignore[return-value, attr-defined]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -270,7 +268,9 @@ class InstancesAPI(APIClient):
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> InstancesResult:
+        node_cls: type[T_Node] | type[Node] = Node,
+        edge_cls: type[T_Edge] | type[Edge] = Edge,
+    ) -> InstancesResult | TypedInstancesResult[T_Node, T_Edge]:
         """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
@@ -278,9 +278,11 @@ class InstancesAPI(APIClient):
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
             sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
+            node_cls (type[T_Node] | type[Node]): Node class to use when returning nodes.
+            edge_cls (type[T_Edge] | type[Edge]): Edge class to use when returning edges.
 
         Returns:
-            InstancesResult: Requested instances.
+            InstancesResult | TypedInstancesResult[T_Node, T_Edge]: Requested instances.
 
         Examples:
 
@@ -314,6 +316,12 @@ class InstancesAPI(APIClient):
                 ...     sources=("myspace", "myView"))
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
+
+        if sources is None and issubclass(node_cls, TypedNode):
+            sources = node_cls.get_source()
+        elif sources is None and issubclass(edge_cls, TypedEdge):
+            sources = edge_cls.get_source()
+
         other_params = self._create_other_params(
             include_typing=include_typing,
             sources=sources,
@@ -321,18 +329,37 @@ class InstancesAPI(APIClient):
             instance_type=None,
         )
 
-        res = self._retrieve_multiple(
-            list_cls=_NodeOrEdgeList,
-            resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
+        class _NodeOrEdgeList(CogniteResourceList):
+            _RESOURCE = (node_cls, edge_cls)  # type: ignore[assignment]
+
+            @classmethod
+            def _load(
+                cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
+            ) -> _NodeOrEdgeList:
+                resources: list[Node | Edge] = [
+                    node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)  # type: ignore[attr-defined, misc]
+                    for data in resource_list
+                ]
+                return cls(resources, None)
+
+        res = self._retrieve_multiple(  # type: ignore[call-overload]
+            list_cls=_NodeOrEdgeList,  # type: ignore[type-var]
+            resource_cls=_NodeOrEdgeResourceAdapter(node_cls, edge_cls),  # type: ignore[type-var]
             identifiers=identifiers,
             other_params=other_params,
             executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-        return InstancesResult(
-            nodes=NodeList([node for node in res if isinstance(node, Node)]),
-            edges=EdgeList([edge for edge in res if isinstance(edge, Edge)]),
-        )
+        if issubclass(node_cls, Node) and issubclass(edge_cls, Edge):
+            return InstancesResult(
+                nodes=NodeList([node for node in res if isinstance(node, Node)]),
+                edges=EdgeList([edge for edge in res if isinstance(edge, Edge)]),
+            )
+        else:
+            return TypedInstancesResult[T_Node, T_Edge](
+                nodes=TypedNodeList[T_Node]([node for node in res if isinstance(node, node_cls)]),
+                edges=TypedEdgeList[T_Edge]([edge for edge in res if isinstance(edge, edge_cls)]),
+            )
 
     def _load_node_and_edge_ids(
         self,

@@ -3,17 +3,26 @@ from __future__ import annotations
 import inspect
 from abc import ABC
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar, Union
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteResource, T_WriteClass, WriteableCogniteResource
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    T_CogniteResource,
+    T_WriteClass,
+    WriteableCogniteResource,
+)
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
-from cognite.client.data_classes.data_modeling.instances import _serialize_property_value
+from cognite.client.data_classes.data_modeling.instances import (
+    _serialize_property_value,
+)
 from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
@@ -196,7 +205,7 @@ class TypedInstance(WriteableCogniteResource[T_WriteClass], ABC):
         self.deleted_time = deleted_time
 
     @classmethod
-    def get_source(cls) -> ViewId | ContainerId:
+    def get_source(cls) -> ViewId:
         raise NotImplementedError()
 
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -363,3 +372,40 @@ class TypedEdge(TypedInstance[T_WriteClass], ABC):
         output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
         output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
         return output
+
+
+T_Any = TypeVar("T_Any", bound=CogniteResource)
+T_Node = TypeVar("T_Node", bound=Union[TypedNode])
+T_Edge = TypeVar("T_Edge", bound=Union[TypedEdge])
+
+
+class TypedInstanceList(CogniteResourceList, Generic[T_CogniteResource]):
+    @classmethod
+    def _load(
+        cls,
+        resource_list: Iterable[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
+    ) -> Self:
+        raise NotImplementedError(
+            "TypedNodes/Edges cannot be loaded from a list of resources. Load them individually instead."
+        )
+
+
+class TypedNodeList(TypedInstanceList, Generic[T_Node]):
+    _RESOURCE = TypedNode
+
+    def as_ids(self) -> list[NodeId]:
+        return [node.as_id() for node in self]
+
+
+class TypedEdgeList(TypedInstanceList, Generic[T_Edge]):
+    _RESOURCE = TypedEdge
+
+    def as_ids(self) -> list[EdgeId]:
+        return [edge.as_id() for edge in self]
+
+
+@dataclass
+class TypedInstancesResult(Generic[T_Node, T_Edge]):
+    nodes: TypedNodeList[T_Node]
+    edges: TypedEdgeList[T_Edge]
