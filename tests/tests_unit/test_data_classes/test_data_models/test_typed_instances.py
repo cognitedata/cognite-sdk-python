@@ -59,6 +59,19 @@ class PersonRead(TypedNode[Person]):
         return ViewId("sp_model_space", "view_id", "1")
 
 
+class Asset(TypedNodeWrite):
+    type_ = PropertyOptions(identifier="type")
+
+    def __init__(self, external_id: str, name: str, type_: str) -> None:
+        super().__init__("sp_my_fixed_space", external_id, type=DirectRelationReference("sp_model_space", "asset"))
+        self.name = name
+        self.type_ = type_
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("sp_model_space", "Asset", "1")
+
+
 class TestTypedNodeWrite:
     def test_dump_person(self) -> None:
         person = Person("my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
@@ -76,6 +89,23 @@ class TestTypedNodeWrite:
         }
 
         assert person.dump() == expected
+
+    def test_dump_asset(self) -> None:
+        asset = Asset("my_external_id", "My Asset", "Pump")
+        expected = {
+            "space": "sp_my_fixed_space",
+            "externalId": "my_external_id",
+            "instanceType": "node",
+            "type": {"space": "sp_model_space", "externalId": "asset"},
+            "sources": [
+                {
+                    "source": {"space": "sp_model_space", "externalId": "Asset", "version": "1", "type": "view"},
+                    "properties": {"name": "My Asset", "type": "Pump"},
+                }
+            ],
+        }
+
+        assert asset.dump() == expected
 
 
 class TestTypedNode:

@@ -44,6 +44,8 @@ class PropertyOptions:
 
     def __set_name__(self, owner: type, name: str) -> None:
         self.name = self.name or name
+        if self.name in _RESERVED_PROPERTY_NAMES:
+            self.name = f"__{self.name}"
 
     def __get__(self, instance: Any, owner: type) -> Any:
         try:
@@ -104,6 +106,8 @@ class TypedInstanceWrite(CogniteResource, ABC):
         for key, value in vars(self).items():
             if key in self._instance_properties or value is None:
                 continue
+            if key.startswith("__"):
+                key = key[2:]
             if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
                 properties[key] = [_serialize_property_value(v, camel_case) for v in value]
             else:
@@ -236,8 +240,10 @@ class TypedInstance(WriteableCogniteResource[T_WriteClass], ABC):
     def _dump_properties(self, camel_case: bool) -> dict[str, Any]:
         properties: dict[str, str | int | float | bool | dict | list] = {}
         for key, value in vars(self).items():
-            if key in self._instance_properties:
+            if key in self._instance_properties or value is None:
                 continue
+            if key.startswith("__"):
+                key = key[2:]
             if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
                 properties[key] = [_serialize_property_value(v, camel_case) for v in value]
             else:
@@ -409,3 +415,11 @@ class TypedEdgeList(TypedInstanceList, Generic[T_Edge]):
 class TypedInstancesResult(Generic[T_Node, T_Edge]):
     nodes: TypedNodeList[T_Node]
     edges: TypedEdgeList[T_Edge]
+
+
+_RESERVED_PROPERTY_NAMES = (
+    TypedNodeWrite._instance_properties
+    | TypedEdgeWrite._instance_properties
+    | TypedNode._instance_properties
+    | TypedEdge._instance_properties
+)
