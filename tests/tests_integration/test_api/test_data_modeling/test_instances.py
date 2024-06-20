@@ -1036,6 +1036,14 @@ class TestInstancesAPI:
         assert len(persons) > 0
         assert all(isinstance(person, PersonRead) for person in persons)
 
+    def test_search_person(self, cognite_client: CogniteClient) -> None:
+        persons = cognite_client.data_modeling.instances.search(
+            PersonRead.get_source(), query="Quentin", instance_type=PersonRead, limit=10
+        )
+
+        assert len(persons) > 0
+        assert all(isinstance(person, PersonRead) for person in persons)
+
 
 class TestInstancesSync:
     def test_sync_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:

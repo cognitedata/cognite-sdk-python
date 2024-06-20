@@ -752,25 +752,52 @@ class InstancesAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList: ...
-
+    @overload
     def search(
         self,
         view: ViewId,
         query: str,
-        instance_type: Literal["node", "edge"] = "node",
+        instance_type: type[T_Node],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> NodeList | EdgeList:
+    ) -> TypedNodeList[T_Node]: ...
+
+    @overload
+    def search(
+        self,
+        view: ViewId,
+        query: str,
+        instance_type: type[T_Edge],
+        properties: list[str] | None = None,
+        target_units: list[TargetUnit] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+    ) -> TypedEdgeList[T_Edge]: ...
+
+    def search(
+        self,
+        view: ViewId,
+        query: str,
+        instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge] = "node",
+        properties: list[str] | None = None,
+        target_units: list[TargetUnit] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+    ) -> NodeList | EdgeList | TypedNodeList[T_Node] | TypedEdgeList[T_Edge]:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
         Args:
             view (ViewId): View to search in.
             query (str): Query string that will be parsed and used for search.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
@@ -779,7 +806,7 @@ class InstancesAPI(APIClient):
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
 
         Returns:
-            NodeList | EdgeList: Search result with matching nodes or edges.
+            NodeList | EdgeList | TypedNodeList[T_Node] | TypedEdgeList[T_Edge]: Search result with matching nodes or edges.
 
         Examples:
 
@@ -808,15 +835,26 @@ class InstancesAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        filter = self._merge_space_into_filter(instance_type, space, filter)
+        instance_type_str = self._to_instance_type_str(instance_type)
+        filter = self._merge_space_into_filter(instance_type_str, space, filter)
         if instance_type == "node":
-            list_cls: type[NodeList] | type[EdgeList] = NodeList
+            list_cls: type[NodeList] | type[EdgeList] | type[TypedNodeList[T_Node]] | type[TypedEdgeList[T_Edge]] = (
+                NodeList
+            )
+            resource_cls: type[Node] | type[Edge] | type[T_Node] | type[T_Edge] = Node
         elif instance_type == "edge":
             list_cls = EdgeList
+            resource_cls = Edge
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
+            list_cls = TypedNodeList[instance_type]  # type: ignore[valid-type]
+            resource_cls = instance_type  # type: ignore[assignment]
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
+            list_cls = TypedEdgeList[instance_type]  # type: ignore[valid-type]
+            resource_cls = instance_type  # type: ignore[assignment]
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
-        body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type, "limit": limit}
+        body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type_str, "limit": limit}
         if properties:
             body["properties"] = properties
         if filter:
@@ -832,7 +870,8 @@ class InstancesAPI(APIClient):
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
-        return list_cls._load(res.json()["items"], cognite_client=None)
+        items = res.json()["items"]
+        return list_cls([resource_cls._load(item) for item in items], cognite_client=None)
 
     @overload
     def aggregate(
