@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import random
 import time
@@ -70,6 +71,7 @@ from cognite.client.data_classes.data_modeling.typed_instances import (
     TypedEdge,
     TypedEdgeList,
     TypedEdgeWrite,
+    TypedInstance,
     TypedInstancesResult,
     TypedNode,
     TypedNodeList,
@@ -98,7 +100,7 @@ Source: TypeAlias = Union[SourceSelector, View, ViewId, Tuple[str, str], Tuple[s
 
 
 class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
-    def __init__(self, node_cls: type[T_Node], edge_cls: type[T_Edge]):
+    def __init__(self, node_cls: type[T_Node] | type[Node], edge_cls: type[T_Edge] | type[Edge]):
         self._node_cls = node_cls
         self._edge_cls = edge_cls
 
@@ -107,6 +109,19 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
         if data["instanceType"] == "node":
             return self._node_cls._load(data)  # type: ignore[return-value, attr-defined]
         return self._edge_cls._load(data)  # type: ignore[return-value, attr-defined]
+
+
+class _TypedNodeOrEdgeListAdapter:
+    def __init__(self, instance_cls: type, typed_list: type[TypedNodeList] | type[TypedEdgeList]) -> None:
+        self._instance_cls = instance_cls
+        self._typed_list = typed_list
+
+    def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
+        return self._typed_list(items, cognite_client)
+
+    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
+        data = load_yaml_or_json(data) if isinstance(data, str) else data
+        return self._typed_list([self._instance_cls._load(item) for item in data], cognite_client)  # type: ignore[return-value, attr-defined]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -317,10 +332,7 @@ class InstancesAPI(APIClient):
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
 
-        if sources is None and issubclass(node_cls, TypedNode):
-            sources = node_cls.get_source()
-        elif sources is None and issubclass(edge_cls, TypedEdge):
-            sources = edge_cls.get_source()
+        sources = self._to_sources(sources, node_cls, edge_cls)  # type: ignore[arg-type]
 
         other_params = self._create_other_params(
             include_typing=include_typing,
@@ -360,6 +372,17 @@ class InstancesAPI(APIClient):
                 nodes=TypedNodeList[T_Node]([node for node in res if isinstance(node, node_cls)]),
                 edges=TypedEdgeList[T_Edge]([edge for edge in res if isinstance(edge, edge_cls)]),
             )
+
+    @staticmethod
+    def _to_sources(
+        sources: Source | Sequence[Source] | None, *instance_cls: type[TypedInstance] | None
+    ) -> Source | Sequence[Source] | None:
+        if sources is not None:
+            return sources
+        for cls in instance_cls:
+            if issubclass(cls, TypedInstance):  # type: ignore[arg-type]
+                return cls.get_source()  # type: ignore[union-attr]
+        return sources
 
     def _load_node_and_edge_ids(
         self,
@@ -1151,20 +1174,44 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
     ) -> EdgeList: ...
 
+    @overload
     def list(
         self,
-        instance_type: Literal["node", "edge"] = "node",
+        instance_type: type[T_Node],
         include_typing: bool = False,
         sources: Source | Sequence[Source] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> NodeList | EdgeList:
+    ) -> TypedNodeList[T_Node]: ...
+
+    @overload
+    def list(
+        self,
+        instance_type: type[T_Edge],
+        include_typing: bool = False,
+        sources: Source | Sequence[Source] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> TypedEdgeList[T_Edge]: ...
+
+    def list(
+        self,
+        instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge] = "node",
+        include_typing: bool = False,
+        sources: Source | Sequence[Source] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> NodeList | EdgeList | TypedNodeList[T_Node] | TypedEdgeList[T_Edge]:
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
@@ -1173,7 +1220,7 @@ class InstancesAPI(APIClient):
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
 
         Returns:
-            NodeList | EdgeList: List of requested instances
+            NodeList | EdgeList | TypedNodeList[T_Node] | TypedEdgeList[T_Edge]: List of requested instances
 
         Examples:
 
@@ -1207,10 +1254,13 @@ class InstancesAPI(APIClient):
                 ...     instance_list # do something with the instances
         """
         self._validate_filter(filter)
-        filter = self._merge_space_into_filter(instance_type, space, filter)
+        instance_type_str = self._to_instance_type_str(instance_type)
+        if not isinstance(instance_type, str) and issubclass(instance_type, TypedInstance):  # type: ignore[arg-type]
+            sources = self._to_sources(sources, instance_type)
+        filter = self._merge_space_into_filter(instance_type_str, space, filter)
 
         other_params = self._create_other_params(
-            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
+            include_typing=include_typing, instance_type=instance_type_str, sort=sort, sources=sources
         )
 
         if instance_type == "node":
@@ -1218,11 +1268,21 @@ class InstancesAPI(APIClient):
             list_cls: type = NodeList
         elif instance_type == "edge":
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
+            resource_cls, list_cls = (  # type: ignore[assignment]
+                _NodeOrEdgeResourceAdapter(instance_type, Edge),  # type: ignore[assignment]
+                _TypedNodeOrEdgeListAdapter(instance_type, TypedNodeList[T_Node]),  # type: ignore[assignment]
+            )
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
+            resource_cls, list_cls = (
+                _NodeOrEdgeResourceAdapter(Node, instance_type),  # type: ignore[assignment]
+                _TypedNodeOrEdgeListAdapter(instance_type, TypedEdgeList[T_Edge]),  # type: ignore[assignment]
+            )
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
         return cast(
-            Union[NodeList, EdgeList],
+            Union[NodeList, EdgeList, TypedNodeList[T_Node], TypedEdgeList[T_Edge]],
             self._list(
                 list_cls=list_cls,
                 resource_cls=resource_cls,
@@ -1249,3 +1309,9 @@ class InstancesAPI(APIClient):
         if filter is None:
             return space_filter
         return filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)
+
+    @staticmethod
+    def _to_instance_type_str(
+        instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge],
+    ) -> Literal["node", "edge"]:
+        return instance_type if isinstance(instance_type, str) else instance_type._instance_type  # type: ignore[return-value]

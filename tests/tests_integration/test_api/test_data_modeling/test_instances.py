@@ -1030,6 +1030,12 @@ class TestInstancesAPI:
         finally:
             cognite_client.data_modeling.instances.delete(person.as_id())
 
+    def test_list_person_types(self, cognite_client: CogniteClient) -> None:
+        persons = cognite_client.data_modeling.instances.list(PersonRead, limit=10)
+
+        assert len(persons) > 0
+        assert all(isinstance(person, PersonRead) for person in persons)
+
 
 class TestInstancesSync:
     def test_sync_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:
