@@ -168,6 +168,6 @@ class TypedEdgeWrite(TypedInstanceWrite, ABC):
     def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
         output = super()._dump_instance(camel_case)
         output["type"] = self.type.dump(camel_case)
-        output["startNode"] = self.start_node.dump(camel_case)
-        output["endNode"] = self.end_node.dump(camel_case)
+        output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
+        output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
         return output
