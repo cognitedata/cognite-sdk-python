@@ -137,6 +137,12 @@ class TypedNodeWrite(TypedInstanceWrite, ABC):
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
+    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
+        output = super()._dump_instance(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
 
 class TypedEdgeWrite(TypedInstanceWrite, ABC):
     _instance_properties = frozenset({"space", "external_id", "existing_version", "type", "start_node", "end_node"})
@@ -158,3 +164,10 @@ class TypedEdgeWrite(TypedInstanceWrite, ABC):
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
+
+    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
+        output = super()._dump_instance(camel_case)
+        output["type"] = self.type.dump(camel_case)
+        output["startNode"] = self.start_node.dump(camel_case)
+        output["endNode"] = self.end_node.dump(camel_case)
+        return output
