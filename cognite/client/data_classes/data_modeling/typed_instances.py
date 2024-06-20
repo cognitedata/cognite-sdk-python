@@ -293,10 +293,10 @@ def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
     if parameter.annotation is inspect.Parameter.empty:
         return value
     annotation = str(parameter.annotation)
-    if "date" in annotation and isinstance(value, str):
-        return date.fromisoformat(value)
-    elif "datetime" in annotation and isinstance(value, str):
+    if "datetime" in annotation and isinstance(value, str):
         return datetime.fromisoformat(value)
+    elif "date" in annotation and isinstance(value, str):
+        return date.fromisoformat(value)
     elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):
         return DirectRelationReference.load(value)
     elif NodeId.__name__ in annotation and isinstance(value, dict):
