@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteResource, WriteableCogniteResource
+from cognite.client.data_classes._base import CogniteResource, T_WriteClass, WriteableCogniteResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -173,7 +173,7 @@ class TypedEdgeWrite(TypedInstanceWrite, ABC):
         return output
 
 
-class TypedInstance(WriteableCogniteResource, ABC):
+class TypedInstance(WriteableCogniteResource[T_WriteClass], ABC):
     _instance_properties: frozenset[str]
     _instance_type: ClassVar[str]
 
@@ -254,13 +254,13 @@ class TypedInstance(WriteableCogniteResource, ABC):
         raise NotImplementedError()
 
 
-class TypedNode(TypedInstance, ABC):
+class TypedNode(TypedInstance[T_WriteClass], ABC):
     _instance_properties = frozenset(
         {"space", "external_id", "version", "last_updated_time", "created_time", "deleted_time", "type"}
     )
     _instance_type = "node"
 
-    def __init___(
+    def __init__(
         self,
         space: str,
         external_id: str,
@@ -280,7 +280,7 @@ class TypedNode(TypedInstance, ABC):
         return output
 
 
-class TypedEdge(TypedInstance, ABC):
+class TypedEdge(TypedInstance[T_WriteClass], ABC):
     _instance_properties = frozenset(
         {
             "space",
