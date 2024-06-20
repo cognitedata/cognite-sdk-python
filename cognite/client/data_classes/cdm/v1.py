@@ -565,3 +565,551 @@ class AssetType(AssetTypeProperties, Describable):
             self.version,
             self.type,
         )
+
+
+class AssetProperties:
+    last_path_materialized_time = PropertyOptions("lastPathMaterializedTime")
+    asset_type = PropertyOptions("type")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Asset", "v1")
+
+
+class AssetWrite(AssetProperties, Object3DWrite):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        parent: DirectRelationReference | tuple[str, str] | None = None,
+        path: DirectRelationReference | tuple[str, str] | None = None,
+        last_path_materialization_time: datetime | None = None,
+        equipment: DirectRelationReference | tuple[str, str] | None = None,
+        asset_type: DirectRelationReference | tuple[str, str] | None = None,
+        root: DirectRelationReference | tuple[str, str] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            name,
+            description,
+            tags,
+            aliases,
+            existing_version,
+            type,
+        )
+
+        self.parent = DirectRelationReference.load(parent) if parent else None
+        self.path = DirectRelationReference.load(path) if path else None
+        self.last_path_materialization_time = last_path_materialization_time
+        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+        self.asset_type = DirectRelationReference.load(asset_type) if asset_type else None
+        self.root = DirectRelationReference.load(root) if root else None
+
+
+class Asset(AssetProperties, Object3D):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        parent: DirectRelationReference | tuple[str, str] | None = None,
+        path: DirectRelationReference | tuple[str, str] | None = None,
+        last_path_materialization_time: datetime | None = None,
+        equipment: DirectRelationReference | tuple[str, str] | None = None,
+        asset_type: DirectRelationReference | tuple[str, str] | None = None,
+        root: DirectRelationReference | tuple[str, str] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        self.parent = DirectRelationReference.load(parent) if parent else None
+        self.path = DirectRelationReference.load(path) if path else None
+        self.last_path_materialization_time = last_path_materialization_time
+        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+        self.asset_type = DirectRelationReference.load(asset_type) if asset_type else None
+        self.root = DirectRelationReference.load(root) if root else None
+
+    def as_write(self) -> AssetWrite:
+        return AssetWrite(
+            self.space,
+            self.external_id,
+            self.parent,
+            self.path,
+            self.last_path_materialization_time,
+            self.equipment,
+            self.asset_type,
+            self.root,
+            self.source_id,
+            self.source,
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.version,
+            self.type,
+        )
+
+
+class EquipmentProperties:
+    serial_number = PropertyOptions("serialNumber")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Equipment", "v1")
+
+
+class EquipmentWrite(EquipmentProperties, Object3DWrite):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        serial_number: str | None = None,
+        manufacturer: str | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            name,
+            description,
+            tags,
+            aliases,
+            existing_version,
+            type,
+        )
+        self.serial_number = serial_number
+        self.manufacturer = manufacturer
+
+
+class Equipment(EquipmentProperties, Object3D):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        serial_number: str | None = None,
+        manufacturer: str | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        self.serial_number = serial_number
+        self.manufacturer = manufacturer
+
+    def as_write(self) -> EquipmentWrite:
+        return EquipmentWrite(
+            self.space,
+            self.external_id,
+            self.serial_number,
+            self.manufacturer,
+            self.source_id,
+            self.source,
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.version,
+            self.type,
+        )
+
+
+class ActivityProperties:
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Activity", "v1")
+
+
+class ActivityWrite(ActivityProperties, DescribableWrite, SourceableWrite, SchedulableWrite):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        assets: list[DirectRelationReference] | list[tuple[str, str]] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        scheduled_start_time: datetime | None = None,
+        scheduled_end_time: datetime | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        DescribableWrite.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
+        SourceableWrite.__init__(
+            self,
+            space,
+            external_id,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            existing_version,
+            type,
+        )
+        SchedulableWrite.__init__(
+            self,
+            space,
+            external_id,
+            start_time,
+            end_time,
+            scheduled_start_time,
+            scheduled_end_time,
+            existing_version,
+            type,
+        )
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+
+
+class Activity(ActivityProperties, Describable, Sourceable, Schedulable):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        assets: list[DirectRelationReference] | list[tuple[str, str]] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        scheduled_start_time: datetime | None = None,
+        scheduled_end_time: datetime | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        Describable.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        Sourceable.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            type,
+            deleted_time,
+        )
+        Schedulable.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            start_time,
+            end_time,
+            scheduled_start_time,
+            scheduled_end_time,
+            type,
+            deleted_time,
+        )
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+
+    def as_write(self) -> ActivityWrite:
+        return ActivityWrite(
+            self.space,
+            self.external_id,
+            self.assets,
+            self.source_id,
+            self.source,
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.start_time,
+            self.end_time,
+            self.scheduled_start_time,
+            self.scheduled_end_time,
+            self.version,
+            self.type,
+        )
+
+
+class TimeSeriesProperties:
+    is_step = PropertyOptions("isStep")
+    is_string = PropertyOptions("isString")
+    source_unit = PropertyOptions("sourceUnit")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "TimeSeriesBase", "v1")
+
+
+class TimesSeriesBaseWrite(TimeSeriesProperties, DescribableWrite, SourceableWrite):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        is_step: bool,
+        is_string: bool,
+        source_unit: str | None = None,
+        unit: str | None = None,
+        assets: list[DirectRelationReference] | list[tuple[str, str]] | None = None,
+        equipment: DirectRelationReference | tuple[str, str] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        DescribableWrite.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
+        SourceableWrite.__init__(
+            self,
+            space,
+            external_id,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            existing_version,
+            type,
+        )
+        self.is_step = is_step
+        self.is_string = is_string
+        self.source_unit = source_unit
+        self.unit = unit
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+
+
+class TimeSeriesBase(TimeSeriesProperties, Describable, Sourceable):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        is_step: bool,
+        is_string: bool,
+        source_unit: str | None = None,
+        unit: str | None = None,
+        assets: list[DirectRelationReference] | list[tuple[str, str]] | None = None,
+        equipment: DirectRelationReference | tuple[str, str] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        Describable.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        Sourceable.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            type,
+            deleted_time,
+        )
+        self.is_step = is_step
+        self.is_string = is_string
+        self.source_unit = source_unit
+        self.unit = unit
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+
+    def as_write(self) -> TimesSeriesBaseWrite:
+        return TimesSeriesBaseWrite(
+            self.space,
+            self.external_id,
+            self.is_step,
+            self.is_string,
+            self.source_unit,
+            self.unit,
+            self.assets,
+            self.equipment,
+            self.source_id,
+            self.source,
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.version,
+            self.type,
+        )
