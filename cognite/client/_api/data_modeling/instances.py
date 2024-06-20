@@ -630,6 +630,24 @@ class InstancesAPI(APIClient):
                 >>> from datetime import datetime, timezone
                 >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=timezone.utc)
                 >>> data_model_timestamp = datetime_to_ms_iso_timestamp(my_date)  # "2020-03-14T15:09:26.535+00:00"
+
+            Create a typed node:
+
+                >>> from cognite.client import CogniteClient
+                >>> from datetime import date
+                >>> from cognite.client.data_classes.data_modeling import TypedNodeWrite, PropertyOptions
+                >>> class Person(TypedNodeWrite):
+                ...     birth_date = PropertyOptions(identifier="birthDate")
+                ...
+                ...     def __init__(self, space: str, external_id, name: str, birth_date: date):
+                ...         super().__init__(space, external_id, type=("sp_model_space", "Person"))
+                ...         self.name = name
+                ...         self.birth_date = birth_date
+                ...
+                >>> client = CogniteClient()
+                >>> person = Person("sp_date_space", "my_person", "John Doe", date(1980, 1, 1))
+                >>> res = client.data_modeling.instances.apply(nodes=person)
+
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
