@@ -19,15 +19,18 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class InstanceProperty:
+class PropertyOptions:
     """This is a descriptor class for instance properties in a typed class.
 
     It is used when you have a property that has a different name in the Data Model
     compared to the name in the Python class.
+
+    Args:
+        identifier (str | None): The name of the property in the Data Model. Defaults to the name of the property in the Python class.
     """
 
-    def __init__(self, alias: str | None = None) -> None:
-        self.name = alias
+    def __init__(self, identifier: str | None = None) -> None:
+        self.name = identifier
 
     def __set_name__(self, owner: type, name: str) -> None:
         self.name = self.name or name

@@ -50,7 +50,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.typed_instances import InstanceProperty, TypedNodeWrite
+from cognite.client.data_classes.data_modeling.typed_instances import PropertyOptions, TypedNodeWrite
 from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
@@ -194,7 +194,7 @@ class PrimitiveListed(TypedNodeWrite):
 
 
 class Person(TypedNodeWrite):
-    birth_year = InstanceProperty(alias="birthYear")
+    birth_year = PropertyOptions(identifier="birthYear")
 
     def __init__(
         self,
