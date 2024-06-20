@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import inspect
 from abc import ABC
 from collections.abc import Iterable
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import Self
@@ -91,7 +93,7 @@ class TypedInstanceWrite(CogniteResource, ABC):
     def _dump_properties(self, camel_case: bool) -> dict[str, Any]:
         properties: dict[str, str | int | float | bool | dict | list] = {}
         for key, value in vars(self).items():
-            if key in self._instance_properties:
+            if key in self._instance_properties or value is None:
                 continue
             if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
                 properties[key] = [_serialize_property_value(v, camel_case) for v in value]
@@ -236,7 +238,11 @@ class TypedInstance(WriteableCogniteResource[T_WriteClass], ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         args: dict[str, Any] = {}
-        args.update(cls._load_properties(resource))
+        all_properties = resource.get("properties", {})
+        if all_properties:
+            source = cls.get_source()
+            properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
+            args.update(cls._load_properties(properties))
         args.update(cls._load_instance(resource))
         return cls(**args)
 
@@ -251,7 +257,45 @@ class TypedInstance(WriteableCogniteResource[T_WriteClass], ABC):
 
     @classmethod
     def _load_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError()
+        output: dict[str, Any] = {}
+        signature = inspect.signature(cls.__init__)
+        for name, parameter in signature.parameters.items():
+            if name in cls._instance_properties:
+                continue
+            if name in resource:
+                output[name] = _deserialize_values(resource[name], parameter)
+            elif (
+                name in cls.__dict__
+                and isinstance(cls.__dict__[name], PropertyOptions)
+                and cls.__dict__[name].name in resource
+            ):
+                output[name] = _deserialize_values(resource[cls.__dict__[name].name], parameter)
+        return output
+
+
+def _deserialize_values(value: Any, parameter: inspect.Parameter) -> Any:
+    if isinstance(value, list):
+        return [_deserialize_value(v, parameter) for v in value]
+    else:
+        return _deserialize_value(value, parameter)
+
+
+def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
+    if parameter.annotation is inspect.Parameter.empty:
+        return value
+    annotation = str(parameter.annotation)
+    if "date" in annotation and isinstance(value, str):
+        return date.fromisoformat(value)
+    elif "datetime" in annotation and isinstance(value, str):
+        return datetime.fromisoformat(value)
+    elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):
+        return DirectRelationReference.load(value)
+    elif NodeId.__name__ in annotation and isinstance(value, dict):
+        return NodeId.load(value)
+    elif EdgeId.__name__ in annotation and isinstance(value, dict):
+        return EdgeId.load(value)
+
+    return value
 
 
 class TypedNode(TypedInstance[T_WriteClass], ABC):
