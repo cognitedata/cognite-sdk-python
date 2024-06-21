@@ -489,6 +489,7 @@ class DatapointsArray(CogniteResource):
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: InstanceId | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
@@ -519,6 +520,7 @@ class DatapointsArray(CogniteResource):
     ) -> None:
         self.id = id
         self.external_id = external_id
+        self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
@@ -552,6 +554,9 @@ class DatapointsArray(CogniteResource):
         return {
             "id": self.id,
             "external_id": self.external_id,
+            "instance_id": self.instance_id.dump(camel_case=False, include_instance_type=False)
+            if self.instance_id
+            else None,
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
@@ -605,6 +610,7 @@ class DatapointsArray(CogniteResource):
         return cls(
             id=dps_dct.get("id"),
             external_id=dps_dct.get("externalId"),
+            instance_id=InstanceId.load(dps_dct["instanceId"]) if "instanceId" in dps_dct else None,
             is_step=dps_dct.get("isStep"),
             is_string=dps_dct.get("isString"),
             unit=dps_dct.get("unit"),
