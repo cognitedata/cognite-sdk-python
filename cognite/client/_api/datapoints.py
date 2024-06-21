@@ -57,6 +57,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore, InstanceId
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
@@ -1390,9 +1391,19 @@ class DatapointsAPI(APIClient):
                 ... )
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
+
         post_dps_object = Identifier.of_either(id, external_id, instance_id).as_dict()
         post_dps_object["datapoints"] = datapoints
-        DatapointsPoster(self).insert([post_dps_object])
+        cdf_version: str | None = None
+        if instance_id is not None:
+            self._use_instance_api()
+            cdf_version = "alpha"
+        DatapointsPoster(self, cdf_version).insert([post_dps_object])
+
+    def _use_instance_api(self) -> None:
+        FeaturePreviewWarning(
+            api_maturity="alpha", feature_name="Datapoint with Instance API", sdk_maturity="alpha"
+        ).warn()
 
     def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
@@ -1594,11 +1605,12 @@ class _InsertDatapoint(NamedTuple):
 
 
 class DatapointsPoster:
-    def __init__(self, dps_client: DatapointsAPI) -> None:
+    def __init__(self, dps_client: DatapointsAPI, cdf_version: str | None = None) -> None:
         self.dps_client = dps_client
         self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
         self.max_workers = self.dps_client._config.max_workers
+        self.cdf_version = cdf_version
 
     def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
@@ -1701,7 +1713,11 @@ class DatapointsPoster:
         # Convert to memory intensive format as late as possible (and clean up after insert)
         for dct in payload:
             dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
-        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": payload})
+        headers: dict[str, str] | None = None
+        if self.cdf_version:
+            headers = {"cdf-version": self.cdf_version}
+
+        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": payload}, headers=headers)
         for dct in payload:
             dct["datapoints"].clear()
 
