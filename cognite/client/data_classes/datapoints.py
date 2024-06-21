@@ -865,6 +865,7 @@ class Datapoints(CogniteResource):
     Args:
         id (int | None): Id of the time series the datapoints belong to
         external_id (str | None): External id of the time series the datapoints belong to
+        instance_id (InstanceId | None): The instance id of the time series the datapoints belong to
         is_string (bool | None): Whether the time series contains numerical or string data.
         is_step (bool | None): Whether the time series is stepwise or continuous.
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
@@ -898,6 +899,7 @@ class Datapoints(CogniteResource):
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: InstanceId | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
@@ -928,6 +930,7 @@ class Datapoints(CogniteResource):
     ) -> None:
         self.id = id
         self.external_id = external_id
+        self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
@@ -1013,6 +1016,8 @@ class Datapoints(CogniteResource):
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
         }
+        if self.instance_id is not None:
+            dumped["instance_id"] = self.instance_id.dump(camel_case=camel_case, include_instance_type=False)
         if self.timezone is not None:
             dumped["timezone"] = convert_timezone_to_str(self.timezone)
         datapoints = [dp.dump(camel_case=camel_case, include_timezone=False) for dp in self.__get_datapoint_objects()]
@@ -1133,6 +1138,7 @@ class Datapoints(CogniteResource):
         instance = cls(
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
+            instance_id=InstanceId.load(dps_object["instanceId"]) if "instanceId" in dps_object else None,
             is_string=dps_object.get("isString"),
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
@@ -1185,6 +1191,7 @@ class Datapoints(CogniteResource):
         skip_attrs = {
             "id",
             "external_id",
+            "instance_id",
             "is_string",
             "is_step",
             "unit",
