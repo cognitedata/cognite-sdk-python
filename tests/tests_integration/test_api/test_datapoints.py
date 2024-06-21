@@ -2736,3 +2736,8 @@ class TestInsertDatapointsAPI:
 
     def test_insert_datapoints_with_instance_id(self, alpha_client: CogniteClient, instance_ts_id: InstanceId) -> None:
         alpha_client.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
+
+        retrieved = alpha_client.time_series.data.retrieve(instance_id=instance_ts_id)
+
+        assert retrieved.timestamp == [0, 1]
+        assert retrieved.value == [0.0, 1.0]

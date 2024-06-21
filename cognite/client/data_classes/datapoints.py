@@ -198,7 +198,7 @@ class DatapointsQuery:
 
     @classmethod
     # TODO: Remove in next major version (require use of DatapointsQuery directly)
-    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id"]) -> Self:
+    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id", "instance_id"]) -> Self:
         if id_type not in dct:
             if (arg_name_cc := to_camel_case(id_type)) not in dct:
                 raise KeyError(f"Missing required key `{id_type}` in dict: {dct}.")
