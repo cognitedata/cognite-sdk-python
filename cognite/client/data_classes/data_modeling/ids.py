@@ -10,10 +10,7 @@ from cognite.client.data_classes._base import CogniteObject
 from cognite.client.utils._identifier import (
     DataModelingIdentifier,
     DataModelingIdentifierSequence,
-    EdgeId,
-    # Imported for backwards compatibility
-    InstanceId,  # noqa: F401
-    NodeId,
+    InstanceId,
 )
 from cognite.client.utils._text import convert_all_keys_recursive
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -90,6 +87,16 @@ class VersionedDataModelingId(AbstractDataclass):
 
 
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)
+
+
+@dataclass(frozen=True)
+class NodeId(InstanceId):
+    _instance_type: ClassVar[Literal["node", "edge"]] = "node"
+
+
+@dataclass(frozen=True)
+class EdgeId(InstanceId):
+    _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
 
 
 @dataclass(frozen=True)

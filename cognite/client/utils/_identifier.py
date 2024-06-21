@@ -51,17 +51,6 @@ class InstanceId:
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
-
-@dataclass(frozen=True)
-class NodeId(InstanceId):
-    _instance_type: ClassVar[Literal["node", "edge"]] = "node"
-
-
-@dataclass(frozen=True)
-class EdgeId(InstanceId):
-    _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
-
-
 T_ID = TypeVar("T_ID", int, str, InstanceId)
 
 
