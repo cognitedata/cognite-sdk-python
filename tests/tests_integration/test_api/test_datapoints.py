@@ -2722,14 +2722,14 @@ class TestInsertDatapointsAPI:
     ) -> None:
         cognite_client_alpha.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
 
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id)
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
         assert retrieved.timestamp == [0, 1]
         assert retrieved.value == [0.0, 1.0]
 
         cognite_client_alpha.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
 
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id)
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
         assert retrieved.timestamp == []
 
