@@ -1489,6 +1489,7 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime.datetime,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: InstanceId | None = None,
     ) -> None:
         """Delete a range of datapoints from a time series.
 
@@ -1497,6 +1498,7 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime.datetime): Exclusive end of delete range
             id (int | None): Id of time series to delete data from
             external_id (str | None): External id of time series to delete data from
+            instance_id (InstanceId | None): (Alpha) Instance ID of time series to delete data from
 
         Examples:
 
@@ -1511,9 +1513,13 @@ class DatapointsAPI(APIClient):
         if end_ms <= start_ms:
             raise ValueError(f"{end=} must be larger than {start=}")
 
-        identifier = Identifier.of_either(id, external_id).as_dict()
+        identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
+        cdf_version: str | None = None
+        if instance_id is not None:
+            cdf_version = "alpha"
+            self._use_instance_api()
         delete_dps_object = {**identifier, "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
-        self._delete_datapoints_ranges([delete_dps_object])
+        self._delete_datapoints_ranges([delete_dps_object], cdf_version=cdf_version)
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
         """`Delete a range of datapoints from multiple time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_
@@ -1541,8 +1547,11 @@ class DatapointsAPI(APIClient):
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
 
-    def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
-        self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
+    def _delete_datapoints_ranges(self, delete_range_objects: list[dict], cdf_version: str | None = None) -> None:
+        headers: dict | None = None
+        if cdf_version:
+            headers = {"cdf-version": cdf_version}
+        self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects}, headers=headers)
 
     def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
         """Insert a dataframe (columns must be unique).
