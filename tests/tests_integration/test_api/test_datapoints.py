@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import itertools
 import math
-import os
 import random
 import re
 import unittest
@@ -21,7 +20,6 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from dotenv import load_dotenv
 from numpy.testing import assert_allclose, assert_equal
 
 from cognite.client import CogniteClient
@@ -52,7 +50,6 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
 )
 from tests.utils import (
-    REPO_ROOT,
     cdf_aggregate,
     random_aggregates,
     random_cognite_external_ids,
@@ -183,22 +180,8 @@ def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
 
 
 @pytest.fixture(scope="session")
-def alpha_client() -> CogniteClient:
-    load_dotenv(REPO_ROOT / "alpha.env")
-    if "COGNITE_ALPHA_PROJECT" not in os.environ:
-        pytest.skip("ALPHA environment variables not set. Skipping ALPHA tests.")
-    return CogniteClient.default_oauth_client_credentials(
-        project=os.environ["COGNITE_ALPHA_PROJECT"],
-        cdf_cluster=os.environ["COGNITE_ALPHA_CLUSTER"],
-        client_id=os.environ["COGNITE_ALPHA_CLIENT_ID"],
-        client_secret=os.environ["COGNITE_ALPHA_CLIENT_SECRET"],
-        tenant_id=os.environ["COGNITE_ALPHA_TENANT_ID"],
-    )
-
-
-@pytest.fixture(scope="session")
-def instance_ts_id(alpha_client: CogniteClient) -> InstanceId:
-    created = alpha_client.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
+def instance_ts_id(cognite_client_alpha: CogniteClient) -> InstanceId:
+    created = cognite_client_alpha.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
 
     my_ts = NodeApply(
         space=created.space,
@@ -214,7 +197,7 @@ def instance_ts_id(alpha_client: CogniteClient) -> InstanceId:
             )
         ],
     )
-    created_ts = alpha_client.data_modeling.instances.apply(my_ts).nodes
+    created_ts = cognite_client_alpha.data_modeling.instances.apply(my_ts).nodes
 
     return created_ts[0].as_id()
 
@@ -2735,27 +2718,29 @@ class TestInsertDatapointsAPI:
         assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
 
     def test_insert_retrieve_delete_datapoints_with_instance_id(
-        self, alpha_client: CogniteClient, instance_ts_id: InstanceId
+        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
     ) -> None:
-        alpha_client.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
+        cognite_client_alpha.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
 
-        retrieved = alpha_client.time_series.data.retrieve(instance_id=instance_ts_id)
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id)
 
         assert retrieved.timestamp == [0, 1]
         assert retrieved.value == [0.0, 1.0]
 
-        alpha_client.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
+        cognite_client_alpha.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
 
-        retrieved = alpha_client.time_series.data.retrieve(instance_id=instance_ts_id)
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id)
 
         assert retrieved.timestamp == []
 
-    def test_insert_multiple_with_instance_id(self, alpha_client: CogniteClient, instance_ts_id: InstanceId) -> None:
-        alpha_client.time_series.data.insert_multiple(
+    def test_insert_multiple_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
+    ) -> None:
+        cognite_client_alpha.time_series.data.insert_multiple(
             [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": 4, "value": 42}]}]
         )
 
-        retrieved = alpha_client.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
 
         assert retrieved.timestamp == [4]
         assert retrieved.value == [42]
