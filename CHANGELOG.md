@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.51.2] - 2024-06-24
+### Added
+
+- Alpha feature, in `client.time_series.data` support for `instance_id` in `.insert`, `insert_multiple`,
+  `.delete`, and `.retrieve` methods. This is an experimental feature and may change without warning.
+
 ## [7.51.1] - 2024-06-18
 ### Fixed
 
