@@ -46,7 +46,6 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     LatestDatapointQuery,
 )
-from cognite.client.data_classes.data_modeling.ids import InstanceId
 from cognite.client.data_classes.datapoints import Aggregate, _DatapointsPayload, _DatapointsPayloadItem
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
@@ -58,7 +57,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore, InstanceId
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
     ZoneInfo,

@@ -124,13 +124,13 @@ class Identifier(Generic[T_ID]):
 
     def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         if isinstance(self.__value, InstanceId):
-            return self.__value.dump(camel_case=camel_case)
+            return self.__value.dump(camel_case=camel_case)  # type: ignore[return-value]
         else:
-            return {self.name(camel_case): self.__value}
+            return {self.name(camel_case): self.__value}  # type: ignore[return-value]
 
     def as_tuple(self, camel_case: bool = True) -> tuple[str, T_ID]:
-        if self.is_instance_id:
-            return self.__value.as_tuple()
+        if isinstance(self.__value, InstanceId):
+            return self.__value.as_tuple()  # type: ignore[return-value]
         else:
             return self.name(camel_case), self.__value
 

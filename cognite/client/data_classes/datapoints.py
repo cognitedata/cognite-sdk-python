@@ -28,7 +28,7 @@ from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates
-from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dps_dataframe_list,
@@ -165,6 +165,7 @@ class DatapointsQuery:
     )
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
+    instance_id: InitVar[InstanceId | None] = None
     start: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     end: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
@@ -179,9 +180,9 @@ class DatapointsQuery:
     ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
-    def __post_init__(self, id: int | None, external_id: str | None) -> None:
+    def __post_init__(self, id: int | None, external_id: str | None, instance_id: InstanceId | None) -> None:
         # Ensure user have just specified one of id/xid:
-        self._identifier = Identifier.of_either(id, external_id)
+        self._identifier = Identifier.of_either(id, external_id, instance_id)
         # Store the possibly custom granularity (we support more than the API and a translation is done)
         self._original_granularity = self.granularity
 
