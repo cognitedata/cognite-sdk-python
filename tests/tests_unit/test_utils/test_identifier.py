@@ -17,17 +17,17 @@ class TestIdentifier:
         assert exp_tpl == Identifier.of_either(id, external_id).as_tuple(camel_case=False)
 
     @pytest.mark.parametrize(
-        "id, external_id, err_msg",
+        "id, external_id, instance_id, err_msg",
         (
-            (None, None, "Exactly one of id or external id must be specified, got neither"),
-            (123, "foo", "Exactly one of id or external id must be specified, got both"),
-            (0, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
-            (MAX_VALID_INTERNAL_ID + 1, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
+            (None, None, None, "Exactly one of id, external id, or instance_id must be specified, got neither"),
+            (123, "foo", None, "Exactly one of id, external id, or instance_id must be specified, got multiple"),
+            (0, None, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
+            (MAX_VALID_INTERNAL_ID + 1, None, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
         ),
     )
-    def test_of_either__bad_input(self, id, external_id, err_msg):
+    def test_of_either__bad_input(self, id, external_id, instance_id, err_msg):
         with pytest.raises(ValueError, match=err_msg):
-            Identifier.of_either(id, external_id)
+            Identifier.of_either(id, external_id, instance_id)
 
     def test_handles_id_type_correctly(self):
         # int is ok
