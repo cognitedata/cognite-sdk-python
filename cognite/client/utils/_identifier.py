@@ -28,10 +28,7 @@ class InstanceId:
     external_id: str
 
     def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
-        output = {"space": self.space, "externalId" if camel_case else "external_id": self.external_id}
-        if include_instance_type:
-            output["instanceType" if camel_case else "instance_type"] = self._instance_type
-        return output
+        return {"space": self.space, "externalId" if camel_case else "external_id": self.external_id}
 
     @classmethod
     def load(cls: type[T_InstanceId], data: dict) -> T_InstanceId:
@@ -47,6 +44,9 @@ class InstanceId:
 
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(space={self.space!r}, external_id={self.external_id!r})"
 
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)

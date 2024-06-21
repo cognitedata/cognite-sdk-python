@@ -2749,3 +2749,13 @@ class TestInsertDatapointsAPI:
         retrieved = alpha_client.time_series.data.retrieve(instance_id=instance_ts_id)
 
         assert retrieved.timestamp == []
+
+    def test_insert_multiple_with_instance_id(self, alpha_client: CogniteClient, instance_ts_id: InstanceId) -> None:
+        alpha_client.time_series.data.insert_multiple(
+            [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": 4, "value": 42}]}]
+        )
+
+        retrieved = alpha_client.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
+
+        assert retrieved.timestamp == [4]
+        assert retrieved.value == [42]

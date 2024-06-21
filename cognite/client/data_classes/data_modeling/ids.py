@@ -93,10 +93,22 @@ T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=Versi
 class NodeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "node"
 
+    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
+        output = super().dump(camel_case=camel_case)
+        if include_instance_type:
+            output["type"] = self._instance_type
+        return output
+
 
 @dataclass(frozen=True)
 class EdgeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
+
+    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
+        output = super().dump(camel_case=camel_case)
+        if include_instance_type:
+            output["type"] = self._instance_type
+        return output
 
 
 @dataclass(frozen=True)

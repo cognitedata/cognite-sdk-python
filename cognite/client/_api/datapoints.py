@@ -1481,7 +1481,19 @@ class DatapointsAPI(APIClient):
                 >>> to_insert.append({"external_id": "bar-clone", "datapoints": data_to_clone})
                 >>> client.time_series.data.insert_multiple(to_insert)
         """
-        DatapointsPoster(self).insert(datapoints)
+        if not isinstance(datapoints, Sequence):
+            raise ValueError("Input must be a list of dictionaries")
+        cdf_version: str | None = None
+        if any("instance_id" in d or "instanceId" in d for d in datapoints):
+            self._use_instance_api()
+            cdf_version = "alpha"
+            for d in datapoints:
+                if "instance_id" in d and isinstance(d["instance_id"], InstanceId):
+                    d["instance_id"] = d["instance_id"].dump(include_instance_type=False)  # type: ignore[assignment]
+                elif "instanceId" in d and isinstance(d["instanceId"], InstanceId):
+                    d["instanceId"] = d["instanceId"].dump(include_instance_type=False)  # type: ignore[assignment]
+
+        DatapointsPoster(self, cdf_version).insert(datapoints)
 
     def delete_range(
         self,
