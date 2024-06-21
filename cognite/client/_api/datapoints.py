@@ -1617,8 +1617,8 @@ class DatapointsPoster:
 
     def _verify_and_prepare_dps_objects(
         self, dps_object_lst: list[dict[str, Any]]
-    ) -> list[tuple[tuple[str, int], list[_InsertDatapoint]]]:
-        dps_to_insert = defaultdict(list)
+    ) -> list[tuple[tuple[str, int | str | dict], list[_InsertDatapoint]]]:
+        dps_to_insert: dict[tuple[str, int | str | tuple[str, str]], list[_InsertDatapoint]] = defaultdict(list)
         for obj in dps_object_lst:
             validated: dict[str, Any] = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
             validated_dps = self._parse_and_validate_dps(obj["datapoints"])
@@ -1626,9 +1626,14 @@ class DatapointsPoster:
             # Concatenate datapoints using identifier as key:
             if (xid := validated.get("externalId")) is not None:
                 dps_to_insert["externalId", xid].extend(validated_dps)
+            elif (instance_id := validated.get("instanceId")) is not None:
+                dps_to_insert["instanceId", (instance_id["space"], instance_id["externalId"])].extend(validated_dps)
             else:
                 dps_to_insert["id", validated["id"]].extend(validated_dps)
-        return list(dps_to_insert.items())
+        return [
+            ((id_name, {"space": id_[0], "externalId": id_[1]} if id_name == "instanceId" else id_), data)  # type: ignore[index, dict-item, misc]
+            for (id_name, id_), data in dps_to_insert.items()
+        ]
 
     def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
         if not dps:

@@ -37,10 +37,12 @@ def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[st
     # Verify that we have gotten exactly one identifier:
     if (xid := dct.get("external_id")) is None:  # "" is valid ext.id
         xid = dct.get("externalId")
-    id_dct = Identifier.of_either(dct.get("id"), xid).as_dict(camel_case=True)
+    if (instance_id := dct.get("instance_id")) is None:
+        instance_id = dct.get("instanceId")
+    id_dct = Identifier.of_either(dct.get("id"), xid, instance_id).as_dict(camel_case=True)
 
     missing_keys = required_keys.difference(dct)
-    invalid_keys = set(dct) - required_keys - {"id", "externalId", "external_id"}
+    invalid_keys = set(dct) - required_keys - {"id", "externalId", "external_id", "instance_id", "instanceId"}
     if missing_keys or invalid_keys:
         raise ValueError(
             f"Given dictionary failed validation. Invalid key(s): {sorted(invalid_keys)}, "

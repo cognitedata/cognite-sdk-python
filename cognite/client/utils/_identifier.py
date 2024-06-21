@@ -83,6 +83,8 @@ class Identifier(Generic[T_ID]):
             elif not isinstance(external_id, str):
                 raise TypeError(f"Invalid external_id, expected str, got {type(external_id)}")
         elif instance_id is not None:
+            if isinstance(instance_id, dict):
+                instance_id = InstanceId.load(instance_id)
             if not isinstance(instance_id, InstanceId):
                 raise TypeError(f"Invalid instance_id, expected InstanceId, got {type(instance_id)}")
         return Identifier(id or external_id or instance_id)
@@ -124,7 +126,7 @@ class Identifier(Generic[T_ID]):
 
     def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         if isinstance(self.__value, InstanceId):
-            return self.__value.dump(camel_case=camel_case)  # type: ignore[return-value]
+            return {"instanceId": self.__value.dump(camel_case=camel_case, include_instance_type=False)}  # type: ignore[return-value, dict-item]
         else:
             return {self.name(camel_case): self.__value}  # type: ignore[return-value]
 
