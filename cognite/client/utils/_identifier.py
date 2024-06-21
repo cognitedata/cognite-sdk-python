@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import numbers
 from abc import ABC
+from dataclasses import dataclass
 from typing import (
     Any,
+    ClassVar,
     Generic,
     Literal,
     NoReturn,
@@ -18,7 +20,49 @@ from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils.useful_types import SequenceNotStr
 
-T_ID = TypeVar("T_ID", int, str)
+
+@dataclass(frozen=True)
+class InstanceId:
+    _instance_type: ClassVar[Literal["node", "edge"]]
+    space: str
+    external_id: str
+
+    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
+        output = {"space": self.space, "externalId" if camel_case else "external_id": self.external_id}
+        if include_instance_type:
+            output["instanceType" if camel_case else "instance_type"] = self._instance_type
+        return output
+
+    @classmethod
+    def load(cls: type[T_InstanceId], data: dict) -> T_InstanceId:
+        if "externalId" in data:
+            return cls(space=data["space"], external_id=data["externalId"])
+        if "external_id" in data:
+            return cls(space=data["space"], external_id=data["external_id"])
+        raise KeyError(f"Cannot load {data} into {cls}, missing 'externalId' or 'external_id' key")
+
+    @property
+    def instance_type(self) -> Literal["node", "edge"]:
+        return self._instance_type
+
+    def as_tuple(self) -> tuple[str, str]:
+        return self.space, self.external_id
+
+
+T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
+
+
+@dataclass(frozen=True)
+class NodeId(InstanceId):
+    _instance_type: ClassVar[Literal["node", "edge"]] = "node"
+
+
+@dataclass(frozen=True)
+class EdgeId(InstanceId):
+    _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
+
+
+T_ID = TypeVar("T_ID", int, str, InstanceId)
 
 
 class IdentifierCore(Protocol):
@@ -29,37 +73,50 @@ class IdentifierCore(Protocol):
 
 class Identifier(Generic[T_ID]):
     def __init__(self, value: T_ID) -> None:
-        if not isinstance(value, (int, str)):
+        if not isinstance(value, (int, str, InstanceId)):
             raise TypeError(f"Expected id/external_id to be of type int or str, got {value} of type {type(id)}")
         self.__value: T_ID = value
 
     @classmethod
-    def of_either(cls, id: int | None, external_id: str | None) -> Identifier:
-        if id is external_id is None:
-            raise ValueError("Exactly one of id or external id must be specified, got neither")
+    def of_either(cls, id: int | None, external_id: str | None, instance_id: InstanceId | None = None) -> Identifier:
+        if id is external_id is instance_id is None:
+            raise ValueError("Exactly one of id, external id, or instance_id must be specified, got neither")
         elif id is not None:
-            if external_id is not None:
-                raise ValueError("Exactly one of id or external id must be specified, got both")
+            if external_id is not None or instance_id is not None:
+                raise ValueError("Exactly one of id, external id, or instance_id must be specified, got multiple")
             elif not isinstance(id, int):
                 raise TypeError(f"Invalid id, expected int, got {type(id)}")
             elif not 1 <= id <= MAX_VALID_INTERNAL_ID:
                 raise ValueError(f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}")
-        elif not isinstance(external_id, str):
-            raise TypeError(f"Invalid external_id, expected str, got {type(external_id)}")
-        return Identifier(id or external_id)
+        elif external_id is not None:
+            if instance_id is not None:
+                raise ValueError("Exactly one of id, external id, or instance_id must be specified, got multiple")
+            elif not isinstance(external_id, str):
+                raise TypeError(f"Invalid external_id, expected str, got {type(external_id)}")
+        elif instance_id is not None:
+            if not isinstance(instance_id, InstanceId):
+                raise TypeError(f"Invalid instance_id, expected InstanceId, got {type(instance_id)}")
+        return Identifier(id or external_id or instance_id)
 
     @classmethod
-    def load(cls, id: int | None = None, external_id: str | None = None) -> Identifier:
+    def load(
+        cls, id: int | None = None, external_id: str | None = None, instance_id: InstanceId | None = None
+    ) -> Identifier:
         if id is not None:
             return Identifier(id)
         if external_id is not None:
             return Identifier(external_id)
-        raise ValueError("At least one of id and external id must be specified")
+        if instance_id is not None:
+            return Identifier(instance_id)
+        raise ValueError("At least one of id, external id, instance_id must be specified")
 
     def name(self, camel_case: bool = False) -> str:
         if self.is_id:
             return "id"
-        return "externalId" if camel_case else "external_id"
+        elif self.is_instance_id:
+            return "instanceId" if camel_case else "instance_id"
+        else:
+            return "externalId" if camel_case else "external_id"
 
     def as_primitive(self) -> T_ID:
         return self.__value
@@ -72,11 +129,21 @@ class Identifier(Generic[T_ID]):
     def is_external_id(self) -> bool:
         return isinstance(self.__value, str)
 
+    @property
+    def is_instance_id(self) -> bool:
+        return isinstance(self.__value, InstanceId)
+
     def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
-        return {self.name(camel_case): self.__value}
+        if isinstance(self.__value, InstanceId):
+            return self.__value.dump(camel_case=camel_case)
+        else:
+            return {self.name(camel_case): self.__value}
 
     def as_tuple(self, camel_case: bool = True) -> tuple[str, T_ID]:
-        return self.name(camel_case), self.__value
+        if self.is_instance_id:
+            return self.__value.as_tuple()
+        else:
+            return self.name(camel_case), self.__value
 
 
 class UserIdentifier:

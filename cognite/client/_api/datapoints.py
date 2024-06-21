@@ -46,6 +46,7 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     LatestDatapointQuery,
 )
+from cognite.client.data_classes.data_modeling.ids import InstanceId
 from cognite.client.data_classes.datapoints import Aggregate, _DatapointsPayload, _DatapointsPayloadItem
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
@@ -1311,6 +1312,7 @@ class DatapointsAPI(APIClient):
         | Sequence[tuple[int | float | datetime.datetime, int | float | str]],
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: InstanceId | None = None,
     ) -> None:
         """Insert datapoints into a time series
 
@@ -1324,6 +1326,7 @@ class DatapointsAPI(APIClient):
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
+            instance_id (InstanceId | None): (Alpha) Instance ID of time series to insert datapoints into.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1388,7 +1391,7 @@ class DatapointsAPI(APIClient):
                 ... )
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
-        post_dps_object = Identifier.of_either(id, external_id).as_dict()
+        post_dps_object = Identifier.of_either(id, external_id, instance_id).as_dict()
         post_dps_object["datapoints"] = datapoints
         DatapointsPoster(self).insert([post_dps_object])
 
