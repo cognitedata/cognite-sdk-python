@@ -126,7 +126,7 @@ class Identifier(Generic[T_ID]):
 
     def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         if isinstance(self.__value, InstanceId):
-            return {"instanceId": self.__value.dump(camel_case=camel_case, include_instance_type=False)}  # type: ignore[return-value, dict-item]
+            return {"instanceId": self.__value.dump(camel_case=camel_case, include_instance_type=False)}  # type: ignore[dict-item]
         else:
             return {self.name(camel_case): self.__value}  # type: ignore[return-value]
 

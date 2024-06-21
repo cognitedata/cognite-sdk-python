@@ -1681,7 +1681,7 @@ class DatapointsPoster:
             else:
                 dps_to_insert["id", validated["id"]].extend(validated_dps)
         return [
-            ((id_name, {"space": id_[0], "externalId": id_[1]} if id_name == "instanceId" else id_), data)  # type: ignore[index, dict-item, misc]
+            ((id_name, {"space": id_[0], "externalId": id_[1]} if id_name == "instanceId" else id_), data)  # type: ignore[index, misc]
             for (id_name, id_), data in dps_to_insert.items()
         ]
 
