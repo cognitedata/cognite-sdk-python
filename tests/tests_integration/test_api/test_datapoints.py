@@ -2,13 +2,14 @@
 Note: If tests related to fetching datapoints are broken, all time series + their datapoints can be
       recreated easily by running the file linked below. You will need to provide a valid set of
       credentials to the `CogniteClient` for the Python SDK integration test CDF project:
->>> python scripts/create_ts_for_integration_tests.py
+python scripts/create_ts_for_integration_tests.py
 """
 
 from __future__ import annotations
 
 import itertools
 import math
+import os
 import random
 import re
 import unittest
@@ -20,6 +21,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from dotenv import load_dotenv
 from numpy.testing import assert_allclose, assert_equal
 
 from cognite.client import CogniteClient
@@ -35,8 +37,10 @@ from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesList,
 )
+from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, SpaceApply, ViewId
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
@@ -48,6 +52,7 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
 )
 from tests.utils import (
+    REPO_ROOT,
     cdf_aggregate,
     random_aggregates,
     random_cognite_external_ids,
@@ -175,6 +180,43 @@ def retrieve_endpoints(cognite_client):
 def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
     # retrieve_dataframe is just a wrapper around retrieve_arrays
     return [*retrieve_endpoints, cognite_client.time_series.data.retrieve_dataframe]
+
+
+@pytest.fixture(scope="session")
+def alpha_client() -> CogniteClient:
+    load_dotenv(REPO_ROOT / "alpha.env")
+    if "COGNITE_ALPHA_PROJECT" not in os.environ:
+        pytest.skip("ALPHA environment variables not set. Skipping ALPHA tests.")
+    return CogniteClient.default_oauth_client_credentials(
+        project=os.environ["COGNITE_ALPHA_PROJECT"],
+        cdf_cluster=os.environ["COGNITE_ALPHA_CLUSTER"],
+        client_id=os.environ["COGNITE_ALPHA_CLIENT_ID"],
+        client_secret=os.environ["COGNITE_ALPHA_CLIENT_SECRET"],
+        tenant_id=os.environ["COGNITE_ALPHA_TENANT_ID"],
+    )
+
+
+@pytest.fixture(scope="session")
+def instance_ts_id(alpha_client: CogniteClient) -> InstanceId:
+    created = alpha_client.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
+
+    my_ts = NodeApply(
+        space=created.space,
+        external_id="ts_python_sdk_instance_id_tests",
+        sources=[
+            NodeOrEdgeData(
+                source=ViewId("cdf_cdm_experimental", "TimeSeriesBase", "v1"),
+                properties={
+                    "name": "ts_python_sdk_instance_id_tests",
+                    "isStep": False,
+                    "isString": False,
+                },
+            )
+        ],
+    )
+    created_ts = alpha_client.data_modeling.instances.apply(my_ts).nodes
+
+    return created_ts[0].as_id()
 
 
 def ts_to_ms(ts, tz=None):
@@ -2691,3 +2733,6 @@ class TestInsertDatapointsAPI:
         assert dps_numeric.status_code == dps_str.status_code
         assert dps_numeric.status_symbol == dps_str.status_symbol
         assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
+
+    def test_insert_datapoints_with_instance_id(self, alpha_client: CogniteClient, instance_ts_id: InstanceId) -> None:
+        alpha_client.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
