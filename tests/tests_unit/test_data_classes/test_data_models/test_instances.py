@@ -15,6 +15,7 @@ from cognite.client.data_classes.data_modeling import (
     NodeApply,
     NodeId,
     NodeList,
+    NodeListWithCursor,
     NodeOrEdgeData,
     ViewId,
 )
@@ -159,6 +160,32 @@ class TestNode:
             "type": {"externalId": "someType", "space": "someSpace"},
             "version": 1,
         }
+
+
+class TestNodeListWithCursor:
+    def test_extend(self) -> None:
+        default_args: dict[str, Any] = dict(
+            version=1, last_updated_time=0, created_time=0, deleted_time=None, properties=None, type=None
+        )
+        nodes = NodeListWithCursor(
+            [
+                Node(space="space", external_id="node1", **default_args),
+                Node(space="space", external_id="node2", **default_args),
+            ],
+            cursor="original_cursor",
+        )
+
+        nodes.extend(
+            NodeListWithCursor(
+                [
+                    Node(space="space", external_id="node3", **default_args),
+                    Node(space="space", external_id="node4", **default_args),
+                ],
+                cursor="next_cursor",
+            ),
+        )
+        assert len(nodes) == 4
+        assert nodes.cursor == "next_cursor"
 
 
 @pytest.fixture
