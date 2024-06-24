@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.51.2] - 2024-06-18
+### Fixed
+
+-  Calling `.extend` on a `NodeListWithCursor` or `EdgeListWithCursor` would raise a `TypeError`. This is now fixed.
+
 ## [7.51.1] - 2024-06-18
 ### Fixed
 
