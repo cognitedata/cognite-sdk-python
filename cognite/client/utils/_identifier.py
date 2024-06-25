@@ -32,6 +32,8 @@ class InstanceId:
 
     @classmethod
     def load(cls: type[T_InstanceId], data: dict) -> T_InstanceId:
+        if isinstance(data, cls):
+            return data
         if "externalId" in data:
             return cls(space=data["space"], external_id=data["externalId"])
         if "external_id" in data:
