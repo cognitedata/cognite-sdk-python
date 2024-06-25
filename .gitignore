@@ -59,4 +59,4 @@ playground.py
 scripts/tmp/
 my_file.txt
 .venv/
-alpha.env
+*.env
