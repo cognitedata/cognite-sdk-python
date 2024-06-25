@@ -26,9 +26,10 @@ from typing_extensions import NotRequired, Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates
-from cognite.client.utils._identifier import Identifier, InstanceId
+from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dps_dataframe_list,
@@ -165,7 +166,7 @@ class DatapointsQuery:
     )
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
-    instance_id: InitVar[InstanceId | None] = None
+    instance_id: InitVar[NodeId | None] = None
     start: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     end: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
@@ -180,7 +181,7 @@ class DatapointsQuery:
     ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
-    def __post_init__(self, id: int | None, external_id: str | None, instance_id: InstanceId | None) -> None:
+    def __post_init__(self, id: int | None, external_id: str | None, instance_id: NodeId | None) -> None:
         # Ensure user have just specified one of id/xid:
         self._identifier = Identifier.of_either(id, external_id, instance_id)
         # Store the possibly custom granularity (we support more than the API and a translation is done)
@@ -489,7 +490,7 @@ class DatapointsArray(CogniteResource):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        instance_id: InstanceId | None = None,
+        instance_id: NodeId | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
@@ -610,7 +611,7 @@ class DatapointsArray(CogniteResource):
         return cls(
             id=dps_dct.get("id"),
             external_id=dps_dct.get("externalId"),
-            instance_id=InstanceId.load(dps_dct["instanceId"]) if "instanceId" in dps_dct else None,
+            instance_id=NodeId.load(dps_dct["instanceId"]) if "instanceId" in dps_dct else None,
             is_step=dps_dct.get("isStep"),
             is_string=dps_dct.get("isString"),
             unit=dps_dct.get("unit"),
@@ -871,7 +872,7 @@ class Datapoints(CogniteResource):
     Args:
         id (int | None): Id of the time series the datapoints belong to
         external_id (str | None): External id of the time series the datapoints belong to
-        instance_id (InstanceId | None): The instance id of the time series the datapoints belong to
+        instance_id (NodeId | None): The instance id of the time series the datapoints belong to
         is_string (bool | None): Whether the time series contains numerical or string data.
         is_step (bool | None): Whether the time series is stepwise or continuous.
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
@@ -905,7 +906,7 @@ class Datapoints(CogniteResource):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        instance_id: InstanceId | None = None,
+        instance_id: NodeId | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
@@ -1144,7 +1145,7 @@ class Datapoints(CogniteResource):
         instance = cls(
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
-            instance_id=InstanceId.load(dps_object["instanceId"]) if "instanceId" in dps_object else None,
+            instance_id=NodeId.load(dps_object["instanceId"]) if "instanceId" in dps_object else None,
             is_string=dps_object.get("isString"),
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),

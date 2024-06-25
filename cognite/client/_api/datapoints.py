@@ -46,6 +46,7 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     LatestDatapointQuery,
 )
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import Aggregate, _DatapointsPayload, _DatapointsPayloadItem
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
@@ -541,7 +542,7 @@ class DatapointsAPI(APIClient):
         | DatapointsQuery
         | dict[str, Any]
         | SequenceNotStr[str | DatapointsQuery | dict[str, Any]] = None,
-        instance_id: None | InstanceId | Sequence[InstanceId] = None,
+        instance_id: None | NodeId | Sequence[NodeId] = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -573,7 +574,7 @@ class DatapointsAPI(APIClient):
         Args:
             id (None | int | DatapointsQuery | dict[str, Any] | Sequence[int | DatapointsQuery | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | dict[str, Any] | SequenceNotStr[str | DatapointsQuery | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | InstanceId | Sequence[InstanceId]): Instance id or sequence of instance ids. If provided, the `id` and `external_id` arguments are ignored.
+            instance_id (None | NodeId | Sequence[NodeId]): Instance id or sequence of instance ids. If provided, the `id` and `external_id` arguments are ignored.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``,
@@ -1329,7 +1330,7 @@ class DatapointsAPI(APIClient):
         | Sequence[tuple[int | float | datetime.datetime, int | float | str]],
         id: int | None = None,
         external_id: str | None = None,
-        instance_id: InstanceId | None = None,
+        instance_id: NodeId | None = None,
     ) -> None:
         """Insert datapoints into a time series
 
@@ -1343,7 +1344,7 @@ class DatapointsAPI(APIClient):
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
-            instance_id (InstanceId | None): (Alpha) Instance ID of time series to insert datapoints into.
+            instance_id (NodeId | None): (Alpha) Instance ID of time series to insert datapoints into.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1501,7 +1502,7 @@ class DatapointsAPI(APIClient):
         end: int | str | datetime.datetime,
         id: int | None = None,
         external_id: str | None = None,
-        instance_id: InstanceId | None = None,
+        instance_id: NodeId | None = None,
     ) -> None:
         """Delete a range of datapoints from a time series.
 
@@ -1510,7 +1511,7 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime.datetime): Exclusive end of delete range
             id (int | None): Id of time series to delete data from
             external_id (str | None): External id of time series to delete data from
-            instance_id (InstanceId | None): (Alpha) Instance ID of time series to delete data from
+            instance_id (NodeId | None): (Alpha) Instance ID of time series to delete data from
 
         Examples:
 
