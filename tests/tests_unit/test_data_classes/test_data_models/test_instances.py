@@ -245,7 +245,14 @@ class TestEdgeListWithCursor:
 
     def test_extend_with_duplicates(self) -> None:
         default_args: dict[str, Any] = dict(
-            version=1, last_updated_time=0, created_time=0, deleted_time=None, properties=None, type=None
+            start_node=DirectRelationReference("space", "node1"),
+            end_node=DirectRelationReference("space", "node2"),
+            version=1,
+            last_updated_time=0,
+            created_time=0,
+            deleted_time=None,
+            properties=None,
+            type=None,
         )
         edges = EdgeListWithCursor(
             [

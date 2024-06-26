@@ -948,7 +948,7 @@ class NodeListWithCursor(NodeList):
         if not isinstance(other, type(self)):
             raise ValueError("Unable to extend as the types do not match")
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
-        if set(self._external_id_to_item.keys()).isdisjoint(other_res_list._external_id_to_item.keys()):
+        if self._external_id_to_item.keys().isdisjoint(other_res_list._external_id_to_item.keys()):
             # Skip super() as we need the original type.
             UserList.extend(self, other)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
@@ -1011,7 +1011,7 @@ class EdgeListWithCursor(EdgeList):
         if not isinstance(other, type(self)):
             raise ValueError("Unable to extend as the types do not match")
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
-        if set(self._id_to_item.keys()).isdisjoint(other_res_list._id_to_item):
+        if self._external_id_to_item.keys().isdisjoint(other_res_list._external_id_to_item):
             # Skip super() as we need the original type.
             UserList.extend(self, other)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
