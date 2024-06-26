@@ -15,10 +15,11 @@ from cognite.client.data_classes.data_modeling import (
     NodeApply,
     NodeId,
     NodeList,
+    NodeListWithCursor,
     NodeOrEdgeData,
     ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import Instance
+from cognite.client.data_classes.data_modeling.instances import EdgeListWithCursor, Instance
 
 
 class TestEdgeApply:
@@ -159,6 +160,118 @@ class TestNode:
             "type": {"externalId": "someType", "space": "someSpace"},
             "version": 1,
         }
+
+
+class TestNodeListWithCursor:
+    def test_extend(self) -> None:
+        default_args: dict[str, Any] = dict(
+            version=1, last_updated_time=0, created_time=0, deleted_time=None, properties=None, type=None
+        )
+        nodes = NodeListWithCursor(
+            [
+                Node(space="space", external_id="node1", **default_args),
+                Node(space="space", external_id="node2", **default_args),
+            ],
+            cursor="original_cursor",
+        )
+
+        nodes.extend(
+            NodeListWithCursor(
+                [
+                    Node(space="space", external_id="node3", **default_args),
+                    Node(space="space", external_id="node4", **default_args),
+                ],
+                cursor="next_cursor",
+            ),
+        )
+        assert len(nodes) == 4
+        assert nodes.cursor == "next_cursor"
+
+    def test_extend_with_duplicates(self) -> None:
+        default_args: dict[str, Any] = dict(
+            version=1, last_updated_time=0, created_time=0, deleted_time=None, properties=None, type=None
+        )
+        nodes = NodeListWithCursor(
+            [
+                Node(space="space", external_id="node1", **default_args),
+                Node(space="space", external_id="node2", **default_args),
+            ],
+            cursor="original_cursor",
+        )
+
+        with pytest.raises(ValueError):
+            nodes.extend(
+                NodeListWithCursor(
+                    [
+                        Node(space="space", external_id="node2", **default_args),
+                        Node(space="space", external_id="node3", **default_args),
+                    ],
+                    cursor="next_cursor",
+                ),
+            )
+
+
+class TestEdgeListWithCursor:
+    def test_extend(self) -> None:
+        default_args: dict[str, Any] = dict(
+            start_node=DirectRelationReference("space", "node1"),
+            end_node=DirectRelationReference("space", "node2"),
+            version=1,
+            last_updated_time=0,
+            created_time=0,
+            deleted_time=None,
+            properties=None,
+            type=None,
+        )
+        edges = EdgeListWithCursor(
+            [
+                Edge(space="space", external_id="edge1", **default_args),
+                Edge(space="space", external_id="edge2", **default_args),
+            ],
+            cursor="original_cursor",
+        )
+
+        edges.extend(
+            EdgeListWithCursor(
+                [
+                    Edge(space="space", external_id="edge3", **default_args),
+                    Edge(space="space", external_id="edge4", **default_args),
+                ],
+                cursor="next_cursor",
+            ),
+        )
+        assert len(edges) == 4
+        assert edges.cursor == "next_cursor"
+
+    def test_extend_with_duplicates(self) -> None:
+        default_args: dict[str, Any] = dict(
+            start_node=DirectRelationReference("space", "node1"),
+            end_node=DirectRelationReference("space", "node2"),
+            version=1,
+            last_updated_time=0,
+            created_time=0,
+            deleted_time=None,
+            properties=None,
+            type=None,
+        )
+        edges = EdgeListWithCursor(
+            [
+                Edge(space="space", external_id="edge1", **default_args),
+                Edge(space="space", external_id="edge2", **default_args),
+            ],
+            cursor="original_cursor",
+        )
+
+        with pytest.raises(ValueError):
+            edges.extend(
+                EdgeListWithCursor(
+                    [
+                        Edge(space="space", external_id="edge2", **default_args),
+                        Edge(space="space", external_id="edge3", **default_args),
+                    ],
+                    cursor="next_cursor",
+                ),
+            )
 
 
 @pytest.fixture
