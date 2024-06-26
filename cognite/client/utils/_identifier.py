@@ -68,6 +68,9 @@ class Identifier(Generic[T_ID]):
             raise TypeError(f"Expected id/external_id to be of type int or str, got {value} of type {type(id)}")
         self.__value: T_ID = value
 
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Identifier) and self.__value == other.__value
+
     @classmethod
     def of_either(cls, id: int | None, external_id: str | None, instance_id: InstanceId | None = None) -> Identifier:
         if id is external_id is instance_id is None:

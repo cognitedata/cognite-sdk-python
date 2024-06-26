@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping, Sequence, Tuple, Union
+from typing import Any, Callable, Literal, Mapping, Sequence, Tuple, Union
 
 from typing_extensions import TypeAlias
 
@@ -9,10 +9,6 @@ from cognite.client.data_classes._base import T_CogniteSort
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client.utils._identifier import T_ID
-
 
 SortSpec: TypeAlias = Union[
     T_CogniteSort,
@@ -30,17 +26,15 @@ def assert_type(var: Any, var_name: str, types: list[type], allow_none: bool = F
         raise TypeError(f"{var_name!r} must be one of types {types}, not {type(var)}")
 
 
-def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[str]) -> dict[str, T_ID]:
+def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[str]) -> Identifier:
     if not isinstance(dct, Mapping):
         raise TypeError(f"Expected dict-like object, got {type(dct)}")
 
     # Verify that we have gotten exactly one identifier:
     if (xid := dct.get("external_id")) is None:  # "" is valid ext.id
         xid = dct.get("externalId")
-    if (instance_id := dct.get("instance_id")) is None:
-        instance_id = dct.get("instanceId")
-    id_dct = Identifier.of_either(dct.get("id"), xid, instance_id).as_dict(camel_case=True)
-
+    instance_id = dct.get("instance_id") or dct.get("instanceId")
+    id_dct = Identifier.of_either(dct.get("id"), xid, instance_id)
     missing_keys = required_keys.difference(dct)
     invalid_keys = set(dct) - required_keys - {"id", "externalId", "external_id", "instance_id", "instanceId"}
     if missing_keys or invalid_keys:

@@ -2,6 +2,7 @@ import re
 
 import pytest
 
+from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._validation import (
     assert_type,
     process_asset_subtree_ids,
@@ -25,9 +26,9 @@ class TestValidateUserInputDictWithIdentifier:
     @pytest.mark.parametrize(
         "dct, keys, expected",
         (
-            ({"id": 123, "a": None, "b": 0}, {"a", "b"}, {"id": 123}),
-            ({"external_id": "foo", "c": None}, {"c"}, {"externalId": "foo"}),
-            ({"externalId": "foo"}, set(), {"externalId": "foo"}),
+            ({"id": 123, "a": None, "b": 0}, {"a", "b"}, Identifier(123)),
+            ({"external_id": "foo", "c": None}, {"c"}, Identifier("foo")),
+            ({"externalId": "foo"}, set(), Identifier("foo")),
         ),
     )
     def test_validate_normal_input(self, dct, keys, expected):

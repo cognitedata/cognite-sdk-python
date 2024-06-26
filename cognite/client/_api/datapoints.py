@@ -59,7 +59,7 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore, InstanceId
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
     ZoneInfo,
@@ -1547,8 +1547,9 @@ class DatapointsAPI(APIClient):
         """
         valid_ranges = []
         for time_range in ranges:
-            valid_range = validate_user_input_dict_with_identifier(time_range, required_keys={"start", "end"})
-            valid_range.update(
+            identifier = validate_user_input_dict_with_identifier(time_range, required_keys={"start", "end"})
+            valid_range = dict(
+                **identifier.as_dict(),
                 inclusiveBegin=timestamp_to_ms(time_range["start"]),
                 exclusiveEnd=timestamp_to_ms(time_range["end"]),
             )
@@ -1663,23 +1664,13 @@ class DatapointsPoster:
 
     def _verify_and_prepare_dps_objects(
         self, dps_object_lst: list[dict[str, Any]]
-    ) -> list[tuple[tuple[str, int | str | dict], list[_InsertDatapoint]]]:
-        dps_to_insert: dict[tuple[str, int | str | InstanceId], list[_InsertDatapoint]] = defaultdict(list)
+    ) -> list[tuple[Identifier, list[_InsertDatapoint]]]:
+        dps_to_insert: dict[Identifier, list[_InsertDatapoint]] = defaultdict(list)
         for obj in dps_object_lst:
-            validated: dict[str, Any] = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
+            identifier = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
             validated_dps = self._parse_and_validate_dps(obj["datapoints"])
-
-            # Concatenate datapoints using identifier as key:
-            if (xid := validated.get("externalId")) is not None:
-                dps_to_insert["externalId", xid].extend(validated_dps)
-            elif (instance_id := validated.get("instanceId")) is not None:
-                dps_to_insert["instanceId", InstanceId.load(instance_id)].extend(validated_dps)
-            else:
-                dps_to_insert["id", validated["id"]].extend(validated_dps)
-        return [
-            ((id_name, id_.dump(include_instance_type=False) if id_name == "instanceId" else id_), data)  # type: ignore[misc, union-attr]
-            for (id_name, id_), data in dps_to_insert.items()
-        ]
+            dps_to_insert[identifier].extend(validated_dps)
+        return list(dps_to_insert.items())
 
     def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
         if not dps:
@@ -1727,13 +1718,13 @@ class DatapointsPoster:
         return isinstance(dps[0], dict)
 
     def _create_payload_tasks(
-        self, post_dps_objects: list[tuple[tuple[str, int], list[_InsertDatapoint]]]
+        self, post_dps_objects: list[tuple[Identifier, list[_InsertDatapoint]]]
     ) -> Iterator[list[dict[str, Any]]]:
         payload = []
         n_left = self.dps_limit
-        for (id_name, ident), dps in post_dps_objects:
+        for identifier, dps in post_dps_objects:
             for next_chunk, is_full in self._split_datapoints(dps, n_left, self.dps_limit):
-                payload.append({id_name: ident, "datapoints": next_chunk})
+                payload.append({**identifier.as_dict(), "datapoints": next_chunk})
                 if is_full:
                     yield payload
                     payload = []
