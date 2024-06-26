@@ -71,6 +71,9 @@ class Identifier(Generic[T_ID]):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Identifier) and self.__value == other.__value
 
+    def __hash__(self) -> int:
+        return hash(self.__value)
+
     @classmethod
     def of_either(cls, id: int | None, external_id: str | None, instance_id: InstanceId | None = None) -> Identifier:
         if id is external_id is instance_id is None:
@@ -136,10 +139,7 @@ class Identifier(Generic[T_ID]):
             return {self.name(camel_case): self.__value}
 
     def as_tuple(self, camel_case: bool = True) -> tuple[str, T_ID]:
-        if isinstance(self.__value, InstanceId):
-            return self.__value.as_tuple()  # type: ignore[return-value]
-        else:
-            return self.name(camel_case), self.__value
+        return self.name(camel_case), self.__value
 
 
 class UserIdentifier:

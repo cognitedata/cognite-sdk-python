@@ -1,26 +1,39 @@
 import pytest
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.utils._identifier import Identifier, IdentifierSequence, UserIdentifier, UserIdentifierSequence
+from cognite.client.utils._identifier import (
+    Identifier,
+    IdentifierSequence,
+    InstanceId,
+    UserIdentifier,
+    UserIdentifierSequence,
+)
 
 
 class TestIdentifier:
     @pytest.mark.parametrize(
-        "id, external_id, exp_tpl",
+        "id, external_id, instance_id, exp_tpl",
         (
-            (1, None, ("id", 1)),
-            (MAX_VALID_INTERNAL_ID, None, ("id", MAX_VALID_INTERNAL_ID)),
-            (None, "foo", ("external_id", "foo")),
+            (1, None, None, ("id", 1)),
+            (MAX_VALID_INTERNAL_ID, None, None, ("id", MAX_VALID_INTERNAL_ID)),
+            (None, "foo", None, ("external_id", "foo")),
+            (None, None, InstanceId("s", "extid"), ("instance_id", InstanceId("s", "extid"))),
         ),
     )
-    def test_of_either__normal_input(self, id, external_id, exp_tpl):
-        assert exp_tpl == Identifier.of_either(id, external_id).as_tuple(camel_case=False)
+    def test_of_either__normal_input(self, id, external_id, instance_id, exp_tpl):
+        assert exp_tpl == Identifier.of_either(id, external_id, instance_id).as_tuple(camel_case=False)
 
     @pytest.mark.parametrize(
         "id, external_id, instance_id, err_msg",
         (
             (None, None, None, "Exactly one of id, external id, or instance_id must be specified, got neither"),
             (123, "foo", None, "Exactly one of id, external id, or instance_id must be specified, got multiple"),
+            (
+                None,
+                "foo",
+                InstanceId("space", "external_id"),
+                "Exactly one of id, external id, or instance_id must be specified, got multiple",
+            ),
             (0, None, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
             (MAX_VALID_INTERNAL_ID + 1, None, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
         ),
@@ -36,9 +49,17 @@ class TestIdentifier:
         # string is ok
         Identifier("abc")
 
+        # InstanceId is ok
+        Identifier(InstanceId("s", "e"))
+
         # anything else is not ok
         with pytest.raises(TypeError, match="Expected id/external_id to be of type int or str"):
             Identifier(object())
+
+    def test_is_hashable(self) -> None:
+        assert hash(Identifier(1)) == hash(Identifier(1))
+        assert hash(Identifier(1)) != hash(Identifier(2))
+        assert hash(Identifier(InstanceId("s", "e1"))) != hash(Identifier(InstanceId("s", "e2")))
 
 
 class TestIdentifierSequence:
