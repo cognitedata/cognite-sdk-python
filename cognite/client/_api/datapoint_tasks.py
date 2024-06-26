@@ -46,6 +46,7 @@ from cognite.client.data_classes.datapoints import (
     _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
     ZoneInfo,
@@ -87,6 +88,7 @@ DatapointsId = Union[int, DatapointsQuery, Dict[str, Any], Sequence[Union[int, D
 DatapointsExternalId = Union[
     str, DatapointsQuery, Dict[str, Any], SequenceNotStr[Union[str, DatapointsQuery, Dict[str, Any]]]
 ]
+DatapointsInstanceId = Union[InstanceId, Sequence[InstanceId]]
 
 
 @dataclass
@@ -100,6 +102,7 @@ class _FullDatapointsQuery:
     end: int | str | datetime.datetime | None = None
     id: DatapointsId | None = None
     external_id: DatapointsExternalId | None = None
+    instance_id: InstanceId | Sequence[InstanceId] | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
     timezone: str | datetime.timezone | ZoneInfo | None = None
@@ -117,9 +120,11 @@ class _FullDatapointsQuery:
         # No lists given and exactly one of id/xid was given:
         return (
             isinstance(self.id, (dict, DatapointsQuery, numbers.Integral))
-            and self.external_id is None
+            and (self.external_id is None and self.instance_id is None)
             or isinstance(self.external_id, (dict, DatapointsQuery, str))
-            and self.id is None
+            and (self.id is None and self.instance_id is None)
+            or isinstance(self.instance_id, InstanceId)
+            and (self.id is None and self.external_id is None)
         )
 
     @cached_property
@@ -146,12 +151,17 @@ class _FullDatapointsQuery:
             queries.extend(self._parse(id_, arg_name="id", exp_type=numbers.Integral))
         if (xid := self.external_id) is not None:
             queries.extend(self._parse(xid, arg_name="external_id", exp_type=str))
+        if (iid := self.instance_id) is not None:
+            queries.extend(self._parse(iid, arg_name="instance_id", exp_type=InstanceId))
         if queries:
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
     def _parse(
-        self, id_or_xid: DatapointsId | DatapointsExternalId, arg_name: Literal["id", "external_id"], exp_type: type
+        self,
+        id_or_xid: DatapointsId | DatapointsExternalId | DatapointsInstanceId,
+        arg_name: Literal["id", "external_id", "instance_id"],
+        exp_type: type,
     ) -> list[DatapointsQuery]:
         user_queries: SequenceNotStr[int | str | DatapointsQuery | dict[str, Any]]
         if isinstance(id_or_xid, (dict, DatapointsQuery, exp_type)):
