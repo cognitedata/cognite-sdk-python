@@ -26,6 +26,7 @@ from typing_extensions import NotRequired, Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier
@@ -165,6 +166,7 @@ class DatapointsQuery:
     )
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
+    instance_id: InitVar[NodeId | None] = None
     start: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     end: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
@@ -179,9 +181,9 @@ class DatapointsQuery:
     ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
-    def __post_init__(self, id: int | None, external_id: str | None) -> None:
+    def __post_init__(self, id: int | None, external_id: str | None, instance_id: NodeId | None) -> None:
         # Ensure user have just specified one of id/xid:
-        self._identifier = Identifier.of_either(id, external_id)
+        self._identifier = Identifier.of_either(id, external_id, instance_id)
         # Store the possibly custom granularity (we support more than the API and a translation is done)
         self._original_granularity = self.granularity
 
@@ -197,7 +199,7 @@ class DatapointsQuery:
 
     @classmethod
     # TODO: Remove in next major version (require use of DatapointsQuery directly)
-    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id"]) -> Self:
+    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id", "instance_id"]) -> Self:
         if id_type not in dct:
             if (arg_name_cc := to_camel_case(id_type)) not in dct:
                 raise KeyError(f"Missing required key `{id_type}` in dict: {dct}.")
@@ -488,6 +490,7 @@ class DatapointsArray(CogniteResource):
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
@@ -518,6 +521,7 @@ class DatapointsArray(CogniteResource):
     ) -> None:
         self.id = id
         self.external_id = external_id
+        self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
@@ -551,6 +555,9 @@ class DatapointsArray(CogniteResource):
         return {
             "id": self.id,
             "external_id": self.external_id,
+            "instance_id": self.instance_id.dump(camel_case=False, include_instance_type=False)
+            if self.instance_id
+            else None,
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
@@ -604,6 +611,7 @@ class DatapointsArray(CogniteResource):
         return cls(
             id=dps_dct.get("id"),
             external_id=dps_dct.get("externalId"),
+            instance_id=NodeId.load(dps_dct["instanceId"]) if "instanceId" in dps_dct else None,
             is_step=dps_dct.get("isStep"),
             is_string=dps_dct.get("isString"),
             unit=dps_dct.get("unit"),
@@ -864,6 +872,7 @@ class Datapoints(CogniteResource):
     Args:
         id (int | None): Id of the time series the datapoints belong to
         external_id (str | None): External id of the time series the datapoints belong to
+        instance_id (NodeId | None): The instance id of the time series the datapoints belong to
         is_string (bool | None): Whether the time series contains numerical or string data.
         is_step (bool | None): Whether the time series is stepwise or continuous.
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
@@ -897,6 +906,7 @@ class Datapoints(CogniteResource):
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
@@ -927,6 +937,7 @@ class Datapoints(CogniteResource):
     ) -> None:
         self.id = id
         self.external_id = external_id
+        self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
@@ -1012,6 +1023,8 @@ class Datapoints(CogniteResource):
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
         }
+        if self.instance_id is not None:
+            dumped["instance_id"] = self.instance_id.dump(camel_case=camel_case, include_instance_type=False)
         if self.timezone is not None:
             dumped["timezone"] = convert_timezone_to_str(self.timezone)
         datapoints = [dp.dump(camel_case=camel_case, include_timezone=False) for dp in self.__get_datapoint_objects()]
@@ -1132,6 +1145,7 @@ class Datapoints(CogniteResource):
         instance = cls(
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
+            instance_id=NodeId.load(dps_object["instanceId"]) if "instanceId" in dps_object else None,
             is_string=dps_object.get("isString"),
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
@@ -1184,6 +1198,7 @@ class Datapoints(CogniteResource):
         skip_attrs = {
             "id",
             "external_id",
+            "instance_id",
             "is_string",
             "is_step",
             "unit",
