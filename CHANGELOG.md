@@ -17,25 +17,26 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [7.52.3] - 2024-06-27
+### Added
+- Added `partitions` parameter to `retrieve_dataframe()` method of the `RawRowsAPI`.
+
 ## [7.52.2] - 2024-06-26
 ### Added
-
 - Alpha feature, in `client.time_series.data` support for `instance_id` in `.insert`, `insert_multiple`,
   `.delete`, and `.retrieve` methods. This is an experimental feature and may change without warning.
 
 ## [7.52.1] - 2024-06-26
 ### Fixed
-
 -  Calling `.extend` on a `NodeListWithCursor` or `EdgeListWithCursor` would raise a `TypeError`. This is now fixed.
 
 ## [7.52.0] - 2024-06-19
 ### Added
-
 - Support the `immutable` flag on container/view properties
 
 ## [7.51.1] - 2024-06-18
 ### Added
-
 - Added support for serializing Node/Edge properties of type `list` of `NodeId`and `DirectRelationReference`, 
   `date`, `datetime` and list of `date` and `datetime` to `json` format.
 
