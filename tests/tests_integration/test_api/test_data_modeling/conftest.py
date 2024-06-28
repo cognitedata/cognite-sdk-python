@@ -75,12 +75,14 @@ def populated_movie(cognite_client: CogniteClient, movie_model: DataModel[View])
     views = ViewList(movie_model.views)
     nodes = _read_nodes(views)
     edges = _read_edges(views)
-    result = cognite_client.data_modeling.instances.retrieve(nodes.as_ids(), edges.as_ids())
+    result = cast(InstancesResult, cognite_client.data_modeling.instances.retrieve(nodes.as_ids(), edges.as_ids()))
     if len(result.nodes) == len(nodes) and len(result.edges) == len(edges):
         return result
 
     created = cognite_client.data_modeling.instances.apply(nodes, edges)
-    result = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), created.edges.as_ids())
+    result = cast(
+        InstancesResult, cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), created.edges.as_ids())
+    )
     return result
 
 

@@ -31,8 +31,11 @@ from cognite.client.data_classes.data_modeling import (
     NodeId,
     NodeList,
     NodeOrEdgeData,
+    PropertyOptions,
     SingleHopConnectionDefinition,
     Space,
+    TypedNode,
+    TypedNodeWrite,
     View,
     ViewApply,
     ViewId,
@@ -50,7 +53,6 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SourceSelector,
 )
-from cognite.client.data_classes.data_modeling.typed_instances import PropertyOptions, TypedNodeWrite
 from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
@@ -158,6 +160,70 @@ class PrimitiveNullable(TypedNodeWrite):
         return ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
 
 
+class PrimitiveNullableRead(TypedNode[PrimitiveNullable]):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        text: str | None = None,
+        boolean: bool | None = None,
+        float32: float | None = None,
+        float64: float | None = None,
+        int32: int | None = None,
+        int64: int | None = None,
+        timestamp: datetime | None = None,
+        date: date | None = None,
+        json: dict | None = None,
+        direct: DirectRelationReference | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            version=version,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
+
+    def as_write(self) -> PrimitiveNullable:
+        return PrimitiveNullable(
+            space=self.space,
+            external_id=self.external_id,
+            text=self.text,
+            boolean=self.boolean,
+            float32=self.float32,
+            float64=self.float64,
+            int32=self.int32,
+            int64=self.int64,
+            timestamp=self.timestamp,
+            date=self.date,
+            json=self.json,
+            direct=self.direct,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
+
+
 class PrimitiveListed(TypedNodeWrite):
     def __init__(
         self,
@@ -193,6 +259,70 @@ class PrimitiveListed(TypedNodeWrite):
         return ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
 
 
+class PrimitiveListedRead(TypedNode[PrimitiveListed]):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        text: list[str] | None = None,
+        boolean: list[bool] | None = None,
+        float32: list[float] | None = None,
+        float64: list[float] | None = None,
+        int32: list[int] | None = None,
+        int64: list[int] | None = None,
+        timestamp: list[datetime] | None = None,
+        date: list[date] | None = None,
+        json: list[dict] | None = None,
+        direct: list[DirectRelationReference] | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            version=version,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
+
+    def as_write(self) -> PrimitiveListed:
+        return PrimitiveListed(
+            space=self.space,
+            external_id=self.external_id,
+            text=self.text,
+            boolean=self.boolean,
+            float32=self.float32,
+            float64=self.float64,
+            int32=self.int32,
+            int64=self.int64,
+            timestamp=self.timestamp,
+            date=self.date,
+            json=self.json,
+            direct=self.direct,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
 class Person(TypedNodeWrite):
     birth_year = PropertyOptions(identifier="birthYear")
 
@@ -201,7 +331,7 @@ class Person(TypedNodeWrite):
         space: str,
         external_id: str,
         name: str,
-        birth_year: int,
+        birth_year: int | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ):
@@ -214,16 +344,72 @@ class Person(TypedNodeWrite):
         return ViewId("IntegrationTestSpace", "Person", "37ce1494b83df2")
 
 
+class PersonRead(TypedNode[Person]):
+    birth_year = PropertyOptions(identifier="birthYear")
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        name: str,
+        birth_year: int | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ):
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            version=version,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.name = name
+        self.birth_year = birth_year
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "Person", "37ce1494b83df2")
+
+    def as_write(self) -> Person:
+        return Person(
+            space=self.space,
+            external_id=self.external_id,
+            name=self.name,
+            birth_year=self.birth_year,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
 class TestInstancesAPI:
     def test_list_nodes(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
-        listed_nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node")
+        is_prefix = filters.Or(
+            *[
+                filters.Prefix(["node", "externalId"], prefix)
+                for prefix in {n.external_id.split(":", maxsplit=1)[0] for n in movie_nodes}
+            ]
+        )
+
+        listed_nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node", filter=is_prefix)
 
         movie_node_ids = set(movie_nodes.as_ids())
         assert movie_node_ids
         assert movie_node_ids <= set(listed_nodes.as_ids())
 
     def test_list_edges(self, cognite_client: CogniteClient, movie_edges: EdgeList) -> None:
-        listed_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
+        is_prefix = filters.Or(
+            *[
+                filters.Prefix(["edge", "externalId"], prefix)
+                for prefix in {e.external_id.split(":", maxsplit=1)[0] for e in movie_edges}
+            ]
+        )
+
+        listed_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge", filter=is_prefix)
         assert set(movie_edges.as_ids()) <= set(listed_edges.as_ids())
 
     def test_list_nodes_with_properties(self, cognite_client: CogniteClient, person_view: View) -> None:
@@ -305,7 +491,7 @@ class TestInstancesAPI:
 
         try:
             created = cognite_client.data_modeling.instances.apply(new_node, replace=True)
-            retrieved = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
+            retrieved = cast(InstancesResult, cognite_client.data_modeling.instances.retrieve(new_node.as_id()))
 
             assert len(created.nodes) == 1
             assert created.nodes[0].created_time
@@ -314,7 +500,7 @@ class TestInstancesAPI:
             assert retrieved.nodes[0].as_id() == new_node.as_id()
 
             deleted_result = cognite_client.data_modeling.instances.delete(new_node.as_id())
-            retrieved_deleted = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
+            retrieved_deleted = cast(InstancesResult, cognite_client.data_modeling.instances.retrieve(new_node.as_id()))
 
             assert len(deleted_result.nodes) == 1
             assert deleted_result.nodes[0] == new_node.as_id()
@@ -390,7 +576,7 @@ class TestInstancesAPI:
             created_edges = cognite_client.data_modeling.instances.apply(
                 edges=person_to_actor, auto_create_start_nodes=True, auto_create_end_nodes=True, replace=True
             )
-            created_nodes = cognite_client.data_modeling.instances.retrieve(node_pair)
+            created_nodes = cast(InstancesResult, cognite_client.data_modeling.instances.retrieve(node_pair))
 
             assert len(created_edges.edges) == 1
             assert created_edges.edges[0].created_time
@@ -409,15 +595,18 @@ class TestInstancesAPI:
         assert res.edges == []
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
-        retrieved = cognite_client.data_modeling.instances.retrieve(movie_nodes.as_ids())
+        retrieved = cast(InstancesResult, cognite_client.data_modeling.instances.retrieve(movie_nodes.as_ids()))
         assert len(retrieved.nodes) == len(movie_nodes)
 
     def test_retrieve_nodes_and_edges_using_id_tuples(
         self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
     ) -> None:
-        retrieved = cognite_client.data_modeling.instances.retrieve(
-            nodes=[(id.space, id.external_id) for id in movie_nodes.as_ids()],
-            edges=[(id.space, id.external_id) for id in movie_edges.as_ids()],
+        retrieved = cast(
+            InstancesResult,
+            cognite_client.data_modeling.instances.retrieve(
+                nodes=[(id.space, id.external_id) for id in movie_nodes.as_ids()],
+                edges=[(id.space, id.external_id) for id in movie_edges.as_ids()],
+            ),
         )
         assert set(retrieved.nodes.as_ids()) == set(movie_nodes.as_ids())
         assert set(retrieved.edges.as_ids()) == set(movie_edges.as_ids())
@@ -425,8 +614,9 @@ class TestInstancesAPI:
     def test_retrieve_nodes_and_edges(
         self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
     ) -> None:
-        retrieved = cognite_client.data_modeling.instances.retrieve(
-            nodes=movie_nodes.as_ids(), edges=movie_edges.as_ids()
+        retrieved = cast(
+            InstancesResult,
+            cognite_client.data_modeling.instances.retrieve(nodes=movie_nodes.as_ids(), edges=movie_edges.as_ids()),
         )
         assert set(retrieved.nodes.as_ids()) == set(movie_nodes.as_ids())
         assert set(retrieved.edges.as_ids()) == set(movie_edges.as_ids())
@@ -435,7 +625,7 @@ class TestInstancesAPI:
         ids_without_missing = movie_nodes.as_ids()
         ids_with_missing = [*ids_without_missing, NodeId("myNonExistingSpace", "myImaginaryContainer")]
 
-        retrieved = cognite_client.data_modeling.instances.retrieve(ids_with_missing)
+        retrieved = cast(InstancesResult, cognite_client.data_modeling.instances.retrieve(ids_with_missing))
         assert retrieved.nodes.as_ids() == ids_without_missing
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient) -> None:
@@ -686,7 +876,10 @@ class TestInstancesAPI:
         node = node_with_1_1_pressure_in_bar
         source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
 
-        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
+        retrieved: InstancesResult
+        retrieved = cast(
+            InstancesResult, cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
+        )
         assert retrieved.nodes
         assert math.isclose(retrieved.nodes[0]["pressure"], 1.1 * 1e5)
 
@@ -771,6 +964,13 @@ class TestInstancesAPI:
             created = cognite_client.data_modeling.instances.apply(primitive)
             assert len(created.nodes) == 1
             assert created.nodes[0].external_id == external_id
+
+            retrieved = cognite_client.data_modeling.instances.retrieve(
+                primitive.as_id(), node_cls=PrimitiveNullableRead
+            ).nodes
+            assert len(retrieved) == 1
+            assert isinstance(retrieved[0], PrimitiveNullableRead)
+            assert retrieved[0].text == "text"
         finally:
             cognite_client.data_modeling.instances.delete(primitive.as_id())
 
@@ -799,6 +999,13 @@ class TestInstancesAPI:
             created = cognite_client.data_modeling.instances.apply(primitive_listed)
             assert len(created.nodes) == 1
             assert created.nodes[0].external_id == external_id
+
+            retrieved = cognite_client.data_modeling.instances.retrieve(
+                primitive_listed.as_id(), node_cls=PrimitiveListedRead
+            ).nodes
+            assert len(retrieved) == 1
+            assert isinstance(retrieved[0], PrimitiveListedRead)
+            assert retrieved[0].text == ["text"]
         finally:
             cognite_client.data_modeling.instances.delete(primitive_listed.as_id())
 
@@ -814,8 +1021,28 @@ class TestInstancesAPI:
             created = cognite_client.data_modeling.instances.apply(person)
             assert len(created.nodes) == 1
             assert created.nodes[0].external_id == external_id
+
+            retrieved = cognite_client.data_modeling.instances.retrieve(person.as_id(), node_cls=PersonRead).nodes
+            assert len(retrieved) == 1
+            assert isinstance(retrieved[0], PersonRead)
+            assert retrieved[0].name == "John Doe"
+            assert retrieved[0].birth_year == 1980
         finally:
             cognite_client.data_modeling.instances.delete(person.as_id())
+
+    def test_list_person_types(self, cognite_client: CogniteClient) -> None:
+        persons = cognite_client.data_modeling.instances.list(PersonRead, limit=10)
+
+        assert len(persons) > 0
+        assert all(isinstance(person, PersonRead) for person in persons)
+
+    def test_search_person(self, cognite_client: CogniteClient) -> None:
+        persons = cognite_client.data_modeling.instances.search(
+            PersonRead.get_source(), query="Quentin", instance_type=PersonRead, limit=10
+        )
+
+        assert len(persons) > 0
+        assert all(isinstance(person, PersonRead) for person in persons)
 
 
 class TestInstancesSync:
