@@ -2,7 +2,7 @@
 Note: If tests related to fetching datapoints are broken, all time series + their datapoints can be
       recreated easily by running the file linked below. You will need to provide a valid set of
       credentials to the `CogniteClient` for the Python SDK integration test CDF project:
->>> python scripts/create_ts_for_integration_tests.py
+python scripts/create_ts_for_integration_tests.py
 """
 
 from __future__ import annotations
@@ -35,8 +35,10 @@ from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesList,
 )
+from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, SpaceApply, ViewId
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
@@ -175,6 +177,29 @@ def retrieve_endpoints(cognite_client):
 def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
     # retrieve_dataframe is just a wrapper around retrieve_arrays
     return [*retrieve_endpoints, cognite_client.time_series.data.retrieve_dataframe]
+
+
+@pytest.fixture(scope="session")
+def instance_ts_id(cognite_client_alpha: CogniteClient) -> InstanceId:
+    created = cognite_client_alpha.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
+
+    my_ts = NodeApply(
+        space=created.space,
+        external_id="ts_python_sdk_instance_id_tests",
+        sources=[
+            NodeOrEdgeData(
+                source=ViewId("cdf_cdm_experimental", "TimeSeriesBase", "v1"),
+                properties={
+                    "name": "ts_python_sdk_instance_id_tests",
+                    "isStep": False,
+                    "isString": False,
+                },
+            )
+        ],
+    )
+    created_ts = cognite_client_alpha.data_modeling.instances.apply(my_ts).nodes
+
+    return created_ts[0].as_id()
 
 
 def ts_to_ms(ts, tz=None):
@@ -2691,3 +2716,31 @@ class TestInsertDatapointsAPI:
         assert dps_numeric.status_code == dps_str.status_code
         assert dps_numeric.status_symbol == dps_str.status_symbol
         assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
+
+    def test_insert_retrieve_delete_datapoints_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
+    ) -> None:
+        cognite_client_alpha.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
+
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+
+        assert retrieved.timestamp == [0, 1]
+        assert retrieved.value == [0.0, 1.0]
+
+        cognite_client_alpha.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
+
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+
+        assert retrieved.timestamp == []
+
+    def test_insert_multiple_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
+    ) -> None:
+        cognite_client_alpha.time_series.data.insert_multiple(
+            [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": 4, "value": 42}]}]
+        )
+
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
+
+        assert retrieved.timestamp == [4]
+        assert retrieved.value == [42]

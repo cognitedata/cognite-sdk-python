@@ -153,25 +153,39 @@ class TestGetLatest:
         assert e.value.code == 500
 
     @pytest.mark.parametrize(
-        "id, external_id, pass_as, err_msg",
+        "id, external_id, instance_id, pass_as, err_msg",
         (
-            (None, None, "id", "Exactly one of id or external id must be specified, got neither"),
-            (None, None, "external_id", "Exactly one of id or external id must be specified, got neither"),
-            (None, "foo", "id", "Missing 'id' from: 'LatestDatapointQuery"),
-            (123, None, "external_id", "Missing 'external_id' from: 'LatestDatapointQuery"),
-            (123, "foo", "id", "Exactly one of id or external id must be specified, got both"),
-            (123, "foo", "external_id", "Exactly one of id or external id must be specified, got both"),
+            (None, None, None, "id", "Exactly one of id, external id, or instance_id must be specified, got neither"),
+            (
+                None,
+                None,
+                None,
+                "external_id",
+                "Exactly one of id, external id, or instance_id must be specified, got neither",
+            ),
+            (None, "foo", None, "id", "Missing 'id' from: 'LatestDatapointQuery"),
+            (123, None, None, "external_id", "Missing 'external_id' from: 'LatestDatapointQuery"),
+            (123, "foo", None, "id", "Exactly one of id, external id, or instance_id must be specified, got multiple"),
+            (
+                123,
+                "foo",
+                None,
+                "external_id",
+                "Exactly one of id, external id, or instance_id must be specified, got multiple",
+            ),
         ),
     )
-    def test_using_latest_datapoint_query__fails_wrong_ident(self, cognite_client, id, external_id, pass_as, err_msg):
+    def test_using_latest_datapoint_query__fails_wrong_ident(
+        self, cognite_client, id, external_id, instance_id, pass_as, err_msg
+    ):
         # Pass directly
         with pytest.raises(ValueError, match=err_msg):
-            ldq = LatestDatapointQuery(id, external_id)
+            ldq = LatestDatapointQuery(id, external_id, instance_id)
             cognite_client.time_series.data.retrieve_latest(**{pass_as: ldq})
 
         # Pass as a part of a list
         with pytest.raises(ValueError, match=err_msg):
-            ldq = LatestDatapointQuery(id, external_id)
+            ldq = LatestDatapointQuery(id, external_id, instance_id)
             valid = 123 if pass_as == "id" else "foo"
             cognite_client.time_series.data.retrieve_latest(**{pass_as: [valid, ldq, ldq, valid]})
 
@@ -264,7 +278,9 @@ class TestInsertDatapoints:
     def test_insert_datapoints_in_multiple_time_series_invalid_key(self, cognite_client):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
         dps_objects = [{"extId": "1", "datapoints": dps}]
-        with pytest.raises(ValueError, match="Exactly one of id or external id must be specified, got neither"):
+        with pytest.raises(
+            ValueError, match="Exactly one of id, external id, or instance_id must be specified, got neither"
+        ):
             cognite_client.time_series.data.insert_multiple(dps_objects)
 
     def test_insert_datapoints_ts_does_not_exist(self, cognite_client, mock_post_datapoints_400):
@@ -346,13 +362,15 @@ class TestDeleteDatapoints:
         "input_dct, err_suffix",
         (
             ({}, "neither"),
-            ({"id": 1, "external_id": "a"}, "both"),
-            ({"id": 1, "externalId": "a"}, "both"),
+            ({"id": 1, "external_id": "a"}, "multiple"),
+            ({"id": 1, "externalId": "a"}, "multiple"),
         ),
     )
     def test_delete_ranges_invalid_ids(self, input_dct, err_suffix, cognite_client):
         ranges = [{"start": 0, "end": 1, **input_dct}]
-        with pytest.raises(ValueError, match=f"Exactly one of id or external id must be specified, got {err_suffix}"):
+        with pytest.raises(
+            ValueError, match=f"Exactly one of id, external id, or instance_id must be specified, got {err_suffix}"
+        ):
             cognite_client.time_series.data.delete_ranges(ranges)
 
 
