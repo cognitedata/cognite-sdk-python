@@ -277,8 +277,8 @@ class InstancesAPI(APIClient):
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-        node_cls: type[T_Node] = Node,
-        edge_cls: type[T_Edge] = Edge,
+        node_cls: type[T_Node] = Node,  # type: ignore[assignment]
+        edge_cls: type[T_Edge] = Edge,  # type: ignore[assignment]
     ) -> InstancesResult[T_Node, T_Edge]:
         """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
@@ -368,8 +368,8 @@ class InstancesAPI(APIClient):
         if sources is not None:
             return sources
         for cls in instance_cls:
-            if issubclass(cls, (TypedNode, TypedEdge)):
-                return cls.get_source()
+            if issubclass(cls, (TypedNode, TypedEdge)):  # type: ignore[arg-type]
+                return cls.get_source()  # type: ignore[union-attr]
         return sources
 
     def _load_node_and_edge_ids(
@@ -827,10 +827,10 @@ class InstancesAPI(APIClient):
         instance_type_str = self._to_instance_type_str(instance_type)
         filter = self._merge_space_into_filter(instance_type_str, space, filter)
         if instance_type == "node":
-            list_cls: type[NodeList[T_Node]] | type[EdgeList[T_Edge]] = NodeList[Node]
+            list_cls: type[NodeList[T_Node]] | type[EdgeList[T_Edge]] = NodeList[Node]  # type: ignore[assignment]
             resource_cls: type[Node] | type[Edge] = Node
         elif instance_type == "edge":
-            list_cls = EdgeList
+            list_cls = EdgeList  # type: ignore[assignment]
             resource_cls = Edge
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
             list_cls = NodeList[T_Node]  # type: ignore[valid-type]

@@ -4,7 +4,7 @@ import inspect
 from abc import ABC
 from collections.abc import Iterable
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import Self
 
@@ -87,7 +87,7 @@ class TypedNodeWrite(NodeApply, ABC):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
-        return _load_instance(cls, resource, properties, cls._instance_properties)
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
 class TypedEdgeWrite(EdgeApply, ABC):
@@ -115,7 +115,7 @@ class TypedEdgeWrite(EdgeApply, ABC):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
-        return _load_instance(cls, resource, properties, cls._instance_properties)
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
 class TypedNode(Node, ABC):
@@ -154,7 +154,7 @@ class TypedNode(Node, ABC):
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-        return _load_instance(cls, resource, properties, cls._instance_properties)
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
 class TypedEdge(Edge, ABC):
@@ -195,7 +195,7 @@ class TypedEdge(Edge, ABC):
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-        return _load_instance(cls, resource, properties, cls._instance_properties)
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
 def _load_instance(
@@ -203,7 +203,7 @@ def _load_instance(
 ) -> dict[str, Any]:
     args: dict[str, Any] = {}
     resource.pop("instanceType", None)
-    signature = inspect.signature(cls.__init__)
+    signature = inspect.signature(cls.__init__)  # type: ignore[misc]
     args.update(_load_properties(cls, properties, instance_properties, signature))
     args.update(_load_fixed_attributes(resource, instance_properties, signature))
     return cls(**args)

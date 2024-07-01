@@ -204,7 +204,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         self.sources = sources
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = {
+        output: dict[str, Any] = {
             "space": self.space,
             "externalId" if camel_case else "external_id": self.external_id,
             "instanceType": self.instance_type,
@@ -610,7 +610,7 @@ class Node(Instance["NodeApply"]):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the node.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -622,10 +622,10 @@ class Node(Instance["NodeApply"]):
         created_time: int,
         deleted_time: int | None,
         properties: Properties | None,
-        type: DirectRelationReference | None,
+        type: DirectRelationReference | tuple[str, str] | None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
-        self.type = type
+        self.type = DirectRelationReference.load(type) if type else None
 
     def as_apply(self) -> NodeApply:
         """
