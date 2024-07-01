@@ -160,7 +160,7 @@ class PrimitiveNullable(TypedNodeWrite):
         return ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
 
 
-class PrimitiveNullableRead(TypedNode[PrimitiveNullable]):
+class PrimitiveNullableRead(TypedNode):
     def __init__(
         self,
         space: str,
@@ -189,6 +189,7 @@ class PrimitiveNullableRead(TypedNode[PrimitiveNullable]):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
+            properties=None,
         )
         self.text = text
         self.boolean = boolean
@@ -259,7 +260,7 @@ class PrimitiveListed(TypedNodeWrite):
         return ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
 
 
-class PrimitiveListedRead(TypedNode[PrimitiveListed]):
+class PrimitiveListedRead(TypedNode):
     def __init__(
         self,
         space: str,
@@ -288,6 +289,7 @@ class PrimitiveListedRead(TypedNode[PrimitiveListed]):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
+            properties=None,
         )
         self.text = text
         self.boolean = boolean
@@ -344,7 +346,7 @@ class Person(TypedNodeWrite):
         return ViewId("IntegrationTestSpace", "Person", "37ce1494b83df2")
 
 
-class PersonRead(TypedNode[Person]):
+class PersonRead(TypedNode):
     birth_year = PropertyOptions(identifier="birthYear")
 
     def __init__(
@@ -367,6 +369,7 @@ class PersonRead(TypedNode[Person]):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
+            properties=None,
         )
         self.name = name
         self.birth_year = birth_year

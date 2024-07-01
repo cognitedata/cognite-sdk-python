@@ -108,13 +108,14 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
 class _TypedNodeOrEdgeListAdapter:
     def __init__(self, instance_cls: type) -> None:
         self._instance_cls = instance_cls
+        self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
     def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
-        return self._typed_list(items, cognite_client)
+        return self._list_cls(items, cognite_client)
 
     def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
-        return self._typed_list([self._instance_cls._load(item) for item in data], cognite_client)  # type: ignore[return-value, attr-defined]
+        return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client)  # type: ignore[return-value, attr-defined]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -362,13 +363,13 @@ class InstancesAPI(APIClient):
 
     @staticmethod
     def _to_sources(
-        sources: Source | Sequence[Source] | None, *instance_cls: type[TypedInstance] | None
+        sources: Source | Sequence[Source] | None, *instance_cls: type[T_Node] | type[T_Edge] | None
     ) -> Source | Sequence[Source] | None:
         if sources is not None:
             return sources
         for cls in instance_cls:
-            if issubclass(cls, TypedInstance):  # type: ignore[arg-type]
-                return cls.get_source()  # type: ignore[union-attr]
+            if issubclass(cls, (TypedNode, TypedEdge)):
+                return cls.get_source()
         return sources
 
     def _load_node_and_edge_ids(
@@ -1280,7 +1281,7 @@ class InstancesAPI(APIClient):
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)
-        if not isinstance(instance_type, str) and issubclass(instance_type, TypedInstance):  # type: ignore[arg-type]
+        if not isinstance(instance_type, str) and issubclass(instance_type, (TypedNode, TypedEdge)):
             sources = self._to_sources(sources, instance_type)
         filter = self._merge_space_into_filter(instance_type_str, space, filter)
 
@@ -1295,13 +1296,13 @@ class InstancesAPI(APIClient):
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
             resource_cls, list_cls = (  # type: ignore[assignment]
-                _NodeOrEdgeResourceAdapter(instance_type, Edge),  # type: ignore[assignment]
-                _TypedNodeOrEdgeListAdapter(instance_type, TypedNodeList[T_Node]),  # type: ignore[assignment]
+                _NodeOrEdgeResourceAdapter,  # type: ignore[assignment]
+                _TypedNodeOrEdgeListAdapter(instance_type),  # type: ignore[assignment]
             )
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
             resource_cls, list_cls = (
                 _NodeOrEdgeResourceAdapter(Node, instance_type),  # type: ignore[assignment]
-                _TypedNodeOrEdgeListAdapter(instance_type, TypedEdgeList[T_Edge]),  # type: ignore[assignment]
+                _TypedNodeOrEdgeListAdapter(instance_type),  # type: ignore[assignment]
             )
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
@@ -1339,4 +1340,10 @@ class InstancesAPI(APIClient):
     def _to_instance_type_str(
         instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge],
     ) -> Literal["node", "edge"]:
-        return instance_type if isinstance(instance_type, str) else instance_type._instance_type  # type: ignore[return-value]
+        if isinstance(instance_type, str):
+            return instance_type
+        elif issubclass(instance_type, TypedNode):
+            return "node"
+        elif issubclass(instance_type, TypedEdge):
+            return "edge"
+        raise ValueError(f"Invalid instance type: {instance_type}")
