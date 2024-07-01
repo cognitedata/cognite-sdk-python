@@ -12,6 +12,7 @@ from typing import (
     Any,
     Collection,
     Dict,
+    Generic,
     ItemsView,
     Iterator,
     KeysView,
@@ -24,7 +25,6 @@ from typing import (
     Union,
     ValuesView,
     cast,
-    final,
     overload,
 )
 
@@ -175,7 +175,6 @@ class InstanceCore(DataModelingResource, ABC):
 class WritableInstanceCore(WritableDataModelingResource[T_CogniteResource], ABC):
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
         super().__init__(space=space)
-        self.instance_type = instance_type
         self.external_id = external_id
 
 
@@ -552,10 +551,7 @@ class NodeApply(InstanceApply["NodeApply"]):
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
-        if isinstance(type, tuple):
-            self.type: DirectRelationReference | None = DirectRelationReference.load(type)
-        else:
-            self.type = type
+        self.type = DirectRelationReference.load(type) if type else None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -578,12 +574,11 @@ class NodeApply(InstanceApply["NodeApply"]):
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
-    def as_write(self) -> NodeApply:
+    def as_write(self) -> Self:
         """Returns this NodeApply instance"""
         return self
 
 
-@final
 class Node(Instance["NodeApply"]):
     """A node. This is the read version of the node.
 
@@ -764,7 +759,6 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         return self
 
 
-@final
 class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 
@@ -920,7 +914,10 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[NodeApply, Node]):
+T_Node = TypeVar("T_Node", bound=Node)
+
+
+class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
@@ -937,7 +934,7 @@ class NodeList(DataModelingInstancesList[NodeApply, Node]):
         return NodeApplyList([node.as_write() for node in self])
 
 
-class NodeListWithCursor(NodeList):
+class NodeListWithCursor(NodeList[T_Node]):
     def __init__(
         self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
     ) -> None:
@@ -983,7 +980,10 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
+T_Edge = TypeVar("T_Edge", bound=Edge)
+
+
+class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
@@ -1045,7 +1045,7 @@ class InstanceSort(DataModelingSort):
 
 
 @dataclass
-class InstancesResult:
+class InstancesResult(Generic[T_Node, T_Edge]):
     """This represents the read result of an instance query
 
     Args:
@@ -1054,8 +1054,8 @@ class InstancesResult:
 
     """
 
-    nodes: NodeList
-    edges: EdgeList
+    nodes: NodeList[T_Node]
+    edges: EdgeList[T_Edge]
 
 
 @dataclass
