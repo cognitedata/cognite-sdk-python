@@ -175,8 +175,8 @@ class InstanceCore(DataModelingResource, ABC):
 class WritableInstanceCore(WritableDataModelingResource[T_CogniteResource], ABC):
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
         super().__init__(space=space)
-        self.external_id = external_id
         self.instance_type = instance_type
+        self.external_id = external_id
 
 
 class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
@@ -411,8 +411,10 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         }
         if self.deleted_time is not None:
             dumped["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
-        if "properties" in dumped:
+        if self.properties:
             dumped["properties"] = self.properties.dump()
+        else:
+            dumped["properties"] = {}
         return dumped
 
     def to_pandas(  # type: ignore [override]
