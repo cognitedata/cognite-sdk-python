@@ -82,12 +82,9 @@ from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, 
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
     TypedEdge,
-    TypedEdgeList,
     TypedEdgeWrite,
-    TypedInstancesResult,
     TypedInstanceWrite,
     TypedNode,
-    TypedNodeList,
     TypedNodeWrite,
 )
 from cognite.client.data_classes.data_modeling.views import (

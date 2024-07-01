@@ -28,7 +28,7 @@ class Person(TypedNodeWrite):
         return ViewId("sp_model_space", "view_id", "1")
 
 
-class PersonRead(TypedNode[Person]):
+class PersonRead(TypedNode):
     birth_date = PropertyOptions(identifier="birthDate")
 
     def __init__(
@@ -45,7 +45,7 @@ class PersonRead(TypedNode[Person]):
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, type, deleted_time)
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
         self.name = name
         self.birth_date = birth_date
         self.email = email

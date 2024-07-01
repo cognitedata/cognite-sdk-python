@@ -176,6 +176,7 @@ class WritableInstanceCore(WritableDataModelingResource[T_CogniteResource], ABC)
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
         super().__init__(space=space)
         self.external_id = external_id
+        self.instance_type = instance_type
 
 
 class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
@@ -201,6 +202,18 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
         self.sources = sources
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "instanceType": self.instance_type,
+        }
+        if self.existing_version is not None:
+            output["existingVersion"] = self.existing_version
+        if self.sources:
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
+        return output
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -388,7 +401,16 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             self.__raise_if_non_singular_source(attr)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        dumped = super().dump(camel_case)
+        dumped = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "version": self.version,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
+            "createdTime" if camel_case else "created_time": self.created_time,
+            "instanceType" if camel_case else "instance_type": self.instance_type,
+        }
+        if self.deleted_time is not None:
+            dumped["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
         if "properties" in dumped:
             dumped["properties"] = self.properties.dump()
         return dumped
@@ -553,14 +575,6 @@ class NodeApply(InstanceApply["NodeApply"]):
         super().__init__(space, external_id, "node", existing_version, sources)
         self.type = DirectRelationReference.load(type) if type else None
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.sources:
-            output["sources"] = [source.dump(camel_case) for source in self.sources]
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        return output
-
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
         return cls(
@@ -570,6 +584,12 @@ class NodeApply(InstanceApply["NodeApply"]):
             sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
 
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
