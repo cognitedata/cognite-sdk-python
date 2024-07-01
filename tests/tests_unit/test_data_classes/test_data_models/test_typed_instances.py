@@ -166,18 +166,18 @@ class TestTypedNodeWrite:
 
 class TestTypedEdgeWrite:
     def test_dump_load_flow_write(self) -> None:
-        flow = FlowWrite("my_external_id", ("sp_my_fixed_space", "start_node"), ("sp_my_fixed_space", "end_node"), 42.0)
+        flow = FlowWrite("my_external_id", ("sp_my_data_space", "start_node"), ("sp_my_data_space", "end_node"), 42.0)
         expected = {
             "space": "sp_my_fixed_space",
             "externalId": "my_external_id",
             "instanceType": "edge",
             "type": {"space": "sp_model_space", "externalId": "Flow"},
+            "startNode": {"space": "sp_my_data_space", "externalId": "start_node"},
+            "endNode": {"space": "sp_my_data_space", "externalId": "end_node"},
             "sources": [
                 {
                     "source": {"space": "sp_model_space", "externalId": "flow", "version": "1", "type": "view"},
                     "properties": {"flowRate": 42.0},
-                    "startNode": {"space": "sp_my_fixed_space", "externalId": "start_node"},
-                    "endNode": {"space": "sp_my_fixed_space", "externalId": "end_node"},
                 }
             ],
         }

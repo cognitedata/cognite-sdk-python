@@ -64,7 +64,7 @@ class PropertyOptions:
 
 class TypedNodeWrite(NodeApply, ABC):
     _instance_properties: frozenset[str] = frozenset(
-        {"space", "external_id", "existing_version", "type", "instance_type"}
+        {"space", "external_id", "existing_version", "type", "instance_type", "sources"}
     )
 
     @classmethod
@@ -83,9 +83,17 @@ class TypedNodeWrite(NodeApply, ABC):
         )
         return output
 
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        sources = resource.pop("sources", [])
+        properties = sources[0].get("properties", {}) if sources else {}
+        return _load_instance(cls, resource, properties, cls._instance_properties)
+
 
 class TypedEdgeWrite(EdgeApply, ABC):
-    _instance_properties = frozenset({"space", "external_id", "existing_version", "type", "start_node", "end_node"})
+    _instance_properties = frozenset(
+        {"space", "external_id", "existing_version", "type", "start_node", "end_node", "instance_type", "sources"}
+    )
 
     @classmethod
     def get_source(cls) -> ContainerId | ViewId:
@@ -102,6 +110,12 @@ class TypedEdgeWrite(EdgeApply, ABC):
             }
         )
         return output
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        sources = resource.pop("sources", [])
+        properties = sources[0].get("properties", {}) if sources else {}
+        return _load_instance(cls, resource, properties, cls._instance_properties)
 
 
 class TypedNode(Node, ABC):
@@ -137,55 +151,10 @@ class TypedNode(Node, ABC):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return _load_instance(cls, resource, cls.get_source(), cls._instance_properties)
-
-
-def _load_instance(
-    cls: type, resource: dict[str, Any], source: ViewId, instance_properties: frozenset[str]
-) -> dict[str, Any]:
-    args: dict[str, Any] = {}
-    resource.pop("instanceType", None)
-    all_properties = resource.pop("properties", {})
-    signature = inspect.signature(cls.__init__)
-    if all_properties:
+        all_properties = resource.pop("properties", {})
+        source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-        args.update(_load_properties(cls, properties, instance_properties, signature))
-    args.update(_load_fixed_attributes(resource, instance_properties, signature))
-    return cls(**args)
-
-
-def _load_fixed_attributes(
-    resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
-) -> dict[str, Any]:
-    args: dict[str, Any] = {}
-    for key in instance_properties:
-        camel_key = to_camel_case(key)
-        if camel_key in resource:
-            args[key] = _deserialize_value(resource[camel_key], signature.parameters[key])
-        elif key in signature.parameters:
-            if signature.parameters[key].default is inspect.Parameter.empty:
-                args[key] = None
-            else:
-                args[key] = _deserialize_value(signature.parameters[key].default or None, signature.parameters[key])
-    return args
-
-
-def _load_properties(
-    cls: type, resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
-) -> dict[str, Any]:
-    output: dict[str, Any] = {}
-    for name, parameter in signature.parameters.items():
-        if name in instance_properties:
-            continue
-        if name in resource:
-            output[name] = _deserialize_values(resource[name], parameter)
-        elif (
-            name in cls.__dict__
-            and isinstance(cls.__dict__[name], PropertyOptions)
-            and cls.__dict__[name].name in resource
-        ):
-            output[name] = _deserialize_values(resource[cls.__dict__[name].name], parameter)
-    return output
+        return _load_instance(cls, resource, properties, cls._instance_properties)
 
 
 class TypedEdge(Edge, ABC):
@@ -223,7 +192,56 @@ class TypedEdge(Edge, ABC):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return _load_instance(cls, resource, cls.get_source(), cls._instance_properties)
+        all_properties = resource.pop("properties", {})
+        source = cls.get_source()
+        properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
+        return _load_instance(cls, resource, properties, cls._instance_properties)
+
+
+def _load_instance(
+    cls: type, resource: dict[str, Any], properties: dict[str, Any], instance_properties: frozenset[str]
+) -> dict[str, Any]:
+    args: dict[str, Any] = {}
+    resource.pop("instanceType", None)
+    signature = inspect.signature(cls.__init__)
+    args.update(_load_properties(cls, properties, instance_properties, signature))
+    args.update(_load_fixed_attributes(resource, instance_properties, signature))
+    return cls(**args)
+
+
+def _load_fixed_attributes(
+    resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
+) -> dict[str, Any]:
+    args: dict[str, Any] = {}
+    for key in instance_properties:
+        camel_key = to_camel_case(key)
+        if camel_key in resource:
+            if key in signature.parameters and key in signature.parameters:
+                args[key] = _deserialize_value(resource[camel_key], signature.parameters[key])
+        elif key in signature.parameters:
+            if signature.parameters[key].default is inspect.Parameter.empty:
+                args[key] = None
+            else:
+                args[key] = _deserialize_value(signature.parameters[key].default or None, signature.parameters[key])
+    return args
+
+
+def _load_properties(
+    cls: type, resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
+) -> dict[str, Any]:
+    output: dict[str, Any] = {}
+    for name, parameter in signature.parameters.items():
+        if name in instance_properties:
+            continue
+        if name in resource:
+            output[name] = _deserialize_values(resource[name], parameter)
+        elif name in cls.__dict__ and isinstance(cls.__dict__[name], PropertyOptions):
+            property_name = cls.__dict__[name].name
+            if property_name.startswith("__"):
+                property_name = property_name[2:]
+            if property_name in resource:
+                output[name] = _deserialize_values(resource[property_name], parameter)
+    return output
 
 
 _RESERVED_PROPERTY_NAMES = (
