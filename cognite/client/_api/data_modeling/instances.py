@@ -69,7 +69,6 @@ from cognite.client.data_classes.data_modeling.query import (
 )
 from cognite.client.data_classes.data_modeling.typed_instances import (
     TypedEdge,
-    TypedInstance,
     TypedNode,
 )
 from cognite.client.data_classes.data_modeling.views import View

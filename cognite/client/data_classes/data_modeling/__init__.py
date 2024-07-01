@@ -83,7 +83,6 @@ from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
     TypedEdge,
     TypedEdgeWrite,
-    TypedInstanceWrite,
     TypedNode,
     TypedNodeWrite,
 )
@@ -199,11 +198,7 @@ __all__ = [
     "query",
     "PropertyOptions",
     "TypedEdgeWrite",
-    "TypedInstanceWrite",
     "TypedNodeWrite",
     "TypedNode",
     "TypedEdge",
-    "TypedInstancesResult",
-    "TypedNodeList",
-    "TypedEdgeList",
 ]
