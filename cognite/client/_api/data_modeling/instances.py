@@ -277,7 +277,7 @@ class InstancesAPI(APIClient):
         edges: EdgeId | tuple[str, str],
         *,
         edge_cls: type[T_Edge],
-    ) -> T_Edge: ...
+    ) -> T_Edge | None: ...
 
     @overload
     def retrieve_edges(
@@ -286,7 +286,7 @@ class InstancesAPI(APIClient):
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> Edge: ...
+    ) -> Edge | None: ...
 
     @overload
     def retrieve_edges(
@@ -311,7 +311,7 @@ class InstancesAPI(APIClient):
         edge_cls: type[T_Edge] = Edge,  # type: ignore
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> EdgeList[T_Edge] | T_Edge | Edge:
+    ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
         """`Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
@@ -327,7 +327,7 @@ class InstancesAPI(APIClient):
             include_typing (bool): Whether to include typing information
 
         Returns:
-            EdgeList[T_Edge] | T_Edge | Edge: The requested edges.
+            EdgeList[T_Edge] | T_Edge | Edge | None: The requested edges.
 
         Retrieve nodes using a custom Edge class Flow
 
@@ -366,7 +366,7 @@ class InstancesAPI(APIClient):
             nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
         )
         if isinstance(edges, Edge) or (isinstance(edges, tuple) and all(isinstance(i, str) for i in edges)):
-            return res.edges[0]
+            return res.edges[0] if res.edges else None
         return res.edges
 
     @overload
@@ -375,7 +375,7 @@ class InstancesAPI(APIClient):
         nodes: NodeId | tuple[str, str],
         *,
         node_cls: type[T_Node],
-    ) -> T_Node: ...
+    ) -> T_Node | None: ...
 
     @overload
     def retrieve_nodes(
@@ -384,7 +384,7 @@ class InstancesAPI(APIClient):
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> Node: ...
+    ) -> Node | None: ...
 
     @overload
     def retrieve_nodes(
@@ -409,7 +409,7 @@ class InstancesAPI(APIClient):
         node_cls: type[T_Node] = Node,  # type: ignore
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> NodeList[T_Node] | T_Node | Node:
+    ) -> NodeList[T_Node] | T_Node | Node | None:
         """`Retrieve one or more nodes by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
@@ -425,7 +425,7 @@ class InstancesAPI(APIClient):
             include_typing (bool): Whether to include typing information
 
         Returns:
-            NodeList[T_Node] | T_Node | Node: The requested edges.
+            NodeList[T_Node] | T_Node | Node | None: The requested edges.
 
         Retrieve nodes using a custom Node class Person
 
@@ -471,7 +471,7 @@ class InstancesAPI(APIClient):
             nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
         )
         if isinstance(nodes, Node) or (isinstance(nodes, tuple) and all(isinstance(i, str) for i in nodes)):
-            return res.nodes[0]
+            return res.nodes[0] if res.nodes else None
         return res.nodes
 
     def retrieve(
