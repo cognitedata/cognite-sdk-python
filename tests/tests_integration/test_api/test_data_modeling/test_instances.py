@@ -494,7 +494,7 @@ class TestInstancesAPI:
 
         try:
             created = cognite_client.data_modeling.instances.apply(new_node, replace=True)
-            retrieved: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
+            retrieved = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
 
             assert len(created.nodes) == 1
             assert created.nodes[0].created_time
@@ -503,9 +503,7 @@ class TestInstancesAPI:
             assert retrieved.nodes[0].as_id() == new_node.as_id()
 
             deleted_result = cognite_client.data_modeling.instances.delete(new_node.as_id())
-            retrieved_deleted: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(
-                new_node.as_id()
-            )
+            retrieved_deleted = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
 
             assert len(deleted_result.nodes) == 1
             assert deleted_result.nodes[0] == new_node.as_id()
@@ -581,7 +579,7 @@ class TestInstancesAPI:
             created_edges = cognite_client.data_modeling.instances.apply(
                 edges=person_to_actor, auto_create_start_nodes=True, auto_create_end_nodes=True, replace=True
             )
-            created_nodes: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(node_pair)
+            created_nodes = cognite_client.data_modeling.instances.retrieve(node_pair)
 
             assert len(created_edges.edges) == 1
             assert created_edges.edges[0].created_time
@@ -600,13 +598,13 @@ class TestInstancesAPI:
         assert res.edges == []
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
-        retrieved: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(movie_nodes.as_ids())
+        retrieved = cognite_client.data_modeling.instances.retrieve(movie_nodes.as_ids())
         assert len(retrieved.nodes) == len(movie_nodes)
 
     def test_retrieve_nodes_and_edges_using_id_tuples(
         self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
     ) -> None:
-        retrieved: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(
+        retrieved = cognite_client.data_modeling.instances.retrieve(
             nodes=[(id.space, id.external_id) for id in movie_nodes.as_ids()],
             edges=[(id.space, id.external_id) for id in movie_edges.as_ids()],
         )
@@ -616,17 +614,25 @@ class TestInstancesAPI:
     def test_retrieve_nodes_and_edges(
         self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
     ) -> None:
-        retrieved: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(
+        retrieved = cognite_client.data_modeling.instances.retrieve(
             nodes=movie_nodes.as_ids(), edges=movie_edges.as_ids()
         )
         assert set(retrieved.nodes.as_ids()) == set(movie_nodes.as_ids())
         assert set(retrieved.edges.as_ids()) == set(movie_edges.as_ids())
 
+    def test_retrieve_nodes(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
+        retrieved = cognite_client.data_modeling.instances.retrieve_nodes(movie_nodes.as_ids())
+        assert set(retrieved.as_ids()) == set(movie_nodes.as_ids())
+
+    def test_retrieve_edges(self, cognite_client: CogniteClient, movie_edges: EdgeList) -> None:
+        retrieved = cognite_client.data_modeling.instances.retrieve_edges(movie_edges.as_ids())
+        assert set(retrieved.as_ids()) == set(movie_edges.as_ids())
+
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
         ids_without_missing = movie_nodes.as_ids()
         ids_with_missing = [*ids_without_missing, NodeId("myNonExistingSpace", "myImaginaryContainer")]
 
-        retrieved: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(ids_with_missing)
+        retrieved = cognite_client.data_modeling.instances.retrieve(ids_with_missing)
         assert retrieved.nodes.as_ids() == ids_without_missing
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient) -> None:
@@ -877,9 +883,7 @@ class TestInstancesAPI:
         node = node_with_1_1_pressure_in_bar
         source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
 
-        retrieved: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(
-            node.as_id(), sources=[source]
-        )
+        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
         assert retrieved.nodes
         assert math.isclose(cast(float, retrieved.nodes[0]["pressure"]), 1.1 * 1e5)
 
@@ -965,9 +969,9 @@ class TestInstancesAPI:
             assert len(created.nodes) == 1
             assert created.nodes[0].external_id == external_id
 
-            retrieved = cognite_client.data_modeling.instances.retrieve(
+            retrieved = cognite_client.data_modeling.instances.retrieve_nodes(
                 primitive.as_id(), node_cls=PrimitiveNullableRead
-            ).nodes
+            )
             assert len(retrieved) == 1
             assert isinstance(retrieved[0], PrimitiveNullableRead)
             assert retrieved[0].text == "text"
@@ -1000,9 +1004,9 @@ class TestInstancesAPI:
             assert len(created.nodes) == 1
             assert created.nodes[0].external_id == external_id
 
-            retrieved = cognite_client.data_modeling.instances.retrieve(
+            retrieved = cognite_client.data_modeling.instances.retrieve_nodes(
                 primitive_listed.as_id(), node_cls=PrimitiveListedRead
-            ).nodes
+            )
             assert len(retrieved) == 1
             assert isinstance(retrieved[0], PrimitiveListedRead)
             assert retrieved[0].text == ["text"]
@@ -1022,7 +1026,7 @@ class TestInstancesAPI:
             assert len(created.nodes) == 1
             assert created.nodes[0].external_id == external_id
 
-            retrieved = cognite_client.data_modeling.instances.retrieve(person.as_id(), node_cls=PersonRead).nodes
+            retrieved = cognite_client.data_modeling.instances.retrieve_nodes(person.as_id(), node_cls=PersonRead)
             assert len(retrieved) == 1
             assert isinstance(retrieved[0], PersonRead)
             assert retrieved[0].name == "John Doe"

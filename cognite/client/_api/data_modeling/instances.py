@@ -271,15 +271,71 @@ class InstancesAPI(APIClient):
         """
         return self(None, "node")
 
+    @overload
+    def retrieve_edges(
+        self,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        *,
+        edge_cls: type[T_Edge],
+    ) -> EdgeList[T_Edge]: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> EdgeList[Edge]: ...
+
+    def retrieve_edges(
+        self,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        edge_cls: type[T_Edge] = Edge,  # type: ignore
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> EdgeList[T_Edge]:
+        res = self._retrieve_typed(
+            nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
+        )
+        return res.edges
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        *,
+        node_cls: type[T_Node],
+    ) -> NodeList[T_Node]: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> NodeList[Node]: ...
+
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        node_cls: type[T_Node] = Node,  # type: ignore
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> NodeList[T_Node]:
+        res = self._retrieve_typed(
+            nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
+        )
+        return res.nodes
+
     def retrieve(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-        node_cls: type[T_Node] = Node,  # type: ignore[assignment]
-        edge_cls: type[T_Edge] = Edge,  # type: ignore[assignment]
-    ) -> InstancesResult[T_Node, T_Edge]:
+    ) -> InstancesResult[Node, Edge]:
         """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
@@ -287,11 +343,9 @@ class InstancesAPI(APIClient):
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
             sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
-            node_cls (type[T_Node]): Node class to use when returning nodes.
-            edge_cls (type[T_Edge]): Edge class to use when returning edges.
 
         Returns:
-            InstancesResult[T_Node, T_Edge]: Requested instances.
+            InstancesResult[Node, Edge]: Requested instances.
 
         Examples:
 
@@ -324,6 +378,19 @@ class InstancesAPI(APIClient):
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     sources=("myspace", "myView"))
         """
+        return self._retrieve_typed(
+            nodes=nodes, edges=edges, sources=sources, include_typing=include_typing, node_cls=Node, edge_cls=Edge
+        )
+
+    def _retrieve_typed(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
+        sources: Source | Sequence[Source] | None,
+        include_typing: bool,
+        node_cls: type[T_Node],
+        edge_cls: type[T_Edge],
+    ) -> InstancesResult[T_Node, T_Edge]:
         identifiers = self._load_node_and_edge_ids(nodes, edges)
 
         sources = self._to_sources(sources, node_cls, edge_cls)
