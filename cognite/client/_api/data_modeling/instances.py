@@ -101,8 +101,8 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
     def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
-            return self._node_cls._load(data)  # type: ignore[return-value, attr-defined]
-        return self._edge_cls._load(data)  # type: ignore[return-value, attr-defined]
+            return self._node_cls._load(data)  # type: ignore[return-value]
+        return self._edge_cls._load(data)
 
 
 class _TypedNodeOrEdgeListAdapter:
@@ -326,7 +326,7 @@ class InstancesAPI(APIClient):
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
 
-        sources = self._to_sources(sources, node_cls, edge_cls)  # type: ignore[arg-type]
+        sources = self._to_sources(sources, node_cls, edge_cls)
 
         other_params = self._create_other_params(
             include_typing=include_typing,
@@ -343,14 +343,14 @@ class InstancesAPI(APIClient):
                 cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
             ) -> _NodeOrEdgeList:
                 resources: list[Node | Edge] = [
-                    node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)  # type: ignore[attr-defined, misc]
+                    node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for data in resource_list
                 ]
                 return cls(resources, None)
 
         res = self._retrieve_multiple(  # type: ignore[call-overload]
-            list_cls=_NodeOrEdgeList,  # type: ignore[type-var]
-            resource_cls=_NodeOrEdgeResourceAdapter(node_cls, edge_cls),  # type: ignore[type-var]
+            list_cls=_NodeOrEdgeList,
+            resource_cls=_NodeOrEdgeResourceAdapter(node_cls, edge_cls),
             identifiers=identifiers,
             other_params=other_params,
             executor=ConcurrencySettings.get_data_modeling_executor(),
@@ -701,7 +701,7 @@ class InstancesAPI(APIClient):
         edges = edges if isinstance(edges, Sequence) else [edges]
 
         res = self._create_multiple(
-            items=cast(Sequence[WriteableCogniteResource], (*nodes, *edges)),  # type: ignore[misc]
+            items=cast(Sequence[WriteableCogniteResource], (*nodes, *edges)),
             list_cls=_NodeOrEdgeApplyResultList,
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
@@ -833,11 +833,11 @@ class InstancesAPI(APIClient):
             list_cls = EdgeList  # type: ignore[assignment]
             resource_cls = Edge
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
-            list_cls = NodeList[T_Node]  # type: ignore[valid-type]
-            resource_cls = instance_type  # type: ignore[assignment]
+            list_cls = NodeList[T_Node]
+            resource_cls = instance_type
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
-            list_cls = EdgeList[T_Edge]  # type: ignore[valid-type]
-            resource_cls = instance_type  # type: ignore[assignment]
+            list_cls = EdgeList[T_Edge]
+            resource_cls = instance_type
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
@@ -1295,8 +1295,8 @@ class InstancesAPI(APIClient):
         elif instance_type == "edge":
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
-            resource_cls, list_cls = (  # type: ignore[assignment]
-                _NodeOrEdgeResourceAdapter,  # type: ignore[assignment]
+            resource_cls, list_cls = (
+                _NodeOrEdgeResourceAdapter,
                 _TypedNodeOrEdgeListAdapter(instance_type),  # type: ignore[assignment]
             )
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
