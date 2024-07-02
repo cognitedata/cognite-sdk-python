@@ -722,6 +722,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
     ) -> pd.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -734,6 +735,10 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
+                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
+                (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
+                `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
             pd.DataFrame: The requested rows in a pandas dataframe.
@@ -747,7 +752,7 @@ class RawRowsAPI(APIClient):
                 >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
-        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
+        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
         idx = [r.key for r in rows]
         cols = [r.columns for r in rows]
         return pd.DataFrame(cols, index=idx)

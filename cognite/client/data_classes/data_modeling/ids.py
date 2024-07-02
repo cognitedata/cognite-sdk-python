@@ -7,9 +7,12 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, Sequence, Tu
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
-from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
-from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._identifier import (
+    DataModelingIdentifier,
+    DataModelingIdentifierSequence,
+    InstanceId,
+)
+from cognite.client.utils._text import convert_all_keys_recursive
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -87,42 +90,25 @@ T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=Versi
 
 
 @dataclass(frozen=True)
-class InstanceId:
-    _instance_type: ClassVar[Literal["node", "edge"]]
-    space: str
-    external_id: str
-
-    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
-        output = asdict(self)
-        if include_instance_type:
-            output["instanceType" if camel_case else "instance_type"] = self._instance_type
-        return convert_all_keys_recursive(output, camel_case)
-
-    @classmethod
-    def load(cls: type[T_InstanceId], data: dict) -> T_InstanceId:
-        return cls(
-            **convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"instanceType", "instance_type"}))
-        )
-
-    @property
-    def instance_type(self) -> Literal["node", "edge"]:
-        return self._instance_type
-
-    def as_tuple(self) -> tuple[str, str]:
-        return self.space, self.external_id
-
-
-T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
-
-
-@dataclass(frozen=True)
 class NodeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "node"
+
+    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
+        output = super().dump(camel_case=camel_case)
+        if include_instance_type:
+            output["type"] = self._instance_type
+        return output
 
 
 @dataclass(frozen=True)
 class EdgeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
+
+    def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
+        output = super().dump(camel_case=camel_case)
+        if include_instance_type:
+            output["type"] = self._instance_type
+        return output
 
 
 @dataclass(frozen=True)

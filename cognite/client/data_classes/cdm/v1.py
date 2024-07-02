@@ -7,9 +7,9 @@ from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
     TypedEdge,
-    TypedEdgeWrite,
+    TypedEdgeApply,
     TypedNode,
-    TypedNodeWrite,
+    TypedNodeApply,
 )
 
 
@@ -25,7 +25,7 @@ class SourceableProperties:
         return ViewId("cdf_cdm_experimental", "Sourceable", "v1")
 
 
-class SourceableWrite(SourceableProperties, TypedNodeWrite):
+class SourceableWrite(SourceableProperties, TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -39,7 +39,7 @@ class SourceableWrite(SourceableProperties, TypedNodeWrite):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        super().__init__(space, external_id, existing_version, type)
+        super().__init__(space, external_id, existing_version, None, type)
         self.source = source
         self.source_id = source_id
         self.source_created_time = source_created_time
@@ -50,7 +50,7 @@ class SourceableWrite(SourceableProperties, TypedNodeWrite):
 
 class Sourceable(
     SourceableProperties,
-    TypedNode[SourceableWrite],
+    TypedNode,
 ):
     def __init__(
         self,
@@ -68,7 +68,7 @@ class Sourceable(
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, type, deleted_time)
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
         self.source = source
         self.source_id = source_id
         self.source_created_time = source_created_time
@@ -97,7 +97,7 @@ class DescribableProperties:
         return ViewId("cdf_cdm_experimental", "Describable", "v1")
 
 
-class DescribableWrite(DescribableProperties, TypedNodeWrite):
+class DescribableWrite(DescribableProperties, TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -109,7 +109,7 @@ class DescribableWrite(DescribableProperties, TypedNodeWrite):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        super().__init__(space, external_id, existing_version, type)
+        super().__init__(space, external_id, existing_version, None, type)
         self.name = name
         self.description = description
         self.tags = tags
@@ -118,7 +118,7 @@ class DescribableWrite(DescribableProperties, TypedNodeWrite):
 
 class Describable(
     DescribableProperties,
-    TypedNode[DescribableWrite],
+    TypedNode,
 ):
     def __init__(
         self,
@@ -134,7 +134,7 @@ class Describable(
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, type, deleted_time)
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
         self.name = name
         self.description = description
         self.tags = tags
@@ -164,7 +164,7 @@ class SchedulableProperties:
         return ViewId("cdf_cdm_experimental", "Schedulable", "v1")
 
 
-class SchedulableWrite(SchedulableProperties, TypedNodeWrite):
+class SchedulableWrite(SchedulableProperties, TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -176,14 +176,14 @@ class SchedulableWrite(SchedulableProperties, TypedNodeWrite):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        super().__init__(space, external_id, existing_version, type)
+        super().__init__(space, external_id, existing_version, None, type)
         self.start_time = start_time
         self.end_time = end_time
         self.scheduled_start_time = scheduled_start_time
         self.scheduled_end_time = scheduled_end_time
 
 
-class Schedulable(SchedulableProperties, TypedNode[SchedulableWrite]):
+class Schedulable(SchedulableProperties, TypedNode):
     def __init__(
         self,
         space: str,
@@ -198,7 +198,7 @@ class Schedulable(SchedulableProperties, TypedNode[SchedulableWrite]):
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, type, deleted_time)
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
         self.start_time = start_time
         self.end_time = end_time
         self.scheduled_start_time = scheduled_start_time
@@ -226,7 +226,7 @@ class Connection3DProperties:
         return ViewId("cdf_cdm_experimental", "Connection3D", "v1")
 
 
-class Connection3DWrite(Connection3DProperties, TypedEdgeWrite):
+class Connection3DWrite(Connection3DProperties, TypedEdgeApply):
     def __init__(
         self,
         space: str,
@@ -243,7 +243,7 @@ class Connection3DWrite(Connection3DProperties, TypedEdgeWrite):
         self.revision_node_id = revision_node_id
 
 
-class Connection3D(Connection3DProperties, TypedEdge[Connection3DWrite]):
+class Connection3D(Connection3DProperties, TypedEdge):
     def __init__(
         self,
         space: str,
@@ -259,7 +259,7 @@ class Connection3D(Connection3DProperties, TypedEdge[Connection3DWrite]):
         deleted_time: int | None = None,
     ) -> None:
         super().__init__(
-            space, external_id, type, start_node, end_node, version, last_updated_time, created_time, deleted_time
+            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
         )
         self.revision_id = revision_id
         self.revision_node_id = revision_node_id

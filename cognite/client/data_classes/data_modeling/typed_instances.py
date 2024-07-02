@@ -3,24 +3,20 @@ from __future__ import annotations
 import inspect
 from abc import ABC
 from collections.abc import Iterable
-from dataclasses import dataclass
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar, Union
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import (
-    CogniteResource,
-    CogniteResourceList,
-    T_CogniteResource,
-    T_WriteClass,
-    WriteableCogniteResource,
-)
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import (
+    Edge,
+    EdgeApply,
+    Node,
+    NodeApply,
     _serialize_property_value,
 )
 from cognite.client.utils._text import to_camel_case
@@ -66,226 +62,209 @@ class PropertyOptions:
             raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
 
 
-class TypedInstanceWrite(CogniteResource, ABC):
-    _instance_properties: frozenset[str]
-    _instance_type: ClassVar[str]
-
-    def __init__(self, space: str, external_id: str, existing_version: int | None = None) -> None:
-        self.space = space
-        self.external_id = external_id
-        self.existing_version = existing_version
+class TypedNodeApply(NodeApply, ABC):
+    _instance_properties: frozenset[str] = frozenset(
+        {"space", "external_id", "existing_version", "type", "instance_type", "sources"}
+    )
 
     @classmethod
     def get_source(cls) -> ContainerId | ViewId:
         raise NotImplementedError()
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        output = self._dump_instance(camel_case)
-        properties = self._dump_properties(camel_case)
-        if properties:
-            output["sources"] = [
-                {
-                    "source": self.get_source().dump(camel_case),
-                    "properties": properties,
-                }
-            ]
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if "sources" not in output:
+            output["sources"] = []
+        output["sources"].append(
+            {
+                "source": self.get_source().dump(camel_case),
+                "properties": _dump_properties(self, camel_case, self._instance_properties),
+            }
+        )
         return output
 
-    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
-        output: dict[str, Any] = {
-            "space": self.space,
-            "externalId" if camel_case else "external_id": self.external_id,
-            "instanceType" if camel_case else "instance_type": self._instance_type,
-        }
-        if self.existing_version:
-            output["existingVersion" if camel_case else "existing_version"] = self.existing_version
-        return output
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        sources = resource.pop("sources", [])
+        properties = sources[0].get("properties", {}) if sources else {}
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
-    def _dump_properties(self, camel_case: bool) -> dict[str, Any]:
-        properties: dict[str, str | int | float | bool | dict | list] = {}
-        for key, value in vars(self).items():
-            if key in self._instance_properties or value is None:
-                continue
-            if key.startswith("__"):
-                key = key[2:]
-            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
-                properties[key] = [_serialize_property_value(v, camel_case) for v in value]
-            else:
-                properties[key] = _serialize_property_value(value, camel_case)
-        return properties
+
+class TypedEdgeApply(EdgeApply, ABC):
+    _instance_properties = frozenset(
+        {"space", "external_id", "existing_version", "type", "start_node", "end_node", "instance_type", "sources"}
+    )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        args: dict[str, Any] = {}
-        args.update(cls._load_properties(resource))
-        args.update(cls._load_instance(resource))
-        return cls(**args)
-
-    @classmethod
-    def _load_instance(cls, resource: dict[str, Any]) -> dict[str, Any]:
-        args: dict[str, Any] = {}
-        for key in cls._instance_properties:
-            camel_key = to_camel_case(key)
-            if camel_key in resource:
-                args[key] = resource[camel_key]
-        return args
-
-    @classmethod
-    def _load_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
+    def get_source(cls) -> ContainerId | ViewId:
         raise NotImplementedError()
 
-
-class TypedNodeWrite(TypedInstanceWrite, ABC):
-    _instance_properties: frozenset[str] = frozenset({"space", "external_id", "existing_version", "type"})
-    _instance_type = "node"
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(space, external_id, existing_version)
-        self.type = DirectRelationReference.load(type) if type else None
-
-    def as_id(self) -> NodeId:
-        return NodeId(space=self.space, external_id=self.external_id)
-
-    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
-        output = super()._dump_instance(camel_case)
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if "sources" not in output:
+            output["sources"] = []
+        output["sources"].append(
+            {
+                "source": self.get_source().dump(camel_case),
+                "properties": _dump_properties(self, camel_case, self._instance_properties),
+            }
+        )
         return output
 
-
-class TypedEdgeWrite(TypedInstanceWrite, ABC):
-    _instance_properties = frozenset({"space", "external_id", "existing_version", "type", "start_node", "end_node"})
-    _instance_type = "edge"
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        type: DirectRelationReference | tuple[str, str],
-        start_node: DirectRelationReference | tuple[str, str],
-        end_node: DirectRelationReference | tuple[str, str],
-        existing_version: int | None = None,
-    ) -> None:
-        super().__init__(space, external_id, existing_version)
-        self.type = DirectRelationReference.load(type)
-        self.start_node = DirectRelationReference.load(start_node)
-        self.end_node = DirectRelationReference.load(end_node)
-
-    def as_id(self) -> EdgeId:
-        return EdgeId(space=self.space, external_id=self.external_id)
-
-    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
-        output = super()._dump_instance(camel_case)
-        output["type"] = self.type.dump(camel_case)
-        output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
-        output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
-        return output
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        sources = resource.pop("sources", [])
+        properties = sources[0].get("properties", {}) if sources else {}
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
-class TypedInstance(WriteableCogniteResource[T_WriteClass], ABC):
-    _instance_properties: frozenset[str]
-    _instance_type: ClassVar[str]
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        deleted_time: int | None,
-    ) -> None:
-        self.space = space
-        self.external_id = external_id
-        self.version = version
-        self.last_updated_time = last_updated_time
-        self.created_time = created_time
-        self.deleted_time = deleted_time
+class TypedNode(Node, ABC):
+    _instance_properties = frozenset(
+        {
+            "space",
+            "external_id",
+            "version",
+            "last_updated_time",
+            "created_time",
+            "deleted_time",
+            "type",
+            "instance_type",
+            "properties",
+        }
+    )
 
     @classmethod
     def get_source(cls) -> ViewId:
         raise NotImplementedError()
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        output = self._dump_instance(camel_case)
-        properties = self._dump_properties(camel_case)
-        if properties:
-            source = self.get_source()
-            output["properties"] = {
-                source.space: {
-                    source.as_source_identifier(): properties,
-                }
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if "properties" not in output:
+            output["properties"] = {}
+        source = self.get_source()
+        output["properties"] = {
+            source.space: {
+                source.as_source_identifier(): _dump_properties(self, camel_case, self._instance_properties),
             }
-        return output
-
-    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
-        output: dict[str, Any] = {
-            "space": self.space,
-            "externalId" if camel_case else "external_id": self.external_id,
-            "instanceType" if camel_case else "instance_type": self._instance_type,
-            "version": self.version,
-            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
-            "createdTime" if camel_case else "created_time": self.created_time,
         }
-        if self.deleted_time:
-            output["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
         return output
-
-    def _dump_properties(self, camel_case: bool) -> dict[str, Any]:
-        properties: dict[str, str | int | float | bool | dict | list] = {}
-        for key, value in vars(self).items():
-            if key in self._instance_properties or value is None:
-                continue
-            if key.startswith("__"):
-                key = key[2:]
-            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
-                properties[key] = [_serialize_property_value(v, camel_case) for v in value]
-            else:
-                properties[key] = _serialize_property_value(value, camel_case)
-        return properties
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        args: dict[str, Any] = {}
-        all_properties = resource.get("properties", {})
-        if all_properties:
-            source = cls.get_source()
-            properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-            args.update(cls._load_properties(properties))
-        args.update(cls._load_instance(resource))
-        return cls(**args)
+        all_properties = resource.pop("properties", {})
+        source = cls.get_source()
+        properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
+
+
+class TypedEdge(Edge, ABC):
+    _instance_properties = frozenset(
+        {
+            "space",
+            "external_id",
+            "version",
+            "last_updated_time",
+            "created_time",
+            "deleted_time",
+            "type",
+            "start_node",
+            "end_node",
+            "instance_type",
+            "properties",
+        }
+    )
 
     @classmethod
-    def _load_instance(cls, resource: dict[str, Any]) -> dict[str, Any]:
-        args: dict[str, Any] = {}
-        for key in cls._instance_properties:
-            camel_key = to_camel_case(key)
-            if camel_key in resource:
-                args[key] = resource[camel_key]
-        return args
+    def get_source(cls) -> ViewId:
+        raise NotImplementedError()
 
-    @classmethod
-    def _load_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
-        output: dict[str, Any] = {}
-        signature = inspect.signature(cls.__init__)
-        for name, parameter in signature.parameters.items():
-            if name in cls._instance_properties:
-                continue
-            if name in resource:
-                output[name] = _deserialize_values(resource[name], parameter)
-            elif (
-                name in cls.__dict__
-                and isinstance(cls.__dict__[name], PropertyOptions)
-                and cls.__dict__[name].name in resource
-            ):
-                output[name] = _deserialize_values(resource[cls.__dict__[name].name], parameter)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if "properties" not in output:
+            output["properties"] = {}
+        source = self.get_source()
+        output["properties"] = {
+            source.space: {
+                source.as_source_identifier(): _dump_properties(self, camel_case, self._instance_properties),
+            }
+        }
         return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        all_properties = resource.pop("properties", {})
+        source = cls.get_source()
+        properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
+        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
+
+
+def _load_instance(
+    cls: type, resource: dict[str, Any], properties: dict[str, Any], instance_properties: frozenset[str]
+) -> dict[str, Any]:
+    args: dict[str, Any] = {}
+    resource.pop("instanceType", None)
+    signature = inspect.signature(cls.__init__)  # type: ignore[misc]
+    args.update(_load_properties(cls, properties, instance_properties, signature))
+    args.update(_load_fixed_attributes(resource, instance_properties, signature))
+    return cls(**args)
+
+
+def _load_fixed_attributes(
+    resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
+) -> dict[str, Any]:
+    args: dict[str, Any] = {}
+    for key in instance_properties:
+        camel_key = to_camel_case(key)
+        if camel_key in resource:
+            if key in signature.parameters and key in signature.parameters:
+                args[key] = _deserialize_value(resource[camel_key], signature.parameters[key])
+        elif key in signature.parameters:
+            if signature.parameters[key].default is inspect.Parameter.empty:
+                args[key] = None
+            else:
+                args[key] = _deserialize_value(signature.parameters[key].default or None, signature.parameters[key])
+    return args
+
+
+def _load_properties(
+    cls: type, resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
+) -> dict[str, Any]:
+    output: dict[str, Any] = {}
+    for name, parameter in signature.parameters.items():
+        if name in instance_properties:
+            continue
+        if name in resource:
+            output[name] = _deserialize_values(resource[name], parameter)
+        elif name in cls.__dict__ and isinstance(cls.__dict__[name], PropertyOptions):
+            property_name = cls.__dict__[name].name
+            if property_name.startswith("__"):
+                property_name = property_name[2:]
+            if property_name in resource:
+                output[name] = _deserialize_values(resource[property_name], parameter)
+    return output
+
+
+_RESERVED_PROPERTY_NAMES = (
+    TypedNodeApply._instance_properties
+    | TypedEdgeApply._instance_properties
+    | TypedNode._instance_properties
+    | TypedEdge._instance_properties
+)
+
+
+def _dump_properties(obj: object, camel_case: bool, instance_properties: frozenset[str]) -> dict[str, Any]:
+    properties: dict[str, str | int | float | bool | dict | list] = {}
+    for key, value in vars(obj).items():
+        if key in instance_properties or value is None:
+            continue
+        if key.startswith("__"):
+            key = key[2:]
+
+        if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
+            properties[key] = [_serialize_property_value(v, camel_case) for v in value]
+        else:
+            properties[key] = _serialize_property_value(value, camel_case)
+    return properties
 
 
 def _deserialize_values(value: Any, parameter: inspect.Parameter) -> Any:
@@ -311,115 +290,3 @@ def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
         return EdgeId.load(value)
 
     return value
-
-
-class TypedNode(TypedInstance[T_WriteClass], ABC):
-    _instance_properties = frozenset(
-        {"space", "external_id", "version", "last_updated_time", "created_time", "deleted_time", "type"}
-    )
-    _instance_type = "node"
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time)
-        self.type = DirectRelationReference.load(type) if type else None
-
-    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
-        output = super()._dump_instance(camel_case)
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        return output
-
-
-class TypedEdge(TypedInstance[T_WriteClass], ABC):
-    _instance_properties = frozenset(
-        {
-            "space",
-            "external_id",
-            "version",
-            "last_updated_time",
-            "created_time",
-            "deleted_time",
-            "type",
-            "start_node",
-            "end_node",
-        }
-    )
-    _instance_type = "edge"
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        type: DirectRelationReference | tuple[str, str],
-        start_node: DirectRelationReference | tuple[str, str],
-        end_node: DirectRelationReference | tuple[str, str],
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time)
-        self.type = DirectRelationReference.load(type)
-        self.start_node = DirectRelationReference.load(start_node)
-        self.end_node = DirectRelationReference.load(end_node)
-
-    def _dump_instance(self, camel_case: bool) -> dict[str, Any]:
-        output = super()._dump_instance(camel_case)
-        output["type"] = self.type.dump(camel_case)
-        output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
-        output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
-        return output
-
-
-T_Any = TypeVar("T_Any", bound=CogniteResource)
-T_Node = TypeVar("T_Node", bound=Union[TypedNode])
-T_Edge = TypeVar("T_Edge", bound=Union[TypedEdge])
-
-
-class TypedInstanceList(CogniteResourceList, Generic[T_CogniteResource]):
-    @classmethod
-    def _load(
-        cls,
-        resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
-    ) -> Self:
-        raise NotImplementedError(
-            "TypedNodes/Edges cannot be loaded from a list of resources. Load them individually instead."
-        )
-
-
-class TypedNodeList(TypedInstanceList, Generic[T_Node]):
-    _RESOURCE = TypedNode
-
-    def as_ids(self) -> list[NodeId]:
-        return [node.as_id() for node in self]
-
-
-class TypedEdgeList(TypedInstanceList, Generic[T_Edge]):
-    _RESOURCE = TypedEdge
-
-    def as_ids(self) -> list[EdgeId]:
-        return [edge.as_id() for edge in self]
-
-
-@dataclass
-class TypedInstancesResult(Generic[T_Node, T_Edge]):
-    nodes: TypedNodeList[T_Node]
-    edges: TypedEdgeList[T_Edge]
-
-
-_RESERVED_PROPERTY_NAMES = (
-    TypedNodeWrite._instance_properties
-    | TypedEdgeWrite._instance_properties
-    | TypedNode._instance_properties
-    | TypedEdge._instance_properties
-)

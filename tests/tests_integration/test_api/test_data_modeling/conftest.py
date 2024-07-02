@@ -24,7 +24,13 @@ from cognite.client.data_classes.data_modeling import (
     ViewList,
 )
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
-from cognite.client.data_classes.data_modeling.instances import EdgeApplyList, InstancesResult, NodeApplyList
+from cognite.client.data_classes.data_modeling.instances import (
+    Edge,
+    EdgeApplyList,
+    InstancesResult,
+    Node,
+    NodeApplyList,
+)
 
 RESOURCES = Path(__file__).parent / "resources"
 
@@ -71,18 +77,18 @@ def empty_model(cognite_client: CogniteClient, integration_test_space: Space) ->
 
 
 @pytest.fixture(scope="session")
-def populated_movie(cognite_client: CogniteClient, movie_model: DataModel[View]) -> InstancesResult:
+def populated_movie(cognite_client: CogniteClient, movie_model: DataModel[View]) -> InstancesResult[Node, Edge]:
     views = ViewList(movie_model.views)
     nodes = _read_nodes(views)
     edges = _read_edges(views)
-    result = cast(InstancesResult, cognite_client.data_modeling.instances.retrieve(nodes.as_ids(), edges.as_ids()))
+    result: InstancesResult[Node, Edge] = cognite_client.data_modeling.instances.retrieve(
+        nodes.as_ids(), edges.as_ids()
+    )
     if len(result.nodes) == len(nodes) and len(result.edges) == len(edges):
         return result
 
     created = cognite_client.data_modeling.instances.apply(nodes, edges)
-    result = cast(
-        InstancesResult, cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), created.edges.as_ids())
-    )
+    result = cognite_client.data_modeling.instances.retrieve(created.nodes.as_ids(), created.edges.as_ids())
     return result
 
 
