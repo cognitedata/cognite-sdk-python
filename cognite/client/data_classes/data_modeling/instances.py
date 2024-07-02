@@ -12,6 +12,7 @@ from typing import (
     Any,
     Collection,
     Dict,
+    Generic,
     ItemsView,
     Iterator,
     KeysView,
@@ -24,17 +25,21 @@ from typing import (
     Union,
     ValuesView,
     cast,
-    final,
     overload,
 )
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import (
+    CogniteObject,
+    CogniteResourceList,
+    T_CogniteResource,
+    T_WriteClass,
+    WriteableCogniteResourceList,
+)
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
-    DataModelingInstancesList,
     DataModelingResource,
     DataModelingSort,
     WritableDataModelingResource,
@@ -129,9 +134,9 @@ class NodeOrEdgeData(CogniteObject):
         properties: dict[str, str | int | float | bool | dict | list] = {}
         for key, value in self.properties.items():
             if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
-                properties[key] = [self._serialize_value(v, camel_case) for v in value]
+                properties[key] = [_serialize_property_value(v, camel_case) for v in value]
             else:
-                properties[key] = self._serialize_value(value, camel_case)
+                properties[key] = _serialize_property_value(value, camel_case)
 
         output: dict[str, Any] = {"properties": properties}
         if self.source:
@@ -143,19 +148,19 @@ class NodeOrEdgeData(CogniteObject):
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
 
-    @staticmethod
-    def _serialize_value(value: PropertyValueWrite, camel_case: bool) -> str | int | float | bool | dict | list:
-        if isinstance(value, NodeId):
-            # We don't want to dump the instance_type field when serializing NodeId in this context
-            return value.dump(camel_case, include_instance_type=False)
-        elif isinstance(value, DirectRelationReference):
-            return value.dump(camel_case)
-        elif isinstance(value, datetime):
-            return value.isoformat(timespec="milliseconds")
-        elif isinstance(value, date):
-            return value.isoformat()
-        else:
-            return value
+
+def _serialize_property_value(value: PropertyValueWrite, camel_case: bool) -> str | int | float | bool | dict | list:
+    if isinstance(value, NodeId):
+        # We don't want to dump the instance_type field when serializing NodeId in this context
+        return value.dump(camel_case, include_instance_type=False)
+    elif isinstance(value, DirectRelationReference):
+        return value.dump(camel_case)
+    elif isinstance(value, datetime):
+        return value.isoformat(timespec="milliseconds")
+    elif isinstance(value, date):
+        return value.isoformat()
+    else:
+        return value
 
 
 class InstanceCore(DataModelingResource, ABC):
@@ -202,6 +207,18 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
         self.sources = sources
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "instanceType": self.instance_type,
+        }
+        if self.existing_version is not None:
+            output["existingVersion"] = self.existing_version
+        if self.sources:
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
+        return output
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -389,9 +406,20 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             self.__raise_if_non_singular_source(attr)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        dumped = super().dump(camel_case)
-        if "properties" in dumped:
+        dumped = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "version": self.version,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
+            "createdTime" if camel_case else "created_time": self.created_time,
+            "instanceType" if camel_case else "instance_type": self.instance_type,
+        }
+        if self.deleted_time is not None:
+            dumped["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
+        if self.properties:
             dumped["properties"] = self.properties.dump()
+        else:
+            dumped["properties"] = {}
         return dumped
 
     def to_pandas(  # type: ignore [override]
@@ -552,18 +580,7 @@ class NodeApply(InstanceApply["NodeApply"]):
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
-        if isinstance(type, tuple):
-            self.type: DirectRelationReference | None = DirectRelationReference.load(type)
-        else:
-            self.type = type
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.sources:
-            output["sources"] = [source.dump(camel_case) for source in self.sources]
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        return output
+        self.type = DirectRelationReference.load(type) if type else None
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
@@ -575,15 +592,20 @@ class NodeApply(InstanceApply["NodeApply"]):
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
-    def as_write(self) -> NodeApply:
+    def as_write(self) -> Self:
         """Returns this NodeApply instance"""
         return self
 
 
-@final
 class Node(Instance["NodeApply"]):
     """A node. This is the read version of the node.
 
@@ -595,7 +617,7 @@ class Node(Instance["NodeApply"]):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the node.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -607,10 +629,10 @@ class Node(Instance["NodeApply"]):
         created_time: int,
         deleted_time: int | None,
         properties: Properties | None,
-        type: DirectRelationReference | None,
+        type: DirectRelationReference | tuple[str, str] | None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
-        self.type = type
+        self.type = DirectRelationReference.load(type) if type else None
 
     def as_apply(self) -> NodeApply:
         """
@@ -764,7 +786,6 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         return self
 
 
-@final
 class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 
@@ -920,8 +941,62 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[NodeApply, Node]):
-    _RESOURCE = Node
+T_Instance = TypeVar("T_Instance", bound=Instance)
+
+
+class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
+    def to_pandas(  # type: ignore [override]
+        self,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+        expand_properties: bool = False,
+        remove_property_prefix: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Convert the instance into a pandas DataFrame. Note that if the properties column is expanded and there are
+        keys in the metadata that already exist in the DataFrame, then an error will be raised by pandas during joining.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
+            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
+            remove_property_prefix (bool): Remove view ID prefix from columns names of expanded properties. Requires data to be from a single view.
+            **kwargs (Any): For backwards compatability.
+
+        Returns:
+            pd.DataFrame: The Cognite resource as a dataframe.
+        """
+        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
+        if kwargs:
+            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+        if not expand_properties:
+            warnings.warn(
+                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
+                DeprecationWarning,
+            )
+        df = super().to_pandas(camel_case=camel_case, expand_metadata=False, convert_timestamps=convert_timestamps)
+        if not expand_properties or "properties" not in df.columns:
+            return df
+
+        prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
+        if remove_property_prefix and not prop_df.empty:
+            # We only do/allow this if we have a single source:
+            view_id, *extra = set(vid for item in self for vid in item.properties)
+            if not extra:
+                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+            else:
+                warnings.warn(
+                    "Can't remove view ID prefix from expanded property columns as source was not unique",
+                    RuntimeWarning,
+                )
+        return df.join(prop_df)
+
+
+T_Node = TypeVar("T_Node", bound=Node)
+
+
+class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
+    _RESOURCE = Node  # type: ignore[assignment]
 
     def as_ids(self) -> list[NodeId]:
         """
@@ -937,7 +1012,7 @@ class NodeList(DataModelingInstancesList[NodeApply, Node]):
         return NodeApplyList([node.as_write() for node in self])
 
 
-class NodeListWithCursor(NodeList):
+class NodeListWithCursor(NodeList[T_Node]):
     def __init__(
         self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
     ) -> None:
@@ -983,8 +1058,11 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
-    _RESOURCE = Edge
+T_Edge = TypeVar("T_Edge", bound=Edge)
+
+
+class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
+    _RESOURCE = Edge  # type: ignore[assignment]
 
     def as_ids(self) -> list[EdgeId]:
         """
@@ -1045,7 +1123,7 @@ class InstanceSort(DataModelingSort):
 
 
 @dataclass
-class InstancesResult:
+class InstancesResult(Generic[T_Node, T_Edge]):
     """This represents the read result of an instance query
 
     Args:
@@ -1054,8 +1132,8 @@ class InstancesResult:
 
     """
 
-    nodes: NodeList
-    edges: EdgeList
+    nodes: NodeList[T_Node]
+    edges: EdgeList[T_Edge]
 
 
 @dataclass

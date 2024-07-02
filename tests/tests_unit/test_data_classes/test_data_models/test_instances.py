@@ -167,7 +167,7 @@ class TestNodeListWithCursor:
         default_args: dict[str, Any] = dict(
             version=1, last_updated_time=0, created_time=0, deleted_time=None, properties=None, type=None
         )
-        nodes = NodeListWithCursor(
+        nodes = NodeListWithCursor[Node](
             [
                 Node(space="space", external_id="node1", **default_args),
                 Node(space="space", external_id="node2", **default_args),
@@ -176,7 +176,7 @@ class TestNodeListWithCursor:
         )
 
         nodes.extend(
-            NodeListWithCursor(
+            NodeListWithCursor[Node](
                 [
                     Node(space="space", external_id="node3", **default_args),
                     Node(space="space", external_id="node4", **default_args),
@@ -191,7 +191,7 @@ class TestNodeListWithCursor:
         default_args: dict[str, Any] = dict(
             version=1, last_updated_time=0, created_time=0, deleted_time=None, properties=None, type=None
         )
-        nodes = NodeListWithCursor(
+        nodes = NodeListWithCursor[Node](
             [
                 Node(space="space", external_id="node1", **default_args),
                 Node(space="space", external_id="node2", **default_args),
@@ -201,7 +201,7 @@ class TestNodeListWithCursor:
 
         with pytest.raises(ValueError):
             nodes.extend(
-                NodeListWithCursor(
+                NodeListWithCursor[Node](
                     [
                         Node(space="space", external_id="node2", **default_args),
                         Node(space="space", external_id="node3", **default_args),
