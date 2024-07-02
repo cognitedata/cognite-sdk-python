@@ -113,8 +113,19 @@ def is_integration_test() -> Filter:
 
 class TestAssetsAPI:
     def test_get(self, cognite_client):
+        import warnings
+
+        s = f"{Asset.__eq__ = }\n{Asset.__mro__ = }\n"
         res = cognite_client.assets.list(limit=1)
-        assert res[0] == cognite_client.assets.retrieve(res[0].id)
+        s += f"{res[0].__eq__ = }\n{type(res[0]).__mro__ = }"
+        warnings.warn(s, UserWarning)  # xdist hijacks stdout and -s doesnt work :(
+        try:
+            single = cognite_client.assets.retrieve(res[0].id)
+            assert res[0] == single
+        except AssertionError:
+            s += f"\n{single.__eq__ = }\n{type(single).__mro__ = }"
+            warnings.warn(s, UserWarning)
+            assert False, s
 
     def test_retrieve_unknown(self, cognite_client):
         res = cognite_client.assets.list(limit=1)
