@@ -32,11 +32,11 @@ class TestContainerProperty:
     @pytest.mark.parametrize(
         "data",
         [
-            {"type": {"type": "direct", "list": False}},
+            {"type": {"type": "direct", "list": False}, "immutable": False},
             # List is not required, but gets set and thus will be dumped
-            {"type": {"type": "int32", "list": False}},
-            {"type": {"type": "text", "list": False, "collation": "ucs_basic"}},
-            {"type": {"type": "file", "list": False}},
+            {"type": {"type": "int32", "list": False}, "immutable": False},
+            {"type": {"type": "text", "list": False, "collation": "ucs_basic"}, "immutable": False},
+            {"type": {"type": "file", "list": False}, "immutable": False},
         ],
     )
     def test_load_dump__only_required(self, data: dict) -> None:

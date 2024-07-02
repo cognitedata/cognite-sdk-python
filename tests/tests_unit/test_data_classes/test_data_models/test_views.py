@@ -37,6 +37,7 @@ class TestViewPropertyDefinition:
             "nullable": False,
             "autoIncrement": False,
             "defaultValue": None,
+            "immutable": False,
         }
         actual = ViewProperty.load(input)
         assert isinstance(actual, MappedProperty)
@@ -50,6 +51,7 @@ class TestViewPropertyDefinition:
             "description": None,
             "name": "fullName",
             "nullable": False,
+            "immutable": False,
             "type": {
                 "type": "direct",
                 "source": {"external_id": "myExternalId", "space": "mySpace", "version": "myVersion"},

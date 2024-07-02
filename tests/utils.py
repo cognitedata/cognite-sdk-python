@@ -15,6 +15,7 @@ import typing
 from collections import Counter
 from contextlib import contextmanager
 from datetime import timedelta, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
@@ -53,6 +54,8 @@ from cognite.client.utils._text import random_string, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
 

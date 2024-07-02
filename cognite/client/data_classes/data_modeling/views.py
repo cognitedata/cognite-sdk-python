@@ -435,6 +435,7 @@ class MappedProperty(ViewProperty):
     container_property_identifier: str
     type: PropertyType
     nullable: bool
+    immutable: bool
     auto_increment: bool
     source: ViewId | None = None
     default_value: str | int | dict | None = None
@@ -451,6 +452,7 @@ class MappedProperty(ViewProperty):
             container_property_identifier=resource["containerPropertyIdentifier"],
             type=PropertyType.load({k: v for k, v in type_.items() if k != "source"}),
             nullable=resource["nullable"],
+            immutable=resource["immutable"],
             auto_increment=resource["autoIncrement"],
             source=ViewId.load(source) if source else None,
             default_value=resource.get("defaultValue"),

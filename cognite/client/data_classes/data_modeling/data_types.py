@@ -32,7 +32,7 @@ class DirectRelationReference:
         }
 
     @classmethod
-    def load(cls, data: dict | tuple[str, str]) -> DirectRelationReference:
+    def load(cls, data: dict | tuple[str, str] | DirectRelationReference) -> DirectRelationReference:
         if isinstance(data, dict):
             return cls(
                 space=data["space"],
@@ -40,6 +40,8 @@ class DirectRelationReference:
             )
         elif isinstance(data, tuple) and len(data) == 2:
             return cls(data[0], data[1])
+        elif isinstance(data, cls):
+            return data
         else:
             raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
 

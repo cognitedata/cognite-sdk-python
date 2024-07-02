@@ -79,6 +79,13 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeOrEdgeData,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
+from cognite.client.data_classes.data_modeling.typed_instances import (
+    PropertyOptions,
+    TypedEdge,
+    TypedEdgeApply,
+    TypedNode,
+    TypedNodeApply,
+)
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
     EdgeConnection,
@@ -189,4 +196,9 @@ __all__ = [
     "InstancesResult",
     "InstanceApply",
     "query",
+    "PropertyOptions",
+    "TypedEdgeApply",
+    "TypedNodeApply",
+    "TypedNode",
+    "TypedEdge",
 ]

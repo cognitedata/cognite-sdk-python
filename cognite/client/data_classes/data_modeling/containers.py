@@ -250,6 +250,7 @@ class ContainerProperty(CogniteObject):
     name: str | None = None
     default_value: str | int | float | bool | dict | None = None
     description: str | None = None
+    immutable: bool = False
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -267,12 +268,14 @@ class ContainerProperty(CogniteObject):
             name=resource.get("name"),
             default_value=resource.get("defaultValue"),
             description=resource.get("description"),
+            immutable=resource.get("immutable", False),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        output: dict[str, str | dict] = {}
+        output: dict[str, Any] = {}
         if self.type:
             output["type"] = self.type.dump(camel_case)
+        output["immutable"] = self.immutable
         for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
             if (value := getattr(self, key)) is not None:
                 output[key] = value
