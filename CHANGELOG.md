@@ -20,7 +20,7 @@ Changes are grouped as follows
 
 ## [7.53.0] - 2024-07-02
 ### Added
-- New classes `TypedNode` and `TypedEdge` (in addition to `TypedNodeWrite` and `TypedEdgeWrite`) to be used as
+- New classes `TypedNode` and `TypedEdge` (in addition to `TypedNodeApply` and `TypedEdgeApply`) to be used as
   base classes for user created classes that represent nodes and edges with properties in a specific view. For example,
   is you have a view `Person` with properties `name` and `age`, you can create a class `Person` that inherits from
   `TypedNode` and add properties `name` and `age` to it. This class can then be used with the 

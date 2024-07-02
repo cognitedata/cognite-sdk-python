@@ -35,7 +35,7 @@ from cognite.client.data_classes.data_modeling import (
     SingleHopConnectionDefinition,
     Space,
     TypedNode,
-    TypedNodeWrite,
+    TypedNodeApply,
     View,
     ViewApply,
     ViewId,
@@ -125,7 +125,7 @@ def node_with_1_1_pressure_in_bar(
     return node
 
 
-class PrimitiveNullable(TypedNodeWrite):
+class PrimitiveNullable(TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -225,7 +225,7 @@ class PrimitiveNullableRead(TypedNode):
         return ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
 
 
-class PrimitiveListed(TypedNodeWrite):
+class PrimitiveListed(TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -325,7 +325,7 @@ class PrimitiveListedRead(TypedNode):
         )
 
 
-class Person(TypedNodeWrite):
+class Person(TypedNodeApply):
     birth_year = PropertyOptions(identifier="birthYear")
 
     def __init__(

@@ -62,7 +62,7 @@ class PropertyOptions:
             raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
 
 
-class TypedNodeWrite(NodeApply, ABC):
+class TypedNodeApply(NodeApply, ABC):
     _instance_properties: frozenset[str] = frozenset(
         {"space", "external_id", "existing_version", "type", "instance_type", "sources"}
     )
@@ -90,7 +90,7 @@ class TypedNodeWrite(NodeApply, ABC):
         return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
-class TypedEdgeWrite(EdgeApply, ABC):
+class TypedEdgeApply(EdgeApply, ABC):
     _instance_properties = frozenset(
         {"space", "external_id", "existing_version", "type", "start_node", "end_node", "instance_type", "sources"}
     )
@@ -245,8 +245,8 @@ def _load_properties(
 
 
 _RESERVED_PROPERTY_NAMES = (
-    TypedNodeWrite._instance_properties
-    | TypedEdgeWrite._instance_properties
+    TypedNodeApply._instance_properties
+    | TypedEdgeApply._instance_properties
     | TypedNode._instance_properties
     | TypedEdge._instance_properties
 )

@@ -6,13 +6,13 @@ from cognite.client.data_classes.data_modeling import DirectRelationReference, V
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
     TypedEdge,
-    TypedEdgeWrite,
+    TypedEdgeApply,
     TypedNode,
-    TypedNodeWrite,
+    TypedNodeApply,
 )
 
 
-class Person(TypedNodeWrite):
+class Person(TypedNodeApply):
     birth_date = PropertyOptions(identifier="birthDate")
 
     def __init__(
@@ -34,7 +34,7 @@ class Person(TypedNodeWrite):
         return ViewId("sp_model_space", "view_id", "1")
 
 
-class FlowWrite(TypedEdgeWrite):
+class FlowWrite(TypedEdgeApply):
     flow_rate = PropertyOptions(identifier="flowRate")
 
     def __init__(
@@ -111,7 +111,7 @@ class PersonRead(TypedNode):
         return ViewId("sp_model_space", "view_id", "1")
 
 
-class Asset(TypedNodeWrite):
+class Asset(TypedNodeApply):
     type_ = PropertyOptions(identifier="type")
 
     def __init__(self, external_id: str, name: str, type_: str) -> None:
@@ -124,7 +124,7 @@ class Asset(TypedNodeWrite):
         return ViewId("sp_model_space", "Asset", "1")
 
 
-class TestTypedNodeWrite:
+class TestTypedNodeApply:
     def test_dump_person(self) -> None:
         person = Person("my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
         expected = {
@@ -164,7 +164,7 @@ class TestTypedNodeWrite:
         assert asset.dump() == loaded.dump()
 
 
-class TestTypedEdgeWrite:
+class TestTypedEdgeApply:
     def test_dump_load_flow_write(self) -> None:
         flow = FlowWrite("my_external_id", ("sp_my_data_space", "start_node"), ("sp_my_data_space", "end_node"), 42.0)
         expected = {

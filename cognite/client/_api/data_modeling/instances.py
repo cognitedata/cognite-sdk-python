@@ -740,8 +740,8 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import date
-                >>> from cognite.client.data_classes.data_modeling import TypedNodeWrite, PropertyOptions
-                >>> class Person(TypedNodeWrite):
+                >>> from cognite.client.data_classes.data_modeling import TypedNodeApply, PropertyOptions
+                >>> class Person(TypedNodeApply):
                 ...     birth_date = PropertyOptions(identifier="birthDate")
                 ...
                 ...     def __init__(self, space: str, external_id, name: str, birth_date: date):
