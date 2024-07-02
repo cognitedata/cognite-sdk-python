@@ -707,7 +707,7 @@ class TestRequirementsParser:
         with open(file, "w+") as f:
             f.writelines("\n".join(["# this should not be included", "     " + req]))
         reqs = _extract_requirements_from_file(file_name=file)
-        assert type(reqs) is list  # noqa E721
+        assert type(reqs) is list
         assert len(reqs) == 1
         assert req in reqs
 
@@ -1130,7 +1130,7 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
 
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
-    assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
+    assert len(call.args) == 1 and type(call.args[0]) is bytes
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
@@ -1144,7 +1144,7 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
 )
 def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
     def validate_file_upload_call(*args, **kwargs):
-        assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
+        assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
@@ -1188,7 +1188,7 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
 
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
-    assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
+    assert len(call.args) == 1 and type(call.args[0]) is bytes
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
@@ -1202,7 +1202,7 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
 )
 def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite):
     def validate_file_upload_call(*args, **kwargs):
-        assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
+        assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
