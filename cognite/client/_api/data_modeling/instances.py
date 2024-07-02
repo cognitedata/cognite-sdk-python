@@ -274,7 +274,24 @@ class InstancesAPI(APIClient):
     @overload
     def retrieve_edges(
         self,
-        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        edges: EdgeId | tuple[str, str],
+        *,
+        edge_cls: type[T_Edge],
+    ) -> T_Edge: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: EdgeId | tuple[str, str],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> Edge: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
         *,
         edge_cls: type[T_Edge],
     ) -> EdgeList[T_Edge]: ...
@@ -282,7 +299,7 @@ class InstancesAPI(APIClient):
     @overload
     def retrieve_edges(
         self,
-        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
@@ -294,7 +311,7 @@ class InstancesAPI(APIClient):
         edge_cls: type[T_Edge] = Edge,  # type: ignore
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> EdgeList[T_Edge]:
+    ) -> EdgeList[T_Edge] | T_Edge | Edge:
         """`Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
@@ -310,7 +327,7 @@ class InstancesAPI(APIClient):
             include_typing (bool): Whether to include typing information
 
         Returns:
-            EdgeList[T_Edge]: The requested edges.
+            EdgeList[T_Edge] | T_Edge | Edge: The requested edges.
 
         Retrieve nodes using a custom Edge class Flow
 
@@ -343,11 +360,13 @@ class InstancesAPI(APIClient):
                 ...
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.instances.retrieve_edges(NodeId("mySpace", "theFlow"), edge_cls=Flow)
-                >>> isinstance(res[0], Flow)
+                >>> isinstance(res, Flow)
         """
         res = self._retrieve_typed(
             nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
         )
+        if isinstance(edges, Edge) or (isinstance(edges, tuple) and all(isinstance(i, str) for i in edges)):
+            return res.edges[0]
         return res.edges
 
     @overload
@@ -446,7 +465,7 @@ class InstancesAPI(APIClient):
                 ...
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.instances.retrieve_nodes(NodeId("myDataSpace", "myPerson"), node_cls=Person)
-                >>> isinstance(res[0], Person)
+                >>> isinstance(res, Person)
         """
         res = self._retrieve_typed(
             nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
