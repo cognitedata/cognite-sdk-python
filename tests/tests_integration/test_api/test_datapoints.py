@@ -785,19 +785,19 @@ class TestRetrieveRawDatapointsAPI:
         dps_arr = cognite_client.time_series.data.retrieve_arrays(id=str_ts.id, limit=3)
         # Test __iter__
         for dp in dps_arr:
-            assert type(dp.timestamp) is int  # noqa: E721
-            assert type(dp.value) is str  # noqa: E721
+            assert type(dp.timestamp) is int
+            assert type(dp.value) is str
         # Test __getitem__ of non-slices
         dp = dps_arr[0]
-        assert type(dp.timestamp) is int  # noqa: E721
-        assert type(dp.value) is str  # noqa: E721
+        assert type(dp.timestamp) is int
+        assert type(dp.value) is str
         # Test dump()
         dumped = dps_arr.dump(camel_case=False)
         dp_dumped = dumped["datapoints"][0]
         assert dumped["is_string"] is True
         assert dp_dumped == {"timestamp": 0, "value": "2"}
-        assert type(dp_dumped["timestamp"]) is int  # noqa: E721
-        assert type(dp_dumped["value"]) is str  # noqa: E721
+        assert type(dp_dumped["timestamp"]) is int
+        assert type(dp_dumped["value"]) is str
 
     def test_getitem_and_iter_preserves_status_codes(self, cognite_client, ts_status_codes, retrieve_endpoints):
         mixed_ts, *_ = ts_status_codes
