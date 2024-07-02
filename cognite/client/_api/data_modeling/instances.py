@@ -365,7 +365,7 @@ class InstancesAPI(APIClient):
         res = self._retrieve_typed(
             nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
         )
-        if isinstance(edges, Edge) or (isinstance(edges, tuple) and all(isinstance(i, str) for i in edges)):
+        if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and all(isinstance(i, str) for i in edges)):
             return res.edges[0] if res.edges else None
         return res.edges
 
@@ -470,7 +470,7 @@ class InstancesAPI(APIClient):
         res = self._retrieve_typed(
             nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
         )
-        if isinstance(nodes, Node) or (isinstance(nodes, tuple) and all(isinstance(i, str) for i in nodes)):
+        if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and all(isinstance(i, str) for i in nodes)):
             return res.nodes[0] if res.nodes else None
         return res.nodes
 
