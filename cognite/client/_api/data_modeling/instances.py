@@ -725,7 +725,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> NodeList: ...
+    ) -> NodeList[Node]: ...
 
     @overload
     def search(
@@ -739,7 +739,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> EdgeList: ...
+    ) -> EdgeList[Edge]: ...
 
     @overload
     def search(

@@ -881,7 +881,7 @@ class TestInstancesAPI:
             node.as_id(), sources=[source]
         )
         assert retrieved.nodes
-        assert math.isclose(retrieved.nodes[0]["pressure"], 1.1 * 1e5)
+        assert math.isclose(cast(float, retrieved.nodes[0]["pressure"]), 1.1 * 1e5)
 
     def test_list_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
@@ -892,7 +892,7 @@ class TestInstancesAPI:
 
         assert listed
         assert len(listed) == 1
-        assert math.isclose(listed[0]["pressure"], 1.1 * 1e5)
+        assert math.isclose(cast(float, listed[0]["pressure"]), 1.1 * 1e5)
 
     def test_search_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
@@ -906,7 +906,7 @@ class TestInstancesAPI:
 
         assert searched
         assert len(searched) == 1
-        assert math.isclose(searched[0]["pressure"], 1.1 * 1e5)
+        assert math.isclose(cast(float, searched[0]["pressure"]), 1.1 * 1e5)
 
     def test_aggregate_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
