@@ -353,7 +353,24 @@ class InstancesAPI(APIClient):
     @overload
     def retrieve_nodes(
         self,
-        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        nodes: NodeId | tuple[str, str],
+        *,
+        node_cls: type[T_Node],
+    ) -> T_Node: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | tuple[str, str],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> Node: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         node_cls: type[T_Node],
     ) -> NodeList[T_Node]: ...
@@ -361,7 +378,7 @@ class InstancesAPI(APIClient):
     @overload
     def retrieve_nodes(
         self,
-        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
@@ -373,7 +390,7 @@ class InstancesAPI(APIClient):
         node_cls: type[T_Node] = Node,  # type: ignore
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> NodeList[T_Node]:
+    ) -> NodeList[T_Node] | T_Node | Node:
         """`Retrieve one or more nodes by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
@@ -389,7 +406,7 @@ class InstancesAPI(APIClient):
             include_typing (bool): Whether to include typing information
 
         Returns:
-            NodeList[T_Node]: The requested edges.
+            NodeList[T_Node] | T_Node | Node: The requested edges.
 
         Retrieve nodes using a custom Node class Person
 
@@ -434,6 +451,8 @@ class InstancesAPI(APIClient):
         res = self._retrieve_typed(
             nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
         )
+        if isinstance(nodes, Node) or (isinstance(nodes, tuple) and all(isinstance(i, str) for i in nodes)):
+            return res.nodes[0]
         return res.nodes
 
     def retrieve(

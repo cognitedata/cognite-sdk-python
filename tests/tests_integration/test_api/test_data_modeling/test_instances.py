@@ -972,9 +972,8 @@ class TestInstancesAPI:
             retrieved = cognite_client.data_modeling.instances.retrieve_nodes(
                 primitive.as_id(), node_cls=PrimitiveNullableRead
             )
-            assert len(retrieved) == 1
-            assert isinstance(retrieved[0], PrimitiveNullableRead)
-            assert retrieved[0].text == "text"
+            assert isinstance(retrieved, PrimitiveNullableRead)
+            assert retrieved.text == "text"
         finally:
             cognite_client.data_modeling.instances.delete(primitive.as_id())
 
@@ -1007,9 +1006,8 @@ class TestInstancesAPI:
             retrieved = cognite_client.data_modeling.instances.retrieve_nodes(
                 primitive_listed.as_id(), node_cls=PrimitiveListedRead
             )
-            assert len(retrieved) == 1
-            assert isinstance(retrieved[0], PrimitiveListedRead)
-            assert retrieved[0].text == ["text"]
+            assert isinstance(retrieved, PrimitiveListedRead)
+            assert retrieved.text == ["text"]
         finally:
             cognite_client.data_modeling.instances.delete(primitive_listed.as_id())
 
@@ -1027,10 +1025,9 @@ class TestInstancesAPI:
             assert created.nodes[0].external_id == external_id
 
             retrieved = cognite_client.data_modeling.instances.retrieve_nodes(person.as_id(), node_cls=PersonRead)
-            assert len(retrieved) == 1
-            assert isinstance(retrieved[0], PersonRead)
-            assert retrieved[0].name == "John Doe"
-            assert retrieved[0].birth_year == 1980
+            assert isinstance(retrieved, PersonRead)
+            assert retrieved.name == "John Doe"
+            assert retrieved.birth_year == 1980
         finally:
             cognite_client.data_modeling.instances.delete(person.as_id())
 
