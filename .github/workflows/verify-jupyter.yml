@@ -10,9 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - name: Build package
-        run: poetry build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          cache: 'pip'
+      - name: Build package using poetry
+        run: |
+            pip install poetry
+            poetry build
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
