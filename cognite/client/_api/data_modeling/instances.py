@@ -4,6 +4,7 @@ import inspect
 import logging
 import random
 import time
+import warnings
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from threading import Thread
@@ -1016,6 +1017,12 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
+
+        if limit is None:
+            warnings.warn(
+                "When using `limit=None` for an endpoint that does not support pagination/cursors, the API default limit is used. Please refer to the Cognite API documentation.",
+                UserWarning,
+            )
 
         self._validate_filter(filter)
         filter = self._merge_space_into_filter(instance_type, space, filter)
