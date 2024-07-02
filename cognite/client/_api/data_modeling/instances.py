@@ -274,7 +274,24 @@ class InstancesAPI(APIClient):
     @overload
     def retrieve_edges(
         self,
-        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        edges: EdgeId | tuple[str, str],
+        *,
+        edge_cls: type[T_Edge],
+    ) -> T_Edge | None: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: EdgeId | tuple[str, str],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> Edge | None: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
         *,
         edge_cls: type[T_Edge],
     ) -> EdgeList[T_Edge]: ...
@@ -282,7 +299,7 @@ class InstancesAPI(APIClient):
     @overload
     def retrieve_edges(
         self,
-        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
@@ -294,16 +311,85 @@ class InstancesAPI(APIClient):
         edge_cls: type[T_Edge] = Edge,  # type: ignore
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> EdgeList[T_Edge]:
+    ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
+        """`Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+
+        Note:
+            This method should be used for retrieving edges with a custom edge class.You can use it
+            without providing a custom node class, but in that case, the retrieved nodes will be of the
+            built-in Edge class.
+
+
+        Args:
+            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]]): Edge id(s) to retrieve.
+            edge_cls (type[T_Edge]): The custom edge class to use, the retrieved edges will automatically be serialized into this class.
+            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom edge class.
+            include_typing (bool): Whether to include typing information
+
+        Returns:
+            EdgeList[T_Edge] | T_Edge | Edge | None: The requested edges.
+
+        Retrieve nodes using a custom Edge class Flow
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import EdgeId, TypedEdge, PropertyOptions, DirectRelationReference, ViewId
+                >>> class Flow(TypedEdge):
+                ...    flow_rate = PropertyOptions(identifier="flowRate")
+                ...
+                ...    def __init__(
+                ...        self,
+                ...        space: str,
+                ...        external_id: str,
+                ...        version: int,
+                ...        type: DirectRelationReference,
+                ...        last_updated_time: int,
+                ...        created_time: int,
+                ...        flow_rate: float,
+                ...        start_node: DirectRelationReference,
+                ...        end_node: DirectRelationReference,
+                ...        deleted_time: Union[int, None] = None,
+                ...    ) -> None:
+                ...        super().__init__(
+                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+                ...        )
+                ...        self.flow_rate = flow_rate
+                ...
+                ...    @classmethod
+                ...    def get_source(cls) -> ViewId:
+                ...        return ViewId("sp_model_space", "flow", "1")
+                ...
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve_edges(NodeId("mySpace", "theFlow"), edge_cls=Flow)
+                >>> isinstance(res, Flow)
+        """
         res = self._retrieve_typed(
             nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
         )
+        if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and all(isinstance(i, str) for i in edges)):
+            return res.edges[0] if res.edges else None
         return res.edges
 
     @overload
     def retrieve_nodes(
         self,
-        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        nodes: NodeId | tuple[str, str],
+        *,
+        node_cls: type[T_Node],
+    ) -> T_Node | None: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | tuple[str, str],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> Node | None: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         node_cls: type[T_Node],
     ) -> NodeList[T_Node]: ...
@@ -311,7 +397,7 @@ class InstancesAPI(APIClient):
     @overload
     def retrieve_nodes(
         self,
-        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
@@ -323,10 +409,69 @@ class InstancesAPI(APIClient):
         node_cls: type[T_Node] = Node,  # type: ignore
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> NodeList[T_Node]:
+    ) -> NodeList[T_Node] | T_Node | Node | None:
+        """`Retrieve one or more nodes by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+
+        Note:
+            This method should be used for retrieving nodes with a custom node class. You can use it
+            without providing a custom node class, but in that case, the retrieved nodes will be of the
+            built-in Node class.
+
+
+        Args:
+            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]]): Node id(s) to retrieve.
+            node_cls (type[T_Node]): The custom node class to use, the retrieved nodes will automatically be serialized to this class.
+            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom node class.
+            include_typing (bool): Whether to include typing information
+
+        Returns:
+            NodeList[T_Node] | T_Node | Node | None: The requested edges.
+
+        Retrieve nodes using a custom Node class Person
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId, TypedNode, PropertyOptions, DirectRelationReference, ViewId
+                >>> class Person(TypedNode):
+                ...    birth_year = PropertyOptions(identifier="birthYear")
+                ...
+                ...    def __init__(
+                ...        self,
+                ...        space: str,
+                ...        external_id: str,
+                ...        version: int,
+                ...        last_updated_time: int,
+                ...        created_time: int,
+                ...        name: str,
+                ...        birth_year: Union[int, None] = None,
+                ...        type: Union[DirectRelationReference, None] = None,
+                ...        deleted_time: Union[int, None] = None,
+                ...    ):
+                ...        super().__init__(
+                ...            space=space,
+                ...            external_id=external_id,
+                ...            version=version,
+                ...            last_updated_time=last_updated_time,
+                ...            created_time=created_time,
+                ...            type=type,
+                ...            deleted_time=deleted_time,
+                ...            properties=None,
+                ...        )
+                ...        self.name = name
+                ...        self.birth_year = birth_year
+                ...
+                ...    @classmethod
+                ...    def get_source(cls) -> ViewId:
+                ...        return ViewId("myModelSpace", "Person", "1")
+                ...
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve_nodes(NodeId("myDataSpace", "myPerson"), node_cls=Person)
+                >>> isinstance(res, Person)
+        """
         res = self._retrieve_typed(
             nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
         )
+        if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and all(isinstance(i, str) for i in nodes)):
+            return res.nodes[0] if res.nodes else None
         return res.nodes
 
     def retrieve(
