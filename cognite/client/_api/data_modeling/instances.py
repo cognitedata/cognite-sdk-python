@@ -311,6 +311,41 @@ class InstancesAPI(APIClient):
 
         Returns:
             EdgeList[T_Edge]: The requested edges.
+
+        Retrieve nodes using a custom Edge class Flow
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import EdgeId, TypedEdge, PropertyOptions, DirectRelationReference, ViewId
+                >>> class Flow(TypedEdge):
+                ...    flow_rate = PropertyOptions(identifier="flowRate")
+                ...
+                ...    def __init__(
+                ...        self,
+                ...        space: str,
+                ...        external_id: str,
+                ...        version: int,
+                ...        type: DirectRelationReference,
+                ...        last_updated_time: int,
+                ...        created_time: int,
+                ...        flow_rate: float,
+                ...        start_node: DirectRelationReference,
+                ...        end_node: DirectRelationReference,
+                ...        deleted_time: Union[int, None] = None,
+                ...    ) -> None:
+                ...        super().__init__(
+                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+                ...        )
+                ...        self.flow_rate = flow_rate
+                ...
+                ...    @classmethod
+                ...    def get_source(cls) -> ViewId:
+                ...        return ViewId("sp_model_space", "flow", "1")
+                ...
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve_edges(NodeId("mySpace", "theFlow"), edge_cls=Flow)
+                >>> isinstance(res[0], Flow)
+                True
+
         """
         res = self._retrieve_typed(
             nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
@@ -358,19 +393,44 @@ class InstancesAPI(APIClient):
         Returns:
             NodeList[T_Node]: The requested edges.
 
-        Retrieve nodes an edges using a custom Node class persion
+        Retrieve nodes using a custom Node class Person
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import NodeId, TypedNode, PropertyOptions
+                >>> from cognite.client.data_classes.data_modeling import NodeId, TypedNode, PropertyOptions, DirectRelationReference, ViewId
                 >>> class Person(TypedNode):
-                ...    birth_year = PropertyOptions("birthYear")
+                ...    birth_year = PropertyOptions(identifier="birthYear")
                 ...
-                ...    def __init__(self, name: str, birth_year: int):
+                ...    def __init__(
+                ...        self,
+                ...        space: str,
+                ...        external_id: str,
+                ...        version: int,
+                ...        last_updated_time: int,
+                ...        created_time: int,
+                ...        name: str,
+                ...        birth_year: Union[int, None] = None,
+                ...        type: Union[DirectRelationReference, None] = None,
+                ...        deleted_time: Union[int, None] = None,
+                ...    ):
+                ...        super().__init__(
+                ...            space=space,
+                ...            external_id=external_id,
+                ...            version=version,
+                ...            last_updated_time=last_updated_time,
+                ...            created_time=created_time,
+                ...            type=type,
+                ...            deleted_time=deleted_time,
+                ...            properties=None,
+                ...        )
                 ...        self.name = name
                 ...        self.birth_year = birth_year
                 ...
+                ...    @classmethod
+                ...    def get_source(cls) -> ViewId:
+                ...        return ViewId("myModelSpace", "Person", "1")
+                ...
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.instances.retrieve_nodes(NodeId("mySpace", "myPerson"), node_cls=Person)
+                >>> res = client.data_modeling.instances.retrieve_nodes(NodeId("myDataSpace", "myPerson"), node_cls=Person)
                 >>> isinstance(res[0], Person)
                 True
         """
