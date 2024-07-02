@@ -1204,8 +1204,7 @@ class InstancesAPI(APIClient):
     def list(
         self,
         instance_type: type[T_Node],
-        include_typing: bool = False,
-        sources: Source | Sequence[Source] | None = None,
+        *,
         space: str | SequenceNotStr[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
@@ -1216,8 +1215,7 @@ class InstancesAPI(APIClient):
     def list(
         self,
         instance_type: type[T_Edge],
-        include_typing: bool = False,
-        sources: Source | Sequence[Source] | None = None,
+        *,
         space: str | SequenceNotStr[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
