@@ -18,6 +18,14 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [7.53.0] - 2024-07-02
+### Added
+- New classes `TypedNode` and `TypedEdge` (in addition to `TypedNodeWrite` and `TypedEdgeWrite`) to be used as
+  base classes for user created classes that represent nodes and edges with properties in a specific view. For example,
+  is you have a view `Person` with properties `name` and `age`, you can create a class `Person` that inherits from
+  `TypedNode` and add properties `name` and `age` to it. This class can then be used with the 
+  `client.data_modeling.instances.retrieve(..)`, `.apply(...)`, `.list(...)` and `.search(...)` methods.
+
 ## [7.52.3] - 2024-06-27
 ### Added
 - Added `partitions` parameter to `retrieve_dataframe()` method of the `RawRowsAPI`.
