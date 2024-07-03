@@ -7,7 +7,7 @@ import pytest
 from _pytest.mark import ParameterSet
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import cdm
+from cognite.client.data_classes.cdm import v1 as cdm
 from cognite.client.data_classes.data_modeling import (
     Space,
     SpaceApply,
