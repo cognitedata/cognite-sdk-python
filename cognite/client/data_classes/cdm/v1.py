@@ -25,7 +25,7 @@ class SourceableProperties:
         return ViewId("cdf_cdm_experimental", "Sourceable", "v1")
 
 
-class SourceableWrite(SourceableProperties, TypedNodeApply):
+class SourceableApply(SourceableProperties, TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -76,8 +76,8 @@ class Sourceable(
         self.source_created_user = source_created_user
         self.source_updated_user = source_updated_user
 
-    def as_write(self) -> SourceableWrite:
-        return SourceableWrite(
+    def as_write(self) -> SourceableApply:
+        return SourceableApply(
             self.space,
             self.external_id,
             self.source_id,
@@ -97,7 +97,7 @@ class DescribableProperties:
         return ViewId("cdf_cdm_experimental", "Describable", "v1")
 
 
-class DescribableWrite(DescribableProperties, TypedNodeApply):
+class DescribableApply(DescribableProperties, TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -140,8 +140,8 @@ class Describable(
         self.tags = tags
         self.aliases = aliases
 
-    def as_write(self) -> DescribableWrite:
-        return DescribableWrite(
+    def as_write(self) -> DescribableApply:
+        return DescribableApply(
             self.space,
             self.external_id,
             self.name,
@@ -164,7 +164,7 @@ class SchedulableProperties:
         return ViewId("cdf_cdm_experimental", "Schedulable", "v1")
 
 
-class SchedulableWrite(SchedulableProperties, TypedNodeApply):
+class SchedulableApply(SchedulableProperties, TypedNodeApply):
     def __init__(
         self,
         space: str,
@@ -204,8 +204,8 @@ class Schedulable(SchedulableProperties, TypedNode):
         self.scheduled_start_time = scheduled_start_time
         self.scheduled_end_time = scheduled_end_time
 
-    def as_write(self) -> SchedulableWrite:
-        return SchedulableWrite(
+    def as_write(self) -> SchedulableApply:
+        return SchedulableApply(
             self.space,
             self.external_id,
             self.start_time,
@@ -283,7 +283,7 @@ class Model3DProperties:
         return ViewId("cdf_cdm_experimental", "Model3D", "v1")
 
 
-class Model3DWrite(Model3DProperties, SourceableWrite, DescribableWrite):
+class Model3DApply(Model3DProperties, SourceableApply, DescribableApply):
     def __init__(
         self,
         space: str,
@@ -301,7 +301,7 @@ class Model3DWrite(Model3DProperties, SourceableWrite, DescribableWrite):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        SourceableWrite.__init__(
+        SourceableApply.__init__(
             self,
             space,
             external_id,
@@ -314,7 +314,7 @@ class Model3DWrite(Model3DProperties, SourceableWrite, DescribableWrite):
             existing_version,
             type,
         )
-        DescribableWrite.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
+        DescribableApply.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
 
 
 class Model3D(Model3DProperties, Sourceable, Describable):
@@ -369,8 +369,8 @@ class Model3D(Model3DProperties, Sourceable, Describable):
             deleted_time,
         )
 
-    def as_write(self) -> Model3DWrite:
-        return Model3DWrite(
+    def as_write(self) -> Model3DApply:
+        return Model3DApply(
             self.space,
             self.external_id,
             self.source_id,
@@ -394,7 +394,7 @@ class Object3DProperties:
         return ViewId("cdf_cdm_experimental", "Object3D", "v1")
 
 
-class Object3DWrite(Object3DProperties, SourceableWrite, DescribableWrite):
+class Object3DApply(Object3DProperties, SourceableApply, DescribableApply):
     def __init__(
         self,
         space: str,
@@ -412,7 +412,7 @@ class Object3DWrite(Object3DProperties, SourceableWrite, DescribableWrite):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        SourceableWrite.__init__(
+        SourceableApply.__init__(
             self,
             space,
             external_id,
@@ -425,7 +425,7 @@ class Object3DWrite(Object3DProperties, SourceableWrite, DescribableWrite):
             existing_version,
             type,
         )
-        DescribableWrite.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
+        DescribableApply.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
 
 
 class Object3D(Object3DProperties, Sourceable, Describable):
@@ -480,8 +480,8 @@ class Object3D(Object3DProperties, Sourceable, Describable):
             deleted_time,
         )
 
-    def as_write(self) -> Object3DWrite:
-        return Object3DWrite(
+    def as_write(self) -> Object3DApply:
+        return Object3DApply(
             self.space,
             self.external_id,
             self.source_id,
@@ -505,7 +505,7 @@ class AssetTypeProperties:
         return ViewId("cdf_cdm_experimental", "AssetType", "v1")
 
 
-class AssetTypeWrite(AssetTypeProperties, DescribableWrite):
+class AssetTypeApply(AssetTypeProperties, DescribableApply):
     def __init__(
         self,
         space: str,
@@ -553,8 +553,8 @@ class AssetType(AssetTypeProperties, Describable):
         )
         self.code = code
 
-    def as_write(self) -> AssetTypeWrite:
-        return AssetTypeWrite(
+    def as_write(self) -> AssetTypeApply:
+        return AssetTypeApply(
             self.space,
             self.external_id,
             self.name,
@@ -576,7 +576,7 @@ class AssetProperties:
         return ViewId("cdf_cdm_experimental", "Asset", "v1")
 
 
-class AssetApply(AssetProperties, Object3DWrite):
+class AssetApply(AssetProperties, Object3DApply):
     def __init__(
         self,
         space: str,
@@ -711,7 +711,7 @@ class EquipmentProperties:
         return ViewId("cdf_cdm_experimental", "Equipment", "v1")
 
 
-class EquipmentWrite(EquipmentProperties, Object3DWrite):
+class EquipmentApply(EquipmentProperties, Object3DApply):
     def __init__(
         self,
         space: str,
@@ -796,8 +796,8 @@ class Equipment(EquipmentProperties, Object3D):
         self.serial_number = serial_number
         self.manufacturer = manufacturer
 
-    def as_write(self) -> EquipmentWrite:
-        return EquipmentWrite(
+    def as_write(self) -> EquipmentApply:
+        return EquipmentApply(
             self.space,
             self.external_id,
             self.serial_number,
@@ -823,7 +823,7 @@ class ActivityProperties:
         return ViewId("cdf_cdm_experimental", "Activity", "v1")
 
 
-class ActivityWrite(ActivityProperties, DescribableWrite, SourceableWrite, SchedulableWrite):
+class ActivityApply(ActivityProperties, DescribableApply, SourceableApply, SchedulableApply):
     def __init__(
         self,
         space: str,
@@ -846,8 +846,8 @@ class ActivityWrite(ActivityProperties, DescribableWrite, SourceableWrite, Sched
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        DescribableWrite.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
-        SourceableWrite.__init__(
+        DescribableApply.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
+        SourceableApply.__init__(
             self,
             space,
             external_id,
@@ -860,7 +860,7 @@ class ActivityWrite(ActivityProperties, DescribableWrite, SourceableWrite, Sched
             existing_version,
             type,
         )
-        SchedulableWrite.__init__(
+        SchedulableApply.__init__(
             self,
             space,
             external_id,
@@ -946,8 +946,8 @@ class Activity(ActivityProperties, Describable, Sourceable, Schedulable):
         )
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
 
-    def as_write(self) -> ActivityWrite:
-        return ActivityWrite(
+    def as_write(self) -> ActivityApply:
+        return ActivityApply(
             self.space,
             self.external_id,
             self.assets,
@@ -980,7 +980,7 @@ class TimeSeriesProperties:
         return ViewId("cdf_cdm_experimental", "TimeSeriesBase", "v1")
 
 
-class TimesSeriesBaseWrite(TimeSeriesProperties, DescribableWrite, SourceableWrite):
+class TimesSeriesBaseApply(TimeSeriesProperties, DescribableApply, SourceableApply):
     def __init__(
         self,
         space: str,
@@ -1004,8 +1004,8 @@ class TimesSeriesBaseWrite(TimeSeriesProperties, DescribableWrite, SourceableWri
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        DescribableWrite.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
-        SourceableWrite.__init__(
+        DescribableApply.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
+        SourceableApply.__init__(
             self,
             space,
             external_id,
@@ -1090,8 +1090,8 @@ class TimeSeriesBase(TimeSeriesProperties, Describable, Sourceable):
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
         self.equipment = DirectRelationReference.load(equipment) if equipment else None
 
-    def as_write(self) -> TimesSeriesBaseWrite:
-        return TimesSeriesBaseWrite(
+    def as_write(self) -> TimesSeriesBaseApply:
+        return TimesSeriesBaseApply(
             self.space,
             self.external_id,
             self.is_step,

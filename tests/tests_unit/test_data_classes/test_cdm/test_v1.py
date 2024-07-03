@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from cognite.client.data_classes.cdm.v1 import Model3DWrite, SourceableWrite
+from cognite.client.data_classes.cdm.v1 import Model3DApply, SourceableApply
 
 
 class TestSourceable:
     def test_dump_load(self) -> None:
         today = datetime.today()
-        source = SourceableWrite(
+        source = SourceableApply(
             "sp_data_space",
             "my_source",
             source="imagination",
@@ -44,7 +44,7 @@ class TestSourceable:
 
 class TestModel3D:
     def test_dump(self) -> None:
-        my_model = Model3DWrite(
+        my_model = Model3DApply(
             "sp_data_space",
             "my_model",
             source="imagination",

@@ -15,6 +15,7 @@ DATA_SPACE = "python_sdk_core_v1_test_space"
 
 def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
     today = datetime.now()
+    yesterday = today.replace(day=today.day - 1)
     yield pytest.param(
         cdm.AssetApply(
             space=DATA_SPACE,
@@ -30,6 +31,145 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
         ),
         cdm.Asset,
         id="Asset",
+    )
+    yield pytest.param(
+        cdm.ActivityApply(
+            space=DATA_SPACE,
+            external_id="test_activity",
+            assets=[(DATA_SPACE, "test_asset")],
+            source_id="SAP",
+            source_created_time=yesterday,
+            source_updated_time=today,
+            source_created_user="Me",
+            source_updated_user="Also me",
+            name="Test activity",
+            description="Test activity for core model v1 tests with Python SDK",
+            aliases=["test_activity_alias"],
+            start_time=yesterday,
+            end_time=today,
+            scheduled_start_time=yesterday,
+            scheduled_end_time=today,
+        ),
+        cdm.Activity,
+        id="Activity",
+    )
+
+    yield pytest.param(
+        cdm.AssetTypeApply(
+            space=DATA_SPACE,
+            external_id="test_asset_type",
+            name="Test asset type",
+            description="Test asset type for core model v1 tests with Python SDK",
+            aliases=["test_asset_type_alias"],
+            code="101",
+        ),
+        cdm.AssetType,
+        id="AssetType",
+    )
+    yield pytest.param(
+        cdm.DescribableApply(
+            space=DATA_SPACE,
+            external_id="test_describable",
+            name="Test describable",
+            description="Test describable for core model v1 tests with Python SDK",
+            aliases=["test_describable_alias"],
+        ),
+        cdm.Describable,
+        id="Describable",
+    )
+    yield pytest.param(
+        cdm.EquipmentApply(
+            space=DATA_SPACE,
+            external_id="test_equipment",
+            name="Test equipment",
+            description="Test equipment for core model v1 tests with Python SDK",
+            aliases=["test_equipment_alias"],
+            source_id="SAP",
+            source_created_time=yesterday,
+            source_updated_time=today,
+            source_created_user="Me",
+            source_updated_user="Also me",
+        ),
+        cdm.Equipment,
+        id="Equipment",
+    )
+    yield pytest.param(
+        cdm.Model3DApply(
+            space=DATA_SPACE,
+            external_id="test_model_3d",
+            name="Test model 3D",
+            description="Test model 3D for core model v1 tests with Python SDK",
+            aliases=["test_model_3d_alias"],
+            source_id="SAP",
+            source_created_time=yesterday,
+            source_updated_time=today,
+            source_created_user="Me",
+            source_updated_user="Also me",
+        ),
+        cdm.Model3D,
+        id="Model3D",
+    )
+    yield pytest.param(
+        cdm.Object3DApply(
+            space=DATA_SPACE,
+            external_id="test_object_3d",
+            name="Test object 3D",
+            description="Test object 3D for core model v1 tests with Python SDK",
+            aliases=["test_object_3d_alias"],
+            source_id="SAP",
+            source_created_time=yesterday,
+            source_updated_time=today,
+            source_created_user="Me",
+            source_updated_user="Also me",
+        ),
+        cdm.Object3D,
+        id="Object3D",
+    )
+
+    yield pytest.param(
+        cdm.SchedulableApply(
+            space=DATA_SPACE,
+            external_id="test_schedulable",
+            start_time=yesterday,
+            end_time=today,
+            scheduled_start_time=yesterday,
+            scheduled_end_time=today,
+        ),
+        cdm.Schedulable,
+        id="Schedulable",
+    )
+
+    yield pytest.param(
+        cdm.SourceableApply(
+            space=DATA_SPACE,
+            external_id="test_sourceable",
+            source_id="SAP",
+            source_created_time=yesterday,
+            source_updated_time=today,
+            source_created_user="Me",
+            source_updated_user="Also me",
+        ),
+        cdm.Sourceable,
+        id="Sourceable",
+    )
+
+    yield pytest.param(
+        cdm.TimesSeriesBaseApply(
+            space=DATA_SPACE,
+            external_id="test_time_series_base",
+            is_step=False,
+            is_string=False,
+            name="Test time series base",
+            description="Test time series base for core model v1 tests with Python SDK",
+            aliases=["test_time_series_base_alias"],
+            source_id="SAP",
+            source_created_time=yesterday,
+            source_updated_time=today,
+            source_created_user="Me",
+            source_updated_user="Also me",
+        ),
+        cdm.TimeSeriesBase,
+        id="TimeSeriesBase",
     )
 
 
