@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from cognite.client.config import global_config
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
