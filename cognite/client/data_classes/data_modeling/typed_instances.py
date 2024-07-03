@@ -230,20 +230,7 @@ def _load_properties(
     cls: type, resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
 ) -> dict[str, Any]:
     output: dict[str, Any] = {}
-    to_search = [cls]
-    property_by_name: dict[str, PropertyOptions] = {}
-    while to_search:
-        current_cls = to_search.pop()
-        for name, value in current_cls.__dict__.items():
-            if isinstance(value, PropertyOptions):
-                property_by_name[name] = value
-        to_search.extend(
-            [
-                b
-                for b in current_cls.__bases__
-                if {b not in {object, TypedNode, TypedEdge, Edge, Node, TypedNodeApply, TypedEdgeApply}}
-            ]
-        )
+    property_by_name = _get_properties_by_name(cls)
 
     for name, parameter in signature.parameters.items():
         if name in instance_properties:
@@ -260,6 +247,24 @@ def _load_properties(
     return output
 
 
+def _get_properties_by_name(cls: type) -> dict[str, PropertyOptions]:
+    to_search = [cls]
+    property_by_name: dict[str, PropertyOptions] = {}
+    while to_search:
+        current_cls = to_search.pop()
+        for name, value in current_cls.__dict__.items():
+            if isinstance(value, PropertyOptions):
+                property_by_name[name] = value
+        to_search.extend(
+            [
+                b
+                for b in current_cls.__bases__
+                if {b not in {object, TypedNode, TypedEdge, Edge, Node, TypedNodeApply, TypedEdgeApply}}
+            ]
+        )
+    return property_by_name
+
+
 _RESERVED_PROPERTY_NAMES = (
     TypedNodeApply._instance_properties
     | TypedEdgeApply._instance_properties
@@ -270,11 +275,15 @@ _RESERVED_PROPERTY_NAMES = (
 
 def _dump_properties(obj: object, camel_case: bool, instance_properties: frozenset[str]) -> dict[str, Any]:
     properties: dict[str, str | int | float | bool | dict | list] = {}
+    properties_by_name = _get_properties_by_name(type(obj))
     for key, value in vars(obj).items():
         if key in instance_properties or value is None:
             continue
         if key.startswith("__"):
             key = key[2:]
+
+        if key in properties_by_name:
+            key = cast(str, properties_by_name[key].name)
 
         if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
             properties[key] = [_serialize_property_value(v, camel_case) for v in value]
