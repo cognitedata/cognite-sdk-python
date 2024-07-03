@@ -576,7 +576,7 @@ class AssetProperties:
         return ViewId("cdf_cdm_experimental", "Asset", "v1")
 
 
-class AssetWrite(AssetProperties, Object3DWrite):
+class AssetApply(AssetProperties, Object3DWrite):
     def __init__(
         self,
         space: str,
@@ -678,8 +678,8 @@ class Asset(AssetProperties, Object3D):
         self.asset_type = DirectRelationReference.load(asset_type) if asset_type else None
         self.root = DirectRelationReference.load(root) if root else None
 
-    def as_write(self) -> AssetWrite:
-        return AssetWrite(
+    def as_write(self) -> AssetApply:
+        return AssetApply(
             self.space,
             self.external_id,
             self.parent,
