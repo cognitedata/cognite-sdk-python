@@ -230,17 +230,33 @@ def _load_properties(
     cls: type, resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
 ) -> dict[str, Any]:
     output: dict[str, Any] = {}
+    to_search = [cls]
+    property_by_name: dict[str, PropertyOptions] = {}
+    while to_search:
+        current_cls = to_search.pop()
+        for name, value in current_cls.__dict__.items():
+            if isinstance(value, PropertyOptions):
+                property_by_name[name] = value
+        to_search.extend(
+            [
+                b
+                for b in current_cls.__bases__
+                if {b not in {object, TypedNode, TypedEdge, Edge, Node, TypedNodeApply, TypedEdgeApply}}
+            ]
+        )
+
     for name, parameter in signature.parameters.items():
         if name in instance_properties:
             continue
         if name in resource:
             output[name] = _deserialize_values(resource[name], parameter)
-        elif name in cls.__dict__ and isinstance(cls.__dict__[name], PropertyOptions):
-            property_name = cls.__dict__[name].name
+        elif name in property_by_name:
+            property_name = cast(str, property_by_name[name].name)
             if property_name.startswith("__"):
                 property_name = property_name[2:]
             if property_name in resource:
                 output[name] = _deserialize_values(resource[property_name], parameter)
+
     return output
 
 
