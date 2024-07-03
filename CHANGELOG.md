@@ -18,6 +18,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [7.53.1] - 2024-07-02
+### Fixed
+- In the new `.retrieve_nodes` and `retrieve_edges` methods in the `client.data_modeling.instances` module, if you 
+  give the identifier of a single node or edge, you will now get a single `TypedNode` or `TypedEdge` instance back.
+
 ## [7.53.0] - 2024-07-02
 ### Added
 - New classes `TypedNode` and `TypedEdge` (in addition to `TypedNodeApply` and `TypedEdgeApply`) to be used as
