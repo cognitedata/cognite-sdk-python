@@ -44,26 +44,27 @@ def data_space(cognite_client_alpha: CogniteClient) -> Space:
 class TestCoreModelv1:
     @pytest.mark.usefixtures("data_space")
     @pytest.mark.parametrize("write_instance, read_type", list(core_model_v1_node_test_cases()))
-    def test_write_read_delete_node(
+    def test_write_read_node(
         self, write_instance: TypedNodeApply, read_type: type[TypedNode], cognite_client_alpha: CogniteClient
     ) -> None:
-        try:
-            created = cognite_client_alpha.data_modeling.instances.apply(write_instance)
+        created = cognite_client_alpha.data_modeling.instances.apply(write_instance)
 
-            assert len(created.nodes) == 1
-            assert created.nodes[0].as_id() == write_instance.as_id()
+        assert len(created.nodes) == 1
+        assert created.nodes[0].as_id() == write_instance.as_id()
 
-            read = cognite_client_alpha.data_modeling.instances.retrieve_nodes(
-                write_instance.as_id(), node_cls=read_type
-            )
+        read = cognite_client_alpha.data_modeling.instances.retrieve_nodes(write_instance.as_id(), node_cls=read_type)
 
-            assert isinstance(read, read_type)
-            assert read.as_id() == write_instance.as_id()
+        assert isinstance(read, read_type)
+        assert read.as_id() == write_instance.as_id()
 
-            read_dumped = read.as_write().dump()
-            write_instance_dumped = write_instance.dump()
-            read_dumped.pop("existingVersion", None)
-            write_instance_dumped.pop("existingVersion", None)
-            assert write_instance_dumped == read_dumped
-        finally:
-            cognite_client_alpha.data_modeling.instances.delete(write_instance.as_id())
+        read_dumped = read.as_write().dump()
+        write_instance_dumped = write_instance.dump()
+        # Existing version will be bumped by the server
+        # so we need to remove it from the comparison
+        read_dumped.pop("existingVersion", None)
+        write_instance_dumped.pop("existingVersion", None)
+        for key, value in read_dumped["sources"][0]["properties"].items():
+            if isinstance(value, str) and value.endswith("+00:00"):
+                # Server sets timezone to UTC, but expects the client to send it without
+                read_dumped["sources"][0]["properties"][key] = value[:-6]
+        assert write_instance_dumped == read_dumped
