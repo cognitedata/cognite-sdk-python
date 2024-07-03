@@ -30,7 +30,6 @@ class GlobalConfig:
         max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
-        cdm_model_version (str): The version of the Core Data Model to use. Defaults to "v1".
     """
 
     def __init__(self) -> None:
@@ -46,7 +45,6 @@ class GlobalConfig:
         self.proxies: dict[str, str] | None = {}
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
-        self.cdm_model_version = "v1"
 
 
 global_config = GlobalConfig()
