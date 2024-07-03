@@ -35,7 +35,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
-from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNodeApply
+from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -52,7 +52,6 @@ from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string, to_snake_case
-from scripts.tmp.experiment_typed import TypedNode
 
 if TYPE_CHECKING:
     import pandas
