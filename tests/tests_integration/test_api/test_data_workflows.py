@@ -196,7 +196,7 @@ def add_multiply_workflow(
 def workflow_execution_list(
     cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
 ) -> WorkflowExecutionList:
-    executions = cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=5)
+    executions = cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=10)
     if executions:
         return executions
     # Creating at least one execution
