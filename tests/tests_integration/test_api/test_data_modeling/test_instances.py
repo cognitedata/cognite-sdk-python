@@ -566,12 +566,12 @@ class TestInstancesAPI:
         space = person_view.space
         person_to_actor = EdgeApply(
             space=space,
-            external_id="relation:sylvester_stallone:actor",
+            external_id=random_string(10),
             type=DirectRelationReference(
                 space, cast(SingleHopConnectionDefinition, person_view.properties["roles"]).type.external_id
             ),
-            start_node=DirectRelationReference(space, "person:sylvester_stallone"),
-            end_node=DirectRelationReference(space, "actor:sylvester_stallone"),
+            start_node=DirectRelationReference(space, random_string(10)),
+            end_node=DirectRelationReference(space, random_string(10)),
         )
         node_pair = [person_to_actor.start_node.as_tuple(), person_to_actor.end_node.as_tuple()]
         created_edges: InstancesApplyResult | None = None
@@ -585,8 +585,8 @@ class TestInstancesAPI:
             assert created_edges.edges[0].created_time
             assert created_edges.edges[0].last_updated_time
             assert len(created_nodes.nodes) == 2
-            assert created_nodes.nodes[0].external_id == "person:sylvester_stallone"
-            assert created_nodes.nodes[1].external_id == "actor:sylvester_stallone"
+            assert created_nodes.nodes[0].external_id == person_to_actor.start_node.external_id
+            assert created_nodes.nodes[1].external_id == person_to_actor.end_node.external_id
         finally:
             if created_edges is not None:
                 cognite_client.data_modeling.instances.delete(nodes=node_pair, edges=created_edges.edges.as_ids())
