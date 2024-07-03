@@ -226,7 +226,7 @@ class Connection3DProperties:
         return ViewId("cdf_cdm_experimental", "Connection3D", "v1")
 
 
-class Connection3DWrite(Connection3DProperties, TypedEdgeApply):
+class Connection3DApply(Connection3DProperties, TypedEdgeApply):
     def __init__(
         self,
         space: str,
@@ -264,8 +264,8 @@ class Connection3D(Connection3DProperties, TypedEdge):
         self.revision_id = revision_id
         self.revision_node_id = revision_node_id
 
-    def as_write(self) -> Connection3DWrite:
-        return Connection3DWrite(
+    def as_write(self) -> Connection3DApply:
+        return Connection3DApply(
             self.space,
             self.external_id,
             self.type,

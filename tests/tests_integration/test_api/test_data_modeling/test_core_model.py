@@ -8,7 +8,14 @@ from _pytest.mark import ParameterSet
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import cdm
-from cognite.client.data_classes.data_modeling import Space, SpaceApply, TypedNode, TypedNodeApply
+from cognite.client.data_classes.data_modeling import (
+    Space,
+    SpaceApply,
+    TypedEdge,
+    TypedEdgeApply,
+    TypedNode,
+    TypedNodeApply,
+)
 
 DATA_SPACE = "python_sdk_core_v1_test_space"
 
@@ -173,6 +180,22 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
     )
 
 
+def core_model_v1_edge_test_cases() -> Iterable[ParameterSet]:
+    yield pytest.param(
+        cdm.Connection3DApply(
+            space=DATA_SPACE,
+            external_id="test_connection_3d",
+            type=(DATA_SPACE, "test_asset_type"),
+            start_node=(DATA_SPACE, "test_object_3d_start"),
+            end_node=(DATA_SPACE, "test_object_3d_end"),
+            revision_id=4,
+            revision_node_id=42,
+        ),
+        cdm.Connection3D,
+        id="Connection3D",
+    )
+
+
 @pytest.fixture(scope="session")
 def data_space(cognite_client_alpha: CogniteClient) -> Space:
     space = cognite_client_alpha.data_modeling.spaces.apply(
@@ -193,6 +216,35 @@ class TestCoreModelv1:
         assert created.nodes[0].as_id() == write_instance.as_id()
 
         read = cognite_client_alpha.data_modeling.instances.retrieve_nodes(write_instance.as_id(), node_cls=read_type)
+
+        assert isinstance(read, read_type)
+        assert read.as_id() == write_instance.as_id()
+
+        read_dumped = read.as_write().dump()
+        write_instance_dumped = write_instance.dump()
+        # Existing version will be bumped by the server
+        # so we need to remove it from the comparison
+        read_dumped.pop("existingVersion", None)
+        write_instance_dumped.pop("existingVersion", None)
+        for key, value in read_dumped["sources"][0]["properties"].items():
+            if isinstance(value, str) and value.endswith("+00:00"):
+                # Server sets timezone to UTC, but expects the client to send it without
+                read_dumped["sources"][0]["properties"][key] = value[:-6]
+        assert write_instance_dumped == read_dumped
+
+    @pytest.mark.usefixtures("data_space")
+    @pytest.mark.parametrize("write_instance, read_type", list(core_model_v1_edge_test_cases()))
+    def test_write_read_edge(
+        self, write_instance: TypedEdgeApply, read_type: type[TypedEdge], cognite_client_alpha: CogniteClient
+    ) -> None:
+        created = cognite_client_alpha.data_modeling.instances.apply(
+            edges=write_instance, auto_create_start_nodes=True, auto_create_end_nodes=True
+        )
+
+        assert len(created.edges) == 1
+        assert created.edges[0].as_id() == write_instance.as_id()
+
+        read = cognite_client_alpha.data_modeling.instances.retrieve_edges(write_instance.as_id(), edge_cls=read_type)
 
         assert isinstance(read, read_type)
         assert read.as_id() == write_instance.as_id()
