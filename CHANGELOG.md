@@ -25,7 +25,7 @@ Changes are grouped as follows
 
 ### Added
 
-- [Feature Preview - alpha] Core Model, available from `cognite.client.data_classes import cdm`. 
+- [Feature Preview - alpha] Core Model, available `cognite.client.data_classes import cdm`. 
 
 ## [7.53.1] - 2024-07-02
 ### Fixed
