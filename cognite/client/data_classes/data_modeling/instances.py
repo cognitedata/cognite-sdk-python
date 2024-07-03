@@ -793,11 +793,11 @@ class Edge(Instance[EdgeApply]):
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
         version (int): DMS version.
-        type (DirectRelationReference): The type of edge.
+        type (DirectRelationReference | tuple[str, str]): The type of edge.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): No description.
     """
@@ -807,18 +807,18 @@ class Edge(Instance[EdgeApply]):
         space: str,
         external_id: str,
         version: int,
-        type: DirectRelationReference,
+        type: DirectRelationReference | tuple[str, str],
         last_updated_time: int,
         created_time: int,
-        start_node: DirectRelationReference,
-        end_node: DirectRelationReference,
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
         deleted_time: int | None,
         properties: Properties | None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
-        self.type = type
-        self.start_node = start_node
-        self.end_node = end_node
+        self.type = DirectRelationReference.load(type)
+        self.start_node = DirectRelationReference.load(start_node)
+        self.end_node = DirectRelationReference.load(end_node)
 
     def as_apply(self) -> EdgeApply:
         """

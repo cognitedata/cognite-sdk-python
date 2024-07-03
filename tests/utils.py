@@ -35,6 +35,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
+from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -83,7 +84,11 @@ def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
     return [
         sub
         for sub in all_subclasses(base)
-        if all(base is not abc.ABC for base in sub.__bases__) and not inspect.isabstract(sub)
+        if all(base is not abc.ABC for base in sub.__bases__)
+        and not inspect.isabstract(sub)
+        # The FakeCogniteResourceGenerator does not support descriptors, so we exclude the Typed classes
+        # as these use the PropertyOptions descriptor.
+        and all(parent not in {TypedNodeApply, TypedEdgeApply, TypedEdge, TypedNode} for parent in sub.__mro__)
     ]
 
 

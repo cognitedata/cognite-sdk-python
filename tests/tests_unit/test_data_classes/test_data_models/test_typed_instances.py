@@ -12,9 +12,11 @@ from cognite.client.data_classes.data_modeling.typed_instances import (
 )
 
 
-class Person(TypedNodeApply):
+class PersonProperties:
     birth_date = PropertyOptions(identifier="birthDate")
 
+
+class Person(TypedNodeApply, PersonProperties):
     def __init__(
         self,
         external_id: str,
@@ -34,9 +36,11 @@ class Person(TypedNodeApply):
         return ViewId("sp_model_space", "view_id", "1")
 
 
-class FlowWrite(TypedEdgeApply):
+class FlowProperties:
     flow_rate = PropertyOptions(identifier="flowRate")
 
+
+class FlowWrite(TypedEdgeApply, FlowProperties):
     def __init__(
         self,
         external_id: str,
@@ -54,9 +58,7 @@ class FlowWrite(TypedEdgeApply):
         return ViewId("sp_model_space", "flow", "1")
 
 
-class Flow(TypedEdge):
-    flow_rate = PropertyOptions(identifier="flowRate")
-
+class Flow(TypedEdge, FlowProperties):
     def __init__(
         self,
         space: str,
@@ -80,9 +82,7 @@ class Flow(TypedEdge):
         return ViewId("sp_model_space", "flow", "1")
 
 
-class PersonRead(TypedNode):
-    birth_date = PropertyOptions(identifier="birthDate")
-
+class PersonRead(TypedNode, PersonProperties):
     def __init__(
         self,
         space: str,

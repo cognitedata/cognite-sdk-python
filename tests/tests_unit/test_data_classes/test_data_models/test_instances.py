@@ -221,7 +221,7 @@ class TestEdgeListWithCursor:
             created_time=0,
             deleted_time=None,
             properties=None,
-            type=None,
+            type=DirectRelationReference("space", "type"),
         )
         edges = EdgeListWithCursor(
             [
@@ -252,7 +252,7 @@ class TestEdgeListWithCursor:
             created_time=0,
             deleted_time=None,
             properties=None,
-            type=None,
+            type=DirectRelationReference("space", "type"),
         )
         edges = EdgeListWithCursor(
             [
