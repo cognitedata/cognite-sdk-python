@@ -18,6 +18,15 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [7.53.2] - 2024-07-03
+### Fixed
+- If you derived from `TypedNode` or `TypedEdge`, and then derived the `load` method would not include the parent
+  class properties. Same if you used multiple inheritance. This is now fixed.
+
+### Added
+
+- [Feature Preview - alpha] Core Model, available from `cognite.client.data_classes import cdm`. 
+
 ## [7.53.1] - 2024-07-02
 ### Fixed
 - In the new `.retrieve_nodes` and `retrieve_edges` methods in the `client.data_modeling.instances` module, if you 
