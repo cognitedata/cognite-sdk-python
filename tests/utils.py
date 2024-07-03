@@ -86,7 +86,7 @@ def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
         for sub in all_subclasses(base)
         if all(base is not abc.ABC for base in sub.__bases__)
         and not inspect.isabstract(sub)
-        and any(base not in {TypedNodeApply, TypedEdgeApply, TypedEdge, TypedNode} for base in sub.__bases__)
+        and all(parent not in {TypedNodeApply, TypedEdgeApply, TypedEdge, TypedNode} for parent in sub.__mro__)
     ]
 
 
