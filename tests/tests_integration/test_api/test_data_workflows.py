@@ -218,7 +218,7 @@ def workflow_execution_list(
         time.sleep(0.5)
         if time.time() - t0 > 60:
             raise TimeoutError("Workflow execution did not complete in time")
-    return cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=5)
+    return cognite_client.workflows.executions.list(workflow_version_ids=add_multiply_workflow.as_id(), limit=10)
 
 
 @pytest.fixture()
@@ -393,7 +393,9 @@ class TestWorkflowExecutions:
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
         assert workflow_execution_list, "There should be at least one workflow execution to test retrieve detailed with"
-        terminal_execution = next((execution for execution in workflow_execution_list if execution.status == "completed"), None)
+        terminal_execution = next(
+            (execution for execution in workflow_execution_list if execution.status == "completed"), None
+        )
         assert terminal_execution is not None, "There should be at least one completed workflow execution"
 
         retrieved = cognite_client.workflows.executions.retrieve_detailed(terminal_execution.id)
