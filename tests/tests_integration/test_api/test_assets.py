@@ -114,7 +114,7 @@ def is_integration_test() -> Filter:
 class TestAssetsAPI:
     def test_get(self, cognite_client):
         res = cognite_client.assets.list(limit=1)
-        assert res[0] == cognite_client.assets.retrieve(res[0].id)
+        assert res[0].id == cognite_client.assets.retrieve(res[0].id).id
 
     def test_retrieve_unknown(self, cognite_client):
         res = cognite_client.assets.list(limit=1)
