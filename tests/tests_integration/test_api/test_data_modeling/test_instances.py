@@ -516,7 +516,7 @@ class TestInstancesAPI:
         space = person_view.space
         person = NodeApply(
             space=space,
-            external_id="person:arnold_schwarzenegger",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     person_view.as_id(),
@@ -529,7 +529,7 @@ class TestInstancesAPI:
         )
         actor = NodeApply(
             space=space,
-            external_id="actor:arnold_schwarzenegger",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     actor_view.as_id(),
@@ -542,7 +542,7 @@ class TestInstancesAPI:
         )
         person_to_actor = EdgeApply(
             space=space,
-            external_id="relation:arnold_schwarzenegger:actor",
+            external_id=random_string(10),
             type=DirectRelationReference(
                 space, cast(SingleHopConnectionDefinition, person_view.properties["roles"]).type.external_id
             ),
@@ -676,7 +676,7 @@ class TestInstancesAPI:
         space = person_view.space
         valid_person = NodeApply(
             space=space,
-            external_id="person:arnold_schwarzenegger",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     person_view.as_id(),
@@ -689,7 +689,7 @@ class TestInstancesAPI:
         )
         invalid_person = NodeApply(
             space=space,
-            external_id="person:sylvester_stallone",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     person_view.as_id(),
@@ -947,7 +947,7 @@ class TestInstancesAPI:
     @pytest.mark.usefixtures("primitive_nullable_view")
     def test_write_typed_node(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
-        external_id = "node_test_write_read_custom_properties"
+        external_id = random_string(10)
         primitive = PrimitiveNullable(
             space=space,
             external_id=external_id,
@@ -982,7 +982,7 @@ class TestInstancesAPI:
         self, cognite_client: CogniteClient, integration_test_space: Space
     ) -> None:
         space = integration_test_space.space
-        external_id = "node_test_write_read_custom_properties_listable"
+        external_id = random_string(10)
         primitive_listed = PrimitiveListed(
             space=space,
             external_id=external_id,
@@ -1016,7 +1016,7 @@ class TestInstancesAPI:
         self, cognite_client: CogniteClient, integration_test_space: Space
     ) -> None:
         space = integration_test_space.space
-        external_id = "node_test_write_read_instance_property_descriptor"
+        external_id = random_string(10)
         person = Person(space=space, external_id=external_id, name="John Doe", birth_year=1980)
 
         try:
@@ -1061,7 +1061,7 @@ class TestInstancesSync:
 
         new_1994_movie = NodeApply(
             space=movie_view.space,
-            external_id="movie:forrest_gump",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     source=movie_id,
@@ -1101,7 +1101,7 @@ class TestInstancesSync:
 
         new_1994_movie = NodeApply(
             space=movie_view.space,
-            external_id="movie:forrest_gump",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     source=movie_id,
@@ -1115,7 +1115,7 @@ class TestInstancesSync:
         )
         updated_1994_movie = NodeApply(
             space=movie_view.space,
-            external_id="movie:forrest_gump",
+            external_id=new_1994_movie.external_id,
             sources=[
                 NodeOrEdgeData(
                     source=movie_id,
