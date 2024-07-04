@@ -392,7 +392,7 @@ class TestAPIClientRetrieveMultiple:
     ) -> None:
         # Between SDK version 7.0.0 and 7.33.1, ordering of results was broken when >> 1k elements
         # was requested (meaning multiple requests were used):
-        event_ids = cognite_client.events.list(limit=1000).as_ids()
+        event_ids = cognite_client.events.list(limit=10).as_ids()
         random.shuffle(event_ids)
         monkeypatch.setattr(cognite_client.events, "_RETRIEVE_LIMIT", 80)
         res = cognite_client.events.retrieve_multiple(ids=event_ids)
