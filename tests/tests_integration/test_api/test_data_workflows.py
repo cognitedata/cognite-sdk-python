@@ -392,15 +392,12 @@ class TestWorkflowExecutions:
         cognite_client: CogniteClient,
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
-        assert workflow_execution_list, "There should be at least one workflow execution to test retrieve detailed with"
-        terminal_execution = next(
-            (execution for execution in workflow_execution_list if execution.status == "completed"), None
-        )
-        assert terminal_execution is not None, "There should be at least one completed workflow execution"
-
-        retrieved = cognite_client.workflows.executions.retrieve_detailed(terminal_execution.id)
-
-        assert retrieved.as_execution().dump() == terminal_execution.dump()
+        workflow_execution_completed = cognite_client.workflows.executions.list(statuses="completed", limit=1)
+        assert (
+            workflow_execution_completed
+        ), "There should be at least one workflow execution to test retrieve detailed with"
+        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_completed[0].id)
+        assert retrieved.as_execution().dump() == workflow_execution_completed[0].dump()
         assert retrieved.executed_tasks
 
     def test_retrieve_non_existing_workflow_execution(self, cognite_client: CogniteClient) -> None:
