@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC
 from datetime import datetime
 from enum import auto
@@ -77,6 +78,13 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         self.description = description
         self.security_categories = security_categories
         self.data_set_id = data_set_id
+        if legacy_name is not None:
+            warnings.warn(
+                "The 'legacy_name' is not used and will be ignored. It will be completely removed "
+                "in the next major version.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.legacy_name = legacy_name
 
 
