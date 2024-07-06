@@ -883,9 +883,14 @@ class TestInstancesAPI:
         node = node_with_1_1_pressure_in_bar
         source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
 
-        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
+        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source], include_typing=True)
         assert retrieved.nodes
         assert math.isclose(cast(float, retrieved.nodes[0]["pressure"]), 1.1 * 1e5)
+
+        assert retrieved.nodes.typing
+        type_ = cast(Float64, retrieved.nodes.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_list_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
