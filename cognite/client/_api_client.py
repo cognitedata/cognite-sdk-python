@@ -549,7 +549,7 @@ class APIClient:
             )
 
         resource_path = resource_path or self._RESOURCE_PATH
-        items: list[T_CogniteResource] = []
+        items: T_CogniteResourceList | None = None
         for resource_list in self._list_generator(
             list_cls=list_cls,
             resource_cls=resource_cls,
@@ -566,8 +566,11 @@ class APIClient:
             advanced_filter=advanced_filter,
             api_subversion=api_subversion,
         ):
-            items.extend(cast(T_CogniteResourceList, resource_list).data)
-        return list_cls(items, cognite_client=self._cognite_client)
+            if items is None:
+                items = cast(T_CogniteResourceList, resource_list)
+            else:
+                items.data.extend(cast(T_CogniteResourceList, resource_list).data)
+        return items if items is not None else list_cls([], cognite_client=self._cognite_client)
 
     def _list_partitioned(
         self,
