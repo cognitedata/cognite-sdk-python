@@ -439,6 +439,7 @@ class APIClient:
         next_cursor = initial_cursor
         filter = filter or {}
         unprocessed_items = []
+        first_response: dict | None = None
         while True:
             if limit:
                 num_of_remaining_items = limit - total_items_retrieved
@@ -476,6 +477,8 @@ class APIClient:
                 raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
             last_received_items = res.json()["items"]
             total_items_retrieved += len(last_received_items)
+            if first_response is None:
+                first_response = {k: v for k, v in res.json().items() if k != "items"}
 
             if not chunk_size:
                 for item in last_received_items:
@@ -489,12 +492,21 @@ class APIClient:
                     else:
                         unprocessed_items = []
                     for chunk in chunks:
-                        yield list_cls._load(chunk, cognite_client=self._cognite_client)
+                        if list_cls._support_dict_load:
+                            yield list_cls._load(
+                                {"items": chunk, **first_response},  # type: ignore[dict-item]
+                                cognite_client=self._cognite_client,
+                            )
+                        else:
+                            yield list_cls._load(chunk, cognite_client=self._cognite_client)
 
             next_cursor = res.json().get("nextCursor")
             if total_items_retrieved == limit or next_cursor is None:
                 if chunk_size and unprocessed_items:
-                    yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
+                    if list_cls._support_dict_load:
+                        yield list_cls._load({"items": chunk, **first_response}, cognite_client=self._cognite_client)  # type: ignore[dict-item]
+                    else:
+                        yield list_cls._load(chunk, cognite_client=self._cognite_client)
                 break
 
     def _list(
