@@ -917,12 +917,17 @@ class TestInstancesAPI:
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
 
         searched = cognite_client.data_modeling.instances.search(
-            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units
+            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units, include_typing=True
         )
 
         assert searched
         assert len(searched) == 1
         assert math.isclose(cast(float, searched[0]["pressure"]), 1.1 * 1e5)
+
+        assert searched.typing
+        type_ = cast(Float64, searched.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_aggregate_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View

@@ -953,6 +953,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        include_typing: bool = False,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList[Node]: ...
@@ -967,6 +968,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        include_typing: bool = False,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList[Edge]: ...
@@ -981,6 +983,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        include_typing: bool = False,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList[T_Node]: ...
@@ -995,6 +998,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        include_typing: bool = False,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList[T_Edge]: ...
@@ -1008,6 +1012,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        include_typing: bool = False,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
@@ -1021,6 +1026,7 @@ class InstancesAPI(APIClient):
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
+            include_typing (bool): Whether to include typing information.
             limit (int): Maximum number of instances to return. Defaults to 25.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
 
@@ -1074,6 +1080,8 @@ class InstancesAPI(APIClient):
         body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type_str, "limit": limit}
         if properties:
             body["properties"] = properties
+        if include_typing:
+            body["includeTyping"] = include_typing
         if filter:
             body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
         if target_units:
@@ -1088,7 +1096,8 @@ class InstancesAPI(APIClient):
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
         items = res.json()["items"]
-        return list_cls([resource_cls._load(item) for item in items], cognite_client=None)
+        typing = TypeInformation._load(res.json()["typing"]) if "typing" in res.json() else None
+        return list_cls([resource_cls._load(item) for item in items], typing, cognite_client=None)
 
     @overload
     def aggregate(
