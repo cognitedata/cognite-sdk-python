@@ -910,6 +910,22 @@ class TestInstancesAPI:
         assert type_.unit is not None
         assert type_.unit.external_id == "pressure:pa"
 
+    def test_iterate_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+        iterator = cognite_client.data_modeling.instances(
+            chunk_size=1, sources=[source], include_typing=True, filter=is_node
+        )
+        first_iter = next(iterator)
+        assert isinstance(first_iter, NodeList)
+        assert len(first_iter) == 1
+        assert first_iter.typing
+        type_ = cast(Float64, first_iter.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
+
     def test_search_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
