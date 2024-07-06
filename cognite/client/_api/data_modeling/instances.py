@@ -115,11 +115,11 @@ class _TypedNodeOrEdgeListAdapter:
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
     def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
-        return self._list_cls(items, cognite_client)
+        return self._list_cls(items, None, cognite_client)
 
     def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
-        return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client)  # type: ignore[return-value, attr-defined]
+        return self._list_cls([self._instance_cls._load(item) for item in data], None, cognite_client)  # type: ignore[return-value, attr-defined]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):

@@ -1030,7 +1030,8 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
     ) -> Self:
         if isinstance(resource_list, dict):
             resources = [
-                cls._RESOURCE._load(item, cognite_client=cognite_client) for item in resource_list.get("items", [])
+                cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+                for item in resource_list.get("items", [])
             ]
             typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
             return cls(resources, typing, cognite_client=cognite_client)
@@ -1133,7 +1134,8 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
     ) -> Self:
         if isinstance(resource_list, dict):
             resources = [
-                cls._RESOURCE._load(item, cognite_client=cognite_client) for item in resource_list.get("items", [])
+                cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+                for item in resource_list.get("items", [])
             ]
             typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
             return cls(resources, typing, cognite_client=cognite_client)
