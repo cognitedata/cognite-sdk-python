@@ -61,6 +61,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Edge,
     T_Node,
     TargetUnit,
+    TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
@@ -106,7 +107,7 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
 
 
 class _TypedNodeOrEdgeListAdapter:
-    _support_dict_load = False
+    _support_dict_load = True
 
     def __init__(self, instance_cls: type) -> None:
         self._instance_cls = instance_cls
@@ -550,17 +551,32 @@ class InstancesAPI(APIClient):
         )
 
         class _NodeOrEdgeList(CogniteResourceList):
+            _support_dict_load = True
             _RESOURCE = (node_cls, edge_cls)  # type: ignore[assignment]
+
+            def __init__(
+                self,
+                resources: list[Node | Edge],
+                typing: TypeInformation | None,
+                cognite_client: CogniteClient | None,
+            ):
+                super().__init__(resources, cognite_client)
+                self.typing = typing
 
             @classmethod
             def _load(
                 cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
             ) -> _NodeOrEdgeList:
+                typing: TypeInformation | None = None
+                if isinstance(resource_list, dict):
+                    typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
+                    resource_list = resource_list["items"]
+
                 resources: list[Node | Edge] = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for data in resource_list
                 ]
-                return cls(resources, None)
+                return cls(resources, typing, None)
 
         res = self._retrieve_multiple(  # type: ignore[call-overload]
             list_cls=_NodeOrEdgeList,
@@ -571,8 +587,8 @@ class InstancesAPI(APIClient):
         )
 
         return InstancesResult[T_Node, T_Edge](
-            nodes=NodeList([node for node in res if isinstance(node, Node)]),
-            edges=EdgeList([edge for edge in res if isinstance(edge, Edge)]),
+            nodes=NodeList([node for node in res if isinstance(node, Node)], typing=res.typing),
+            edges=EdgeList([edge for edge in res if isinstance(edge, Edge)], typing=res.typing),
         )
 
     @staticmethod

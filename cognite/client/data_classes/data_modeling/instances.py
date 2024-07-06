@@ -996,6 +996,7 @@ T_Node = TypeVar("T_Node", bound=Node)
 
 
 class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
+    _support_dict_load = True
     _RESOURCE = Node  # type: ignore[assignment]
 
     def __init__(
@@ -1100,6 +1101,7 @@ T_Edge = TypeVar("T_Edge", bound=Edge)
 
 
 class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
+    _support_dict_load = True
     _RESOURCE = Edge  # type: ignore[assignment]
 
     def __init__(
