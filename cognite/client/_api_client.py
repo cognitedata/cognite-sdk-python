@@ -504,9 +504,12 @@ class APIClient:
             if total_items_retrieved == limit or next_cursor is None:
                 if chunk_size and unprocessed_items:
                     if list_cls._support_dict_load:
-                        yield list_cls._load({"items": chunk, **first_response}, cognite_client=self._cognite_client)  # type: ignore[dict-item]
+                        yield list_cls._load(
+                            {"items": unprocessed_items, **first_response},  # type: ignore[dict-item]
+                            cognite_client=self._cognite_client,
+                        )
                     else:
-                        yield list_cls._load(chunk, cognite_client=self._cognite_client)
+                        yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
                 break
 
     def _list(
