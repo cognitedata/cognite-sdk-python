@@ -106,6 +106,8 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
 
 
 class _TypedNodeOrEdgeListAdapter:
+    _support_dict_load = False
+
     def __init__(self, instance_cls: type) -> None:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
