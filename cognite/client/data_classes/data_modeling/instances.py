@@ -5,8 +5,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable
-from collections import UserDict, defaultdict
-from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import (

@@ -20,9 +20,13 @@ from cognite.client.data_classes.data_modeling import (
     NodeOrEdgeData,
     ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import EdgeListWithCursor, Instance
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
-from cognite.client.data_classes.data_modeling.instances import Instance, TypeInformation, TypePropertyDefinition
+from cognite.client.data_classes.data_modeling.instances import (
+    EdgeListWithCursor,
+    Instance,
+    TypeInformation,
+    TypePropertyDefinition,
+)
 
 
 class TestEdgeApply:

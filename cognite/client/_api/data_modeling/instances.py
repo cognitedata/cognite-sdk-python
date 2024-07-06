@@ -4,7 +4,6 @@ import inspect
 import logging
 import random
 import time
-import warnings
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from threading import Thread
@@ -62,7 +61,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Edge,
     T_Node,
     TargetUnit,
-    TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
