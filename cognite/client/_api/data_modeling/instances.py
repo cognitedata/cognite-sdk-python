@@ -118,7 +118,8 @@ class _TypedNodeOrEdgeListAdapter:
 
     def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
-        return self._list_cls([self._instance_cls._load(item) for item in data], None, cognite_client)  # type: ignore[return-value, attr-defined]
+        typing = TypeInformation._load(data["typing"]) if "typing" in data else None
+        return self._list_cls([self._instance_cls._load(item) for item in data["items"]], typing, cognite_client)  # type: ignore[return-value, attr-defined]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
