@@ -1275,8 +1275,9 @@ class TargetUnit(CogniteObject):
 @dataclass
 class TypePropertyDefinition(CogniteObject):
     type: PropertyType
-    nullable: bool
-    auto_increment: bool
+    nullable: bool = True
+    auto_increment: bool = False
+    immutable: bool = False
     default_value: str | int | dict | None = None
     name: str | None = None
     description: str | None = None
@@ -1295,6 +1296,7 @@ class TypePropertyDefinition(CogniteObject):
                 "defaultValue": self.default_value,
                 "name": self.name,
                 "description": self.description,
+                "immutable": self.immutable,
             }
         )
         return output
@@ -1312,8 +1314,9 @@ class TypePropertyDefinition(CogniteObject):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TypePropertyDefinition:
         return cls(
             type=PropertyType.load(resource["type"]),
-            nullable=resource["nullable"],
-            auto_increment=resource["autoIncrement"],
+            nullable=resource.get("nullable"),  # type: ignore[arg-type]
+            immutable=resource.get("immutable"),  # type: ignore[arg-type]
+            auto_increment=resource.get("autoIncrement"),  # type: ignore[arg-type]
             default_value=resource.get("defaultValue"),
             name=resource.get("name"),
             description=resource.get("description"),
