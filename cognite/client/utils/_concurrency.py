@@ -49,6 +49,9 @@ class TasksSummary:
                 joined_results.append(unwrapped)
         return joined_results
 
+    def first_result(self, unwrap_fn: Callable = no_op) -> dict:
+        return unwrap_fn(self.results[0]) if self.results else {}
+
     def raise_compound_exception_if_failed_tasks(
         self,
         task_unwrap_fn: Callable = no_op,
