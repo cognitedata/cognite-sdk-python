@@ -407,7 +407,13 @@ class APIClient:
                 # Not all APIs (such as the Data Modeling API) return an error when unknown ids are provided,
                 # so we need to handle the unknown singleton identifier case here as well.
                 return None
-        return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
+        if list_cls._support_dict_load:
+            other_responses = tasks_summary.first_result(
+                lambda res: {k: v for k, v in res.json().items() if k != "items"}
+            )
+            return list_cls._load({"items": retrieved_items, **other_responses}, cognite_client=self._cognite_client)  # type: ignore[dict-item]
+        else:
+            return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
     def _list_generator(
         self,
