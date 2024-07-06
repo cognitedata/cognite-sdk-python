@@ -1323,7 +1323,7 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(self, query: Query) -> QueryResult:
+    def query(self, query: Query, include_typing: bool = False) -> QueryResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -1331,6 +1331,7 @@ class InstancesAPI(APIClient):
 
         Args:
             query (Query): Query.
+            include_typing (bool): Should we return property type information as part of the result?
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -1359,15 +1360,16 @@ class InstancesAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.instances.query(query)
         """
-        return self._query_or_sync(query, "query")
+        return self._query_or_sync(query, "query", include_typing)
 
-    def sync(self, query: Query) -> QueryResult:
+    def sync(self, query: Query, include_typing: bool = False) -> QueryResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
             query (Query): Query.
+            include_typing (bool): Should we return property type information as part of the result?
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -1402,16 +1404,20 @@ class InstancesAPI(APIClient):
 
             In the last example, the res_new will only contain the actors that have been added with the new movie.
         """
-        return self._query_or_sync(query, "sync")
+        return self._query_or_sync(query, "sync", include_typing=include_typing)
 
-    def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"]) -> QueryResult:
+    def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool) -> QueryResult:
         body = query.dump(camel_case=True)
+        if include_typing:
+            body["includeTyping"] = include_typing
 
         result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
 
         json_payload = result.json()
         default_by_reference = query.instance_type_by_result_expression()
-        results = QueryResult.load(json_payload["items"], default_by_reference, json_payload["nextCursor"])
+        results = QueryResult.load(
+            json_payload["items"], default_by_reference, json_payload["nextCursor"], json_payload.get("typing")
+        )
 
         return results
 

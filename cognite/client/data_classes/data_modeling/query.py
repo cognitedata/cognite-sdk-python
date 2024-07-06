@@ -17,6 +17,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeListWithCursor,
     PropertyValue,
     TargetUnit,
+    TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
@@ -395,16 +396,19 @@ class QueryResult(UserDict):
         resource: dict[str, Any],
         instance_list_type_by_result_expression_name: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
         cursors: dict[str, Any],
+        typing: dict[str, Any] | None = None,
     ) -> QueryResult:
         instance = cls()
+        typing_nodes = TypeInformation._load(typing["nodes"]) if typing and "nodes" in typing else None
+        typing_edges = TypeInformation._load(typing["edges"]) if typing and "edges" in typing else None
         for key, values in resource.items():
             cursor = cursors.get(key)
             if not values:
                 instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
             elif values[0]["instanceType"] == "node":
-                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor)
+                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor, typing_nodes)
             elif values[0]["instanceType"] == "edge":
-                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor)
+                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor, typing_edges)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
 

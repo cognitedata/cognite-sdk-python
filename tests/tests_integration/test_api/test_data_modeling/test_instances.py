@@ -955,11 +955,16 @@ class TestInstancesAPI:
             with_={"nodes": NodeResultSetExpression(filter=is_node, limit=1)},
             select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], target_units)])},
         )
-        queried = cognite_client.data_modeling.instances.query(query)
+        queried = cognite_client.data_modeling.instances.query(query, include_typing=True)
 
         assert queried
         assert len(queried["nodes"]) == 1
         assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
+
+        assert queried["nodes"].typing
+        type_ = cast(Float64, queried["nodes"].typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     @pytest.mark.usefixtures("primitive_nullable_view")
     def test_write_typed_node(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
