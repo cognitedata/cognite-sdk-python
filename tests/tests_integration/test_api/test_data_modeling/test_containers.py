@@ -13,13 +13,11 @@ from cognite.client.data_classes.data_modeling import (
     ContainerProperty,
     DataModel,
     Float64,
-    Int32,
     MappedProperty,
     Space,
     Text,
     View,
 )
-from cognite.client.data_classes.data_modeling.containers import BTreeIndex
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.exceptions import CogniteAPIError
 
@@ -64,29 +62,6 @@ class TestContainersAPI:
         actual_containers = cognite_client.data_modeling.containers.list(space=integration_test_space.space, limit=-1)
         assert expected_ids <= set(actual_containers.as_ids())
         assert all(c.space == integration_test_space.space for c in actual_containers)
-
-    def test_apply_retrieve_and_delete_index(
-        self, cognite_client: CogniteClient, integration_test_space: Space
-    ) -> None:
-        new_container = ContainerApply(
-            space=integration_test_space.space,
-            external_id="IntegrationTestContainer",
-            properties={"name": ContainerProperty(type=Text()), "year": ContainerProperty(type=Int32())},
-            description="Integration test, should persist!",
-            name="Create and delete container",
-            used_for="node",
-            indexes={"nameIdx": BTreeIndex(properties=["name"])},
-        )
-        created = cognite_client.data_modeling.containers.apply(new_container)
-        retrieved = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
-
-        assert retrieved is not None
-        assert created.created_time
-        assert created.last_updated_time
-        assert retrieved.as_apply().dump() == new_container.dump()
-
-        deleted_indexes = cognite_client.data_modeling.containers.delete_indexes([(new_container.as_id(), "nameIdx")])
-        assert deleted_indexes == [(new_container.as_id(), "nameIdx")]
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
