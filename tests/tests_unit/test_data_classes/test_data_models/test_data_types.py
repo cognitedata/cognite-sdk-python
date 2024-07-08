@@ -4,6 +4,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     PropertyType,
     PropertyTypeWithUnit,
+    Text,
     UnitReference,
     UnknownPropertyType,
 )
@@ -54,6 +55,15 @@ class TestPropertyType:
         obj = PropertyType.load(data)
         assert isinstance(obj, UnknownPropertyType)
         actual = obj.dump(camel_case=True)
+        assert data == actual
+
+    def test_load_text_without_collation(self) -> None:
+        data = {"type": "text", "list": False}
+        obj = PropertyType.load(data)
+        assert isinstance(obj, Text)
+        actual = obj.dump(camel_case=True)
+        # Default collation is "ucs_basic"
+        data["collation"] = "ucs_basic"
         assert data == actual
 
 

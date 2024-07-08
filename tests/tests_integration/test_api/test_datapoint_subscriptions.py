@@ -6,6 +6,7 @@ import random
 import time
 from contextlib import contextmanager
 from datetime import datetime
+from sys import version_info
 
 import numpy as np
 import pandas as pd
@@ -21,7 +22,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
 )
 from cognite.client.utils._text import random_string
 
-TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(10)]
+TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(20)]
 
 
 @contextmanager
@@ -42,7 +43,7 @@ def all_time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
         external_ids=TIMESERIES_EXTERNAL_IDS, ignore_unknown_ids=True
     ).as_external_ids()
 
-    if len(existing_xids) == len(TIMESERIES_EXTERNAL_IDS):
+    if existing_xids == TIMESERIES_EXTERNAL_IDS:
         return existing_xids
 
     return cognite_client.time_series.upsert(
@@ -50,7 +51,7 @@ def all_time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
             TimeSeries(external_id=external_id, name=external_id, is_string=False)
             for external_id in TIMESERIES_EXTERNAL_IDS
         ],
-        mode="overwrite",
+        mode="replace",
     ).as_external_ids()
 
 
@@ -58,19 +59,19 @@ def all_time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
 def time_series_external_ids(all_time_series_external_ids):
     # Spread the load to avoid API errors like 'a ts can't be part of too many subscriptions':
     ts_xids = all_time_series_external_ids[:]
-    return random.sample(ts_xids, k=4)
+    return random.sample(ts_xids, k=3)
 
 
 @pytest.fixture(scope="session")
 def subscription(cognite_client: CogniteClient, all_time_series_external_ids: list[str]) -> DatapointSubscription:
-    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}"
+    external_id = f"PYSDKDataPointSubscriptionTest-{platform.system()}-{'-'.join(map(str, version_info[:2]))}"
     sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub
     new_sub = DataPointSubscriptionWrite(
         external_id=external_id,
         name=f"{external_id}_3ts",
-        time_series_ids=all_time_series_external_ids[:3],
+        time_series_ids=random.sample(all_time_series_external_ids, k=3),
         partition_count=1,
     )
     return cognite_client.time_series.subscriptions.create(new_sub)
@@ -90,7 +91,7 @@ def sub_for_status_codes(cognite_client: CogniteClient, time_series_external_ids
 
 
 class TestDatapointSubscriptions:
-    def test_list_subscriptions(self, cognite_client: CogniteClient, subscription: DatapointSubscription) -> None:
+    def test_list_subscriptions(self, cognite_client: CogniteClient) -> None:
         subscriptions = cognite_client.time_series.subscriptions.list(limit=5)
         assert len(subscriptions) > 0, "Add at least one subscription to the test environment to run this test"
 
@@ -145,6 +146,24 @@ class TestDatapointSubscriptions:
 
             assert updated.name == "New Name"
             assert updated.time_series_count == len(time_series_external_ids) - 1
+            assert updated.data_set_id == data_set.id
+
+    def test_update_subscription_write_object(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+        new_subscription = DataPointSubscriptionWrite(
+            external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}",
+            name="PYSDKDataPointSubscriptionUpdateTest",
+            time_series_ids=time_series_external_ids,
+            partition_count=1,
+        )
+        data_set = cognite_client.data_sets.list(limit=1)[0]
+        with create_subscription_with_cleanup(cognite_client, new_subscription):
+            update = DataPointSubscriptionWrite.load(new_subscription.dump())
+            update.name = "New Name"
+            update.data_set_id = data_set.id
+            updated = cognite_client.time_series.subscriptions.update(update)
+
+            assert updated.name == "New Name"
+            assert updated.time_series_count == len(time_series_external_ids)
             assert updated.data_set_id == data_set.id
 
     def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):

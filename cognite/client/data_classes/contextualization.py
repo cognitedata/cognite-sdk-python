@@ -7,9 +7,11 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Sequence, Type, TypeVar, Union, cast
 
 from requests.utils import CaseInsensitiveDict
+from typing_extensions import Self
 
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -26,7 +28,7 @@ from cognite.client.data_classes.annotation_types.primitives import VisionResour
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
-from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -1036,3 +1038,212 @@ class ResourceReference(CogniteResource):
 
 class ResourceReferenceList(CogniteResourceList[ResourceReference]):
     _RESOURCE = ResourceReference
+
+
+class DirectionWeights(CogniteObject):
+    """Direction weights for the text graph that control how far text boxes can be one from another
+    in a particular direction before they are no longer connected in the same graph. Lower value means
+    larger distance is allowed.
+
+    Args:
+        left (float | None): Weight for the connection towards text boxes to the left.
+        right (float | None): Weight for the connection towards text boxes to the right.
+        up (float | None): Weight for the connection towards text boxes above.
+        down (float | None): Weight for the connection towards text boxes below.
+    """
+
+    def __init__(
+        self,
+        left: float | None = None,
+        right: float | None = None,
+        up: float | None = None,
+        down: float | None = None,
+    ) -> None:
+        self.left = left
+        self.right = right
+        self.up = up
+        self.down = down
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            left=resource.get("left"),
+            right=resource.get("right"),
+            up=resource.get("up"),
+            down=resource.get("down"),
+        )
+
+
+class CustomizeFuzziness(CogniteObject):
+    """Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
+
+    Args:
+        fuzzy_score (float | None): The minimum fuzzy score of the candidate match.
+        max_boxes (int | None): Maximum number of text boxes the potential match is composed of.
+        min_chars (int | None): The minimum number of characters that must be present in the candidate match string.
+    """
+
+    def __init__(
+        self,
+        fuzzy_score: float | None = None,
+        max_boxes: int | None = None,
+        min_chars: int | None = None,
+    ) -> None:
+        self.fuzzy_score = fuzzy_score
+        self.max_boxes = max_boxes
+        self.min_chars = min_chars
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            fuzzy_score=resource.get("fuzzyScore"),
+            max_boxes=resource.get("maxBoxes"),
+            min_chars=resource.get("minChars"),
+        )
+
+
+class ConnectionFlags:
+    """Connection flags for token graph. These are passed as an array of strings to the API. Only flags set to True are included in the array. There is no need to set any flags to False.
+
+    Args:
+        natural_reading_order (bool): Only connect text regions that are in natural reading order (i.e. top to bottom and left to right).
+        no_text_inbetween (bool): Only connect text regions that are not separated by other text regions.
+        **flags (bool): Other flags.
+    """
+
+    def __init__(
+        self,
+        natural_reading_order: bool = False,
+        no_text_inbetween: bool = False,
+        **flags: bool,
+    ) -> None:
+        self._flags = {
+            "natural_reading_order": natural_reading_order,
+            "no_text_inbetween": no_text_inbetween,
+            **flags,
+        }
+
+    def dump(self, camel_case: bool = False) -> list[str]:
+        return [k for k, v in self._flags.items() if v]
+
+    @classmethod
+    def load(cls, resource: list[str], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(**{flag: True for flag in resource})
+
+
+class DiagramDetectConfig(CogniteObject):
+    """`Configuration options for the diagrams/detect endpoint <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
+
+    Args:
+        annotation_extract (bool | None): Read SHX text embedded in the diagram file. If present, this text will override overlapping OCR text. Cannot be used at the same time as read_embedded_text.
+        case_sensitive (bool | None): Case sensitive text matching. Defaults to True.
+        connection_flags (ConnectionFlags | list[str] | None): Connection flags for token graph. Two flags are supported thus far: `no_text_inbetween` and `natural_reading_order`.
+        customize_fuzziness (CustomizeFuzziness | dict[str, Any] | None): Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
+        direction_delta (float | None): Maximum angle between the direction of two text boxes for them to be connected. Directions are currently multiples of 90 degrees.
+        direction_weights (DirectionWeights | dict[str, Any] | None): Direction weights that control how far subsequent ocr text boxes can be from another in a particular direction and still be combined into the same detection. Lower value means larger distance is allowed. The direction is relative to the text orientation.
+        min_fuzzy_score (float | None): For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
+        read_embedded_text (bool | None): Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
+        remove_leading_zeros (bool | None): Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
+        substitutions (dict[str, list[str]] | None): Override the default mapping of characters to an array of allowed substitute characters. The default mapping contains characters commonly confused by OCR. Provide your custom mapping in the format like so: {"0": ["O", "Q"], "1": ["l", "I"]}. This means: 0 (zero) is allowed to be replaced by uppercase letter O or Q, and 1 (one) is allowed to be replaced by lowercase letter l or uppercase letter I. No other replacements are allowed.
+        **params (Any): Other parameters. The parameter name will be converted to camel case but the value will be passed as is.
+
+    Example:
+
+        Configure a call to digrams detect endpoint:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+            >>> client = CogniteClient()
+            >>> config = DiagramDetectConfig(
+            ...     remove_leading_zeros=True,
+            ...     connection_flags=ConnectionFlags(
+            ...         no_text_inbetween=True,
+            ...         natural_reading_order=True,
+            ...     )
+            ... )
+            >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
+
+        If you want to use an undocumented parameter, you can pass it as a keyword argument:
+
+            >>> config_with_undoducmented_params = DiagramDetectConfig(
+            ...     remove_leading_zeros=True,
+            ...     connection_flags=ConnectionFlags(new_undocumented_flag=True),
+            ...     new_undocumented_param={"can_be_anything": True},
+            ... )
+    """
+
+    def __init__(
+        self,
+        annotation_extract: bool | None = None,
+        case_sensitive: bool | None = None,
+        connection_flags: ConnectionFlags | list[str] | None = None,
+        customize_fuzziness: CustomizeFuzziness | dict[str, Any] | None = None,
+        direction_delta: float | None = None,
+        direction_weights: DirectionWeights | dict[str, Any] | None = None,
+        min_fuzzy_score: float | None = None,
+        read_embedded_text: bool | None = None,
+        remove_leading_zeros: bool | None = None,
+        substitutions: dict[str, list[str]] | None = None,
+        **params: Any,
+    ) -> None:
+        self.annotation_extract = annotation_extract
+        self.case_sensitive = case_sensitive
+        self.connection_flags = connection_flags
+        self.customize_fuzziness = customize_fuzziness
+        self.direction_delta = direction_delta
+        self.direction_weights = direction_weights
+        self.min_fuzzy_score = min_fuzzy_score
+        self.read_embedded_text = read_embedded_text
+        self.remove_leading_zeros = remove_leading_zeros
+        self.substitutions = substitutions
+
+        _known_params = {to_camel_case(k): k for k in vars(self)}
+        self._extra_params = {}
+        for param_name, value in params.items():
+            if known := _known_params.get(to_camel_case(param_name)):
+                raise ValueError(
+                    f"Provided parameter name `{param_name}` collides with a known parameter `{known}`. Please use it insead."
+                )
+            self._extra_params[param_name] = value
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+
+        for param_name, v in self._extra_params.items():
+            dumped[to_camel_case(param_name) if camel_case else param_name] = v
+
+        remove_keys: list[str] = []
+        for param_name, v in dumped.items():
+            if isinstance(v, CogniteObject):
+                dumped[param_name] = v.dump(camel_case=camel_case)
+            elif isinstance(v, ConnectionFlags):
+                cf = v.dump()
+                if cf:
+                    dumped[param_name] = cf
+                else:
+                    remove_keys.append(param_name)
+
+        for param_name in remove_keys:
+            del dumped[param_name]
+
+        return dumped
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        resource_copy = resource.copy()
+
+        if con_flg := resource_copy.pop("connectionFlags", None):
+            con_flg = ConnectionFlags.load(con_flg)
+        if cus_fuz := resource_copy.pop("customizeFuzziness", None):
+            cus_fuz = CustomizeFuzziness.load(cus_fuz)
+        if dir_wgt := resource_copy.pop("directionWeights", None):
+            dir_wgt = DirectionWeights.load(dir_wgt)
+
+        snake_cased = convert_all_keys_to_snake_case(resource_copy)
+
+        return cls(
+            connection_flags=con_flg,
+            customize_fuzziness=cus_fuz,
+            direction_weights=dir_wgt,
+            **snake_cased,
+        )

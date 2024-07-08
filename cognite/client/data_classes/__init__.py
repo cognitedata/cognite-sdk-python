@@ -269,6 +269,8 @@ from cognite.client.data_classes.transformations.jobs import (
 from cognite.client.data_classes.transformations.notifications import (
     TransformationNotification,
     TransformationNotificationList,
+    TransformationNotificationWrite,
+    TransformationNotificationWriteList,
 )
 from cognite.client.data_classes.transformations.schedules import (
     TransformationSchedule,
@@ -283,7 +285,6 @@ from cognite.client.data_classes.transformations.schema import (
 )
 from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
 from cognite.client.data_classes.workflows import (
-    CancelExecution,
     CDFTaskOutput,
     CDFTaskParameters,
     DynamicTaskOutput,
@@ -481,6 +482,8 @@ __all__ = [
     "TransformationJobStatus",
     "TransformationNotification",
     "TransformationNotificationList",
+    "TransformationNotificationWrite",
+    "TransformationNotificationWriteList",
     "TransformationSchedule",
     "TransformationScheduleWrite",
     "TransformationScheduleList",
@@ -541,7 +544,6 @@ __all__ = [
     "CoordinateReferenceSystem",
     "UserProfile",
     "UserProfileList",
-    "CancelExecution",
     "WorkflowUpsert",
     "WorkflowExecution",
     "WorkflowExecutionDetailed",

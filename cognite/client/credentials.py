@@ -220,7 +220,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             credentials = self.__app.acquire_token_by_device_flow(flow=device_flow)
 
         self._verify_credentials(credentials)
-        return credentials["access_token"], time.time() + credentials["expires_in"]
+        return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
@@ -300,7 +300,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
 
         self._verify_credentials(credentials)
-        return credentials["access_token"], time.time() + credentials["expires_in"]
+        return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
     def default_for_azure_ad(
@@ -436,7 +436,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
                 **self.__token_custom_args,
             )
             # Azure gives 'expires_at' directly, but it's not a part of the RFC:
-            return credentials["access_token"], time.time() + credentials["expires_in"]
+            return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
         except OAuth2Error as oauth_err:
             raise CogniteAuthError(
@@ -552,4 +552,4 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         credentials = self.__app.acquire_token_for_client(scopes=self.__scopes)
 
         self._verify_credentials(credentials)
-        return credentials["access_token"], time.time() + credentials["expires_in"]
+        return credentials["access_token"], time.time() + float(credentials["expires_in"])

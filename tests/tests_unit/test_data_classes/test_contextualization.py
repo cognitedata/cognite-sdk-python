@@ -6,7 +6,13 @@ from unittest.mock import Mock, patch
 import pytest
 
 from cognite.client.data_classes import ContextualizationJob
-from cognite.client.data_classes.contextualization import VISION_FEATURE_MAP, DetectJobBundle, VisionExtractPredictions
+from cognite.client.data_classes.contextualization import (
+    VISION_FEATURE_MAP,
+    ConnectionFlags,
+    DetectJobBundle,
+    DiagramDetectConfig,
+    VisionExtractPredictions,
+)
 from cognite.client.testing import monkeypatch_cognite_client
 
 
@@ -181,3 +187,34 @@ class TestJobBundle:
             # With no job_ids
             with pytest.raises(ValueError):
                 res = DetectJobBundle(cognite_client=mock_client, job_ids=[])
+
+
+class TestDiagramDetectConfig:
+    def test_connection_flags(self) -> None:
+        cf = ConnectionFlags(
+            natural_reading_order=True,
+            no_text_inbetween=True,
+            new_parameter=True,
+            excluded_parameter=False,
+            newCamelCaseParameter=True,
+        )
+        expected = [
+            "natural_reading_order",
+            "no_text_inbetween",
+            "new_parameter",
+            "newCamelCaseParameter",
+        ]
+        assert cf.dump() == expected
+
+    @pytest.mark.parametrize(
+        "param_name",
+        [
+            "annotationExtract",
+            "annotation_Extract",
+            "minFuzzyScore",
+        ],
+    )
+    def test_overlapping_parameter_name(self, param_name: str):
+        kwargs = {param_name: True}
+        with pytest.raises(ValueError):
+            DiagramDetectConfig(**kwargs)

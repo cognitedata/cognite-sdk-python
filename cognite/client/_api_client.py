@@ -194,7 +194,7 @@ class APIClient:
         **kwargs: Any,
     ) -> Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
-        json_payload = kwargs.get("json")
+        json_payload = kwargs.pop("json", None)
         headers = self._configure_headers(
             accept,
             additional_headers=self._config.headers.copy(),
@@ -202,7 +202,7 @@ class APIClient:
         )
         headers.update(kwargs.get("headers") or {})
 
-        if json_payload:
+        if json_payload is not None:
             try:
                 data = _json.dumps(json_payload, allow_nan=False)
             except ValueError as e:
@@ -228,9 +228,9 @@ class APIClient:
         kwargs.setdefault("allow_redirects", False)
 
         if is_retryable:
-            res = self._http_client_with_retry.request(method=method, url=full_url, **kwargs)
+            res = self._http_client_with_retry.request(method=method, url=full_url, accept=accept, **kwargs)
         else:
-            res = self._http_client.request(method=method, url=full_url, **kwargs)
+            res = self._http_client.request(method=method, url=full_url, accept=accept, **kwargs)
 
         if not self._status_ok(res.status_code):
             self._raise_api_error(res, payload=json_payload)
@@ -511,7 +511,9 @@ class APIClient:
         verify_limit(limit)
         if partitions:
             if not is_unlimited(limit):
-                raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+                raise ValueError(
+                    "When using partitions, a finite limit can not be used. Pass one of `None`, `-1` or `inf`."
+                )
             if sort is not None:
                 raise ValueError("When using sort, partitions is not supported.")
             return self._list_partitioned(

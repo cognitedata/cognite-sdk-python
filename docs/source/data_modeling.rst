@@ -91,6 +91,14 @@ Delete containers
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete
 
+Delete constraints
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete_constraints
+
+Delete indexes
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete_indexes
+
 Containers data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_modeling.containers
@@ -102,6 +110,14 @@ Instances
 Retrieve instances by id(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve
+
+Retrieve Nodes by id(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve_nodes
+
+Retrieve Edges by id(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve_edges
 
 List instances
 ^^^^^^^^^^^^^^^^^

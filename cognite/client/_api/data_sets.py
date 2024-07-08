@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -27,6 +27,30 @@ class DataSetsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[DataSet]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[DataSetList]: ...
 
     def __call__(
         self,
@@ -73,7 +97,7 @@ class DataSetsAPI(APIClient):
         Returns:
             Iterator[DataSet]: yields DataSet one by one.
         """
-        return cast(Iterator[DataSet], self())
+        return self()
 
     @overload
     def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList: ...

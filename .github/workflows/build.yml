@@ -5,24 +5,14 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  PYTHON_VERSION: '3.8'
-
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install required dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E numpy
-
+          extras: '-E pandas'
       - name: Linting and static code checks
         run: pre-commit run --all-files
 
@@ -30,33 +20,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install core dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install
-
+      - uses: ./.github/actions/setup
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"
+
+  build_package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build package
+        run: poetry build
 
   test_core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install core dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install
-
+      - uses: ./.github/actions/setup
       - name: Test core
         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
@@ -66,17 +46,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        python-version: ['3.8', '3.11', '3.12']  # TODO: 3.9, 3.10 (requires a lot of work for FakeCogResGen for tests)
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E all
+          python_version: ${{ matrix.python-version }}
+          extras: '-E all'
 
       - name: Test full
         env:
@@ -88,23 +64,9 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-        run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        run: pytest tests --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
+        if: matrix.os == 'windows-latest' && matrix.python-version == '3.8'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: python3 -m pip install --upgrade pip poetry
-
-      - name: Build package
-        run: poetry build

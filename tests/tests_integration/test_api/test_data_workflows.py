@@ -7,7 +7,6 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
-    CancelExecution,
     CDFTaskParameters,
     FunctionTaskParameters,
     SubworkflowTaskParameters,
@@ -371,15 +370,34 @@ class TestWorkflowExecutions:
         assert len(listed) == len(workflow_execution_list)
         assert all(w.as_workflow_id() in workflow_ids for w in listed)
 
+    def test_list_workflow_executions_by_status(
+        self,
+        cognite_client: CogniteClient,
+        add_multiply_workflow: WorkflowVersion,
+    ) -> None:
+        listed_completed = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses="completed", limit=3
+        )
+        for execution in listed_completed:
+            assert execution.status == "completed"
+
+        listed_others = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses=["running", "failed"], limit=3
+        )
+        for execution in listed_others:
+            assert execution.status in ["running", "failed"]
+
     def test_retrieve_workflow_execution_detailed(
         self,
         cognite_client: CogniteClient,
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
-        assert workflow_execution_list, "There should be at least one workflow execution to test retrieve detailed with"
-        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
-
-        assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
+        workflow_execution_completed = cognite_client.workflows.executions.list(statuses="completed", limit=1)
+        assert (
+            workflow_execution_completed
+        ), "There should be at least one workflow execution to test retrieve detailed with"
+        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_completed[0].id)
+        assert retrieved.as_execution().dump() == workflow_execution_completed[0].dump()
         assert retrieved.executed_tasks
 
     def test_retrieve_non_existing_workflow_execution(self, cognite_client: CogniteClient) -> None:
@@ -421,11 +439,9 @@ class TestWorkflowExecutions:
             add_multiply_workflow.version,
         )
 
-        cancelled_workflow_executions = cognite_client.workflows.executions.cancel(
-            [CancelExecution(id=workflow_execution.id, reason="test")]
+        cancelled_workflow_execution = cognite_client.workflows.executions.cancel(
+            id=workflow_execution.id, reason="test"
         )
-        assert len(cancelled_workflow_executions) == 1
-        cancelled_workflow_execution = cancelled_workflow_executions[0]
         assert cancelled_workflow_execution.status == "terminated"
         assert cancelled_workflow_execution.reason_for_incompletion == "test"
 

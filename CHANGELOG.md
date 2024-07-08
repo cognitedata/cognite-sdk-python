@@ -17,6 +17,159 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [7.53.2] - 2024-07-03
+### Fixed
+- If you derived from `TypedNode` or `TypedEdge`, and then derived the `load` method would not include the parent
+  class properties. Same if you used multiple inheritance. This is now fixed.
+
+### Added
+
+- [Feature Preview - alpha] Core Model, available `cognite.client.data_classes import cdm`. 
+
+## [7.53.1] - 2024-07-02
+### Fixed
+- In the new `.retrieve_nodes` and `retrieve_edges` methods in the `client.data_modeling.instances` module, if you 
+  give the identifier of a single node or edge, you will now get a single `TypedNode` or `TypedEdge` instance back.
+
+## [7.53.0] - 2024-07-02
+### Added
+- New classes `TypedNode` and `TypedEdge` (in addition to `TypedNodeApply` and `TypedEdgeApply`) to be used as
+  base classes for user created classes that represent nodes and edges with properties in a specific view. For example,
+  is you have a view `Person` with properties `name` and `age`, you can create a class `Person` that inherits from
+  `TypedNode` and add properties `name` and `age` to it. This class can then be used with the 
+  `client.data_modeling.instances.retrieve(..)`, `.apply(...)`, `.list(...)` and `.search(...)` methods.
+
+## [7.52.3] - 2024-06-27
+### Added
+- Added `partitions` parameter to `retrieve_dataframe()` method of the `RawRowsAPI`.
+
+## [7.52.2] - 2024-06-26
+### Added
+- Alpha feature, in `client.time_series.data` support for `instance_id` in `.insert`, `insert_multiple`,
+  `.delete`, and `.retrieve` methods. This is an experimental feature and may change without warning.
+
+## [7.52.1] - 2024-06-26
+### Fixed
+-  Calling `.extend` on a `NodeListWithCursor` or `EdgeListWithCursor` would raise a `TypeError`. This is now fixed.
+
+## [7.52.0] - 2024-06-19
+### Added
+- Support the `immutable` flag on container/view properties
+
+## [7.51.1] - 2024-06-18
+### Added
+- Added support for serializing Node/Edge properties of type `list` of `NodeId`and `DirectRelationReference`, 
+  `date`, `datetime` and list of `date` and `datetime` to `json` format.
+
+## [7.51.0] - 2024-06-16
+### Added
+- Support for iterating over `Functions`, `FunctionSchedules`, `DatapointSubscriptions`, `Transformations`,
+  `TransformationSchedules`, `TransformationNotifications`, `ExtractionPipelines`, `Workflows`, `WorkflowVersions`.
+
+## [7.50.0] - 2024-06-14
+### Changed
+- DatapointsAPI support for timezones and calendar-based aggregates reaches general availability (GA).
+### Deprecated
+- The function `DatapointsAPI.retrieve_dataframe_in_tz` is deprecated. Use the other retrieve methods instead
+  and pass in `timezone`.
+
+## [7.49.2] - 2024-06-12
+### Fixed
+- Converting rows (`RowList` and `RowListWrite`) to a pandas DataFrame no longer silently drops rows that do not have
+  any columnar data.
+
+## [7.49.1] - 2024-06-11
+### Fixed
+- Fixes resetting dataSetId to None in a ThreeDModelUpdate.
+
+## [7.49.0] - 2024-06-05
+### Added
+- `WorkfowExecutionAPI.list` now allows filtering by execution status.
+
+## [7.48.1] - 2024-06-04
+### Fixed
+- A bug introduced in `7.45.0` that would short-circuit raw datapoint queries too early when a lot of time series was
+  requested at the same time, and `include_outside_points=True` was used (empty cursor are to be expected).
+
+## [7.48.0] - 2024-06-04
+### Changed
+- Mark Data Workflows SDK implementation as Generally Available.
+
+## [7.47.0] - 2024-06-04
+### Added
+- Support for retrieving `Labels`, `client.labels.retrieve`.
+
+## [7.46.2] - 2024-06-03
+### Added
+- Added option for silencing `FeaturePreviewWarnings` in the `cognite.client.global_config`.
+
+## [7.46.1] - 2024-05-31
+### Fixed
+- Pyodide issue related to missing tzdata package.
+
+## [7.46.0] - 2024-05-31
+### Added
+- `RawRowsAPI.insert_dataframe` now has a new `dropna` setting (defaulting to True, as this would otherwise raise later).
+
+## [7.45.0] - 2024-05-31
+### Added
+- DatapointsAPI now support `timezone` and new calendar-based granularities like `month`, `quarter` and `year`.
+  These API features are in beta, and the SDK implementation in alpha, meaning breaking changes can
+  occur without warning. Set beta header to avoid warning. Users of `retrieve_dataframe_in_tz` should
+  consider preparing to upgrade as soon as the features reach general availability (GA).
+
+## [7.44.1] - 2024-05-24
+### Added
+- Missing parameter `timeout` to `client.transformations.preview`.
+
+## [7.44.0] - 2024-05-24
+### Added
+- New utility function `datetime_to_ms_iso_timestamp` in `cognite.client.utils` to convert a datetime object
+  to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+
+## [7.43.6] - 2024-05-27
+### Improved
+- JSON is no longer attempted decoded when e.g. expecting protobuf, which currently leads to a small performance
+  improvement for datapoints fetching.
+
+## [7.43.5] - 2024-05-22
+### Fixed
+- Transformation schemas no longer raise when loaded into its resource type.
+
+## [7.43.4] - 2024-05-20
+### Fixed
+- The data modeling APIs (Views, Containers, Data Models and Spaces) limits for create, retrieve, delete,
+  and list were not matching the API spec, causing the SDK to wrongly split large calls into too few requests.
+  This means that the SDK will no longer raise a `CogniteAPIError` if you, for example, try to delete
+  more than 100 containers in a single method call.
+
+## [7.43.3] - 2024-05-15
+### Fixed
+- Identity providers that return `expires_in` as a string no longer causes `TypeError` when authenticating.
+
+## [7.43.2] - 2024-05-10
+### Fixed
+- In containers, `PropertyType` `Text` required parameter `collation` is now optional when `load()`ing, matching the API spec.
+
+## [7.43.1] - 2024-05-10
+### Fixed
+- `RawRowsAPI.insert()` silently ignored rows of type `RowWriteList`.
+
+## [7.43.0] - 2024-05-09
+### Added
+- Added new data classes to the contextualization module to simplify configuring diagram detect options: `DiagramDetectConfig`,`ConnectionFlags`, `CustomizeFuzziness`, `DirectionWeights`.
+- `DiagramsAPI.detect()` method's parameter `configuration` now also accepts `DiagramDetectConfig` instances.
+
+## [7.42.0] - 2024-05-06
+### Changed
+- Breaking change: the `workflows.executions.cancel` method now only allows cancelling one execution at a time to reflect its non-atomic operation.
+
+## [7.41.1] - 2024-05-06
+### Fixed
+- An edge case when a request for datapoints from several hundred time series (with specific finite limits) would return
+  more datapoints than the user-specified limit.
+
 ## [7.41.0] - 2024-04-30
 ### Added
 - Support for Status Codes in the DatapointsAPI and DatapointSubscriptionsAPI reaches General Availability (GA).

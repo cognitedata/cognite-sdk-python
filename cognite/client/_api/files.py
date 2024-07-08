@@ -43,6 +43,61 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
 
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[FileMetadata]: ...
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[FileMetadataList]: ...
+
     def __call__(
         self,
         chunk_size: int | None = None,
@@ -142,7 +197,7 @@ class FilesAPI(APIClient):
         Returns:
             Iterator[FileMetadata]: yields Files one by one.
         """
-        return cast(Iterator[FileMetadata], self())
+        return self()
 
     def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
@@ -592,7 +647,7 @@ class FilesAPI(APIClient):
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
-            "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
+            "PUT", upload_url, accept="*/*", data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
         if not upload_response.ok:
             raise CogniteFileUploadError(
@@ -714,6 +769,7 @@ class FilesAPI(APIClient):
         upload_response = self._http_client_with_retry.request(
             "PUT",
             upload_url,
+            accept="*/*",
             data=content,
             timeout=self._config.file_transfer_timeout,
             headers=None,
@@ -946,7 +1002,7 @@ class FilesAPI(APIClient):
 
     def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(
-            "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
+            "GET", download_link, accept="*/*", stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
@@ -998,7 +1054,9 @@ class FilesAPI(APIClient):
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
-        res = self._http_client_with_retry.request("GET", download_link, timeout=self._config.file_transfer_timeout)
+        res = self._http_client_with_retry.request(
+            "GET", download_link, accept="*/*", timeout=self._config.file_transfer_timeout
+        )
         return res.content
 
     def list(

@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import typing
 import warnings
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Tuple, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -63,6 +63,46 @@ class SequencesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.rows = SequencesDataAPI(config, api_version, cognite_client)
         self.data = self.rows
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: typing.Sequence[int] | None = None,
+        asset_subtree_ids: int | typing.Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | typing.Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[Sequence]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: typing.Sequence[int] | None = None,
+        asset_subtree_ids: int | typing.Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | typing.Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[SequenceList]: ...
 
     def __call__(
         self,
@@ -143,7 +183,7 @@ class SequencesAPI(APIClient):
         Returns:
             Iterator[Sequence]: yields Sequence one by one.
         """
-        return cast(Iterator[Sequence], self())
+        return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
@@ -742,7 +782,7 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> asset_filter = filters.Equals("asset_id", 123)
                 >>> is_efficiency = filters.Equals(["metadata", "type"], "efficiency")
-                >>> res = client.time_series.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
+                >>> res = client.sequences.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -756,7 +796,7 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> asset_filter = filters.Equals(SequenceProperty.asset_id, 123)
                 >>> is_efficiency = filters.Equals(SequenceProperty.metadata_key("type"), "efficiency")
-                >>> res = client.time_series.filter(
+                >>> res = client.sequences.filter(
                 ...     filter=filters.And(asset_filter, is_efficiency),
                 ...     sort=SortableSequenceProperty.created_time)
 

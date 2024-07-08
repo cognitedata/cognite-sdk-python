@@ -2,7 +2,7 @@
 Note: If tests related to fetching datapoints are broken, all time series + their datapoints can be
       recreated easily by running the file linked below. You will need to provide a valid set of
       credentials to the `CogniteClient` for the Python SDK integration test CDF project:
->>> python scripts/create_ts_for_integration_tests.py
+python scripts/create_ts_for_integration_tests.py
 """
 
 from __future__ import annotations
@@ -14,13 +14,13 @@ import re
 import unittest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Callable, Literal
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
@@ -35,13 +35,16 @@ from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesList,
 )
+from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, SpaceApply, ViewId
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
     UNIT_IN_MS,
+    ZoneInfo,
     align_start_and_end_for_granularity,
     granularity_to_ms,
     timestamp_to_ms,
@@ -56,12 +59,6 @@ from tests.utils import (
     rng_context,
     set_max_workers,
 )
-
-try:
-    from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo
-
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
@@ -176,9 +173,38 @@ def retrieve_endpoints(cognite_client):
     ]
 
 
-def ts_to_ms(ts):
+@pytest.fixture
+def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
+    # retrieve_dataframe is just a wrapper around retrieve_arrays
+    return [*retrieve_endpoints, cognite_client.time_series.data.retrieve_dataframe]
+
+
+@pytest.fixture(scope="session")
+def instance_ts_id(cognite_client_alpha: CogniteClient) -> InstanceId:
+    created = cognite_client_alpha.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
+
+    my_ts = NodeApply(
+        space=created.space,
+        external_id="ts_python_sdk_instance_id_tests",
+        sources=[
+            NodeOrEdgeData(
+                source=ViewId("cdf_cdm_experimental", "TimeSeriesBase", "v1"),
+                properties={
+                    "name": "ts_python_sdk_instance_id_tests",
+                    "isStep": False,
+                    "isString": False,
+                },
+            )
+        ],
+    )
+    created_ts = cognite_client_alpha.data_modeling.instances.apply(my_ts).nodes
+
+    return created_ts[0].as_id()
+
+
+def ts_to_ms(ts, tz=None):
     assert isinstance(ts, str)
-    return pd.Timestamp(ts).value // int(1e6)
+    return pd.Timestamp(ts, tz=tz).value // int(1e6)
 
 
 def convert_any_ts_to_integer(ts):
@@ -197,6 +223,8 @@ def validate_raw_datapoints_lst(ts_lst, dps_lst, **kw):
 
 def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
     assert isinstance(dps, DPS_TYPES), "Datapoints(Array) not given"
+    assert ts.id == dps.id
+    assert ts.external_id == dps.external_id
     # Convert both dps types to arrays for simple comparisons:
     # (also convert string datapoints - which are also integers)
     values = np.array(dps.value, dtype=np.int64)
@@ -347,10 +375,73 @@ def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeri
     return created_timeseries
 
 
+@pytest.fixture
+def dps_queries_dst_transitions(all_test_time_series):
+    ts1, ts2 = all_test_time_series[113], all_test_time_series[119]
+    oslo = "Europe/Oslo"
+    return [
+        # DST from winter to summer:
+        DatapointsQuery(
+            id=ts1.id,
+            start=ts_to_ms("1991-03-31 00:20:05.912", tz=oslo),
+            end=ts_to_ms("1991-03-31 03:28:51.903", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+        # DST from summer to winter:
+        DatapointsQuery(
+            id=ts1.id,
+            start=ts_to_ms("1991-09-29 01:02:37.950", tz=oslo),
+            end=ts_to_ms("1991-09-29 04:12:02.558", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+        DatapointsQuery(
+            id=ts2.id,
+            start=ts_to_ms("2023-03-26", tz=oslo),
+            end=ts_to_ms("2023-03-26 05:00:00", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+        DatapointsQuery(
+            id=ts2.id,
+            start=ts_to_ms("2023-10-29 01:00:00", tz=oslo),
+            end=ts_to_ms("2023-10-29 03:00:00.001", tz=oslo),
+            timezone=ZoneInfo(oslo),
+        ),
+    ]
+
+
 class TestRetrieveRawDatapointsAPI:
     """Note: Since `retrieve` and `retrieve_arrays` endpoints should give identical results,
-    except for the data container types, all tests run both endpoints.
+    except for the data container types, all tests run both endpoints except those targeting a specific bug
     """
+
+    def test_retrieve_chunking_mode_with_limit_ignores_dps_count_in_first_batch(
+        self, cognite_client, all_test_time_series
+    ):
+        # From 6.33.2 to 7.41.0, when fetching in "chunking mode" with a finite limit and with more than
+        # 100 time series per available worker - in some rare cases - the initial batch of datapoints would
+        # not be counted towards the total limit requested.
+        ids = [all_test_time_series[105].id] * 100
+        with set_max_workers(cognite_client, 1), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+            dps_lst = cognite_client.time_series.data.retrieve(id=ids, limit=1001)
+        assert all(len(dps) == 1001 for dps in dps_lst)
+
+    def test_retrieve_chunking_mode_outside_points_stopped_after_no_cursor(self, cognite_client, weekly_dps_ts):
+        # From 7.45.0 to 7.48.0, when fetching in "chunking mode" with include_outside_points=True,
+        # due to an added is-nextCursor-empty check, the queries would short-circuit after the first batch.
+        ts_ids, ts_xids = weekly_dps_ts
+        with set_max_workers(cognite_client, 1):
+            dps_lst = cognite_client.time_series.data.retrieve(
+                id=ts_ids.as_ids(),
+                external_id=ts_xids.as_external_ids(),
+                start=ts_to_ms("1951"),
+                end=ts_to_ms("1999"),
+                include_outside_points=True,
+            )
+            df = dps_lst.to_pandas()
+
+            validate_raw_datapoints_lst(ts_ids + ts_xids, dps_lst)
+            assert df.shape == (2506, 101)
+            assert df.notna().any(axis=None)
 
     def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
         # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
@@ -694,19 +785,19 @@ class TestRetrieveRawDatapointsAPI:
         dps_arr = cognite_client.time_series.data.retrieve_arrays(id=str_ts.id, limit=3)
         # Test __iter__
         for dp in dps_arr:
-            assert type(dp.timestamp) is int  # noqa: E721
-            assert type(dp.value) is str  # noqa: E721
+            assert type(dp.timestamp) is int
+            assert type(dp.value) is str
         # Test __getitem__ of non-slices
         dp = dps_arr[0]
-        assert type(dp.timestamp) is int  # noqa: E721
-        assert type(dp.value) is str  # noqa: E721
+        assert type(dp.timestamp) is int
+        assert type(dp.value) is str
         # Test dump()
         dumped = dps_arr.dump(camel_case=False)
         dp_dumped = dumped["datapoints"][0]
         assert dumped["is_string"] is True
         assert dp_dumped == {"timestamp": 0, "value": "2"}
-        assert type(dp_dumped["timestamp"]) is int  # noqa: E721
-        assert type(dp_dumped["value"]) is str  # noqa: E721
+        assert type(dp_dumped["timestamp"]) is int
+        assert type(dp_dumped["value"]) is str
 
     def test_getitem_and_iter_preserves_status_codes(self, cognite_client, ts_status_codes, retrieve_endpoints):
         mixed_ts, *_ = ts_status_codes
@@ -874,6 +965,56 @@ class TestRetrieveRawDatapointsAPI:
             assert b3.status_code[1] == 2152267776
             assert b3.status_code[-1] == 2165309440
             assert b3.status_symbol[-1] == "BadLicenseNotAvailable"
+
+    def test_query_no_ts_exists(self, retrieve_endpoints):
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            ts_id = random_cognite_ids(1)  # list of len 1
+            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
+            assert isinstance(res_lst, exp_res_lst_type)
+            # SDK bug v<5, id mapping would not exist because empty `.data` on res_lst:
+            assert res_lst.get(id=ts_id[0]) is None
+
+    def test_timezone_raw_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
+        expected_index = pd.to_datetime(
+            [
+                # to summer
+                "1991-03-31 00:20:05.911+01:00",
+                "1991-03-31 00:39:49.780+01:00",
+                "1991-03-31 03:21:08.144+02:00",
+                "1991-03-31 03:28:06.963+02:00",
+                "1991-03-31 03:28:51.903+02:00",
+                # to winter
+                "1991-09-29 01:02:37.949+02:00",
+                "1991-09-29 02:09:29.699+02:00",
+                "1991-09-29 02:11:39.983+02:00",
+                "1991-09-29 02:10:59.442+01:00",
+                "1991-09-29 02:52:26.212+01:00",
+                "1991-09-29 04:12:02.558+01:00",
+            ],
+            utc=True,  # pandas is not great at parameter names
+        ).tz_convert("Europe/Oslo")
+        expected_to_summer_index = expected_index[:5]
+        expected_to_winter_index = expected_index[5:]
+        for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
+            to_summer, to_winter = dps_lst = endpoint(id=dps_queries_dst_transitions[:2], include_outside_points=True)
+            if convert:
+                dps_lst = dps_lst.to_pandas().astype("Int64")
+                to_summer, to_winter = to_summer.to_pandas().astype(np.int64), to_winter.to_pandas().astype(np.int64)
+            else:
+                dps_lst = dps_lst.astype("Int64")
+                to_summer, to_winter = dps_lst.iloc[:, 0], dps_lst.iloc[:, 1]
+
+            if not convert:
+                for dps in [to_summer, to_winter]:
+                    pd.testing.assert_index_equal(expected_index, dps.index)
+                to_summer = to_summer.dropna()
+                to_winter = to_winter.dropna()
+
+            assert list(range(89712, 89717)) == to_summer.squeeze().values.tolist()
+            assert list(range(96821, 96827)) == to_winter.squeeze().values.tolist()
+            pd.testing.assert_index_equal(expected_index, dps_lst.index)
+            pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
+            pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
 
 
 class TestRetrieveAggregateDatapointsAPI:
@@ -1316,65 +1457,20 @@ class TestRetrieveAggregateDatapointsAPI:
             assert df[f"{xid}|count"].dtype == np.int64
             assert df[f"{xid}|interpolation"].dtype == np.float64
 
-    def test_query_no_ts_exists(self, retrieve_endpoints):
-        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
-            ts_id = random_cognite_ids(1)  # list of len 1
-            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
-            assert isinstance(res_lst, exp_res_lst_type)
-            # SDK bug v<5, id mapping would not exist because empty `.data` on res_lst:
-            assert res_lst.get(id=ts_id[0]) is None
-
-    def test_query_with_duplicates(self, retrieve_endpoints, one_mill_dps_ts, ms_bursty_ts):
-        ts_numeric, ts_string = one_mill_dps_ts
-        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
-            res_lst = endpoint(
-                id=[
-                    ms_bursty_ts.id,  # This is the only non-duplicated
-                    ts_string.id,
-                    {"id": ts_numeric.id, "granularity": "1d", "aggregates": "average"},
-                ],
-                external_id=[
-                    ts_string.external_id,
-                    ts_numeric.external_id,
-                    {"external_id": ts_numeric.external_id, "granularity": "1d", "aggregates": "average"},
-                ],
-                limit=5,
-            )
-            assert isinstance(res_lst, exp_res_lst_type)
-            # Check non-duplicated in result:
-            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)
-            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)
-            # Check duplicated in result:
-            assert isinstance(res_lst.get(id=ts_numeric.id), list)
-            assert isinstance(res_lst.get(id=ts_string.id), list)
-            assert isinstance(res_lst.get(external_id=ts_numeric.external_id), list)
-            assert isinstance(res_lst.get(external_id=ts_string.external_id), list)
-            assert len(res_lst.get(id=ts_numeric.id)) == 3
-            assert len(res_lst.get(id=ts_string.id)) == 2
-            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
-            assert len(res_lst.get(external_id=ts_string.external_id)) == 2
-
-    @pytest.mark.parametrize(
-        "retrieve_method_name, kwargs",
-        itertools.product(
-            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
-            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
-        ),
-    )
+    @pytest.mark.parametrize("kwargs", (dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")))
     def test_retrieve_methods_in_target_unit(
         self,
-        retrieve_method_name: str,
+        all_retrieve_endpoints: list[Callable],
         kwargs: dict,
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
         ts = timeseries_degree_c_minus40_0_100
-        retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
-
-        res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
-        if isinstance(res, pd.DataFrame):
-            res = DatapointsArray(max=res.values)
-        assert math.isclose(res.max[0], 212)
+        for retrieve_method in all_retrieve_endpoints:
+            res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
+            if isinstance(res, pd.DataFrame):
+                res = DatapointsArray(max=res.values)
+            assert math.isclose(res.max[0], 212)
 
     def test_status_codes_affect_aggregate_calculations(self, retrieve_endpoints, ts_status_codes):
         mixed_ts, _, bad_ts, _ = ts_status_codes  # No aggregates for string dps
@@ -1464,6 +1560,92 @@ class TestRetrieveAggregateDatapointsAPI:
                 [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
             )
 
+    def test_timezone_agg_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
+        expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
+        expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
+        expected_index = pd.to_datetime(
+            [
+                # to summer
+                "2023-03-26 00:00:00+01:00",
+                "2023-03-26 01:00:00+01:00",
+                "2023-03-26 03:00:00+02:00",
+                "2023-03-26 04:00:00+02:00",
+                # to winter
+                "2023-10-29 01:00:00+02:00",
+                "2023-10-29 02:00:00+02:00",
+                "2023-10-29 02:00:00+01:00",
+                "2023-10-29 03:00:00+01:00",
+            ],
+            utc=True,  # pandas is still not great at parameter names
+        ).tz_convert("Europe/Oslo")
+        expected_to_summer_index = expected_index[:4]
+        expected_to_winter_index = expected_index[4:]
+        for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
+            to_summer, to_winter = dps_lst = endpoint(
+                id=dps_queries_dst_transitions[2:], aggregates="average", granularity="1hour"
+            )
+            if convert:
+                dps_lst = dps_lst.to_pandas()
+                to_summer, to_winter = to_summer.to_pandas(), to_winter.to_pandas()
+            else:
+                to_summer, to_winter = dps_lst.iloc[:, 0], dps_lst.iloc[:, 1]
+
+            if not convert:
+                for dps in [to_summer, to_winter]:
+                    pd.testing.assert_index_equal(expected_index, dps.index)
+                to_summer = to_summer.dropna()
+                to_winter = to_winter.dropna()
+
+            assert_allclose(expected_values1, to_summer.squeeze().to_numpy())
+            assert_allclose(expected_values2, to_winter.squeeze().to_numpy())
+            pd.testing.assert_index_equal(expected_index, dps_lst.index)
+            pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
+            pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
+
+    def test_calendar_granularities_in_utc_and_timezone(self, retrieve_endpoints, all_test_time_series):
+        daily_ts, oslo = all_test_time_series[108], ZoneInfo("Europe/Oslo")
+        granularities = [
+            "1" + random.choice(["mo", "month", "months"]),
+            "1" + random.choice(["q", "quarter", "quarters"]),
+            "1" + random.choice(["y", "year", "years"]),
+        ]
+        for endpoint in retrieve_endpoints:
+            mo_utc, q_utc, y_utc, mo_oslo, q_oslo, y_oslo = endpoint(
+                id=[DatapointsQuery(id=daily_ts.id, granularity=gran) for gran in granularities],
+                external_id=[
+                    DatapointsQuery(external_id=daily_ts.external_id, granularity=gran, timezone=oslo)
+                    for gran in granularities
+                ],
+                start=ts_to_ms("1964-01-01"),
+                end=ts_to_ms("1974-12-31"),
+                aggregates="count",
+            )
+            assert_equal(mo_utc.count, mo_oslo.count)
+            assert_equal(q_utc.count, q_oslo.count)
+            assert_equal(y_utc.count, y_oslo.count)
+
+            # Verify that the number of days per year/quarter/month follows the actual calendar:
+            exp_days_per_year = [
+                365, 365, 365, 366,
+                365, 365, 365, 366,
+                365, 365,  #   ^^^
+            ]  # fmt: skip
+            exp_days_per_quarter = [
+                90, 91, 92, 92,
+                90, 91, 92, 92,
+                90, 91, 92, 92,
+                91, 91, 92, 92,  # Look, I'm special
+            ]  # fmt: skip
+            exp_days_per_month = [
+                31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+                31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+                31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+                31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,  # star of the show: Feb 29
+            ]  # fmt: skip
+            assert_equal(exp_days_per_year, y_utc.count)
+            assert_equal(exp_days_per_quarter, q_utc.count[: 4 * 4])
+            assert_equal(exp_days_per_month, mo_utc.count[: 12 * 4])
+
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
     # "start, end, granularity, expected_df"
@@ -1535,7 +1717,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         "6hours",
         pd.DataFrame(
             [6 * 60] * 4,
-            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6H", tz="Europe/Oslo"),
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6h", tz="Europe/Oslo"),
             columns=["count"],
             dtype="Int64",
         ),
@@ -1548,7 +1730,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
         "10minutes",
         pd.DataFrame(
             [10] * 3,
-            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10T", tz="Europe/Oslo"),
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10min", tz="Europe/Oslo"),
             columns=["count"],
             dtype="Int64",
         ),
@@ -1892,6 +2074,36 @@ class TestRetrieveMixedRawAndAgg:
             assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)
             dps_id = res_lst.get(id=ts_num.id)
             assert isinstance(dps_id, exp_res_lst_type._RESOURCE)
+
+    def test_query_with_duplicates(self, retrieve_endpoints, one_mill_dps_ts, ms_bursty_ts):
+        ts_numeric, ts_string = one_mill_dps_ts
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            res_lst = endpoint(
+                id=[
+                    ms_bursty_ts.id,  # This is the only non-duplicated
+                    ts_string.id,
+                    {"id": ts_numeric.id, "granularity": "1d", "aggregates": "average"},
+                ],
+                external_id=[
+                    ts_string.external_id,
+                    ts_numeric.external_id,
+                    {"external_id": ts_numeric.external_id, "granularity": "1d", "aggregates": "average"},
+                ],
+                limit=5,
+            )
+            assert isinstance(res_lst, exp_res_lst_type)
+            # Check non-duplicated in result:
+            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)
+            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)
+            # Check duplicated in result:
+            assert isinstance(res_lst.get(id=ts_numeric.id), list)
+            assert isinstance(res_lst.get(id=ts_string.id), list)
+            assert isinstance(res_lst.get(external_id=ts_numeric.external_id), list)
+            assert isinstance(res_lst.get(external_id=ts_string.external_id), list)
+            assert len(res_lst.get(id=ts_numeric.id)) == 3
+            assert len(res_lst.get(id=ts_string.id)) == 2
+            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
+            assert len(res_lst.get(external_id=ts_string.external_id)) == 2
 
 
 class TestRetrieveDataFrameAPI:
@@ -2504,3 +2716,31 @@ class TestInsertDatapointsAPI:
         assert dps_numeric.status_code == dps_str.status_code
         assert dps_numeric.status_symbol == dps_str.status_symbol
         assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
+
+    def test_insert_retrieve_delete_datapoints_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
+    ) -> None:
+        cognite_client_alpha.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
+
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+
+        assert retrieved.timestamp == [0, 1]
+        assert retrieved.value == [0.0, 1.0]
+
+        cognite_client_alpha.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
+
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+
+        assert retrieved.timestamp == []
+
+    def test_insert_multiple_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
+    ) -> None:
+        cognite_client_alpha.time_series.data.insert_multiple(
+            [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": 4, "value": 42}]}]
+        )
+
+        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
+
+        assert retrieved.timestamp == [4]
+        assert retrieved.value == [42]

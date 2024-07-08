@@ -33,7 +33,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
         capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
-        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
@@ -42,7 +42,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         name: str,
         source_id: str | None = None,
         capabilities: list[Capability] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
     ) -> None:
         self.name = name
@@ -83,7 +83,7 @@ class Group(GroupCore):
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
-        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
         cognite_client (CogniteClient | None): No description.
     """
@@ -96,7 +96,7 @@ class Group(GroupCore):
         id: int | None = None,
         is_deleted: bool | None = None,
         deleted_time: int | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
@@ -181,7 +181,7 @@ class GroupWrite(GroupCore):
         name (str): Name of the group
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
         capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
-        metadata (dict[str, Any] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
@@ -190,7 +190,7 @@ class GroupWrite(GroupCore):
         name: str,
         source_id: str | None = None,
         capabilities: list[Capability] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
     ) -> None:
         super().__init__(

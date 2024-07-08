@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import random
 import time
@@ -10,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Generic,
     Iterator,
     List,
     Literal,
@@ -56,12 +58,18 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResultList,
     NodeList,
     SubscriptionContext,
+    T_Edge,
+    T_Node,
     TargetUnit,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
     SourceSelector,
+)
+from cognite.client.data_classes.data_modeling.typed_instances import (
+    TypedEdge,
+    TypedNode,
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
@@ -85,29 +93,29 @@ logger = logging.getLogger(__name__)
 Source: TypeAlias = Union[SourceSelector, View, ViewId, Tuple[str, str], Tuple[str, str, str]]
 
 
-class _NodeOrEdgeList(CogniteResourceList):
-    _RESOURCE = (Node, Edge)  # type: ignore[assignment]
+class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
+    def __init__(self, node_cls: type[T_Node], edge_cls: type[T_Edge]):
+        self._node_cls = node_cls
+        self._edge_cls = edge_cls
 
-    @classmethod
-    def _load(
-        cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> _NodeOrEdgeList:
-        resources: list[Node | Edge] = [
-            Node._load(data) if data["instanceType"] == "node" else Edge._load(data) for data in resource_list
-        ]
-        return cls(resources, None)
-
-    def as_ids(self) -> list[NodeId | EdgeId]:
-        return [instance.as_id() for instance in self]
-
-
-class _NodeOrEdgeResourceAdapter:
-    @staticmethod
-    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
+    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
-            return Node._load(data)
-        return Edge._load(data)
+            return self._node_cls._load(data)  # type: ignore[return-value]
+        return self._edge_cls._load(data)
+
+
+class _TypedNodeOrEdgeListAdapter:
+    def __init__(self, instance_cls: type) -> None:
+        self._instance_cls = instance_cls
+        self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
+
+    def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
+        return self._list_cls(items, cognite_client)
+
+    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
+        data = load_yaml_or_json(data) if isinstance(data, str) else data
+        return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client)  # type: ignore[return-value, attr-defined]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -263,13 +271,216 @@ class InstancesAPI(APIClient):
         """
         return self(None, "node")
 
+    @overload
+    def retrieve_edges(
+        self,
+        edges: EdgeId | tuple[str, str],
+        *,
+        edge_cls: type[T_Edge],
+    ) -> T_Edge | None: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: EdgeId | tuple[str, str],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> Edge | None: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
+        *,
+        edge_cls: type[T_Edge],
+    ) -> EdgeList[T_Edge]: ...
+
+    @overload
+    def retrieve_edges(
+        self,
+        edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> EdgeList[Edge]: ...
+
+    def retrieve_edges(
+        self,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        edge_cls: type[T_Edge] = Edge,  # type: ignore
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
+        """`Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+
+        Note:
+            This method should be used for retrieving edges with a custom edge class.You can use it
+            without providing a custom node class, but in that case, the retrieved nodes will be of the
+            built-in Edge class.
+
+
+        Args:
+            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]]): Edge id(s) to retrieve.
+            edge_cls (type[T_Edge]): The custom edge class to use, the retrieved edges will automatically be serialized into this class.
+            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom edge class.
+            include_typing (bool): Whether to include typing information
+
+        Returns:
+            EdgeList[T_Edge] | T_Edge | Edge | None: The requested edges.
+
+        Retrieve nodes using a custom Edge class Flow
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import EdgeId, TypedEdge, PropertyOptions, DirectRelationReference, ViewId
+                >>> class Flow(TypedEdge):
+                ...    flow_rate = PropertyOptions(identifier="flowRate")
+                ...
+                ...    def __init__(
+                ...        self,
+                ...        space: str,
+                ...        external_id: str,
+                ...        version: int,
+                ...        type: DirectRelationReference,
+                ...        last_updated_time: int,
+                ...        created_time: int,
+                ...        flow_rate: float,
+                ...        start_node: DirectRelationReference,
+                ...        end_node: DirectRelationReference,
+                ...        deleted_time: Union[int, None] = None,
+                ...    ) -> None:
+                ...        super().__init__(
+                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+                ...        )
+                ...        self.flow_rate = flow_rate
+                ...
+                ...    @classmethod
+                ...    def get_source(cls) -> ViewId:
+                ...        return ViewId("sp_model_space", "flow", "1")
+                ...
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve_edges(NodeId("mySpace", "theFlow"), edge_cls=Flow)
+                >>> isinstance(res, Flow)
+        """
+        res = self._retrieve_typed(
+            nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
+        )
+        if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and all(isinstance(i, str) for i in edges)):
+            return res.edges[0] if res.edges else None
+        return res.edges
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | tuple[str, str],
+        *,
+        node_cls: type[T_Node],
+    ) -> T_Node | None: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | tuple[str, str],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> Node | None: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
+        *,
+        node_cls: type[T_Node],
+    ) -> NodeList[T_Node]: ...
+
+    @overload
+    def retrieve_nodes(
+        self,
+        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
+        *,
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> NodeList[Node]: ...
+
+    def retrieve_nodes(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
+        node_cls: type[T_Node] = Node,  # type: ignore
+        sources: Source | Sequence[Source] | None = None,
+        include_typing: bool = False,
+    ) -> NodeList[T_Node] | T_Node | Node | None:
+        """`Retrieve one or more nodes by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+
+        Note:
+            This method should be used for retrieving nodes with a custom node class. You can use it
+            without providing a custom node class, but in that case, the retrieved nodes will be of the
+            built-in Node class.
+
+
+        Args:
+            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]]): Node id(s) to retrieve.
+            node_cls (type[T_Node]): The custom node class to use, the retrieved nodes will automatically be serialized to this class.
+            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom node class.
+            include_typing (bool): Whether to include typing information
+
+        Returns:
+            NodeList[T_Node] | T_Node | Node | None: The requested edges.
+
+        Retrieve nodes using a custom Node class Person
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId, TypedNode, PropertyOptions, DirectRelationReference, ViewId
+                >>> class Person(TypedNode):
+                ...    birth_year = PropertyOptions(identifier="birthYear")
+                ...
+                ...    def __init__(
+                ...        self,
+                ...        space: str,
+                ...        external_id: str,
+                ...        version: int,
+                ...        last_updated_time: int,
+                ...        created_time: int,
+                ...        name: str,
+                ...        birth_year: Union[int, None] = None,
+                ...        type: Union[DirectRelationReference, None] = None,
+                ...        deleted_time: Union[int, None] = None,
+                ...    ):
+                ...        super().__init__(
+                ...            space=space,
+                ...            external_id=external_id,
+                ...            version=version,
+                ...            last_updated_time=last_updated_time,
+                ...            created_time=created_time,
+                ...            type=type,
+                ...            deleted_time=deleted_time,
+                ...            properties=None,
+                ...        )
+                ...        self.name = name
+                ...        self.birth_year = birth_year
+                ...
+                ...    @classmethod
+                ...    def get_source(cls) -> ViewId:
+                ...        return ViewId("myModelSpace", "Person", "1")
+                ...
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.retrieve_nodes(NodeId("myDataSpace", "myPerson"), node_cls=Person)
+                >>> isinstance(res, Person)
+        """
+        res = self._retrieve_typed(
+            nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
+        )
+        if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and all(isinstance(i, str) for i in nodes)):
+            return res.nodes[0] if res.nodes else None
+        return res.nodes
+
     def retrieve(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> InstancesResult:
+    ) -> InstancesResult[Node, Edge]:
         """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
@@ -279,7 +490,7 @@ class InstancesAPI(APIClient):
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
-            InstancesResult: Requested instances.
+            InstancesResult[Node, Edge]: Requested instances.
 
         Examples:
 
@@ -312,7 +523,23 @@ class InstancesAPI(APIClient):
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     sources=("myspace", "myView"))
         """
+        return self._retrieve_typed(
+            nodes=nodes, edges=edges, sources=sources, include_typing=include_typing, node_cls=Node, edge_cls=Edge
+        )
+
+    def _retrieve_typed(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
+        sources: Source | Sequence[Source] | None,
+        include_typing: bool,
+        node_cls: type[T_Node],
+        edge_cls: type[T_Edge],
+    ) -> InstancesResult[T_Node, T_Edge]:
         identifiers = self._load_node_and_edge_ids(nodes, edges)
+
+        sources = self._to_sources(sources, node_cls, edge_cls)
+
         other_params = self._create_other_params(
             include_typing=include_typing,
             sources=sources,
@@ -320,18 +547,42 @@ class InstancesAPI(APIClient):
             instance_type=None,
         )
 
-        res = self._retrieve_multiple(
+        class _NodeOrEdgeList(CogniteResourceList):
+            _RESOURCE = (node_cls, edge_cls)  # type: ignore[assignment]
+
+            @classmethod
+            def _load(
+                cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
+            ) -> _NodeOrEdgeList:
+                resources: list[Node | Edge] = [
+                    node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
+                    for data in resource_list
+                ]
+                return cls(resources, None)
+
+        res = self._retrieve_multiple(  # type: ignore[call-overload]
             list_cls=_NodeOrEdgeList,
-            resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
+            resource_cls=_NodeOrEdgeResourceAdapter(node_cls, edge_cls),
             identifiers=identifiers,
             other_params=other_params,
             executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-        return InstancesResult(
+        return InstancesResult[T_Node, T_Edge](
             nodes=NodeList([node for node in res if isinstance(node, Node)]),
             edges=EdgeList([edge for edge in res if isinstance(edge, Edge)]),
         )
+
+    @staticmethod
+    def _to_sources(
+        sources: Source | Sequence[Source] | None, *instance_cls: type[T_Node] | type[T_Edge] | None
+    ) -> Source | Sequence[Source] | None:
+        if sources is not None:
+            return sources
+        for cls in instance_cls:
+            if issubclass(cls, (TypedNode, TypedEdge)):  # type: ignore[arg-type]
+                return cls.get_source()  # type: ignore[union-attr]
+        return sources
 
     def _load_node_and_edge_ids(
         self,
@@ -623,6 +874,30 @@ class InstancesAPI(APIClient):
                 ...     auto_create_end_nodes=True
                 ... )
 
+            Using helper function to create valid graphql timestamp for a datetime object:
+
+                >>> from cognite.client.utils import datetime_to_ms_iso_timestamp
+                >>> from datetime import datetime, timezone
+                >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=timezone.utc)
+                >>> data_model_timestamp = datetime_to_ms_iso_timestamp(my_date)  # "2020-03-14T15:09:26.535+00:00"
+
+            Create a typed node:
+
+                >>> from cognite.client import CogniteClient
+                >>> from datetime import date
+                >>> from cognite.client.data_classes.data_modeling import TypedNodeApply, PropertyOptions
+                >>> class Person(TypedNodeApply):
+                ...     birth_date = PropertyOptions(identifier="birthDate")
+                ...
+                ...     def __init__(self, space: str, external_id, name: str, birth_date: date):
+                ...         super().__init__(space, external_id, type=("sp_model_space", "Person"))
+                ...         self.name = name
+                ...         self.birth_date = birth_date
+                ...
+                >>> client = CogniteClient()
+                >>> person = Person("sp_date_space", "my_person", "John Doe", date(1980, 1, 1))
+                >>> res = client.data_modeling.instances.apply(nodes=person)
+
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
@@ -662,7 +937,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> NodeList: ...
+    ) -> NodeList[Node]: ...
 
     @overload
     def search(
@@ -676,26 +951,54 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> EdgeList: ...
+    ) -> EdgeList[Edge]: ...
 
+    @overload
     def search(
         self,
         view: ViewId,
         query: str,
-        instance_type: Literal["node", "edge"] = "node",
+        instance_type: type[T_Node],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-    ) -> NodeList | EdgeList:
+    ) -> NodeList[T_Node]: ...
+
+    @overload
+    def search(
+        self,
+        view: ViewId,
+        query: str,
+        instance_type: type[T_Edge],
+        properties: list[str] | None = None,
+        target_units: list[TargetUnit] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+    ) -> EdgeList[T_Edge]: ...
+
+    def search(
+        self,
+        view: ViewId,
+        query: str,
+        instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge] = "node",
+        properties: list[str] | None = None,
+        target_units: list[TargetUnit] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+    ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
         Args:
             view (ViewId): View to search in.
             query (str): Query string that will be parsed and used for search.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
@@ -704,7 +1007,7 @@ class InstancesAPI(APIClient):
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
 
         Returns:
-            NodeList | EdgeList: Search result with matching nodes or edges.
+            NodeList[T_Node] | EdgeList[T_Edge]: Search result with matching nodes or edges.
 
         Examples:
 
@@ -733,15 +1036,24 @@ class InstancesAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        filter = self._merge_space_into_filter(instance_type, space, filter)
+        instance_type_str = self._to_instance_type_str(instance_type)
+        filter = self._merge_space_into_filter(instance_type_str, space, filter)
         if instance_type == "node":
-            list_cls: type[NodeList] | type[EdgeList] = NodeList
+            list_cls: type[NodeList[T_Node]] | type[EdgeList[T_Edge]] = NodeList[Node]  # type: ignore[assignment]
+            resource_cls: type[Node] | type[Edge] = Node
         elif instance_type == "edge":
-            list_cls = EdgeList
+            list_cls = EdgeList  # type: ignore[assignment]
+            resource_cls = Edge
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
+            list_cls = NodeList[T_Node]
+            resource_cls = instance_type
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
+            list_cls = EdgeList[T_Edge]
+            resource_cls = instance_type
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
-        body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type, "limit": limit}
+        body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type_str, "limit": limit}
         if properties:
             body["properties"] = properties
         if filter:
@@ -757,7 +1069,8 @@ class InstancesAPI(APIClient):
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
-        return list_cls._load(res.json()["items"], cognite_client=None)
+        items = res.json()["items"]
+        return list_cls([resource_cls._load(item) for item in items], cognite_client=None)
 
     @overload
     def aggregate(
@@ -1085,7 +1398,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> NodeList: ...
+    ) -> NodeList[Node]: ...
 
     @overload
     def list(
@@ -1097,22 +1410,44 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> EdgeList: ...
+    ) -> EdgeList[Edge]: ...
+
+    @overload
+    def list(
+        self,
+        instance_type: type[T_Node],
+        *,
+        space: str | SequenceNotStr[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> NodeList[T_Node]: ...
+
+    @overload
+    def list(
+        self,
+        instance_type: type[T_Edge],
+        *,
+        space: str | SequenceNotStr[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+    ) -> EdgeList[T_Edge]: ...
 
     def list(
         self,
-        instance_type: Literal["node", "edge"] = "node",
+        instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge] = "node",
         include_typing: bool = False,
         sources: Source | Sequence[Source] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> NodeList | EdgeList:
+    ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
@@ -1121,7 +1456,7 @@ class InstancesAPI(APIClient):
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
 
         Returns:
-            NodeList | EdgeList: List of requested instances
+            NodeList[T_Node] | EdgeList[T_Edge]: List of requested instances
 
         Examples:
 
@@ -1155,10 +1490,13 @@ class InstancesAPI(APIClient):
                 ...     instance_list # do something with the instances
         """
         self._validate_filter(filter)
-        filter = self._merge_space_into_filter(instance_type, space, filter)
+        instance_type_str = self._to_instance_type_str(instance_type)
+        if not isinstance(instance_type, str) and issubclass(instance_type, (TypedNode, TypedEdge)):
+            sources = self._to_sources(sources, instance_type)
+        filter = self._merge_space_into_filter(instance_type_str, space, filter)
 
         other_params = self._create_other_params(
-            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
+            include_typing=include_typing, instance_type=instance_type_str, sort=sort, sources=sources
         )
 
         if instance_type == "node":
@@ -1166,11 +1504,21 @@ class InstancesAPI(APIClient):
             list_cls: type = NodeList
         elif instance_type == "edge":
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
+            resource_cls, list_cls = (
+                _NodeOrEdgeResourceAdapter,
+                _TypedNodeOrEdgeListAdapter(instance_type),  # type: ignore[assignment]
+            )
+        elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
+            resource_cls, list_cls = (
+                _NodeOrEdgeResourceAdapter(Node, instance_type),  # type: ignore[assignment]
+                _TypedNodeOrEdgeListAdapter(instance_type),  # type: ignore[assignment]
+            )
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
         return cast(
-            Union[NodeList, EdgeList],
+            Union[NodeList[T_Node], EdgeList[T_Edge]],
             self._list(
                 list_cls=list_cls,
                 resource_cls=resource_cls,
@@ -1197,3 +1545,15 @@ class InstancesAPI(APIClient):
         if filter is None:
             return space_filter
         return filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)
+
+    @staticmethod
+    def _to_instance_type_str(
+        instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge],
+    ) -> Literal["node", "edge"]:
+        if isinstance(instance_type, str):
+            return instance_type
+        elif issubclass(instance_type, TypedNode):
+            return "node"
+        elif issubclass(instance_type, TypedEdge):
+            return "edge"
+        raise ValueError(f"Invalid instance type: {instance_type}")

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable, Iterable, Iterator, TypeVar, overloa
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
+
 _T = TypeVar("_T")
 
 

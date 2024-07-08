@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -27,17 +27,52 @@ class LabelsAPI(APIClient):
         Returns:
             Iterator[LabelDefinition]: yields Labels one by one.
         """
-        return cast(Iterator[LabelDefinition], self())
+        return self()
 
+    @overload
     def __call__(
         self,
+        chunk_size: None = None,
         name: str | None = None,
         external_id_prefix: str | None = None,
         limit: int | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> Iterator[LabelDefinition]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        limit: int | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> Iterator[LabelDefinitionList]: ...
+
+    def __call__(
+        self,
         chunk_size: int | None = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        limit: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> Iterator[LabelDefinition] | Iterator[LabelDefinitionList]:
+        """Iterate over Labels
+
+        Args:
+            chunk_size (int | None): Number of Labels to return in each chunk. Defaults to yielding one Label a time.
+            name (str | None): returns the label definitions matching that name
+            external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
+            limit (int | None): Maximum number of label definitions to return. Defaults return all labels.
+            data_set_ids (int | Sequence[int] | None): return only labels in the data sets with this id / these ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): return only labels in the data sets with this external id / these external ids.
+
+        Returns:
+            Iterator[LabelDefinition] | Iterator[LabelDefinitionList]: yields Labels one by one or in chunks.
+        """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = LabelDefinitionFilter(
@@ -51,6 +86,49 @@ class LabelsAPI(APIClient):
             filter=filter,
             chunk_size=chunk_size,
         )
+
+    @overload
+    def retrieve(self, external_id: str, ignore_unknown_ids: Literal[True]) -> LabelDefinition | None: ...
+
+    @overload
+    def retrieve(self, external_id: str, ignore_unknown_ids: Literal[False] = False) -> LabelDefinition: ...
+
+    @overload
+    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> LabelDefinitionList: ...
+
+    def retrieve(
+        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> LabelDefinition | LabelDefinitionList | None:
+        """`Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
+
+        Args:
+            external_id (str | SequenceNotStr[str]): External ID or list of external ids
+            ignore_unknown_ids (bool): If True, ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            LabelDefinition | LabelDefinitionList | None: The requested label definition(s)
+
+        Examples:
+
+            Get label by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
+
+        """
+        is_single = isinstance(external_id, str)
+        external_ids = [external_id] if is_single else external_id
+        identifiers = IdentifierSequence.load(external_ids=external_ids)  # type: ignore[arg-type]
+        result = self._retrieve_multiple(
+            list_cls=LabelDefinitionList,
+            resource_cls=LabelDefinition,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
+        if is_single:
+            return result[0] if result else None
+        return result
 
     def list(
         self,
