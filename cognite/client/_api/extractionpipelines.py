@@ -76,7 +76,7 @@ class ExtractionPipelinesAPI(APIClient):
 
     def __iter__(self) -> Iterator[ExtractionPipeline]:
         """Iterate over all extraction pipelines"""
-        return self.__call__()
+        return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:
         """`Retrieve a single extraction pipeline by id. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/showExtPipe>`_

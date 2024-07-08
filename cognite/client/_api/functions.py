@@ -156,7 +156,7 @@ class FunctionsAPI(APIClient):
 
     def __iter__(self) -> Iterator[Function]:
         """Iterate over all functions."""
-        return self.__call__()
+        return self()
 
     def create(
         self,
@@ -1050,7 +1050,7 @@ class FunctionSchedulesAPI(APIClient):
 
     def __iter__(self) -> Iterator[FunctionSchedule]:
         """Iterate over all function schedules"""
-        return self.__call__()
+        return self()
 
     def retrieve(self, id: int) -> FunctionSchedule | None:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_

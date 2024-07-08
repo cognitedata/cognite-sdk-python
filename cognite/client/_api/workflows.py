@@ -356,7 +356,7 @@ class WorkflowVersionAPI(APIClient):
 
     def __iter__(self) -> Iterator[WorkflowVersion]:
         """Iterate all over workflow versions"""
-        return self.__call__()
+        return self()
 
     def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
         """`Create a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
@@ -560,7 +560,7 @@ class WorkflowAPI(APIClient):
 
     def __iter__(self) -> Iterator[Workflow]:
         """Iterate all over workflows"""
-        return self.__call__()
+        return self()
 
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
         """`Create a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_

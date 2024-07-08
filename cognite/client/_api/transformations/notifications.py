@@ -78,7 +78,7 @@ class TransformationNotificationsAPI(APIClient):
 
     def __iter__(self) -> Iterator[TransformationNotification]:
         """Iterate over all transformation notifications"""
-        return self.__call__()
+        return self()
 
     @overload
     def create(
