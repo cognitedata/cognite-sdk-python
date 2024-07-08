@@ -49,7 +49,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): : This field is not used by the API and will be removed in a future version of the SDK.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def __init__(
@@ -108,7 +108,7 @@ class TimeSeries(TimeSeriesCore):
         data_set_id (int | None): The dataSet ID for the item.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        legacy_name (str | None): No description.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -250,7 +250,7 @@ class TimeSeriesWrite(TimeSeriesCore):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): : This field is not used by the API and will be removed in a future version of the SDK
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def as_write(self) -> TimeSeriesWrite:
