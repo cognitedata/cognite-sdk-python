@@ -146,7 +146,7 @@ class FunctionsAPI(APIClient):
 
         return self._list_generator(
             method="POST",
-            resource_path="/functions/list",
+            resource_path=self._RESOURCE_PATH + "/list",
             filter=filter_,
             limit=limit,
             chunk_size=chunk_size,
@@ -476,7 +476,7 @@ class FunctionsAPI(APIClient):
 
         if data is None:
             data = {}
-        url = f"/functions/{id}/call"
+        url = self.calls._RESOURCE_PATH.format(id)
         res = self._post(url, json={"data": data, "nonce": nonce})
 
         function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
@@ -498,7 +498,7 @@ class FunctionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> limits = client.functions.limits()
         """
-        res = self._get("/functions/limits")
+        res = self._get(self._RESOURCE_PATH + "/limits")
         return FunctionsLimits.load(res.json())
 
     def _zip_and_upload_folder(
@@ -600,7 +600,7 @@ class FunctionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> status = client.functions.activate()
         """
-        res = self._post("/functions/status")
+        res = self._post(self._RESOURCE_PATH + "/status")
         return FunctionsStatus.load(res.json())
 
     def status(self) -> FunctionsStatus:
@@ -617,7 +617,7 @@ class FunctionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> status = client.functions.status()
         """
-        res = self._get("/functions/status")
+        res = self._get(self._RESOURCE_PATH + "/status")
         return FunctionsStatus.load(res.json())
 
 
