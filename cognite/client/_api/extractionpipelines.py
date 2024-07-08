@@ -282,7 +282,7 @@ class ExtractionPipelineRunsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> runsList = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
+                >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
