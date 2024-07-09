@@ -17,6 +17,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.data_classes.time_series import (
     SortableTimeSeriesProperty,
@@ -200,12 +201,13 @@ class TimeSeriesAPI(APIClient):
         """
         return self()
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> TimeSeries | None:
+    def retrieve(self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None) -> TimeSeries | None:
         """`Retrieve a single time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
             id (int | None): ID
             external_id (str | None): External ID
+            instance_id (NodeId | None): Instance ID
 
         Returns:
             TimeSeries | None: Requested time series or None if it does not exist.
@@ -236,6 +238,7 @@ class TimeSeriesAPI(APIClient):
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
+        instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
@@ -243,6 +246,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             ids (Sequence[int] | None): IDs
             external_ids (SequenceNotStr[str] | None): External IDs
+            instance_ids (Sequence[NodeId] | None): Instance IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -550,6 +554,7 @@ class TimeSeriesAPI(APIClient):
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
+        instance_id: NodeId | Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
@@ -557,6 +562,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+            instance_id (NodeId | Sequence[NodeId] | None): Instance ID or list of instance ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:

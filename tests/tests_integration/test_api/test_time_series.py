@@ -5,7 +5,8 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
-from cognite.client.data_classes.time_series import TimeSeriesProperty
+from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.time_series import TimeSeriesProperty, TimeSeriesWrite
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
 
@@ -272,6 +273,25 @@ class TestTimeSeriesAPI:
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in time_series_list for key in a.metadata or []
         }
+
+    def test_create_retrieve_delete_with_instance_id(self, cognite_client_alpha: CogniteClient) -> None:
+        my_timeseries = TimeSeriesWrite(
+            instance_id=NodeId("sp_123", "ts_456"),
+            name="my timeseries",
+            description="a timeseries",
+            is_step=False,
+            is_string=False,
+        )
+
+        try:
+            created = cognite_client_alpha.time_series.create(my_timeseries)
+
+            retrieved = cognite_client_alpha.time_series.retrieve(instance_id=my_timeseries.instance_id)
+
+            assert retrieved == created
+
+        finally:
+            cognite_client_alpha.time_series.delete(instance_id=my_timeseries.instance_id)
 
 
 class TestTimeSeriesHelperMethods:

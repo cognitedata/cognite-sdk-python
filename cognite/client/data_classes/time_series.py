@@ -24,6 +24,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
@@ -55,6 +56,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
     def __init__(
         self,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         name: str | None = None,
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -68,6 +70,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         legacy_name: str | None = None,
     ) -> None:
         self.external_id = external_id
+        self.instance_id = instance_id
         self.name = name
         self.is_string = is_string
         self.metadata = metadata
@@ -95,6 +98,7 @@ class TimeSeries(TimeSeriesCore):
     Args:
         id (int | None): A server-generated ID for the object.
         external_id (str | None): The externally supplied ID for the time series.
+        instance_id (NodeId | None): The ID of the instance this time series belongs to.
         name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -115,6 +119,7 @@ class TimeSeries(TimeSeriesCore):
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         name: str | None = None,
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -132,6 +137,7 @@ class TimeSeries(TimeSeriesCore):
     ) -> None:
         super().__init__(
             external_id=external_id,
+            instance_id=instance_id,
             name=name,
             is_string=is_string,
             metadata=metadata,
