@@ -80,8 +80,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         self.data_set_id = data_set_id
         if legacy_name is not None:
             warnings.warn(
-                "The 'legacy_name' is not used and will be ignored. It will be completely removed "
-                "in the next major version.",
+                "The 'legacy_name' is not used and will be ignored. " "It will be completely removed October 2024.",
                 DeprecationWarning,
                 stacklevel=2,
             )
