@@ -69,7 +69,7 @@ class TypedNodeApply(NodeApply, ABC):
 
     @classmethod
     def get_source(cls) -> ContainerId | ViewId:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -97,7 +97,7 @@ class TypedEdgeApply(EdgeApply, ABC):
 
     @classmethod
     def get_source(cls) -> ContainerId | ViewId:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -135,7 +135,7 @@ class TypedNode(Node, ABC):
 
     @classmethod
     def get_source(cls) -> ViewId:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -176,7 +176,7 @@ class TypedEdge(Edge, ABC):
 
     @classmethod
     def get_source(cls) -> ViewId:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
