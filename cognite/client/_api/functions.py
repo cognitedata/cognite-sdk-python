@@ -88,6 +88,7 @@ def _ensure_at_most_one_id_given(function_id: int | None, function_external_id: 
 
 class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
+    _RESOURCE_PATH_CALL = "/functions/{}/call"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -490,7 +491,7 @@ class FunctionsAPI(APIClient):
 
         if data is None:
             data = {}
-        url = self.calls._RESOURCE_PATH.format(id)
+        url = self._RESOURCE_PATH_CALL.format(id)
         res = self._post(url, json={"data": data, "nonce": nonce})
 
         function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
