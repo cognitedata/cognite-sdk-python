@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import auto
 from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -40,6 +40,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
+        instance_id (NodeId | None): No description.
         name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -88,6 +89,54 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
                 stacklevel=2,
             )
         self.legacy_name = legacy_name
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        """Dump the object to a dictionary"""
+        output: dict[str, Any] = {}
+        if self.external_id is not None:
+            output["externalId" if camel_case else "external_id"] = self.external_id
+        if self.instance_id is not None:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        if self.name is not None:
+            output["name"] = self.name
+        if self.is_string is not None:
+            output["isString" if camel_case else "is_string"] = self.is_string
+        if self.metadata is not None:
+            output["metadata"] = self.metadata
+        if self.unit is not None:
+            output["unit"] = self.unit
+        if self.unit_external_id is not None:
+            output["unitExternalId" if camel_case else "unit_external_id"] = self.unit_external_id
+        if self.asset_id is not None:
+            output["assetId" if camel_case else "asset_id"] = self.asset_id
+        if self.is_step is not None:
+            output["isStep" if camel_case else "is_step"] = self.is_step
+        if self.description is not None:
+            output["description"] = self.description
+        if self.security_categories is not None:
+            output["securityCategories" if camel_case else "security_categories"] = self.security_categories
+        if self.data_set_id is not None:
+            output["dataSetId" if camel_case else "data_set_id"] = self.data_set_id
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            name=resource.get("name"),
+            is_string=resource.get("isString"),
+            metadata=resource.get("metadata"),
+            unit=resource.get("unit"),
+            unit_external_id=resource.get("unitExternalId"),
+            asset_id=resource.get("assetId"),
+            is_step=resource.get("isStep"),
+            description=resource.get("description"),
+            security_categories=resource.get("securityCategories"),
+            data_set_id=resource.get("dataSetId"),
+        )
 
 
 class TimeSeries(TimeSeriesCore):
@@ -159,6 +208,34 @@ class TimeSeries(TimeSeriesCore):
         self.created_time: int = created_time  # type: ignore
         self.last_updated_time: int = last_updated_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["id" if camel_case else "id"] = self.id
+        output["createdTime" if camel_case else "created_time"] = self.created_time
+        output["lastUpdatedTime" if camel_case else "last_updated_time"] = self.last_updated_time
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            external_id=resource.get("externalId"),
+            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            name=resource.get("name"),
+            is_string=resource.get("isString"),
+            metadata=resource.get("metadata"),
+            unit=resource.get("unit"),
+            unit_external_id=resource.get("unitExternalId"),
+            asset_id=resource.get("assetId"),
+            is_step=resource.get("isStep"),
+            description=resource.get("description"),
+            security_categories=resource.get("securityCategories"),
+            data_set_id=resource.get("dataSetId"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> TimeSeriesWrite:
         """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""

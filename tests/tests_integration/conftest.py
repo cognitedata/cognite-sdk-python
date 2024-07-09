@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, OAuthInteractive
+from cognite.client.data_classes.data_modeling import Space, SpaceApply
 from tests.utils import REPO_ROOT
 
 
@@ -27,6 +28,11 @@ def cognite_client_alpha() -> CogniteClient:
         client_secret=os.environ["COGNITE_ALPHA_CLIENT_SECRET"],
         tenant_id=os.environ["COGNITE_ALPHA_TENANT_ID"],
     )
+
+
+@pytest.fixture(scope="session")
+def alpha_test_space(cognite_client_alpha: CogniteClient) -> Space:
+    return cognite_client_alpha.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
 
 
 @pytest.fixture(scope="session")

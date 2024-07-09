@@ -5,8 +5,9 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
-from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.data_classes.time_series import TimeSeriesProperty, TimeSeriesWrite
+from cognite.client.data_classes.cdm.v1 import TimesSeriesBaseApply
+from cognite.client.data_classes.data_modeling import Space
+from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
 
@@ -274,24 +275,32 @@ class TestTimeSeriesAPI:
             ("metadata", key.casefold()) for a in time_series_list for key in a.metadata or []
         }
 
-    def test_create_retrieve_delete_with_instance_id(self, cognite_client_alpha: CogniteClient) -> None:
-        my_timeseries = TimeSeriesWrite(
-            instance_id=NodeId("sp_123", "ts_456"),
-            name="my timeseries",
-            description="a timeseries",
-            is_step=False,
+    def test_create_retrieve_delete_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, alpha_test_space: Space
+    ) -> None:
+        my_ts = TimesSeriesBaseApply(
+            space=alpha_test_space.space,
+            external_id="ts_python_sdk_instance_id_tests",
             is_string=False,
+            is_step=False,
+            name="Create Retrieve Delete with instance_id",
+            description="This time series was created by the Python SDK",
         )
 
         try:
-            created = cognite_client_alpha.time_series.create(my_timeseries)
+            created = cognite_client_alpha.data_modeling.instances.apply(my_ts)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].as_id() == my_ts.as_id()
 
-            retrieved = cognite_client_alpha.time_series.retrieve(instance_id=my_timeseries.instance_id)
+            retrieved = cognite_client_alpha.time_series.retrieve(instance_id=my_ts.as_id())
 
-            assert retrieved == created
+            assert retrieved.instance_id == my_ts.as_id()
+            cognite_client_alpha.time_series.delete(instance_id=my_ts.as_id())
 
+            retrieved = cognite_client_alpha.time_series.retrieve_multiple(instance_ids=[my_ts.as_id()])
+            assert not retrieved.dump()
         finally:
-            cognite_client_alpha.time_series.delete(instance_id=my_timeseries.instance_id)
+            cognite_client_alpha.data_modeling.instances.delete(nodes=my_ts.as_id())
 
 
 class TestTimeSeriesHelperMethods:
