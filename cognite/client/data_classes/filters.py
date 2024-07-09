@@ -246,7 +246,7 @@ def _validate_filter(
             names = [f.__name__ for f in not_supported]
             raise ValueError(f"The filters {names} are not supported for {api_name}")
     else:
-        raise ValueError(f"Invalid filter type: {type(filter)}. Must be Filter or dict")
+        raise TypeError(f"Invalid filter type: {type(filter)}. Must be Filter or dict")
 
 
 class CompoundFilter(Filter, ABC):
