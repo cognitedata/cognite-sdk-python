@@ -232,6 +232,10 @@ def at_least_one_is_not_none(*args: Any) -> bool:
     return sum(a is not None for a in args) >= 1
 
 
+def at_most_one_is_not_none(*args: Any) -> bool:
+    return sum(a is not None for a in args) <= 1
+
+
 def rename_and_exclude_keys(
     dct: dict[str, Any], aliases: dict[str, str] | None = None, exclude: set[str] | None = None
 ) -> dict[str, Any]:

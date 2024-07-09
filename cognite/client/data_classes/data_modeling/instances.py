@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import warnings
 from abc import ABC, abstractmethod
-from collections import UserList, defaultdict
+from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -1021,11 +1021,10 @@ class NodeListWithCursor(NodeList[T_Node]):
 
     def extend(self, other: NodeListWithCursor) -> None:  # type: ignore[override]
         if not isinstance(other, type(self)):
-            raise ValueError("Unable to extend as the types do not match")
+            raise TypeError("Unable to extend as the types do not match")
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
-        if self._external_id_to_item.keys().isdisjoint(other_res_list._external_id_to_item.keys()):
-            # Skip super() as we need the original type.
-            UserList.extend(self, other)
+        if self._external_id_to_item.keys().isdisjoint(other_res_list._external_id_to_item):
+            self.data.extend(other.data)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
             self.cursor = other.cursor
         else:
@@ -1087,11 +1086,10 @@ class EdgeListWithCursor(EdgeList):
 
     def extend(self, other: EdgeListWithCursor) -> None:  # type: ignore[override]
         if not isinstance(other, type(self)):
-            raise ValueError("Unable to extend as the types do not match")
+            raise TypeError("Unable to extend as the types do not match")
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
         if self._external_id_to_item.keys().isdisjoint(other_res_list._external_id_to_item):
-            # Skip super() as we need the original type.
-            UserList.extend(self, other)
+            self.data.extend(other.data)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
             self.cursor = other.cursor
         else:
