@@ -196,7 +196,7 @@ class Filter(ABC):
                 if isinstance(filter_, Filter):
                     output.update(filter_._involved_filter_types())
                 else:
-                    raise ValueError(f"Unknown filter type: {type(filter_)}. Expected Filter got {type(filter_)}")
+                    raise TypeError(f"Unknown filter type: {type(filter_)}")
         return output
 
 
