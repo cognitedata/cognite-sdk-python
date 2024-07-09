@@ -238,6 +238,9 @@ def _validate_filter(
 ) -> None:
     if filter is None or isinstance(filter, dict):
         return
+    elif not isinstance(filter, Filter):
+        raise TypeError(f"Invalid filter type: {type(filter)}. Must be Filter or dict")
+
     if not_supported := (filter._involved_filter_types() - supported_filters):
         names = [f.__name__ for f in not_supported]
         raise ValueError(f"The filters {names} are not supported for {api_name}")
@@ -247,6 +250,8 @@ class CompoundFilter(Filter, ABC):
     _filter_name = "compound"
 
     def __init__(self, *filters: Filter) -> None:
+        if not_flt := [flt for flt in filters if not isinstance(flt, Filter)]:
+            raise TypeError(f"One or more invalid filters, expected Filter, got: {not_flt}")
         self._filters = filters
 
     def _filter_body(self, camel_case_property: bool) -> list | dict:
