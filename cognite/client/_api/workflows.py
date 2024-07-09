@@ -39,6 +39,14 @@ WorkflowIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
 WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str]]
 
 
+def wrap_workflow_ids(
+    workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None,
+) -> list[dict[str, Any]]:
+    if workflow_version_ids is None:
+        return []
+    return WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
+
+
 class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
@@ -347,11 +355,15 @@ class WorkflowVersionAPI(APIClient):
             limit (int | None): Maximum number of workflow versions to return. Defaults to returning all.
 
         Returns:
-            Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]: Returns an iterator over workflow versions.
-
+            Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
         """
         return self._list_generator(
-            method="GET", resource_cls=WorkflowVersion, list_cls=WorkflowVersionList, limit=limit, chunk_size=chunk_size
+            method="GET",
+            resource_cls=WorkflowVersion,
+            list_cls=WorkflowVersionList,
+            filter={"workflowFilters": wrap_workflow_ids(workflow_version_ids)},
+            limit=limit,
+            chunk_size=chunk_size,
         )
 
     def __iter__(self) -> Iterator[WorkflowVersion]:
@@ -506,16 +518,11 @@ class WorkflowVersionAPI(APIClient):
                 >>> res = client.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
-        if workflow_version_ids is None:
-            workflow_ids_dumped = []
-        else:
-            workflow_ids_dumped = WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
-
         return self._list(
             method="POST",
             resource_cls=WorkflowVersion,
             list_cls=WorkflowVersionList,
-            filter={"workflowFilters": workflow_ids_dumped},
+            filter={"workflowFilters": wrap_workflow_ids(workflow_version_ids)},
             limit=limit,
         )
 
@@ -551,7 +558,7 @@ class WorkflowAPI(APIClient):
             limit (int | None): Maximum number of workflows to return. Defaults to returning all items.
 
         Returns:
-            Iterator[Workflow] | Iterator[WorkflowList]: Returns an iterator over workflows.
+            Iterator[Workflow] | Iterator[WorkflowList]: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
 
         """
         return self._list_generator(
