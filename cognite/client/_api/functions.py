@@ -13,7 +13,7 @@ from multiprocessing import Process, Queue
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Sequence, overload
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -33,7 +33,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
-from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
@@ -70,6 +70,20 @@ def _get_function_identifier(function_id: int | None, function_external_id: str 
     if identifier.is_singleton():
         return identifier[0]
     raise ValueError("Exactly one of function_id and function_external_id must be specified")
+
+
+@overload
+def _ensure_at_most_one_id_given(function_id: int, function_external_id: str) -> NoReturn: ...
+
+
+@overload
+def _ensure_at_most_one_id_given(function_id: int | None, function_external_id: str | None) -> None: ...
+
+
+def _ensure_at_most_one_id_given(function_id: int | None, function_external_id: str | None) -> None:
+    if at_most_one_is_not_none(function_id, function_external_id):
+        return
+    raise ValueError("Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither.")
 
 
 class FunctionsAPI(APIClient):
@@ -986,6 +1000,7 @@ class FunctionSchedulesAPI(APIClient):
         cron_expression: str | None = None,
         limit: int | None = None,
     ) -> Iterator[FunctionSchedule]: ...
+
     @overload
     def __call__(
         self,
@@ -1023,13 +1038,7 @@ class FunctionSchedulesAPI(APIClient):
             Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]: yields function schedules.
 
         """
-        if function_id or function_external_id:
-            try:
-                IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
-            except ValueError:
-                raise ValueError(
-                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
-                ) from None
+        _ensure_at_most_one_id_given(function_id, function_external_id)
 
         filter_ = FunctionSchedulesFilter(
             name=name,
@@ -1038,6 +1047,7 @@ class FunctionSchedulesAPI(APIClient):
             created_time=created_time,
             cron_expression=cron_expression,
         ).dump(camel_case=True)
+
         return self._list_generator(
             method="POST",
             url_path=f"{self._RESOURCE_PATH}/list",
@@ -1113,17 +1123,10 @@ class FunctionSchedulesAPI(APIClient):
                 >>> schedules = func.list_schedules(limit=None)
 
         """
-        if function_id or function_external_id:
-            try:
-                IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
-            except ValueError:
-                raise ValueError(
-                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
-                ) from None
-
         if is_unlimited(limit):
             limit = self._LIST_LIMIT_CEILING
 
+        _ensure_at_most_one_id_given(function_id, function_external_id)
         filter = FunctionSchedulesFilter(
             name=name,
             function_id=function_id,
