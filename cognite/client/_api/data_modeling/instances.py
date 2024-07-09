@@ -1544,10 +1544,7 @@ class InstancesAPI(APIClient):
         space_filter = filters.SpaceFilter(space, instance_type)
         if filter is None:
             return space_filter
-        elif isinstance(filter, (dict, Filter)):
-            return filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)
-        else:
-            raise ValueError(f"Invalid filter type: {type(filter)}. Must be Filter or dict")
+        return filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)
 
     @staticmethod
     def _to_instance_type_str(
