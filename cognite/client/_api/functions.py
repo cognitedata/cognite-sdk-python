@@ -13,7 +13,7 @@ from multiprocessing import Process, Queue
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Sequence, overload
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -33,7 +33,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
-from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
@@ -72,8 +72,23 @@ def _get_function_identifier(function_id: int | None, function_external_id: str 
     raise ValueError("Exactly one of function_id and function_external_id must be specified")
 
 
+@overload
+def _ensure_at_most_one_id_given(function_id: int, function_external_id: str) -> NoReturn: ...
+
+
+@overload
+def _ensure_at_most_one_id_given(function_id: int | None, function_external_id: str | None) -> None: ...
+
+
+def _ensure_at_most_one_id_given(function_id: int | None, function_external_id: str | None) -> None:
+    if at_most_one_is_not_none(function_id, function_external_id):
+        return
+    raise ValueError("Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither.")
+
+
 class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
+    _RESOURCE_PATH_CALL = "/functions/{}/call"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -146,7 +161,7 @@ class FunctionsAPI(APIClient):
 
         return self._list_generator(
             method="POST",
-            resource_path="/functions/list",
+            resource_path=self._RESOURCE_PATH + "/list",
             filter=filter_,
             limit=limit,
             chunk_size=chunk_size,
@@ -156,7 +171,7 @@ class FunctionsAPI(APIClient):
 
     def __iter__(self) -> Iterator[Function]:
         """Iterate over all functions."""
-        return self.__call__()
+        return self()
 
     def create(
         self,
@@ -476,7 +491,7 @@ class FunctionsAPI(APIClient):
 
         if data is None:
             data = {}
-        url = f"/functions/{id}/call"
+        url = self._RESOURCE_PATH_CALL.format(id)
         res = self._post(url, json={"data": data, "nonce": nonce})
 
         function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
@@ -498,7 +513,7 @@ class FunctionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> limits = client.functions.limits()
         """
-        res = self._get("/functions/limits")
+        res = self._get(self._RESOURCE_PATH + "/limits")
         return FunctionsLimits.load(res.json())
 
     def _zip_and_upload_folder(
@@ -600,7 +615,7 @@ class FunctionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> status = client.functions.activate()
         """
-        res = self._post("/functions/status")
+        res = self._post(self._RESOURCE_PATH + "/status")
         return FunctionsStatus.load(res.json())
 
     def status(self) -> FunctionsStatus:
@@ -617,7 +632,7 @@ class FunctionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> status = client.functions.status()
         """
-        res = self._get("/functions/status")
+        res = self._get(self._RESOURCE_PATH + "/status")
         return FunctionsStatus.load(res.json())
 
 
@@ -986,6 +1001,7 @@ class FunctionSchedulesAPI(APIClient):
         cron_expression: str | None = None,
         limit: int | None = None,
     ) -> Iterator[FunctionSchedule]: ...
+
     @overload
     def __call__(
         self,
@@ -1023,13 +1039,7 @@ class FunctionSchedulesAPI(APIClient):
             Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]: yields function schedules.
 
         """
-        if function_id or function_external_id:
-            try:
-                IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
-            except ValueError:
-                raise ValueError(
-                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
-                ) from None
+        _ensure_at_most_one_id_given(function_id, function_external_id)
 
         filter_ = FunctionSchedulesFilter(
             name=name,
@@ -1038,6 +1048,7 @@ class FunctionSchedulesAPI(APIClient):
             created_time=created_time,
             cron_expression=cron_expression,
         ).dump(camel_case=True)
+
         return self._list_generator(
             method="POST",
             url_path=f"{self._RESOURCE_PATH}/list",
@@ -1050,7 +1061,7 @@ class FunctionSchedulesAPI(APIClient):
 
     def __iter__(self) -> Iterator[FunctionSchedule]:
         """Iterate over all function schedules"""
-        return self.__call__()
+        return self()
 
     def retrieve(self, id: int) -> FunctionSchedule | None:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
@@ -1113,17 +1124,10 @@ class FunctionSchedulesAPI(APIClient):
                 >>> schedules = func.list_schedules(limit=None)
 
         """
-        if function_id or function_external_id:
-            try:
-                IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
-            except ValueError:
-                raise ValueError(
-                    "Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither."
-                ) from None
-
         if is_unlimited(limit):
             limit = self._LIST_LIMIT_CEILING
 
+        _ensure_at_most_one_id_given(function_id, function_external_id)
         filter = FunctionSchedulesFilter(
             name=name,
             function_id=function_id,

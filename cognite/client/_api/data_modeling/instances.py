@@ -645,7 +645,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
                 >>> client = CogniteClient()
-                >>> my_view = client.data_modeling.views.retrieve('mySpace', 'myView')
+                >>> my_view = client.data_modeling.views.retrieve(('mySpace', 'myView'))
                 >>> my_nodes = client.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
                 >>> client.data_modeling.instances.delete(nodes=my_nodes.as_ids())
         """

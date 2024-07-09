@@ -95,8 +95,8 @@ class TransformationsAPI(APIClient):
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: list[int] | None = None,
-        data_set_external_ids: list[str] | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = None,
     ) -> Iterator[Transformation] | Iterator[TransformationList]:
@@ -113,21 +113,15 @@ class TransformationsAPI(APIClient):
             has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
             created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
             last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            data_set_ids (list[int] | None): Return only transformations in the specified data sets with these ids.
-            data_set_external_ids (list[str] | None): Return only transformations in the specified data sets with these external ids.
+            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
             tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
 
         Returns:
             Iterator[Transformation] | Iterator[TransformationList]: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
         """
-        ds_ids: list[dict[str, Any]] | None = None
-        if data_set_ids and data_set_external_ids:
-            ds_ids = [*[{"id": i} for i in data_set_ids], *[{"externalId": i} for i in data_set_external_ids]]
-        elif data_set_ids:
-            ds_ids = [{"id": i} for i in data_set_ids]
-        elif data_set_external_ids:
-            ds_ids = [{"externalId": i} for i in data_set_external_ids]
+        ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
 
         filter_ = TransformationFilter(
             include_public=include_public,
@@ -140,7 +134,7 @@ class TransformationsAPI(APIClient):
             created_time=created_time,
             last_updated_time=last_updated_time,
             tags=tags,
-            data_set_ids=ds_ids,
+            data_set_ids=ds_ids or None,
         ).dump(camel_case=True)
 
         return self._list_generator(
@@ -299,8 +293,8 @@ class TransformationsAPI(APIClient):
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: list[int] | None = None,
-        data_set_external_ids: list[str] | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationList:
@@ -316,8 +310,8 @@ class TransformationsAPI(APIClient):
             has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
             created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
             last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            data_set_ids (list[int] | None): Return only transformations in the specified data sets with these ids.
-            data_set_external_ids (list[str] | None): Return only transformations in the specified data sets with these external ids.
+            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
             tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
@@ -332,13 +326,7 @@ class TransformationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> transformations_list = client.transformations.list()
         """
-        ds_ids: list[dict[str, Any]] | None = None
-        if data_set_ids and data_set_external_ids:
-            ds_ids = [*[{"id": i} for i in data_set_ids], *[{"externalId": i} for i in data_set_external_ids]]
-        elif data_set_ids:
-            ds_ids = [{"id": i} for i in data_set_ids]
-        elif data_set_external_ids:
-            ds_ids = [{"externalId": i} for i in data_set_external_ids]
+        ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
 
         filter = TransformationFilter(
             include_public=include_public,
@@ -351,8 +339,9 @@ class TransformationsAPI(APIClient):
             created_time=created_time,
             last_updated_time=last_updated_time,
             tags=tags,
-            data_set_ids=ds_ids,
+            data_set_ids=ds_ids or None,
         ).dump(camel_case=True)
+
         return self._list(
             list_cls=TransformationList,
             resource_cls=Transformation,
