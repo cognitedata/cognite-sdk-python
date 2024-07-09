@@ -22,14 +22,12 @@ Changes are grouped as follows
 ### Fixed
 - If you derived from `TypedNode` or `TypedEdge`, and then derived the `load` method would not include the parent
   class properties. Same if you used multiple inheritance. This is now fixed.
-
 ### Added
-
-- [Feature Preview - alpha] Core Model, available `cognite.client.data_classes import cdm`. 
+- [Feature Preview - alpha] Core Model, available `cognite.client.data_classes import cdm`.
 
 ## [7.53.1] - 2024-07-02
 ### Fixed
-- In the new `.retrieve_nodes` and `retrieve_edges` methods in the `client.data_modeling.instances` module, if you 
+- In the new `retrieve_nodes` and `retrieve_edges` methods in the `client.data_modeling.instances` module, if you
   give the identifier of a single node or edge, you will now get a single `TypedNode` or `TypedEdge` instance back.
 
 ## [7.53.0] - 2024-07-02
@@ -37,7 +35,7 @@ Changes are grouped as follows
 - New classes `TypedNode` and `TypedEdge` (in addition to `TypedNodeApply` and `TypedEdgeApply`) to be used as
   base classes for user created classes that represent nodes and edges with properties in a specific view. For example,
   is you have a view `Person` with properties `name` and `age`, you can create a class `Person` that inherits from
-  `TypedNode` and add properties `name` and `age` to it. This class can then be used with the 
+  `TypedNode` and add properties `name` and `age` to it. This class can then be used with the
   `client.data_modeling.instances.retrieve(..)`, `.apply(...)`, `.list(...)` and `.search(...)` methods.
 
 ## [7.52.3] - 2024-06-27
@@ -46,12 +44,12 @@ Changes are grouped as follows
 
 ## [7.52.2] - 2024-06-26
 ### Added
-- Alpha feature, in `client.time_series.data` support for `instance_id` in `.insert`, `insert_multiple`,
-  `.delete`, and `.retrieve` methods. This is an experimental feature and may change without warning.
+- Alpha feature: `client.time_series.data` support for `instance_id` in `insert`, `insert_multiple`,
+  `delete`, and `retrieve` methods. This is an experimental feature and may change without warning.
 
 ## [7.52.1] - 2024-06-26
 ### Fixed
--  Calling `.extend` on a `NodeListWithCursor` or `EdgeListWithCursor` would raise a `TypeError`. This is now fixed.
+- Calling `.extend` on a `NodeListWithCursor` or `EdgeListWithCursor` no longer raises a `TypeError`.
 
 ## [7.52.0] - 2024-06-19
 ### Added
@@ -59,7 +57,7 @@ Changes are grouped as follows
 
 ## [7.51.1] - 2024-06-18
 ### Added
-- Added support for serializing Node/Edge properties of type `list` of `NodeId`and `DirectRelationReference`, 
+- Added support for serializing Node/Edge properties of type `list` of `NodeId` and `DirectRelationReference`,
   `date`, `datetime` and list of `date` and `datetime` to `json` format.
 
 ## [7.51.0] - 2024-06-16
