@@ -193,10 +193,11 @@ class Filter(ABC):
         output = {type(self)}
         if isinstance(self, CompoundFilter):
             for filter_ in self._filters:
-                output.update(filter_._involved_filter_types())
-        elif isinstance(self, Filter):
-            return output
-        raise ValueError(f"Unknown filter type: {type(self)}. Expected Filter got {type(self)}")
+                if isinstance(filter_, Filter):
+                    output.update(filter_._involved_filter_types())
+                else:
+                    raise ValueError(f"Unknown filter type: {type(filter_)}. Expected Filter got {type(filter_)}")
+        return output
 
 
 class UnknownFilter(Filter):
