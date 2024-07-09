@@ -241,6 +241,7 @@ class TimeSeries(TimeSeriesCore):
         """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""
         return TimeSeriesWrite(
             external_id=self.external_id,
+            instance_id=self.instance_id,
             name=self.name,
             is_string=self.is_string,
             metadata=self.metadata,

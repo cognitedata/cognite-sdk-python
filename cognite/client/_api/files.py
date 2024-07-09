@@ -35,7 +35,7 @@ from cognite.client.data_classes import (
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import execute_tasks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, InstanceId
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -919,7 +919,7 @@ class FilesAPI(APIClient):
     @staticmethod
     def _get_ids_filepaths_directories(
         directory: Path,
-        id_to_metadata: dict[str | int, FileMetadata],
+        id_to_metadata: dict[str | int | InstanceId, FileMetadata],
         keep_directory_structure: bool = False,
     ) -> tuple[list[dict[str, str | int]], list[Path], list[Path]]:
         # Note on type hint: Too much of the SDK is wrongly typed with 'dict[str, str | int]',
@@ -952,13 +952,13 @@ class FilesAPI(APIClient):
                 stacklevel=2,
             )
 
-    def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int, FileMetadata]:
+    def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int | InstanceId, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
 
         files_metadata = self.retrieve_multiple(ids=ids, external_ids=external_ids)
 
-        id_to_metadata: dict[str | int, FileMetadata] = {}
+        id_to_metadata: dict[str | int | InstanceId, FileMetadata] = {}
         for f in files_metadata:
             id_to_metadata[f.id] = f
             if f.external_id is not None:
@@ -970,7 +970,7 @@ class FilesAPI(APIClient):
         self,
         directory: Path,
         all_ids: Sequence[dict[str, int | str]],
-        id_to_metadata: dict[str | int, FileMetadata],
+        id_to_metadata: dict[str | int | InstanceId, FileMetadata],
         filepaths: list[Path],
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)

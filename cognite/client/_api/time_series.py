@@ -637,12 +637,20 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.time_series.update(my_update)
         """
+        headers: dict | None = None
+        if (isinstance(item, (TimeSeries, TimeSeriesWrite)) and item.instance_id) or (
+            isinstance(item, Sequence)
+            and any(ts.instance_id for ts in item if isinstance(ts, (TimeSeries, TimeSeriesWrite)))
+        ):
+            self._use_alpha()
+            headers = {"cdf-version": "alpha"}
 
         return self._update_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             update_cls=TimeSeriesUpdate,
             items=item,
+            headers=headers,
         )
 
     @overload

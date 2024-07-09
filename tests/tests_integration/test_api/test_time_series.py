@@ -293,9 +293,12 @@ class TestTimeSeriesAPI:
             assert created.nodes[0].as_id() == my_ts.as_id()
 
             retrieved = cognite_client_alpha.time_series.retrieve(instance_id=my_ts.as_id())
-
             assert retrieved.instance_id == my_ts.as_id()
-            cognite_client_alpha.time_series.delete(instance_id=my_ts.as_id())
+
+            update = retrieved.as_write()
+            update.description = "Updated description"
+            updated = cognite_client_alpha.time_series.update(update)
+            updated.description = "Updated description"
 
             retrieved = cognite_client_alpha.time_series.retrieve_multiple(instance_ids=[my_ts.as_id()])
             assert not retrieved.dump()

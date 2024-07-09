@@ -246,7 +246,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         return len(self) == len(set(self.as_primitives()))
 
     @staticmethod
-    def unwrap_identifier(identifier: str | int | dict) -> str | int:
+    def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
         if isinstance(identifier, (str, int)):
             return identifier
         if "externalId" in identifier:
@@ -255,6 +255,8 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
             return identifier["id"]
         if "space" in identifier:
             return identifier["space"]
+        if "instanceId" in identifier:
+            return InstanceId.load(identifier["instanceId"])
         raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
 
     @staticmethod
