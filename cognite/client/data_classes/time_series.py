@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC
 from datetime import datetime
 from enum import auto
@@ -38,7 +39,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
-        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
@@ -48,7 +49,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def __init__(
@@ -77,6 +78,12 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         self.description = description
         self.security_categories = security_categories
         self.data_set_id = data_set_id
+        if legacy_name is not None:
+            warnings.warn(
+                "The 'legacy_name' is not used and will be ignored. " "It will be completely removed October 2024.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.legacy_name = legacy_name
 
 
@@ -88,7 +95,7 @@ class TimeSeries(TimeSeriesCore):
     Args:
         id (int | None): A server-generated ID for the object.
         external_id (str | None): The externally supplied ID for the time series.
-        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
@@ -100,7 +107,7 @@ class TimeSeries(TimeSeriesCore):
         data_set_id (int | None): The dataSet ID for the item.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -232,7 +239,7 @@ class TimeSeriesWrite(TimeSeriesCore):
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
-        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
@@ -242,7 +249,7 @@ class TimeSeriesWrite(TimeSeriesCore):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def as_write(self) -> TimeSeriesWrite:
