@@ -491,20 +491,30 @@ class TimeSeriesUpdate(CogniteUpdate):
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
-        return [
-            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
-            PropertySpec("external_id", is_nullable=False),
-            PropertySpec("name"),
-            # TimeSeries does not support setting metadata to an empty array.
-            PropertySpec("metadata", is_container=True, is_nullable=False),
-            PropertySpec("unit"),
-            PropertySpec("unit_external_id"),
-            PropertySpec("asset_id"),
-            PropertySpec("description"),
-            PropertySpec("is_step", is_nullable=False),
-            PropertySpec("security_categories", is_container=True),
-            PropertySpec("data_set_id"),
-        ]
+        if isinstance(item, (TimeSeries, TimeSeriesWrite)) and item.instance_id:
+            return [
+                # If Instance ID is set, the time series was created in DMS. Then, it is
+                # limited which properties can be updated. (Only the ones that are not in DMS + security categories)
+                PropertySpec("external_id", is_nullable=False),
+                PropertySpec("metadata", is_container=True, is_nullable=False),
+                PropertySpec("asset_id"),
+                PropertySpec("data_set_id"),
+            ]
+        else:
+            return [
+                # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+                PropertySpec("external_id", is_nullable=False),
+                PropertySpec("name"),
+                # TimeSeries does not support setting metadata to an empty array.
+                PropertySpec("metadata", is_container=True, is_nullable=False),
+                PropertySpec("unit"),
+                PropertySpec("unit_external_id"),
+                PropertySpec("asset_id"),
+                PropertySpec("description"),
+                PropertySpec("is_step", is_nullable=False),
+                PropertySpec("security_categories", is_container=True),
+                PropertySpec("data_set_id"),
+            ]
 
 
 class TimeSeriesWriteList(CogniteResourceList[TimeSeriesWrite], ExternalIDTransformerMixin):

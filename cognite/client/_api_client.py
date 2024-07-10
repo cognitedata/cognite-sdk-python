@@ -1127,12 +1127,12 @@ class APIClient:
         has_instance_id = "instanceId" in dumped_resource
 
         patch_object: dict[str, dict[str, dict]] = {"update": {}}
-        if has_id:
+        if has_instance_id:
+            patch_object["instanceId"] = dumped_resource.pop("instanceId")
+        elif has_id:
             patch_object["id"] = dumped_resource.pop("id")
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")
-        elif has_instance_id:
-            patch_object["instanceId"] = dumped_resource.pop("instanceId")
 
         update: dict[str, dict] = cls._clear_all_attributes(update_attributes) if mode == "replace" else {}
 
