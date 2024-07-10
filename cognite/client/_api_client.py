@@ -427,87 +427,35 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
-        verify_limit(limit)
-        if is_unlimited(limit):
-            limit = None
         if partitions:
             warnings.warn("passing `partitions` to a generator method is not supported, so it's being ignored")
             # set chunk_size to None in order to not break the existing API.
             # TODO: Remove this and support for partitions (in combo with generator) in the next major version
             chunk_size = None
-
-        total_items_retrieved = 0
-        current_limit = self._LIST_LIMIT
-        next_cursor = initial_cursor
-        filter = filter or {}
-        if method == "GET":
-            url_path = url_path or resource_path or self._RESOURCE_PATH
-            if sort is not None:
-                filter["sort"] = sort
-            filter.update(other_params or {})
-
-        elif method == "POST":
-            url_path = url_path or (resource_path or self._RESOURCE_PATH) + "/list"
-            body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
-            if filter:
-                body["filter"] = filter
-            if advanced_filter:
-                if isinstance(advanced_filter, Filter):
-                    # TODO: Does our json.dumps now understand Filter?
-                    body["advancedFilter"] = advanced_filter.dump(camel_case_property=True)
-                else:
-                    body["advancedFilter"] = advanced_filter
-            if sort is not None:
-                body["sort"] = sort
-        else:
-            raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
-
+        limit, url_path, params = self._prepare_params_for_list_generator(
+            limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
+        )
         unprocessed_items: list[dict[str, Any]] = []
+        total_retrieved, current_limit, next_cursor = 0, self._LIST_LIMIT, initial_cursor
         while True:
-            if limit:
-                num_of_remaining_items = limit - total_items_retrieved
-                if num_of_remaining_items < current_limit:
-                    current_limit = num_of_remaining_items
+            if limit and (n_remaining := limit - total_retrieved) < current_limit:
+                current_limit = n_remaining
 
+            params.update(limit=current_limit, cursor=next_cursor)
             if method == "GET":
-                filter.update(limit=current_limit, cursor=next_cursor)
-                res = self._get(url_path=url_path, params=filter, headers=headers)
+                res = self._get(url_path=url_path, params=params, headers=headers)
             else:
-                body.update(limit=current_limit, cursor=next_cursor)
-                res = self._post(url_path=url_path, json=body, headers=headers, api_subversion=api_subversion)
+                res = self._post(url_path=url_path, json=params, headers=headers, api_subversion=api_subversion)
 
             response = res.json()
-            yield from self._list_generator_items(response, chunk_size, resource_cls, list_cls, unprocessed_items)
+            yield from self._process_into_chunks(response, chunk_size, resource_cls, list_cls, unprocessed_items)
 
             next_cursor = response.get("nextCursor")
-            total_items_retrieved += len(response["items"])
-
-            if total_items_retrieved == limit or next_cursor is None:
-                if chunk_size and unprocessed_items:
+            total_retrieved += len(response["items"])
+            if total_retrieved == limit or next_cursor is None:
+                if unprocessed_items:  # can only happen when using chunk_size
                     yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
                 break
-
-    def _list_generator_items(
-        self,
-        response: dict[str, Any],
-        chunk_size: int | None,
-        resource_cls: type[T_CogniteResource],
-        list_cls: type[T_CogniteResourceList],
-        unprocessed_items: list[dict[str, Any]],
-    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
-        if not chunk_size:
-            for item in response["items"]:
-                yield resource_cls._load(item, cognite_client=self._cognite_client)
-        else:
-            unprocessed_items.extend(response["items"])
-            if len(unprocessed_items) >= chunk_size:
-                chunks = split_into_chunks(unprocessed_items, chunk_size)
-                if chunks and len(chunks[-1]) < chunk_size:
-                    unprocessed_items = chunks.pop(-1)
-                else:
-                    unprocessed_items = []
-                for chunk in chunks:
-                    yield list_cls._load(chunk, cognite_client=self._cognite_client)
 
     def _list_generator_raw_responses(
         self,
@@ -526,9 +474,6 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        verify_limit(limit)
-        if is_unlimited(limit):
-            limit = None
         if partitions:
             raise ValueError("When fetching additional data (besides items), using partitions is not supported")
         if not chunk_size:
@@ -543,21 +488,51 @@ class APIClient:
                 f"settings: {settings_forcing_raw_response_loading}.",
                 UserWarning,
             )
-        del chunk_size
+        limit, url_path, params = self._prepare_params_for_list_generator(
+            limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
+        )
+        total_retrieved, current_limit, next_cursor = 0, self._LIST_LIMIT, initial_cursor
+        while True:
+            if limit and (n_remaining := limit - total_retrieved) < current_limit:
+                current_limit = n_remaining
 
-        total_items_retrieved = 0
-        current_limit = self._LIST_LIMIT
-        next_cursor = initial_cursor
-        filter = filter or {}
+            params.update(limit=current_limit, cursor=next_cursor)
+            if method == "GET":
+                res = self._get(url_path=url_path, params=params, headers=headers)
+            else:
+                res = self._post(url_path=url_path, json=params, headers=headers, api_subversion=api_subversion)
+
+            yield (response := res.json())
+            next_cursor = response.get("nextCursor")
+            total_retrieved += len(response["items"])
+            if total_retrieved == limit or next_cursor is None:
+                break
+
+    def _prepare_params_for_list_generator(
+        self,
+        limit: int | None,
+        method: Literal["GET", "POST"],
+        filter: dict[str, Any] | None,
+        url_path: str | None,
+        resource_path: str | None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None,
+        other_params: dict[str, Any] | None,
+        advanced_filter: dict | Filter | None,
+    ) -> tuple[int | None, str, dict[str, Any]]:
+        verify_limit(limit)
+        if is_unlimited(limit):
+            limit = None
+        filter, other_params = (filter or {}).copy(), (other_params or {}).copy()
         if method == "GET":
             url_path = url_path or resource_path or self._RESOURCE_PATH
             if sort is not None:
                 filter["sort"] = sort
-            filter.update(other_params or {})
+            filter.update(other_params)
+            return limit, url_path, filter
 
-        elif method == "POST":
+        if method == "POST":
             url_path = url_path or (resource_path or self._RESOURCE_PATH) + "/list"
-            body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+            body: dict[str, Any] = {}
             if filter:
                 body["filter"] = filter
             if advanced_filter:
@@ -568,27 +543,30 @@ class APIClient:
                     body["advancedFilter"] = advanced_filter
             if sort is not None:
                 body["sort"] = sort
+            body.update(other_params)
+            return limit, url_path, body
+        raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
+
+    def _process_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: int | None,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
+        if not chunk_size:
+            for item in response["items"]:
+                yield resource_cls._load(item, cognite_client=self._cognite_client)
         else:
-            raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
-
-        while True:
-            if limit:
-                num_of_remaining_items = limit - total_items_retrieved
-                if num_of_remaining_items < current_limit:
-                    current_limit = num_of_remaining_items
-
-            if method == "GET":
-                filter.update(limit=current_limit, cursor=next_cursor)
-                res = self._get(url_path=url_path, params=filter, headers=headers)
-            else:
-                body.update(limit=current_limit, cursor=next_cursor)
-                res = self._post(url_path=url_path, json=body, headers=headers, api_subversion=api_subversion)
-
-            yield (response := res.json())
-            next_cursor = response.get("nextCursor")
-            total_items_retrieved += len(response["items"])
-            if total_items_retrieved == limit or next_cursor is None:
-                break
+            unprocessed_items.extend(response["items"])
+            if len(unprocessed_items) >= chunk_size:
+                chunks = split_into_chunks(unprocessed_items, chunk_size)
+                unprocessed_items.clear()
+                if chunks and len(chunks[-1]) < chunk_size:
+                    unprocessed_items.extend(chunks.pop(-1))
+                for chunk in chunks:
+                    yield list_cls._load(chunk, cognite_client=self._cognite_client)
 
     def _list(
         self,
@@ -635,7 +613,6 @@ class APIClient:
         fetch_kwargs = dict(
             resource_path=resource_path or self._RESOURCE_PATH,
             url_path=url_path,
-            method=method,
             limit=limit,
             chunk_size=self._LIST_LIMIT,
             filter=filter,
@@ -646,8 +623,12 @@ class APIClient:
             advanced_filter=advanced_filter,
             api_subversion=api_subversion,
         )
-        if not settings_forcing_raw_response_loading:
-            raw_response_fetcher = self._list_generator_raw_responses(**fetch_kwargs)  # type: ignore [arg-type]
+        if settings_forcing_raw_response_loading:
+            raw_response_fetcher = self._list_generator_raw_responses(
+                method,
+                settings_forcing_raw_response_loading,
+                **fetch_kwargs,  # type: ignore [arg-type]
+            )
             return list_cls._load_raw_api_response(
                 list(raw_response_fetcher),
                 cognite_client=self._cognite_client,
@@ -656,7 +637,7 @@ class APIClient:
         #       elements, then do it again. Perhaps a modified version of 'raw responses' should be used:
         resource_fetcher = cast(
             Iterator[T_CogniteResourceList],
-            self._list_generator(list_cls=list_cls, resource_cls=resource_cls, **fetch_kwargs),  # type: ignore [arg-type]
+            self._list_generator(method, list_cls, resource_cls, **fetch_kwargs),  # type: ignore [arg-type]
         )
         return list_cls(
             list(itertools.chain.from_iterable(resource_fetcher)),
