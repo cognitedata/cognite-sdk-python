@@ -283,9 +283,11 @@ class TestTimeSeriesAPI:
             external_id="ts_python_sdk_instance_id_tests",
             is_string=False,
             is_step=False,
+            source_unit="pressure:psi",
             name="Create Retrieve Delete with instance_id",
             description="This time series was created by the Python SDK",
         )
+        update = TimeSeriesUpdate(instance_id=my_ts.as_id()).metadata.add({"a": "b"})
 
         try:
             created = cognite_client_alpha.data_modeling.instances.apply(my_ts)
@@ -293,15 +295,14 @@ class TestTimeSeriesAPI:
             assert created.nodes[0].as_id() == my_ts.as_id()
 
             retrieved = cognite_client_alpha.time_series.retrieve(instance_id=my_ts.as_id())
+            assert retrieved is not None
             assert retrieved.instance_id == my_ts.as_id()
 
-            update = retrieved.as_write()
-            update.description = "Updated description"
             updated = cognite_client_alpha.time_series.update(update)
-            updated.description = "Updated description"
+            assert updated.metadata == {"a": "b"}
 
             retrieved = cognite_client_alpha.time_series.retrieve_multiple(instance_ids=[my_ts.as_id()])
-            assert not retrieved.dump()
+            assert retrieved.dump() == [updated.dump()]
         finally:
             cognite_client_alpha.data_modeling.instances.delete(nodes=my_ts.as_id())
 

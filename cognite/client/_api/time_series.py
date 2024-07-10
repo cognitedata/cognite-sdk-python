@@ -638,9 +638,8 @@ class TimeSeriesAPI(APIClient):
                 >>> res = client.time_series.update(my_update)
         """
         headers: dict | None = None
-        if (isinstance(item, (TimeSeries, TimeSeriesWrite)) and item.instance_id) or (
-            isinstance(item, Sequence)
-            and any(ts.instance_id for ts in item if isinstance(ts, (TimeSeries, TimeSeriesWrite)))
+        if (isinstance(item, Sequence) and any(ts.instance_id for ts in item)) or (
+            isinstance(item, (TimeSeries, TimeSeriesWrite, TimeSeriesUpdate)) and item.instance_id
         ):
             self._use_alpha()
             headers = {"cdf-version": "alpha"}

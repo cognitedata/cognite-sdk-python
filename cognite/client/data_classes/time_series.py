@@ -90,7 +90,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
             )
         self.legacy_name = legacy_name
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the object to a dictionary"""
         output: dict[str, Any] = {}
         if self.external_id is not None:
@@ -209,7 +209,7 @@ class TimeSeries(TimeSeriesCore):
         self.last_updated_time: int = last_updated_time  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["id" if camel_case else "id"] = self.id
         output["createdTime" if camel_case else "created_time"] = self.created_time
@@ -398,9 +398,24 @@ class TimeSeriesUpdate(CogniteUpdate):
     """Changes will be applied to time series.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id (int | None): A server-generated ID for the object.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of the instance this time series belongs to.
     """
+
+    def __init__(
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+    ) -> None:
+        super().__init__(id=id, external_id=external_id)
+        self.instance_id = instance_id
+
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.instance_id is not None:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return output
 
     class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> TimeSeriesUpdate:
