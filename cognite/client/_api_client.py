@@ -1129,11 +1129,9 @@ class APIClient:
         patch_object: dict[str, dict[str, dict]] = {"update": {}}
         if has_instance_id:
             patch_object["instanceId"] = dumped_resource.pop("instanceId")
-            dumped_resource.pop("externalId", None)
             dumped_resource.pop("id", None)
         elif has_id:
             patch_object["id"] = dumped_resource.pop("id")
-            dumped_resource.pop("externalId", None)
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
