@@ -59,7 +59,7 @@ class TransformationNotificationsAPI(APIClient):
             limit (int | None): Limits the number of results to be returned. Defaults to yielding all notifications.
 
         Returns:
-            Iterator[TransformationNotification] | Iterator[TransformationNotificationList]: No description.
+            Iterator[TransformationNotification] | Iterator[TransformationNotificationList]: Yields notifications one by one if chunk_size is None, otherwise yields lists of notifications.
         """
         filter_ = TransformationNotificationFilter(
             transformation_id=transformation_id,
@@ -78,7 +78,7 @@ class TransformationNotificationsAPI(APIClient):
 
     def __iter__(self) -> Iterator[TransformationNotification]:
         """Iterate over all transformation notifications"""
-        return self.__call__()
+        return self()
 
     @overload
     def create(

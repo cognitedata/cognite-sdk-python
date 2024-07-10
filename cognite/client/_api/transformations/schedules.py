@@ -66,7 +66,7 @@ class TransformationSchedulesAPI(APIClient):
 
     def __iter__(self) -> Iterator[TransformationSchedule]:
         """Iterate over all transformation schedules"""
-        return self.__call__()
+        return self()
 
     @overload
     def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule: ...

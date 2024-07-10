@@ -224,7 +224,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
-            raise ValueError("Exactly one of id or external id must be specified")
+            raise ValueError("Exactly one of id or external_id must be specified")
 
     def as_singleton(self) -> SingletonIdentifierSequence:
         self.assert_singleton()

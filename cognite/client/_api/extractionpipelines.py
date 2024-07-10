@@ -76,7 +76,7 @@ class ExtractionPipelinesAPI(APIClient):
 
     def __iter__(self) -> Iterator[ExtractionPipeline]:
         """Iterate over all extraction pipelines"""
-        return self.__call__()
+        return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:
         """`Retrieve a single extraction pipeline by id. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/showExtPipe>`_
@@ -259,6 +259,7 @@ class ExtractionPipelinesAPI(APIClient):
             Update an extraction pipeline that you have fetched. This will perform a full update of the extraction pipeline::
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ExtractionPipelineUpdate
                 >>> client = CogniteClient()
                 >>> update = ExtractionPipelineUpdate(id=1)
                 >>> update.description.set("Another new extpipe")
@@ -313,7 +314,7 @@ class ExtractionPipelineRunsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> runsList = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], statuslimit=5)
+                >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
