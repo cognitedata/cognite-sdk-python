@@ -1116,3 +1116,213 @@ class TimeSeriesBase(TimeSeriesProperties, Describable, Sourceable):
             self.version,
             self.type,
         )
+
+
+class FileClassProperties:
+    file_class = PropertyOptions("fileClass")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "FileClass", "v1")
+
+
+class FileClassApply(FileClassProperties, DescribableApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        file_class: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space, external_id, name, description, tags, aliases, existing_version, type)
+        self.file_class = file_class
+
+
+class FileClass(FileClassProperties, Describable):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        file_class: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        self.file_class = file_class
+
+    def as_write(self) -> FileClassApply:
+        return FileClassApply(
+            self.space,
+            self.external_id,
+            self.file_class,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.version,
+            self.type,
+        )
+
+
+class FileBaseProperties:
+    mime_type = PropertyOptions("mimeType")
+    is_uploaded = PropertyOptions("isUploaded")
+    file_class = PropertyOptions("fileClass")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "FileBase", "v1")
+
+
+class FileBaseApply(FileBaseProperties, DescribableApply, SourceableApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        is_uploaded: bool,
+        assets: list[DirectRelationReference] | list[tuple[str, str]] | None = None,
+        mime_type: str | None = None,
+        directory: str | None = None,
+        file_class: DirectRelationReference | tuple[str, str] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        DescribableApply.__init__(self, space, external_id, name, description, tags, aliases, existing_version, type)
+        SourceableApply.__init__(
+            self,
+            space,
+            external_id,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            existing_version,
+            type,
+        )
+        self.is_uploaded = is_uploaded
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.mime_type = mime_type
+        self.directory = directory
+        self.file_class = DirectRelationReference.load(file_class) if file_class else None
+
+
+class FileBase(FileBaseProperties, Describable, Sourceable):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        is_uploaded: bool,
+        assets: list[DirectRelationReference] | list[tuple[str, str]] | None = None,
+        mime_type: str | None = None,
+        directory: str | None = None,
+        file_class: DirectRelationReference | tuple[str, str] | None = None,
+        source_id: str | None = None,
+        source: str | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        Describable.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        Sourceable.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            type,
+            deleted_time,
+        )
+        self.is_uploaded = is_uploaded
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.mime_type = mime_type
+        self.directory = directory
+        self.file_class = DirectRelationReference.load(file_class) if file_class else None
+
+    def as_write(self) -> FileBaseApply:
+        return FileBaseApply(
+            self.space,
+            self.external_id,
+            self.is_uploaded,
+            self.assets,
+            self.mime_type,
+            self.directory,
+            self.file_class,
+            self.source_id,
+            self.source,
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.version,
+            self.type,
+        )
