@@ -212,15 +212,18 @@ class TimeSeries(TimeSeriesCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["id" if camel_case else "id"] = self.id
-        output["createdTime" if camel_case else "created_time"] = self.created_time
-        output["lastUpdatedTime" if camel_case else "last_updated_time"] = self.last_updated_time
+        if self.id:
+            output["id" if camel_case else "id"] = self.id
+        if self.created_time:
+            output["createdTime" if camel_case else "created_time"] = self.created_time
+        if self.last_updated_time:
+            output["lastUpdatedTime" if camel_case else "last_updated_time"] = self.last_updated_time
         return output
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            id=resource["id"],
+            id=resource.get("id"),
             external_id=resource.get("externalId"),
             instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
             name=resource.get("name"),
