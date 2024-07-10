@@ -212,11 +212,11 @@ class TimeSeries(TimeSeriesCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        if self.id:
+        if self.id is not None:
             output["id" if camel_case else "id"] = self.id
-        if self.created_time:
+        if self.created_time is not None:
             output["createdTime" if camel_case else "created_time"] = self.created_time
-        if self.last_updated_time:
+        if self.last_updated_time is not None:
             output["lastUpdatedTime" if camel_case else "last_updated_time"] = self.last_updated_time
         return output
 
