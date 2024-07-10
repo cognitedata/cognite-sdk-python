@@ -32,9 +32,11 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, InstanceId
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -42,6 +44,10 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
+
+    @staticmethod
+    def _use_alpha() -> None:
+        FeaturePreviewWarning(api_maturity="alpha", feature_name="Files with Instance ID", sdk_maturity="alpha").warn()
 
     @overload
     def __call__(
@@ -232,12 +238,15 @@ class FilesAPI(APIClient):
         file_metadata = FileMetadata._load(returned_file_metadata)
         return file_metadata, upload_url
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> FileMetadata | None:
+    def retrieve(
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+    ) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
 
         Args:
             id (int | None): ID
             external_id (str | None): External ID
+            instance_id (NodeId | None): Instance ID
 
         Returns:
             FileMetadata | None: Requested file metadata or None if it does not exist.
@@ -256,13 +265,20 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.files.retrieve(external_id="1")
         """
-        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
+        headers: dict | None = None
+        if instance_id is not None:
+            self._use_alpha()
+            headers = {"cdf-version": "alpha"}
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers, headers=headers
+        )
 
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
+        instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
@@ -270,6 +286,7 @@ class FilesAPI(APIClient):
         Args:
             ids (Sequence[int] | None): IDs
             external_ids (SequenceNotStr[str] | None): External IDs
+            instance_ids (Sequence[NodeId] | None): Instance IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -289,12 +306,18 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
-        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        headers: dict | None = None
+        if instance_ids is not None:
+            self._use_alpha()
+            headers = {"cdf-version": "alpha"}
+
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
         return self._retrieve_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
+            headers=headers,
         )
 
     def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
