@@ -41,7 +41,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
-        instance_id (NodeId | None): No description.
+        instance_id (NodeId | None): The ID of the instance this time series belongs to.
         name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
