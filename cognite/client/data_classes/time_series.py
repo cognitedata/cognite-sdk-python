@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
@@ -489,7 +490,7 @@ class TimeSeriesUpdate(CogniteUpdate):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "dataSetId")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
             PropertySpec("external_id", is_nullable=False),

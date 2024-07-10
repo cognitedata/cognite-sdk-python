@@ -940,7 +940,7 @@ class APIClient:
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
                 patch_objects.append(
-                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(), mode)
+                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(item), mode)
                 )
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump(camel_case=True))

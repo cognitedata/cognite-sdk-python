@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     ExternalIDTransformerMixin,
@@ -400,7 +401,7 @@ class RelationshipUpdate(CogniteUpdate):
         return RelationshipUpdate._LabelRelationshipUpdate(self, "labels")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("source_type", is_nullable=False),
             PropertySpec("source_external_id", is_nullable=False),

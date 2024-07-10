@@ -643,7 +643,7 @@ class TransformationUpdate(CogniteUpdate):
         return obj
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("external_id", is_nullable=False),
             PropertySpec("name", is_nullable=False),

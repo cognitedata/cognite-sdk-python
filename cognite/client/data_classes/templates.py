@@ -452,7 +452,7 @@ class TemplateInstanceUpdate(CogniteUpdate):
         return TemplateInstanceUpdate._ObjectAssetUpdate(self, "fieldResolvers")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("field_resolvers"),
         ]

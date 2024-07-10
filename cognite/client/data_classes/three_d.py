@@ -208,7 +208,7 @@ class ThreeDModelUpdate(CogniteUpdate):
         return ThreeDModelUpdate._PrimitiveThreeDModelUpdate(self, "dataSetId")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name", is_nullable=False),
             PropertySpec("metadata", is_container=True),
@@ -464,7 +464,7 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
         return ThreeDModelRevisionUpdate._ObjectThreeDModelRevisionUpdate(self, "metadata")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("published", is_nullable=False),
             PropertySpec("rotation", is_nullable=False),
