@@ -355,7 +355,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
-        load_raw_response: bool = False,
+        settings_forcing_raw_response_loading: list[str] | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -390,7 +390,7 @@ class APIClient:
                 return None
             raise
 
-        if load_raw_response:
+        if settings_forcing_raw_response_loading:
             # The API response include one or more top-level keys than items we care about:
             loaded = list_cls._load_raw_api_response(
                 tasks_summary.raw_api_responses, cognite_client=self._cognite_client
@@ -410,7 +410,7 @@ class APIClient:
 
     def _list_generator(
         self,
-        method: str,
+        method: Literal["GET", "POST"],
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
         resource_path: str | None = None,
@@ -425,6 +425,7 @@ class APIClient:
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
+        settings_forcing_raw_response_loading: list[str] | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
         verify_limit(limit)
         if is_unlimited(limit):
@@ -440,7 +441,7 @@ class APIClient:
         current_limit = self._LIST_LIMIT
         next_cursor = initial_cursor
         filter = filter or {}
-        unprocessed_items = []
+        unprocessed_items: list[dict[str, Any]] = []
         while True:
             if limit:
                 num_of_remaining_items = limit - total_items_retrieved
@@ -476,28 +477,64 @@ class APIClient:
                 )
             else:
                 raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
-            last_received_items = res.json()["items"]
-            total_items_retrieved += len(last_received_items)
 
-            if not chunk_size:
-                for item in last_received_items:
-                    yield resource_cls._load(item, cognite_client=self._cognite_client)
+            response = res.json()
+            if settings_forcing_raw_response_loading:
+                yield from self._list_generator_raw_response(
+                    response, chunk_size, list_cls, settings_forcing_raw_response_loading
+                )
             else:
-                unprocessed_items.extend(last_received_items)
-                if len(unprocessed_items) >= chunk_size:
-                    chunks = split_into_chunks(unprocessed_items, chunk_size)
-                    if chunks and len(chunks[-1]) < chunk_size:
-                        unprocessed_items = chunks.pop(-1)
-                    else:
-                        unprocessed_items = []
-                    for chunk in chunks:
-                        yield list_cls._load(chunk, cognite_client=self._cognite_client)
+                yield from self._list_generator_items(response, chunk_size, resource_cls, list_cls, unprocessed_items)
 
-            next_cursor = res.json().get("nextCursor")
+            next_cursor = response.get("nextCursor")
+            total_items_retrieved += len(response["items"])
+
             if total_items_retrieved == limit or next_cursor is None:
                 if chunk_size and unprocessed_items:
                     yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
                 break
+
+    def _list_generator_raw_response(
+        self,
+        response: dict[str, Any],
+        chunk_size: int | None,
+        list_cls: type[T_CogniteResourceList],
+        settings_forcing_raw_response_loading: list[str],
+    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
+        loaded = list_cls._load_raw_api_response([response], cognite_client=self._cognite_client)
+        if not chunk_size:
+            yield from loaded
+        else:
+            if chunk_size != self._LIST_LIMIT:
+                warnings.warn(
+                    "When fetching additional data (besides items), an arbitrary chunk_size setting is not "
+                    f"supported, only {self._LIST_LIMIT} (the API limit). This is caused by the following "
+                    f"settings: {settings_forcing_raw_response_loading}.",
+                    UserWarning,
+                )
+            yield loaded
+
+    def _list_generator_items(
+        self,
+        response: dict[str, Any],
+        chunk_size: int | None,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
+        if not chunk_size:
+            for item in response["items"]:
+                yield resource_cls._load(item, cognite_client=self._cognite_client)
+        else:
+            unprocessed_items.extend(response["items"])
+            if len(unprocessed_items) >= chunk_size:
+                chunks = split_into_chunks(unprocessed_items, chunk_size)
+                if chunks and len(chunks[-1]) < chunk_size:
+                    unprocessed_items = chunks.pop(-1)
+                else:
+                    unprocessed_items = []
+                for chunk in chunks:
+                    yield list_cls._load(chunk, cognite_client=self._cognite_client)
 
     def _list(
         self,
