@@ -322,7 +322,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
                 value_passed_as_primitive = True
                 all_identifiers.append(instance_ids)
             elif isinstance(instance_ids, Sequence):
-                all_identifiers.extend(instance_ids)
+                all_identifiers.extend([InstanceId.load(instance_id) for instance_id in instance_ids])  # type: ignore[arg-type]
             else:
                 raise TypeError(
                     f"{id_name}instance_ids must be of type InstanceId or Sequence[InstanceId]. Found {type(instance_ids)}"
