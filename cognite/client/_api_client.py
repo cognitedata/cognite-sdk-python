@@ -355,6 +355,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
+        load_raw_response: bool = False,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -388,6 +389,13 @@ class APIClient:
             if identifiers.is_singleton():
                 return None
             raise
+
+        if load_raw_response:
+            # The API response include one or more top-level keys than items we care about:
+            loaded = list_cls._load_raw_api_response(
+                tasks_summary.raw_api_responses, cognite_client=self._cognite_client
+            )
+            return (loaded[0] if loaded else None) if identifiers.is_singleton() else loaded
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 

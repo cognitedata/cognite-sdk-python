@@ -49,6 +49,10 @@ class TasksSummary:
                 joined_results.append(unwrapped)
         return joined_results
 
+    @property
+    def raw_api_responses(self) -> list[dict[str, Any]]:
+        return [res.json() for res in self.results]
+
     def raise_compound_exception_if_failed_tasks(
         self,
         task_unwrap_fn: Callable = no_op,
