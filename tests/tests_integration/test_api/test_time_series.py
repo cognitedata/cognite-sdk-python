@@ -275,7 +275,7 @@ class TestTimeSeriesAPI:
             ("metadata", key.casefold()) for a in time_series_list for key in a.metadata or []
         }
 
-    def test_create_retrieve_delete_with_instance_id(
+    def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client_alpha: CogniteClient, alpha_test_space: Space
     ) -> None:
         my_ts = TimesSeriesBaseApply(
@@ -298,8 +298,13 @@ class TestTimeSeriesAPI:
             assert retrieved is not None
             assert retrieved.instance_id == my_ts.as_id()
 
+            update_writable = retrieved.as_write()
+            update_writable.metadata = {"c": "d"}
+            updated_writable = cognite_client_alpha.time_series.update(update_writable)
+            assert updated_writable.metadata == {"c": "d"}
+
             updated = cognite_client_alpha.time_series.update(update)
-            assert updated.metadata == {"a": "b"}
+            assert updated.metadata == {"a": "b", "c": "d"}
 
             retrieved = cognite_client_alpha.time_series.retrieve_multiple(instance_ids=[my_ts.as_id()])
             assert retrieved.dump() == [updated.dump()]
