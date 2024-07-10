@@ -231,7 +231,7 @@ class TimeSeriesAPI(APIClient):
         """
         headers: dict | None = None
         if instance_id is not None:
-            self._use_alpha()
+            self._warn_alpha()
             headers = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
 
@@ -276,7 +276,7 @@ class TimeSeriesAPI(APIClient):
         """
         header: dict | None = None
         if instance_ids is not None:
-            self._use_alpha()
+            self._warn_alpha()
             header = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
         return self._retrieve_multiple(
@@ -564,7 +564,7 @@ class TimeSeriesAPI(APIClient):
         )
 
     @staticmethod
-    def _use_alpha() -> None:
+    def _warn_alpha() -> None:
         FeaturePreviewWarning(
             api_maturity="alpha", feature_name="TimeSeries with Instance ID", sdk_maturity="alpha"
         ).warn()
@@ -641,7 +641,7 @@ class TimeSeriesAPI(APIClient):
         if (isinstance(item, Sequence) and any(ts.instance_id for ts in item)) or (
             isinstance(item, (TimeSeries, TimeSeriesWrite, TimeSeriesUpdate)) and item.instance_id
         ):
-            self._use_alpha()
+            self._warn_alpha()
             headers = {"cdf-version": "alpha"}
 
         return self._update_multiple(
