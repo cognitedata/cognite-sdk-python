@@ -453,7 +453,7 @@ class APIClient:
             next_cursor = response.get("nextCursor")
             total_retrieved += len(response["items"])
             if total_retrieved == limit or next_cursor is None:
-                if unprocessed_items:  # can only happen when using chunk_size
+                if unprocessed_items:  # may only happen when -not- yielding one-by-one
                     yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
                 break
 
