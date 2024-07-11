@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, BinaryIO, Sequence, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, Sequence, TextIO, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteFileUploadError
@@ -33,6 +34,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of the instance this file belongs to.
         name (str | None): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
@@ -50,6 +52,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
     def __init__(
         self,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         name: str | None = None,
         source: str | None = None,
         mime_type: str | None = None,
@@ -69,6 +72,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
             if not isinstance(geo_location, GeoLocation):
                 raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
+        self.instance_id = instance_id
         self.name = name
         self.directory = directory
         self.source = source
@@ -88,10 +92,16 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
         instance.labels = Label._load_list(instance.labels)
         if isinstance(instance.geo_location, dict):
             instance.geo_location = GeoLocation._load(instance.geo_location)
+        if isinstance(instance.instance_id, dict):
+            instance.instance_id = NodeId._load(instance.instance_id)
         return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
+        if self.instance_id is not None:
+            result["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case, include_instance_type=False
+            )
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location:
@@ -108,6 +118,7 @@ class FileMetadata(FileMetadataCore):
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of the instance this file belongs to.
         name (str | None): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
@@ -131,6 +142,7 @@ class FileMetadata(FileMetadataCore):
     def __init__(
         self,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         name: str | None = None,
         source: str | None = None,
         mime_type: str | None = None,
@@ -152,6 +164,7 @@ class FileMetadata(FileMetadataCore):
     ) -> None:
         super().__init__(
             external_id=external_id,
+            instance_id=instance_id,
             name=name,
             directory=directory,
             source=source,
@@ -184,6 +197,7 @@ class FileMetadata(FileMetadataCore):
 
         return FileMetadataWrite(
             external_id=self.external_id,
+            instance_id=self.instance_id,
             name=self.name,
             directory=self.directory,
             source=self.source,
@@ -206,6 +220,7 @@ class FileMetadataWrite(FileMetadataCore):
     Args:
         name (str): Name of the file.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of the instance this file belongs to.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -223,6 +238,7 @@ class FileMetadataWrite(FileMetadataCore):
         self,
         name: str,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         source: str | None = None,
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
@@ -237,6 +253,7 @@ class FileMetadataWrite(FileMetadataCore):
     ) -> None:
         super().__init__(
             external_id=external_id,
+            instance_id=instance_id,
             name=name,
             directory=directory,
             source=source,
@@ -364,7 +381,24 @@ class FileMetadataUpdate(CogniteUpdate):
     """Changes will be applied to file.
 
     Args:
+        id (int | None): A server-generated ID for the object.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of the instance this file belongs to.
     """
+
+    def __init__(
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+    ) -> None:
+        super().__init__(id=id, external_id=external_id)
+        self.instance_id = instance_id
+
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.instance_id is not None:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return output
 
     class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> FileMetadataUpdate:
