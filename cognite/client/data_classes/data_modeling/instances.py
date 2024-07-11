@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import UserDict, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -46,6 +46,7 @@ from cognite.client.data_classes.data_modeling.core import (
 )
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
+    PropertyType,
     UnitReference,
     UnitSystemReference,
 )
@@ -996,7 +997,6 @@ T_Node = TypeVar("T_Node", bound=Node)
 
 
 class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
-    _support_dict_load = True
     _RESOURCE = Node  # type: ignore[assignment]
 
     def __init__(
@@ -1022,20 +1022,16 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         return NodeApplyList([node.as_write() for node in self])
 
     @classmethod
-    def _load(
-        cls,
-        resource_list: Iterable[dict[str, Any]] | dict[str, Any],
-        cognite_client: CogniteClient | None = None,
-    ) -> Self:
-        if isinstance(resource_list, dict):
-            resources = [
-                cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
-                for item in resource_list.get("items", [])
-            ]
-            typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
-            return cls(resources, typing, cognite_client=cognite_client)
-        else:
-            return super()._load(resource_list, cognite_client)
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+        typing: TypeInformation | None = None
+        if len(responses) >= 1:
+            typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+        resources = [
+            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            for response in responses
+            for item in response.get("items", [])
+        ]  # type: ignore[has-type]
+        return cls(resources, typing, cognite_client=cognite_client)
 
     def dump(self, camel_case: bool = True) -> list[dict[str, Any]] | dict[str, Any]:  # type: ignore[override]
         items = super().dump(camel_case)
@@ -1101,7 +1097,6 @@ T_Edge = TypeVar("T_Edge", bound=Edge)
 
 
 class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
-    _support_dict_load = True
     _RESOURCE = Edge  # type: ignore[assignment]
 
     def __init__(
@@ -1127,20 +1122,16 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
         return EdgeApplyList([edge.as_write() for edge in self], cognite_client=self._get_cognite_client())
 
     @classmethod
-    def _load(
-        cls,
-        resource_list: Iterable[dict[str, Any]] | dict[str, Any],
-        cognite_client: CogniteClient | None = None,
-    ) -> Self:
-        if isinstance(resource_list, dict):
-            resources = [
-                cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
-                for item in resource_list.get("items", [])
-            ]
-            typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
-            return cls(resources, typing, cognite_client=cognite_client)
-        else:
-            return super()._load(resource_list, cognite_client)
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+        typing: TypeInformation | None = None
+        if len(responses) >= 1:
+            typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+        resources = [
+            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            for response in responses
+            for item in response.get("items", [])
+        ]  # type: ignore[has-type]
+        return cls(resources, typing, cognite_client=cognite_client)
 
     def dump(self, camel_case: bool = True) -> list[dict[str, Any]] | dict[str, Any]:  # type: ignore[override]
         items = super().dump(camel_case)

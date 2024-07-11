@@ -258,7 +258,6 @@ T_WritableCogniteResource = TypeVar("T_WritableCogniteResource", bound=Writeable
 
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
-    _support_dict_load = False
     _RESOURCE: type[T_CogniteResource]
     __cognite_client: CogniteClient | None
 

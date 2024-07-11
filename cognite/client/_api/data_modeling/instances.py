@@ -107,19 +107,16 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
 
 
 class _TypedNodeOrEdgeListAdapter:
-    _support_dict_load = True
-
     def __init__(self, instance_cls: type) -> None:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
-    def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
-        return self._list_cls(items, None, cognite_client)
-
-    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
-        data = load_yaml_or_json(data) if isinstance(data, str) else data
-        typing = TypeInformation._load(data["typing"]) if "typing" in data else None
-        return self._list_cls([self._instance_cls._load(item) for item in data["items"]], typing, cognite_client)  # type: ignore[return-value, attr-defined]
+    # def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
+    #     return self._list_cls(items, cognite_client)
+    #
+    # def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
+    #     data = load_yaml_or_json(data) if isinstance(data, str) else data
+    #     return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client)  # type: ignore[return-value, attr-defined]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -552,7 +549,6 @@ class InstancesAPI(APIClient):
         )
 
         class _NodeOrEdgeList(CogniteResourceList):
-            _support_dict_load = True
             _RESOURCE = (node_cls, edge_cls)  # type: ignore[assignment]
 
             def __init__(
@@ -568,16 +564,25 @@ class InstancesAPI(APIClient):
             def _load(
                 cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
             ) -> _NodeOrEdgeList:
-                typing: TypeInformation | None = None
-                if isinstance(resource_list, dict):
-                    typing = TypeInformation._load(resource_list["typing"]) if "typing" in resource_list else None
-                    resource_list = resource_list["items"]
-
                 resources: list[Node | Edge] = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for data in resource_list
                 ]
-                return cls(resources, typing, None)
+                return cls(resources, None, None)
+
+            @classmethod
+            def _load_raw_api_response(
+                cls, responses: list[dict[str, Any]], cognite_client: CogniteClient
+            ) -> _NodeOrEdgeList:
+                typing: TypeInformation | None = None
+                if len(responses) >= 1:
+                    typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+                resources = [
+                    node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
+                    for response in responses
+                    for data in response["items"]
+                ]
+                return cls(resources, typing, cognite_client)  # type: ignore[arg-type]
 
         res = self._retrieve_multiple(  # type: ignore[call-overload]
             list_cls=_NodeOrEdgeList,
@@ -585,6 +590,7 @@ class InstancesAPI(APIClient):
             identifiers=identifiers,
             other_params=other_params,
             executor=ConcurrencySettings.get_data_modeling_executor(),
+            settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
         )
 
         return InstancesResult[T_Node, T_Edge](
