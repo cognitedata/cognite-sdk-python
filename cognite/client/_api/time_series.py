@@ -573,7 +573,6 @@ class TimeSeriesAPI(APIClient):
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
@@ -581,7 +580,6 @@ class TimeSeriesAPI(APIClient):
         Args:
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
-            instance_id (NodeId | Sequence[NodeId] | None): Instance ID or list of instance ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
@@ -639,7 +637,7 @@ class TimeSeriesAPI(APIClient):
         """
         headers: dict | None = None
         if (isinstance(item, Sequence) and any(ts.instance_id for ts in item)) or (
-            isinstance(item, (TimeSeries, TimeSeriesWrite, TimeSeriesUpdate)) and item.instance_id
+            not isinstance(item, Sequence) and item.instance_id
         ):
             self._warn_alpha()
             headers = {"cdf-version": "alpha"}
