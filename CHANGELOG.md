@@ -21,6 +21,11 @@ Changes are grouped as follows
 ### Added
 - `FilesAPI.upload_bytes` and `FilesAPI.upload` are updated to be compatible with Private Link projects.
 
+## [7.53.3] - 2024-07-11
+### Added
+- [Feature Preview - alpha] Support for `instanceId` in the `client.time_series` `.retrieve`, `.retrieve_multiple`,
+  and `.update` methods. This is an experimental feature and may change without warning.
+
 ## [7.53.2] - 2024-07-03
 ### Fixed
 - If you derived from `TypedNode` or `TypedEdge`, and then derived the `load` method would not include the parent
