@@ -246,7 +246,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         return len(self) == len(set(self.as_primitives()))
 
     @staticmethod
-    def unwrap_identifier(identifier: str | int | dict) -> str | int:
+    def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
         if isinstance(identifier, (str, int)):
             return identifier
         if "externalId" in identifier:
@@ -255,6 +255,8 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
             return identifier["id"]
         if "space" in identifier:
             return identifier["space"]
+        if "instanceId" in identifier:
+            return InstanceId.load(identifier["instanceId"])
         raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
 
     @staticmethod
@@ -269,14 +271,14 @@ T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierS
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @overload
     @classmethod
-    def of(cls, *ids: list[int | str]) -> IdentifierSequence: ...
+    def of(cls, *ids: list[int | str | InstanceId]) -> IdentifierSequence: ...
 
     @overload
     @classmethod
-    def of(cls, *ids: int | str) -> IdentifierSequence: ...
+    def of(cls, *ids: int | str | InstanceId) -> IdentifierSequence: ...
 
     @classmethod
-    def of(cls, *ids: int | str | Sequence[int | str]) -> IdentifierSequence:
+    def of(cls, *ids: int | str | InstanceId | Sequence[int | str | InstanceId]) -> IdentifierSequence:
         if len(ids) == 1 and isinstance(ids[0], Sequence) and not isinstance(ids[0], str):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
@@ -287,13 +289,14 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
         cls,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
+        instance_ids: InstanceId | Sequence[InstanceId] | None = None,
         *,
         id_name: str = "",
     ) -> IdentifierSequence:
         if id_name and not id_name.endswith("_"):
             id_name += "_"
         value_passed_as_primitive = False
-        all_identifiers: list[int | str] = []
+        all_identifiers: list[int | str | InstanceId] = []
 
         if ids is not None:
             if isinstance(ids, numbers.Integral):
@@ -313,6 +316,16 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
             else:
                 raise TypeError(
                     f"{id_name}external_ids must be of type str or SequenceNotStr[str]. Found {type(external_ids)}"
+                )
+        if instance_ids is not None:
+            if isinstance(instance_ids, InstanceId):
+                value_passed_as_primitive = True
+                all_identifiers.append(instance_ids)
+            elif isinstance(instance_ids, Sequence):
+                all_identifiers.extend([InstanceId.load(instance_id) for instance_id in instance_ids])  # type: ignore[arg-type]
+            else:
+                raise TypeError(
+                    f"{id_name}instance_ids must be of type InstanceId or Sequence[InstanceId]. Found {type(instance_ids)}"
                 )
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1

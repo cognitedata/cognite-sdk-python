@@ -35,7 +35,7 @@ from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesList,
 )
-from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, SpaceApply, ViewId
+from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, Space, ViewId
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import InstanceId
@@ -180,11 +180,9 @@ def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
 
 
 @pytest.fixture(scope="session")
-def instance_ts_id(cognite_client_alpha: CogniteClient) -> InstanceId:
-    created = cognite_client_alpha.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
-
+def instance_ts_id(cognite_client_alpha: CogniteClient, alpha_test_space: Space) -> InstanceId:
     my_ts = NodeApply(
-        space=created.space,
+        space=alpha_test_space.space,
         external_id="ts_python_sdk_instance_id_tests",
         sources=[
             NodeOrEdgeData(

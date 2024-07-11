@@ -340,7 +340,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "description")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name", is_nullable=False),
             PropertySpec("description", is_nullable=False),
