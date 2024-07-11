@@ -84,6 +84,29 @@ def mock_file_upload_response(rsps, cognite_client, mock_geo_location: GeoLocati
 
 
 @pytest.fixture
+def mock_file_upload_response_without_netloc_in_upload_url(rsps, cognite_client, mock_geo_location: GeoLocation):
+    response_body = {
+        "externalId": "string",
+        "name": "string",
+        "source": "string",
+        "mimeType": "string",
+        "metadata": {},
+        "assetIds": [1],
+        "labels": [{"externalId": "WELL LOG"}],
+        "geoLocation": mock_geo_location.dump(camel_case=True),
+        "id": 1,
+        "uploaded": True,
+        "uploadedTime": 0,
+        "createdTime": 0,
+        "lastUpdatedTime": 0,
+        "uploadUrl": "upload.here",
+    }
+    rsps.add(rsps.POST, cognite_client.files._get_base_url_with_base_path() + "/files", status=200, json=response_body)
+    rsps.add(rsps.PUT, cognite_client.config.base_url + "/upload.here", status=200)
+    yield rsps
+
+
+@pytest.fixture
 def mock_file_create_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
@@ -505,6 +528,23 @@ class TestFilesAPI:
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert b"content" == mock_file_upload_response.calls[1].request.body
+
+    def test_upload_with_netloc(self, cognite_client, mock_file_upload_response):
+        """
+        When uploading a file, the upload URL should be used as-is if it contains a netloc.
+        """
+        _ = cognite_client.files.upload_bytes(content=b"content", name="bla")
+        assert mock_file_upload_response.calls[1].request.url == "https://upload.here/"
+
+    def test_upload_without_netloc(self, cognite_client, mock_file_upload_response_without_netloc_in_upload_url):
+        """
+        When uploading a file, the upload URL should be appended to the base URL if it does not contain a netloc.
+        """
+        _ = cognite_client.files.upload_bytes(content=b"content", name="bla")
+        assert (
+            mock_file_upload_response_without_netloc_in_upload_url.calls[1].request.url
+            == "https://api.cognitedata.com/upload.here"
+        )
 
     def test_upload_using_file_handle(self, cognite_client, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
