@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.53.3] - 2024-07-03
+### Added
+- `FilesAPI.upload_bytes` and `FilesAPI.upload` are updated to be compatible with Private Link projects.
 
 ## [7.53.2] - 2024-07-03
 ### Fixed
