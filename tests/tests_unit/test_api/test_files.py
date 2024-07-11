@@ -99,10 +99,10 @@ def mock_file_upload_response_without_netloc_in_upload_url(rsps, cognite_client,
         "uploadedTime": 0,
         "createdTime": 0,
         "lastUpdatedTime": 0,
-        "uploadUrl": "upload.here",
+        "uploadUrl": "upload/here/to/some/path",
     }
     rsps.add(rsps.POST, cognite_client.files._get_base_url_with_base_path() + "/files", status=200, json=response_body)
-    rsps.add(rsps.PUT, cognite_client.config.base_url + "/upload.here", status=200)
+    rsps.add(rsps.PUT, cognite_client.config.base_url + "/upload/here/to/some/path", status=200)
     yield rsps
 
 
@@ -543,7 +543,7 @@ class TestFilesAPI:
         _ = cognite_client.files.upload_bytes(content=b"content", name="bla")
         assert (
             mock_file_upload_response_without_netloc_in_upload_url.calls[1].request.url
-            == "https://api.cognitedata.com/upload.here"
+            == "https://api.cognitedata.com/upload/here/to/some/path"
         )
 
     def test_upload_using_file_handle(self, cognite_client, mock_file_upload_response):
