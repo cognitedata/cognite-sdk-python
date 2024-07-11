@@ -472,11 +472,11 @@ class TestTypeInformation:
                     "type.unit.external_id": "pressure:pa",
                     "type.type": "float64",
                     "nullable": True,
-                    "immutable": False,
                     "autoIncrement": False,
                     "defaultValue": None,
                     "name": None,
                     "description": None,
+                    "immutable": False,
                 }
             },
             orient="index",

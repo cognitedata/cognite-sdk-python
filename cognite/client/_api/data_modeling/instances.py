@@ -111,12 +111,23 @@ class _TypedNodeOrEdgeListAdapter:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
-    # def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
-    #     return self._list_cls(items, cognite_client)
-    #
-    # def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
-    #     data = load_yaml_or_json(data) if isinstance(data, str) else data
-    #     return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client)  # type: ignore[return-value, attr-defined]
+    def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
+        return self._list_cls(items, None, cognite_client)
+
+    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
+        data = load_yaml_or_json(data) if isinstance(data, str) else data
+        return self._list_cls([self._instance_cls._load(item) for item in data], None, cognite_client)  # type: ignore[return-value, attr-defined]
+
+    def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
+        typing: TypeInformation | None = None
+        if len(responses) >= 1:
+            typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+        resources = [
+            self._instance_cls._load(item, cognite_client=cognite_client)  # type: ignore[attr-defined]
+            for response in responses
+            for item in response.get("items", [])
+        ]
+        return self._list_cls(resources, typing, cognite_client=cognite_client)  # type: ignore[return-value]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -249,19 +260,31 @@ class InstancesAPI(APIClient):
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
-
-        return cast(
-            Union[Iterator[Edge], Iterator[EdgeList], Iterator[Node], Iterator[NodeList]],
-            self._list_generator(
-                list_cls=list_cls,
-                resource_cls=resource_cls,
-                method="POST",
-                chunk_size=chunk_size,
-                limit=limit,
-                filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
-                other_params=other_params,
-            ),
-        )
+        if not include_typing:
+            return cast(
+                Union[Iterator[Edge], Iterator[EdgeList], Iterator[Node], Iterator[NodeList]],
+                self._list_generator(
+                    list_cls=list_cls,
+                    resource_cls=resource_cls,
+                    method="POST",
+                    chunk_size=chunk_size,
+                    limit=limit,
+                    filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+                    other_params=other_params,
+                ),
+            )
+        else:
+            return (
+                list_cls._load_raw_api_response([raw], self._cognite_client)  # type: ignore[attr-defined]
+                for raw in self._list_generator_raw_responses(
+                    method="POST",
+                    settings_forcing_raw_response_loading=[f"{include_typing=}"],
+                    chunk_size=chunk_size,
+                    limit=limit,
+                    filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+                    other_params=other_params,
+                )
+            )
 
     def __iter__(self) -> Iterator[Node]:
         """Iterate over instances (nodes only)
@@ -1566,6 +1589,7 @@ class InstancesAPI(APIClient):
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
+                settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else [],
             ),
         )
 
