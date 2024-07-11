@@ -6,15 +6,8 @@ import warnings
 from collections import defaultdict
 from io import BufferedReader
 from pathlib import Path
-from typing import (
-    Any,
-    BinaryIO,
-    Iterator,
-    Sequence,
-    TextIO,
-    cast,
-    overload,
-)
+from typing import Any, BinaryIO, Iterator, Sequence, TextIO, cast, overload
+from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
@@ -645,9 +638,19 @@ class FilesAPI(APIClient):
 
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
+        if urlparse(upload_url).netloc:
+            full_upload_url = upload_url
+        else:
+            full_upload_url = urljoin(self._config.base_url, upload_url)
+
         headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
-            "PUT", upload_url, accept="*/*", data=content, timeout=self._config.file_transfer_timeout, headers=headers
+            "PUT",
+            full_upload_url,
+            accept="*/*",
+            data=content,
+            timeout=self._config.file_transfer_timeout,
+            headers=headers,
         )
         if not upload_response.ok:
             raise CogniteFileUploadError(
