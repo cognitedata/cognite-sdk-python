@@ -20,7 +20,8 @@ Changes are grouped as follows
 ## [7.54.0] - 2024-07-12
 ### Added
 - In the `client.data_modeling.instances` the methods `.search`, `.retrieve`,`.list`, `.query`, and `.sync` now
-  supports `include_typing` parameter. This parameter is used to include typing information in the response.
+  support the `include_typing` parameter. This parameter is used to include typing information in the response,
+  that can be accessed via the `.typing` attribute on the result object.
 
 ## [7.53.4] - 2024-07-11
 ### Added
