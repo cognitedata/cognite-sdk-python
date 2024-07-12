@@ -1038,7 +1038,7 @@ class APIClient:
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
                 patch_objects.append(
-                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(), mode)
+                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(item), mode)
                 )
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump(camel_case=True))
@@ -1222,9 +1222,13 @@ class APIClient:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
+        has_instance_id = "instanceId" in dumped_resource
 
         patch_object: dict[str, dict[str, dict]] = {"update": {}}
-        if has_id:
+        if has_instance_id:
+            patch_object["instanceId"] = dumped_resource.pop("instanceId")
+            dumped_resource.pop("id", None)
+        elif has_id:
             patch_object["id"] = dumped_resource.pop("id")
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")

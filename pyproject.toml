@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "7.53.2"
+version = "7.53.4"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
@@ -71,7 +71,7 @@ pytest-cov = ">=3"
 pytest-rerunfailures = ">=10"
 pytest-asyncio = ">=0.23.5a0"
 pytest-xdist = ">=2"
-twine = "^4.0.1"
+twine = ">=4.0.1"
 pre-commit = "^3"
 responses = "^0"
 toml = "^0"

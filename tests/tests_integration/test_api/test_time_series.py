@@ -4,7 +4,9 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
+from cognite.client.data_classes import DataSet, TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
+from cognite.client.data_classes.cdm.v1 import TimesSeriesBaseApply
+from cognite.client.data_classes.data_modeling import Space
 from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
@@ -272,6 +274,46 @@ class TestTimeSeriesAPI:
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in time_series_list for key in a.metadata or []
         }
+
+    def test_create_retrieve_update_delete_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, alpha_test_space: Space, alpha_test_dataset: DataSet
+    ) -> None:
+        my_ts = TimesSeriesBaseApply(
+            space=alpha_test_space.space,
+            external_id="ts_python_sdk_instance_id_tests",
+            is_string=False,
+            is_step=False,
+            source_unit="pressure:psi",
+            name="Create Retrieve Delete with instance_id",
+            description="This time series was created by the Python SDK",
+        )
+        update = TimeSeriesUpdate(instance_id=my_ts.as_id()).metadata.add({"a": "b"})
+
+        try:
+            created = cognite_client_alpha.data_modeling.instances.apply(my_ts)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].as_id() == my_ts.as_id()
+
+            retrieved = cognite_client_alpha.time_series.retrieve(instance_id=my_ts.as_id())
+            assert retrieved is not None
+            assert retrieved.instance_id == my_ts.as_id()
+
+            update_writable = retrieved.as_write()
+            update_writable.metadata = {"c": "d"}
+            update_writable.external_id = "ts_python_sdk_instance_id_tests"
+            update_writable.data_set_id = alpha_test_dataset.id
+            updated_writable = cognite_client_alpha.time_series.update(update_writable)
+            assert updated_writable.metadata == {"c": "d"}
+            assert updated_writable.data_set_id == alpha_test_dataset.id
+            assert updated_writable.external_id == "ts_python_sdk_instance_id_tests"
+
+            updated = cognite_client_alpha.time_series.update(update)
+            assert updated.metadata == {"a": "b", "c": "d"}
+
+            retrieved = cognite_client_alpha.time_series.retrieve_multiple(instance_ids=[my_ts.as_id()])
+            assert retrieved.dump() == [updated.dump()]
+        finally:
+            cognite_client_alpha.data_modeling.instances.delete(nodes=my_ts.as_id())
 
 
 class TestTimeSeriesHelperMethods:
