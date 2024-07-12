@@ -1029,7 +1029,7 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
             cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
             for response in responses
             for item in response.get("items", [])
-        ]  # type: ignore[has-type]
+        ]
         return cls(resources, typing, cognite_client=cognite_client)
 
     def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1125,7 +1125,7 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
             cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
             for response in responses
             for item in response.get("items", [])
-        ]  # type: ignore[has-type]
+        ]
         return cls(resources, typing, cognite_client=cognite_client)
 
     def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
