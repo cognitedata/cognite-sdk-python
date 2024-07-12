@@ -1121,9 +1121,9 @@ class InstancesAPI(APIClient):
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
-        items = res.json()["items"]
-        typing = TypeInformation._load(res.json()["typing"]) if "typing" in res.json() else None
-        return list_cls([resource_cls._load(item) for item in items], typing, cognite_client=None)
+        result = res.json()
+        typing = TypeInformation._load(result["typing"]) if "typing" in result else None
+        return list_cls([resource_cls._load(item) for item in result["items"]], typing, cognite_client=None)
 
     @overload
     def aggregate(
