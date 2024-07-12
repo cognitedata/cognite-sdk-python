@@ -327,6 +327,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
+        settings_forcing_raw_response_loading: list[str] | None = None,
     ) -> T_CogniteResource | None: ...
 
     @overload
@@ -342,6 +343,7 @@ class APIClient:
         params: dict[str, Any] | None = None,
         executor: ThreadPoolExecutor | None = None,
         api_subversion: str | None = None,
+        settings_forcing_raw_response_loading: list[str] | None = None,
     ) -> T_CogniteResourceList: ...
 
     def _retrieve_multiple(
