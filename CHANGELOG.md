@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.0] - 2024-07-12
+### Added
+- In the `client.data_modeling.instances` the methods `.search`, `.retrieve`,`.list`, `.query`, and `.sync` now
+  support the `include_typing` parameter. This parameter is used to include typing information in the response,
+  that can be accessed via the `.typing` attribute on the result object.
+
 ## [7.53.4] - 2024-07-11
 ### Added
 - `FilesAPI.upload_bytes` and `FilesAPI.upload` are updated to be compatible with Private Link projects.

@@ -252,3 +252,13 @@ def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -
 
 def unpack_items_in_payload(payload: dict[str, dict[str, Any]]) -> list:
     return payload["json"]["items"]
+
+
+def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = ".") -> dict[str, Any]:
+    items: list[tuple[str, Any]] = []
+    for key, value in d.items():
+        if isinstance(value, dict):
+            items.extend(flatten_dict(value, (*parent_keys, key)).items())
+        else:
+            items.append((sep.join((*parent_keys, key)), value))
+    return dict(items)

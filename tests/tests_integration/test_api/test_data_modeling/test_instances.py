@@ -883,20 +883,48 @@ class TestInstancesAPI:
         node = node_with_1_1_pressure_in_bar
         source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
 
-        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
+        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source], include_typing=True)
         assert retrieved.nodes
         assert math.isclose(cast(float, retrieved.nodes[0]["pressure"]), 1.1 * 1e5)
+
+        assert retrieved.nodes.typing
+        type_ = cast(Float64, retrieved.nodes.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_list_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
         source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
-        listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
+        listed = cognite_client.data_modeling.instances.list(
+            instance_type="node", filter=is_node, sources=[source], include_typing=True
+        )
 
         assert listed
         assert len(listed) == 1
         assert math.isclose(cast(float, listed[0]["pressure"]), 1.1 * 1e5)
+
+        assert listed.typing
+        type_ = cast(Float64, listed.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
+
+    def test_iterate_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+        iterator = cognite_client.data_modeling.instances(
+            chunk_size=1, sources=[source], include_typing=True, filter=is_node
+        )
+        first_iter = next(iterator)
+        assert isinstance(first_iter, NodeList)
+        assert len(first_iter) == 1
+        assert first_iter.typing
+        type_ = cast(Float64, first_iter.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_search_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
@@ -905,12 +933,17 @@ class TestInstancesAPI:
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
 
         searched = cognite_client.data_modeling.instances.search(
-            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units
+            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units, include_typing=True
         )
 
         assert searched
         assert len(searched) == 1
         assert math.isclose(cast(float, searched[0]["pressure"]), 1.1 * 1e5)
+
+        assert searched.typing
+        type_ = cast(Float64, searched.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_aggregate_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
@@ -938,11 +971,16 @@ class TestInstancesAPI:
             with_={"nodes": NodeResultSetExpression(filter=is_node, limit=1)},
             select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], target_units)])},
         )
-        queried = cognite_client.data_modeling.instances.query(query)
+        queried = cognite_client.data_modeling.instances.query(query, include_typing=True)
 
         assert queried
         assert len(queried["nodes"]) == 1
         assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
+
+        assert queried["nodes"].typing
+        type_ = cast(Float64, queried["nodes"].typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     @pytest.mark.usefixtures("primitive_nullable_view")
     def test_write_typed_node(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
