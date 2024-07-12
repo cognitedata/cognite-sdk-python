@@ -411,6 +411,17 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         # an implementation of this method
         raise NotImplementedError
 
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        """This method dumps the list with extra information in addition to the items.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the list.
+        """
+        return {"items": [resource.dump(camel_case) for resource in self.data]}
+
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 

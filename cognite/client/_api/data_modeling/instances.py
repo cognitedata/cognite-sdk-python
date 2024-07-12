@@ -118,14 +118,13 @@ class _TypedNodeOrEdgeListAdapter:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         return self._list_cls([self._instance_cls._load(item) for item in data], None, cognite_client)  # type: ignore[return-value, attr-defined]
 
+    @classmethod
     def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
-        typing: TypeInformation | None = None
-        if len(responses) >= 1:
-            typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+        typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [
             self._instance_cls._load(item, cognite_client=cognite_client)  # type: ignore[attr-defined]
             for response in responses
-            for item in response.get("items", [])
+            for item in response["items"]
         ]
         return self._list_cls(resources, typing, cognite_client=cognite_client)  # type: ignore[return-value]
 
@@ -273,18 +272,17 @@ class InstancesAPI(APIClient):
                     other_params=other_params,
                 ),
             )
-        else:
-            return (
-                list_cls._load_raw_api_response([raw], self._cognite_client)  # type: ignore[attr-defined]
-                for raw in self._list_generator_raw_responses(
-                    method="POST",
-                    settings_forcing_raw_response_loading=[f"{include_typing=}"],
-                    chunk_size=chunk_size,
-                    limit=limit,
-                    filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
-                    other_params=other_params,
-                )
+        return (
+            list_cls._load_raw_api_response([raw], self._cognite_client)  # type: ignore[attr-defined]
+            for raw in self._list_generator_raw_responses(
+                method="POST",
+                settings_forcing_raw_response_loading=[f"{include_typing=}"],
+                chunk_size=chunk_size,
+                limit=limit,
+                filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+                other_params=other_params,
             )
+        )
 
     def __iter__(self) -> Iterator[Node]:
         """Iterate over instances (nodes only)
@@ -597,9 +595,7 @@ class InstancesAPI(APIClient):
             def _load_raw_api_response(
                 cls, responses: list[dict[str, Any]], cognite_client: CogniteClient
             ) -> _NodeOrEdgeList:
-                typing: TypeInformation | None = None
-                if len(responses) >= 1:
-                    typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+                typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
                 resources = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for response in responses

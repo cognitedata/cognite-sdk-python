@@ -57,6 +57,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
+from cognite.client.utils._auxiliary import flatten_dict
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -1023,9 +1024,7 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
-        typing: TypeInformation | None = None
-        if len(responses) >= 1:
-            typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+        typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [
             cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
             for response in responses
@@ -1033,15 +1032,13 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         ]  # type: ignore[has-type]
         return cls(resources, typing, cognite_client=cognite_client)
 
-    def dump(self, camel_case: bool = True) -> list[dict[str, Any]] | dict[str, Any]:  # type: ignore[override]
-        items = super().dump(camel_case)
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "items": self.dump(camel_case),
+        }
         if self.typing:
-            return {
-                "items": items,
-                "typing": self.typing.dump(camel_case),
-            }
-        else:
-            return items
+            output["typing"] = self.typing.dump(camel_case)
+        return output
 
 
 class NodeListWithCursor(NodeList[T_Node]):
@@ -1123,9 +1120,7 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
-        typing: TypeInformation | None = None
-        if len(responses) >= 1:
-            typing = TypeInformation._load(responses[0]["typing"]) if "typing" in responses[0] else None
+        typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [
             cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
             for response in responses
@@ -1133,15 +1128,13 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
         ]  # type: ignore[has-type]
         return cls(resources, typing, cognite_client=cognite_client)
 
-    def dump(self, camel_case: bool = True) -> list[dict[str, Any]] | dict[str, Any]:  # type: ignore[override]
-        items = super().dump(camel_case)
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "items": self.dump(camel_case),
+        }
         if self.typing:
-            return {
-                "items": items,
-                "typing": self.typing.dump(camel_case),
-            }
-        else:
-            return items
+            output["typing"] = self.typing.dump(camel_case)
+        return output
 
 
 class EdgeListWithCursor(EdgeList):
@@ -1278,7 +1271,7 @@ class TypePropertyDefinition(CogniteObject):
     def dump(self, camel_case: bool = True, return_flat_dict: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if return_flat_dict:
-            dumped = self._flatten_dict(self.type.dump(camel_case), ("type",))
+            dumped = flatten_dict(self.type.dump(camel_case), ("type",), sep=".")
             output.update({key: value for key, value in dumped.items()})
         else:
             output["type"] = self.type.dump(camel_case)
@@ -1293,15 +1286,6 @@ class TypePropertyDefinition(CogniteObject):
             }
         )
         return output
-
-    def _flatten_dict(self, d: dict[str, Any], parent_keys: tuple[str, ...]) -> dict[str, Any]:
-        items: list[tuple[str, Any]] = []
-        for key, value in d.items():
-            if isinstance(value, dict):
-                items.extend(self._flatten_dict(value, (*parent_keys, key)).items())
-            else:
-                items.append((".".join((*parent_keys, key)), value))
-        return dict(items)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TypePropertyDefinition:
@@ -1322,7 +1306,7 @@ class TypeInformation(UserDict, CogniteObject):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
-        for space_name, space_data in self.data.items():
+        for space_name, space_data in self.items():
             output.setdefault(space_name, {})
             for view_or_container_id, view_data in space_data.items():
                 output[space_name].setdefault(view_or_container_id, {})
@@ -1393,3 +1377,23 @@ class TypeInformation(UserDict, CogniteObject):
             return super().__getitem__(item[0])[item[1]][item[2]]
         else:
             raise ValueError(f"Invalid key: {item}")
+
+    def __setitem__(self, key: str | tuple[str, str] | tuple[str, str, str], value: Any) -> None:
+        if isinstance(key, str):
+            super().__setitem__(key, value)
+        elif isinstance(key, tuple) and len(key) == 2:
+            super().__setitem__(key[0], {key[1]: value})
+        elif isinstance(key, tuple) and len(key) == 3:
+            super().__setitem__(key[0], {key[1]: {key[2]: value}})
+        else:
+            raise ValueError(f"Invalid key: {key}")
+
+    def __delitem__(self, key: str | tuple[str, str] | tuple[str, str, str]) -> None:
+        if isinstance(key, str):
+            super().__delitem__(key)
+        elif isinstance(key, tuple) and len(key) == 2:
+            del self[key[0]][key[1]]
+        elif isinstance(key, tuple) and len(key) == 3:
+            del self[key[0]][key[1]][key[2]]
+        else:
+            raise ValueError(f"Invalid key: {key}")
