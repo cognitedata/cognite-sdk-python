@@ -422,7 +422,7 @@ class FunctionsAPI(APIClient):
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
-    ) -> FunctionList | Function | None:
+    ) -> FunctionList:
         """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
@@ -431,7 +431,7 @@ class FunctionsAPI(APIClient):
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            FunctionList | Function | None: The requested functions.
+            FunctionList: The requested functions.
 
         Examples:
 
