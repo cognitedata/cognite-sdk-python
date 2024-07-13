@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes import Function
 from cognite.client.exceptions import CogniteNotFoundError
 
 
@@ -35,3 +36,10 @@ class TestFunctionsAPI:
                 cron_expression="* * * * *",
                 name="test_schedule",
             )
+
+    def test_iterate_functions(self, cognite_client: CogniteClient) -> None:
+        for function in cognite_client.functions:
+            assert isinstance(function, Function)
+            break
+        else:
+            assert False, "Expected at least one function"
