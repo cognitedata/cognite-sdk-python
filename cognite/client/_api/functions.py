@@ -13,7 +13,7 @@ from multiprocessing import Process, Queue
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Literal, NoReturn, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, NoReturn, Sequence, cast, overload
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -32,7 +32,13 @@ from cognite.client.data_classes import (
     FunctionsLimits,
     TimestampRange,
 )
-from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus, FunctionStatus
+from cognite.client.data_classes.functions import (
+    FunctionCallsFilter,
+    FunctionsStatus,
+    FunctionStatus,
+    FunctionWrite,
+    RunTime,
+)
 from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
@@ -192,9 +198,9 @@ class FunctionsAPI(APIClient):
         owner: str | None = None,
         secrets: dict[str, str] | None = None,
         env_vars: dict[str, str] | None = None,
-        cpu: Number | None = None,
-        memory: Number | None = None,
-        runtime: str | None = None,
+        cpu: float | None = None,
+        memory: float | None = None,
+        runtime: RunTime | None = None,
         metadata: dict[str, str] | None = None,
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
@@ -228,9 +234,9 @@ class FunctionsAPI(APIClient):
             owner (str | None): Owner of this function. Typically used to know who created it.
             secrets (dict[str, str] | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
             env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (Number | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            memory (Number | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (str | None): The function runtime. Valid values are ["py38", "py39", "py310", "py311", `None`], and `None` translates to the API default which will change over time. The runtime "py38" resolves to the latest version of the Python 3.8 series.
+            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            runtime (RunTime | None): The function runtime. Valid values are ["py38", "py39", "py310", "py311", `None`], and `None` translates to the API default which will change over time. The runtime "py38" resolves to the latest version of the Python 3.8 series.
             metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
@@ -300,31 +306,24 @@ class FunctionsAPI(APIClient):
         else:
             raise OSError("Could not retrieve file from files API")
 
-        function: dict[str, Any] = {
-            "name": name,
-            "description": description,
-            "owner": owner,
-            "fileId": file_id,
-            "functionPath": function_path,
-            "envVars": env_vars,
-            "metadata": metadata,
-        }
-        if cpu:
-            function["cpu"] = cpu
-        if memory:
-            function["memory"] = memory
-        if runtime:
-            function["runtime"] = runtime
-        if external_id:
-            function["externalId"] = external_id
-        if secrets:
-            function["secrets"] = secrets
-        if extra_index_urls:
-            function["extraIndexUrls"] = extra_index_urls
-        if index_url:
-            function["indexUrl"] = index_url
+        function = FunctionWrite(
+            name=name,
+            file_id=cast(int, file_id),  # We know that file id is set
+            external_id=external_id,
+            description=description,
+            owner=owner,
+            secrets=secrets,
+            env_vars=env_vars,
+            function_path=function_path,
+            cpu=cpu,
+            memory=memory,
+            runtime=runtime,
+            metadata=metadata,
+            index_url=index_url,
+            extra_index_urls=extra_index_urls,
+        )
 
-        res = self._post(self._RESOURCE_PATH, json={"items": [function]})
+        res = self._post(self._RESOURCE_PATH, json={"items": [function.dump(camel_case=True)]})
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(
