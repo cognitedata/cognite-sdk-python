@@ -96,7 +96,10 @@ class FunctionsAPI(APIClient):
         self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
         # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
         self._LIST_LIMIT_CEILING = 10_000
-        self._LIST_LIMIT = 10
+        self._CREATE_LIMIT = 1
+        self._LIST_LIMIT = 100
+        self._RETRIEVE_LIMIT = 10
+        self._DELETE_LIMIT = 10
 
     @overload
     def __call__(
