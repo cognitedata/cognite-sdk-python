@@ -32,7 +32,7 @@ from cognite.client.data_classes import (
     FunctionsLimits,
     TimestampRange,
 )
-from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
+from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus, FunctionStatus
 from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
@@ -348,7 +348,7 @@ class FunctionsAPI(APIClient):
         name: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        status: str | None = None,
+        status: FunctionStatus | None = None,
         external_id_prefix: str | None = None,
         created_time: dict[str, int] | TimestampRange | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -359,7 +359,7 @@ class FunctionsAPI(APIClient):
             name (str | None): The name of the function.
             owner (str | None): Owner of the function.
             file_id (int | None): The file ID of the zip-file used to create the function.
-            status (str | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
+            status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
             created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
@@ -386,6 +386,9 @@ class FunctionsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             created_time=created_time,
         ).dump(camel_case=True)
+
+        # The _list method is not used as the /list endpoint does not
+        # respond with a cursor (pagination is not supported)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
         return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)

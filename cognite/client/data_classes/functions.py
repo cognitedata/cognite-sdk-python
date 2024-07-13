@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 RunTime: TypeAlias = Literal["py38", "py39", "py310", "py311"]
+FunctionStatus: TypeAlias = Literal["Queued", "Deploying", "Ready", "Failed"]
 
 
 class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
