@@ -331,9 +331,10 @@ class FunctionFilter(CogniteFilter):
         name: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        status: str | None = None,
+        status: FunctionStatus | None = None,
         external_id_prefix: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         self.name = name
         self.owner = owner
@@ -341,6 +342,7 @@ class FunctionFilter(CogniteFilter):
         self.status = status
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
+        self.metadata = metadata
 
 
 class FunctionCallsFilter(CogniteFilter):

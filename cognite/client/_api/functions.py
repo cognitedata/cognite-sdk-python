@@ -13,7 +13,7 @@ from multiprocessing import Process, Queue
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, NoReturn, Sequence, overload
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -108,9 +108,10 @@ class FunctionsAPI(APIClient):
         name: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        status: str | None = None,
+        status: FunctionStatus | None = None,
         external_id_prefix: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
         limit: int | None = None,
     ) -> Iterator[Function]: ...
 
@@ -121,9 +122,10 @@ class FunctionsAPI(APIClient):
         name: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        status: str | None = None,
+        status: FunctionStatus | None = None,
         external_id_prefix: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
         limit: int | None = None,
     ) -> Iterator[FunctionList]: ...
 
@@ -133,9 +135,10 @@ class FunctionsAPI(APIClient):
         name: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        status: str | None = None,
+        status: FunctionStatus | None = None,
         external_id_prefix: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
         limit: int | None = None,
     ) -> Iterator[Function] | Iterator[FunctionList]:
         """Iterate over functions.
@@ -145,9 +148,10 @@ class FunctionsAPI(APIClient):
             name (str | None): The name of the function.
             owner (str | None): Owner of the function.
             file_id (int | None): The file ID of the zip-file used to create the function.
-            status (str | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
+            status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            metadata (dict[str, str] | None): No description.
             limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
 
         Returns:
@@ -161,6 +165,7 @@ class FunctionsAPI(APIClient):
             status=status,
             external_id_prefix=external_id_prefix,
             created_time=created_time,
+            metadata=metadata,
         ).dump(camel_case=True)
 
         return self._list_generator(
@@ -350,7 +355,8 @@ class FunctionsAPI(APIClient):
         file_id: int | None = None,
         status: FunctionStatus | None = None,
         external_id_prefix: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionList:
         """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
@@ -361,7 +367,8 @@ class FunctionsAPI(APIClient):
             file_id (int | None): The file ID of the zip-file used to create the function.
             status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32, value 512 characters, up to 16 key-value pairs. Maximum size of entire metadata is 4096 bytes.
             limit (int | None): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
 
         Returns:
@@ -385,6 +392,7 @@ class FunctionsAPI(APIClient):
             status=status,
             external_id_prefix=external_id_prefix,
             created_time=created_time,
+            metadata=metadata,
         ).dump(camel_case=True)
 
         # The _list method is not used as the /list endpoint does not
