@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 RunTime: TypeAlias = Literal["py38", "py39", "py310", "py311"]
 FunctionStatus: TypeAlias = Literal["Queued", "Deploying", "Ready", "Failed"]
+HANDLER_FILE_NAME = "handler.py"
 
 
 class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
@@ -36,7 +37,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
         file_id (int | None): File id of the code represented by this object.
-        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         secrets (dict | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
@@ -52,7 +53,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         description: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        function_path: str | None = None,
+        function_path: str = HANDLER_FILE_NAME,
         secrets: dict | None = None,
         env_vars: dict | None = None,
         cpu: float | None = None,
@@ -91,7 +92,7 @@ class Function(FunctionCore):
         owner (str | None): Owner of the function.
         status (str | None): Status of the function.
         file_id (int | None): File id of the code represented by this object.
-        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         created_time (int | None): Created time in UNIX.
         secrets (dict | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
@@ -113,7 +114,7 @@ class Function(FunctionCore):
         owner: str | None = None,
         status: str | None = None,
         file_id: int | None = None,
-        function_path: str | None = None,
+        function_path: str = HANDLER_FILE_NAME,
         created_time: int | None = None,
         secrets: dict | None = None,
         env_vars: dict | None = None,
@@ -256,7 +257,7 @@ class FunctionWrite(FunctionCore):
         external_id (str | None): External id of the function.
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
-        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
@@ -274,7 +275,7 @@ class FunctionWrite(FunctionCore):
         external_id: str | None = None,
         description: str | None = None,
         owner: str | None = None,
-        function_path: str | None = None,
+        function_path: str = HANDLER_FILE_NAME,
         secrets: dict[str, str] | None = None,
         env_vars: dict[str, str] | None = None,
         cpu: float | None = None,
@@ -309,7 +310,7 @@ class FunctionWrite(FunctionCore):
             description=resource.get("description"),
             owner=resource.get("owner"),
             file_id=resource["fileId"],
-            function_path=resource.get("functionPath"),
+            function_path=resource.get("functionPath", HANDLER_FILE_NAME),
             secrets=resource.get("secrets"),
             env_vars=resource.get("envVars"),
             cpu=resource.get("cpu"),

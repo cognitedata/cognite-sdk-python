@@ -33,6 +33,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import (
+    HANDLER_FILE_NAME,
     FunctionCallsFilter,
     FunctionsStatus,
     FunctionStatus,
@@ -50,7 +51,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-HANDLER_FILE_NAME = "handler.py"
+
 MAX_RETRIES = 5
 REQUIREMENTS_FILE_NAME = "requirements.txt"
 REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Matches [requirements] and [/requirements]
@@ -188,7 +189,7 @@ class FunctionsAPI(APIClient):
 
     def create(
         self,
-        name: str,
+        name: str | FunctionWrite,
         folder: str | None = None,
         file_id: int | None = None,
         function_path: str = HANDLER_FILE_NAME,
@@ -224,7 +225,8 @@ class FunctionsAPI(APIClient):
         For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
 
         Args:
-            name (str): The name of the function.
+            name (str | FunctionWrite): The name of the function or a FunctionWrite object. If a FunctionWrite object
+                is passed, the other arguments are ignored except for `folder`, `function_handle` and `data_set_id`.
             folder (str | None): Path to the folder where the function source code is located.
             file_id (int | None): File ID of the code uploaded to the Files API.
             function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
@@ -285,14 +287,21 @@ class FunctionsAPI(APIClient):
             .. note::
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring. The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
         '''
+        if isinstance(name, FunctionWrite):
+            file_id = name.file_id
+            function_path = name.function_path
+            name_input = name.name
+            external_id = name.external_id
+        else:
+            name_input = name
         self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
 
         if folder:
             validate_function_folder(folder, function_path, skip_folder_validation)
-            file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
+            file_id = self._zip_and_upload_folder(folder, name_input, external_id, data_set_id)
         elif function_handle:
             _validate_function_handle(function_handle)
-            file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
+            file_id = self._zip_and_upload_handle(function_handle, name_input, external_id, data_set_id)
         assert_type(cpu, "cpu", [Number], allow_none=True)
         assert_type(memory, "memory", [Number], allow_none=True)
 
@@ -306,22 +315,28 @@ class FunctionsAPI(APIClient):
         else:
             raise OSError("Could not retrieve file from files API")
 
-        function = FunctionWrite(
-            name=name,
-            file_id=cast(int, file_id),  # We know that file id is set
-            external_id=external_id,
-            description=description,
-            owner=owner,
-            secrets=secrets,
-            env_vars=env_vars,
-            function_path=function_path,
-            cpu=cpu,
-            memory=memory,
-            runtime=runtime,
-            metadata=metadata,
-            index_url=index_url,
-            extra_index_urls=extra_index_urls,
-        )
+        if isinstance(name, str):
+            function = FunctionWrite(
+                name=name,
+                file_id=cast(int, file_id),  # We know that file id is set
+                external_id=external_id,
+                description=description,
+                owner=owner,
+                secrets=secrets,
+                env_vars=env_vars,
+                function_path=function_path,
+                cpu=cpu,
+                memory=memory,
+                runtime=runtime,
+                metadata=metadata,
+                index_url=index_url,
+                extra_index_urls=extra_index_urls,
+            )
+        elif isinstance(name, FunctionWrite):
+            function = name
+            function.file_id = cast(int, file_id)
+        else:
+            raise TypeError("name must be a string or a FunctionWrite object")
 
         res = self._post(self._RESOURCE_PATH, json={"items": [function.dump(camel_case=True)]})
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
