@@ -33,7 +33,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus, FunctionStatus
-from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited
+from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
@@ -156,9 +156,10 @@ class FunctionsAPI(APIClient):
 
         Returns:
             Iterator[Function] | Iterator[FunctionList]: An iterator over functions.
-
         """
-        filter_ = FunctionFilter(
+        # The _list_generator method is not used as the /list endpoint does not
+        # respond with a cursor (pagination is not supported)
+        functions = self.list(
             name=name,
             owner=owner,
             file_id=file_id,
@@ -166,16 +167,13 @@ class FunctionsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             created_time=created_time,
             metadata=metadata,
-        ).dump(camel_case=True)
-
-        return self._list_generator(
-            method="POST",
-            resource_path=self._RESOURCE_PATH + "/list",
-            filter=filter_,
             limit=limit,
-            chunk_size=chunk_size,
-            resource_cls=Function,
-            list_cls=FunctionList,
+        )
+        if chunk_size is None:
+            return iter(functions)
+        return (
+            FunctionList(chunk, cognite_client=self._cognite_client)
+            for chunk in split_into_chunks(functions.data, chunk_size)
         )
 
     def __iter__(self) -> Iterator[Function]:
