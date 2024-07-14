@@ -322,7 +322,8 @@ class FunctionsAPI(APIClient):
 
             function = FunctionWrite(
                 name=name,
-                file_id=cast(int, file_id),  # We know that file id is set
+                # Due to _assert_exactly_one_of_folder_or_file_id_or_function_handle we know that file_id is not None
+                file_id=cast(int, file_id),
                 external_id=external_id,
                 description=description,
                 owner=owner,
